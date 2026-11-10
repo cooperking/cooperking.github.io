@@ -1667,8 +1667,8 @@ html .th-picture .zfrontw .zrim, html.gxown .th-picture .zfrontw .zrim { opacity
    2026: "Take away the curtain and instead integrate the theme we had for Cinema Paradiso, with the same lights around the screen and put
    the film reel in too, that displays the posters") */
 .th-picture .zcurt { display: none !important; }
-html .th-picture .zcin, html.gxown .th-picture .zcin { box-shadow: 0 0 0 10px #000, 0 0 0 26px #2a2420, 0 0 60px 30px rgba(235, 222, 202, .22) !important; }
-html.gxproj .th-picture .zcin { box-shadow: 0 0 0 10px #000, 0 0 0 26px #2a2420, 0 0 90px 34px rgba(255, 240, 215, .26), 0 30px 140px 40px rgba(255, 236, 205, .1) !important; }
+html .th-picture .zcin, html.gxown .th-picture .zcin { box-shadow: 0 0 0 6px #000, 0 0 60px 30px rgba(235, 222, 202, .22) !important; }
+html.gxproj .th-picture .zcin { box-shadow: 0 0 0 6px #000, 0 0 90px 34px rgba(255, 240, 215, .26), 0 30px 140px 40px rgba(255, 236, 205, .1) !important; }
 .th-picture .zstagef::before { content: ""; position: absolute; inset: -24px; pointer-events: none; z-index: 4;
   --bulb: radial-gradient(circle, #fff8e6 0 3px, #ebdeca 4px, rgba(235, 222, 202, .35) 5px, transparent 7px);
   background: var(--bulb) left top / 20px 20px repeat-x, var(--bulb) left bottom / 20px 20px repeat-x, var(--bulb) left top / 20px 20px repeat-y, var(--bulb) right top / 20px 20px repeat-y; animation: zbulb 2.4s steps(2) infinite; }
@@ -1691,7 +1691,12 @@ html[data-theme=picture] .zpost { background: #000; } html[data-theme=picture] .
 .th-picture .zproj { filter: blur(6px) !important; z-index: 9 !important; }
 .th-picture .zproj i { background: linear-gradient(calc(var(--ang) + 180deg), rgba(255, 250, 235, .7), rgba(255, 246, 226, .36) 45%, rgba(255, 244, 222, .18)), repeating-linear-gradient(var(--ang), transparent 0 22px, rgba(255, 246, 226, .1) 22px 30px, transparent 30px 61px) !important; }   /* (the projector's beam brighter) */
 .th-picture .zlit { background: radial-gradient(60% 75% at var(--lx) 0%, rgba(255, 238, 205, .42), rgba(255, 238, 205, .14) 45%, transparent 75%) !important; }
-html.gxproj .th-picture .zcin { box-shadow: 0 0 0 10px #000, 0 0 0 26px #2a2420, 0 0 110px 44px rgba(255, 240, 215, .38), 0 30px 160px 50px rgba(255, 236, 205, .18) !important; }
+html.gxproj .th-picture .zcin { box-shadow: 0 0 0 6px #000, 0 0 110px 44px rgba(255, 240, 215, .38), 0 30px 160px 50px rgba(255, 236, 205, .18) !important; }
+/* (Vertigo: the day and its film in the credits' clean lettering, clear, a white line round each letter: John, 10 Nov 2026) */
+html[data-theme=spiral] .hinfo .w, html[data-theme=spiral] .hinfo .w > span, html[data-theme=spiral] .hinfo h2 { font-family: "Special Gothic Expanded One", "Archivo Black", Futura, sans-serif !important; font-weight: 400 !important; text-transform: uppercase; letter-spacing: .04em; color: transparent !important; -webkit-text-stroke: 1.6px #fff; paint-order: stroke; text-shadow: none !important; }
+html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
+.th-picture .vday.soon { background: #141210 !important; box-shadow: inset 0 0 0 1px rgba(244, 236, 216, .25) !important; }
+.th-picture .vday.soon .cs { display: grid !important; font: 600 15px/1.2 var(--kfont) !important; letter-spacing: .28em; color: rgba(244, 236, 216, .55) !important; text-transform: uppercase; }
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -3019,7 +3024,7 @@ function themeShow(at, force) {   // the theme at any point between days; the ne
   // than there would be in that month on a theme")
   var mo = (S.month || '').split('-'), N = mo.length > 1 ? new Date(+mo[0], +mo[1], 0).getDate() : all.length, lo = Math.round(at) - Math.floor((N - 1) / 2);
   lo = Math.max(0, Math.min(lo, all.length - N));
-  all.forEach(function (el, j) { el.classList.toggle('xwin', j < lo || j >= lo + N); });
+  all.forEach(function (el, j) { el.classList.toggle('xwin', !T.fx.whole && (j < lo || j >= lo + N)); });   // (the table seats its own month's days itself)
 }
 function themeCross(dir) {   // on into the next or last month (its own theme), quietly
   var ms = monthsOf(S.calData.days), j = ms.indexOf(S.month) + dir; if (j < 0 || j >= ms.length || !S.step) return false;
@@ -3102,7 +3107,10 @@ THEMEFX.corridor = {
       var i = j - at;
       if (i >= 0) {
         var u = Math.min(i, N) / N, t = u * u * (3 - 2 * u), z = u * D;   // (u: how far down the corridor, 1 at the door)
-        el.style.transform = 'translate3d(' + (ox * t).toFixed(1) + 'px, ' + (oy * t).toFixed(1) + 'px, ' + (-z * HALLG.dz).toFixed(1) + 'px)';
+        // (the days to come down either side of the corridor, as if hung on its walls, so each is seen past the one before: John, 10 Nov 2026:
+        // "the posters block each other so you can't see them going down the corridor"); the next, near you, and the farthest at the door, in its line
+        var side = (Math.round(j - at) % 2 ? -1 : 1) * Math.min(1, i) * Math.sin(Math.PI * Math.min(1, u * 1.15)) * (q && q.cx1 ? (q.cx1 - q.cx0) * (MOB() ? .95 : .6) : 230);
+        el.style.transform = 'translate3d(' + (ox * t + side).toFixed(1) + 'px, ' + (oy * t).toFixed(1) + 'px, ' + (-z * HALLG.dz).toFixed(1) + 'px)';
         el.style.opacity = i > N - .8 ? Math.max(0, (N - i) / .8).toFixed(2) : 1; el.style.zIndex = 200 - Math.round(i); el.style.pointerEvents = i > N - .5 ? 'none' : ''; return;
       }
       if (i < 0) { var f = Math.min(1, -i); el.style.transform = 'translate3d(0, 0, ' + (HALLG.p * .7 * f).toFixed(0) + 'px)'; el.style.opacity = (1 - f).toFixed(3); el.style.zIndex = 300; el.style.pointerEvents = f > .5 ? 'none' : ''; }   // (the days passed: behind you)
@@ -3111,6 +3119,7 @@ THEMEFX.corridor = {
 };
 // November: the table (Dr. Strangelove's War Room): the month round a table, turning
 THEMEFX.table = {
+  whole: true,   // (all the month's days round the table, always: none dropped out of sight)
   geo: function (c) { return c.mob ? { cx: 390, cy: 520, rx: 352, ry: 196, fs: 2.4 } : { cx: ($('#cal').clientWidth || 1280) / 2, cy: 418, rx: 530, ry: 150, fs: 2.6 }; },   // (the day you're on large at the table's front: John, 9 Nov 2026: "chosen poster on Dr Strangelove very small")
   swipe: function (c) { return { x: -1, y: 0, px: c.mob ? 34 : 60 }; },   // (the table turns with the finger)
   place: function (all, at, c) {
@@ -3121,12 +3130,22 @@ THEMEFX.table = {
     // 10 Nov 2026: "Dr strange love still has far more sitting around the table than in the month")
     var j0 = 0; for (var q = 0; q < all.length; q++) if (!all[q].hasAttribute('data-om')) { j0 = q; break; }
     var jc = Math.max(j0, Math.min(j0 + n - 1, at));
+    // (spaced by equal distances round the table's edge, not equal angles, which bunched them up at its two ends: John,
+    // 10 Nov 2026: "the posters need to be evenly spaced around the table")
+    var M = 720, cum = [0];
+    for (var i = 1; i <= M; i++) { var t0 = Math.PI / 2 - (i - 1) / M * 2 * Math.PI, t1 = Math.PI / 2 - i / M * 2 * Math.PI; cum.push(cum[i - 1] + Math.hypot(g.rx * (Math.cos(t1) - Math.cos(t0)), g.ry * (Math.sin(t1) - Math.sin(t0)))); }
+    var arcA = function (fr) {   // (the angle a fraction of the way round from the front, going the way the angles did before)
+      var want = ((fr % 1) + 1) % 1 * cum[M], lo = 0, hi = M;
+      while (hi - lo > 1) { var md = (lo + hi) >> 1; if (cum[md] < want) lo = md; else hi = md; }
+      var u = lo + (want - cum[lo]) / Math.max(1e-6, cum[hi] - cum[lo]);
+      return Math.PI / 2 - u / M * 2 * Math.PI;
+    };
     all.forEach(function (el, j) {
       var om = el.hasAttribute('data-om');
       el.style.visibility = om ? 'hidden' : ''; el.style.pointerEvents = om ? 'none' : '';
       if (om) return;
       var kk = j - jc; kk = ((kk + n / 2) % n + n) % n - n / 2;
-      var a = Math.PI / 2 - kk * 2 * Math.PI / n, x = g.cx + g.rx * Math.cos(a), y = g.cy + g.ry * Math.sin(a), depth = (Math.sin(a) + 1) / 2, nf = near(j - at);
+      var a = arcA(kk / n), x = g.cx + g.rx * Math.cos(a), y = g.cy + g.ry * Math.sin(a), depth = (Math.sin(a) + 1) / 2, nf = near(j - at);
       el.style.left = x.toFixed(1) + 'px'; el.style.top = y.toFixed(1) + 'px';
       el.style.transform = 'scale(' + (.62 + .38 * depth + nf * (g.fs - 1)).toFixed(3) + ')';
       el.style.zIndex = Math.round(depth * 100) + (nf > .5 ? 100 : 0);
@@ -3909,9 +3928,11 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
       if (tt - Q.last > 110 && Math.abs(Q.v) < 1.5) {   // (slowing to a stop, it settles with a slit square in front)
         // (coming to rest on the next day it's heading for, always on, never back: John, 10 Nov 2026: "it shouldn't ever reverse to get
         // itself back on track")
-        if (Q.rt == null) { var Z = me.hr(), rc = Z.rankOf(me._d0 + (me._xs - .5) / me.nb()), dq = Q.dir || 1; Q.rt = Math.abs(rc - Math.round(rc)) < .03 ? Math.round(rc) : dq > 0 ? Math.ceil(rc) : Math.floor(rc); Q.Z = Z; }
+        if (Q.rt == null) { var Z = me.hr(), rc = Z.rankOf(me._d0 + (me._xs - .5) / me.nb()), dq = Q.dir || 1; Q.rt = Math.abs(rc - Math.round(rc)) < .03 ? Math.round(rc) : dq > 0 ? Math.ceil(rc) : Math.floor(rc); for (var g3 = 0; g3 < Z.L && !Z.ok(Q.rt); g3++) Q.rt += dq; if (dq > 0 && Q.rt >= Z.L && !Z.ok(Z.L - 1)) { Q.rt = Math.round(rc); while (Q.rt > 0 && !Z.ok(Q.rt)) Q.rt--; }   // (nothing yet after today's: it stays on today's, not on into next month's days to come)
+          Q.Z = Z; }
         var xt = .5 + (Q.Z.dayOf(Q.rt) - me._d0) * me.nb(); Q.v = 0; me._xs += (xt - me._xs) * .16;
         if (Math.abs(xt - me._xs) < .01) { var rf = ((Q.rt % Q.Z.L) + Q.Z.L) % Q.Z.L, dT = Q.Z.H[rf]; me._xs = .5 + (dT - me._d0) * me.nb(); me._push = null; me._gal = false; me._w = 0; me.draw(me._at);
+          if (Q.rt < 0 || Q.rt >= Q.Z.L) { me.cross(Q.rt < 0 ? -1 : 1); return; }   // (past the 1st or the last: on into that month's theme)
           if (dT !== me._day && typeof themeShow === 'function') { me._noGal = true; themeShow(dT, true); }
           return; }
       }
@@ -3920,28 +3941,37 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
   },
   // (a big spin: the film runs right round the month's films and on to the next day, the drum whirling all the way: John, 10 Nov 2026:
   // "a big spin should shove it into the next day by taking it all the way through the month")
+  cross: function (dir) {   // (on past the month's 1st or last day: the month before's or after's theme, on its last or first day: John, 10 Nov 2026)
+    var me = this, AL = me.all || [], b = AL[dir < 0 ? 0 : AL.length - 1]; if (!b) return;
+    me._noGal = true; themeShow(dir < 0 ? 0 : AL.length - 1, true); b.focus({ preventScroll: true });
+    setTimeout(function () { themeStep(dir); }, 30);
+  },
   hr: function () {   // (the month's films in order, and the way between a day and its place among them)
-    var H = []; (this.all || []).forEach(function (el, j) { if (el.classList.contains('has')) H.push(j); }); var L = H.length;
-    return { H: H, L: L,
+    var AL = this.all || [], H = []; AL.forEach(function (el, j) { H.push(j); }); var L = H.length;
+    return { H: H, L: L, ok: function (r) { var e = AL[H[((r % L) + L) % L]]; return !!(e && e.classList.contains('has')); },
       dayOf: function (r) { if (!L) return r; if (r <= 0) return H[0] + r; if (r >= L - 1) return H[L - 1] + (r - (L - 1)); var i = Math.floor(r); return H[i] + (H[i + 1] - H[i]) * (r - i); },
       rankOf: function (x) { if (!L) return x; if (x <= H[0]) return x - H[0]; for (var i = 0; i < L - 1; i++) if (x <= H[i + 1]) return i + (x - H[i]) / (H[i + 1] - H[i]); return L - 1 + (x - H[L - 1]); } };
   },
   bigSpin: function (dir, v0) {
-    var me = this, NB = me.nb(), AL = me.all || [], H = []; AL.forEach(function (el, j) { if (el.classList.contains('has')) H.push(j); });
+    var me = this, NB = me.nb(), AL = me.all || [], H = []; AL.forEach(function (el, j) { H.push(j); });
     var L = H.length; if (!L || me._d0 == null) return;
     var dayOf = function (r) { if (r <= 0) return H[0] + r; if (r >= L - 1) return H[L - 1] + (r - (L - 1)); var i = Math.floor(r); return H[i] + (H[i + 1] - H[i]) * (r - i); };
     var rankOf = function (x) { if (x <= H[0]) return x - H[0]; for (var i = 0; i < L - 1; i++) if (x <= H[i + 1]) return i + (x - H[i]) / (H[i + 1] - H[i]); return L - 1 + (x - H[L - 1]); };
-    var rs0 = rankOf(me._d0 + ((me._xs || .5) - .5) / NB), r0 = me._r0 != null ? me._r0 : Math.round(rs0), r1 = r0 + dir * (L + 1); while (dir * (r1 - rs0) < 1) r1 += dir * L; var rf = ((r1 % L) + L) % L;   // (from where the swipe began: once round and one on)
+    var rs0 = rankOf(me._d0 + ((me._xs || .5) - .5) / NB), r0 = me._r0 != null ? me._r0 : Math.round(rs0), r1 = r0 + dir * (L + 1); while (dir * (r1 - rs0) < 1) r1 += dir * L; for (var g2 = 0; g2 < L && !(AL[H[((r1 % L) + L) % L]] || { classList: { contains: function () { return true; } } }).classList.contains('has'); g2++) r1 += dir; var rf = ((r1 % L) + L) % L;   // (onward past days still to come)   // (from where the swipe began: once round and one on)
     // (one motion: off at the swipe's own speed, slowing evenly all the way round the month, to rest on the next day)
     var rs = rankOf(me._d0 + ((me._xs || .5) - .5) / NB), S = r1 - rs, vr = Math.max(4, (v0 || 0) / NB);   // (ranks a second)
-    var T = Math.max(2400, Math.min(4200, 2 * Math.abs(S) / vr * 1000)), m = Math.max(.8, Math.min(2.6, vr * T / 1000 / Math.abs(S)));
+    var T = Math.max(1500, Math.min(2200, 2 * Math.abs(S) / vr * 1000)), m = Math.max(.8, Math.min(2.6, vr * T / 1000 / Math.abs(S)));   // (the film through the month quickly: John, 10 Nov 2026)
     var h = function (u) { return m * u + (3 - 2 * m) * u * u + (m - 2) * u * u * u; }, hd = function (u) { return m + 2 * (3 - 2 * m) * u + 3 * (m - 2) * u * u; };
+    // (the film races through the month; the drum turns only at the horse's galloping pace, slowing with it to rest on the day's slit:
+    // John, 10 Nov 2026: "the film strip can go just as fast as it should on a big spin, but the zoetrope should just go at galloping horse speed")
+    var xs0 = me._xs || .5, xt = .5 + (H[rf] - me._d0) * NB, G = 26, want = dir * G * T / 1000 / m, Sd = xt - xs0;
+    Sd += NB * Math.round((want - Sd) / NB); if (Sd * dir <= 0) Sd += dir * NB;
     var t0 = performance.now(), tok = me._gtok = {}; me._bigUntil = t0 + T; me._gal = true;
     (function f(t) {
-      if (tok !== me._gtok || !$('#zstagef') || me._at == null) return;
+      if (tok !== me._gtok || !$('#zstagef') || me._at == null) { me._fpos = null; return; }
       var u = Math.min(1, (t - t0) / T), r = rs + S * h(u);
-      me._xs = .5 + (dayOf(r) - me._d0) * NB; me._w = Math.abs(S) * NB * hd(u) / (T / 1000);
-      if (u >= 1) { me._gal = false; me._w = 0; me._xs = .5 + (H[rf] - me._d0) * NB; me.draw(me._at); if (H[rf] !== me._day) { me._noGal = true; themeShow(H[rf], true); } return; }
+      me._fpos = dayOf(r); me._xs = xs0 + Sd * h(u); me._w = Math.abs(Sd) * hd(u) / (T / 1000);
+      if (u >= 1) { me._fpos = null; me._gal = false; me._w = 0; me._xs = xt; me.draw(me._at); if (r0 + dir < 0 || r0 + dir >= L) { me.cross(dir); return; } if (H[rf] !== me._day) { me._noGal = true; themeShow(H[rf], true); } return; }
       me.draw(me._at); requestAnimationFrame(f);
     })(t0);
   },
@@ -3974,9 +4004,10 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     // does, showing the previous film next to the screen")
     var fy = g.fT + g.fH / 2, fs = 1, fw = 240, f2 = 262, f1 = Math.max(f2, g.sw / 2 + 30 * g.f + fw / 2), tgt = me._tgt != null ? me._tgt : a, pos = a;
     var off = function (k) { var ak = Math.abs(k); return (k < 0 ? -1 : 1) * (ak <= 1 ? ak * f1 : f1 + (ak - 1) * f2); };   // (the day's behind the screen, the ones either side just past its edges, the rest along the strip)
-    if (me._d0 != null) pos = me._d0 + ((me._xs || .5) - .5) / NB;   // (the film where the drum has turned it)
+    if (me._fpos != null) pos = me._fpos; else if (me._d0 != null) pos = me._d0 + ((me._xs || .5) - .5) / NB;   // (the film where the drum has turned it)
     // (only the month's films on the strip, round and round: after the last, the first again)
-    var AL = me.all || [], H = []; AL.forEach(function (el, j) { if (el.classList.contains('has')) H.push(j); });
+    // (every day of the month on the film, a day without its film yet a frame saying so: John, 10 Nov 2026: "film reel should have a gap for any missing days")
+    var AL = me.all || [], H = []; AL.forEach(function (el, j) { H.push(j); });
     var L = H.length, rankOf = function (x) { if (!L) return 0; if (x <= H[0]) return x - H[0]; for (var i = 0; i < L - 1; i++) if (x <= H[i + 1]) return i + (x - H[i]) / (H[i + 1] - H[i]); return L - 1 + (x - H[L - 1]); };
     var pr = rankOf(pos);
     AL.forEach(function (el, j) {
