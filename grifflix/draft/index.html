@@ -3920,6 +3920,7 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
         if (Q.rt == null) { var Z = me.hr(), rc = Z.rankOf(me._d0 + (me._xs - .5) / me.nb()), dq = Q.dir || 1; Q.rt = Math.abs(rc - Math.round(rc)) < .03 ? Math.round(rc) : dq > 0 ? Math.ceil(rc) : Math.floor(rc); for (var g3 = 0; g3 < Z.L && !Z.ok(Q.rt); g3++) Q.rt += dq; Q.Z = Z; }
         var xt = .5 + (Q.Z.dayOf(Q.rt) - me._d0) * me.nb(); Q.v = 0; me._xs += (xt - me._xs) * .16;
         if (Math.abs(xt - me._xs) < .01) { var rf = ((Q.rt % Q.Z.L) + Q.Z.L) % Q.Z.L, dT = Q.Z.H[rf]; me._xs = .5 + (dT - me._d0) * me.nb(); me._push = null; me._gal = false; me._w = 0; me.draw(me._at);
+          if (Q.rt < 0 || Q.rt >= Q.Z.L) { me.cross(Q.rt < 0 ? -1 : 1); return; }   // (past the 1st or the last: on into that month's theme)
           if (dT !== me._day && typeof themeShow === 'function') { me._noGal = true; themeShow(dT, true); }
           return; }
       }
@@ -3928,6 +3929,11 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
   },
   // (a big spin: the film runs right round the month's films and on to the next day, the drum whirling all the way: John, 10 Nov 2026:
   // "a big spin should shove it into the next day by taking it all the way through the month")
+  cross: function (dir) {   // (on past the month's 1st or last day: the month before's or after's theme, on its last or first day: John, 10 Nov 2026)
+    var me = this, AL = me.all || [], b = AL[dir < 0 ? 0 : AL.length - 1]; if (!b) return;
+    me._noGal = true; themeShow(dir < 0 ? 0 : AL.length - 1, true); b.focus({ preventScroll: true });
+    setTimeout(function () { themeStep(dir); }, 30);
+  },
   hr: function () {   // (the month's films in order, and the way between a day and its place among them)
     var AL = this.all || [], H = []; AL.forEach(function (el, j) { H.push(j); }); var L = H.length;
     return { H: H, L: L, ok: function (r) { var e = AL[H[((r % L) + L) % L]]; return !!(e && e.classList.contains('has')); },
@@ -3953,7 +3959,7 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
       if (tok !== me._gtok || !$('#zstagef') || me._at == null) { me._fpos = null; return; }
       var u = Math.min(1, (t - t0) / T), r = rs + S * h(u);
       me._fpos = dayOf(r); me._xs = xs0 + Sd * h(u); me._w = Math.abs(Sd) * hd(u) / (T / 1000);
-      if (u >= 1) { me._fpos = null; me._gal = false; me._w = 0; me._xs = xt; me.draw(me._at); if (H[rf] !== me._day) { me._noGal = true; themeShow(H[rf], true); } return; }
+      if (u >= 1) { me._fpos = null; me._gal = false; me._w = 0; me._xs = xt; me.draw(me._at); if (r0 + dir < 0 || r0 + dir >= L) { me.cross(dir); return; } if (H[rf] !== me._day) { me._noGal = true; themeShow(H[rf], true); } return; }
       me.draw(me._at); requestAnimationFrame(f);
     })(t0);
   },
