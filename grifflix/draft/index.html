@@ -3879,10 +3879,11 @@ THEMEFX.picture = {
   // with my track pad")
   push: function (px) {
     var me = this; if (!me.c || me._at == null || CALM) return; me._gtok = null; if (me._d0 == null) me._d0 = me._day != null ? me._day : me._at;
-    var g = me.g(me.c), per = g.Rv * 2 * Math.PI / me.nb(), t = performance.now(), d = px / per * .6;
+    // (the faster the fingers, the further each bit of their swipe throws it: a gentle push nudges, a big swipe races the film by: John, 10 Nov 2026)
+    var t = performance.now(), d = px * .02 * (1 + Math.abs(px) / 35);
     me._xs = (me._xs || 0) + d;
     var P = me._push || (me._push = { v: 0, t: t, last: t }), dt = Math.max(8, t - P.t) / 1000;
-    P.v = P.v * .5 + (d / .6 / dt) * .5; P.t = t; P.last = t; me._gal = true; me._w = Math.abs(P.v);
+    P.v = P.v * .5 + (d / dt) * .5; P.t = t; P.last = t; me._gal = true; me._w = Math.abs(P.v);
     me.draw(me._at);
     if (P.raf) return;
     (function f(tt) {
@@ -3894,7 +3895,9 @@ THEMEFX.picture = {
       me._w = Math.abs(Q.v);
       if (tt - Q.last > 70 && Math.abs(Q.v) < .5) {   // (slowing to a stop, it settles with a slit square in front)
         // (coming to rest on a day, the film's picture square behind the screen, the one before it to its left, a slit square under it)
-        var NBp = me.nb(), last = Math.max(0, (me.all || []).length - 1), dT = Math.max(0, Math.min(last, Math.round(me._d0 + (me._xs - .5) / NBp))), tgt = .5 + (dT - me._d0) * NBp;
+        var NBp = me.nb(), AL = me.all || [], last = Math.max(0, AL.length - 1), want = me._d0 + (me._xs - .5) / NBp, dT = Math.max(0, Math.min(last, Math.round(want)));
+        if (AL[dT] && !AL[dT].classList.contains('has')) { var best = -1; AL.forEach(function (el, j) { if (el.classList.contains('has') && (best < 0 || Math.abs(j - want) < Math.abs(best - want))) best = j; }); if (best >= 0) dT = best; }   // (never stopping on a day still to come)
+        var tgt = .5 + (dT - me._d0) * NBp;
         Q.v = 0; me._xs += (tgt - me._xs) * .1;
         if (Math.abs(tgt - me._xs) < .004) { me._xs = tgt; me._push = null; me._gal = false; me._w = 0; me.draw(me._at);
           if (dT !== me._day && typeof themeShow === 'function') { me._noGal = true; themeShow(dT, true); }
