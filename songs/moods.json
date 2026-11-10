@@ -27441,7 +27441,7 @@
       ],
       [
        "Playful",
-       22
+       23
       ]
      ]
     ]
@@ -28168,6 +28168,139 @@
    "musicbrainz": [
     "folk",
     "soul"
+   ],
+   "check": true
+  },
+  "252pAlbltOjOcUux4dRtjp": {
+   "n": 274,
+   "title": "Must of Got Lost",
+   "artist": "The J. Geils Band",
+   "moods": [
+    "Energetic",
+    "Melancholy"
+   ],
+   "moodMix": [
+    [
+     "Energetic",
+     21
+    ],
+    [
+     "Melancholy",
+     19
+    ],
+    [
+     "Joyful",
+     14
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Energetic",
+       21
+      ],
+      [
+       "Melancholy",
+       19
+      ],
+      [
+       "Joyful",
+       14
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Energetic",
+    "Melancholy",
+    "Joyful"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Pop Rock",
+    "Classic Rock",
+    "Glam"
+   ],
+   "genres": [
+    "Rock"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Rock",
+     84
+    ],
+    [
+     "Pop",
+     14
+    ],
+    [
+     "Soul & R&B",
+     2
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Rock",
+       80
+      ],
+      [
+       "Pop",
+       16
+      ],
+      [
+       "Soul & R&B",
+       4
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Rock",
+       94
+      ],
+      [
+       "Pop",
+       6
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Rock",
+       79
+      ],
+      [
+       "Pop",
+       21
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "blue-eyed soul",
+    "blues rock",
+    "boogie rock",
+    "classic rock",
+    "hard rock",
+    "new wave",
+    "pop rock",
+    "rock",
+    "rock and roll"
    ],
    "check": true
   }
