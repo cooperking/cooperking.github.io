@@ -3488,7 +3488,7 @@ THEMEFX.picture = {
   g: function (c) {
     var mob = c.mob, f = mob ? 1 : Math.min(1, c.H / 900), E = .24;
     var sw = mob ? 600 : Math.min(470, c.W * .33) * f, sh = sw * .75, scx = mob ? 390 : c.W * .7, sy0 = mob ? 24 : 112;   // (the screen)
-    var R = mob ? 200 : Math.min(215, c.W * .15) * f, cx = mob ? 250 : scx - 150 * f, ty = mob ? 548 : sy0 + sh + 70 * f, Hw = R * .32;
+    var R = mob ? 250 : Math.min(215, c.W * .15) * f, cx = mob ? 390 : scx - 150 * f, ty = mob ? 560 : sy0 + sh + 70 * f, Hw = R * .32;   // (a phone: centred under the screen: John, 10 Nov 2026: "spacing is wrong on iPhone")
     var ry = R * E, rm = R * .38, rym = rm * E, mw = 2 * rm * Math.tan(Math.PI / this.NM), mh = mw * .66;   // (low: under the screen, not in its way: John, 9 Nov 2026)
     var mcy = ty + ry + 6 * f - rym - mh / 2;   // (the mirrors' middle: their feet just below the near rim)
     var pt = ty - 24 * f, ph = Math.max(180, (mob ? 850 : c.H - 112) - pt), pw = ph * 170 / 255;   // (the day's poster, beside the praxinoscope)
@@ -3577,7 +3577,7 @@ THEMEFX.picture = {
     })(t0);
   },
   lo: function (el) {   // (a day's poster below: its own fade, and gone while the screen shows it)
-    var v = (el._o == null ? 0 : el._o) * (this._lo == null ? 1 : this._lo);
+    var v = this.c && this.c.mob ? 0 : (el._o == null ? 0 : el._o) * (this._lo == null ? 1 : this._lo);   // (a phone: the day's poster on the screen only)
     if (Math.abs((el._v == null ? -1 : el._v) - v) < .004) return; el._v = v;
     el.style.opacity = v.toFixed(3); el.style.visibility = v < .005 ? 'hidden' : '';
   },
