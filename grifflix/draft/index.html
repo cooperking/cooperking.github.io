@@ -26,7 +26,7 @@ page shown inside another, stay where they are. On grifflix.co.uk, what came wit
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Grifflix</title>
 <meta name="description" content="John's films and TV for family and friends, with a Movie of the Day.">
-<meta name="theme-color" content="#0a0a0a">
+<meta name="theme-color" content="#173a5e">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">   <!-- (the home-screen app: the theme's colour right up behind the clock, the page kept clear of it: John, 8 Nov 2026) -->
 <link rel="manifest" href="/grifflix/manifest.webmanifest">
@@ -1604,6 +1604,13 @@ html.gxown .zcurt { background: repeating-linear-gradient(90deg, var(--gx-c1) 0 
 html.gxown .zcurt::after { display: none !important; }
 html.gxown .leaf2 { border-color: var(--gx-tiletop) !important; background: var(--gx-tile) !important; } html.gxown .leaf2 i { background: var(--gx-tiletop) !important; color: var(--gx-tile) !important; } html.gxown .leaf2 b { color: var(--gx-tilet) !important; }
 html.gxown .zlead .zbg { background: var(--bg); }
+@property --bg { syntax: '<color>'; inherits: true; initial-value: #0a0a0a; }
+@property --gx-band { syntax: '<color>'; inherits: true; initial-value: #0d0c0f; }
+@property --gx-c1 { syntax: '<color>'; inherits: true; initial-value: #0d0c0f; }
+@property --gx-c2 { syntax: '<color>'; inherits: true; initial-value: #0d0c0f; }
+html.gxown { transition: --bg 1.8s ease, --gx-band 1.8s ease, --gx-c1 1.8s ease, --gx-c2 1.8s ease, background-color 1.8s ease; }   /* (the house lights, down and up) */
+html.gxown body { transition: background-color 1.8s ease; }
+html.gxown .hinfo .w, html.gxown .hinfo .w > span { color: var(--fg) !important; }
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -2125,7 +2132,7 @@ var THEMES_LATER = [
   { key: 'lane', mob: [0, 0, 1280, 720], name: 'The Lane', film: 'The Big Lebowski', year: 1998, by: 'the Coen brothers', bg: '#d79e48', ink: '#000', font: '"GF-lane", "Lobster", cursive', tw: 700, tt: 'none' },
   // Grifflix's own, the launch's showcase (John, 9 Nov 2026: "fully reworked - it's the showcase - an exciting launch screen -
   // the way things move and display should be original and creative"): the zoetrope, where moving pictures began
-  { key: 'picture', mob: [0, 0, 1280, 720], name: 'Grifflix', film: 'the zoetrope', year: 1834, by: '', credit: 'Muybridge’s horse (1878) · the Lumières’ <i>train</i> (1896)', creditM: 'Muybridge (1878) · Lumière (1896)'   /* (all three: John, 10 Nov 2026) */   /* (just its name, and the film's credit: John, 9 Nov 2026) */, bg: '#0b0809', ink: '#fff', font: '"Grifflix Display", "Federo", Georgia, serif', tw: 400, tt: 'none' },   /* (Grifflix's own headline face: John, 10 Nov 2026) */
+  { key: 'picture', mob: [0, 0, 1280, 720], name: 'Grifflix', film: 'the zoetrope', year: 1834, by: '', credit: 'Muybridge’s horse (1878) · the Lumières’ <i>train</i> (1896)', creditM: 'Muybridge (1878) · Lumière (1896)'   /* (all three: John, 10 Nov 2026) */   /* (just its name, and the film's credit: John, 9 Nov 2026) */, bg: '#173a5e', ink: '#fff', font: '"Grifflix Display", "Federo", Georgia, serif', tw: 400, tt: 'none' },   /* (Grifflix's own headline face: John, 10 Nov 2026) */
   // The Grand Budapest Hotel (back again: John, 9 Nov 2026): the façade's pink (#f1b1b3), Mendl's box pink and ribbon blue
   // (#f498b5, #6c77b8), the lobby red (#d61302), the gold sign (#e3c183), the bellboy's purple (#5a3d4e); the posters' billing
   // in Archer (Fonts In Use: John's own copy, Arvo till then); the sign hand-lettered (Annie Atkins): Marcellus for it
@@ -2143,7 +2150,7 @@ var THEMEALL = THEMES.concat(THEMES_LATER), THEMEDEF = THEMES.slice();
 // a month not yet given a theme, from December 2026: plain black, a holding space till John chooses its theme on the admin page
 // (John, 9 Nov 2026: "can upcoming months have no theme - on the screen it will just be black, as a holding space - until I
 // have added them in. It makes it easier to choose")
-var BLANKFROM = '2026-12', THEMEBLANK = { key: 'blank', mob: [0, 0, 1280, 720], name: 'Grifflix', film: '', year: 0, by: '', bg: '#000000', ink: '#fff', font: 'var(--serif)', tw: 500, tt: 'none' };
+var BLANKFROM = '2026-12', THEMEBLANK = { key: 'blank', mob: [0, 0, 1280, 720], name: 'Grifflix', film: '', year: 0, by: '', bg: '#173a5e', ink: '#fff', font: 'var(--serif)', tw: 500, tt: 'none' };
 THEMEALL.push(THEMEBLANK);
 var THEMEMONTHS = {};   // (months given their own theme on the admin page: { 'YYYY-MM': key })
 function themeOrder(keys) {   // true when the months changed
@@ -2162,23 +2169,26 @@ function themeFor(m, y) {   // a month's theme: the list (any length: John, 9 No
   var n = THEMES.length, i = (y - 2026) * 12 + m;
   return THEMES[((i % n) + n) % n];
 }
-// Grifflix's own colours (John, 10 Nov 2026, from his palette: Orange #FF8400, Vista Bleu #8FA0D8, Amande #F9DFC6, Bleu Oxford
-// #0B0829), for its own month and the months not given a theme; two ways to try on the draft, A (orange) and B (Bleu Oxford):
-// ?gx=a or ?gx=b. Text in Oxford on orange (7.9:1); on Oxford, Amande text (15.2:1), orange titles (7.9:1), Vista Bleu labels (7.6:1)
-var GXP = {
-  a: { bg: '#ff8400', ink: '11, 8, 41', title: '#0b0829', label: '#0b0829', band: '#0b0829', strip: '#f9dfc6', logo: '#8fa0d8', c1: '#0b0829', c2: '#221d52', tile: '#f9dfc6', tilet: '#0b0829', tiletop: '#0b0829' },
-  b: { bg: '#0b0829', ink: '249, 223, 198', title: '#ff8400', label: '#8fa0d8', band: '#ff8400', strip: '#f9dfc6', logo: '#0b0829', c1: '#8fa0d8', c2: '#7486c6', tile: '#f9dfc6', tilet: '#0b0829', tiletop: '#ff8400' }
-};
-var GXV = (function () { var q = (Q.get('gx') || '').toLowerCase(); if (GXP[q]) { store.set('grifflix-gx', q); return q; } var k = store.get('grifflix-gx'); return GXP[k] ? k : 'a'; })(), GX = GXP[GXV];
+// Grifflix's own colour (John, 10 Nov 2026: "Go with blue"): poster blue, after Cassandre's few flat inks, one deep colour with cream
+// words (9.6:1) and one small soft-orange accent (4.7:1), for its own month and the months not given a theme. The zoetrope's theme
+// opens with the house lights up, then they come down like a cinema's, the room dark and the drum and screen in the blue (John: "The
+// theme would only work if the lights came down like in a cinema before the theme started"); away from the theme, back up
+var GX = { bg: '#173a5e', ink: '243, 232, 210', title: '#f08a4b', label: '#f3e8d2', band: '#0d0c0f', strip: '#f3e8d2', logo: '#f08a4b', c1: '#0d0c0f', c2: '#0d0c0f', tile: '#f3e8d2', tilet: '#14213d', tiletop: '#f08a4b' },
+  GXDARK = '#0d0c0f', GXDIM = false;
 function monthTint(m) {   // the month's theme's one flat colour, and its ink: black on its light colours, white on the rest
-  var t = themeFor(m), R = document.documentElement.style, own = t.key === 'picture' || t.key === 'blank';
+  var t = themeFor(m), R = document.documentElement.style, own = t.key === 'picture' || t.key === 'blank',
+    dim = own && GXDIM && t.key === 'picture' && VIEW() === 'themes' && (!S.view || S.view === 'home') && !!document.getElementById('zstagef') && !(document.getElementById('sheet') || {}).open;   // (a pop-up open over it: lights up)
   document.documentElement.classList.toggle('gxown', own);
-  if (own) { t = Object.assign({}, t, { bg: GX.bg });
-    ['title', 'label', 'band', 'strip', 'logo', 'c1', 'c2', 'tile', 'tilet', 'tiletop'].forEach(function (k) { R.setProperty('--gx-' + k, GX[k]); }); }
+  if (own) { t = Object.assign({}, t, { bg: dim ? GXDARK : GX.bg });
+    ['title', 'label', 'band', 'strip', 'logo', 'c1', 'c2', 'tile', 'tilet', 'tiletop'].forEach(function (k) { R.setProperty('--gx-' + k, dim && /^(band|c1|c2)$/.test(k) ? GX.bg : GX[k]); }); }
   R.setProperty('--kink', own ? GX.ink : t.ink === '#000' ? '0, 0, 0' : '255, 255, 255');
   R.setProperty('--bg', t.bg);
-  store.set('grifflix-lastbg', t.bg); R.background = t.bg;   // (the next load opens in it)
+  if (!dim) store.set('grifflix-lastbg', t.bg); R.background = t.bg;   // (the next load opens in it, lights up)
   var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = t.bg;
+}
+function gxLights() { monthTint(S.month ? +S.month.slice(5, 7) - 1 : new Date().getMonth()); }
+function lightsDown() {   // the zoetrope's theme, open: the house lights dim
+  GXDIM = true; monthTint(S.month ? +S.month.slice(5, 7) - 1 : new Date().getMonth());
 }
 monthTint(new Date().getMonth());
 themeEarly();
@@ -3648,6 +3658,7 @@ THEMEFX.picture = {
   },
   ready: function (c) {
     fxReset(this); this.c = c; var me = this, st = $('#zstagef'); me._lo = window.ZFILMED || CALM ? 0 : 1; if (!st) return;
+    clearTimeout(window._gxdim); window._gxdim = setTimeout(function () { if ($('#zstagef')) lightsDown(); }, CALM || window.ZFILMED ? 0 : 900);
     // (the drum spun up as the theme opens, slowing to rest, the horse galloping in its mirrors: John, 10 Nov 2026: "the praxinoscope
     // needs to spin when it first starts")
     me._sp = CALM ? 0 : 1; me._la = null;
@@ -4171,6 +4182,7 @@ var dlg = $('#sheet');
 function openSheet(html) {
   $('#sheetIn').innerHTML = html;
   if (!dlg.open) dlg.showModal();
+  if (!dlg._gx) { dlg._gx = 1; dlg.addEventListener('close', function () { setTimeout(gxLights, 0); }); } gxLights();
   shBrand(); setTimeout(function () { if (dlg.open) shBrand(); }, 420);   // (again once it has slid in: where its words start)
   $('#sheetIn').scrollTop = 0;
   var c = $('#sheetIn .close'); if (c) c.onclick = closeSheet;
