@@ -1660,6 +1660,9 @@ html .th-picture .zfrontw .zrim, html.gxown .th-picture .zfrontw .zrim { opacity
 .th-picture .zstripc { display: none; }
 .th-picture .ztop .zinb { fill: #e6dac4 !important; }
 .th-picture .zw { background-image: none !important; } .th-picture .zw::before { display: none !important; }
+.zfar { position: absolute; left: 0; top: 0; z-index: 7; pointer-events: none; overflow: visible; }
+.znear { position: absolute; left: 0; top: 0; z-index: 1; pointer-events: none; overflow: visible; }
+.th-picture .zw, .th-picture .zbs, .th-picture .zbsl { visibility: hidden !important; }
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -3743,7 +3746,9 @@ THEMEFX.picture = {
       '<path class="zbrim" d="M' + F(cx - R) + ',' + F(rt) + ' A' + F(R) + ' ' + F(ry) + ' 0 0 1 ' + F(cx + R) + ',' + F(rt) + '"/></svg>';
     for (var kb = 0, NBb = this.nb(c); kb < NBb; kb++) h += '<i class="zbs" style="height:' + F(ry * .9) + 'px"></i>';
     // (the near wall: its slits, a rim above them, a band below with GRIFFLIX round it)
+    h += '<svg class="zfar" id="zfar" width="' + c.W + '" height="' + c.H + '"></svg>';   // (the far wall's slits, drawn as it turns)
     h += '<div class="zfrontw" style="' + mkAt(0) + '">';
+    h += '<svg class="znear" id="znear" width="' + c.W + '" height="' + c.H + '"></svg>';   // (the near wall between its slits, drawn as it turns)
     var NB = this.nb(c), PWd = R * 2 * Math.PI / NB * .58;
     for (var k = 0; k < NB; k++) h += '<i class="zw" style="width:' + F(PWd) + 'px;height:' + F(g.yS - g.yT) + 'px"></i>';
     h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '"><defs><linearGradient id="zlac" x1="0" x2="1"><stop offset="0" stop-color="#070607"/><stop offset=".18" stop-color="#131113"/><stop offset=".5" stop-color="#262224"/><stop offset=".82" stop-color="#131113"/><stop offset="1" stop-color="#070607"/></linearGradient></defs>' +
@@ -3776,7 +3781,7 @@ THEMEFX.picture = {
   },
   ready: function (c) {
     fxReset(this); this.c = c; var me = this, st = $('#zstagef'); me._lo = window.ZFILMED || CALM ? 0 : 1; if (!st) return;
-    clearTimeout(window._gxdim); window._gxdim = setTimeout(function () { if ($('#zstagef')) lightsDown(); }, CALM || window.ZFILMED ? 0 : 900);
+    // (no lights going down: the zoetrope reads better in the room's own colour: John, 10 Nov 2026)
     // (the drum spun up as the theme opens, slowing to rest, the horse galloping in its mirrors: John, 10 Nov 2026: "the praxinoscope
     // needs to spin when it first starts")
     me._sp = CALM ? 0 : 1; me._la = null;
@@ -3917,6 +3922,37 @@ THEMEFX.picture = {
       b.style.transform = 'translate(' + (g.cx + x0).toFixed(1) + 'px,' + (g.yT + g.ry * cs).toFixed(1) + 'px) scaleX(' + ((x1 - x0) / pw0).toFixed(3) + ')';
       b.style.setProperty('--dk', Math.min(.85, .9 * (1 - cs)).toFixed(2)); if (b._wo !== wo) { b._wo = wo; b.style.opacity = wo; }
     });
+    // (the drum's walls drawn as they are: each piece of the near wall between two slits curved with the drum, its top and foot on the
+    // rim's and the band's curves, lighter facing you, darker turning away, the wall's thickness seen at each slit's edge; the far wall's
+    // slits, holes through to the room, curved with it, their cut edges catching the light: John, 10 Nov 2026: "the blocks between slits
+    // are just 2D rectangles. They don't join up with the drum. The back ones don't have the illusion of being a hole either")
+    (function () {
+      var NS = $('#znear'), FS = $('#zfar'); if (!NS || !FS) return;
+      var rotN = ad * st + XR, cx = g.cx, ry = g.ry, yT = g.yT, yS = g.yS, half = D * .29, th2 = R * .018, F2 = function (n) { return n.toFixed(1); };
+      var P = function (t, y0) { return F2(cx + R * Math.sin(t)) + ',' + F2(y0 + ry * Math.cos(t)); };
+      var edge = function (a0, a1, y0, y1) { var n = 10, pts = [], j; for (j = 0; j <= n; j++) pts.push(P(a0 + (a1 - a0) * j / n, y0)); for (j = n; j >= 0; j--) pts.push(P(a0 + (a1 - a0) * j / n, y1)); return 'M' + pts.join('L') + 'Z'; };
+      var sh = function (c) { var k = Math.max(0, Math.min(1, c)), r = Math.round(13 + 30 * k), gg = Math.round(12 + 26 * k), b = Math.round(13 + 28 * k); return 'rgb(' + r + ',' + gg + ',' + b + ')'; };
+      var hn = '', hf = '';
+      for (var i = 0; i < NB; i++) {
+        var m = ((i * D - rotN) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, a0 = Math.max(-Math.PI / 2, m - half), a1 = Math.min(Math.PI / 2, m + half);
+        if (a1 > a0) {
+          hn += '<path d="' + edge(a0, a1, yT, yS) + '" fill="' + sh(Math.cos(m)) + '"/>';
+          // (the wall's thickness, on the edge that turns towards you)
+          var ex = m > 0 ? a0 : a1, ew = th2 * Math.abs(Math.sin(ex)) / R * 6;
+          if (Math.abs(Math.sin(ex)) > .05 && ex > -Math.PI / 2 && ex < Math.PI / 2) hn += '<path d="' + edge(m > 0 ? ex - ew : ex, m > 0 ? ex : ex + ew, yT, yS) + '" fill="rgba(70,62,60,.9)"/>';
+        }
+        // (the far wall's slit, a hole: dark through to the room, its cut edge lit on the side facing you)
+        var fm = (((i + .5) * D - rotN) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cf = Math.cos(fm);
+        if (cf < -.04) {
+          var fw = D * .21, b0 = fm - fw, b1 = fm + fw;
+          hf += '<path d="' + edge(b0, b1, yT, yS) + '" fill="#030304"/>';
+          var cut = fm > 0 ? b0 : b1, cw = .012 + .02 * Math.abs(Math.sin(fm));
+          hf += '<path d="' + edge(fm > 0 ? cut : cut - cw, fm > 0 ? cut + cw : cut, yT, yS) + '" fill="rgba(120,108,92,.55)"/>';
+        }
+      }
+      NS.innerHTML = hn; FS.innerHTML = hf;
+      var op = (1 - .74 * (me._gal ? Math.max(0, Math.min(1, ((me._w || 0) - 5) / 12)) : 0)).toFixed(3); NS.style.opacity = op; FS.style.opacity = (1 - (me._gal ? Math.max(0, Math.min(1, ((me._w || 0) - 3) / 8)) : 0)).toFixed(3);
+    })();
     // (the far side's slits, seen over the near rim, turning the other way across)
     var BS = me._bs && me._bs[0] && me._bs[0].isConnected ? me._bs : (me._bs = $$('#cal .zbs')), rt = g.yT - 18 * g.f;
     var bso = (1 - (me._gal ? Math.max(0, Math.min(1, ((me._w || 0) - 5) / 12)) : 0)).toFixed(3);
