@@ -18,6 +18,7 @@ in English").
   python3 motd-fill.py --unrepeat (go)   a film on more than one day still to come (a month's theme film put on its 1st
                                          when it was already on another day): the other days given new films, the 1st kept
                                          (John, 9 Nov 2026: "The playlist shouldn't have repeated films")
+  (a film may come round again a year or more after another day it's on: only those closer count as repeats)
   python3 motd-fill.py --unrepeat --all --keep 2026-05-01,2026-08-01 (go)   the days gone by too, and the days given (the
                                          months' theme 1sts) kept first: the admin page runs this through the gateway when the
                                          themes are saved and on Update everything (John, 10 Nov 2026: "there are still repeats
@@ -147,7 +148,13 @@ if UNREPEAT:   # the days still to come whose film is on another day too: given 
             continue
         # (kept: the 1st of the month whose theme it is, else a 1st, else the first day it was on)
         keep = next((d for d in ds if d in KEEP), None) or next((d for d in ds if d.endswith('-01')), ds[0])
-        again += [d for d in ds if d != keep and (ALL or d > TODAY.isoformat())]
+        # (a year or more from each day it stays on: allowed again; John, 10 Nov 2026: "add a rule that you can repeat a film a year later")
+        kept = [keep]
+        for d in sorted(x for x in ds if x != keep):
+            if all(abs((datetime.date.fromisoformat(d) - datetime.date.fromisoformat(k)).days) >= 365 for k in kept):
+                kept.append(d)
+            elif ALL or d > TODAY.isoformat():
+                again.append(d)
     open_days = sorted(datetime.date.fromisoformat(d) for d in again)
     print('%d days %shave a film that is on another day too.' % (len(open_days), '' if ALL else 'still to come '))
 
