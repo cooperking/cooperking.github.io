@@ -3824,14 +3824,19 @@ THEMEFX.picture = {
     me.gallop(dir, 4);
   },
   gallop: function (dir, turns) {
-    var me = this, NB = me.nb(), S = NB * turns, t0 = performance.now(), tok = me._gtok = {};
-    if (CALM) { me._xs = 0; me._gal = false; me.draw(me._at); return; }
-    me._gal = true; me._xs = -dir * S;
+    // (a real spin: it speeds up, runs, slows to a stop on the day, never in step with the slits, so the drum is seen to whirl;
+    // fast, its wall blurs to a veil and the horses inside hold their places and gallop, as the eye sees a zoetrope: John, 10 Nov
+    // 2026: "the spinning is being faked again")
+    var me = this, NB = me.nb(), S = NB * turns + .37, T = 2600, t0 = performance.now(), tok = me._gtok = {}, A = .22, B = .62, area = A / 2 + (B - A) + (1 - B) / 2;
+    if (CALM) { me._xs = 0; me._gal = false; me._w = 0; me.draw(me._at); return; }
+    var pos = function (u) { var x = u <= A ? u * u / (2 * A) : u <= B ? A / 2 + (u - A) : A / 2 + (B - A) + (u - B) - (u - B) * (u - B) / (2 * (1 - B)); return x / area; };
+    me._gal = true; me._xs = -dir * S; me._w = 0;
     (function f(t) {
-      if (tok !== me._gtok || !$('#zstagef') || me._at == null) { if (tok === me._gtok) { me._gal = false; me._xs = 0; } return; }
-      var k = Math.floor((t - t0) / (2000 / 60));   // (a slit every two frames at 60 a second, whatever the screen's own rate)
-      if (k >= S) { me._gal = false; me._xs = 0; me.draw(me._at); return; }
-      me._xs = -dir * (S - k); me.draw(me._at); requestAnimationFrame(f);
+      if (tok !== me._gtok || !$('#zstagef') || me._at == null) { if (tok === me._gtok) { me._gal = false; me._xs = 0; me._w = 0; } return; }
+      var u = Math.min(1, (t - t0) / T), v = u <= A ? u / A : u <= B ? 1 : (1 - u) / (1 - B);
+      me._w = S * v / (area * T / 1000);   // (slits a second)
+      if (u >= 1) { me._gal = false; me._xs = 0; me._w = 0; me.draw(me._at); return; }
+      me._xs = -dir * S * (1 - pos(u)); me.draw(me._at); requestAnimationFrame(f);
     })(t0);
   },
   draw: function (a) {
@@ -3839,7 +3844,9 @@ THEMEFX.picture = {
     var ad = a + (me._spin || 0), t = performance.now();
     if (me._la != null) { var v = Math.abs(ad - me._la) / Math.max(8, t - me._lt) * 1000, tg = Math.min(1, v / .5); me._sp += (tg - me._sp) * (tg > me._sp ? .45 : .09); }
     me._la = ad; me._lt = t; me._last = a;
-    var sp = me._gal ? 1 : me._sp || 0, XR = (me._xs || 0) * D;   // (galloping: the drum's turn beyond the day's, a slit at a time)
+    var sp = me._gal ? 1 : me._sp || 0, XR = (me._xs || 0) * D, veil = me._gal ? Math.max(0, Math.min(1, ((me._w || 0) - 5) / 12)) : 0;
+    var FW = me._fw && me._fw.isConnected ? me._fw : (me._fw = $('#cal .zfrontw'));
+    if (FW && FW._veil !== veil.toFixed(2)) { FW._veil = veil.toFixed(2); FW.style.filter = veil > .01 ? 'blur(' + (veil * 2.6).toFixed(2) + 'px)' : ''; }   // (galloping: the drum's turn beyond the day's, a slit at a time)
     if (!me._gal && sp > .004 && !me._zraf) me._zraf = requestAnimationFrame(function () { me._zraf = 0; if (me.all && $('#zpaper')) me.draw(me._last); });   // (its own frame, not the move's: the slits close up again after a spin)
     // (the month's films going by behind the horse, the other way to the slits; the day's own at the middle)
     var lo = g.mob ? -80 : c.W * .36, hi = g.mob ? 860 : c.W + 60;
@@ -3855,7 +3862,7 @@ THEMEFX.picture = {
       var ph = ((ad * st / D) % 1 + 1) % 1, fl = 1 - Math.min(1, sp * 1.5) * .35 * (1 - Math.abs(Math.cos(Math.PI * ph)));
       pp.style.opacity = '1';   // (no fading: the drum solid, the far side seen only through the slits and over the top: John, 10 Nov 2026: "If it was done properly the effect would actually be achieved without fading")
       // (turning, the wall blurs and the strip's seen whole through it, as the eye sees a zoetrope; at rest only through the slits)
-      wo = '1';
+      wo = (1 - .74 * veil).toFixed(3);   // (fast, the wall a veil the strip is seen through)
       var step = Math.floor(ad * 15), hs = me._hs && me._hs[0] && me._hs[0].isConnected ? me._hs : (me._hs = $$('#cal .zhs'));
       // (the far wall: its slits, and the horses between them on the strip, going round with the drum; turning, seen a slit at a time, as
       // a zoetrope is, so the horse stays in its place and gallops: John, 10 Nov 2026: "the top slits which you see over the top are the
@@ -3863,13 +3870,15 @@ THEMEFX.picture = {
       var Z = me._hz || { hw: 60, hh: 36, pc: 60, cv: 10 }, rot = ad * st + XR, rq = rot, R0 = g.Rv;   // (all of it turning together, as one drum)
       var BL = me._bl && me._bl[0] && me._bl[0].isConnected ? me._bl : (me._bl = $$('#cal .zbsl')), ang = function (v) { return ((v % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI; };
       var skf = function (c) { return .78 + .22 * (1 - c); };
+      var strobe = veil > .3, rH = strobe ? ad * st : rq, passed = Math.floor(Math.abs(me._xs || 0));
+      var BSop = (1 - veil).toFixed(3);
       hs.forEach(function (hz, k) {
-        var th = ang(k * D - rq), c = -Math.cos(th);
+        var th = ang(k * D - rH), c = -Math.cos(th);
         if (c < .03) { if (hz._v !== 0) { hz.style.visibility = 'hidden'; hz._v = 0; } } else {
           if (hz._v !== 1) { hz.style.visibility = ''; hz._v = 1; } var sc = skf(c);
           hz.style.transform = 'translate(' + (R0 + R0 * Math.sin(th) - Z.hw / 2).toFixed(1) + 'px,' + (Z.pc - Z.hh / 2 - Z.cv * c).toFixed(1) + 'px) scale(' + (c * sc).toFixed(3) + ',' + sc.toFixed(3) + ')';
-          var n = Math.floor(k * 15 / NB) % 15; if (hz._n !== n) { hz._n = n; hz.style.backgroundPosition = (-n * Z.hw).toFixed(1) + 'px 0'; } }
-        var bl = BL[k]; if (!bl) return; var tb = ang((k + .5) * D - rq), cb = -Math.cos(tb);
+          var n = (Math.floor(k * 15 / NB) + (strobe ? passed : 0)) % 15; if (hz._n !== n) { hz._n = n; hz.style.backgroundPosition = (-n * Z.hw).toFixed(1) + 'px 0'; } }
+        var bl = BL[k]; if (!bl) return; if (bl._op !== BSop) { bl._op = BSop; bl.style.opacity = BSop; } var tb = ang((k + .5) * D - rq), cb = -Math.cos(tb);
         if (cb < .03) { if (bl._v !== 0) { bl.style.visibility = 'hidden'; bl._v = 0; } return; } if (bl._v !== 1) { bl.style.visibility = ''; bl._v = 1; }
         var bw = Math.max(1, R0 * D * .42 * cb), bot = Z.pc - Z.cv * cb + Z.hh * .9 * skf(cb);
         bl.style.transform = 'translate(' + (R0 + R0 * Math.sin(tb) - bw / 2).toFixed(1) + 'px,0) scaleX(' + (bw / 4).toFixed(3) + ')'; bl.style.height = Math.max(0, bot).toFixed(1) + 'px';
@@ -3898,7 +3907,9 @@ THEMEFX.picture = {
     });
     // (the far side's slits, seen over the near rim, turning the other way across)
     var BS = me._bs && me._bs[0] && me._bs[0].isConnected ? me._bs : (me._bs = $$('#cal .zbs')), rt = g.yT - 18 * g.f;
+    var bso = (1 - (me._gal ? Math.max(0, Math.min(1, ((me._w || 0) - 5) / 12)) : 0)).toFixed(3);
     BS.forEach(function (b, i) {
+      if (b._op !== bso) { b._op = bso; b.style.opacity = bso; }
       var th = (((i + .5) * D - (me._rq != null ? me._rq : ad * st + XR)) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
       if (cs > -.03) { if (b._v !== 0) { b.style.visibility = 'hidden'; b._v = 0; } return; } if (b._v !== 1) { b.style.visibility = ''; b._v = 1; }
       var w = Math.max(1, R * D * .42 * -cs);
