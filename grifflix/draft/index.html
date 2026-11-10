@@ -1537,7 +1537,7 @@ html.phone .bar-top #refresh2, html.phone .bar-top #who, html.phone .bar-top > .
 /* (a film's theme keeps its own lettering and spacing, as its film's titles: John, 9 Nov 2026: "that futura rule shouldn't
    apply to themes if they have that specific font - the spacing should match the film style". Only Grifflix's own and the
    months not yet given a theme take the brand's serif) */
-html[data-theme=picture] .hinfo .w, html[data-theme=picture] .hinfo h2, html[data-theme=picture] .tcentre h2, html[data-theme=blank] .hinfo .w, html[data-theme=blank] .hinfo h2, html[data-theme=blank] .tcentre h2, html:not([data-theme]) .hinfo .w, html:not([data-theme]) .hinfo h2 { font-family: var(--serif); font-weight: 500; text-transform: none; letter-spacing: -.005em; }
+html[data-theme=picture] .hinfo .w, html[data-theme=picture] .hinfo h2, html[data-theme=picture] .tcentre h2, html[data-theme=blank] .hinfo .w, html[data-theme=blank] .hinfo h2, html[data-theme=blank] .tcentre h2, html:not([data-theme]) .hinfo .w, html:not([data-theme]) .hinfo h2 { font-family: var(--display); font-weight: 400; text-transform: none; letter-spacing: .005em; }   /* (Grifflix Display, the brand's headline face: John, 10 Nov 2026: "font for the day isn't using the new branding") */
 html[data-theme=pinboard] .hinfo .w > span { letter-spacing: .32em; }
 html[data-theme=pinboard] .hinfo h2 { letter-spacing: .24em; }   /* (Zodiac's own Futura, spaced as its poster's logo) */
 html[data-theme=pinboard] .th-pinboard .vday .cs { letter-spacing: .22em; }
@@ -2091,7 +2091,7 @@ var THEMES_LATER = [
   { key: 'lane', mob: [0, 0, 1280, 720], name: 'The Lane', film: 'The Big Lebowski', year: 1998, by: 'the Coen brothers', bg: '#d79e48', ink: '#000', font: '"GF-lane", "Lobster", cursive', tw: 700, tt: 'none' },
   // Grifflix's own, the launch's showcase (John, 9 Nov 2026: "fully reworked - it's the showcase - an exciting launch screen -
   // the way things move and display should be original and creative"): the zoetrope, where moving pictures began
-  { key: 'picture', mob: [0, 0, 1280, 720], name: 'Grifflix', film: 'the zoetrope', year: 1834, by: '', credit: '<i>L’Arrivée d’un train</i> (1896, Lumière)', creditM: 'the Lumières’ <i>train</i> (1896)'   /* (just its name, and the film's credit: John, 9 Nov 2026) */, bg: '#0b0809', ink: '#fff', font: 'var(--serif)', tw: 500, tt: 'none' },
+  { key: 'picture', mob: [0, 0, 1280, 720], name: 'Grifflix', film: 'the zoetrope', year: 1834, by: '', credit: '<i>L’Arrivée d’un train</i> (1896, Lumière)', creditM: 'the Lumières’ <i>train</i> (1896)'   /* (just its name, and the film's credit: John, 9 Nov 2026) */, bg: '#0b0809', ink: '#fff', font: '"Grifflix Display", "Federo", Georgia, serif', tw: 400, tt: 'none' },   /* (Grifflix's own headline face: John, 10 Nov 2026) */
   // The Grand Budapest Hotel (back again: John, 9 Nov 2026): the façade's pink (#f1b1b3), Mendl's box pink and ribbon blue
   // (#f498b5, #6c77b8), the lobby red (#d61302), the gold sign (#e3c183), the bellboy's purple (#5a3d4e); the posters' billing
   // in Archer (Fonts In Use: John's own copy, Arvo till then); the sign hand-lettered (Annie Atkins): Marcellus for it
