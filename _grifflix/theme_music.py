@@ -16,7 +16,7 @@ PICKS = {
     'corridor': ('The Shining Main Title Wendy Carlos', 'carlos', 'main title'),
     'slices': ("Yumeji's Theme Shigeru Umebayashi", 'umebayashi', 'yumeji'),
     'umbrellas': ('Les Parapluies de Cherbourg Michel Legrand', 'legrand', 'parapluies'),
-    'code': ('Clubbed to Death Rob Dougan', 'robert d', 'clubbed to death', ''),   # (the film's best-known piece)
+    'code': ('Clubbed to Death Rob Dougan', 'rob dougan', 'clubbed to death', 'essential movies'),   # (the film's best-known piece; this release's 30 seconds are the strings and beat everyone knows, not the quiet opening: John, 10 Nov 2026)
     'spiral': ('Vertigo Prelude Herrmann', 'herrmann', 'vertigo: prelude', 'hitchcock: the great'),   # (the Prelude alone, Herrmann conducting: the 30 seconds can't miss it)
     'tron': ('Tron Main Title Wendy Carlos', 'carlos', 'theme from tron', ''),
     'pinboard': ('Hurdy Gurdy Man Donovan', 'donovan', 'hurdy gurdy'),
