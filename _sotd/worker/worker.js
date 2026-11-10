@@ -65,7 +65,7 @@ export default {
         if (url.pathname.startsWith('/gi/')) return await gInvitePage(url, env);
         if (url.pathname.startsWith('/gs/')) return await gSharePage(url, env);
       } catch (e) { return new Response('Grifflix isn’t answering just now.', { status: 500 }); }
-      return await gSiteProxy(request, url);   // (Grifflix itself, on its own address: John, 9 Nov 2026: "how can we get it on grifflix.co.uk now?")
+      return await gSiteProxy(request, url, env);   // (Grifflix itself, on its own address: John, 9 Nov 2026: "how can we get it on grifflix.co.uk now?")
     }
     try {
       if (url.pathname === '/songs.json') return await songsJson(request, env, ctx);
@@ -1590,9 +1590,16 @@ const G_ORIGINS = ['https://grifflix.co.uk', 'https://cooperking.github.io'], G_
 function gOrigin(request) { const o = request.headers.get('Origin') || ''; return G_ORIGINS.includes(o) ? o : G_ORIGIN; }   // (Grifflix's page on either address)
 // Grifflix on grifflix.co.uk: its pages from GitHub Pages (/grifflix/ there), at the root here: / the page, /admin its admin page,
 // /sw.js its service worker (so it covers the whole site), the rest as on the site (/grifflix/... as it is, else under /grifflix/)
-async function gSiteProxy(request, url) {
+async function gSiteProxy(request, url, env) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Not here.', { status: 405 });
   let p = url.pathname;
+  // (the draft as it is this minute, straight from the newest commit: no wait for GitHub to publish, nothing cached; John, 10 Nov
+  // 2026: "what can we do to speed up updates?")
+  if (p === '/preview' || p === '/preview/') {
+    const sha = await mainSha(env), r = await fetch(RAW + sha + '/grifflix/draft/index.html', { headers: { 'User-Agent': 'Grifflix' }, cf: { cacheTtl: 0 } });
+    if (!r.ok) return new Response('The preview isn’t there just now.', { status: 502 });
+    return new Response(r.body, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Grifflix-Commit': sha.slice(0, 7) } });
+  }
   if (p === '/' || p === '/index.html') p = '/grifflix/';
   else if (p === '/admin' || p === '/admin/' || p === '/admin.html') p = '/grifflix/admin.html';
   else if (p === '/draft' || p === '/draft/') p = '/grifflix/draft/';
