@@ -1642,6 +1642,7 @@ html.tv #barnav button.vtog:focus { background: none; color: var(--fg); box-shad
 html .zlogo.zol, html.gxown .zlogo.zol { background: none !important; -webkit-mask: none !important; mask: none !important; background-image: var(--gx-outline) !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; }
 .zlg { position: absolute; left: 0; top: 0; z-index: 3; background-image: var(--gx-outline); background-repeat: no-repeat; will-change: transform; pointer-events: none; }
 .zhs { transform-origin: 50% 50%; }
+.zstripc { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; } .zstripc polygon { fill: var(--gx-strip, #f3e8d2); }
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -3704,13 +3705,18 @@ THEMEFX.picture = {
     // (Muybridge's horse (The Horse in Motion, 1878), big, in front of the films going by)
     // (the strip: black figures on its paper, a frame apart, as Muybridge's horse on a zoetrope's strip; smaller: John, 10 Nov 2026)
     var hh = (g.yS - g.yT) * .5, hw = hh * 150 / 91, NH = Math.ceil(2 * R / (hw * 1.25)) | 1;
-    h += '<div class="zpaper" id="zpaper" style="' + mk + 'left:' + F(cx - R) + 'px;top:' + F(g.yT) + 'px;width:' + F(2 * R) + 'px;height:' + F(g.yS - g.yT + 2 * ry) + 'px"><i class="zstrip" style="top:' + F(g.pcy - g.yT - hh * .72) + 'px;height:' + F(hh * 1.44) + 'px"></i>';
+    h += '<div class="zpaper" id="zpaper" style="' + mk + 'left:' + F(cx - R) + 'px;top:' + F(g.yT) + 'px;width:' + F(2 * R) + 'px;height:' + F(g.yS - g.yT + 2 * ry) + 'px">';
     // (the horses on the far wall's strip, one to each slit, round its curve: smaller towards the sides, the middle furthest back and
     // highest (John, 10 Nov 2026: "Horses are working as a 2 D strip ... rather than appearing on the 3D drum"); they stay where they
     // are as it turns, galloping, as a zoetrope's horse is seen)
     var NBh = this.nb(c), Dh = 2 * Math.PI / NBh; hw = Math.min(hw, R * Dh * .92); hh = hw * 91 / 150;
-    for (var i = -Math.ceil(NBh / 4); i < Math.ceil(NBh / 4); i++) { var ca = Math.cos((i + .5) * Dh), xa = R + R * Math.sin((i + .5) * Dh);   // (behind each slit)
-      h += '<i class="zhs" style="left:' + F(xa - hw / 2) + 'px;top:' + F(g.pcy - g.yT - hh / 2 - ry * ca * .6) + 'px;width:' + F(hw) + 'px;height:' + F(hh) + 'px;background-size:' + F(hw * 15) + 'px ' + F(hh) + 'px;transform:scaleX(' + ca.toFixed(3) + ')"></i>'; }
+    // (the paper strip round the far wall: curving, higher and narrower in the middle where it's furthest away)
+    var pc = g.pcy - g.yT + ry * .35, cv = ry * 1.05, sk = function (ca) { return .78 + .22 * (1 - ca); }, top = [], bot = [];
+    for (var j = 0; j <= 48; j++) { var aa = -Math.PI / 2 + j / 48 * Math.PI, c2 = Math.cos(aa), xx = R + R * Math.sin(aa), hb = hh * .72 * sk(c2);
+      top.push(F(xx) + ',' + F(pc - cv * c2 - hb)); bot.unshift(F(xx) + ',' + F(pc - cv * c2 + hb)); }
+    h += '<svg class="zstripc" width="' + F(2 * R) + '" height="' + F(g.yS - g.yT + 2 * ry) + '"><polygon points="' + top.concat(bot).join(' ') + '"/></svg>';
+    for (var i = -Math.ceil(NBh / 4); i < Math.ceil(NBh / 4); i++) { var ca = Math.cos((i + .5) * Dh), xa = R + R * Math.sin((i + .5) * Dh), sc = sk(ca);   // (behind each slit)
+      h += '<i class="zhs" style="left:' + F(xa - hw / 2) + 'px;top:' + F(pc - hh / 2 - cv * ca) + 'px;width:' + F(hw) + 'px;height:' + F(hh) + 'px;background-size:' + F(hw * 15) + 'px ' + F(hh) + 'px;transform:scale(' + (ca * sc).toFixed(3) + ',' + sc.toFixed(3) + ')"></i>'; }
     h += '</div>';
     // (the open top: the inside of the far side, seen a little from above, its rim curving round behind; its slits drawn as it turns)
     var rt = g.yT - 18 * g.f;
