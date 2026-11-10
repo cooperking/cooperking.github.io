@@ -26,7 +26,7 @@ page shown inside another, stay where they are. On grifflix.co.uk, what came wit
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Grifflix</title>
 <meta name="description" content="John's films and TV for family and friends, with a Movie of the Day.">
-<meta name="theme-color" content="#0a0a0a">
+<meta name="theme-color" content="#173a5e">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">   <!-- (the home-screen app: the theme's colour right up behind the clock, the page kept clear of it: John, 8 Nov 2026) -->
 <link rel="manifest" href="/grifflix/manifest.webmanifest">
@@ -579,7 +579,7 @@ html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a1
 .llane .ldeck { fill: #e2c477; } .llane .st { fill: #fbefc4; opacity: .55; filter: blur(6px); }   /* (its clouds) */
 /* the view through the zoetrope's slits (John, 10 Nov 2026) */
 .zback { position: absolute; z-index: 1; pointer-events: none; background: #0d0b0a; }   /* (the drum's inside, unlit: John, 10 Nov 2026: "I don't need the lighting on the zoetrope") */
-.zpaper { position: absolute; z-index: 6; opacity: 1; pointer-events: none; will-change: opacity; }
+.zpaper { position: absolute; z-index: 6; opacity: 1; overflow: hidden; pointer-events: none; will-change: opacity; }
 .zhs { position: absolute; background: url("/grifflix/img/muybridge-horse.webp") 0 0 no-repeat; filter: brightness(0); }   /* (black on the strip's paper) */
 .zstrip { position: absolute; left: 0; right: 0; background: #e6dfcc; }   /* (the strip's paper, plain) */
 .zfrontw { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
@@ -619,8 +619,15 @@ html.tv .th-picture .zamb { filter: blur(18px) saturate(1.4) brightness(.42); }
 .zdrum .rim { fill: none; stroke: #e9c46a; stroke-width: 2; opacity: .55; }
 .zdrum .rimf { fill: rgba(233, 196, 106, .06); }
 .zdrum .zin { fill: #0d0809; } .zdrum.zfront { z-index: 100; }
+.shsheet .shk { margin: 0; font: 400 13px/1.3 var(--serif); font-variant: small-caps; text-transform: lowercase; letter-spacing: .1em; color: var(--fg-2); }
+.shsheet h2 { font-family: var(--display) !important; font-weight: 400 !important; }
+.shcard img { display: block; width: 100%; height: auto; margin-top: 16px; border-radius: 0 !important; }   /* (square edges, as the brand) */
+.tshare { position: fixed; z-index: 27; right: 52px; bottom: 104px; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(var(--kink), .35); background: color-mix(in srgb, var(--bg) 72%, #000); color: var(--fg); padding: 0; cursor: pointer; }
+.tshare svg { width: 15px; height: 15px; }
+html.mob .tshare { right: 16px; bottom: auto; top: max(66px, calc(env(safe-area-inset-top) + 64px)); border: 0; background: none; } html.mob .tinspo { right: 52px !important; }
+html.tv .tshare { display: none; }
 .zlt { position: absolute; left: 0; top: 0; z-index: 105; font-family: var(--kfont); font-weight: 700; line-height: 1; color: #ece7dd; text-transform: uppercase; pointer-events: none; will-change: transform; backface-visibility: hidden; -webkit-backface-visibility: hidden; text-shadow: 0 0 1px rgba(0, 0, 0, .5); }   /* (the logo's own Futura, bold, as the bar's GRIFFLIX: John, 10 Nov 2026) */
-#sharecal, #ashare { display: none !important; }
+html.public .bar-top [data-go="search"], html.public .bar-top [data-go="browse"], html.public .bar-top .members, html.public #refresh, html.public #refresh2, html.public #rows, html.public .tinspo .tfilm { display: none !important; }   /* (signed out: no library, no search) */
 #shwho { cursor: pointer; line-height: 1; } #shwho svg { display: block; width: 15px; height: 15px; } #shwho.whoico svg { width: 22px; height: 22px; }   /* (no sharing links until they're sorted: John, 10 Nov 2026) */
 html .bar-top > .ico[data-go="profile"] { margin-left: auto !important; }
 html:not(.x) .bar-top > #who { margin-left: auto !important; }   /* (the profile always at the bar's right: John, 10 Nov 2026) */   /* (GRIFFLIX painted round the band, the logo's Futura) */
@@ -1582,6 +1589,28 @@ html.phone .bar-top .brand, html.mob.hall .bar-top .brand, html.mob.table .bar-t
 .zlead .gx { width: min(72vw, 780px); height: auto; }
 .welcome h1 { width: min(82vw, 540px); height: auto; margin: 0 auto !important; }
 .zlt { font-family: "Grifflix Display", "Federo", Georgia, serif !important; font-weight: 400 !important; font-size: 1.15em; }
+/* Grifflix's own look (its palette: Orange, Vista Bleu, Amande, Bleu Oxford): the room flat in its colour, the type in its ink,
+   the zoetrope and the cinema in the palette, no red velvet (John, 10 Nov 2026) */
+html.gxown { --fg: rgb(var(--kink)); --fg-2: rgb(var(--kink)); --muted: rgba(var(--kink), .86); --faint: rgba(var(--kink), .8); }
+html.gxown .th-picture .zamb { background: var(--bg) !important; background-image: none !important; filter: none !important; }
+html.gxown .th-picture .zvig, html.gxown .th-picture .zbeam, html.gxown .th-picture .zgrain { display: none; }
+html.gxown .hinfo h2 { color: var(--gx-title) !important; } html.gxown .hinfo .k, html.gxown .tmonth, html.gxown .tinspo b { color: var(--gx-label) !important; }
+html.gxown .tinspo, html.gxown .tmonth { background: transparent !important; }
+html.gxown .zw { background: var(--gx-band) !important; } html.gxown .zw::after { opacity: 0 !important; }
+html.gxown .zfrontw svg path[fill] { fill: var(--gx-band) !important; } html.gxown .zfrontw .zrim { opacity: 0 !important; }
+html.gxown .zstrip { background: var(--gx-strip) !important; } html.gxown .zlogo { background: var(--gx-logo) !important; }
+html.gxown .zcin { box-shadow: 0 0 0 6px var(--gx-band) !important; }
+html.gxown .zcurt { background: repeating-linear-gradient(90deg, var(--gx-c1) 0 14px, var(--gx-c2) 14px 22px, var(--gx-c1) 22px 30px) !important; filter: none !important; box-shadow: none !important; }
+html.gxown .zcurt::after { display: none !important; }
+html.gxown .leaf2 { border-color: var(--gx-tiletop) !important; background: var(--gx-tile) !important; } html.gxown .leaf2 i { background: var(--gx-tiletop) !important; color: var(--gx-tile) !important; } html.gxown .leaf2 b { color: var(--gx-tilet) !important; }
+html.gxown .zlead .zbg { background: var(--bg); }
+@property --bg { syntax: '<color>'; inherits: true; initial-value: #0a0a0a; }
+@property --gx-band { syntax: '<color>'; inherits: true; initial-value: #0d0c0f; }
+@property --gx-c1 { syntax: '<color>'; inherits: true; initial-value: #0d0c0f; }
+@property --gx-c2 { syntax: '<color>'; inherits: true; initial-value: #0d0c0f; }
+html.gxown { transition: --bg 1.8s ease, --gx-band 1.8s ease, --gx-c1 1.8s ease, --gx-c2 1.8s ease, background-color 1.8s ease; }   /* (the house lights, down and up) */
+html.gxown body { transition: background-color 1.8s ease; }
+html.gxown .hinfo .w, html.gxown .hinfo .w > span { color: var(--fg) !important; }
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -1889,6 +1918,15 @@ function fromSite(path) {   // what the site's own files answer (null: a thing o
   if (name === 'calendar') return PUBLIC ? null : own(path);
   if (name === 'lists') return PUBLIC ? null : own('lists');
   if (['home', 'items', 'item', 'collections', 'collection', 'search'].indexOf(name) < 0) return null;
+  if (PUBLIC && !DEMO) {   // (signed out: only the films on the calendar, never the library's list)
+    if (name === 'home') return Promise.resolve({ movies: [], tv: [] });
+    if (name !== 'item') return Promise.reject(Object.assign(new Error('Sign in to see the library.'), { status: 401 }));
+    return motdCal().then(function (C) {
+      var id = q.get('id'), it = null; Object.keys(C.days).some(function (d) { var x = C.days[d]; if (x && !x.secret && x.id === id) { it = x; return true; } });
+      if (!it) throw Object.assign(new Error('Not on the calendar.'), { status: 404 });
+      return details(it);
+    });
+  }
   return library().then(function (L) {
     var I = L.items, get = function (ids) { return ids.map(function (i) { return I[i]; }).filter(Boolean); };
     if (name === 'home') {
@@ -1920,7 +1958,8 @@ function fromSite(path) {   // what the site's own files answer (null: a thing o
 }
 function api(path, body) {
   if (DEMO) return Demo.api(path, body);
-  if (!body) { var site = fromSite(path); if (site) return Promise.resolve(site).then(function (r) { return r == null ? mac(path) : r; }); }
+  if (!body) { var site = fromSite(path); if (site) return Promise.resolve(site).then(function (r) { if (r == null && PUBLIC) throw Object.assign(new Error('Sign in to see that.'), { status: 401 }); return r == null ? mac(path) : r; }); }
+  if (PUBLIC && !body) return Promise.reject(Object.assign(new Error('Sign in to see that.'), { status: 401 }));   // (signed out: never the Mac)
   if (PUBLIC) { var x = new Error('Sign in to do that.'); x.status = 401; signInSheet(); return Promise.reject(x); }
   if (path === 'lists' || (path === 'calendar' && body.id !== 'motd')) return own(path, body);
   return mac(path, body).then(function (r) {   // John's changes to Movie of the Day or the collections: made on the Mac, on the site with his next Update
@@ -2013,7 +2052,7 @@ function img(id, kind, w) {
   if (TV && w >= 1100 && kind !== 'Primary') w = 1920;   // (a TV: its full-screen pictures sharp at 1080p)
   var sizes = { Primary: [400], Backdrop: [480, 1100, 1920], Thumb: [480, 1100, 1920] }[kind] || [400], size = sizes.filter(function (x) { return x >= (w || 0); })[0] || sizes[sizes.length - 1];
   var t = PICTAG[id + kind];
-  return WORKER + '/gp/' + id + '/' + kind + '-' + size + '.jpg' + (t ? '?t=' + t : '');
+  return WORKER + '/gp/' + id + '/' + kind + '-' + size + '.jpg' + (t ? '?t=' + t : '') + (PUBLIC ? '' : (t ? '&' : '?') + 'm=1');   // (signed out: the site's copies only, never the Mac)
 }
 function gwUrl(p) { return DEMO ? p : GW + p; }
 
@@ -2093,7 +2132,7 @@ var THEMES_LATER = [
   { key: 'lane', mob: [0, 0, 1280, 720], name: 'The Lane', film: 'The Big Lebowski', year: 1998, by: 'the Coen brothers', bg: '#d79e48', ink: '#000', font: '"GF-lane", "Lobster", cursive', tw: 700, tt: 'none' },
   // Grifflix's own, the launch's showcase (John, 9 Nov 2026: "fully reworked - it's the showcase - an exciting launch screen -
   // the way things move and display should be original and creative"): the zoetrope, where moving pictures began
-  { key: 'picture', mob: [0, 0, 1280, 720], name: 'Grifflix', film: 'the zoetrope', year: 1834, by: '', credit: 'Muybridge’s horse (1878) · the Lumières’ <i>train</i> (1896)', creditM: 'Muybridge (1878) · Lumière (1896)'   /* (all three: John, 10 Nov 2026) */   /* (just its name, and the film's credit: John, 9 Nov 2026) */, bg: '#0b0809', ink: '#fff', font: '"Grifflix Display", "Federo", Georgia, serif', tw: 400, tt: 'none' },   /* (Grifflix's own headline face: John, 10 Nov 2026) */
+  { key: 'picture', mob: [0, 0, 1280, 720], name: 'Grifflix', film: 'the zoetrope', year: 1834, by: '', credit: 'Muybridge’s horse (1878) · the Lumières’ <i>train</i> (1896)', creditM: 'Muybridge (1878) · Lumière (1896)'   /* (all three: John, 10 Nov 2026) */   /* (just its name, and the film's credit: John, 9 Nov 2026) */, bg: '#173a5e', ink: '#fff', font: '"Grifflix Display", "Federo", Georgia, serif', tw: 400, tt: 'none' },   /* (Grifflix's own headline face: John, 10 Nov 2026) */
   // The Grand Budapest Hotel (back again: John, 9 Nov 2026): the façade's pink (#f1b1b3), Mendl's box pink and ribbon blue
   // (#f498b5, #6c77b8), the lobby red (#d61302), the gold sign (#e3c183), the bellboy's purple (#5a3d4e); the posters' billing
   // in Archer (Fonts In Use: John's own copy, Arvo till then); the sign hand-lettered (Annie Atkins): Marcellus for it
@@ -2111,7 +2150,7 @@ var THEMEALL = THEMES.concat(THEMES_LATER), THEMEDEF = THEMES.slice();
 // a month not yet given a theme, from December 2026: plain black, a holding space till John chooses its theme on the admin page
 // (John, 9 Nov 2026: "can upcoming months have no theme - on the screen it will just be black, as a holding space - until I
 // have added them in. It makes it easier to choose")
-var BLANKFROM = '2026-12', THEMEBLANK = { key: 'blank', mob: [0, 0, 1280, 720], name: 'Grifflix', film: '', year: 0, by: '', bg: '#000000', ink: '#fff', font: 'var(--serif)', tw: 500, tt: 'none' };
+var BLANKFROM = '2026-12', THEMEBLANK = { key: 'blank', mob: [0, 0, 1280, 720], name: 'Grifflix', film: '', year: 0, by: '', bg: '#173a5e', ink: '#fff', font: 'var(--serif)', tw: 500, tt: 'none' };
 THEMEALL.push(THEMEBLANK);
 var THEMEMONTHS = {};   // (months given their own theme on the admin page: { 'YYYY-MM': key })
 function themeOrder(keys) {   // true when the months changed
@@ -2130,12 +2169,26 @@ function themeFor(m, y) {   // a month's theme: the list (any length: John, 9 No
   var n = THEMES.length, i = (y - 2026) * 12 + m;
   return THEMES[((i % n) + n) % n];
 }
+// Grifflix's own colour (John, 10 Nov 2026: "Go with blue"): poster blue, after Cassandre's few flat inks, one deep colour with cream
+// words (9.6:1) and one small soft-orange accent (4.7:1), for its own month and the months not given a theme. The zoetrope's theme
+// opens with the house lights up, then they come down like a cinema's, the room dark and the drum and screen in the blue (John: "The
+// theme would only work if the lights came down like in a cinema before the theme started"); away from the theme, back up
+var GX = { bg: '#173a5e', ink: '243, 232, 210', title: '#f08a4b', label: '#f3e8d2', band: '#0d0c0f', strip: '#f3e8d2', logo: '#f08a4b', c1: '#0d0c0f', c2: '#0d0c0f', tile: '#f3e8d2', tilet: '#14213d', tiletop: '#f08a4b' },
+  GXDARK = '#0d0c0f', GXDIM = false;
 function monthTint(m) {   // the month's theme's one flat colour, and its ink: black on its light colours, white on the rest
-  var t = themeFor(m), R = document.documentElement.style;
-  R.setProperty('--kink', t.ink === '#000' ? '0, 0, 0' : '255, 255, 255');
+  var t = themeFor(m), R = document.documentElement.style, own = t.key === 'picture' || t.key === 'blank',
+    dim = own && GXDIM && t.key === 'picture' && VIEW() === 'themes' && (!S.view || S.view === 'home') && !!document.getElementById('zstagef') && !(document.getElementById('sheet') || {}).open;   // (a pop-up open over it: lights up)
+  document.documentElement.classList.toggle('gxown', own);
+  if (own) { t = Object.assign({}, t, { bg: dim ? GXDARK : GX.bg });
+    ['title', 'label', 'band', 'strip', 'logo', 'c1', 'c2', 'tile', 'tilet', 'tiletop'].forEach(function (k) { R.setProperty('--gx-' + k, dim && /^(band|c1|c2)$/.test(k) ? GX.bg : GX[k]); }); }
+  R.setProperty('--kink', own ? GX.ink : t.ink === '#000' ? '0, 0, 0' : '255, 255, 255');
   R.setProperty('--bg', t.bg);
-  store.set('grifflix-lastbg', t.bg); R.background = t.bg;   // (the next load opens in it)
+  if (!dim) store.set('grifflix-lastbg', t.bg); R.background = t.bg;   // (the next load opens in it, lights up)
   var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = t.bg;
+}
+function gxLights() { monthTint(S.month ? +S.month.slice(5, 7) - 1 : new Date().getMonth()); }
+function lightsDown() {   // the zoetrope's theme, open: the house lights dim
+  GXDIM = true; monthTint(S.month ? +S.month.slice(5, 7) - 1 : new Date().getMonth());
 }
 monthTint(new Date().getMonth());
 themeEarly();
@@ -2149,9 +2202,13 @@ function start() {
   var go = function () {
     if (!DEMO && !TOKEN) {   // (not signed in: only the way in, nothing of Grifflix behind it: John, 9 Nov 2026: "can we actually get all of
       // grifflix behind a sign in")
+      // (now: signed out, Movie of the Day, its films' pages and trailers and the themes, all from the site's own files; nothing of
+      // the Mac, the collections or the whole library: John, 10 Nov 2026: "I want the site to work legitimately as a place to get
+      // film information about the film of the day and watch trailers and themes, without any contact from my mac")
       PUBLIC = true; ME = { name: '', public: true }; window.MACOK = true;
       document.documentElement.classList.add('public');
-      return welcome();
+      $('#who').textContent = 'Sign in';
+      return route();
     }
     macWake();
     api('me').then(function (me) {
@@ -2184,7 +2241,7 @@ function welcome(why) {
   }[why] || '';   // (no strapline: John, 9 Nov 2026)
   var signin = !TOKEN || why === 'notmember';
   $('#main').innerHTML = '<section class="welcome"><h1 class="wlogo">Grifflix</h1>' + (msg ? '<p>' + esc(msg) + '</p>' : '') +
-    (signin ? '<form class="signin" id="signin"><p class="how">Sign in with your 6-letter code, or paste your invitation link. Haven’t one? Ask John.</p>' +
+    (signin ? '<form class="signin" id="signin"><p class="how">Sign in with your 6-letter code, or paste your invitation link.</p>' +
       '<input id="code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="Code or invitation link" aria-label="Code or invitation link">' +
       '<button class="pill on" type="submit">Sign in</button></form>' : '') +
     '<div class="acts">' + (TOKEN && !signin ? '<button class="pill on" onclick="location.reload()">Try again</button>' : '') +
@@ -2225,7 +2282,11 @@ window.grifflixJoin = join;   // (the Fire TV app's menu: Sign in with a code)
 
 /* ------------------------------------------------------------------ pages */
 function route() {
-  if (PUBLIC && !DEMO) { if (!$('#signin')) welcome(); return; }   // (not signed in: nothing past the way in, a shared link included)
+  if (PUBLIC && !DEMO) {   // (signed out: the calendar, the themes and the films on it; the library's pages want a sign-in)
+    var ph = (location.hash || '#home').slice(1).split('/')[0];
+    if (ph === 'profile') { location.hash = '#home'; return signInSheet(); }
+    if (['browse', 'collection', 'lists', 'search'].indexOf(ph) >= 0) { location.hash = '#home'; return; }
+  }
   var h = (location.hash || '#home').slice(1).split('/');
   S.view = h[0] || 'home';
   $('#main').className = '';
@@ -2235,6 +2296,7 @@ function route() {
   if (S.view === 'browse') { if (h[1]) S.browse = h[1]; return browse(); }
   if (S.view === 'collection' && h[1]) return collectionView(h[1]);
   if (S.view === 'film' && /^[0-9a-f]{32}$/.test(h[1] || '')) { S.view = 'home'; var fid = h[1]; home(); api('item?id=' + fid).then(function (it) { if (it && it.id) itemSheet(it); }).catch(function () {}); return; }   // (a shared film's link)
+  if (S.view === 'month' && /^\d{4}-\d\d$/.test(h[1] || '')) { S.cal = 'motd'; S.month = h[1]; S.view = 'home'; return home(); }   // (a month's theme shared)
   if (S.view === 'day' && /^\d{4}-\d\d-\d\d$/.test(h[1] || '')) { S.cal = 'motd'; S.month = h[1].slice(0, 7); S.pendingDay = h[1]; S.view = 'home'; return home(); }
   if (S.view !== 'home') setTimeout(resumeHere, 300);
   if (S.view === 'lists') return lists();
@@ -2422,7 +2484,7 @@ function drawMonth() {
     var start = C.days[TODAY] && TODAY.slice(0, 7) === S.month ? TODAY : inMonth.sort().pop(); tvFeat(start || ''); }
   $('#playtoday').onclick = function () { var t = C.days[TODAY] || C.days[inMonth.sort().pop()]; if (t) play(t); else toast('Nothing on this calendar yet.'); };
   $('#surprise').onclick = function () { var all = Object.keys(C.days).filter(function (k) { return !C.days[k].secret; }); if (!all.length) return toast('Nothing on this calendar yet.'); daySheet(all[Math.floor(Math.random() * all.length)]); };
-  $('#sharecal').onclick = function () { share('Grifflix: ' + (C.id === 'motd' ? 'Movie of the Day' : C.name), location.href.split('#')[0] + '#home/' + C.id); };
+  $('#sharecal').onclick = function () { if (C.id === 'motd') shareCal(); else share('Grifflix: ' + C.name, location.href.split('#')[0] + '#home/' + C.id); };
   if (tbl) drawTable(C, n, m, mine);
   if (hall) { if (themeFor(m).key === 'corridor') drawHall(C, n, m, mine); else drawTheme(themeFor(m), C, n, m, mine); }
 }
@@ -2632,10 +2694,11 @@ function themeFilm(t) {   // the film that inspired a theme, if it's in the libr
 function themeCaption(m) {   // a small caption under the month: the film the theme comes from, and a way to it when Grifflix has it
   var t = themeFor(m), id = t.film ? themeFilm(t) : null, txt = (MOB() ? '<b>' + MONTHS[m] + '’s theme · ' + esc(t.name) + '</b> ' : '') + (t.film ? (t.by ? 'after ' : '') + '<i>' + esc(t.film) + '</i> (' + t.year + ')' + (t.by ? ' · ' + esc(t.by) : '') + (t.credit ? ' · ' + (MOB() && t.creditM || t.credit) : '') : '');
   if (!t.film && !MOB()) return '';
-  if (!LIB) library().then(function () { var c = $('#tinspo'); if (c && themeFilm(t)) c.outerHTML = themeCaption(m); wireCaption(); }).catch(function () {});
+  if (!LIB && !PUBLIC) library().then(function () { var c = $('#tinspo'); if (c && themeFilm(t)) c.outerHTML = themeCaption(m); wireCaption(); }).catch(function () {});
   setTimeout(wireCaption, 0);
   var nav = MOB() ? '<div class="mobnav"><button class="pill" id="mbprev" aria-label="The day before">‹ Day before</button><span class="mbhint">or swipe</span><button class="pill" id="mbnext" aria-label="The day after">Day after ›</button></div>' : '';
-  return (id ? '<button class="tinspo link" id="tinspo" data-fid="' + id + '">' + txt + ' ›</button>' : '<div class="tinspo" id="tinspo">' + txt + '</div>') + nav;
+  var sh = '<button class="ico tshare" id="tshare" aria-label="Share this month’s theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button>';
+  return (id ? '<button class="tinspo link" id="tinspo" data-fid="' + id + '">' + txt + ' ›</button>' : '<div class="tinspo" id="tinspo">' + txt + '</div>') + sh + nav;
 }
 function capBar(m, y, prev, next) {   // the theme's caption on the calendar too, ‹ › to the month before or after, its theme with it (John, 9 Nov 2026: "Can the theme caption remain on the page when the calendar is up, with arrows to jump to the next or previous one")
   var t = themeFor(m, y), id = t.film ? themeFilm(t) : null;
@@ -2648,6 +2711,7 @@ function wireCap(root, step) {
   var c = $(root + ' .tctx.link'); if (c) c.onclick = function () { api('item?id=' + c.dataset.fid).then(function (it) { if (it && it.id) itemSheet(it); }).catch(function () { toast('That film isn’t there just now.'); }); };
 }
 function wireCaption() {
+  var ts = $('#tshare'); if (ts && !ts.onclick) ts.onclick = function () { shareMonth(S.month); };
   var bp = $('#mbprev'), bn = $('#mbnext'); if (bp && !bp.onclick) { bp.onclick = function () { themeStep(-1); }; bn.onclick = function () { themeStep(1); }; }
   var c = $('#tinspo.link'); if (c && !c.onclick) c.onclick = function () { api('item?id=' + c.dataset.fid).then(function (it) { if (it && it.id) itemSheet(it); }).catch(function () { toast('That film isn’t there just now.'); }); }; }
 // the months' themes: each lays out the month's days its own way (place: where each day stands, at any point between
@@ -3564,7 +3628,8 @@ THEMEFX.picture = {
     var g = this.g(c), cx = g.cx, R = g.Rv, ry = g.ry, F = function (n) { return (+n).toFixed(1); };
     var arc = function (sw) { return 'A' + F(R) + ' ' + F(ry) + ' 0 0 ' + sw + ' '; };   // (sw 0: left to right by the front; 1: back again)
     // (its left edge fading into the room, beside the day's words; measured from each layer's own left, so the strip runs the whole drum)
-    var mkAt = function (x0) { if (g.mob) return ''; var a1 = F(c.W * .36 - x0), a2 = F(c.W * .44 - x0); return '-webkit-mask-image:linear-gradient(90deg,transparent ' + a1 + 'px,#000 ' + a2 + 'px);mask-image:linear-gradient(90deg,transparent ' + a1 + 'px,#000 ' + a2 + 'px);'; }, mk = mkAt(cx - R);
+    var mkAt = function (x0) { return '';   // (no fade at its edge: the slits solid all along: John, 10 Nov 2026)
+      if (g.mob) return ''; var a1 = F(c.W * .36 - x0), a2 = F(c.W * .44 - x0); return '-webkit-mask-image:linear-gradient(90deg,transparent ' + a1 + 'px,#000 ' + a2 + 'px);mask-image:linear-gradient(90deg,transparent ' + a1 + 'px,#000 ' + a2 + 'px);'; }, mk = mkAt(cx - R);
     var h = '<div class="zamb" id="zamb"></div><div class="zvig"></div><div class="zgrain"></div>';
     // (the cinema: its screen, lit by the Lumières' L'Arrivée d'un train en gare de La Ciotat (1896, public domain); its curtains)
     var sl = g.scx - g.sw / 2, st0 = g.sy0;
@@ -3593,6 +3658,7 @@ THEMEFX.picture = {
   },
   ready: function (c) {
     fxReset(this); this.c = c; var me = this, st = $('#zstagef'); me._lo = window.ZFILMED || CALM ? 0 : 1; if (!st) return;
+    clearTimeout(window._gxdim); window._gxdim = setTimeout(function () { if ($('#zstagef')) lightsDown(); }, CALM || window.ZFILMED ? 0 : 900);
     // (the drum spun up as the theme opens, slowing to rest, the horse galloping in its mirrors: John, 10 Nov 2026: "the praxinoscope
     // needs to spin when it first starts")
     me._sp = CALM ? 0 : 1; me._la = null;
@@ -3649,7 +3715,7 @@ THEMEFX.picture = {
     if (me._la != null) { var v = Math.abs(ad - me._la) / Math.max(8, t - me._lt) * 1000, tg = Math.min(1, v / .5); me._sp += (tg - me._sp) * (tg > me._sp ? .45 : .09); }
     me._la = ad; me._lt = t; me._last = a;
     var sp = me._sp || 0;
-    if (sp > .004 && !me._raf) me._raf = requestAnimationFrame(function () { me._raf = 0; if (me.all && $('#zpaper')) me.draw(me._last); });
+    if (sp > .004 && !me._zraf) me._zraf = requestAnimationFrame(function () { me._zraf = 0; if (me.all && $('#zpaper')) me.draw(me._last); });   // (its own frame, not the move's: the slits close up again after a spin)
     // (the month's films going by behind the horse, the other way to the slits; the day's own at the middle)
     var lo = g.mob ? -80 : c.W * .36, hi = g.mob ? 860 : c.W + 60;
     me.all.forEach(function (el, j) {
@@ -4116,6 +4182,7 @@ var dlg = $('#sheet');
 function openSheet(html) {
   $('#sheetIn').innerHTML = html;
   if (!dlg.open) dlg.showModal();
+  if (!dlg._gx) { dlg._gx = 1; dlg.addEventListener('close', function () { setTimeout(gxLights, 0); }); } gxLights();
   shBrand(); setTimeout(function () { if (dlg.open) shBrand(); }, 420);   // (again once it has slid in: where its words start)
   $('#sheetIn').scrollTop = 0;
   var c = $('#sheetIn .close'); if (c) c.onclick = closeSheet;
@@ -4130,7 +4197,7 @@ function closeSheet() { if (dlg.open) dlg.close(); }
 // on a phone, a computer and the TV; the one you're on marked (John, 8 Nov 2026: "Search theme/calendar should always be in
 // the same place no matter what the format")
 function navWords(on) {
-  return [['calendar', 'Calendar'], ['theme', 'Theme'], ['search', 'Search']].map(function (w) {
+  return [['calendar', 'Calendar'], ['theme', 'Theme']].concat(PUBLIC && !DEMO ? [] : [['search', 'Search']]).map(function (w) {   // (signed out: no searching the library)
     return '<button type="button" data-nv="' + w[0] + '"' + (w[0] === on ? ' class="on" aria-current="page"' : '') + '>' + w[1] + '</button>'; }).join('');
 }
 function navGo(w) {
@@ -4303,8 +4370,7 @@ function bodyHTML(it, ctx) {
   if (it.ext) {   // (a theme's film Grifflix hasn't yet: its trailer, the film itself to come: John, 9 Nov 2026)
     h += (it.trailers && it.trailers.length ? '<button class="pill go" id="atrailer">' + TR + 'Watch the trailer</button>' : '') + '<span class="extnote">Not in Grifflix yet: the trailer for now</span>';
   } else if (PUBLIC) {
-    if (it.trailers && it.trailers.length) h += '<button class="pill go" id="atrailer">' + TR + 'Watch the trailer</button>';
-    h += '<button class="pill' + (it.trailers && it.trailers.length ? '' : ' go') + '" id="asignin">Sign in to watch</button>';
+    if (it.trailers && it.trailers.length) h += '<button class="pill go" id="atrailer">' + TR + 'Watch the trailer</button>';   // (no sign-in on a film's page: John, 10 Nov 2026)
   } else if (isSeries) { var nx = (it.episodes || []).filter(function (e) { return e.id === it.next; })[0]; h += '<button class="pill go" id="aplay">' + PLAY + (nx ? (nx.pos ? 'Carry on' : 'Play') + ' S' + nx.season + ' E' + nx.ep : 'Play') + '</button>'; }
   else h += '<button class="pill go" id="aplay">' + PLAY + (resume ? 'Carry on from ' + clock(it.pos) : 'Play') + '</button>' + (resume ? '<button class="pill" id="afrom0">From the start</button>' : '');
   if (!PUBLIC && !it.ext && it.trailers && it.trailers.length) h += '<button class="pill" id="atrailer">' + TR + 'Trailer</button>';
@@ -4315,7 +4381,7 @@ function bodyHTML(it, ctx) {
     if (ME && ME.owner && it.type !== 'video') h += '<button class="pill" id="acoll">Collections</button>';
     if (ME && ME.downloads && !TV && !isSeries) h += '<button class="pill" id="adown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5M5 21h14"/></svg>Download</button>';
   }
-  h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button></div>';
+  if (!it.ext && shareDayOf(it)) h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button></div>';
   if (isSeries && it.episodes) {
     var seasons = {}; it.episodes.forEach(function (e) { (seasons[e.season || 0] = seasons[e.season || 0] || []).push(e); });
     var keys = Object.keys(seasons).sort(function (a, b) { return a - b; }), cur = ctx.season || (it.next ? (it.episodes.filter(function (e) { return e.id === it.next; })[0] || {}).season : keys[0]) || keys[0];
@@ -4352,7 +4418,7 @@ function wireBody(it, ctx) {
   on('aaddpl', function () { addToPlaylist(it); });
   on('aaddcal', function () { addToCalendar(it); });
   on('acoll', function () { collPicker(it); });
-  on('ashare', function () { if (ctx.date && S.cal === 'motd') return shareDay(ctx.date, it); share(showName(it), location.href.split('#')[0].split('?')[0] + (ctx.date ? '#home/' + S.cal : '#film/' + it.id)); });
+  on('ashare', function () { var d = ctx.date && S.cal === 'motd' && S.calData.days[ctx.date] && S.calData.days[ctx.date].id === it.id ? ctx.date : shareDayOf(it); if (d) shareDay(d, it); });   // (only a film on the calendar: anyone may see it)
   $$('[data-season]').forEach(function (b) { b.onclick = function () { ctx.season = b.dataset.season; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); }; });
   $$('[data-ep]').forEach(function (b) { b.onclick = function () { var i = it.episodes.map(function (e) { return e.id; }).indexOf(b.dataset.ep); play(it.episodes[i], it.episodes.slice(i + 1)); }; });
   on('osave', function () { api('calendar', { op: 'set', id: S.cal, date: ctx.date, note: $('#onote').value }).then(function (c) { S.calData = c; ctx.note = c.notes[ctx.date]; toast('Saved'); }); });
@@ -4600,9 +4666,9 @@ function addEmail() {
     }).catch(oops);
   };
 }
-function share(title, url, card) {   // Grifflix's share sheet: the card (a day's film), and each way to send it
-  var enc = encodeURIComponent, text = title;
-  openSheet('<div class="form shsheet" style="position:relative">' + X + '<h2 style="margin-right:44px">Share <i>' + esc(title) + '</i></h2>' +
+function share(title, url, card, o) {   // Grifflix's share sheet: what it is, its card, and each way to send it
+  var enc = encodeURIComponent, text = title; o = o || {};
+  openSheet('<div class="form shsheet" style="position:relative">' + X + '<p class="shk">Share' + (o.kick ? ' · ' + esc(o.kick) : '') + '</p><h2 style="margin:4px 44px 0 0">' + esc(o.head || title) + '</h2>' +
     (card ? '<div class="shcard" id="shcard"><div class="empty" style="margin:0">Making its card…</div></div>' : '') +
     '<div class="acts">' + (navigator.share ? '<button class="pill go" id="shnative">Share…</button>' : '') +
     '<a class="pill" href="sms:&body=' + enc(text + ' ' + url) + '">Messages</a><a class="pill" href="https://wa.me/?text=' + enc(text + ' ' + url) + '" target="_blank" rel="noopener">WhatsApp</a>' +
@@ -4613,45 +4679,79 @@ function share(title, url, card) {   // Grifflix's share sheet: the card (a day'
 }
 var LINKBASE = '';   // (grifflix.co.uk, once the Worker is on it: asked once)
 fetch(WORKER + '/g/linkbase').then(function (r) { return r.json(); }).then(function (j) { if (j && j.base) LINKBASE = j.base; }).catch(function () {});
-function shareDay(date, it) {   // a day's film: its own link (/gs/<date>: a page with its card), and the card made if it hasn't one
-  var url = (LINKBASE || WORKER) + '/gs/' + date, title = showName(it) + (it.year ? ' (' + it.year + ')' : '');
-  var card = fetch(url + '.jpg?have=1').then(function (r) {
-    if (r.ok) return url + '.jpg';
-    if (PUBLIC || DEMO) return url + '.jpg';   // (the film's picture stands in until a member shares it)
-    var th = themeFor(+date.slice(5, 7) - 1, +date.slice(0, 4));
-    return dayCard(date, it).then(function (jpeg) { return own('card', { date: date, card: jpeg, bg: th.bg, ink: th.ink === '#fff' ? '#fff' : '#000' }).then(function () { return jpeg; }, function () { return jpeg; }); });
-  }).catch(function () { return ''; });
-  share(title + ': Movie of the Day', url, card);
+function shareDay(date, it) { shareLink(date, showName(it) + (it.year ? ' (' + it.year + ')' : '') + ': Movie of the Day', function () { return dayCard(date, it); }, { kick: 'Movie of the Day, ' + new Date(date + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }), head: showName(it) }); }
+// the share cards, 1200 × 630, in Grifflix's own branding (John, 10 Nov 2026: "rework each sharing page to match the new branding"):
+// the month's colour, the GRIFFLIX logo in its ink, a small-capital line, the title in Grifflix Display, a line of Caslon under it;
+// the picture (a day's film) or the month's posters (a theme, the calendar) on the right. Only the colour comes from the theme
+function cardLoad(src) { return new Promise(function (ok) { if (!src) return ok(null); var i = new Image(); i.crossOrigin = 'anonymous'; i.onload = function () { ok(i); }; i.onerror = function () { ok(null); }; i.src = src; }); }
+function cardLogo(ink) {   // the logo, tinted
+  var u = getComputedStyle(document.documentElement).getPropertyValue('--gx-mark'), m = /url\("?(data:image\/svg\+xml,[^")]+)"?\)/.exec(u);
+  if (!m) return Promise.resolve(null);
+  var svg = decodeURIComponent(m[1].slice(19)).replace('<path ', '<path fill="' + ink + '" ');
+  return cardLoad('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
 }
-function dayCard(date, it) {   // 1200 × 630, in the month's theme (John, 8 Nov 2026: "the invite and share buttons to match themes"):
-  // its colour on the left with the film's name in its type, Movie of the Day and the date and GRIFFLIX in Futura; the film's picture on the right
+function brandCard(o) {   // o: ym (its month's colour), kick, title, sub, foot, pics (one picture, or several posters)
   var c = document.createElement('canvas'); c.width = 1200; c.height = 630; var x = c.getContext('2d');
-  var t = themeFor(+date.slice(5, 7) - 1, +date.slice(0, 4)), ink = t.ink === '#fff' ? '#ffffff' : '#000000', soft = t.ink === '#fff' ? 'rgba(255,255,255,.72)' : 'rgba(0,0,0,.68)';
-  var FUT = '"GFutura", "Futura", "Jost", "Century Gothic", sans-serif', tf = String(t.font || FUT), tw = t.tw || 700, upper = (t.tt || 'uppercase') === 'uppercase';
-  var load = function (src) { return new Promise(function (ok) { if (!src) return ok(null); var i = new Image(); i.crossOrigin = 'anonymous'; i.onload = function () { ok(i); }; i.onerror = function () { ok(null); }; i.src = src; }); };
-  var fonts = document.fonts ? Promise.all([document.fonts.load('700 30px ' + FUT), document.fonts.load('400 24px ' + FUT), document.fonts.load((t.fs === 'italic' ? 'italic ' : '') + tw + ' 90px ' + tf)]).catch(function () {}) : null;
-  return Promise.all([load(it.backdrop ? img(it.backdrop, 'Backdrop', 1100) : it.thumb ? img(it.thumb, 'Thumb', 1100) : it.poster ? img(it.poster, 'Primary', 700) : ''), fonts]).then(function (r) {
-    var pic = r[0], W = 600;   // (the coloured half; the picture the other)
+  var t = themeFor(+o.ym.slice(5, 7) - 1, +o.ym.slice(0, 4)), ink = t.ink === '#fff' ? '#ffffff' : '#0c0b0a', soft = t.ink === '#fff' ? 'rgba(255,255,255,.7)' : 'rgba(12,11,10,.66)';
+  var DISP = '"Grifflix Display", "Federo", Georgia, serif', CAS = '"Libre Caslon Text", Georgia, serif';
+  var fonts = document.fonts ? Promise.all([document.fonts.load('400 90px ' + DISP), document.fonts.load('400 20px ' + CAS), document.fonts.load('italic 400 26px ' + CAS)]).catch(function () {}) : null;
+  return Promise.all([Promise.all((o.pics || []).map(cardLoad)), cardLogo(ink), fonts]).then(function (r) {
+    var pics = r[0].filter(Boolean), logo = r[1], W = 620;
     x.fillStyle = t.bg; x.fillRect(0, 0, 1200, 630);
-    if (pic) { x.save(); x.beginPath(); x.rect(W, 0, 1200 - W, 630); x.clip(); var sc = Math.max((1200 - W) / pic.width, 630 / pic.height); x.drawImage(pic, W + (1200 - W - pic.width * sc) / 2, (630 - pic.height * sc) / 2, pic.width * sc, pic.height * sc); x.restore(); }
-    x.fillStyle = ink; x.fillRect(W - 4, 0, 4, 630);   // (a hairline between them, in the theme's ink)
-    var spaced = function (txt, px, y, font, sp, col) { x.font = font; x.fillStyle = col; var cx = px; for (var k = 0; k < txt.length; k++) { x.fillText(txt[k], cx, y); cx += x.measureText(txt[k]).width + sp; } return cx; };
+    x.save(); x.beginPath(); x.rect(W, 0, 1200 - W, 630); x.clip();
+    if (pics.length === 1) { var p = pics[0], sc = Math.max((1200 - W) / p.width, 630 / p.height); x.drawImage(p, W + (1200 - W - p.width * sc) / 2, (630 - p.height * sc) / 2, p.width * sc, p.height * sc); }
+    else if (pics.length) {   // (the month's posters, three across, two down, edge to edge)
+      var cw = (1200 - W) / 3, ch = 315;
+      for (var k = 0; k < 6; k++) { var q = pics[k % pics.length], s2 = Math.max(cw / q.width, ch / q.height); x.save(); x.beginPath(); x.rect(W + (k % 3) * cw, Math.floor(k / 3) * ch, cw, ch); x.clip(); x.drawImage(q, W + (k % 3) * cw + (cw - q.width * s2) / 2, Math.floor(k / 3) * ch + (ch - q.height * s2) / 2, q.width * s2, q.height * s2); x.restore(); }
+    }
+    x.restore();
+    if (logo) { var lw = 300, lh = lw * logo.height / logo.width; x.drawImage(logo, 64, 70, lw, lh); }
+    var caps = function (txt, px, y, size, col) { x.font = '400 ' + size + 'px ' + CAS; x.fillStyle = col; var cx = px; txt = txt.toUpperCase(); for (var k = 0; k < txt.length; k++) { x.fillText(txt[k], cx, y); cx += x.measureText(txt[k]).width + size * .14; } };
     x.textBaseline = 'alphabetic';
-    spaced('GRIFFLIX', 64, 98, '700 30px ' + FUT, 16, ink);
-    spaced('MOVIE OF THE DAY', 64, 182, '500 19px ' + FUT, 6, soft);
-    spaced(new Date(date + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase(), 64, 214, '500 19px ' + FUT, 6, soft);
-    var name = showName(it), maxW = W - 120, size = 96, lines;
-    if (upper) name = name.toUpperCase();
-    var wrap = function () { var words = name.split(' '), out = [''], i; for (i = 0; i < words.length; i++) { var w = (out[out.length - 1] + ' ' + words[i]).trim(); if (x.measureText(w).width > maxW && out[out.length - 1]) out.push(words[i]); else out[out.length - 1] = w; } return out; };
-    do { x.font = (t.fs === 'italic' ? 'italic ' : '') + tw + ' ' + size + 'px ' + tf; lines = wrap(); size -= 4; } while ((lines.length > 3 || lines.some(function (l) { return x.measureText(l).width > maxW; })) && size > 36);
-    size += 4; var y = 260 + size * .9; x.fillStyle = ink;
-    lines.slice(0, 3).forEach(function (l) { x.fillText(l, 62, y); y += size * 1.04; });
-    if (it.year) spaced(String(it.year) + (it.mins ? '  ·  ' + it.mins + ' MIN' : ''), 64, Math.min(y + 8, 520), '500 20px ' + FUT, 5, soft);
-    spaced(t.name.toUpperCase(), 64, 580, '500 15px ' + FUT, 5, soft);   // (the month's theme, small: The Spiral)
+    caps(o.kick || '', 64, 196, 17, soft);
+    var maxW = W - 120, size = 92, lines, words = String(o.title || '').split(/\s+/);
+    var wrap = function () { var out = [], cur = ''; words.forEach(function (w) { var tr = cur ? cur + ' ' + w : w; if (x.measureText(tr).width > maxW && cur) { out.push(cur); cur = w; } else cur = tr; }); if (cur) out.push(cur); return out; };
+    do { x.font = '400 ' + size + 'px ' + DISP; lines = wrap(); size -= 4; } while ((lines.length > 3 || lines.some(function (l) { return x.measureText(l).width > maxW; })) && size > 36);
+    size += 4; var y = 250 + size * .9; x.fillStyle = ink;
+    lines.slice(0, 3).forEach(function (l) { x.fillText(l, 62, y); y += size * 1.06; });
+    if (o.sub) { x.font = 'italic 400 26px ' + CAS; x.fillStyle = soft; x.fillText(o.sub, 64, Math.min(y + 14, 540)); }
+    if (o.foot) caps(o.foot, 64, 580, 15, soft);
     return c.toDataURL('image/jpeg', .88);
   });
 }
-if (Q.has('cardtest')) window.__g = { dayCard: dayCard, S: S };   // (to try the share card's drawing: ?cardtest)
+function dayCard(date, it) {   // a day's film
+  var t = themeFor(+date.slice(5, 7) - 1, +date.slice(0, 4));
+  return brandCard({ ym: date.slice(0, 7), kick: 'Movie of the Day · ' + new Date(date + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }),
+    title: showName(it), sub: [it.year, it.mins ? it.mins + ' minutes' : ''].filter(Boolean).join(' · '), foot: MONTHS[+date.slice(5, 7) - 1] + '’s theme · ' + t.name,
+    pics: [it.backdrop ? img(it.backdrop, 'Backdrop', 1100) : it.thumb ? img(it.thumb, 'Thumb', 1100) : it.poster ? img(it.poster, 'Primary', 700) : ''] });
+}
+function monthPosters(ym) { var D = (S.calData || {}).days || {}; return Object.keys(D).filter(function (d) { return (!ym || d.slice(0, 7) === ym) && D[d] && !D[d].secret && D[d].poster; }).sort().reverse().slice(0, 6).map(function (d) { return img(D[d].poster, 'Primary', 400); }); }
+function monthCard(ym) {   // a month's theme
+  var m = +ym.slice(5, 7) - 1, t = themeFor(m, +ym.slice(0, 4));
+  return brandCard({ ym: ym, kick: MONTHS[m] + ' ' + ym.slice(0, 4) + ' · the month’s theme', title: t.name, sub: t.film ? (t.by ? 'after ' : '') + t.film + ' (' + t.year + ')' : '', foot: 'Movie of the Day on Grifflix', pics: monthPosters(ym) });
+}
+function calCard() {   // the whole calendar
+  return brandCard({ ym: TODAY.slice(0, 7), kick: 'A film every day', title: 'Movie of the Day', sub: 'on Grifflix', foot: MONTHS[+TODAY.slice(5, 7) - 1] + '’s theme · ' + themeFor(+TODAY.slice(5, 7) - 1).name, pics: monthPosters('') });
+}
+// sharing (John, 10 Nov 2026: "sharing links can go back on - only to films that can be shared by anyone to anyone. Sharing can go on
+// a theme, a calendar - a film - the same way song of the day does it"): each its own page (/gs/…) with its card, which the first
+// member to share it draws and keeps; until then a picture stands in
+function shareLink(key, title, draw, o) {
+  var url = (LINKBASE || WORKER) + '/gs/' + key;
+  var card = fetch(url + '.jpg?have=1').then(function (r) {
+    if (r.ok || PUBLIC || DEMO) return url + '.jpg';
+    var ym = key === 'cal' ? TODAY.slice(0, 7) : key.slice(0, 7), th = themeFor(+ym.slice(5, 7) - 1, +ym.slice(0, 4));
+    return draw().then(function (jpeg) { return own('card', { date: key, card: jpeg, bg: th.bg, ink: th.ink === '#fff' ? '#fff' : '#000', name: key.length === 7 ? th.name : '' }).then(function () { return jpeg; }, function () { return jpeg; }); });
+  }).catch(function () { return ''; });
+  share(title, url, card, o);
+}
+function shareDayOf(it) {   // a film: shared by its latest day on the calendar (only a film shown there can be)
+  var D = (S.calData && S.calData.id === 'motd' ? S.calData.days : null) || {}, day = Object.keys(D).filter(function (d) { return D[d] && !D[d].secret && D[d].id === it.id; }).sort().pop();
+  return day || null;
+}
+function shareMonth(ym) { var m = +ym.slice(5, 7) - 1, t = themeFor(m, +ym.slice(0, 4)); shareLink(ym, MONTHS[m] + '’s theme on Grifflix: ' + t.name, function () { return monthCard(ym); }, { kick: MONTHS[m] + ' ' + ym.slice(0, 4) + '’s theme', head: t.name }); }
+function shareCal() { shareLink('cal', 'Movie of the Day on Grifflix', calCard, { kick: 'the whole calendar', head: 'Movie of the Day' }); }
+if (Q.has('cardtest')) window.__g = { dayCard: dayCard, monthCard: monthCard, calCard: calCard, S: S };   // (to try the share card's drawing: ?cardtest)
 function oops(e) { console.warn(e); toast((e && e.message) || 'Something went wrong.'); }
 function clock(s) { s = Math.round(s); var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); }
 
@@ -4712,8 +4812,8 @@ function trailerKeys(k) {   // a remote, on a trailer
   return true;
 }
 function signInSheet() {
-  openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 36px/1.1 var(--serif);color:var(--fg)">Sign in to <i>watch</i></h2>' +
-    '<p class="ov" style="margin-top:0">Grifflix is John’s films for family and friends. Members sign in with their 6-letter code or their invitation link. Haven’t one? Ask John.</p>' +
+  openSheet('<div class="form" style="position:relative">' + X + '<h2 style="color:var(--fg)">Sign in</h2>' +
+    '<p class="ov" style="margin-top:0">With your 6-letter code or your invitation link.</p>' +
     '<form class="signin" id="signin2" style="margin-top:14px"><input id="code2" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="Code or invitation link" aria-label="Code or invitation link"><button class="pill on" type="submit">Sign in</button></form></div>');
   $('#signin2').onsubmit = function (e) { e.preventDefault(); join($('#code2').value); };
   setTimeout(function () { var c = $('#code2'); if (c && !TV) c.focus(); }, 60);
