@@ -1210,9 +1210,9 @@ html.mob .cposter { display: none; }
 html.mob .th-credits .vday { width: 720px; }
 html.mob .th-autumn .vday { width: 300px; height: 450px; }
 html.mob .tboard { top: 70px; width: 740px; }
-html.mob .tlamp { top: 486px; width: 680px; height: 320px; }
-html.mob .tring { top: 520px; width: 720px; height: 380px; }
-html.mob .tday { width: 70px; height: 95px; margin: -47px 0 0 -35px; line-height: 95px; font-size: 14px; }
+html.mob .tlamp { top: 512px; width: 540px; height: 236px; }
+html.mob .tring { top: 520px; width: 580px; height: 262px; }
+html.mob .tday { width: 50px; height: 68px; margin: -34px 0 0 -25px; line-height: 68px; font-size: 12px; }   /* (a phone: the posters seated round the table's lit edge, not on it, room between them: John, 10 Nov 2026) */
 html.mob .tcentre { top: 800px; }
 html.mob[data-theme=table] #cal .thv, html.mob[data-theme=table] #cal .thstage { overflow: visible !important; }   /* (a phone: the day's name under the table, not inside it: John, 8 Nov 2026) */
 html.mob .tcentre h2 { font-size: 56px; max-width: 520px; }
@@ -2908,7 +2908,7 @@ THEMEFX.corridor = {
 };
 // November: the table (Dr. Strangelove's War Room): the month round a table, turning
 THEMEFX.table = {
-  geo: function (c) { return c.mob ? { cx: 390, cy: 520, rx: 330, ry: 170, fs: 2 } : { cx: ($('#cal').clientWidth || 1280) / 2, cy: 418, rx: 530, ry: 150, fs: 2.6 }; },   // (the day you're on large at the table's front: John, 9 Nov 2026: "chosen poster on Dr Strangelove very small")
+  geo: function (c) { return c.mob ? { cx: 390, cy: 520, rx: 352, ry: 196, fs: 2.4 } : { cx: ($('#cal').clientWidth || 1280) / 2, cy: 418, rx: 530, ry: 150, fs: 2.6 }; },   // (the day you're on large at the table's front: John, 9 Nov 2026: "chosen poster on Dr Strangelove very small")
   swipe: function (c) { return { x: -1, y: 0, px: c.mob ? 34 : 60 }; },   // (the table turns with the finger)
   place: function (all, at, c) {
     // (the month's days round the whole table, going on round it as you go through the month, the next month's coming round to the
