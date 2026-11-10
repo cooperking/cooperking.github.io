@@ -1615,15 +1615,15 @@ html.gxown .hinfo .w, html.gxown .hinfo .w > span { color: var(--fg) !important;
 .zproj { z-index: 6; filter: blur(10px); mix-blend-mode: screen; }
 .zproj i { position: absolute; inset: 0; background: linear-gradient(calc(var(--ang) + 180deg), rgba(255, 246, 226, .17), rgba(255, 244, 222, .07) 50%, rgba(255, 244, 222, .03)), repeating-linear-gradient(var(--ang), transparent 0 22px, rgba(255, 246, 226, .035) 22px 30px, transparent 30px 61px); }   /* (its dusty rays) */
 .zlit { z-index: 11; background: radial-gradient(60% 75% at var(--lx) 0%, rgba(255, 238, 205, .26), rgba(255, 238, 205, .08) 45%, transparent 75%); mix-blend-mode: screen; -webkit-mask-image: linear-gradient(transparent, #000 14%); mask-image: linear-gradient(transparent, #000 14%); }
-html.gxdim .zproj { opacity: 1; animation: zprojf 4.2s steps(1) infinite 3.4s; } html.gxdim .zlit { opacity: 1; animation: zlitf 4.2s steps(1) infinite 3.4s; }
+html.gxproj .zproj { opacity: 1; animation: zprojf 4.2s steps(1) infinite 3.4s; } html.gxproj .zlit { opacity: 1; animation: zlitf 4.2s steps(1) infinite 3.4s; }
 @keyframes zprojf { 0% { opacity: 1; } 12% { opacity: .86; } 14% { opacity: 1; } 47% { opacity: .92; } 49% { opacity: 1; } 78% { opacity: .88; } 80% { opacity: 1; } }
 @keyframes zlitf { 0% { opacity: 1; } 12% { opacity: .9; } 14% { opacity: 1; } 47% { opacity: .95; } 49% { opacity: 1; } 78% { opacity: .92; } 80% { opacity: 1; } }
-html.gxdim .zcin { box-shadow: 0 0 0 6px var(--gx-band), 0 0 90px 24px rgba(255, 240, 215, .16), 0 30px 140px 40px rgba(255, 236, 205, .10) !important; transition: box-shadow 2.4s ease 1s; }
+html.gxproj .zcin { box-shadow: 0 0 0 6px var(--gx-band), 0 0 90px 24px rgba(255, 240, 215, .16), 0 30px 140px 40px rgba(255, 236, 205, .10) !important; transition: box-shadow 2.4s ease 1s; }
 html.gxown .zcurt::before { content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity 2.4s ease 1s; mix-blend-mode: screen; }
 html.gxown .zcurt.l::before { background: linear-gradient(90deg, transparent 20%, rgba(255, 238, 210, .22)); }
 html.gxown .zcurt.r::before { background: linear-gradient(270deg, transparent 20%, rgba(255, 238, 210, .22)); }
-html.gxdim .zcurt::before { opacity: 1; }
-@media (prefers-reduced-motion: reduce) { html.gxdim .zproj, html.gxdim .zlit { animation: none; } }
+html.gxproj .zcurt::before { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { html.gxproj .zproj, html.gxproj .zlit { animation: none; } }
 .zcv { position: absolute; z-index: 7; pointer-events: none; }
 #barnav button.vtog, #shnav button.vtog { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr; padding: 3px; border: 1px solid rgba(var(--kink), .45); border-radius: 99px; letter-spacing: 0; }
 .vtog::before { content: ""; position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); border-radius: 99px; background: rgb(var(--kink)); transition: transform .35s cubic-bezier(.6, 0, .2, 1); }
@@ -1668,7 +1668,7 @@ html .th-picture .zfrontw .zrim, html.gxown .th-picture .zfrontw .zrim { opacity
    the film reel in too, that displays the posters") */
 .th-picture .zcurt { display: none !important; }
 html .th-picture .zcin, html.gxown .th-picture .zcin { box-shadow: 0 0 0 10px #000, 0 0 0 26px #2a2420, 0 0 60px 30px rgba(235, 222, 202, .22) !important; }
-html.gxdim .th-picture .zcin { box-shadow: 0 0 0 10px #000, 0 0 0 26px #2a2420, 0 0 90px 34px rgba(255, 240, 215, .26), 0 30px 140px 40px rgba(255, 236, 205, .1) !important; }
+html.gxproj .th-picture .zcin { box-shadow: 0 0 0 10px #000, 0 0 0 26px #2a2420, 0 0 90px 34px rgba(255, 240, 215, .26), 0 30px 140px 40px rgba(255, 236, 205, .1) !important; }
 .th-picture .zstagef::before { content: ""; position: absolute; inset: -24px; pointer-events: none; z-index: 4;
   --bulb: radial-gradient(circle, #fff8e6 0 3px, #ebdeca 4px, rgba(235, 222, 202, .35) 5px, transparent 7px);
   background: var(--bulb) left top / 20px 20px repeat-x, var(--bulb) left bottom / 20px 20px repeat-x, var(--bulb) left top / 20px 20px repeat-y, var(--bulb) right top / 20px 20px repeat-y; animation: zbulb 2.4s steps(2) infinite; }
@@ -1679,6 +1679,9 @@ html.gxdim .th-picture .zcin { box-shadow: 0 0 0 10px #000, 0 0 0 26px #2a2420, 
 .th-picture .vday.front { filter: none; }
 .th-picture .vday .vn, .th-picture .vday .cs { display: none !important; }
 #cal.drag .th-picture .vday { transition: none; }
+.th-picture .zstagef { z-index: 12; }   /* (the screen in front of the drum) */
+.th-picture .vday { transition: filter .4s, opacity .4s !important; }
+.zfilm { right: 0; }
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -2246,6 +2249,7 @@ var GX = { bg: '#173a5e', ink: '243, 232, 210', title: '#f08a4b', label: '#f3e8d
 function monthTint(m) {   // the month's theme's one flat colour, and its ink: black on its light colours, white on the rest
   var t = themeFor(m), R = document.documentElement.style, own = t.key === 'picture' || t.key === 'blank',
     dim = own && GXDIM && t.key === 'picture' && VIEW() === 'themes' && (!S.view || S.view === 'home') && !!document.getElementById('zstagef') && !(document.getElementById('sheet') || {}).open;   // (a pop-up open over it: lights up)
+  document.documentElement.classList.toggle('gxproj', own && t.key === 'picture' && VIEW() === 'themes' && !!document.getElementById('zstagef') && !(document.getElementById('sheet') || {}).open);
   document.documentElement.classList.toggle('gxown', own); document.documentElement.classList.toggle('gxdim', dim);
   if (own) { t = Object.assign({}, t, { bg: dim ? GXDARK : GX.bg });
     ['title', 'label', 'band', 'strip', 'logo', 'c1', 'c2', 'tile', 'tilet', 'tiletop'].forEach(function (k) { R.setProperty('--gx-' + k, dim && /^(band|c1|c2)$/.test(k) ? GX.bg : GX[k]); }); }
@@ -2256,9 +2260,9 @@ function monthTint(m) {   // the month's theme's one flat colour, and its ink: b
 }
 window.addEventListener('resize', function () { setTimeout(zBeamFit, 120); });
 function gxLights() { monthTint(S.month ? +S.month.slice(5, 7) - 1 : new Date().getMonth()); }
-function lightsDown() {   // the zoetrope's theme, open: the house lights dim
-  zBeamFit();
-  GXDIM = true; monthTint(S.month ? +S.month.slice(5, 7) - 1 : new Date().getMonth());
+function lightsDown() {   // the zoetrope's theme, open: the projector on, its beam and the screen's light, the room as it is (John, 10 Nov
+  // 2026: "I just wanted the projector lighting on, not the lights down effect")
+  zBeamFit(); monthTint(S.month ? +S.month.slice(5, 7) - 1 : new Date().getMonth());
 }
 monthTint(new Date().getMonth());
 themeEarly();
@@ -3716,12 +3720,14 @@ THEMEFX.picture = {
     // TV, the day's words down the left, the cinema screen and the zoetrope below it filling the right; a phone, both full width)
     var colL = c.W * .39, colR = c.W - 56 * f, cw = colR - colL;
     var yB = mob ? 846 : c.H - 160 * f, yS = yB - (mob ? 60 : 48 * f), yT = yS - (mob ? 215 : Math.max(150, c.H * .2));   // (bigger: a whole horse seen in a gap: John, 10 Nov 2026)   // (clear of the caption under it)
-    var fT = mob ? 16 : 92 * f, fH = mob ? 132 : 96 * f;   // (the film strip along the top, the days' pictures on it, as Cinema Paradiso's: John, 10 Nov 2026)
-    var sy0 = fT + fH + (mob ? 30 : 24 * f), sh = yT - (mob ? 50 : 48 * f) - sy0, sw = Math.min(mob ? 740 : cw, sh * 4 / 3); sh = sw * .75;
-    var scx = mob ? 390 : (colL + colR) / 2, cx = scx, Rv = mob ? 378 : Math.min(cw * .5, sw * .92), ry = mob ? 16 : 14 * f;   // (nearly level: only the top of the far side seen: John, 10 Nov 2026)   // (smaller: all of it in view, curving away at both sides)
+    // (the screen brought forward, its foot over the drum's rim; the film strip behind it, through its middle, the days either side showing
+    // past its edges: John, 10 Nov 2026: "the film strip can go behind the screen, and the screen can go forward a bit so it's over the drum")
+    var sy0 = mob ? 16 : 96 * f, sh = yT + (mob ? 34 : 30 * f) - sy0, sw = Math.min(mob ? 560 : cw * .74, sh * 4 / 3); sh = sw * .75;
+    var fH = sh * .44, fT = sy0 + sh / 2 - fH / 2;
+    var scx = mob ? 390 : (colL + colR) / 2, cx = scx, Rv = mob ? 378 : Math.min(cw * .5, sw * 1.25), ry = mob ? 16 : 14 * f;   // (nearly level: only the top of the far side seen: John, 10 Nov 2026)   // (smaller: all of it in view, curving away at both sides)
     var zh = yS - yT, ps = zh * .8 / 255;
     var y0p = yT - 18 * f, ryAt = function (y) { return ry * (1 + .45 * (y - y0p) / (yB - y0p)); };   // (seen from above: the lower the circle, the rounder)
-    return { fT: fT, fH: fH, ryAt: ryAt, sw: sw, sh: sh, scx: scx, sy0: sy0, cx: cx, Rv: Rv, ry: ry, yT: yT, yS: yS, yB: yB, ps: ps, pw: 170 * ps, pcy: (yT + yS) / 2 + ry, f: f, mob: mob };
+    return { colL: mob ? 0 : colL - 26 * f, fT: fT, fH: fH, ryAt: ryAt, sw: sw, sh: sh, scx: scx, sy0: sy0, cx: cx, Rv: Rv, ry: ry, yT: yT, yS: yS, yB: yB, ps: ps, pw: 170 * ps, pcy: (yT + yS) / 2 + ry, f: f, mob: mob };
   },
   decor: function (c) {
     this.art(); var g = this.g(c), cx = g.cx, R = g.Rv, ry = g.ry, F = function (n) { return (+n).toFixed(1); };
@@ -3735,7 +3741,7 @@ THEMEFX.picture = {
     // (lights down: the projector's beam from behind and above you to the screen, and the screen's light on the curtains and the drum: John,
     // 10 Nov 2026: "There should be a sense of light projecting onto the screen and light on the zoetrope and curtains")
     h += '<div class="zproj" id="zproj"><i></i></div>';
-    h += '<div class="zfilm" style="top:' + F(g.fT) + 'px;height:' + F(g.fH) + 'px"></div>';   // (drawn to fit, from the film's title: zBeamFit)
+    h += '<div class="zfilm" id="zfilm" style="left:' + F(g.colL) + 'px;top:' + F(g.fT) + 'px;height:' + F(g.fH) + 'px"></div>';   // (drawn to fit, from the film's title: zBeamFit)
     h += '<div class="zlit" style="left:' + F(cx - R) + 'px;top:' + F(g.yT - ry) + 'px;width:' + F(2 * R) + 'px;height:' + F(g.yB - g.yT + 2 * ry) + 'px;--lx:' + F((g.scx - (cx - R)) / (2 * R) * 100) + '%"></div>';
     h += '<div class="zbeam" style="left:' + F(g.scx - g.sw) + 'px;top:' + F(st0 - g.sh * .2) + 'px;width:' + F(g.sw * 2) + 'px;height:' + F(g.sh * 1.9) + 'px"></div>' +
       '<div class="zstagef" id="zstagef" style="left:' + F(sl) + 'px;top:' + F(st0) + 'px;width:' + F(g.sw) + 'px;height:' + F(g.sh) + 'px"><div class="zcin"><i class="zpost on" id="zpost"></i><i class="ztrain" id="ztrain"></i><i class="zflick"></i></div>' +
@@ -3805,7 +3811,7 @@ THEMEFX.picture = {
     // (the drum spun up as the theme opens, slowing to rest, the horse galloping in its mirrors: John, 10 Nov 2026: "the praxinoscope
     // needs to spin when it first starts")
     me._sp = CALM ? 0 : 1; me._la = null;
-    if (!CALM) { setTimeout(function () { if (me._at != null) me.gallop(1, 3); }, 600); var s0 = 0, D = 3400, t0 = performance.now() + 500, tk = me._stok = {}; me._spin = s0;
+    if (!CALM) { setTimeout(function () { if (me._at != null) { me._gprev = me._at; me.gallop(1, 3); } }, 600); var s0 = 0, D = 3400, t0 = performance.now() + 500, tk = me._stok = {}; me._spin = s0;
       (function f(t) { if (tk !== me._stok || !$('#zstagef')) { me._spin = 0; return; } var u = Math.max(0, Math.min(1, (t - t0) / D)); me._spin = s0 * Math.pow(1 - u, 3);
         if (me.all && me._at != null) me.draw(me._at); if (u < 1) requestAnimationFrame(f); else me._spin = 0; })(performance.now()); }
     if (window.ZFILMED || CALM) { st.classList.add('open', 'now'); return; }
@@ -3856,7 +3862,7 @@ THEMEFX.picture = {
     var me = this, drag = $('#cal') && $('#cal').classList.contains('drag'), day = Math.round(at);
     if (me._at == null || drag || Math.abs(at - day) > 1e-3) { if (me._at == null && !drag) me._day = day; fxTween(me, at, drag ? 300 : 1100); return; }
     if (me._day == null || day === me._day) { me._day = day; fxTween(me, at, 600); return; }
-    var dir = day > me._day ? 1 : -1; me._day = day;
+    var dir = day > me._day ? 1 : -1; me._gprev = me._day; me._day = day;
     if (me._raf) { cancelAnimationFrame(me._raf); me._raf = 0; } me._at = at;
     me.gallop(dir, 4);
   },
@@ -3892,7 +3898,7 @@ THEMEFX.picture = {
     var me = this, NB = me.nb(), S = NB * turns + .37, T = 2600, t0 = performance.now(), tok = me._gtok = {}, A = .22, B = .62, area = A / 2 + (B - A) + (1 - B) / 2;
     if (CALM) { me._xs = 0; me._gal = false; me._w = 0; me.draw(me._at); return; }
     var pos = function (u) { var x = u <= A ? u * u / (2 * A) : u <= B ? A / 2 + (u - A) : A / 2 + (B - A) + (u - B) - (u - B) * (u - B) / (2 * (1 - B)); return x / area; };
-    var x0 = me._xs || 0; me._push = null; me._gal = true; me._xs = x0 - dir * S; me._w = 0;
+    var x0 = me._xs || 0; me._push = null; me._gal = true; me._xs = x0 - dir * S; me._w = 0; me._gx0 = x0; me._gdir = dir; me._gS = S; if (me._gprev == null) me._gprev = me._tgt;
     (function f(t) {
       if (tok !== me._gtok || !$('#zstagef') || me._at == null) { if (tok === me._gtok) { me._gal = false; me._xs = x0; me._w = 0; } return; }
       var u = Math.min(1, (t - t0) / T), v = u <= A ? u / A : u <= B ? 1 : (1 - u) / (1 - B);
@@ -3910,9 +3916,17 @@ THEMEFX.picture = {
     var FW = me._fw && me._fw.isConnected ? me._fw : (me._fw = $('#cal .zfrontw'));
     if (FW && FW._veil !== veil.toFixed(2)) { FW._veil = veil.toFixed(2); FW.style.filter = veil > .01 ? 'blur(' + (veil * 2.6).toFixed(2) + 'px)' : ''; }   // (galloping: the drum's turn beyond the day's, a slit at a time)
     if (!me._gal && sp > .004 && !me._zraf) me._zraf = requestAnimationFrame(function () { me._zraf = 0; if (me.all && $('#zpaper')) me.draw(me._last); });   // (its own frame, not the move's: the slits close up again after a spin)
-    // (the days along the film strip at the top, the day you're on over the screen, in colour, the rest sepia: Cinema Paradiso's)
-    var fy = g.fT + g.fH / 2, fs = g.fH / 96 * (g.mob ? .78 : 1), fstep = 168 * fs, tgt = me._tgt != null ? me._tgt : a;
-    (me.all || []).forEach(function (el, j) { var k = j - tgt; vAt(el, g.scx + k * fstep, fy, fs * (Math.abs(k) < .5 ? 1.08 : 1), 0, Math.abs(k) > 9 ? 0 : 1, Math.abs(k) < .5 ? 20 : 10); });
+    // (the days along the film strip behind the screen, the day you're on behind it, the ones before and after showing either side; it runs
+    // with the drum, speeding up and slowing with it, as a change of day spins it: John, 10 Nov 2026: "It should move like the zoetrope
+    // does, showing the previous film next to the screen")
+    var fy = g.fT + g.fH / 2, fs = g.fH * .74 / 66, fw = 150 * fs, fstep = g.sw / 2 + 36 * g.f + fw / 2 + 10, tgt = me._tgt != null ? me._tgt : a, pos = a;
+    if (me._gal && me._gS) { var pr = 1 - (me._xs - me._gx0) / (-me._gdir * me._gS); pos = me._gprev + (tgt - me._gprev) * Math.max(0, Math.min(1, pr)); }
+    (me.all || []).forEach(function (el, j) {
+      var k = j - pos, x = g.scx + k * fstep, l = g.colL - (x - fw / 2);
+      vAt(el, x, fy, fs, 0, Math.abs(k) > 6 ? 0 : 1, Math.abs(k) < .5 ? 4 : 3);
+      el.style.clipPath = l > 0 ? 'inset(0 0 0 ' + Math.min(150, l / fs).toFixed(1) + 'px)' : '';
+    });
+    var ZF = me._zf && me._zf.isConnected ? me._zf : (me._zf = $('#zfilm')); if (ZF) ZF.style.backgroundPositionX = (-pos * fstep).toFixed(1) + 'px';
     // (the horse, galloping in place as the drum turns, flickering as each slit goes by; standing when it stops)
     var pp = me._pp && me._pp.isConnected ? me._pp : (me._pp = $('#zpaper')), wo = '1';
     if (pp) {
