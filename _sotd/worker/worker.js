@@ -757,6 +757,10 @@ async function spKeep(env) {   // the previews and covers not kept yet, from Joh
   if (n) await env.SOTD.put('spkept', JSON.stringify(kept));
 }
 
+// a song whose Spotify cover is wrong (a compilation's copy of it): its own album's cover everywhere, the share pages and
+// their cards too (John, 10 Nov 2026: "The Donal Leace cover is still not right on the share page"); kept with John's
+// covers in R2 (c/<track>/<id>)
+const IMG_FIX = { '5NFkC0umAKe8An9SflzrCn': '/c/5NFkC0umAKe8An9SflzrCn/5NOqvfXg' };
 const SONG_FIELDS = ['a', 'id', 'title', 'artist', 'artists', 'aids', 'album', 'alid', 'img', 'rd'];   // (rd: the album's release date, where Spotify or Exportify gave it)
 function composeSongs(items, pv, tags) {   // each song as songs.json gives it: n, the playlist's fields, p (preview), tag (moods)
   return items.map((it, i) => {
@@ -764,6 +768,7 @@ function composeSongs(items, pv, tags) {   // each song as songs.json gives it: 
     for (const k of SONG_FIELDS) if (it[k] !== undefined) x[k] = it[k];
     if (pv[it.id] && pv[it.id] !== '-') x.p = keptPreview(pv[it.id]);
     if (x.img) x.img = keptCover(x.img);
+    if (IMG_FIX[it.id]) x.img = LIVE_ORIGIN + IMG_FIX[it.id];
     if (it.sx) x.sx = 1;   // (gone from Spotify since: kept here)
     const t = tags[it.id];
     if (t && (t.m || (t.g || []).length)) x.tag = { m: t.m, d: t.d, g: t.g };
@@ -784,7 +789,7 @@ async function readPlaylist(env, ctx) {   // Spotify's playlist now (the timer o
   return { at, songs };
 }
 async function songsJson(request, env, ctx) {
-  const cacheKey = new Request(new URL('/songs.json?v=4', request.url).toString());   // bump to drop cached copies after a format change
+  const cacheKey = new Request(new URL('/songs.json?v=5', request.url).toString());   // bump to drop cached copies after a format change
   const hit = await caches.default.match(cacheKey);
   if (hit) return hit;
   const kept = await env.SOTD.get('songsLast', 'json');
