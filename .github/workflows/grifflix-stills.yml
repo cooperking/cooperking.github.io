@@ -41,7 +41,9 @@ jobs:
       - name: Tools
         run: |
           pip install --quiet playwright boto3
-          python -m playwright install --with-deps chromium
+          # (Ubuntu's download servers are sometimes briefly out of reach from GitHub's machines: tried again after a pause, and
+          # if still out of reach, the browser alone, as the machine already has nearly all it needs)
+          python -m playwright install --with-deps chromium || { sleep 60; python -m playwright install --with-deps chromium; } || python -m playwright install chromium
       - name: Draw
         env:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
