@@ -1625,6 +1625,7 @@ html.gxproj .zcurt::before { opacity: 1; }
 #barnav button.vtog, #shnav button.vtog { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr; padding: 3px; border: 1px solid rgba(var(--kink), .45); border-radius: 99px; letter-spacing: 0; }
 .vtog::before { content: ""; position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); border-radius: 99px; background: rgb(var(--kink)); transition: transform .35s cubic-bezier(.6, 0, .2, 1); }
 .vtog.vt-thm::before { transform: translateX(100%); }
+.twipe { position: fixed; top: 0; bottom: 0; left: -6px; right: -6px; z-index: 19; pointer-events: none; background: #0b0b0b; border-left: 4px solid rgb(243, 232, 210); border-right: 4px solid rgb(243, 232, 210); will-change: transform; }   /* (the wipe between months) */
 .vtog span { position: relative; padding: 7px 14px 6px; text-align: center; letter-spacing: .3em; text-indent: .3em; transition: color .35s ease; }
 .vtog.vt-cal span:first-child, .vtog.vt-thm span:last-child { color: var(--bg); }
 html.phone .vtog span { padding: 6px 8px 5px; letter-spacing: .13em; text-indent: .13em; }
@@ -1756,7 +1757,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '236777839f1f' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'c3f2310e8f83' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2762,15 +2763,15 @@ function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 w
     var t = Date.now(), d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
     if (e.deltaMode === 1) d *= 40;   // (a mouse's wheel, in lines)
     if (S.theme.fx && S.theme.fx.push && e.deltaMode === 0 && Math.abs(e.deltaX) > Math.abs(e.deltaY)) { S.theme.fx.push(-e.deltaX); return; }   // (the zoetrope: across turns the drum by hand; up and down still the days)
-    if (t - wquiet > 220) wacc = 0;   // (a new gesture)
+    if (t - wquiet > 220) { wacc = 0; gestStart(); }   // (a new gesture)
     wquiet = t; wacc += d;
     var need = Math.abs(d) >= 90 ? 1 : 70;   // (a mouse's notch: a day each; a trackpad: a day each 70px of its scroll)
-    while (Math.abs(wacc) >= need && t - wlast > 80) { var dir = wacc > 0 ? 1 : -1; wacc -= dir * need; wlast = t; themeStep(dir); if (need === 1) { wacc = 0; break; } }
+    while (Math.abs(wacc) >= need && t - wlast > 80) { var dir = wacc > 0 ? 1 : -1; wacc -= dir * need; wlast = t; themeStep(dir, true); if (need === 1) { wacc = 0; break; } }
   }, { passive: false });
   document.addEventListener('touchstart', function (e) {
     clearTimeout(fling); if (!on(e) || e.touches.length > 1) { G = null; return; }
     var t = e.touches[0], el = e.target;
-    G = { x0: t.clientX, y0: t.clientY, last: 0, ax: null, live: false, trail: [] }; moved = false;
+    G = { x0: t.clientX, y0: t.clientY, last: 0, ax: null, live: false, trail: [] }; moved = false; gestStart();
     var done = function () { el.removeEventListener('touchmove', move); el.removeEventListener('touchend', end); el.removeEventListener('touchcancel', end); };
     var end = function () { done(); lift(); };
     el.addEventListener('touchmove', move, { passive: false }); el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
@@ -2781,14 +2782,14 @@ function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 w
     e.preventDefault();
     var pos = G.ax === 'x' ? t.clientX : t.clientY;
     G.trail.push([pos, Date.now()]); if (G.trail.length > 6) G.trail.shift();
-    while (Math.abs(pos - G.last) >= STEP) { var dir = pos < G.last ? 1 : -1; G.last += dir > 0 ? -STEP : STEP; themeStep(dir); }   // (finger up or left: the day after)
+    while (Math.abs(pos - G.last) >= STEP) { var dir = pos < G.last ? 1 : -1; G.last += dir > 0 ? -STEP : STEP; if (!themeStep(dir, true)) break; }   // (finger up or left: the day after)
   }
   function lift() {
     if (!G) return; var g = G; G = null; if (!g.live || g.trail.length < 2) return;
     var a = g.trail[0], b = g.trail[g.trail.length - 1], v = (b[0] - a[0]) / Math.max(1, b[1] - a[1]);
     if (Math.abs(v) < .6 || Date.now() - b[1] > 80) return;
     var n = Math.min(10, Math.round(Math.abs(v) * 3)), dir = v < 0 ? 1 : -1, gap = 70;
-    var go = function () { if (n-- <= 0 || !themeStep(dir)) return; gap *= 1.25; fling = setTimeout(go, gap); };
+    var go = function () { if (n-- <= 0 || !themeStep(dir, true)) return; gap *= 1.25; fling = setTimeout(go, gap); };
     fling = setTimeout(go, gap);
   }
   document.addEventListener('click', function (e) { if (moved && e.target.closest && e.target.closest('#cal')) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);   // (a swipe isn't a tap)
@@ -3105,7 +3106,26 @@ function stillWords() {   // a still: a month's has the month and its theme in t
 }
 function themeCross(dir) {   // on into the next or last month (its own theme), quietly
   var ms = monthsOf(S.calData.days), j = ms.indexOf(S.month) + dir; if (j < 0 || j >= ms.length || !S.step) return false;
-  S.quiet = true; S.step(dir); S.quiet = false; themeFadeIn(dir); return true;
+  themeWipe(dir, function () { S.quiet = true; S.step(dir); S.quiet = false; }); return true;
+}
+// a new month's theme comes in with a wipe, as between a film's scenes: a black panel, edged in the ink, sweeps across the way you're
+// going, the next month's theme put in place behind it, then it sweeps on off it (John, 11 Nov 2026: "can a nice transition between
+// theme be introduced, like a wipe")
+function themeWipe(dir, swap) {
+  if (CALM || !document.body.animate) { swap(); themeFadeIn(dir); return; }
+  if (S.wiping) return; S.wiping = true;
+  var w = document.createElement('div'), cal = $('#cal'), done = false; w.className = 'twipe'; document.body.appendChild(w);
+  if (cal) cal.style.isolation = 'isolate';   // (the theme's own layers under the panel, the bar over it)
+  var end = function () { if (done) return; done = true; w.remove(); if (cal) cal.style.isolation = ''; S.wiping = false; };
+  setTimeout(end, 2500);   // (whatever happens, never left up)
+  var a = w.animate([{ transform: 'translateX(' + (dir > 0 ? 100 : -100) + '%)' }, { transform: 'none' }], { duration: TV ? 320 : 280, easing: 'cubic-bezier(.5, 0, .75, .5)', fill: 'forwards' });
+  a.onfinish = function () {
+    try { swap(); } catch (e) { if (window.console) console.error(e); }
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      var b = w.animate([{ transform: 'none' }, { transform: 'translateX(' + (dir > 0 ? -100 : 100) + '%)' }], { duration: TV ? 460 : 420, easing: 'cubic-bezier(.25, .55, .4, 1)', fill: 'forwards' });
+      b.onfinish = end;
+    }); });
+  };
 }
 function themeFadeIn(dir) {   // (a new month's theme: faded in, drifting in from the way you're going; John, 8 Nov 2026: "a smooth transition between months")
   var st = $('#cal .thstage'), inf = $('#hinfo');
@@ -3155,7 +3175,9 @@ function calStep(d, land) {   // the calendar pop-up: the month before or after 
   return true;
 }
 function sheetStep(d) { return $('#sheetIn .tcal') ? calStep(d) : dayStep(d); }   // (a swipe on a pop-up: a month on the calendar, a day on a day's page)
-function themeStep(dir) {   // the day after or before with a film; at a month's end, on into the next month's theme
+function gestStart() { var f = $('#cal button.front'); S.gest = { at: f ? f.dataset.day : null }; }   // (a swipe begun: where from)
+function themeStep(dir, g) {   // the day after or before with a film; at a month's end, on into the next month's theme (g: part of a swipe)
+  if (S.wiping) return false;   // (a month's wipe under way: the rest of the swipe waits)
   var sel = '#cal button.vday, #cal button.hday, #cal button.tday', bs = $$(sel), i = bs.indexOf(document.activeElement);
   if (i < 0) i = bs.indexOf($('#cal button.front'));   // (a phone's buttons, a click: from the day that's showing)
   var nb = bs[i + dir];
@@ -3163,15 +3185,20 @@ function themeStep(dir) {   // the day after or before with a film; at a month's
   // stopped: John, 9 Nov 2026: "Change the moment the scroll leaves the first of the month into the last month, or the moment it leaves
   // the last day of the month into the new month")
   if (i >= 0 && nb && !(nb.dataset.om && !bs[i].dataset.om)) { nb.focus({ preventScroll: true }); if (MOB() || document.activeElement !== nb) themeTurn(nb); return true; }   // (a day hidden for now takes no focus: turned to all the same)
+  // (a swipe begun inside the month goes no further than its 1st or last day; another from there goes on into the next: John, 11 Nov
+  // 2026: "Can a big swipe go no further than the first of that month")
+  if (g && S.gest && i >= 0 && bs[i] && S.gest.at !== bs[i].dataset.day) return false;
   var ms = monthsOf(S.calData.days), j = ms.indexOf(S.month) + dir; if (j < 0 || j >= ms.length || !S.step) return false;
   // (past the last of the neighbouring days: on into that month, on the very next day, never back onto the month just left:
   // John, 9 Nov 2026: "can sometimes cause it to change back to the other theme unexpectedly")
   var cur = i >= 0 && bs[i] ? bs[i].dataset.day : null, nx = cur ? new Date(new Date(cur + 'T12:00').getTime() + dir * 864e5) : null;
   var key = nx ? nx.getFullYear() + '-' + String(nx.getMonth() + 1).padStart(2, '0') + '-' + String(nx.getDate()).padStart(2, '0') : null;
   S.crossAt = Date.now(); if (key) S.resumeDay = key;
-  S.quiet = true; S.step(dir); S.quiet = false; themeFadeIn(dir);
-  var own = $$(sel).filter(function (x) { return !x.dataset.om; }), f = (key && $('#cal button[data-day="' + key + '"]')) || (dir > 0 ? own[0] : own[own.length - 1]);
-  if (f) { f.focus({ preventScroll: true }); if (MOB() || document.activeElement !== f) themeTurn(f); }
+  themeWipe(dir, function () {
+    S.quiet = true; S.step(dir); S.quiet = false;
+    var own = $$(sel).filter(function (x) { return !x.dataset.om; }), f = (key && $('#cal button[data-day="' + key + '"]')) || (dir > 0 ? own[0] : own[own.length - 1]);
+    if (f) { f.focus({ preventScroll: true }); if (MOB() || document.activeElement !== f) themeTurn(f); }
+  });
   return true;
 }
 function themeMonth(dir) {   // the month before or after: its theme, on today in this month, otherwise on its first film's day
@@ -3179,8 +3206,10 @@ function themeMonth(dir) {   // the month before or after: its theme, on today i
   var days = Object.keys(C.days).filter(function (d) { return d.slice(0, 7) === k && !C.days[d].secret; }).sort();
   var key = days.indexOf(TODAY) >= 0 ? TODAY : days[0];
   S.crossAt = Date.now(); if (key) S.resumeDay = key;
-  S.quiet = true; S.step(dir); S.quiet = false; themeFadeIn(dir);
-  var f = key && $('#cal button[data-day="' + key + '"]'); if (f) { f.focus({ preventScroll: true }); themeTurn(f); }
+  themeWipe(dir, function () {
+    S.quiet = true; S.step(dir); S.quiet = false;
+    var f = key && $('#cal button[data-day="' + key + '"]'); if (f) { f.focus({ preventScroll: true }); themeTurn(f); }
+  });
   return true;
 }
 // January: the corridor (Kubrick's The Shining): the days down a corridor, coming towards you as you go on
@@ -4003,8 +4032,8 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     me._gtok = null; if (me._d0 == null) me._d0 = me._day != null ? me._day : me._at;
     // (the faster the fingers, the further each bit of their swipe throws it: a gentle push nudges, a big swipe races the film by: John, 10 Nov 2026)
     var t = performance.now(), d = px * .035 * (1 + Math.abs(px) / 30);   // (lively: John, 10 Nov 2026: "It's sluggish")
-    me._xs = (me._xs || 0) + d;
     if (!me._push) { var Z0 = me.hr(); me._r0 = Math.round(Z0.rankOf(me._d0 + ((me._xs || .5) - .5) / me.nb())); }
+    me._xs = (me._xs || 0) + d; me.first();
     var P = me._push || (me._push = { v: 0, t: t, last: t }), dt = Math.max(8, t - P.t) / 1000;
     P.v = P.v * .5 + (d / dt) * .5; P.t = t; P.last = t; P.peak = Math.max(P.peak || 0, Math.abs(px)); if (d) P.dir = d > 0 ? 1 : -1;
     if (P.peak >= 55) { var v0 = Math.abs(P.v); me._push = null; if (P.raf) cancelAnimationFrame(P.raf); me.bigSpin(P.dir, v0); return; }   // (a big swipe: at once the one long spin, from the swipe's own speed) me._gal = true; me._w = Math.abs(P.v);
@@ -4016,7 +4045,7 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
       if (tt - Q.last > 110 && !Q.rel && (Q.peak || 0) >= 55) { me._push = null; Q.raf = 0; me.bigSpin(Q.dir || (Q.v < 0 ? -1 : 1)); return; }   // (a big spin: round the whole month and on to the next day)
       if (tt - Q.last > 110 && !Q.rel) { Q.rel = 1; var sv = Math.abs(Q.v); Q.v = (Q.v < 0 ? -1 : 1) * (sv < 18 ? sv * .25 : Math.min(240, 1.2 * Math.pow(sv, 1.3))); }   // (let go: a gentle push turns it slowly, only a big swipe brings it up to speed: John, 10 Nov 2026)
       if (tt - Q.last <= 110) Q.rel = 0;
-      if (tt - Q.last > 110) { me._xs += Q.v * dt2; Q.v *= Math.exp(-dt2 * (Math.abs(Q.v) > 8 ? .9 : 1.8)); }   // (it runs on, slowing)
+      if (tt - Q.last > 110) { me._xs += Q.v * dt2; Q.v *= Math.exp(-dt2 * (Math.abs(Q.v) > 8 ? .9 : 1.8)); if (me.first()) Q.v = 0; }   // (it runs on, slowing; no further back than the 1st)
       me._w = Math.abs(Q.v);
       if (tt - Q.last > 110 && Math.abs(Q.v) < 1.5) {   // (slowing to a stop, it settles with a slit square in front)
         // (coming to rest on the next day it's heading for, always on, never back: John, 10 Nov 2026: "it shouldn't ever reverse to get
@@ -4031,6 +4060,11 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
       }
       me.draw(me._at); Q.raf = requestAnimationFrame(f);
     })(t);
+  },
+  first: function () {   // (turned back past the month's 1st by a push begun after it: held on the 1st; true if held)
+    var me = this; if (!(me._r0 > 0)) return false;
+    var Z = me.hr(), rc = Z.rankOf(me._d0 + ((me._xs || .5) - .5) / me.nb()); if (rc > 0) return false;
+    me._xs = .5 + (Z.dayOf(0) - me._d0) * me.nb(); return true;
   },
   // (a big spin: the film runs right round the month's films and on to the next day, the drum whirling all the way: John, 10 Nov 2026:
   // "a big spin should shove it into the next day by taking it all the way through the month")
@@ -4050,7 +4084,8 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     var L = H.length; if (!L || me._d0 == null) return;
     var dayOf = function (r) { if (r <= 0) return H[0] + r; if (r >= L - 1) return H[L - 1] + (r - (L - 1)); var i = Math.floor(r); return H[i] + (H[i + 1] - H[i]) * (r - i); };
     var rankOf = function (x) { if (x <= H[0]) return x - H[0]; for (var i = 0; i < L - 1; i++) if (x <= H[i + 1]) return i + (x - H[i]) / (H[i + 1] - H[i]); return L - 1 + (x - H[L - 1]); };
-    var rs0 = rankOf(me._d0 + ((me._xs || .5) - .5) / NB), r0 = me._r0 != null ? me._r0 : Math.round(rs0), r1 = r0 + dir * (L + 1); while (dir * (r1 - rs0) < 1) r1 += dir * L; for (var g2 = 0; g2 < L && !(AL[H[((r1 % L) + L) % L]] || { classList: { contains: function () { return true; } } }).classList.contains('has'); g2++) r1 += dir; var rf = ((r1 % L) + L) % L;   // (onward past days still to come)   // (from where the swipe began: once round and one on)
+    var rs0 = rankOf(me._d0 + ((me._xs || .5) - .5) / NB), r0 = me._r0 != null ? me._r0 : Math.round(rs0), r1 = r0 + dir * (L + 1); while (dir * (r1 - rs0) < 1) r1 += dir * L;
+    if (dir < 0) { if (r0 <= 0) { me._r0 = null; me.cross(-1); return; } r1 = 0; }   // (back: no further than the 1st; from the 1st, on into the month before: John, 11 Nov 2026) for (var g2 = 0; g2 < L && !(AL[H[((r1 % L) + L) % L]] || { classList: { contains: function () { return true; } } }).classList.contains('has'); g2++) r1 += dir; var rf = ((r1 % L) + L) % L;   // (onward past days still to come)   // (from where the swipe began: once round and one on)
     // (one motion: off at the swipe's own speed, slowing evenly all the way round the month, to rest on the next day)
     var rs = rankOf(me._d0 + ((me._xs || .5) - .5) / NB), S = r1 - rs, vr = Math.max(4, (v0 || 0) / NB);   // (ranks a second)
     var T = Math.max(1500, Math.min(2200, 2 * Math.abs(S) / vr * 1000)), m = Math.max(.8, Math.min(2.6, vr * T / 1000 / Math.abs(S)));   // (the film through the month quickly: John, 10 Nov 2026)
