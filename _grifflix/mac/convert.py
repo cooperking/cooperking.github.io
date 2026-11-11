@@ -5,7 +5,7 @@ The 2010 Mac mini can't convert a film's picture while someone watches (it would
 to send smoothly over Wi-Fi and to phones. So, ahead of time, this converts the ones that need it:
   * a format browsers can't play (XviD/DivX, MPEG-2, VC-1, AV1, VP9, 10-bit H.264...)
   * too big: bigger than 1080p (John, 7 Nov 2026: "1080p is big enough for me"), or over 20 Mbps
-into H.264 at up to 1080p (quality 19, at most about 12 Mbps), with sound that plays everywhere (AAC stereo, and the
+into H.264 at up to 1080p (quality 20, at most 8 Mbps and never more than the original), with sound that plays everywhere (AAC stereo, and the
 original surround kept alongside). Files that already play as they are, and HEVC within those limits, are left alone.
 
 Safe:
@@ -225,8 +225,12 @@ def convert(item, ffmpeg, ffprobe, st):
     else:
         for x in text_subs:
             cmd += ['-map', '0:%d' % x['index']]
+    # (the picture's rate: never more than the original had (a small or old file isn't made big, which adds nothing), and at most 8 Mbps,
+    # plenty for 1080p (John, 11 Nov 2026: "Some of the conversions are still coming out a very large file size Braveheart 8gb"))
+    src_kbps = int(v.get('bit_rate') or 0) / 1000 or (float((info.get('format') or {}).get('bit_rate') or 0) / 1000 - 192 * max(1, len(audio)))
+    cap = int(max(1500, min(8000, src_kbps * 1.05 if src_kbps > 0 else 8000)))
     cmd += ['-map_metadata', '0', '-map_chapters', '0',
-            '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '19', '-maxrate', '12M', '-bufsize', '24M',
+            '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-maxrate', '%dk' % cap, '-bufsize', '%dk' % (cap * 2),
             '-profile:v', 'high', '-level', '4.1', '-pix_fmt', 'yuv420p', '-vf', vf, '-disposition:v:0', 'default']
     if main_a:
         cmd += ['-c:a:0', 'aac', '-b:a:0', '192k', '-ac:a:0', '2', '-metadata:s:a:0', 'title=Stereo', '-disposition:a:0', 'default']

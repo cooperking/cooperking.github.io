@@ -868,6 +868,46 @@ def make_handler(g):
                     items[parent['Id']].setdefault('extras', []).append(e['Id'])
             lists['movies'] = [i for i in lists.get('movies', []) if not items.get(i, {}).get('extra')]
 
+        def api_library(self, me, user, q, b):
+            """John's: every film as its file is, for the admin page's Library (John, 11 Nov 2026: "I need a place in my admin to see my
+            library, so I can see what is good quality and what needs replacing"): its picture, format, rate, size and sound, whether
+            it's been converted, and why it's waiting to be."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            lid = (g.st.get('libraries') or {}).get('movies')
+            if not lid:
+                return self.send_json(200, {'films': []})
+            st = load(os.path.expanduser('~/Grifflix/convert-state.json'), {})
+            made = {os.path.normcase(x.get('to') or ''): x for x in (st.get('done') or {}).values()}
+            rows, start = [], 0
+            while True:
+                r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'MediaSources,Path,ProductionYear',
+                                                                       'StartIndex': start, 'Limit': 300, 'SortBy': 'SortName', 'EnableImageTypes': 'Primary'}) or {}
+                for it in r.get('Items') or []:
+                    ms = (it.get('MediaSources') or [{}])[0]
+                    ss = ms.get('MediaStreams') or []
+                    v = next((x for x in ss if x.get('Type') == 'Video'), {}) or {}
+                    au = [x for x in ss if x.get('Type') == 'Audio']
+                    w, h, vc = v.get('Width') or 0, v.get('Height') or 0, (v.get('Codec') or '').lower()
+                    bits = v.get('BitDepth') or 8
+                    mbps = round((ms.get('Bitrate') or v.get('BitRate') or 0) / 1e6, 1)
+                    why = ''
+                    if w > 1928 or h > 1088:
+                        why = 'bigger than 1080p'
+                    elif mbps > 20:
+                        why = 'over 20 Mbps'
+                    elif not (vc in ('hevc', 'h265') or (vc == 'h264' and bits <= 8 and '10' not in (v.get('Profile') or ''))):
+                        why = 'format browsers can’t play'
+                    cv = made.get(os.path.normcase(it.get('Path') or ''))
+                    rows.append({'id': it.get('Id'), 'n': it.get('Name'), 'y': it.get('ProductionYear') or '', 'w': w, 'h': h, 'v': vc, 'b': bits, 'mbps': mbps,
+                                 'gb': round((ms.get('Size') or 0) / 1e9, 1), 'mins': round((it.get('RunTimeTicks') or 0) / 6e8),
+                                 'a': ', '.join(sorted(set('%s %s' % ((x.get('Codec') or '?').upper(), {1: 'mono', 2: 'stereo', 6: '5.1', 8: '7.1'}.get(x.get('Channels') or 0, '%sch' % (x.get('Channels') or '?'))) for x in au[:4]))),
+                                 'conv': bool(cv), 'was': (cv or {}).get('before'), 'why': '' if cv else why})
+                start += 300
+                if start >= (r.get('TotalRecordCount') or 0):
+                    break
+            self.send_json(200, {'films': rows})
+
         def api_convert(self, me, user, q, b):
             """John's: how the conversions are going (convert.py's files in ~/Grifflix), for the admin page."""
             if not me.get('owner'):
