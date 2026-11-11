@@ -97,6 +97,7 @@ h1 em { font-style: normal; font-weight: 400; }
 .lbl .q.good { background: #2f6b46; color: #fff; } .lbl .q.ok { background: #8a6d1f; color: #fff; } .lbl .q.bad { background: #8c2f2a; color: #fff; }
 .lbl .spec { display: block; margin-top: 2px; font-size: 12.5px; color: var(--fg); } .lbl .why2 { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }   /* (the library: each film's file and its grade) */
 .hh { padding: 12px 0; border-top: 1px solid var(--line); } .hh:first-child { border-top: 0; } .hh .name { max-width: 260px; } .hhm { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 10px 0; } .hhm label { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; color: var(--fg); }   /* (households) */
+.gcode { display: inline-flex; align-items: center; gap: 6px; margin-right: 6px; font-size: 13px; color: var(--muted); } .gcode b { font: 600 18px/1 var(--sans, sans-serif); letter-spacing: .18em; color: var(--fg); }   /* (a member's code from John) */
 .cvl { max-height: 560px; overflow: auto; } .cvl .cvba { display: block; margin-top: 2px; font-size: 12px; color: var(--fg); } .cvl .cvh { font: 600 11px/1 var(--sans, sans-serif); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding-top: 14px; }   /* (the conversions: before and after; the queue) */
 .cvbar { height: 8px; border-radius: 99px; background: var(--tile); overflow: hidden; margin: 4px 0 14px; }
 .cvbar span { display: block; height: 100%; width: 0; background: currentColor; border-radius: 99px; transition: width .6s; }
@@ -493,7 +494,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           ' · Emails: ' + (m.email ? (MODE[m.gmail] || 'off') + ' to ' + m.email : 'no address');
         return '<li><div class="who"><b>' + esc(m.name) + (m.owner ? ' <span class="badge signed">You</span>' : '') + '</b><span>' + esc(st) + '</span><span class="prefs">' + esc(notes) + '</span></div>' +
           '<button class="btn small" data-pref="' + m.id + '">Change</button>' +
-          (m.owner ? '' : '<button class="btn small primary" data-inv="' + m.id + '">' + (m.devices || m.invite ? 'New link' : 'Invite') + '</button><button class="btn small" data-rm="' + m.id + '">Remove</button>') +
+          (m.owner ? '' : '<button class="btn small" data-gcode="' + m.id + '">Code</button>') + (m.owner ? '' : '<button class="btn small primary" data-inv="' + m.id + '">' + (m.devices || m.invite ? 'New link' : 'Invite') + '</button><button class="btn small" data-rm="' + m.id + '">Remove</button>') +
           '<div class="prefedit" id="pe-' + m.id + '" hidden><input type="email" class="name" placeholder="Their email address" value="' + esc(m.email || '') + '">' +
           '<label>Emails <select data-k="gmail">' + ['all', 'week', 'off'].map(function (v) { return '<option value="' + v + '"' + (m.gmail === v ? ' selected' : '') + '>' + MODE[v] + '</option>'; }).join('') + '</select></label>' +
           '<label>Notifications <select data-k="gpush">' + ['all', 'week', 'off'].map(function (v) { return '<option value="' + v + '"' + (m.gpush === v ? ' selected' : '') + '>' + MODE[v] + '</option>'; }).join('') + '</select></label>' +
@@ -508,6 +509,17 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           .catch(function (x) { b.disabled = false; toast(x.message); });
       }; });
       [].forEach.call(document.querySelectorAll('[data-inv]'), function (b) { b.onclick = function () { invite({ op: 'newlink', id: b.dataset.inv }); }; });
+      // (a 6-letter code to text them, no link: they type it in Sign in; 24 hours, once (John, 11 Nov 2026: "Just a code not a link"))
+      [].forEach.call(document.querySelectorAll('[data-gcode]'), function (b) { b.onclick = function () {
+        b.disabled = true;
+        g('admin', { op: 'code', id: b.dataset.gcode }).then(function (j) {
+          var t = 'Your Grifflix code: ' + j.code + ' (open grifflix.co.uk, Sign in, and type it in; it works once, for ' + j.hours + ' hours)';
+          b.outerHTML = '<span class="gcode"><b>' + esc(j.code) + '</b> for ' + j.hours + ' hours, once</span><button class="btn small" data-gcopy="' + esc(t) + '">Copy</button>' +
+            (navigator.share ? '<button class="btn small" data-gshare="' + esc(t) + '">Send</button>' : '');
+          [].forEach.call(document.querySelectorAll('[data-gcopy]'), function (c) { c.onclick = function () { (navigator.clipboard ? navigator.clipboard.writeText(c.dataset.gcopy) : Promise.reject()).then(function () { toast('Copied: paste it in a message to ' + j.name.split(' ')[0]); }).catch(function () { toast(j.code); }); }; });
+          [].forEach.call(document.querySelectorAll('[data-gshare]'), function (c) { c.onclick = function () { navigator.share({ text: c.dataset.gshare }).catch(function () {}); }; });
+        }).catch(function (e) { b.disabled = false; toast(e.message); });
+      }; });
       [].forEach.call(document.querySelectorAll('[data-rm]'), function (b) { b.onclick = function () {
         if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Tap again'; return; }
         g('admin', { op: 'remove', id: b.dataset.rm }).then(function (j) { toast('Removed'); members(j.members); }).catch(function (e) { toast(e.message); });

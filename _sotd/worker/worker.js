@@ -2041,6 +2041,13 @@ async function gAdmin(request, env, b, who, answer) {
     const code = await gInvite(env, all, id);
     return answer(200, { id, name: all[id].name, link: G_SITE + '#join=' + code, members: list() });
   }
+  if (b.op === 'code') {   // a 6-letter code for a member, from John, to text them (no link): they type it in Sign in; 24 hours, once
+    // (John, 11 Nov 2026: "How can I send a member a code anyway? Just a code not a link")
+    if (!all[b.id]) return answer(404, { error: 'No such member.' });
+    const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', r = crypto.getRandomValues(new Uint8Array(6)), code = [...r].map(x => A[x % A.length]).join('');
+    await env.SOTD.put('gtv:' + await sha256hex(code), b.id, { expirationTtl: 24 * 3600 });
+    return answer(200, { code, hours: 24, name: all[b.id].name });
+  }
   if (b.op === 'card') {   // the invitation's card (drawn on the admin page) and its page: /gi/<page>, as long as the invitation lasts
     const m = all[b.id]; if (!m || !m.invite) return answer(404, { error: 'No invitation for them.' });
     const b64 = String(b.card || '').replace(/^data:image\/jpeg;base64,/, '');
