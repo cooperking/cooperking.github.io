@@ -96,6 +96,7 @@ h1 em { font-style: normal; font-weight: 400; }
 .lbl { max-height: 640px; overflow: auto; } .lbl .q { display: inline-block; margin-left: 8px; padding: 2px 6px; font: 600 10px/1.2 var(--sans, sans-serif); letter-spacing: .1em; text-transform: uppercase; vertical-align: 2px; }
 .lbl .q.good { background: #2f6b46; color: #fff; } .lbl .q.ok { background: #8a6d1f; color: #fff; } .lbl .q.bad { background: #8c2f2a; color: #fff; }
 .lbl .spec { display: block; margin-top: 2px; font-size: 12.5px; color: var(--fg); } .lbl .why2 { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }   /* (the library: each film's file and its grade) */
+.hh { padding: 12px 0; border-top: 1px solid var(--line); } .hh:first-child { border-top: 0; } .hh .name { max-width: 260px; } .hhm { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 10px 0; } .hhm label { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; color: var(--fg); }   /* (households) */
 .cvl { max-height: 560px; overflow: auto; } .cvl .cvba { display: block; margin-top: 2px; font-size: 12px; color: var(--fg); } .cvl .cvh { font: 600 11px/1 var(--sans, sans-serif); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding-top: 14px; }   /* (the conversions: before and after; the queue) */
 .cvbar { height: 8px; border-radius: 99px; background: var(--tile); overflow: hidden; margin: 4px 0 14px; }
 .cvbar span { display: block; height: 100%; width: 0; background: currentColor; border-radius: 99px; transition: width .6s; }
@@ -331,6 +332,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="newrow"><input type="text" class="name" id="nname" placeholder="Their name"><input type="text" class="name" id="nmail" placeholder="Their email (optional)" inputmode="email"><button class="btn primary" id="ninvite" type="button">Invite</button></div>
         <ul class="mem" id="mem"></ul>
       </section>
+      <section class="card" data-tab="members">
+        <div class="kicker">Households</div>
+        <h2>Who <em>lives together</em></h2>
+        <p class="stat">Everyone in a household can send films to, and work, any Fire TV signed in by one of them (Play on the TV). Members not in a household see only their own TVs.</p>
+        <div id="hhlist"><p class="stat">Looking…</p></div>
+        <div class="state"><button class="btn" id="hhadd" type="button">Add a household</button><button class="btn primary" id="hhsave" type="button" disabled>Save</button></div>
+      </section>
       <div hidden><h2 id="dlhead"></h2><p id="dlsay"></p><ul id="changes"></ul></div>   <!-- (the draft's changes, read for Updates above; the card itself gone: John, 9 Nov 2026) -->
       <section class="card" data-tab="updates">
         <div class="kicker">Update from the Mac</div>
@@ -475,7 +483,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   var MEM = [];
   function members(list) {
     (list ? Promise.resolve({ members: list }) : g('admin', { op: 'list' })).then(function (j) {
-      MEM = j.members;
+      MEM = j.members; hhDraw();   // (the households' ticks, by these members)
       var signed = MEM.filter(function (m) { return m.devices; }).length;
       $('#memhead').innerHTML = MEM.length + ' members <em>· ' + signed + ' signed in</em>';
       $('#mem').innerHTML = MEM.map(function (m) {
@@ -917,6 +925,37 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     }).catch(function (e) { b.disabled = false; b.textContent = 'Look at the library'; toast(e.message); });
   };
 
+  // ---- households: who lives together, so they share their Fire TVs (John, 11 Nov 2026: "Camilla and I share a house but the tv is
+  // signed in as me and we are both members")
+  var HH = null;
+  var uidOf = function (m) { return m.owner ? 'owner' : 'g:' + m.id; };
+  function hhDraw() {
+    var el = $('#hhlist'); if (!el) return;
+    if (!GW) { el.innerHTML = '<p class="stat">The Mac mini isn’t answering.</p>'; return; }
+    if (!HH || !MEM) { el.innerHTML = '<p class="stat">Looking…</p>'; return; }
+    el.innerHTML = HH.length ? HH.map(function (h, i) {
+      return '<div class="hh"><input class="name" data-hn="' + i + '" value="' + esc(h.name) + '" aria-label="The household’s name"><div class="hhm">' +
+        MEM.map(function (m) { var u = uidOf(m); return '<label><input type="checkbox" data-hi="' + i + '" value="' + esc(u) + '"' + (h.members.indexOf(u) >= 0 ? ' checked' : '') + '> ' + esc(m.name) + '</label>'; }).join('') +
+        '</div><button class="btn small" data-hdel="' + i + '" type="button">Remove this household</button></div>';
+    }).join('') : '<p class="stat">None yet.</p>';
+    Array.prototype.forEach.call(el.querySelectorAll('[data-hn]'), function (x) { x.oninput = function () { HH[+x.dataset.hn].name = x.value; $('#hhsave').disabled = false; }; });
+    Array.prototype.forEach.call(el.querySelectorAll('[data-hi]'), function (x) { x.onchange = function () { var h = HH[+x.dataset.hi], u = x.value; h.members = h.members.filter(function (y) { return y !== u; }); if (x.checked) h.members.push(u); $('#hhsave').disabled = false; }; });
+    Array.prototype.forEach.call(el.querySelectorAll('[data-hdel]'), function (x) { x.onclick = function () { HH.splice(+x.dataset.hdel, 1); $('#hhsave').disabled = false; hhDraw(); }; });
+  }
+  function hhLoad() {
+    if (!GW) return hhDraw();
+    fetch(GW + '/api/households', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (r.status === 404) throw new Error('old'); if (!r.ok) throw 0; return r.json(); })
+      .then(function (j) { HH = j.households || []; hhDraw(); })
+      .catch(function (e) { $('#hhlist').innerHTML = '<p class="stat">' + (e && e.message === 'old' ? 'Update the Mac (Update everything) to set households here.' : 'The Mac mini isn’t answering.') + '</p>'; });
+  }
+  $('#hhadd').onclick = function () { if (!HH) return; HH.push({ name: HH.length ? 'Household ' + (HH.length + 1) : 'Home', members: [] }); $('#hhsave').disabled = false; hhDraw(); };
+  $('#hhsave').onclick = function () {
+    var b = this; b.disabled = true;
+    fetch(GW + '/api/households', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ households: HH }) })
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { HH = j.households || []; hhDraw(); toast('Households saved'); })
+      .catch(function () { b.disabled = false; toast('The Mac mini isn’t answering.'); });
+  };
+
   // ---- the 8am email, as it goes out (the latest film already shown), and a copy to John
   $('#mailsee').onclick = function () {
     var b = this; b.disabled = true;
@@ -1314,7 +1353,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     fetch('/grifflix/config.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (c) {
       var gw = String(c.gateway || '').replace(/\/$/, ''), t0 = Date.now();
       if (!gw) { $('#machead').textContent = 'Not connected'; return; }
-      GW = gw; convert(); software(); dlLook(); originals().then(orLine).catch(function () {});
+      GW = gw; convert(); software(); dlLook(); hhLoad(); originals().then(orLine).catch(function () {});
       return fetch(gw + '/api/me', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (me) {
         var L = me.libraries || {};
         $('#machead').innerHTML = 'Answering <em>(' + (Date.now() - t0) + ' ms)</em>';

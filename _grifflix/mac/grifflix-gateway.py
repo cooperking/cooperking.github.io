@@ -912,6 +912,29 @@ def make_handler(g):
                     break
             self.send_json(200, {'films': rows})
 
+        def api_households(self, me, user, q, b):
+            """John's: who lives together (John, 11 Nov 2026: "Camilla and I share a house but the tv is signed in as me"): everyone in a
+            household sees and works each other's TVs. GET lists them; POST {households: [{name, members: [uid]}]} keeps them."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            if b:
+                hh = []
+                for h in (b.get('households') or [])[:20]:
+                    ms = sorted(set(str(m) for m in (h.get('members') or []) if re.match(r'^(owner|g:[\w-]{1,64}|n:.{1,60})$', str(m))))
+                    if ms:
+                        hh.append({'name': str(h.get('name') or 'Home').strip()[:40] or 'Home', 'members': ms})
+                with g.store.lock:
+                    g.store.d['households'] = hh
+                    g.store.touch()
+            return self.send_json(200, {'households': g.store.d.get('households') or []})
+
+        def housemates(self, uid):   # (the member and everyone in a household with them)
+            out = {uid}
+            for h in g.store.d.get('households') or []:
+                if uid in h.get('members', []):
+                    out.update(h['members'])
+            return out
+
         def api_tvhere(self, me, user, q, b):
             """A Fire TV with Grifflix open: says it's there (and what it's playing), and waits up to 20 seconds for its phone's word."""
             dev = str(b.get('dev') or '')
@@ -933,9 +956,10 @@ def make_handler(g):
         def api_tvs(self, me, user, q, b):
             """The member's Fire TVs with Grifflix open just now, and what each is playing."""
             now = time.time()
+            mates = self.housemates(me['uid'])   # (the household's TVs too: John, 11 Nov 2026)
             with TVC:
                 tvs = [{'dev': d, 'name': t.get('name'), 'state': t.get('state'), 'ago': round(now - t.get('at', now))}
-                       for d, t in (TVS.get(me['uid']) or {}).items() if now - t.get('seen', 0) < 45]
+                       for u in mates for d, t in (TVS.get(u) or {}).items() if now - t.get('seen', 0) < 45]
             return self.send_json(200, {'tvs': tvs})
 
         def api_tvsend(self, me, user, q, b):
@@ -954,8 +978,9 @@ def make_handler(g):
                         c[k] = float(b[k])
                     except (TypeError, ValueError):
                         pass
+            mates = self.housemates(me['uid'])
             with TVC:
-                t = (TVS.get(me['uid']) or {}).get(dev)
+                t = next((TVS[u][dev] for u in mates if dev in (TVS.get(u) or {})), None)
                 if not t or time.time() - t.get('seen', 0) > 45:
                     return self.send_json(404, {'error': 'That TV isn’t on Grifflix just now: open Grifflix on it.'})
                 t['q'] = (t['q'] + [c])[-10:]
