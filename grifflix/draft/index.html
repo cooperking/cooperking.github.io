@@ -857,7 +857,7 @@ html[data-theme=globe], html[data-theme=globe] body { background: #0b0b0b url("/
 html[data-theme=globe] .gbase, html[data-theme=globe] .gpile { display: none; }   /* (no stand, no heap of snow at the foot: John, 11 Nov 2026) */
 html[data-theme=globe] .globe { box-shadow: none; }
 html[data-theme=globe] .hinfo { width: max-content; max-width: min(600px, 44vw); padding: 22px 28px 18px; margin: 0 0 -18px -28px; background: rgba(6, 6, 6, .84); box-shadow: 0 10px 30px rgba(0, 0, 0, .45); }   /* (the words on black, clear of the sleeve) */
-html.mob.mob[data-theme=globe] .hinfo.hinfo { max-width: none; width: auto; margin: 0; padding: 12px 14px; top: auto !important; bottom: calc(var(--mbh, 106px) + 30px + env(safe-area-inset-bottom)) !important; }   /* (a phone: under the hand, above the day buttons) */   /* (Kane's main title: outlined capitals) */
+html.mob.mob[data-theme=globe] .hinfo.hinfo { max-width: none; width: auto; margin: 0; padding: 12px 14px; top: auto !important; bottom: calc(84px + env(safe-area-inset-bottom)) !important; }   /* (a phone: under the hand, above the day buttons) */   /* (Kane's main title: outlined capitals) */
 html[data-theme=pinboard] .string polyline { stroke: #cf424b; }   /* (the UK one-sheet's red) */
 html[data-theme=pinboard] .th-pinboard .vday::before { background: #cf424b; }
 html[data-theme=pinboard] .hinfo h2 { color: #cf424b; }
@@ -1275,11 +1275,20 @@ html.mob .tinspo b { display: block; font: 600 11px/1.5 var(--kfont); letter-spa
 html.mob .hinfo .w { font-size: 40px !important; } html.mob .hinfo h2 { display: block !important; margin: 10px 0 4px; font-size: 23px !important; -webkit-line-clamp: 2; } html.mob .hinfo .k { margin-top: 6px; font-size: 10px !important; letter-spacing: .24em; } html.mob .hinfo .y { font-size: 15px; } html.mob .hinfo .n { display: none !important; }
 html.mob .tmonth, html.mob.hall .tmonth, html.mob.table .tmonth { left: 70px; right: 70px; bottom: calc(84px + env(safe-area-inset-bottom)); text-align: center; font-size: 10px; letter-spacing: .3em; }
 html.mob .tinspo, html.mob.hall .tinspo, html.mob.table .tinspo { position: fixed; left: 16px; right: 16px; top: max(66px, calc(env(safe-area-inset-top) + 64px)); bottom: auto; max-width: none; display: block; padding: 6px 0 0; border-top: 1px solid rgba(var(--kink), .25); text-align: left; font-size: 13px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 26; }
-.mobnav { position: fixed; left: 12px; right: 12px; bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 8px; pointer-events: none; z-index: 27; }
-.mobnav .mbrow { display: flex; align-items: center; justify-content: space-between; }   /* the day buttons, then the month buttons under them */
+.mobnav { position: fixed; left: 12px; right: 12px; bottom: calc(10px + env(safe-area-inset-bottom)); align-items: center; display: flex; justify-content: space-between; pointer-events: none; z-index: 27; }
 .mobnav .pill { pointer-events: auto; min-height: 44px; padding: 0 14px; justify-content: center; }
 .mobnav .pill:disabled { visibility: hidden; }
 .mobnav .mbhint { font: 500 10px/1 var(--kfont); letter-spacing: .2em; text-transform: uppercase; color: var(--fg-2); }
+/* the month before and after, under "or swipe", in the row's own height, as wide as the day buttons leave */
+.mobnav .mbmid { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.mobnav .mbmon { display: flex; gap: 4px; }
+.mobnav .mbm { pointer-events: auto; min-height: 26px; padding: 0 7px; border: 1px solid rgba(var(--kink), .45); background: none; color: var(--fg); font: 500 10px/1 var(--kfont); letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; cursor: pointer; }
+.mobnav .mbm:disabled { visibility: hidden; }
+.mobnav .mbhint { white-space: nowrap; }
+/* a narrow phone: the day buttons' letters closer, a step at a time, till the month buttons fit between them (mobnavFit) */
+.mobnav.fit1 .pill { padding: 0 10px; letter-spacing: .16em !important; }
+.mobnav.fit2 .pill { padding: 0 8px; letter-spacing: .08em !important; } .mobnav.fit2 .mbm { padding: 0 5px; letter-spacing: .06em; } .mobnav.fit2 .mbhint { letter-spacing: .1em; }
+.mobnav.fit3 .pill { padding: 0 6px; letter-spacing: .02em !important; } .mobnav.fit3 .mbm { padding: 0 4px; letter-spacing: 0; } .mobnav.fit3 .mbhint { letter-spacing: .04em; }
 html.mob #cal .vday, html.mob #cal .hday, html.mob #cal .tday { transition-duration: .3s !important; }   /* (a phone: a day's move quick, its picture at once) */
 html.mob .triallabel { top: 4px; bottom: auto; font-size: 9px; padding: 3px 8px; }
 html.table #main.homeview .side { display: none; }
@@ -1767,7 +1776,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'c35318e7124a' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'c606128bebe0' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2750,18 +2759,8 @@ function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 w
     return;
   }
   var vw = document.documentElement.clientWidth || innerWidth, vh = document.documentElement.clientHeight || innerHeight;
-  var sa = themeFit.sa || (themeFit.sa = (function () { var p = document.createElement('div'); p.style.cssText = 'position:fixed;top:0;height:0;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)'; document.body.appendChild(p); var t = parseFloat(getComputedStyle(p).paddingTop) || 0, b = parseFloat(getComputedStyle(p).paddingBottom) || 0; p.remove(); return { t: t, b: b }; })());
-  // this phone's own heights: the day's words at their tallest (a two-line title), and the day and month buttons under them
-  var inf = $('#hinfo'), infoH = 0, nav = $('#cal .mobnav'), navH = nav ? nav.getBoundingClientRect().height : 0;
-  if (inf) {
-    var pr = inf.cloneNode(false); pr.removeAttribute('id'); pr.style.visibility = 'hidden'; pr.style.pointerEvents = 'none';
-    pr.innerHTML = '<div class="w">' + leafOf(new Date('2026-09-30T12:00')) + '<span data-t="Wednesday">Wednesday</span></div><div class="k">30 September 2026 · Movie of the Day</div><h2>The Assassination of Jesse James by the Coward Robert Ford</h2><div class="y">2007 · 160 minutes</div>';
-    c.appendChild(pr); infoH = pr.getBoundingClientRect().height + 6; pr.remove();
-  }
-  c.style.setProperty('--mbh', Math.round(navH + 10) + 'px');
-  var foot = infoH + 12 + navH + 10 + sa.b;
-  var k = Math.min(vw / 780, (vh - 112 - Math.max(0, sa.t - 2) - foot) / 890), off = (vw - 780 * k) / 2;   // (the theme's 890 high, as large as fits over the day's words and the buttons)
-  if (document.fonts && document.fonts.status !== 'loaded' && !themeFit.fw) { themeFit.fw = 1; document.fonts.ready.then(function () { themeFit.fw = 0; if (MOB()) themeFit(m); }); }
+  var sa = themeFit.sa || (themeFit.sa = (function () { var p = document.createElement('div'); p.style.cssText = 'position:fixed;top:0;height:0;padding-top:env(safe-area-inset-top)'; document.body.appendChild(p); var h = p.offsetHeight; p.remove(); return { t: h }; })());
+  var k = Math.min(vw / 780, (vh - 112 - Math.max(0, sa.t - 2) - 224) / 890), off = (vw - 780 * k) / 2;   // (the theme's 890 high, the day's words and the foot under it)
   v.style.width = '780px'; v.style.height = '890px'; v.style.transform = 'translateX(' + off.toFixed(1) + 'px) scale(' + k.toFixed(4) + ')';
   c.style.setProperty('--vk', k.toFixed(4));
 }
@@ -2826,8 +2825,10 @@ function themeCaption(m) {   // a small caption under the month: the film the th
   if (!LIB && !PUBLIC) library().then(function () { var c = $('#tinspo'); if (c && themeFilm(t)) c.outerHTML = themeCaption(m); wireCaption(); }).catch(function () {});
   setTimeout(wireCaption, 0);
   var ms = S.calData ? monthsOf(S.calData.days) : [], mi = ms.indexOf(S.month), mn = function (k) { return k ? MONTHS[+k.slice(5, 7) - 1] : ''; };
-  var nav = MOB() ? '<div class="mobnav"><div class="mbrow"><button class="pill" id="mbprev" aria-label="The day before">‹ Day before</button><span class="mbhint">or swipe</span><button class="pill" id="mbnext" aria-label="The day after">Day after ›</button></div>' +
-    '<div class="mbrow"><button class="pill" id="mbmprev" aria-label="The month before"' + (mi > 0 ? '' : ' disabled') + '>‹ ' + mn(ms[mi - 1]).slice(0, 3) + '</button><span class="mbhint">' + mn(S.month) + '</span><button class="pill" id="mbmnext" aria-label="The month after"' + (mi >= 0 && mi < ms.length - 1 ? '' : ' disabled') + '>' + mn(ms[mi + 1]).slice(0, 3) + ' ›</button></div></div>' : '';
+  var nav = MOB() ? '<div class="mobnav"><button class="pill" id="mbprev" aria-label="The day before">‹ Day before</button>' +
+    '<span class="mbmid"><span class="mbhint">or swipe</span><span class="mbmon"><button class="mbm" id="mbmprev" aria-label="The month before"' + (mi > 0 ? '' : ' disabled') + '>‹ ' + mn(ms[mi - 1]).slice(0, 3) + '</button>' +
+    '<button class="mbm" id="mbmnext" aria-label="The month after"' + (mi >= 0 && mi < ms.length - 1 ? '' : ' disabled') + '>' + mn(ms[mi + 1]).slice(0, 3) + ' ›</button></span></span>' +
+    '<button class="pill" id="mbnext" aria-label="The day after">Day after ›</button></div>' : '';
   var sh = '<button class="ico tshare" id="tshare" aria-label="Share this month’s theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button>';
   return (id ? '<button class="tinspo link" id="tinspo" data-fid="' + id + '">' + txt + ' ›</button>' : '<div class="tinspo" id="tinspo">' + txt + '</div>') + sh + nav;
 }
@@ -2841,10 +2842,21 @@ function wireCap(root, step) {
   $$(root + ' .tcarr').forEach(function (b) { b.onclick = function () { step(+b.dataset.cap); }; });
   var c = $(root + ' .tctx.link'); if (c) c.onclick = function () { api('item?id=' + c.dataset.fid).then(function (it) { if (it && it.id) itemSheet(it); }).catch(function () { toast('That film isn’t there just now.'); }); };
 }
+function mobnavFit() {   // a phone's day and month buttons fitted to its width: the fewest steps that let the month buttons and "or swipe" fit between the day buttons
+  $$('.mobnav').forEach(function (n) {
+    var mid = n.querySelector('.mbmid'), mon = n.querySelector('.mbmon'), hint = n.querySelector('.mbhint'); if (!mid) return;
+    n.classList.remove('fit1', 'fit2', 'fit3');
+    var fits = function () { var w = mid.getBoundingClientRect().width; return mon.getBoundingClientRect().width <= w && hint.getBoundingClientRect().width <= w; };
+    ['fit1', 'fit2', 'fit3'].some(function (c) { if (fits()) return true; n.classList.add(c); return false; });
+  });
+}
+addEventListener('resize', function () { if (MOB()) mobnavFit(); });
+if (document.fonts) document.fonts.ready.then(function () { if (MOB()) mobnavFit(); });
 function wireCaption() {
   var ts = $('#tshare'); if (ts && !ts.onclick) ts.onclick = function () { shareMonth(S.month); };
   var bp = $('#mbprev'), bn = $('#mbnext'); if (bp && !bp.onclick) { bp.onclick = function () { themeStep(-1); }; bn.onclick = function () { themeStep(1); }; }
   var mp = $('#mbmprev'), mx = $('#mbmnext'); if (mp && !mp.onclick) { mp.onclick = function () { themeMonth(-1); }; mx.onclick = function () { themeMonth(1); }; }
+  mobnavFit();
   var c = $('#tinspo.link'); if (c && !c.onclick) c.onclick = function () { api('item?id=' + c.dataset.fid).then(function (it) { if (it && it.id) itemSheet(it); }).catch(function () { toast('That film isn’t there just now.'); }); }; }
 // the months' themes: each lays out the month's days its own way (place: where each day stands, at any point between
 // one day and the next, so the theme can follow a finger); right and left on a remote step through the days, on into
