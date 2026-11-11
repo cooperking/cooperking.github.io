@@ -1718,13 +1718,26 @@ html.phone .vtog span { padding: 6px 8px 5px; letter-spacing: .13em; text-indent
 /* (narrower still: a phone set to show pages larger (Safari's text size, a phone's larger display), or the very smallest: the switch two
    small pictures, a calendar and a strip of film, so the profile is never pushed off the edge: John, 11 Nov 2026: "A user with a smaller
    phone can't see their profile because the mute button covers it") */
-@media (max-width: 339px) {
+@media (max-width: 389px) {
   html .bar-top #barnav { flex: 0 1 auto; min-width: 0; }
   html .bar-top .vtog span { width: 30px; height: 24px; padding: 0 !important; font-size: 0 !important; letter-spacing: 0 !important; text-indent: 0 !important; }
   html .bar-top .vtog span::after { content: ""; position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='5' width='18' height='16'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='5' width='18' height='16'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat; }
   html .bar-top .vtog span:last-child::after { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='4' width='18' height='16'/%3E%3Cpath d='M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='4' width='18' height='16'/%3E%3Cpath d='M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4'/%3E%3C/svg%3E"); }
   html .bar-top .ico[data-go="profile"], html .bar-top #who, html .bar-top .tmute { flex: none; }
   html .bar-top .brand, html.phone .bar-top .brand { font-size: 10px !important; letter-spacing: .1em !important; }
+}
+/* (signed in, the bar has Search too: on a phone a magnifying glass, so it fits beside the switch, the music and the profile (John, 11 Nov
+   2026, a photo: "Profile still blocked by mute button"; it was SEARCH in words that pushed it off)) */
+@media (max-width: 600px) {
+  html #barnav button[data-nv="search"] { position: relative; width: 28px; height: 28px; padding: 0 !important; font-size: 0 !important; letter-spacing: 0 !important; flex: none; }
+  html #barnav button[data-nv="search"]::after { content: ""; position: absolute; left: 50%; top: 50%; width: 17px; height: 17px; margin: -8.5px 0 0 -8.5px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E") center / contain no-repeat; }
+  html #barnav button[data-nv="search"].on { text-decoration: none; } html #barnav button[data-nv="search"].on::after { opacity: 1; }
+  html.phone #barnav { gap: 8px !important; }
+}
+@media (max-width: 600px) { html .bar-top .drafttag { flex: none; width: 9px; height: 9px; min-height: 0; padding: 0; font-size: 0; border-radius: 50%; margin: 0 0 0 2px !important; } }   /* (the draft's tag a dot on any phone) */
+@media (max-width: 430px) {   /* (a phone: no separate home (the switch does it), GRIFFLIX a little smaller, so all of it fits signed in) */
+  html .bar-top .homeic { display: none !important; }
+  html .bar-top .brand, html.phone .bar-top .brand { font-size: 11px !important; letter-spacing: .16em !important; }
 }
 @media (max-width: 374px) {
   html .bar-top .brand, html.phone .bar-top .brand { font-size: 11px !important; letter-spacing: .14em !important; }
