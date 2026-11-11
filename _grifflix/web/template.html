@@ -1715,6 +1715,17 @@ html.phone .vtog span { padding: 6px 8px 5px; letter-spacing: .13em; text-indent
   html .bar-top .drafttag { flex: none; width: 9px; height: 9px; min-height: 0; padding: 0; font-size: 0; border-radius: 50%; margin: 0 0 0 2px !important; }
   html.phone .bar-top .ico, html.tview.hall .bar-top .ico.tmute, html.tview.table .bar-top .ico.tmute { width: 28px !important; padding: 0 !important; }
 }
+/* (narrower still: a phone set to show pages larger (Safari's text size, a phone's larger display), or the very smallest: the switch two
+   small pictures, a calendar and a strip of film, so the profile is never pushed off the edge: John, 11 Nov 2026: "A user with a smaller
+   phone can't see their profile because the mute button covers it") */
+@media (max-width: 339px) {
+  html .bar-top #barnav { flex: 0 1 auto; min-width: 0; }
+  html .bar-top .vtog span { width: 30px; height: 24px; padding: 0 !important; font-size: 0 !important; letter-spacing: 0 !important; text-indent: 0 !important; }
+  html .bar-top .vtog span::after { content: ""; position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='5' width='18' height='16'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='5' width='18' height='16'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat; }
+  html .bar-top .vtog span:last-child::after { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='4' width='18' height='16'/%3E%3Cpath d='M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='4' width='18' height='16'/%3E%3Cpath d='M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4'/%3E%3C/svg%3E"); }
+  html .bar-top .ico[data-go="profile"], html .bar-top #who, html .bar-top .tmute { flex: none; }
+  html .bar-top .brand, html.phone .bar-top .brand { font-size: 10px !important; letter-spacing: .1em !important; }
+}
 @media (max-width: 374px) {
   html .bar-top .brand, html.phone .bar-top .brand { font-size: 11px !important; letter-spacing: .14em !important; }
   html .bar-top .homeic { display: none !important; }
