@@ -162,6 +162,21 @@ def probe(ffprobe, path):
     return json.loads(r.stdout or '{}')
 
 
+def brief(info, path):
+    """A file in a few words, for the admin page: its picture's format and size, its rate and how big it is (John, 11 Nov 2026:
+    "what was the original and what was it converted to?")"""
+    v = next((x for x in info.get('streams') or [] if x.get('codec_type') == 'video' and not (x.get('disposition') or {}).get('attached_pic')), {})
+    fmt = info.get('format') or {}
+    vc = (v.get('codec_name') or '?').replace('h264', 'H.264').replace('hevc', 'HEVC').replace('mpeg4', 'MPEG-4 (XviD/DivX)').replace('mpeg2video', 'MPEG-2').replace('vc1', 'VC-1')
+    if '10' in (v.get('pix_fmt') or '') or '10' in (v.get('profile') or ''):
+        vc += ' 10-bit'
+    try:
+        gb = os.path.getsize(path) / 1e9
+    except OSError:
+        gb = 0
+    return {'v': vc, 'w': v.get('width') or 0, 'h': v.get('height') or 0, 'mbps': round(float(fmt.get('bit_rate') or 0) / 1e6, 1), 'gb': round(gb, 1)}
+
+
 def watching():
     try:
         return any(g(x, 'NowPlayingItem') for x in call('GET', '/Sessions') or [])
@@ -271,7 +286,8 @@ def convert(item, ffmpeg, ffprobe, st):
     shutil.move(tmp, dst)   # (the same drive: a rename)
     mins = (time.time() - t0) / 60
     log('  done in %d min: %.1f GB → %.1f GB; original kept in %s' % (mins, item['gb'], os.path.getsize(dst) / 1e9, os.path.dirname(keep_at)))
-    st['done'][item['id']] = {'name': item['name'], 'from': src, 'to': dst, 'kept': keep_at, 'at': int(time.time()), 'mins': round(mins)}
+    st['done'][item['id']] = {'name': item['name'], 'from': src, 'to': dst, 'kept': keep_at, 'at': int(time.time()), 'mins': round(mins),
+                              'why': item['why'], 'before': brief(info, keep_at), 'after': brief(probe(ffprobe, dst), dst)}
     if dst != src:   # a new name: Jellyfin will make it a new item; noted, so everything follows it once it's seen
         try:   # (when it was first added: the new item keeps it, so a converted film isn't "new")
             added = g(call('GET', '/Users/%s/Items/%s' % (s['jf_user_id'], item['id'])) or {}, 'DateCreated')
@@ -404,6 +420,7 @@ RUN['total'] = len(items)
 follow_up(st)
 for n, it in enumerate(items):
     RUN['n'] = n
+    RUN['next'] = [{'name': x['name'], 'why': x['why'], 'gb': x['gb'], 'mins': x['mins']} for x in items[n:n + 12]]   # (what's coming, for the admin page)
     if not night():
         log('waiting for %d am' % NIGHT[0])
         while not night():
