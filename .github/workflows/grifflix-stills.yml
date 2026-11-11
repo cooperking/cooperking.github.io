@@ -41,9 +41,10 @@ jobs:
       - name: Tools
         run: |
           pip install --quiet playwright boto3
-          # (Ubuntu's download servers are sometimes briefly out of reach from GitHub's machines: tried again after a pause, and
-          # if still out of reach, the browser alone, as the machine already has nearly all it needs)
-          python -m playwright install --with-deps chromium || { sleep 60; python -m playwright install --with-deps chromium; } || python -m playwright install chromium
+          # (the browser's extras from Ubuntu's servers, which are sometimes out of reach from GitHub's machines: given at most
+          # two and a half minutes, then on without them, as the machine already has nearly all it needs; then the browser itself)
+          timeout 150 python -m playwright install-deps chromium || echo "Ubuntu's servers out of reach: on without the extras"
+          python -m playwright install chromium
       - name: Draw
         env:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
