@@ -1889,7 +1889,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'dc27cb203ceb' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '76c021d7fc05' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5329,7 +5329,7 @@ function profile() {
   if (PUBLIC) return signInSheet();
   if (!ME) return;
   if (TV) {   // the TV: who's signed in and Sign out, nothing else (John, 8 Nov 2026)
-    openSheet('<div class="form tvprof" style="position:relative">' + X + '<p class="profp tvwho">Signed in as <b>' + esc(ME.name || 'you') + '</b></p><div class="acts"><button class="pill" id="tvlead">Play the 3 2 1</button><button class="pill on" id="signout">Sign out</button></div></div>');
+    openSheet('<div class="form tvprof" style="position:relative">' + X + '<p class="profp tvwho">Signed in as <b>' + esc(ME.name || 'you') + '</b>' + codecLine() + '</p><div class="acts"><button class="pill" id="tvlead">Play the 3 2 1</button><button class="pill on" id="signout">Sign out</button></div></div>');
     $('#tvlead').onclick = function () { closeSheet(); window.ZLED = 0; THEMEFX.picture.leader(true); };   // (John, 9 Nov 2026: "how can I get the firestick to reload the 3 2 1")
     var so = $('#signout'); so.onclick = function () {
       if (!so.dataset.sure) { so.dataset.sure = 1; so.textContent = 'Press again to sign out'; return; }
