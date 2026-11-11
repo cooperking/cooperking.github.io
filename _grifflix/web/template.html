@@ -857,7 +857,7 @@ html[data-theme=globe], html[data-theme=globe] body { background: #0b0b0b url("/
 html[data-theme=globe] .gbase, html[data-theme=globe] .gpile { display: none; }   /* (no stand, no heap of snow at the foot: John, 11 Nov 2026) */
 html[data-theme=globe] .globe { box-shadow: none; }
 html[data-theme=globe] .hinfo { width: max-content; max-width: min(600px, 44vw); padding: 22px 28px 18px; margin: 0 0 -18px -28px; background: rgba(6, 6, 6, .84); box-shadow: 0 10px 30px rgba(0, 0, 0, .45); }   /* (the words on black, clear of the sleeve) */
-html.mob.mob[data-theme=globe] .hinfo.hinfo { max-width: none; width: auto; margin: 0; padding: 12px 14px; top: auto !important; bottom: calc(84px + env(safe-area-inset-bottom)) !important; }   /* (a phone: under the hand, above the day buttons) */   /* (Kane's main title: outlined capitals) */
+html.mob.mob[data-theme=globe] .hinfo.hinfo { max-width: none; width: auto; margin: 0; padding: 12px 14px; top: auto !important; bottom: calc(var(--mbh, 106px) + 30px + env(safe-area-inset-bottom)) !important; }   /* (a phone: under the hand, above the day buttons) */   /* (Kane's main title: outlined capitals) */
 html[data-theme=pinboard] .string polyline { stroke: #cf424b; }   /* (the UK one-sheet's red) */
 html[data-theme=pinboard] .th-pinboard .vday::before { background: #cf424b; }
 html[data-theme=pinboard] .hinfo h2 { color: #cf424b; }
@@ -946,7 +946,8 @@ html.phone #sheet:has(.tcal) .tcal { padding-top: calc(env(safe-area-inset-top) 
 html.phone #sheetIn > .form:not(.tcal) { padding-top: calc(env(safe-area-inset-top) + 76px) !important; }   /* (a phone: the logo its own strip above a pop-up's words) */
 #shbrand { text-shadow: 0 1px 6px rgba(0, 0, 0, .35); }
 /* the home-screen app draws under the clock: pages that scroll (not the full-screen themes) start below it */
-html:not(.hall):not(.table) body { padding-top: env(safe-area-inset-top); }
+html:not(.hall):not(.table) .wrap { padding-top: max(14px, calc(env(safe-area-inset-top) + 12px)); }   /* the bar where the full-screen themes put it */
+html.phone:not(.hall):not(.table) .bar-top { top: max(14px, calc(env(safe-area-inset-top) + 12px)); }
 /* the rows in Search's pop-up: above the shelves */
 #bgrid .nowrows { margin: 6px 0 0; }
 #bgrid .nowrows .row { margin: 0 0 22px; }
@@ -1270,8 +1271,10 @@ html.mob .tinspo b { display: block; font: 600 11px/1.5 var(--kfont); letter-spa
 html.mob .hinfo .w { font-size: 40px !important; } html.mob .hinfo h2 { display: block !important; margin: 10px 0 4px; font-size: 23px !important; -webkit-line-clamp: 2; } html.mob .hinfo .k { margin-top: 6px; font-size: 10px !important; letter-spacing: .24em; } html.mob .hinfo .y { font-size: 15px; } html.mob .hinfo .n { display: none !important; }
 html.mob .tmonth, html.mob.hall .tmonth, html.mob.table .tmonth { left: 70px; right: 70px; bottom: calc(84px + env(safe-area-inset-bottom)); text-align: center; font-size: 10px; letter-spacing: .3em; }
 html.mob .tinspo, html.mob.hall .tinspo, html.mob.table .tinspo { position: fixed; left: 16px; right: 16px; top: max(66px, calc(env(safe-area-inset-top) + 64px)); bottom: auto; max-width: none; display: block; padding: 6px 0 0; border-top: 1px solid rgba(var(--kink), .25); text-align: left; font-size: 13px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 26; }
-.mobnav { position: fixed; left: 12px; right: 12px; bottom: calc(10px + env(safe-area-inset-bottom)); align-items: center; display: flex; justify-content: space-between; pointer-events: none; z-index: 27; }
+.mobnav { position: fixed; left: 12px; right: 12px; bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 8px; pointer-events: none; z-index: 27; }
+.mobnav .mbrow { display: flex; align-items: center; justify-content: space-between; }   /* the day buttons, then the month buttons under them */
 .mobnav .pill { pointer-events: auto; min-height: 44px; padding: 0 14px; justify-content: center; }
+.mobnav .pill:disabled { visibility: hidden; }
 .mobnav .mbhint { font: 500 10px/1 var(--kfont); letter-spacing: .2em; text-transform: uppercase; color: var(--fg-2); }
 html.mob #cal .vday, html.mob #cal .hday, html.mob #cal .tday { transition-duration: .3s !important; }   /* (a phone: a day's move quick, its picture at once) */
 html.mob .triallabel { top: 4px; bottom: auto; font-size: 9px; padding: 3px 8px; }
@@ -1851,7 +1854,11 @@ function getJSON(u, tries) {   // the site's files, tried again a few times: whi
   tries = tries == null ? 5 : tries;
   return getJSON1(u).catch(function (e) { if (tries <= 0) throw e; return new Promise(function (ok) { setTimeout(ok, 2000 * (6 - tries)); }).then(function () { return getJSON(u, tries - 1); }); });
 }
-function getJSON1(u) { return fetch(u, { cache: 'no-cache' }).then(function (r) { if (!r.ok) { var e = new Error('Grifflix’s films aren’t on the site yet: John’s Update puts them there.'); e.status = r.status; throw e; } return r.json(); }); }
+function getJSON1(u) {   // one try, given up after 30 seconds without an answer, so getJSON tries again
+  var ac = window.AbortController ? new AbortController() : null, tm = ac ? setTimeout(function () { ac.abort(); }, 30000) : 0;
+  return fetch(u, ac ? { cache: 'no-cache', signal: ac.signal } : { cache: 'no-cache' }).then(function (r) { if (!r.ok) { var e = new Error('Grifflix’s films aren’t on the site yet: John’s Update puts them there.'); e.status = r.status; throw e; } return r.json(); })
+    .then(function (j) { clearTimeout(tm); return j; }, function (e) { clearTimeout(tm); throw e; });
+}
 function library() {
   if (!LIBP) LIBP = getJSON(DATA + 'library.json').then(function (L) {
     var tag = function (it) { land(it); var t = it.tags || {}; if (it.poster && t.poster) PICTAG[it.poster + 'Primary'] = t.poster; if (it.backdrop && t.backdrop) PICTAG[it.backdrop + 'Backdrop'] = t.backdrop; if (it.thumb && t.thumb) PICTAG[it.thumb + 'Thumb'] = t.thumb; };
@@ -2737,8 +2744,18 @@ function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 w
     return;
   }
   var vw = document.documentElement.clientWidth || innerWidth, vh = document.documentElement.clientHeight || innerHeight;
-  var sa = themeFit.sa || (themeFit.sa = (function () { var p = document.createElement('div'); p.style.cssText = 'position:fixed;top:0;height:0;padding-top:env(safe-area-inset-top)'; document.body.appendChild(p); var h = p.offsetHeight; p.remove(); return { t: h }; })());
-  var k = Math.min(vw / 780, (vh - 112 - Math.max(0, sa.t - 2) - 224) / 890), off = (vw - 780 * k) / 2;   // (the theme's 890 high, the day's words and the foot under it)
+  var sa = themeFit.sa || (themeFit.sa = (function () { var p = document.createElement('div'); p.style.cssText = 'position:fixed;top:0;height:0;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)'; document.body.appendChild(p); var t = parseFloat(getComputedStyle(p).paddingTop) || 0, b = parseFloat(getComputedStyle(p).paddingBottom) || 0; p.remove(); return { t: t, b: b }; })());
+  // this phone's own heights: the day's words at their tallest (a two-line title), and the day and month buttons under them
+  var inf = $('#hinfo'), infoH = 0, nav = $('#cal .mobnav'), navH = nav ? nav.getBoundingClientRect().height : 0;
+  if (inf) {
+    var pr = inf.cloneNode(false); pr.removeAttribute('id'); pr.style.visibility = 'hidden'; pr.style.pointerEvents = 'none';
+    pr.innerHTML = '<div class="w">' + leafOf(new Date('2026-09-30T12:00')) + '<span data-t="Wednesday">Wednesday</span></div><div class="k">30 September 2026 · Movie of the Day</div><h2>The Assassination of Jesse James by the Coward Robert Ford</h2><div class="y">2007 · 160 minutes</div>';
+    c.appendChild(pr); infoH = pr.getBoundingClientRect().height + 6; pr.remove();
+  }
+  c.style.setProperty('--mbh', Math.round(navH + 10) + 'px');
+  var foot = infoH + 12 + navH + 10 + sa.b;
+  var k = Math.min(vw / 780, (vh - 112 - Math.max(0, sa.t - 2) - foot) / 890), off = (vw - 780 * k) / 2;   // (the theme's 890 high, as large as fits over the day's words and the buttons)
+  if (document.fonts && document.fonts.status !== 'loaded' && !themeFit.fw) { themeFit.fw = 1; document.fonts.ready.then(function () { themeFit.fw = 0; if (MOB()) themeFit(m); }); }
   v.style.width = '780px'; v.style.height = '890px'; v.style.transform = 'translateX(' + off.toFixed(1) + 'px) scale(' + k.toFixed(4) + ')';
   c.style.setProperty('--vk', k.toFixed(4));
 }
@@ -2802,7 +2819,9 @@ function themeCaption(m) {   // a small caption under the month: the film the th
   if (!t.film && !MOB()) return '';
   if (!LIB && !PUBLIC) library().then(function () { var c = $('#tinspo'); if (c && themeFilm(t)) c.outerHTML = themeCaption(m); wireCaption(); }).catch(function () {});
   setTimeout(wireCaption, 0);
-  var nav = MOB() ? '<div class="mobnav"><button class="pill" id="mbprev" aria-label="The day before">‹ Day before</button><span class="mbhint">or swipe</span><button class="pill" id="mbnext" aria-label="The day after">Day after ›</button></div>' : '';
+  var ms = S.calData ? monthsOf(S.calData.days) : [], mi = ms.indexOf(S.month), mn = function (k) { return k ? MONTHS[+k.slice(5, 7) - 1] : ''; };
+  var nav = MOB() ? '<div class="mobnav"><div class="mbrow"><button class="pill" id="mbprev" aria-label="The day before">‹ Day before</button><span class="mbhint">or swipe</span><button class="pill" id="mbnext" aria-label="The day after">Day after ›</button></div>' +
+    '<div class="mbrow"><button class="pill" id="mbmprev" aria-label="The month before"' + (mi > 0 ? '' : ' disabled') + '>‹ ' + mn(ms[mi - 1]).slice(0, 3) + '</button><span class="mbhint">' + mn(S.month) + '</span><button class="pill" id="mbmnext" aria-label="The month after"' + (mi >= 0 && mi < ms.length - 1 ? '' : ' disabled') + '>' + mn(ms[mi + 1]).slice(0, 3) + ' ›</button></div></div>' : '';
   var sh = '<button class="ico tshare" id="tshare" aria-label="Share this month’s theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button>';
   return (id ? '<button class="tinspo link" id="tinspo" data-fid="' + id + '">' + txt + ' ›</button>' : '<div class="tinspo" id="tinspo">' + txt + '</div>') + sh + nav;
 }
@@ -2819,6 +2838,7 @@ function wireCap(root, step) {
 function wireCaption() {
   var ts = $('#tshare'); if (ts && !ts.onclick) ts.onclick = function () { shareMonth(S.month); };
   var bp = $('#mbprev'), bn = $('#mbnext'); if (bp && !bp.onclick) { bp.onclick = function () { themeStep(-1); }; bn.onclick = function () { themeStep(1); }; }
+  var mp = $('#mbmprev'), mx = $('#mbmnext'); if (mp && !mp.onclick) { mp.onclick = function () { themeMonth(-1); }; mx.onclick = function () { themeMonth(1); }; }
   var c = $('#tinspo.link'); if (c && !c.onclick) c.onclick = function () { api('item?id=' + c.dataset.fid).then(function (it) { if (it && it.id) itemSheet(it); }).catch(function () { toast('That film isn’t there just now.'); }); }; }
 // the months' themes: each lays out the month's days its own way (place: where each day stands, at any point between
 // one day and the next, so the theme can follow a finger); right and left on a remote step through the days, on into
@@ -3134,6 +3154,15 @@ function themeStep(dir) {   // the day after or before with a film; at a month's
   S.quiet = true; S.step(dir); S.quiet = false; themeFadeIn(dir);
   var own = $$(sel).filter(function (x) { return !x.dataset.om; }), f = (key && $('#cal button[data-day="' + key + '"]')) || (dir > 0 ? own[0] : own[own.length - 1]);
   if (f) { f.focus({ preventScroll: true }); if (MOB() || document.activeElement !== f) themeTurn(f); }
+  return true;
+}
+function themeMonth(dir) {   // the month before or after: its theme, on today in this month, otherwise on its first film's day
+  var C = S.calData, ms = C ? monthsOf(C.days) : [], k = ms[ms.indexOf(S.month) + dir]; if (!k || !S.step) return false;
+  var days = Object.keys(C.days).filter(function (d) { return d.slice(0, 7) === k && !C.days[d].secret; }).sort();
+  var key = days.indexOf(TODAY) >= 0 ? TODAY : days[0];
+  S.crossAt = Date.now(); if (key) S.resumeDay = key;
+  S.quiet = true; S.step(dir); S.quiet = false; themeFadeIn(dir);
+  var f = key && $('#cal button[data-day="' + key + '"]'); if (f) { f.focus({ preventScroll: true }); themeTurn(f); }
   return true;
 }
 // January: the corridor (Kubrick's The Shining): the days down a corridor, coming towards you as you go on
@@ -4905,15 +4934,30 @@ function searchSheet(onPick, title) {
   inp.oninput = function () {
     clearTimeout(t); var q = inp.value.trim();
     if ($('#bsin')) $('#bsin').hidden = q.length >= 2;
-    t = setTimeout(function () {
+    t = setTimeout(function () { look(q); }, 220);
+  };
+  // search answers from the site's list of films (library.json), not the Mac: when that list hasn't come, or fails, the page says so
+  var look = function (q) {
       if (q.length < 2) { $('#sres').innerHTML = ''; return; }
+      var done = false, say = function (msg) {
+        if (done || inp.value.trim() !== q || !$('#sres')) return;
+        $('#sres').innerHTML = '<div class="empty snote" style="margin:10px 0">' + msg + ' <button class="pill" id="sretry">Try again</button></div>';
+        $('#sretry').onclick = function () { if (!LIB) LIBP = null; look(inp.value.trim()); };
+      };
+      var gone = function () { return navigator.onLine === false ? 'Search can’t look: this device is offline.' : 'Search can’t look yet: Grifflix’s list of films hasn’t loaded.'; };
+      var wait = setTimeout(function () { if (!done && inp.value.trim() === q && $('#sres')) $('#sres').innerHTML = '<div class="empty snote" style="margin:10px 0">Loading Grifflix’s list of films…</div>'; }, 1500);
+      var slow = setTimeout(function () { say(gone()); }, 10000);
       api('search?q=' + encodeURIComponent(q)).then(function (r) {
+        clearTimeout(slow); clearTimeout(wait);
         if (inp.value.trim() !== q) return;
         $('#sres').innerHTML = r.items.length ? r.items.map(function (i) { var src = img(i.poster, 'Primary', 120); return '<button class="res" data-r="' + i.id + '"><div class="pic">' + (src ? '<img alt="" src="' + esc(src) + '">' : '') + '</div><div><div class="t">' + esc(showName(i)) + '</div><div class="s">' + esc(typeName(i) + ' · ' + subOf(i)) + '</div></div></button>'; }).join('') : '<div class="empty" style="margin:10px 0">Nothing by that name.</div>';
         var by = {}; r.items.forEach(function (i) { by[i.id] = i; });
         $$('[data-r]').forEach(function (b) { b.onclick = function () { onPick ? onPick(by[b.dataset.r]) : itemSheet(by[b.dataset.r]); }; });
-      }).catch(function () {});
-    }, 220);
+        done = true;
+      }).catch(function (e) {
+        clearTimeout(slow); clearTimeout(wait); if (window.console) console.error('search', e);
+        say(LIB ? 'Search couldn’t show what it found.' : gone());
+      });
   };
 }
 function secretSheet(date) {   // John, on a day still a surprise: its film changed or taken off without being shown it (John, 9 Nov 2026: "Remove the kings speech")
