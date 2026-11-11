@@ -919,14 +919,62 @@ def make_handler(g):
                 return self.send_json(403, {'error': 'Only John.'})
             if b:
                 hh = []
-                for h in (b.get('households') or [])[:20]:
+                for h in (b.get('households') or [])[:50]:
                     ms = sorted(set(str(m) for m in (h.get('members') or []) if re.match(r'^(owner|g:[\w-]{1,64}|n:.{1,60})$', str(m))))
                     if ms:
-                        hh.append({'name': str(h.get('name') or 'Home').strip()[:40] or 'Home', 'members': ms})
+                        hid = str(h.get('id') or '') if re.match(r'^h[0-9a-f]{8}$', str(h.get('id') or '')) else 'h' + secrets.token_hex(4)
+                        hh.append({'id': hid, 'name': str(h.get('name') or 'Home').strip()[:40] or 'Home', 'members': ms})
                 with g.store.lock:
                     g.store.d['households'] = hh
                     g.store.touch()
             return self.send_json(200, {'households': g.store.d.get('households') or []})
+
+        def api_household(self, me, user, q, b):
+            """A member's own household (John, 11 Nov 2026: "Build household codes"): who's in it; a code (30 minutes, once) for someone
+            they live with to join; joining with a code (leaving any other); leaving. John's admin page still sees and changes them all."""
+            uid, op = me['uid'], str(b.get('op') or '')
+            with g.store.lock:
+                hh = g.store.d.setdefault('households', [])
+                for h in hh:
+                    h.setdefault('id', 'h' + secrets.token_hex(4))
+                codes = g.store.d.setdefault('hhcodes', {})
+                for c in [c for c, x in codes.items() if x.get('until', 0) < time.time()]:
+                    codes.pop(c, None)
+                mine = next((h for h in hh if uid in h.get('members', [])), None)
+                out = {}
+                if op == 'code':
+                    if not mine:
+                        mine = {'id': 'h' + secrets.token_hex(4), 'name': (me.get('name') or 'My').split(' ')[0] + '’s household', 'members': [uid]}
+                        hh.append(mine)
+                    code = ''.join(secrets.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789') for _ in range(6))
+                    codes[code] = {'hid': mine['id'], 'until': time.time() + 1800, 'by': uid}
+                    out = {'code': code, 'minutes': 30}
+                elif op == 'join':
+                    c = codes.pop(re.sub(r'[^A-Z0-9]', '', str(b.get('code') or '').upper()), None)
+                    to = c and next((h for h in hh if h['id'] == c['hid']), None)
+                    if not to:
+                        g.store.touch()
+                        return self.send_json(404, {'error': 'That code isn’t right, or it’s over 30 minutes old: ask for a new one.'})
+                    for h in hh:
+                        if uid in h['members'] and h is not to:
+                            h['members'].remove(uid)
+                    if uid not in to['members']:
+                        to['members'].append(uid)
+                    mine = to
+                elif op == 'leave' and mine:
+                    mine['members'].remove(uid)
+                    mine = None
+                elif op == 'rename' and mine:
+                    mine['name'] = str(b.get('name') or '').strip()[:40] or mine['name']
+                g.store.d['households'] = [h for h in hh if h.get('members')]
+                if op:
+                    g.store.touch()
+                users = g.store.d.get('users') or {}
+                if mine:
+                    out['household'] = {'name': mine['name'], 'members': [(users.get(m) or {}).get('name') or ('John' if m == 'owner' else 'A member') for m in mine['members'] if m != uid]}
+                else:
+                    out['household'] = None
+            return self.send_json(200, out)
 
         def housemates(self, uid):   # (the member and everyone in a household with them)
             out = {uid}
