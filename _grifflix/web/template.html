@@ -1661,9 +1661,9 @@ html .zlogo.zol, html.gxown .zlogo.zol { background: none !important; -webkit-ma
 .zpaper .zhs { left: 0; top: 0; transform-origin: 50% 50%; }
 /* (the zoetrope black lacquer, but seen: lighter where it faces you, darker as it turns away, its edges catching the screen's light:
    John, 10 Nov 2026: "it needs to be done subtly and look real") */
-html .th-picture .zw, html.gxown .th-picture .zw { background-color: #2c2e33 !important; box-shadow: inset 0 1px 0 rgba(255, 244, 226, .16), inset 0 -14px 18px -6px rgba(0, 0, 0, .55), inset 1px 0 0 rgba(255, 244, 226, .07), inset -1px 0 0 rgba(0, 0, 0, .6); }
+html .th-picture .zw, html.gxown .th-picture .zw { background-color: transparent !important; box-shadow: inset 0 1px 0 rgba(255, 244, 226, .16), inset 0 -14px 18px -6px rgba(0, 0, 0, .55), inset 1px 0 0 rgba(255, 244, 226, .07), inset -1px 0 0 rgba(0, 0, 0, .6); }
 html .th-picture .zw::after, html.gxown .th-picture .zw::after { opacity: var(--dk, 0) !important; }
-html .th-picture .zfrontw svg path[fill], html.gxown .th-picture .zfrontw svg path[fill] { fill: url(#zlac) !important; }
+html .th-picture .zfrontw svg path[fill]:not([data-o]), html.gxown .th-picture .zfrontw svg path[fill]:not([data-o]) { fill: url(#zlac) !important; }   /* (the brass ornament, data-o, its own colour) */
 html .th-picture .zfrontw .zrim, html.gxown .th-picture .zfrontw .zrim { opacity: 1 !important; stroke: rgba(255, 244, 226, .2); stroke-width: 1.1; }
 .th-picture .ztop .zinb { fill: #0a090b; } .th-picture .ztop .zbrim { stroke: rgba(255, 244, 226, .3); }
 .th-picture .zbs, .th-picture .zbsl { background: #020203; }
@@ -4052,8 +4052,10 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     me._gtok = null; if (me._d0 == null) me._d0 = me._day != null ? me._day : me._at;
     // (the faster the fingers, the further each bit of their swipe throws it: a gentle push nudges, a big swipe races the film by: John, 10 Nov 2026)
     var t = performance.now(), d = px * .035 * (1 + Math.abs(px) / 30);   // (lively: John, 10 Nov 2026: "It's sluggish")
-    if (!me._push) { var Z0 = me.hr(); me._r0 = Math.round(Z0.rankOf(me._d0 + ((me._xs || .5) - .5) / me.nb())); }
-    me._xs = (me._xs || 0) + d; me.first();
+    if (!me._push) { var Z0 = me.hr(); me._r0 = Math.round(Z0.rankOf(me._d0 + ((me._xs || .5) - .5) / me.nb())); me._hold = me._day != null ? me._day : me._at; }
+    // (a hand's push turns the drum only: the film and the day stay where they are; only a big swipe moves them on: John, 11 Nov 2026:
+    // "make it so a small spin doesn't try and control all the movements, just the drum")
+    me._fpos = me._hold; me._xs = (me._xs || 0) + d;
     var P = me._push || (me._push = { v: 0, t: t, last: t }), dt = Math.max(8, t - P.t) / 1000;
     P.v = P.v * .5 + (d / dt) * .5; P.t = t; P.last = t; P.peak = Math.max(P.peak || 0, Math.abs(px)); if (d) P.dir = d > 0 ? 1 : -1;
     if (P.peak >= 55) { var v0 = Math.abs(P.v); me._push = null; if (P.raf) cancelAnimationFrame(P.raf); me.bigSpin(P.dir, v0); return; }   // (a big swipe: at once the one long spin, from the swipe's own speed) me._gal = true; me._w = Math.abs(P.v);
@@ -4065,17 +4067,15 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
       if (tt - Q.last > 110 && !Q.rel && (Q.peak || 0) >= 55) { me._push = null; Q.raf = 0; me.bigSpin(Q.dir || (Q.v < 0 ? -1 : 1)); return; }   // (a big spin: round the whole month and on to the next day)
       if (tt - Q.last > 110 && !Q.rel) { Q.rel = 1; var sv = Math.abs(Q.v); Q.v = (Q.v < 0 ? -1 : 1) * (sv < 18 ? sv * .25 : Math.min(240, 1.2 * Math.pow(sv, 1.3))); }   // (let go: a gentle push turns it slowly, only a big swipe brings it up to speed: John, 10 Nov 2026)
       if (tt - Q.last <= 110) Q.rel = 0;
-      if (tt - Q.last > 110) { me._xs += Q.v * dt2; Q.v *= Math.exp(-dt2 * (Math.abs(Q.v) > 8 ? .9 : 1.8)); if (me.first()) Q.v = 0; }   // (it runs on, slowing; no further back than the 1st)
+      if (tt - Q.last > 110) { me._xs += Q.v * dt2; Q.v *= Math.exp(-dt2 * (Math.abs(Q.v) > 8 ? .9 : 1.8)); }   // (it runs on, slowing)
       me._w = Math.abs(Q.v);
       if (tt - Q.last > 110 && Math.abs(Q.v) < 1.5) {   // (slowing to a stop, it settles with a slit square in front)
         // (coming to rest on the next day it's heading for, always on, never back: John, 10 Nov 2026: "it shouldn't ever reverse to get
         // itself back on track")
-        if (Q.rt == null) { var Z = me.hr(), rc = Z.rankOf(me._d0 + (me._xs - .5) / me.nb()), dq = Q.dir || 1; Q.rt = Math.abs(rc - Math.round(rc)) < .03 ? Math.round(rc) : dq > 0 ? Math.ceil(rc) : Math.floor(rc); for (var g3 = 0; g3 < Z.L && !Z.ok(Q.rt); g3++) Q.rt += dq; if (dq > 0 && Q.rt >= Z.L && !Z.ok(Z.L - 1)) { Q.rt = Math.round(rc); while (Q.rt > 0 && !Z.ok(Q.rt)) Q.rt--; }   // (nothing yet after today's: it stays on today's, not on into next month's days to come)
-          Q.Z = Z; }
-        var xt = .5 + (Q.Z.dayOf(Q.rt) - me._d0) * me.nb(); Q.v = 0; me._xs += (xt - me._xs) * .16;
-        if (Math.abs(xt - me._xs) < .01) { var rf = ((Q.rt % Q.Z.L) + Q.Z.L) % Q.Z.L, dT = Q.Z.H[rf]; me._xs = .5 + (dT - me._d0) * me.nb(); me._push = null; me._gal = false; me._w = 0; me.draw(me._at);
-          if (Q.rt < 0 || Q.rt >= Q.Z.L) { me.cross(Q.rt < 0 ? -1 : 1); return; }   // (past the 1st or the last: on into that month's theme)
-          if (dT !== me._day && typeof themeShow === 'function') { me._noGal = true; themeShow(dT, true); }
+        // (coming to rest with a slit square in front, on the way it was turning, never back: John, 10 Nov 2026: "it shouldn't ever reverse")
+        if (Q.xt == null) { var u0 = me._xs - .5, dq = Q.dir || (Q.v < 0 ? -1 : 1); Q.xt = .5 + (Math.abs(u0 - Math.round(u0)) < .02 ? Math.round(u0) : dq > 0 ? Math.ceil(u0) : Math.floor(u0)); }
+        Q.v = 0; me._xs += (Q.xt - me._xs) * .16;
+        if (Math.abs(Q.xt - me._xs) < .01) { me._xs = Q.xt; me._d0 = me._hold - (me._xs - .5) / me.nb(); me._fpos = null; me._push = null; me._gal = false; me._w = 0; me.draw(me._at);
           return; }
       }
       me.draw(me._at); Q.raf = requestAnimationFrame(f);
@@ -4234,13 +4234,25 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
       var hn = [], hf = [], put = function (svg, list) {
         var ks = svg._ps || (svg._ps = []);
         while (ks.length < list.length) { var e = document.createElementNS('http://www.w3.org/2000/svg', 'path'); svg.appendChild(e); ks.push(e); }
-        for (var q = 0; q < ks.length; q++) { var w = list[q] || ['', 'none'], el = ks[q]; if (el._d !== w[0]) { el._d = w[0]; el.setAttribute('d', w[0]); } if (el._f !== w[1]) { el._f = w[1]; el.setAttribute('fill', w[1]); } }
+        for (var q = 0; q < ks.length; q++) { var w = list[q] || ['', 'none'], el = ks[q]; if (el._d !== w[0]) { el._d = w[0]; el.setAttribute('d', w[0]); } if (el._f !== w[1]) { el._f = w[1]; el.setAttribute('fill', w[1]); } if (el._o !== !!w[2]) { el._o = !!w[2]; if (w[2]) el.setAttribute('data-o', '1'); else el.removeAttribute('data-o'); } }
       };
       if (NS._ps && !NS.contains(NS._ps[0])) NS._ps = null; if (FS._ps && !FS.contains(FS._ps[0])) FS._ps = null;
       for (var i = 0; i < NB; i++) {
         var m = ((i * D - rotN) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, a0 = Math.max(-Math.PI / 2, m - half), a1 = Math.min(Math.PI / 2, m + half);
         if (a1 > a0) {
           hn.push([edge(a0, a1, yT, yS), sh(Math.cos(m))]);
+          // (each panel between the slits framed in brass, a medallion at its heart and studs at its corners, as a Victorian maker's
+          // drum: John, 11 Nov 2026: "some decoration between the slits to make it look ornate and like a Victorian thing of beauty")
+          var cm = Math.cos(m), pw = a1 - a0;
+          if (cm > .1 && pw > D * .5) {
+            var al = (.3 + .65 * cm).toFixed(2), brass = 'rgba(214,176,92,' + al + ')', dk = 'rgba(16,17,20,' + al + ')';
+            var ins = pw * .15, lw2 = pw * .04, hgt = yS - yT, yt = yT + hgt * .09, yb = yS - hgt * .09, th3 = Math.max(1.2, hgt * .012), ym = (yT + yS) / 2, hh = hgt * .15, aw = pw * .24;
+            hn.push([edge(a0 + ins, a0 + ins + lw2, yt, yb), brass, 1]); hn.push([edge(a1 - ins - lw2, a1 - ins, yt, yb), brass, 1]);   // (the frame's sides)
+            hn.push([edge(a0 + ins, a1 - ins, yt, yt + th3), brass, 1]); hn.push([edge(a0 + ins, a1 - ins, yb - th3, yb), brass, 1]);   // (its top and foot)
+            var dia2 = function (t, y, a, hy) { return 'M' + P(t, y - hy) + 'L' + P(t + a, y) + 'L' + P(t, y + hy) + 'L' + P(t - a, y) + 'Z'; };
+            hn.push([dia2(m, ym, aw, hh), brass, 1]); hn.push([dia2(m, ym, aw * .5, hh * .5), dk, 1]); if (!TV) hn.push([dia2(m, ym, aw * .18, hh * .18), brass, 1]);   // (the medallion)
+            (TV ? [] : [[a0 + ins + lw2 / 2, yt], [a1 - ins - lw2 / 2, yt], [a0 + ins + lw2 / 2, yb], [a1 - ins - lw2 / 2, yb]]).forEach(function (q) { hn.push([dia2(q[0], q[1], pw * .045, hgt * .025), brass, 1]); });   // (the studs)
+          }
           // (the wall's thickness, on the edge that turns towards you)
           var ex = m > 0 ? a0 : a1, ew = th2 * Math.abs(Math.sin(ex)) / R * 6;
           if (Math.abs(Math.sin(ex)) > .05 && ex > -Math.PI / 2 && ex < Math.PI / 2) hn.push([edge(m > 0 ? ex - ew : ex, m > 0 ? ex : ex + ew, yT, yS), 'rgba(201,162,74,.92)']);
