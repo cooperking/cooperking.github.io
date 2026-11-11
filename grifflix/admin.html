@@ -90,6 +90,12 @@ h1 em { font-style: normal; font-weight: 400; }
 .changes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .changes li { padding: 10px 12px; border-radius: 12px; background: var(--tile); font-size: 14px; color: var(--fg); }
 .changes li .when { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
+.lbbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 4px 0 10px; } .lbbar select, .lbbar input { max-width: 200px; } .lbchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.lbchips button { font: 600 11px/1 var(--sans, sans-serif); letter-spacing: .1em; text-transform: uppercase; padding: 8px 10px; border: 1px solid var(--line, rgba(255,255,255,.25)); background: none; color: var(--fg); cursor: pointer; }
+.lbchips button[aria-pressed="true"] { background: var(--fg); color: var(--bg, #173a5e); }
+.lbl { max-height: 640px; overflow: auto; } .lbl .q { display: inline-block; margin-left: 8px; padding: 2px 6px; font: 600 10px/1.2 var(--sans, sans-serif); letter-spacing: .1em; text-transform: uppercase; vertical-align: 2px; }
+.lbl .q.good { background: #2f6b46; color: #fff; } .lbl .q.ok { background: #8a6d1f; color: #fff; } .lbl .q.bad { background: #8c2f2a; color: #fff; }
+.lbl .spec { display: block; margin-top: 2px; font-size: 12.5px; color: var(--fg); } .lbl .why2 { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }   /* (the library: each film's file and its grade) */
 .cvl { max-height: 560px; overflow: auto; } .cvl .cvba { display: block; margin-top: 2px; font-size: 12px; color: var(--fg); } .cvl .cvh { font: 600 11px/1 var(--sans, sans-serif); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding-top: 14px; }   /* (the conversions: before and after; the queue) */
 .cvbar { height: 8px; border-radius: 99px; background: var(--tile); overflow: hidden; margin: 4px 0 14px; }
 .cvbar span { display: block; height: 100%; width: 0; background: currentColor; border-radius: 99px; transition: width .6s; }
@@ -341,6 +347,17 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <ul class="changes cvl" id="cvlist"></ul>
         <p class="stat" id="orsay" style="margin-top:14px"></p>
         <div class="state"><button class="btn" id="orsee" type="button" hidden>The originals</button></div>
+      </section>
+      <section class="card" data-tab="films">
+        <div class="kicker">Library</div>
+        <h2 id="lbhead">Every film’s <em>quality</em></h2>
+        <p class="stat" id="lbsay">Each film’s file as it is on the Mac: its picture, format, rate, size and sound, graded <b>Good</b>, <b>OK</b> or <b>Replace</b> (standard definition, or too little picture for its size), with those converted and those waiting to be.</p>
+        <div class="state"><button class="btn" id="lbgo" type="button">Look at the library</button></div>
+        <div id="lbui" hidden>
+          <div class="lbbar"><span class="lbchips" id="lbchips"></span><select id="lbsort" class="name"><option value="worst">Worst first</option><option value="big">Biggest files</option><option value="az">A to Z</option></select><input type="search" id="lbq" class="name" placeholder="A film’s name" autocomplete="off"></div>
+          <ul class="changes lbl" id="lblist"></ul>
+          <div class="state"><button class="btn" id="lbmore" type="button" style="display:none">More</button></div>
+        </div>
       </section>
       <section class="card" data-tab="films">
         <div class="kicker">Movie of the Day</div>
@@ -861,6 +878,44 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       clearTimeout(convert.t); convert.t = setTimeout(convert, 120000);
     });
   }
+
+  // ---- the library: every film's file, graded, so John can see what's good and what wants replacing (John, 11 Nov 2026: "I need a
+  // place in my admin to see my library, so I can see what is good quality and what needs replacing")
+  var LB = { all: null, f: 'bad', n: 150 };
+  function lbGrade(x) {
+    var res = x.w >= 3200 ? '4K' : x.w >= 1800 || x.h >= 1000 ? '1080p' : x.w >= 1200 || x.h >= 700 ? '720p' : x.w ? 'SD' : '?';
+    var eff = x.v === 'hevc' || x.v === 'h265' ? 1.6 : x.v === 'av1' ? 2 : x.v === 'h264' ? 1 : .6;   // (how much picture each bit carries, by format)
+    var bpp = x.w && x.h && x.mbps ? x.mbps * 1e6 * eff / (x.w * x.h * 24) : null, why = [];
+    if (res === 'SD') why.push('standard definition');
+    if (bpp != null && bpp < .035) why.push('little picture for its size (' + x.mbps + ' Mbps)');
+    var q = why.length ? 'bad' : res === '720p' || (bpp != null && bpp < .06) ? 'ok' : 'good';
+    if (q === 'ok') why.push(res === '720p' ? '720p' : 'a modest rate (' + x.mbps + ' Mbps)');
+    return { q: q, res: res, why: why.join(', '), bpp: bpp == null ? 1 : bpp };
+  }
+  function lbDraw() {
+    var all = LB.all || [], cnt = { bad: 0, ok: 0, good: 0 }; all.forEach(function (x) { cnt[x.g.q]++; });
+    $('#lbchips').innerHTML = [['bad', 'Replace'], ['ok', 'OK'], ['good', 'Good'], ['all', 'All']].map(function (c) { return '<button type="button" data-f="' + c[0] + '" aria-pressed="' + (LB.f === c[0]) + '">' + c[1] + ' ' + (c[0] === 'all' ? all.length : cnt[c[0]]) + '</button>'; }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('#lbchips button'), function (b) { b.onclick = function () { LB.f = b.dataset.f; LB.n = 150; lbDraw(); }; });
+    var qq = ($('#lbq').value || '').trim().toLowerCase(), so = $('#lbsort').value, rank = { bad: 0, ok: 1, good: 2 };
+    var L = all.filter(function (x) { return (LB.f === 'all' || x.g.q === LB.f) && (!qq || (x.n || '').toLowerCase().indexOf(qq) >= 0); });
+    L.sort(so === 'big' ? function (p, q) { return q.gb - p.gb; } : so === 'az' ? function (p, q) { return (p.n || '').localeCompare(q.n || ''); } : function (p, q) { return rank[p.g.q] - rank[q.g.q] || p.g.bpp - q.g.bpp; });
+    var vn = function (v) { return { h264: 'H.264', hevc: 'HEVC', h265: 'HEVC', mpeg4: 'MPEG-4 (XviD/DivX)', mpeg2video: 'MPEG-2', vc1: 'VC-1', av1: 'AV1', vp9: 'VP9' }[v] || (v || '?').toUpperCase(); };
+    var fl = function (f) { return f ? (f.w ? f.w + '×' + f.h + ' ' : '') + esc(f.v) + (f.mbps ? ', ' + f.mbps + ' Mbps' : '') + (f.gb ? ', ' + f.gb + ' GB' : '') : ''; };
+    $('#lblist').innerHTML = L.slice(0, LB.n).map(function (x) {
+      return '<li>' + esc(x.n) + (x.y ? ' <span class="when" style="display:inline">(' + x.y + ')</span>' : '') + '<span class="q ' + x.g.q + '">' + { bad: 'Replace', ok: 'OK', good: 'Good' }[x.g.q] + '</span>' +
+        '<span class="spec">' + x.g.res + (x.w ? ' · ' + x.w + '×' + x.h : '') + ' · ' + vn(x.v) + (x.b > 8 ? ' 10-bit' : '') + (x.mbps ? ' · ' + x.mbps + ' Mbps' : '') + (x.gb ? ' · ' + x.gb + ' GB' : '') + (x.mins ? ' · ' + x.mins + ' min' : '') + (x.a ? ' · ' + esc(x.a) : '') + '</span>' +
+        '<span class="why2">' + [x.g.why ? esc(x.g.why) : '', x.conv ? 'converted' + (x.was ? ' (was ' + fl(x.was) + ')' : '') : '', x.why ? 'waiting to convert: ' + esc(x.why) : ''].filter(Boolean).join(' · ') + '</span></li>';
+    }).join('') || '<li>None.</li>';
+    $('#lbmore').style.display = L.length <= LB.n ? 'none' : ''; $('#lbmore').onclick = function () { LB.n += 150; lbDraw(); };
+    $('#lbhead').innerHTML = all.length + ' films: <em>' + cnt.bad + ' to replace</em>';
+  }
+  $('#lbgo').onclick = function () {
+    var b = this; if (!GW) return toast('The Mac mini isn’t answering.'); b.disabled = true; b.textContent = 'Looking…';
+    fetch(GW + '/api/library', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (r.status === 404) throw new Error('Update the Mac (Update everything) to see the library here.'); if (!r.ok) throw new Error('The Mac mini isn’t answering.'); return r.json(); }).then(function (j) {
+      LB.all = (j.films || []).map(function (x) { x.g = lbGrade(x); return x; }); $('#lbui').hidden = false; b.textContent = 'Look again'; b.disabled = false;
+      $('#lbq').oninput = lbDraw; $('#lbsort').onchange = lbDraw; lbDraw();
+    }).catch(function (e) { b.disabled = false; b.textContent = 'Look at the library'; toast(e.message); });
+  };
 
   // ---- the 8am email, as it goes out (the latest film already shown), and a copy to John
   $('#mailsee').onclick = function () {
