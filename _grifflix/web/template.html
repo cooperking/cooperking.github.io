@@ -5726,6 +5726,19 @@ $('#pclose').onclick = stopPlayer;
     });
   };
 })();
+(function () {   // the picture's own box sized to the film's shape and centred, black around it: the Fire TV's browser view stretches a film to
+  // fill its box whatever it's told (object-fit), so a 2.35:1 film came out too tall (John, 11 Nov 2026: "the aspect ratio was wrong")
+  var v = P.v, fit = function () {
+    var w = v.videoWidth, h = v.videoHeight, W = P.el.clientWidth, H = P.el.clientHeight;
+    if (!w || !h || !W || !H) { v.style.cssText = ''; return; }
+    var k = Math.min(W / w, H / h), bw = Math.round(w * k), bh = Math.round(h * k);
+    v.style.cssText = 'inset:auto;left:' + Math.round((W - bw) / 2) + 'px;top:' + Math.round((H - bh) / 2) + 'px;width:' + bw + 'px;height:' + bh + 'px';
+  };
+  ['loadedmetadata', 'resize', 'playing'].forEach(function (e) { v.addEventListener(e, fit); });
+  window.addEventListener('resize', fit); document.addEventListener('fullscreenchange', fit); document.addEventListener('webkitfullscreenchange', fit);
+  v.addEventListener('emptied', function () { v.style.cssText = ''; });
+  P.fit = fit;
+})();
 P.v.addEventListener('ended', function () { saveProgress(); if (P.queue.length) { var n = P.queue.shift(); play(n, P.queue); } else stopPlayer(); });
 P.v.addEventListener('timeupdate', function () { var left = (P.v.duration || 0) - P.v.currentTime; $('#pnext').classList.toggle('on', P.queue.length > 0 && P.v.duration > 0 && left < 40); });
 $('#pnext').onclick = function () { saveProgress(); var n = P.queue.shift(); play(n, P.queue); };
