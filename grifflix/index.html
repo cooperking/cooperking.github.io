@@ -924,6 +924,7 @@ html:not(.mob) .tcal > .tcap { grid-column: 1; grid-row: 1 / 3; justify-self: en
 html:not(.phone):not(.tv) #sheet #sq { width: calc(100% - 70px) !important; height: 60px; font: 500 22px/1 var(--kfont) !important; padding: 0 18px !important; }
 html.tv #sheet #sq { width: calc(100% - 120px) !important; }
 html.phone #sheet #sq { width: 100% !important; box-sizing: border-box; }
+html.phone #sheetIn > .form.srch:not(.pick) > .close { display: none !important; }   /* a phone: no close on Search; Calendar and Theme in the bar leave it */
 .tvkb { margin: 14px 0 6px; display: grid; gap: 8px; } .tvkb[hidden] { display: none; }
 .tvkb .kr { display: flex; gap: 8px; flex-wrap: nowrap; }
 .tvkb .kk { flex: 0 0 auto; min-width: 58px; height: 52px; padding: 0 10px; border: 1px solid rgba(255, 255, 255, .25); background: rgba(255, 255, 255, .06); color: var(--fg); font: 500 22px/1 var(--kfont); border-radius: 4px; cursor: pointer; }
@@ -1759,7 +1760,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '6c8d7ec16052' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: 'd2d73666646b' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -4878,7 +4879,7 @@ function wireBody(it, ctx) {
 function searchSheet(onPick, title) {
   if (!onPick) S.sheetNow = { k: 'search' };
   var withBrowse = !onPick && VIEW() === 'themes' && S.view === 'home';   // (in a theme, John: "Search can bring up the search bar plus collections and browse")
-  openSheet('<div class="form srch' + (withBrowse ? ' bsheet' : '') + '" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (title || 'Search') + '</h2><input type="search" id="sq" placeholder="A film, a series, an episode…" autocomplete="off"><div class="results" id="sres"></div>' + (withBrowse ? '<div id="bsin"></div>' : '') + '</div>');
+  openSheet('<div class="form srch' + (withBrowse ? ' bsheet' : '') + (onPick ? ' pick' : '') + '" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (title || 'Search') + '</h2><input type="search" id="sq" placeholder="A film, a series, an episode…" autocomplete="off"><div class="results" id="sres"></div>' + (withBrowse ? '<div id="bsin"></div>' : '') + '</div>');
   if (withBrowse) browseIn($('#bsin'), 'now');   // (Search opens on Now showing)
   var t, inp = $('#sq');
   if (TV) {   // a TV: Grifflix's own letters under the box, OK on the box to bring them up. Not Amazon's keyboard, which came up
