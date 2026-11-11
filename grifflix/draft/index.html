@@ -1267,6 +1267,10 @@ html.mob .bar-top #refresh2 { display: inline-grid !important; }
 
 html.mob .hinfo, html.mob[data-theme] .hinfo { position: absolute; top: calc(112px + max(0px, env(safe-area-inset-top) - 2px) + var(--vk, .5) * 890px + 6px) !important; bottom: auto !important; left: 16px !important; right: 16px; width: auto !important; max-width: none !important; }
 html.mob .tmonth { display: none; }
+/* a still for a share card: the theme, its words and Grifflix's mark; none of the buttons */
+html.still .bar-top > :not(.brand), html.still .drafttag, html.still #note, html.still .tshare, html.still .mobnav, html.still .aptr, html.still .toast, html.still .zlead, html.still .tinspo::after { display: none !important; }
+html.still .bar-top .brand, html.still .tinspo { pointer-events: none; }
+html.still-month .tinspo, html.still-site .tinspo, html.still-month .tmonth, html.still-site .tmonth { display: none !important; }
 html.mob .tinspo b { display: block; font: 600 11px/1.5 var(--kfont); letter-spacing: .28em; text-transform: uppercase; font-style: normal; color: var(--fg-2); }
 html.mob .hinfo .w { font-size: 40px !important; } html.mob .hinfo h2 { display: block !important; margin: 10px 0 4px; font-size: 23px !important; -webkit-line-clamp: 2; } html.mob .hinfo .k { margin-top: 6px; font-size: 10px !important; letter-spacing: .24em; } html.mob .hinfo .y { font-size: 15px; } html.mob .hinfo .n { display: none !important; }
 html.mob .tmonth, html.mob.hall .tmonth, html.mob.table .tmonth { left: 70px; right: 70px; bottom: calc(84px + env(safe-area-inset-bottom)); text-align: center; font-size: 10px; letter-spacing: .3em; }
@@ -1763,7 +1767,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '5a34cf0e5e4b' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'c35318e7124a' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -1786,6 +1790,8 @@ if (TVHERO) document.documentElement.classList.add('tvhero');
 // will transition to the next theme"), the calendar a button away. ?theme=<key> shows one theme in every month, to try
 var NOTES = false;   // (the first release: no notes on the days, no playlists, no calendars of your own: John, 8 Nov 2026)
 var THEMEQ = Q.get('theme') || (Q.get('tvview') === 'table' ? 'table' : '');
+var STILL = /^(day|month|site)$/.test(Q.get('still') || '') ? Q.get('still') : '';   // a share card's still (1200 × 630): a day's, a month's or Grifflix's own
+if (STILL) document.documentElement.classList.add('still', 'still-' + STILL);
 var VIEW = function () { if (S.mcal) return 'calendar'; return store.get('grifflix-tvview') === 'calendar' ? 'calendar' : 'themes'; };
 var TABLE = function (m) { return VIEW() === 'themes' && themeFor(m).key === 'table'; };
 var HALL = function (m) { return VIEW() === 'themes' && themeFor(m).key !== 'table'; };
@@ -2310,7 +2316,7 @@ requestAnimationFrame(function () { document.documentElement.classList.remove('l
 /* ------------------------------------------------------------------ starting */
 function start() {
   document.documentElement.classList.add('ready');
-  if (!S.leaderTried) { S.leaderTried = 1; try { THEMEFX.picture.leader(); } catch (e) {} }   // (the 3 2 1 at once, while Grifflix reaches the Mac)
+  if (!S.leaderTried && !STILL) { S.leaderTried = 1; try { THEMEFX.picture.leader(); } catch (e) {} }   // (the 3 2 1 at once, while Grifflix reaches the Mac)
   if (BUILD.draft) { var t = document.createElement('a'); t.className = 'drafttag'; t.href = '/grifflix/'; t.title = 'This is the draft: the live Grifflix is at /grifflix/'; t.textContent = 'Draft'; ($('.bar-top .homeic') || $('.brand')).after(t); }
   var go = function () {
     if (!DEMO && !TOKEN) {   // (not signed in: only the way in, nothing of Grifflix behind it: John, 9 Nov 2026: "can we actually get all of
@@ -2410,7 +2416,7 @@ function route() {
   if (S.view === 'collection' && h[1]) return collectionView(h[1]);
   if (S.view === 'film' && /^[0-9a-f]{32}$/.test(h[1] || '')) { S.view = 'home'; var fid = h[1]; home(); api('item?id=' + fid).then(function (it) { if (it && it.id) itemSheet(it); }).catch(function () {}); return; }   // (a shared film's link)
   if (S.view === 'month' && /^\d{4}-\d\d$/.test(h[1] || '')) { S.cal = 'motd'; S.month = h[1]; S.view = 'home'; return home(); }   // (a month's theme shared)
-  if (S.view === 'day' && /^\d{4}-\d\d-\d\d$/.test(h[1] || '')) { S.cal = 'motd'; S.month = h[1].slice(0, 7); S.pendingDay = h[1]; S.view = 'home'; return home(); }
+  if (S.view === 'day' && /^\d{4}-\d\d-\d\d$/.test(h[1] || '')) { S.cal = 'motd'; S.month = h[1].slice(0, 7); if (STILL) S.resumeDay = h[1]; else S.pendingDay = h[1]; S.view = 'home'; return home(); }
   if (S.view !== 'home') setTimeout(resumeHere, 300);
   if (S.view === 'lists') return lists();
   if (S.view === 'search') { location.hash = '#' + (S.lastView || 'home'); return searchSheet(); }
@@ -3071,12 +3077,13 @@ function themeTurn(b) {   // the theme with b at the front
 }
 function themeShow(at, force) {   // the theme at any point between days; the nearest the day you're on, its words with it
   var T = S.theme; if (!T) return; var all = themeEls();
-  if (!all.length) { (T.fx.info || hallInfo)(null); return; }
+  if (!all.length) { (T.fx.info || hallInfo)(null); if (STILL) stillWords(); return; }
   var b = all[Math.max(0, Math.min(all.length - 1, Math.round(at)))];
   if (force || !b.classList.contains('front')) {
     all.forEach(function (el) { el.classList.toggle('front', el === b); });
     if (T.fx.front) T.fx.front(b, T.c, $('#cal').classList.contains('drag'));   // (mid-swipe: the picture at once, no flourish)
     (T.fx.info || hallInfo)(b);
+    if (STILL) stillWords();
     themeOther(b);
   }
   T.fx.place(all, at, T.c, b);
@@ -3086,6 +3093,18 @@ function themeShow(at, force) {   // the theme at any point between days; the ne
   var mo = (S.month || '').split('-'), N = mo.length > 1 ? new Date(+mo[0], +mo[1], 0).getDate() : all.length, lo = Math.round(at) - Math.floor((N - 1) / 2);
   lo = Math.max(0, Math.min(lo, all.length - N));
   all.forEach(function (el, j) { el.classList.toggle('xwin', !T.fx.whole && (j < lo || j >= lo + N)); });   // (the table seats its own month's days itself)
+}
+function stillWords() {   // a still: a month's has the month and its theme in the day's place, Grifflix's has Movie of the Day; each says it's ready
+  var m = +S.month.slice(5, 7) - 1, y = +S.month.slice(0, 4), t = themeFor(m, y), D = S.calData.days;
+  if (STILL !== 'day') {
+    var n = Object.keys(D).filter(function (d) { return d.slice(0, 7) === S.month && !D[d].secret; }).length;
+    var w = STILL === 'site' ? 'Grifflix' : MONTHS[m], k = STILL === 'site' ? 'Movie of the Day' : y + ' · the month’s theme', h = STILL === 'site' ? 'A film every day' : t.name;
+    var sub = STILL === 'site' ? '' : (t.film ? (t.by ? 'after ' : '') + '<i>' + esc(t.film) + '</i> (' + t.year + ') · ' : '') + n + (n === 1 ? ' film' : ' films');
+    var c = $('#hinfo'); if (c) c.innerHTML = '<div class="w"><span data-t="' + esc(w) + '">' + esc(w) + '</span></div><div class="k">' + esc(k) + '</div><h2>' + esc(h) + '</h2>' + (sub ? '<div class="y">' + sub + '</div>' : '');
+    var tc = $('#tcentre'); if (tc) tc.innerHTML = '<div class="k">' + esc(w + ' · ' + k) + '</div><h2 style="--tl:' + h.length + '">' + esc(h) + '</h2>' + (sub ? '<div class="y">' + sub + '</div>' : '');
+  }
+  var R = getComputedStyle(document.documentElement);
+  window.__still = { key: STILL === 'site' ? 'cal' : STILL === 'month' ? S.month : ($('#cal button.front') || {}).dataset ? $('#cal button.front').dataset.day : '', bg: t.bg, ink: R.getPropertyValue('--kink').trim() === '0, 0, 0' ? '#000' : '#fff', name: t.name };
 }
 function themeCross(dir) {   // on into the next or last month (its own theme), quietly
   var ms = monthsOf(S.calData.days), j = ms.indexOf(S.month) + dir; if (j < 0 || j >= ms.length || !S.step) return false;

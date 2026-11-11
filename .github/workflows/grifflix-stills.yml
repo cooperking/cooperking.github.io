@@ -1,0 +1,61 @@
+name: Grifflix stills
+
+# The share stills (a day's, a month's, Grifflix's own) drawn from the live site in a browser and put where the Worker keeps
+# the share cards. See _grifflix/stills.py. Each morning just after 8am London (a new day shown), after Grifflix goes live or
+# its data is updated, and by hand.
+on:
+  schedule:
+    - cron: "7 7 * * *"   # 08:07 in summer (BST)
+    - cron: "7 8 * * *"   # 08:07 in winter (GMT)
+  workflow_run:
+    workflows: [Grifflix live, Grifflix data]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      all:
+        description: "Draw every still again"
+        type: boolean
+        default: false
+      look:
+        description: "Draw today's, this month's and Grifflix's own from the draft, as files to look at (nothing sent)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: grifflix-stills
+  cancel-in-progress: false
+
+jobs:
+  stills:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Tools
+        run: |
+          pip install --quiet playwright boto3
+          python -m playwright install --with-deps chromium
+      - name: Draw
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ALL: ${{ inputs.all }}
+          LOOK: ${{ inputs.look }}
+        run: |
+          if [ "$LOOK" = "true" ]; then python _grifflix/stills.py --page /draft/ --out stills
+          elif [ "$ALL" = "true" ]; then python _grifflix/stills.py --all
+          else python _grifflix/stills.py; fi
+      - uses: actions/upload-artifact@v4
+        if: inputs.look
+        with:
+          name: stills
+          path: stills
