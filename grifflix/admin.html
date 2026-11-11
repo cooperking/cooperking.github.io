@@ -32,20 +32,28 @@ page shown inside another, stay where they are. On grifflix.co.uk, what came wit
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Hanken+Grotesk:wght@400;500;600;700&family=Bebas+Neue&family=Oswald:wght@500&display=swap">
 <meta name="theme-color" content="#ec135b">
 <script src="/songs/admin-theme.js"></script>
-<script>/* Grifflix's colours: the month's theme, as on Grifflix itself (John, 8 Nov 2026: "can my admin theme match the month too -
-   main font can stay the same for readability, but colours"); the cards stay white to read */
+<script>/* the month's colours as Grifflix itself works them out (themeFor and monthTint on the site): the month's own theme when one
+   is chosen for it on Themes, Grifflix's own colours from BLANKFROM on, otherwise the themes' order; the theme's one flat colour,
+   and its ink, black on a light colour and white on the rest */
 (function () {
   var TL = window.GTHEMES = /*THEMELIST*/[{"k":"corridor","n":"The Corridor","f":"The Shining","y":1980,"bg":"#e9e4de","d":0,"font":"\"Helvetica Neue\", Helvetica, \"Arimo\", Arial, sans-serif","tw":500,"tt":"uppercase","fs":"normal"},{"k":"slices","n":"The Slices","f":"In the Mood for Love","y":2000,"bg":"#8e1420","d":1,"font":"\"Archivo Narrow\", sans-serif","tw":600,"tt":"lowercase","fs":"normal"},{"k":"umbrellas","n":"The Umbrellas","f":"The Umbrellas of Cherbourg","y":1964,"bg":"#0495b1","d":0,"font":"\"GF-umbrellas\", \"Special Gothic Expanded One\", sans-serif","tw":400,"tt":"lowercase","fs":"normal"},{"k":"code","n":"The Code","f":"The Matrix","y":1999,"bg":"#03160a","d":1,"font":"\"GF-code\", \"Share Tech Mono\", monospace","tw":400,"tt":"uppercase","fs":"normal"},{"k":"spiral","n":"The Spiral","f":"Vertigo","y":1958,"bg":"#d74719","d":0,"font":"\"GF-spiral\", \"Londrina Solid\", sans-serif","tw":900,"tt":"uppercase","fs":"normal"},{"k":"tron","n":"The Grid","f":"Tron","y":1982,"bg":"#030a1c","d":1,"font":"\"Orbitron\", sans-serif","tw":800,"tt":"uppercase","fs":"normal"},{"k":"pinboard","n":"The Pinboard","f":"Zodiac","y":2007,"bg":"#0b0f0e","d":1,"font":"\"GFutura\", \"Jost\", sans-serif","tw":300,"tt":"uppercase","fs":"normal"},{"k":"moon","n":"The Moon","f":"Hugo","y":2011,"bg":"#145063","d":1,"font":"\"Cinzel\", serif","tw":700,"tt":"uppercase","fs":"normal"},{"k":"reel","n":"The Reel","f":"Cinema Paradiso","y":1988,"bg":"#1f2c3c","d":1,"font":"\"GF-reel\", \"Titan One\", sans-serif","tw":400,"tt":"uppercase","fs":"normal"},{"k":"oz","n":"The Yellow Brick Road","f":"The Wizard of Oz","y":1939,"bg":"#1e8c4e","d":1,"font":"\"Federant\", serif","tw":400,"tt":"none","fs":"normal"},{"k":"table","n":"The Table","f":"Dr. Strangelove","y":1964,"bg":"#0a0a0a","d":1,"font":"\"Amatic SC\", sans-serif","tw":700,"tt":"uppercase","fs":"normal"},{"k":"globe","n":"The Snow Globe","f":"Citizen Kane","y":1941,"bg":"#0b0b0b","d":1,"font":"\"GF-globe\", \"League Gothic\", sans-serif","tw":400,"tt":"uppercase","fs":"normal"},{"k":"jaws","n":"The Deep","f":"Jaws","y":1975,"bg":"#1494b9","d":0,"font":"\"Archivo Black\", sans-serif","tw":400,"tt":"uppercase","fs":"normal"},{"k":"credits","n":"Alpha 60","f":"Alphaville","y":1965,"bg":"#0b0b0c","d":1,"font":"\"Tilt Neon\", sans-serif","tw":400,"tt":"uppercase","fs":"normal"},{"k":"bars","n":"The Bars","f":"Psycho","y":1960,"bg":"#1578aa","d":1,"font":"\"News Cycle\", sans-serif","tw":700,"tt":"uppercase","fs":"normal"},{"k":"fold","n":"The Fold","f":"Inception","y":2010,"bg":"#083345","d":1,"font":"\"Montserrat\", sans-serif","tw":800,"tt":"uppercase","fs":"normal"},{"k":"stairs","n":"The Staircase","f":"Sunset Boulevard","y":1950,"bg":"#c62624","d":1,"font":"\"Big Shoulders Stencil\", \"Big Shoulders Stencil Display\", sans-serif","tw":800,"tt":"uppercase","fs":"normal"},{"k":"lane","n":"The Lane","f":"The Big Lebowski","y":1998,"bg":"#d79e48","d":0,"font":"\"GF-lane\", \"Lobster\", cursive","tw":700,"tt":"none","fs":"normal"},{"k":"picture","n":"Grifflix","f":"the zoetrope","y":1834,"bg":"#173a5e","d":1,"font":"\"Grifflix Display\", \"Federo\", Georgia, serif","tw":400,"tt":"none","fs":"normal"},{"k":"hotel","n":"The Hotel","f":"The Grand Budapest Hotel","y":2014,"bg":"#f1b1b3","d":0,"font":"\"GF-hotel\", \"Arvo\", serif","tw":700,"tt":"uppercase","fs":"normal"},{"k":"bedford","n":"Bedford Falls","f":"It’s a Wonderful Life","y":1946,"bg":"#0b4946","d":1,"font":"\"Stint Ultra Condensed\", serif","tw":400,"tt":"uppercase","fs":"normal"},{"k":"autumn","n":"Late Autumn","f":"Late Autumn","y":1960,"bg":"#c4321f","d":1,"font":"\"Yuji Syuku\", serif","tw":400,"tt":"none","fs":"normal"}]/*THEMELIST END*/;   // (written by _grifflix/web/page.py from the page's THEMES; the first twelve its own order)
-  var ord = null; try { ord = JSON.parse(localStorage.getItem('grifflix-themes') || 'null'); } catch (e) {}
+  var OWN = /*GXOWN*/{"bg":"#173a5e","ink":"243, 232, 210","blankFrom":"2026-12"}/*GXOWN END*/;   // (written by page.py from the page's GX and BLANKFROM)
   var by = {}; TL.forEach(function (x) { by[x.k] = x; });
-  if (!Array.isArray(ord) || ord.length !== 12 || !ord.every(function (k) { return by[k]; })) ord = TL.slice(0, 12).map(function (x) { return x.k; });
-  window.GORDER = ord;
-  var T = ord.map(function (k) { return [by[k].bg, by[k].d]; });
-  var m = new Date().getMonth(); try { m = +new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', month: 'numeric' }).format(new Date()) - 1; } catch (e) {}
-  var t = T[m], st = document.documentElement.style;
-  ['--bg', '--g1', '--g2', '--g3', '--g4'].forEach(function (n) { st.setProperty(n, t[0]); });   // (one flat colour, as the themes)
-  if (!t[1]) { st.setProperty('--ink', '#000'); st.setProperty('--ink-2', 'rgba(0, 0, 0, .78)'); st.setProperty('--glass', 'rgba(0, 0, 0, .08)'); st.setProperty('--glass-2', 'rgba(0, 0, 0, .12)'); st.setProperty('--glass-line', 'rgba(0, 0, 0, .35)'); }
-  var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = t[0];
+  var first = TL.slice(0, 12).map(function (x) { return x.k; });
+  var saved = null; try { saved = JSON.parse(localStorage.getItem('grifflix-themes') || 'null'); } catch (e) {}
+  var orderOf = function (o) { var l = o && !Array.isArray(o) && typeof o === 'object' ? o.order : o; return Array.isArray(l) && l.length >= 1 && l.every(function (k) { return by[k]; }) ? l.slice() : null; };
+  window.GORDER = orderOf(saved) || first;
+  window.gxTint = function (keys) {   // keys: the Worker's live themes ({ order, months } or an order), or none for this device's copy
+    var src = keys === undefined ? saved : keys, months = src && !Array.isArray(src) && typeof src === 'object' ? src.months || {} : {}, ord = orderOf(src) || first;
+    var y = new Date().getFullYear(), m = new Date().getMonth();
+    try { var pt = {}; new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: 'numeric' }).formatToParts(new Date()).forEach(function (x) { pt[x.type] = x.value; }); y = +pt.year; m = +pt.month - 1; } catch (e) {}
+    var ymk = y + '-' + String(m + 1).padStart(2, '0'), k = months[ymk];
+    var t = k ? by[k] || null : ymk >= OWN.blankFrom ? null : by[ord[(((y - 2026) * 12 + m) % ord.length + ord.length) % ord.length]];
+    var own = !t || t.k === 'picture', bg = own ? OWN.bg : t.bg, ink = own ? OWN.ink : t.d ? '255, 255, 255' : '0, 0, 0';
+    var R = document.documentElement; R.style.setProperty('--bg', bg); R.style.setProperty('--kink', ink); R.classList.toggle('gxown', own);
+    var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = bg;
+  };
+  window.gxTint();
 })();
 </script>
 <link rel="stylesheet" href="/songs/admin.css">
@@ -60,6 +68,7 @@ page shown inside another, stay where they are. On grifflix.co.uk, what came wit
 @font-face { font-family: "GF-lane"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/magneto.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto-bold.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto-bold.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/magnetob.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magnetob.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto-regular.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magneto-regular.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/itc-magneto.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/itc-magneto.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/magnetobold.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/magnetobold.woff") format("woff"); }   /* (Magneto, John's own, as uploaded on the admin page's Fonts card under any of its usual names) */
 @font-face { font-family: "GF-reel"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/materhornnf-y0ld.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhornnf-y0ld.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhornnf.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhornnf.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-6ndq.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-6ndq.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf-regular.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf-regular.woff") format("woff"); }   /* (Materhorn NF, Fanfare's revival, freeware but not to be redistributed: John's copy, uploaded on the admin page's Fonts card) */
 @font-face { font-family: "GF-hotel"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/archer.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/archer.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/archer-bold.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/archer-bold.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/archer-semibold.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/archer-semibold.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/archer-book.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/archer-book.woff") format("woff"); }   /* (Archer, the Grand Budapest's billing face (Fonts In Use): John's own copy, uploaded on the admin page's Fonts card) */
+@font-face { font-family: "Grifflix Display"; font-weight: 400; font-display: swap; src: url("https://cooperking.github.io/grifflix/fonts/GrifflixDisplay.woff2") format("woff2"); }
 </style><!--THEMEFONTS END-->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@500;700&display=swap">
 <style>
@@ -199,44 +208,86 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
 @media (max-width: 420px) { .tabs { gap: 3px; } .tabs button { padding: 0 4px; font-size: 10.5px; letter-spacing: .06em; } }
 .cards > [data-tab]:not(.tabon) { display: none; }
 </style>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Federo&display=swap">
 <style>
-/* Grifflix's own branding, as the site: poster blue, cream ink, the soft orange; Futura for the words in capitals, Caslon to read,
-   GRIFFLIX see-through with a cream line round each letter (John, 10 Nov 2026: "admin page to look like the proper branding").
-   Over the month's colours the page used to take (!important: those are set on the page itself) */
+/* the admin in Grifflix's own look, as its pages (Profile, the pop-ups): the month's colour and ink (--bg, --kink, set above),
+   Caslon to read, the Grifflix Display face for titles, Futura in capitals on buttons and tabs, square edges, sections parted by a line */
 :root {
-  --bg: #173a5e !important; --g1: #173a5e !important; --g2: #173a5e !important; --g3: #173a5e !important; --g4: #173a5e !important;
-  --ink: rgb(243, 232, 210) !important; --ink-2: rgba(243, 232, 210, .82) !important;
-  --glass: rgba(6, 18, 32, .22) !important; --glass-2: rgba(6, 18, 32, .34) !important; --glass-line: rgba(243, 232, 210, .28) !important;
-  --fg: rgb(243, 232, 210) !important; --fg-2: rgba(243, 232, 210, .92) !important; --muted: rgba(243, 232, 210, .68) !important; --faint: rgba(243, 232, 210, .5) !important;
-  --line: rgba(243, 232, 210, .2) !important; --chip: rgba(243, 232, 210, .06) !important; --tile: rgba(6, 18, 32, .26) !important; --field: rgba(6, 18, 32, .3) !important;
-  --ok: #9ad9a8 !important; --warn: #f08a4b !important; --accent: #f08a4b !important;
-  --serif: "Libre Caslon Text", "Iowan Old Style", Georgia, serif !important;
-  --sans: "GFutura", "Futura PT", "Futura", "Jost", "Century Gothic", sans-serif !important;
+  --fg: rgb(var(--kink)); --fg-2: rgba(var(--kink), .74); --muted: rgba(var(--kink), .6); --faint: rgba(var(--kink), .5);
+  --line: rgba(var(--kink), .3); --pline: rgba(var(--kink), .45);
+  --ink: rgb(var(--kink)); --ink-2: rgba(var(--kink), .74);
+  --glass: transparent; --glass-2: transparent; --glass-line: rgba(var(--kink), .45);
+  --tile: rgba(var(--kink), .04); --field: rgba(var(--kink), .06); --chip: transparent; --accent: rgb(var(--kink));
+  --g1: var(--bg); --g2: var(--bg); --g3: var(--bg); --g4: var(--bg);
+  --serif: "Libre Caslon Text", "Iowan Old Style", Georgia, serif;
+  --display: "Grifflix Display", "Federo", "Libre Caslon Text", Georgia, serif;
+  --kfont: "GFutura", "futura-pt", "Futura PT", "Futura", "Jost", "Century Gothic", sans-serif;
+  --sans: var(--serif);
   color-scheme: dark;
 }
-html, body { background: #173a5e !important; }
+html, body { background: var(--bg); }
+body { color: var(--fg-2); font: 400 14px/1.5 var(--serif); }
 .glow { display: none !important; }
-.card { background: #1e4670 !important; color: var(--fg-2); box-shadow: 0 18px 50px rgba(4, 12, 24, .35) !important; border: 1px solid rgba(243, 232, 210, .08); }
-.card h2 { color: var(--fg) !important; }
-.card h2 em, h1 em, .bar .name em { color: #f08a4b; }
-h1, .top h1, .bar .name { color: transparent !important; -webkit-text-stroke: .045em rgb(243, 232, 210); paint-order: stroke fill; }
-h1 em, .bar .name em { -webkit-text-stroke: 0; }
-.bar .name { -webkit-text-stroke-width: 1px; }
-.btn { color: var(--fg); border-color: var(--line); }
-.btn:hover { border-color: rgb(243, 232, 210); }
-.btn.primary, .thxfmt button.on, .tyears button.on { background: #f08a4b !important; border-color: #f08a4b !important; color: #12304f !important; }
-.seg button[aria-pressed="true"], .tabs button.on, .tabs button[aria-selected="true"] { background: rgb(243, 232, 210) !important; color: #173a5e !important; }
-.card input, .card textarea, .card select, .prefedit select { background: var(--field) !important; color: var(--fg) !important; border-color: var(--line) !important; }
+a { color: var(--fg); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+/* the bar: GRIFFLIX in outline, as the site's */
+.bar { margin: max(14px, calc(env(safe-area-inset-top, 0px) + 12px)) 0 0; padding: 0; min-height: 44px; border: 0; border-radius: 0; background: none; }
+.bar .name { font: 700 15px/1 var(--kfont) !important; letter-spacing: .55em; text-transform: uppercase; color: transparent; -webkit-text-stroke: 1.15px rgb(var(--kink)); paint-order: stroke fill; }
+.bar .name em { font-style: normal; font-weight: 500; letter-spacing: .3em; color: var(--fg-2); -webkit-text-stroke: 0; }
+/* titles: as Profile's name and the pop-ups' titles */
+.top { padding: 26px 0 14px; }
+.top h1, h1 { font: 400 41px/1.05 var(--display); letter-spacing: .005em; text-transform: none; color: var(--fg); -webkit-text-stroke: 0; }
+h1 em, .card h2 em, .pop h3 em { font: italic 400 .82em var(--serif); letter-spacing: 0; text-transform: none; color: var(--fg-2); -webkit-text-stroke: 0; }
+.sub { font: italic 400 17px/1.3 var(--serif); color: var(--fg-2); } .sub b { font-weight: 400; color: var(--fg); }
+.card h2, .gate h2 { margin: 0; font: 400 30px/1.1 var(--display); letter-spacing: .005em; text-transform: none; color: var(--fg); }
+.kicker, .tmh { margin: 0; font: 400 13px/1.2 var(--serif); font-variant: small-caps; letter-spacing: .1em; text-transform: lowercase; color: var(--muted); }
+.card .stat, .stat, .pop p { font-size: 13.5px; line-height: 1.5; color: var(--fg-2); }
+.card .stat b { color: var(--fg); font-weight: 700; }
+/* sections: no floating cards, each parted from the last by a line, as Profile's */
+.cards { gap: 0; }
+.card { background: none; color: var(--fg-2); border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: none; padding: 22px 0 24px; gap: 12px; }
+.cards > .card.tabon:first-of-type, .gate .card { border-top: 0; }
+/* buttons and tabs: the site's pill, square, Futura in capitals; the one to press filled with the ink */
+.btn, .glassbtn, .reload, .tabs button, .tyears button, .thxfmt button, #thxopen, .seg button, .tmonths .mv button, .tmonths .mv a, .tmspare a, .rqlist button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; padding: 0 16px; border: 1px solid var(--pline); border-radius: 0;
+  background: none; color: var(--fg); font: 500 12px/1 var(--kfont); letter-spacing: .26em; text-transform: uppercase; text-decoration: none; box-shadow: none; cursor: pointer; }
+.btn:hover, .glassbtn:hover, .tabs button:hover { border-color: rgb(var(--kink)); background: none; }
+.btn.primary, .tabs button.on, .tabs button[aria-selected="true"], .tyears button.on, .thxfmt button.on, .seg button[aria-pressed="true"] { background: rgb(var(--kink)); border-color: rgb(var(--kink)); color: var(--bg); }
+.btn.small { min-height: 32px; padding: 0 12px; font-size: 11px; }
+.reload { width: 40px; min-height: 40px; height: 40px; padding: 0; }
+.tmonths .mv button, .tmonths .mv a, .tmspare a, .rqlist button { min-width: 34px; min-height: 34px; height: 34px; padding: 0 8px; letter-spacing: 0; }
+.tabs { gap: 6px; padding: 10px 0; background: var(--bg); }
+.tabs button { flex: 1 1 0; min-width: 0; padding: 0 8px; white-space: nowrap; }
+@media (max-width: 560px) { .tabs { gap: 4px; } .tabs button { padding: 0 3px; font-size: 10px; letter-spacing: .06em; } }
+/* fields: square, as the site's search box */
+.card input[type=text], .card input[type=url], .card input[type=search], .card input[type=date], .card input.name, .card textarea, .card select, .prefedit select, .tmonths select {
+  min-height: 44px; border: 1px solid var(--line); border-radius: 0; background: var(--field); color: var(--fg); padding: 0 14px; font: 500 15px var(--kfont); }
+.card textarea { padding: 10px 14px; font: 400 15px/1.45 var(--serif); }
 .card input::placeholder, .card textarea::placeholder { color: var(--faint); }
-.toast { background: rgb(243, 232, 210) !important; color: #173a5e !important; }
-.fs.ok { color: #9ad9a8 !important; } .fs.no, .tmonths .warn { color: #f2b36d !important; }
-.ttile.over { box-shadow: inset 0 0 0 4px rgb(243, 232, 210), 0 0 0 3px #9ad9a8 !important; }
-.ttile.pick { box-shadow: inset 0 0 0 3px rgb(243, 232, 210), 0 0 0 2px #f08a4b !important; }
-a { color: #f2b36d; }
-@media (max-width: 560px) { .tabs button { letter-spacing: .03em !important; font-size: 10px !important; padding: 0 3px !important; } }
+.card input:focus, .card textarea:focus, .card select:focus { outline: 1px solid rgb(var(--kink)); outline-offset: 0; }
+.card select option, .prefedit select option { color: #000; }
+/* rows (updates, members, requests, results): square boxes, as Profile's choices */
+.changes li, .mem li, .rqlist li, .dres button { border: 1px solid var(--line); border-radius: 0; background: var(--tile); color: var(--fg-2); font: 400 14px/1.4 var(--serif); }
+.mem .who b { font: 700 14px/1.3 var(--serif); color: var(--fg); }
+.badge, .badge.signed, .badge.waiting, .badge.edited, .badge.check { border: 1px solid var(--line); border-radius: 0; background: none; color: var(--fg-2); font: 400 13px/1 var(--serif); font-variant: small-caps; text-transform: lowercase; letter-spacing: .1em; padding: 3px 8px; }
+.changes li .when, .mem .who > span, .rqlist li small, .dres button small, .prefedit label { color: var(--muted); }
+.cvbar { border-radius: 0; background: var(--line); } .cvbar span { border-radius: 0; background: rgb(var(--kink)); }
+.tspare { border: 1px dashed var(--line); border-radius: 0; }
+.fs.ok { color: var(--fg); } .fs.no, .tmonths .warn { color: var(--fg); font-style: italic; }
+.ttile.now, .thx button.on { outline: 3px solid rgb(var(--kink)); outline-offset: 2px; }
+.ttile.pick { box-shadow: inset 0 0 0 3px var(--bg), 0 0 0 2px rgb(var(--kink)); }
+.ttile.over { box-shadow: inset 0 0 0 4px var(--bg), 0 0 0 3px rgb(var(--kink)); }
+.thxbox { border: 1px solid var(--line); }
+.thx button small, .ttile small { font-family: var(--serif); } .thx button .use, .ttile .mo, .ttile .own, .ttile .miss, .ttile .warn2, .ttile .tmons, .ttile .on2, .ttile.off::after { font-family: var(--kfont); }
+.invite img { border-radius: 0; box-shadow: none; }
+/* the pop-ups and the toast, as the site's */
+dialog.pop { background: var(--bg); color: var(--fg-2); border: 1px solid var(--line); border-radius: 0; box-shadow: 0 0 0 1px rgba(var(--kink), .25); }
+dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.pop h3 { font: 400 30px/1.1 var(--display); letter-spacing: .005em; text-transform: none; color: var(--fg); }
+.pop .kicker { color: var(--muted); }
+.pop img { border-radius: 0 !important; box-shadow: none !important; border: 1px solid var(--line); }
+.x { width: 40px; height: 40px; border: 1px solid var(--pline); border-radius: 0; background: none; color: var(--fg); }
+.toast { border-radius: 999px; background: rgb(var(--kink)); color: var(--bg); font: 500 14px/1.3 var(--serif); }
 </style>
-<script>document.addEventListener('DOMContentLoaded', function () { var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = '#173a5e'; });</script>
 </head>
 <body>
 <div class="glow"></div>
@@ -1084,6 +1135,7 @@ a { color: #f2b36d; }
   })();
   var TDRAFT;   // (an order saved but not live yet: undefined when there's none)
   function tmDraft(j) {   // (what the Worker says: the live order, and any saved for the next update)
+    if (window.gxTint && j && j.themes !== undefined) gxTint(j.themes);   // (the page in the live month's colours)
     TDRAFT = 'draft' in j ? j.draft : j.themesDraft;
     tmTake(TDRAFT !== undefined ? TDRAFT : j.themes);
     WAIT.themes = TDRAFT !== undefined ? 'A new order of the months’ themes' : null; summary();

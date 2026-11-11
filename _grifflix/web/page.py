@@ -44,7 +44,7 @@ def theme_list():
             k, n, f, y, bg, ink = m.groups()
             whole = body[m.start():body.find('\n', m.start())]
             fo = re.search(r"font: '([^']*)'", whole); tw = re.search(r"tw: (\d+)", whole); tt = re.search(r"tt: '(\w+)'", whole); fs = re.search(r"fs: '(\w+)'", whole)
-            out.append({'k': k, 'n': n.replace("\\'", "'"), 'f': f.replace("\\'", "’"), 'y': int(y), 'bg': bg, 'd': 1 if ink == '#fff' else 0,
+            out.append({'k': k, 'n': n.replace("\\'", "'"), 'f': f.replace("\\'", "’"), 'y': int(y), 'bg': bg, 'd': 0 if ink == '#000' else 1,
                         'font': fo.group(1) if fo else '', 'tw': int(tw.group(1)) if tw else 700, 'tt': tt.group(1) if tt else 'uppercase', 'fs': fs.group(1) if fs else 'normal'})
     return out
 
@@ -62,8 +62,11 @@ def admin():
     a = open(ADMIN, encoding='utf-8').read()
     new = re.sub(r'/\*THEMELIST\*/.*?/\*THEMELIST END\*/', lambda m: '/*THEMELIST*/' + json.dumps(theme_list(), ensure_ascii=False, separators=(',', ':')) + '/*THEMELIST END*/', a, count=1, flags=re.S)
     t = open(SRC, encoding='utf-8').read()
+    gx = re.search(r"var GX = \{ bg: '(#[0-9a-f]{6})', ink: '([0-9, ]+)'", t)
+    own = {'bg': gx.group(1), 'ink': gx.group(2), 'blankFrom': re.search(r"var BLANKFROM = '(\d{4}-\d\d)'", t).group(1)}
+    new = re.sub(r'/\*GXOWN\*/.*?/\*GXOWN END\*/', lambda m: '/*GXOWN*/' + json.dumps(own, separators=(',', ':')) + '/*GXOWN END*/', new, count=1, flags=re.S)
     link = re.search(r"var THEMEFONTS = '([^']+)'", t).group(1)
-    faces = '\n'.join(l for l in t.split('\n') if l.startswith('@font-face { font-family: "GF-'))
+    faces = '\n'.join(l for l in t.split('\n') if l.startswith('@font-face { font-family: "GF-') or l.startswith('@font-face { font-family: "Grifflix Display"'))
     css = '<link rel="stylesheet" href="%s">\n<style>\n%s\n</style>' % (link, faces)
     new = re.sub(r'<!--THEMEFONTS-->.*?<!--THEMEFONTS END-->', lambda m: '<!--THEMEFONTS-->' + css + '<!--THEMEFONTS END-->', new, count=1, flags=re.S)
     if new != a:
