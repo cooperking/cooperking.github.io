@@ -819,7 +819,7 @@ html[data-theme=autumn] .hinfo { top: 112px; bottom: auto; }
 .gsoon { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; font: 400 44px/1 var(--tfont); text-transform: uppercase; color: #fff; text-shadow: 0 2px 10px rgba(0, 0, 0, .4); }
 .gsoon[hidden] { display: none; }
 .globe { position: absolute; left: calc(73% - 150px); top: calc(55% - 150px); width: 300px; height: 300px; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 50% 60%, rgba(255, 255, 255, .08), rgba(255, 255, 255, .03) 62%, rgba(255, 255, 255, .2) 100%); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .6); transform-origin: 50% 100%; }
-.gpic { position: absolute; left: 50%; top: 50%; width: 150px; height: 225px; margin: -100px 0 0 -75px; background: center/cover; }
+.gpic { position: absolute; left: 22%; top: 12%; width: 56%; height: 80%; margin: 0; background: center/cover; }   /* (in step with the globe, whatever its size: John, 11 Nov 2026: "on a fire tv the pictures sometimes go outside the globe, on an iPhone they're too small") */
 .snow, .gsnow { position: absolute; left: 0; right: 0; top: -240px; bottom: 0; pointer-events: none; background-image: radial-gradient(circle at 20px 30px, #fff 0 2px, transparent 3px), radial-gradient(circle at 90px 130px, #fff 0 1.5px, transparent 2.5px), radial-gradient(circle at 160px 60px, #fff 0 2.5px, transparent 3.5px), radial-gradient(circle at 210px 190px, #fff 0 1.5px, transparent 2.5px), radial-gradient(circle at 120px 215px, #fff 0 2px, transparent 3px); background-size: 240px 240px; animation: snow 10s linear infinite; }
 .snow { opacity: .3; }
 @keyframes snow { from { transform: translateY(0); } to { transform: translateY(240px); } }
@@ -835,9 +835,12 @@ html[data-theme=table] .tcentre h2 { font-family: var(--tfont); font-weight: var
 html[data-theme=globe] .hinfo .w { color: transparent; -webkit-text-stroke: 2px #fff; }
 /* (behind it all, the hand holding the globe, black and white; the globe on the picture's, held, so no stand: John, 11 Nov 2026) */
 html[data-theme=globe] { --bg: #0b0b0b !important; }
-html[data-theme=globe], html[data-theme=globe] body { background: #0b0b0b url("/grifflix/img/kane-hand.jpg?v=2") 70.5% 53.1% / cover no-repeat fixed !important; }
-html[data-theme=globe] .gbase, html[data-theme=globe] .gpile { display: none; }   /* (no stand, no heap of snow at the foot: John, 11 Nov 2026) */
-html[data-theme=globe] .globe { box-shadow: none; }
+html[data-theme=globe], html[data-theme=globe] body { background: #0b0b0b url("/grifflix/img/kane-hand.jpg?v=2") no-repeat fixed !important; background-size: var(--kbs, cover) !important; background-position: var(--kbp, 70.5% 53.1%) !important; }
+html[data-theme=globe] .gbase, html[data-theme=globe] .gpile { display: none; }
+html.covered #cal { visibility: hidden !important; }   /* (a whole-screen page over the theme: the theme not drawn under it) */   /* (no stand, no heap of snow at the foot: John, 11 Nov 2026) */
+html[data-theme=globe] .globe { box-shadow: none; clip-path: circle(50% at 50% 50%); }   /* (a hard circle: a TV draws nothing outside it) */
+.gfront { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 3; pointer-events: none; background: url("/grifflix/img/kane-hand-front.png?v=1") center / 100% 100% no-repeat; }   /* (the thumb and fingers, and the glass's rim, in front of the globe: held) */
+html:not([data-theme=globe]) .gfront { display: none; }
 html[data-theme=globe] .hinfo { width: max-content; max-width: min(600px, 44vw); padding: 22px 28px 18px; margin: 0 0 -18px -28px; background: rgba(6, 6, 6, .84); box-shadow: 0 10px 30px rgba(0, 0, 0, .45); }   /* (the words on black, clear of the sleeve) */
 html.mob.mob[data-theme=globe] .hinfo.hinfo { max-width: none; width: auto; margin: 0; padding: 12px 14px; top: auto !important; bottom: calc(84px + env(safe-area-inset-bottom)) !important; }   /* (a phone: under the hand, above the day buttons) */   /* (Kane's main title: outlined capitals) */
 html[data-theme=pinboard] .string polyline { stroke: #cf424b; }   /* (the UK one-sheet's red) */
@@ -1226,7 +1229,7 @@ html.mob .tcentre h2 { font-size: 56px; max-width: 520px; }
 html.mob .tcentre .k { font-size: 20px; } html.mob .tcentre .y { font-size: 28px; }
 html.mob .th-globe .vday { width: 84px; height: 110px; }
 html.mob .globe { left: 190px; top: 390px; width: 400px; height: 400px; }
-html.mob .gpic { width: 180px; height: 270px; margin: -120px 0 0 -90px; }
+
 html.mob .gbase { left: 216px; top: 772px; width: 348px; height: 84px; }
 html.mob.hall .bar-top, html.mob.table .bar-top { top: max(18px, calc(env(safe-area-inset-top) + 12px)); left: 16px; right: 16px; gap: 8px; }
 html.mob.hall .bar-top .brand, html.mob.table .bar-top .brand { font-size: 13px; letter-spacing: .42em; margin-right: 0; }
@@ -2848,6 +2851,13 @@ function wireCaption() {
 // the next or last month's theme at the ends
 var THEMEFX = {};
 function seeded(n) { var x = Math.sin(n * 9301 + 49297) * 233280; return x - Math.floor(x); }
+// the theme covered by a page over the whole screen (the calendar, search, a film's page, the player; on a TV any pop-up): hidden and
+// resting, so all the TV's effort goes into what's showing (John, 11 Nov 2026: "Calendar movement is still buggy on fire tv, feels heavy")
+function COVERED() { return document.documentElement.classList.contains('covered'); }
+function coverCheck() {
+  var d = $('#sheet'), on = !!(d && d.open && (TV || $('#sheetIn .tcal, #sheetIn #sq, #sheetIn .film'))) || !!($('#player') && $('#player').classList.contains('on'));
+  document.documentElement.classList.toggle('covered', on);
+}
 function ZDPR() { return Math.min(2, window.devicePixelRatio || 1); }
 function vAt(el, x, y, s, r, o, z) {
   el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%) scale(' + (s == null ? 1 : +s.toFixed(3)) + ')' + (r ? ' rotate(' + r.toFixed(1) + 'deg)' : '');
@@ -3114,7 +3124,13 @@ function themeCross(dir) {   // on into the next or last month (its own theme), 
 function themeWipe(dir, swap) {
   if (CALM || !document.body.animate) { swap(); themeFadeIn(dir); return; }
   if (S.wiping) return; S.wiping = true;
-  var w = document.createElement('div'), cal = $('#cal'), done = false; w.className = 'twipe'; document.body.appendChild(w);
+  var w = document.createElement('div'), cal = $('#cal'), done = false; w.className = 'twipe';
+  // (in the colours of the month it's going to: its ground, edged in its ink: John, 11 Nov 2026: "Can wipe transition match the coming/
+  // previous month")
+  try { var y = +S.month.slice(0, 4), m = +S.month.slice(5, 7) - 1 + dir; if (m < 0) { m = 11; y--; } else if (m > 11) { m = 0; y++; }
+    var tt = themeFor(m, y); if (tt) { w.style.background = tt.bg || '#173a5e'; w.style.borderColor = tt.ink || 'rgb(243, 232, 210)'; }   // (Grifflix's own month: its poster blue)
+    if (tt && tt.key === 'globe') w.style.background = '#0b0b0b'; } catch (e) {}
+  document.body.appendChild(w);
   if (cal) cal.style.isolation = 'isolate';   // (the theme's own layers under the panel, the bar over it)
   var end = function () { if (done) return; done = true; w.remove(); if (cal) cal.style.isolation = ''; S.wiping = false; };
   setTimeout(end, 2500);   // (whatever happens, never left up)
@@ -4380,6 +4396,7 @@ function snowfall(host, o) {
   F.sort(function (a, b) { return a.z - b.z; });
   function frame(now) {
     if (!host.isConnected) { raf = 0; return; }
+    if (COVERED()) { last = now; raf = 0; setTimeout(function () { if (!raf) raf = requestAnimationFrame(frame); }, 300); return; }   // (covered by a page over it: resting, not drawing)
     var dt = Math.min(.05, (now - last) / 1000), t = (now - t0) / 1000; last = now;
     if (cv.width !== Math.round(host.getBoundingClientRect().width * dpr)) size();
     var wind = (o.wind || 6) + Math.sin(t * .23) * 10 + Math.sin(t * .61) * 5;   // (gusting)
@@ -4461,18 +4478,22 @@ THEMEFX.globe = { own: true,   // (the whole month laid out at once: its own day
     var dt = new Date(key + 'T12:00'), hl = it && !it.secret ? showName(it) : 'Coming soon';
     return '<i class="np"><b>The Inquirer</b><s><span>' + DOW[(dt.getDay() + 6) % 7] + '</span><span>' + d + ' ' + MONTHS[c.m].slice(0, 3) + '</span><span>2¢</span></s><em>' + esc(hl) + '</em><u></u><i></i></i><span class="vn">' + DOW[(dt.getDay() + 6) % 7] + ' ' + d + '</span>';
   },
-  decor: function () { return '<div class="snow"></div><div class="globe" id="globe"><div class="gpic" id="gpic"></div><div class="gsoon" id="gsoon" hidden>Coming<br>soon</div><i class="gpile"></i><div class="gsnow"></div><i class="gshine"></i></div><div class="gbase"></div>'; },
+  decor: function () { return '<div class="snow"></div><div class="globe" id="globe"><div class="gpic" id="gpic"></div><div class="gsoon" id="gsoon" hidden>Coming<br>soon</div><i class="gpile"></i><div class="gsnow"></div><i class="gshine"></i></div><i class="gfront" id="gfront"></i><div class="gbase"></div>'; },
   swipe: function (c) { return { x: 1, y: 0, px: c.mob ? 24 : 40 }; },
   // (the room behind: a hand holding the globe, as the film opens on it; the globe itself where the picture's is, wherever the
   // picture's cropped to fill the screen: John, 11 Nov 2026: "have the snowglobe be where the globe is in the picture")
-  pic: { w: 1373, h: 809, cx: 968, cy: 430, d: 254, px: .705, py: .531 },
+  pic: { w: 1373, h: 809, cx: 968, cy: 430, d: 252, px: .705, py: .531, fw: 300 },   // (fw: the hand's front layer, kane-hand-front.png, 300 of the picture's pixels square round the globe's middle)
   fit: function () {
     var gl = $('#globe'), par = gl && gl.offsetParent; if (!par) return;
     var vw = document.documentElement.clientWidth || innerWidth, vh = document.documentElement.clientHeight || innerHeight, pr = par.getBoundingClientRect(), sc = pr.width / (par.offsetWidth || 1) || 1;
-    var P = this.pic, s = Math.max(vw / P.w, vh / P.h), ox = (vw - P.w * s) * P.px, oy = (vh - P.h * s) * P.py;
+    // (a phone: the picture from the top, a little short of the screen's height, the words in the black under the hand; elsewhere it fills
+    // the screen. Placed from here, so the picture and the globe always agree)
+    var P = this.pic, mob = MOB(), s = mob ? Math.max(vw / P.w, vh * .72 / P.h) : Math.max(vw / P.w, vh / P.h), ox = (vw - P.w * s) * P.px, oy = mob ? Math.min(0, (vh * .72 - P.h * s) * P.py) + Math.max(0, vh * .1 - 40) : (vh - P.h * s) * P.py;
+    var R = document.documentElement.style; R.setProperty('--kbs', (P.w * s).toFixed(1) + 'px ' + (P.h * s).toFixed(1) + 'px'); R.setProperty('--kbp', ox.toFixed(1) + 'px ' + oy.toFixed(1) + 'px');
     var d = P.d * s / sc, x = (ox + P.cx * s - pr.left) / sc, y = (oy + P.cy * s - pr.top) / sc, k = [vw, vh, Math.round(pr.left), Math.round(pr.top), Math.round(sc * 1000)].join();
     if (gl._fit === k) return; gl._fit = k;
     gl.style.left = (x - d / 2).toFixed(1) + 'px'; gl.style.top = (y - d / 2).toFixed(1) + 'px'; gl.style.width = gl.style.height = d.toFixed(1) + 'px';
+    var fr = $('#gfront'); if (fr) { var fw = P.fw * s / sc; fr.style.left = (x - fw / 2).toFixed(1) + 'px'; fr.style.top = (y - fw / 2).toFixed(1) + 'px'; fr.style.width = fr.style.height = fw.toFixed(1) + 'px'; }
   },
   place: function (all, at, c, b) {
     this.fit();
@@ -4709,6 +4730,8 @@ function openSheet(html) {
   // (what the remote's on in a pop-up is kept when it's redrawn only if they moved there: the browser's own first choice, the day
   // before, isn't kept over Play: John, 10 Nov 2026: "Tab order is still not remote control intuitive")
   if (!dlg.open) { dlg._moved = false; dlg.showModal(); }
+  if (!dlg._cv) { dlg._cv = 1; dlg.addEventListener('close', function () { setTimeout(coverCheck, 0); }); }
+  setTimeout(coverCheck, 0);
   if (!dlg._mv) { dlg._mv = 1; dlg.addEventListener('keydown', function (e) { if (/^Arrow/.test(e.key)) dlg._moved = true; }); }
   if (!dlg._gx) { dlg._gx = 1; dlg.addEventListener('close', function () { setTimeout(gxLights, 0); }); } gxLights();
   shBrand(); setTimeout(function () { if (dlg.open) shBrand(); }, 420);   // (again once it has slid in: where its words start)
@@ -5381,7 +5404,7 @@ function play(it, queue, fromStart) {
   P.it = it; P.queue = queue || [];
   $('#ptitle').textContent = showName(it); $('#psub').textContent = it.type === 'episode' ? subOf(it) : (it.year || '');
   $('#pmsg').classList.remove('on'); $('#pnext').classList.remove('on');
-  P.el.classList.add('on'); document.documentElement.style.overflow = 'hidden';
+  P.el.classList.add('on'); document.documentElement.style.overflow = 'hidden'; coverCheck();
   if (DEMO) { $('#pmsg').textContent = 'In the demo there’s nothing to play. Once the Mac mini is connected, “' + showName(it) + '” plays here.'; $('#pmsg').classList.add('on'); return; }
   var tries = 0, ask = function () {   // (the Mac asleep: it wakes to the first knock; tell them, and knock again for a minute)
     return api('play?id=' + it.id + (HEVC ? '&hevc=1' : '')).catch(function (e) {
@@ -5417,7 +5440,7 @@ function stopPlayer() {
   if (P.info && !DEMO) api('stop', { ps: P.info.ps, device: P.info.device }).catch(function () {});
   if (P.hls) { P.hls.destroy(); P.hls = null; }
   P.v.pause(); P.v.removeAttribute('src'); P.v.load();
-  P.el.classList.remove('on'); document.documentElement.style.overflow = '';
+  P.el.classList.remove('on'); document.documentElement.style.overflow = ''; coverCheck();
   if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
   if (S.view === 'home') homeRows();
 }
