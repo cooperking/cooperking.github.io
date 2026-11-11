@@ -896,7 +896,7 @@ def make_handler(g):
                         why = 'bigger than 1080p'
                     elif mbps > 20:
                         why = 'over 20 Mbps'
-                    elif not (vc in ('hevc', 'h265') or (vc == 'h264' and bits <= 8 and '10' not in (v.get('Profile') or ''))):
+                    elif not ((vc in ('hevc', 'h265') and bits <= 8 and '10' not in (v.get('Profile') or '')) or (vc == 'h264' and bits <= 8 and '10' not in (v.get('Profile') or ''))):
                         why = 'format browsers can’t play'
                     cv = made.get(os.path.normcase(it.get('Path') or ''))
                     rows.append({'id': it.get('Id'), 'n': it.get('Name'), 'y': it.get('ProductionYear') or '', 'w': w, 'h': h, 'v': vc, 'b': bits, 'mbps': mbps,
@@ -1177,6 +1177,9 @@ def make_handler(g):
             msid = ms.get('Id') or iid
             br = int(q.get('br') or 20000000)
             hevc = q.get('hevc') == '1'   # the device plays HEVC itself (the page asks it): copied, not converted
+            vs0 = next((x for x in ms.get('MediaStreams', []) if x.get('Type') == 'Video'), {}) or {}
+            if hevc and ((vs0.get('BitDepth') or 8) > 8 or '10' in (vs0.get('Profile') or '')) and q.get('hevc10') != '1':
+                hevc = False   # (a 10-bit HEVC film to a device that plays only 8-bit HEVC: it couldn't show it; John, 11 Nov 2026: Rushmore)
             hls = ('/v/%s/master.m3u8?' % iid) + urllib.parse.urlencode({
                 'MediaSourceId': msid, 'DeviceId': dev, 'PlaySessionId': ps, 'VideoCodec': 'h264,hevc' if hevc else 'h264', 'AudioCodec': 'aac,mp3',
                 'TranscodingMaxAudioChannels': 2, 'MaxStreamingBitrate': br, 'SegmentContainer': 'mp4', 'MinSegments': 1,
