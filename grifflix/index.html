@@ -614,7 +614,9 @@ html.tv .th-picture .zamb { filter: blur(18px) saturate(1.4) brightness(.42); }
 .tshare { position: fixed; z-index: 27; right: 52px; bottom: 104px; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(var(--kink), .35); background: color-mix(in srgb, var(--bg) 72%, #000); color: var(--fg); padding: 0; cursor: pointer; }
 .tshare svg { width: 15px; height: 15px; }
 html.mob .tshare { right: 16px; bottom: auto; top: max(66px, calc(env(safe-area-inset-top) + 64px)); border: 0; background: none; } html.mob .tinspo { right: 52px !important; }
-html.tv .tshare, html.tv #sharecal, html.tv #ashare, html.tv #shnative { display: none !important; }   /* (no sharing on the TV: John, 10 Nov 2026) */
+.tmute { right: 94px; } html.mob .tmute { right: 52px; } html.tv .tmute { right: 52px; display: grid !important; }   /* (the music on and off, left of the share button) */
+html.mob:has(#tmute) .tinspo { right: 88px !important; }
+html.tv .tshare:not(.tmute), html.tv #sharecal, html.tv #ashare, html.tv #shnative { display: none !important; }   /* (no sharing on the TV: John, 10 Nov 2026) */
 .zlt { position: absolute; left: 0; top: 0; z-index: 105; font-family: var(--kfont); font-weight: 700; line-height: 1; color: #ece7dd; text-transform: uppercase; pointer-events: none; will-change: transform; backface-visibility: hidden; -webkit-backface-visibility: hidden; text-shadow: 0 0 1px rgba(0, 0, 0, .5); }   /* (the logo's own Futura, bold, as the bar's GRIFFLIX: John, 10 Nov 2026) */
 html.public .bar-top [data-go="search"], html.public .bar-top [data-go="browse"], html.public .bar-top .members, html.public #refresh, html.public #refresh2, html.public #rows, html.public .tinspo .tfilm { display: none !important; }   /* (signed out: no library, no search) */
 #shwho { cursor: pointer; line-height: 1; } #shwho svg { display: block; width: 15px; height: 15px; } #shwho.whoico svg { width: 22px; height: 22px; }   /* (no sharing links until they're sorted: John, 10 Nov 2026) */
@@ -1224,7 +1226,8 @@ html.mob .tlamp { top: 512px; width: 540px; height: 236px; }
 html.mob .tring { top: 520px; width: 580px; height: 262px; }
 html.mob .tday { width: 50px; height: 68px; margin: -34px 0 0 -25px; line-height: 68px; font-size: 12px; }   /* (a phone: the posters seated round the table's lit edge, not on it, room between them: John, 10 Nov 2026) */
 html.mob .tcentre { top: 800px; }
-html.mob[data-theme=table] #cal .thv, html.mob[data-theme=table] #cal .thstage { overflow: visible !important; }   /* (a phone: the day's name under the table, not inside it: John, 8 Nov 2026) */
+html.mob[data-theme=table] #cal .thv, html.mob[data-theme=table] #cal .thstage { overflow: visible !important; }
+html.mob[data-theme=picture] #cal .thv { overflow: visible !important; } html.mob[data-theme=picture] #cal .thstage { overflow-x: clip !important; overflow-y: visible !important; }   /* (a phone: the projector's light out of the stage, from the calendar page under the drum: John, 11 Nov 2026) */   /* (a phone: the day's name under the table, not inside it: John, 8 Nov 2026) */
 html.mob .tcentre h2 { font-size: 56px; max-width: 520px; }
 html.mob .tcentre .k { font-size: 20px; } html.mob .tcentre .y { font-size: 28px; }
 html.mob .th-globe .vday { width: 84px; height: 110px; }
@@ -1302,7 +1305,7 @@ html[data-theme=reel] .leaf2 i { background: none; color: #f4ecd8; }
 html[data-theme=reel] .leaf2 b { color: #f4ecd8; background: #3a3a3a; margin: 0 0 .08em; }
 /* March, Cherbourg: an umbrella's canopy over the day */
 html[data-theme=umbrellas] .leaf2 { border: 0; border-radius: .5em .5em .08em .08em; background: #fff; }
-html[data-theme=umbrellas] .leaf2 i { height: .3em; padding: 0; background: repeating-conic-gradient(from 0deg at 50% 100%, #e30613 0 22.5deg, #ffe600 22.5deg 45deg); color: transparent; }
+html[data-theme=umbrellas] .leaf2 i { height: auto; padding: .55em 0 .45em; background: repeating-conic-gradient(from -90deg at 50% 130%, #e30613 0 15deg, #ffe600 15deg 30deg); color: #fff; text-shadow: 0 0 .25em rgba(0, 0, 0, .75), 0 0 .08em #000; }   /* (an umbrella's canopy over the date, the month on it, in its place: John, 11 Nov 2026: "Umbrellas of Cherbourg theme has a misaligned date") */
 html[data-theme=umbrellas] .leaf2 b { color: #000; }
 html[data-theme=fold] .hinfo .w > span { letter-spacing: -.01em; }
 html[data-theme=fold]:not(.mob) .hinfo .w { font-size: 70px; } html[data-theme=fold]:not(.mob) .hinfo { max-width: 600px; }
@@ -1596,8 +1599,8 @@ html.gxown .th-picture .zamb { background: var(--bg) !important; background-imag
 html.gxown .th-picture .zvig, html.gxown .th-picture .zbeam, html.gxown .th-picture .zgrain { display: none; }
 html.gxown .hinfo h2 { color: var(--gx-title) !important; } html.gxown .hinfo .k, html.gxown .tmonth, html.gxown .tinspo b { color: var(--gx-label) !important; }
 html.gxown .tinspo, html.gxown .tmonth { background: transparent !important; }
-html.gxown .zw { background-color: var(--gx-band) !important; } html.gxown .zw::after { opacity: 0 !important; }
-html.gxown .zfrontw svg path[fill] { fill: var(--gx-band) !important; } html.gxown .zfrontw .zrim { opacity: 0 !important; }
+html.gxown .zw::after { opacity: 0 !important; }
+.th-picture .zfrontw .zrim { stroke: #c9a24a !important; stroke-width: 2.8 !important; opacity: 1 !important; } .th-picture .ztop .zbrim { stroke: #c9a24a !important; stroke-opacity: .85 !important; stroke-width: 1.8 !important; }   /* (brass trims: John, 11 Nov 2026) */
 html.gxown .zstrip { background: var(--gx-strip) !important; } html.gxown .zlogo { background: var(--gx-logo) !important; }
 html.gxown .zcin { box-shadow: 0 0 0 6px var(--gx-band) !important; }
 html.gxown .zcurt { background: repeating-linear-gradient(90deg, var(--gx-c1) 0 14px, var(--gx-c2) 14px 22px, var(--gx-c1) 22px 30px) !important; filter: none !important; box-shadow: none !important; }
@@ -1660,9 +1663,9 @@ html .zlogo.zol, html.gxown .zlogo.zol { background: none !important; -webkit-ma
 .zpaper .zhs { left: 0; top: 0; transform-origin: 50% 50%; }
 /* (the zoetrope black lacquer, but seen: lighter where it faces you, darker as it turns away, its edges catching the screen's light:
    John, 10 Nov 2026: "it needs to be done subtly and look real") */
-html .th-picture .zw, html.gxown .th-picture .zw { background-color: #242022 !important; box-shadow: inset 0 1px 0 rgba(255, 244, 226, .16), inset 0 -14px 18px -6px rgba(0, 0, 0, .55), inset 1px 0 0 rgba(255, 244, 226, .07), inset -1px 0 0 rgba(0, 0, 0, .6); }
+html .th-picture .zw, html.gxown .th-picture .zw { background-color: transparent !important; box-shadow: inset 0 1px 0 rgba(255, 244, 226, .16), inset 0 -14px 18px -6px rgba(0, 0, 0, .55), inset 1px 0 0 rgba(255, 244, 226, .07), inset -1px 0 0 rgba(0, 0, 0, .6); }
 html .th-picture .zw::after, html.gxown .th-picture .zw::after { opacity: var(--dk, 0) !important; }
-html .th-picture .zfrontw svg path[fill], html.gxown .th-picture .zfrontw svg path[fill] { fill: url(#zlac) !important; }
+html .th-picture .zfrontw svg path[fill]:not([data-o]), html.gxown .th-picture .zfrontw svg path[fill]:not([data-o]) { fill: url(#zlac) !important; }   /* (the brass ornament, data-o, its own colour) */
 html .th-picture .zfrontw .zrim, html.gxown .th-picture .zfrontw .zrim { opacity: 1 !important; stroke: rgba(255, 244, 226, .2); stroke-width: 1.1; }
 .th-picture .ztop .zinb { fill: #0a090b; } .th-picture .ztop .zbrim { stroke: rgba(255, 244, 226, .3); }
 .th-picture .zbs, .th-picture .zbsl { background: #020203; }
@@ -1760,7 +1763,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '1b623f9e5f99' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '51354dfc133c' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2817,7 +2820,7 @@ function themeCaption(m) {   // a small caption under the month: the film the th
     '<span class="mbmid"><span class="mbhint">or swipe</span><span class="mbmon"><button class="mbm" id="mbmprev" aria-label="The month before"' + (mi > 0 ? '' : ' disabled') + '>‹ ' + mn(ms[mi - 1]).slice(0, 3) + '</button>' +
     '<button class="mbm" id="mbmnext" aria-label="The month after"' + (mi >= 0 && mi < ms.length - 1 ? '' : ' disabled') + '>' + mn(ms[mi + 1]).slice(0, 3) + ' ›</button></span></span>' +
     '<button class="pill" id="mbnext" aria-label="The day after">Day after ›</button></div>' : '';
-  var sh = '<button class="ico tshare" id="tshare" aria-label="Share this month’s theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button>';
+  var sh = muteBtn() + '<button class="ico tshare" id="tshare" aria-label="Share this month’s theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button>';
   return (id ? '<button class="tinspo link" id="tinspo" data-fid="' + id + '">' + txt + ' ›</button>' : '<div class="tinspo" id="tinspo">' + txt + '</div>') + sh + nav;
 }
 function capBar(m, y, prev, next) {   // the theme's caption on the calendar too, ‹ › to the month before or after, its theme with it (John, 9 Nov 2026: "Can the theme caption remain on the page when the calendar is up, with arrows to jump to the next or previous one")
@@ -2840,7 +2843,20 @@ function mobnavFit() {   // a phone's day and month buttons fitted to its width:
 }
 addEventListener('resize', function () { if (MOB()) mobnavFit(); });
 if (document.fonts) document.fonts.ready.then(function () { if (MOB()) mobnavFit(); });
+// (the music on and off from the theme's page itself, beside the share button: John, 11 Nov 2026: "can we have a place on the
+// screen to mute and unmute the background music?"; the same setting as the profile's Theme music, kept on this device)
+function muteBtn() {
+  return '<button class="ico tshare tmute" id="tmute" aria-label="' + (TMUS.on ? 'Turn the music off' : 'Turn the music on') + '" aria-pressed="' + !TMUS.on + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/>' +
+    (TMUS.on ? '<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>' : '<path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/>') + '</svg></button>';
+}
+function muteToggle() {
+  TMUS.on = !TMUS.on; store.set('grifflix-music', TMUS.on ? 'on' : 'off');
+  if (TMUS.on) { TMUS.ok = true; musicCtx(); var k = TMUS.k; TMUS.k = null; if (k) themeMusic(k); } else musicHush();
+  var b = $('#tmute'); if (b) { var f = document.activeElement === b; b.outerHTML = muteBtn(); b = $('#tmute'); b.onclick = muteToggle; if (f) b.focus(); }
+  toast(TMUS.on ? 'Music on' : 'Music off');
+}
 function wireCaption() {
+  var tm = $('#tmute'); if (tm && !tm.onclick) tm.onclick = muteToggle;
   var ts = $('#tshare'); if (ts && !ts.onclick) ts.onclick = function () { shareMonth(S.month); };
   var bp = $('#mbprev'), bn = $('#mbnext'); if (bp && !bp.onclick) { bp.onclick = function () { themeStep(-1); }; bn.onclick = function () { themeStep(1); }; }
   var mp = $('#mbmprev'), mx = $('#mbmnext'); if (mp && !mp.onclick) { mp.onclick = function () { themeMonth(-1); }; mx.onclick = function () { themeMonth(1); }; }
@@ -3589,10 +3605,20 @@ THEMEFX.jaws = {
 var CALM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 function fxTween(me, to, dur) {
   var now = performance.now();
-  if (me._at == null) { me._at = me._from = me._to = to; me._t0 = now - 1e4; me.draw(to, now); }
-  me._from = me._at; me._to = to; me._t0 = now; me._dur = CALM ? 1 : dur || 800;
+  if (me._at == null) {   // (the first placing at once, without the days' fade: each began seen and faded to its place, so far days blinked
+    // across the screen as the page opened: John, 11 Nov 2026: "it's when the page is loading - the images are flashing")
+    var all = me.all || []; all.forEach(function (el) { el.style.transition = 'none'; });
+    me._at = me._from = me._to = to; me._t0 = now - 1e4; me.draw(to, now);
+    if (all[0]) { void all[0].offsetWidth; requestAnimationFrame(function () { all.forEach(function (el) { el.style.transition = ''; }); }); }
+  }
+  // (a new step while it's still moving carries on at the speed it had, not a fresh push each step, which surged and stuttered
+  // under a trackpad's run of steps: John, 11 Nov 2026: "The inception movement is now very jittery too" ... "chrome")
+  var D = CALM ? 1 : dur || 800, d = to - me._at, v = 0, k = 3;
+  if (me._raf && me._dur > 1) { var q = Math.min(1, (now - me._t0) / me._dur), kq = me._k == null ? 3 : me._k; v = (me._to - me._from) * (kq + 2 * (3 - 2 * kq) * q + 3 * (kq - 2) * q * q) / me._dur; }
+  if (Math.abs(d) > 1e-6 && v) { if (v * D / d > 3) D = 3 * d / v; k = Math.max(-3, v * D / d); }
+  me._from = me._at; me._to = to; me._t0 = now; me._dur = D; me._k = k;
   if (!me._raf) me._raf = requestAnimationFrame(function step(t) {
-    var p = Math.min(1, (t - me._t0) / me._dur), e = 1 - Math.pow(1 - p, 3);
+    var p = Math.min(1, (t - me._t0) / me._dur), k = me._k, e = k * p + (3 - 2 * k) * p * p + (k - 2) * p * p * p;   // (from its own speed to rest; from still, the ease-out as before)
     me._at = me._from + (me._to - me._from) * e;
     var more = me.draw(me._at, t) || p < 1;
     me._raf = more && me.all && me.all[0] && me.all[0].isConnected ? requestAnimationFrame(step) : 0;
@@ -3683,7 +3709,11 @@ THEMEFX.fold = {
     me.all.forEach(function (el, j) {   // (the days, standing in the street: their foot on it, their head along its up)
       var k = j - a, t = me.tf + k * me.sp, b = me.S(g, me.P(t, 0, 0, phi)), h = me.S(g, me.P(t, 0, 3, phi));
       var dx = h[0] - b[0], dy = h[1] - b[1], len = Math.sqrt(dx * dx + dy * dy), o = Math.min(clamp01((t - (me.tf - me.sp * .8)) / (me.sp * .8)), t > tm - 1 ? 0 : 1);   // (the day you've left fades as you pass it)
-      if (b[2] < .4 || h[2] < .4) o = 0;
+      // (no day coming up to the lens as the street folds when the month opens, sweeping the screen huge and half see-through, nor
+      // blinking out and back: each fades as it nears the camera or grows too big, and those going overhead wait for the fold to
+      // be nearly done: John, 11 Nov 2026: "it's when the page is loading - the images are flashing")
+      o *= clamp01((Math.min(b[2], h[2]) - .5) / 1.5) * clamp01((3 - len / 300) / .8);
+      if (phi < 1 && t > me.L - 1) o *= clamp01((phi - .8) / .2);
       vAt(el, (b[0] + h[0]) / 2, (b[1] + h[1]) / 2, len / 300, Math.atan2(dx, -dy) * 180 / Math.PI, o, 900 - Math.round(Math.min(b[2], 80) * 10));
     });
     return phi < 1;
@@ -3941,17 +3971,19 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     h += '<svg class="znear" id="znear" width="' + c.W + '" height="' + c.H + '"></svg>';   // (the near wall between its slits, drawn as it turns)
     var NB = this.nb(c), PWd = R * 2 * Math.PI / NB * .58;
     for (var k = 0; k < NB; k++) h += '<i class="zw" style="width:' + F(PWd) + 'px;height:' + F(g.yS - g.yT) + 'px"></i>';
-    h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '"><defs><linearGradient id="zlac" x1="0" x2="1"><stop offset="0" stop-color="#070607"/><stop offset=".18" stop-color="#131113"/><stop offset=".5" stop-color="#262224"/><stop offset=".82" stop-color="#131113"/><stop offset="1" stop-color="#070607"/></linearGradient></defs>' +
+    h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '"><defs><linearGradient id="zlac" x1="0" x2="1"><stop offset="0" stop-color="#0e0f12"/><stop offset=".18" stop-color="#1e2024"/><stop offset=".5" stop-color="#33363b"/><stop offset=".82" stop-color="#1e2024"/><stop offset="1" stop-color="#0e0f12"/></linearGradient></defs>' +
       '<path fill="url(#zlac)" d="M' + F(cx - R) + ',' + F(g.yT - 18 * g.f) + ' ' + arc(0, g.yT - 18 * g.f) + F(cx + R) + ',' + F(g.yT - 18 * g.f) + ' L' + F(cx + R) + ',' + F(g.yT) + ' ' + arc(1, g.yT) + F(cx - R) + ',' + F(g.yT) + ' Z"/>' +
       '<path fill="url(#zlac)" d="M' + F(cx - R) + ',' + F(g.yS) + ' ' + arc(0, g.yS) + F(cx + R) + ',' + F(g.yS) + ' L' + F(cx + R) + ',' + F(g.yB) + ' ' + arc(1, g.yB) + F(cx - R) + ',' + F(g.yB) + ' Z"/>' +
       ['yT18', 'yT', 'yS', 'yB'].map(function (k) { var y = k === 'yT18' ? g.yT - 18 * g.f : g[k]; return '<path class="zrim" d="M' + F(cx - R) + ',' + F(y) + ' ' + arc(0, y) + F(cx + R) + ',' + F(y) + '"/>'; }).join('') + '</svg>';
     // (the GRIFFLIX logo itself painted round the band, twice, turning with the drum: John, 10 Nov 2026: "put the new grifflix logo properly on there")
-    var lh = (g.yB - g.yS) * .5, lw = Math.min(lh * 9.49, R * 1.1);   lh = lw / 9.49;
+    // (brass round the band instead: pinstripes, and a row of diamonds and studs, eight times round, joined, turning with the drum: John,
+    // 11 Nov 2026: "3 with brass trims but it's still quite boring to look at")
+    var ON = 8, lw = 2 * Math.PI * R / ON, lh = (g.yB - g.yS) * .8;
     // (painted round the band four times, in thin upright slices so it bends round the drum and follows its curve)
     // (drawn on one canvas, slice by slice, rather than as 96 moving pieces of page: a Fire Stick spent its time restyling them; John, 10 Nov 2026)
     var my0 = (g.yS + g.yB) / 2, bx0 = Math.floor(cx - R - lw / 24 - 4), by0 = Math.floor(my0 - g.ryAt(my0) - lh / 2 - 4), bw0 = Math.ceil(2 * R + lw / 12 + 8), bh0 = Math.ceil(2 * g.ryAt(my0) + lh + 8);   // (just the band, not the screen)
-    h += '<canvas class="zlgc" data-x="' + bx0 + '" data-y="' + by0 + '" width="' + Math.round(bw0 * ZDPR()) + '" height="' + Math.round(bh0 * ZDPR()) + '" style="left:' + bx0 + 'px;top:' + by0 + 'px;width:' + bw0 + 'px;height:' + bh0 + 'px"></canvas>';
-    this._lw = lw;
+    h += '<canvas class="zlgc" data-x="' + bx0 + '" data-y="' + by0 + '" width="' + Math.round(bw0 * (TV ? 1 : ZDPR())) + '" height="' + Math.round(bh0 * (TV ? 1 : ZDPR())) + '" style="left:' + bx0 + 'px;top:' + by0 + 'px;width:' + bw0 + 'px;height:' + bh0 + 'px"></canvas>';
+    this._lw = lw; this._lh = lh; this._lq = ON;
     return h + '</div>';
   },
   // (the pictures the drum is painted from: the horse's frames in black, GRIFFLIX in the band's lettering colour)
@@ -3961,17 +3993,18 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
       var x = cv.getContext('2d'); x.drawImage(im, 0, 0, cv.width, cv.height); x.globalCompositeOperation = 'source-in'; x.fillStyle = col; x.fillRect(0, 0, cv.width, cv.height); return cv; };
     // (GRIFFLIX as a white outline round each letter, nothing inside it: John, 10 Nov 2026: "Can we try the logo as having just white
     // surrounding and no inner colour itself")
-    var word = function () {   // (the letters in Grifflix Display, spread as the logo is, drawn round their edges only)
-      var fs = 120, sp = .34 * fs, P = 10, x0 = document.createElement('canvas').getContext('2d'); x0.font = '400 ' + fs + 'px "Grifflix Display"';
-      var L = 'GRIFFLIX'.split(''), ws = L.map(function (l) { return x0.measureText(l).width; }), tw = ws.reduce(function (s, v) { return s + v; }, 0) + sp * (L.length - 1);
-      var cv = document.createElement('canvas'); cv.width = Math.ceil(tw + 2 * P); cv.height = Math.ceil(fs * .82 + 2 * P); var x = cv.getContext('2d');
-      x.font = x0.font; x.textBaseline = 'alphabetic'; x.lineJoin = 'round'; x.strokeStyle = '#fbf6ec'; x.lineWidth = fs * .045;
-      var at = P; L.forEach(function (l, i) { x.strokeText(l, at, P + fs * .72); at += ws[i] + sp; });
-      A.logo = cv; A.ok++; try { if (me.all && $('#cal .zlgc')) me.draw(me._last || 0); } catch (e) {} try {   // (a short blob address, not the picture written out: the band's slices are restyled every frame as it turns, and each
-        // time a data: address is read again in full; a Fire Stick stalled on it: John, 10 Nov 2026: "fire tv is really struggling")
-        cv.toBlob(function (bl) { if (bl) document.documentElement.style.setProperty('--gx-outline', 'url(' + URL.createObjectURL(bl) + ')'); });
-      } catch (e) {} };
-    if (document.fonts && document.fonts.load) document.fonts.load('400 120px "Grifflix Display"').then(word, word); else word();
+    (function () {   // (the band's brass: one length of it, joined end to end round the drum)
+      var W = 360, H = 60, cv = document.createElement('canvas'); cv.width = W; cv.height = H; var x = cv.getContext('2d');
+      var br = x.createLinearGradient(0, 0, 0, H); br.addColorStop(0, '#f1d58c'); br.addColorStop(.45, '#c9a24a'); br.addColorStop(1, '#8a6726');
+      x.fillStyle = br;
+      [[3, 2.5], [8, 1], [H - 9, 1], [H - 5.5, 2.5]].forEach(function (b) { x.fillRect(0, b[0], W, b[1]); });   // (the pinstripes)
+      var dia = function (cx0, r) { x.beginPath(); x.moveTo(cx0, H / 2 - r); x.lineTo(cx0 + r * .72, H / 2); x.lineTo(cx0, H / 2 + r); x.lineTo(cx0 - r * .72, H / 2); x.closePath(); x.fill();
+        x.fillStyle = '#1a1b1f'; x.beginPath(); x.moveTo(cx0, H / 2 - r * .45); x.lineTo(cx0 + r * .32, H / 2); x.lineTo(cx0, H / 2 + r * .45); x.lineTo(cx0 - r * .32, H / 2); x.closePath(); x.fill(); x.fillStyle = br; };
+      var dot = function (cx0, r) { x.beginPath(); x.arc(cx0, H / 2, r, 0, 2 * Math.PI); x.fill(); };
+      for (var n = 0; n < 3; n++) { var c0 = W * (n + .5) / 3; dia(c0, 18); dot(c0 - W / 12, 3.2); dot(c0 + W / 12, 3.2); }
+      [0, W].forEach(function (e) { dot(e, 4); });   // (a stud where one length meets the next)
+      A.logo = cv; A.ok++; try { if (me.all && $('#cal .zlgc')) me.draw(me._last || 0); } catch (e) {}
+    })();
     return A;
   },
   ready: function (c) {
@@ -4044,38 +4077,34 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
   // enough, the horses gallop, backwards if it's turned backwards: John, 10 Nov 2026: "I should be able to push and pull the zoetrope
   // with my track pad")
   push: function (px) {
-    var me = this; if (!me.c || me._at == null || CALM) return; if (performance.now() < (me._bigUntil || 0)) return;   // (a big spin under way: the rest of the swipe is part of it)
+    // (a hand on the drum, as a real one: each bit of the swipe gives it a little turn of speed; it coasts on, slowing, and as it all but
+    // stops it eases on to the next slit ahead, never back, never jumping; the film and the day stay put. A big swipe is the long spin
+    // through the month (bigSpin). John, 11 Nov 2026: "small movement still buggy, and not like a small spin, jumps in direction")
+    var me = this; if (!me.c || me._at == null || CALM) return; if (performance.now() < (me._bigUntil || 0)) return;
     me._gtok = null; if (me._d0 == null) me._d0 = me._day != null ? me._day : me._at;
-    // (the faster the fingers, the further each bit of their swipe throws it: a gentle push nudges, a big swipe races the film by: John, 10 Nov 2026)
-    var t = performance.now(), d = px * .035 * (1 + Math.abs(px) / 30);   // (lively: John, 10 Nov 2026: "It's sluggish")
-    if (!me._push) { var Z0 = me.hr(); me._r0 = Math.round(Z0.rankOf(me._d0 + ((me._xs || .5) - .5) / me.nb())); }
-    me._xs = (me._xs || 0) + d; me.first();
-    var P = me._push || (me._push = { v: 0, t: t, last: t }), dt = Math.max(8, t - P.t) / 1000;
-    P.v = P.v * .5 + (d / dt) * .5; P.t = t; P.last = t; P.peak = Math.max(P.peak || 0, Math.abs(px)); if (d) P.dir = d > 0 ? 1 : -1;
-    if (P.peak >= 55) { var v0 = Math.abs(P.v); me._push = null; if (P.raf) cancelAnimationFrame(P.raf); me.bigSpin(P.dir, v0); return; }   // (a big swipe: at once the one long spin, from the swipe's own speed) me._gal = true; me._w = Math.abs(P.v);
-    me.draw(me._at);
+    var t = performance.now(), P = me._push;
+    if (!P) {
+      var Z0 = me.hr(); me._r0 = Math.round(Z0.rankOf(me._d0 + ((me._xs || .5) - .5) / me.nb())); me._hold = me._day != null ? me._day : me._at;
+      P = me._push = { w: 0, peak: 0, last: t, ft: t, xt: null, raf: 0 };
+    }
+    P.last = t; P.peak = Math.max(P.peak, Math.abs(px)); P.xt = null;
+    if (P.peak >= 55) { var w0 = Math.abs(P.w) * 6 + Math.abs(px) * .4; me._push = null; if (P.raf) cancelAnimationFrame(P.raf); me.bigSpin(px > 0 ? 1 : -1, w0); return; }   // (a big swipe: the long spin)
+    P.w = Math.max(-8, Math.min(8, P.w + px * .03));   // (slits a second)
+    me._fpos = me._hold;
     if (P.raf) return;
     (function f(tt) {
       var Q = me._push; if (!Q || !$('#zstagef')) { me._gal = false; me._w = 0; if (Q) Q.raf = 0; return; }
-      var dt2 = Math.min(.05, (tt - (Q.ft || tt)) / 1000); Q.ft = tt;
-      if (tt - Q.last > 110 && !Q.rel && (Q.peak || 0) >= 55) { me._push = null; Q.raf = 0; me.bigSpin(Q.dir || (Q.v < 0 ? -1 : 1)); return; }   // (a big spin: round the whole month and on to the next day)
-      if (tt - Q.last > 110 && !Q.rel) { Q.rel = 1; var sv = Math.abs(Q.v); Q.v = (Q.v < 0 ? -1 : 1) * (sv < 18 ? sv * .25 : Math.min(240, 1.2 * Math.pow(sv, 1.3))); }   // (let go: a gentle push turns it slowly, only a big swipe brings it up to speed: John, 10 Nov 2026)
-      if (tt - Q.last <= 110) Q.rel = 0;
-      if (tt - Q.last > 110) { me._xs += Q.v * dt2; Q.v *= Math.exp(-dt2 * (Math.abs(Q.v) > 8 ? .9 : 1.8)); if (me.first()) Q.v = 0; }   // (it runs on, slowing; no further back than the 1st)
-      me._w = Math.abs(Q.v);
-      if (tt - Q.last > 110 && Math.abs(Q.v) < 1.5) {   // (slowing to a stop, it settles with a slit square in front)
-        // (coming to rest on the next day it's heading for, always on, never back: John, 10 Nov 2026: "it shouldn't ever reverse to get
-        // itself back on track")
-        if (Q.rt == null) { var Z = me.hr(), rc = Z.rankOf(me._d0 + (me._xs - .5) / me.nb()), dq = Q.dir || 1; Q.rt = Math.abs(rc - Math.round(rc)) < .03 ? Math.round(rc) : dq > 0 ? Math.ceil(rc) : Math.floor(rc); for (var g3 = 0; g3 < Z.L && !Z.ok(Q.rt); g3++) Q.rt += dq; if (dq > 0 && Q.rt >= Z.L && !Z.ok(Z.L - 1)) { Q.rt = Math.round(rc); while (Q.rt > 0 && !Z.ok(Q.rt)) Q.rt--; }   // (nothing yet after today's: it stays on today's, not on into next month's days to come)
-          Q.Z = Z; }
-        var xt = .5 + (Q.Z.dayOf(Q.rt) - me._d0) * me.nb(); Q.v = 0; me._xs += (xt - me._xs) * .16;
-        if (Math.abs(xt - me._xs) < .01) { var rf = ((Q.rt % Q.Z.L) + Q.Z.L) % Q.Z.L, dT = Q.Z.H[rf]; me._xs = .5 + (dT - me._d0) * me.nb(); me._push = null; me._gal = false; me._w = 0; me.draw(me._at);
-          if (Q.rt < 0 || Q.rt >= Q.Z.L) { me.cross(Q.rt < 0 ? -1 : 1); return; }   // (past the 1st or the last: on into that month's theme)
-          if (dT !== me._day && typeof themeShow === 'function') { me._noGal = true; themeShow(dT, true); }
-          return; }
+      var dt = Math.min(.05, (tt - Q.ft) / 1000); Q.ft = tt;
+      if (Q.xt == null) {
+        me._xs += Q.w * dt; Q.w *= Math.exp(-dt * 1.1);   // (coasting, slowing)
+        if (Math.abs(Q.w) < 1.2 && tt - Q.last > 120) { var u0 = me._xs - .5, dq = Q.w >= 0 ? 1 : -1; Q.xt = .5 + (dq > 0 ? Math.ceil(u0 + .05) : Math.floor(u0 - .05)); Q.s0 = me._xs; Q.t0 = tt;
+          Q.T = Math.max(.45, Math.min(1.4, 2 * Math.abs(Q.xt - Q.s0) / Math.max(.4, Math.abs(Q.w)))) * 1000; Q.v0 = Q.w; }   // (on to the slit ahead, from its own speed slowing evenly to rest)
+      } else {   // (easing on to the slit ahead at the speed it had, slowing to rest on it)
+        var uu = Math.min(1, (tt - Q.t0) / Q.T); me._xs = Q.s0 + (Q.xt - Q.s0) * (1 - (1 - uu) * (1 - uu));
+        if (uu >= 1) { me._xs = Q.xt; me._d0 = me._hold - (me._xs - .5) / me.nb(); me._fpos = null; me._push = null; me._gal = false; me._w = 0; me.draw(me._at); return; }
       }
-      me.draw(me._at); Q.raf = requestAnimationFrame(f);
-    })(t);
+      me._w = Math.abs(Q.xt == null ? Q.w : (Q.v0 || 0)); me.draw(me._at); Q.raf = requestAnimationFrame(f);
+    })(t + 16);
   },
   first: function () {   // (turned back past the month's 1st by a push begun after it: held on the 1st; true if held)
     var me = this; if (!(me._r0 > 0)) return false;
@@ -4101,7 +4130,8 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     var dayOf = function (r) { if (r <= 0) return H[0] + r; if (r >= L - 1) return H[L - 1] + (r - (L - 1)); var i = Math.floor(r); return H[i] + (H[i + 1] - H[i]) * (r - i); };
     var rankOf = function (x) { if (x <= H[0]) return x - H[0]; for (var i = 0; i < L - 1; i++) if (x <= H[i + 1]) return i + (x - H[i]) / (H[i + 1] - H[i]); return L - 1 + (x - H[L - 1]); };
     var rs0 = rankOf(me._d0 + ((me._xs || .5) - .5) / NB), r0 = me._r0 != null ? me._r0 : Math.round(rs0), r1 = r0 + dir * (L + 1); while (dir * (r1 - rs0) < 1) r1 += dir * L;
-    if (dir < 0) { if (r0 <= 0) { me._r0 = null; me.cross(-1); return; } r1 = 0; }   // (back: no further than the 1st; from the 1st, on into the month before: John, 11 Nov 2026) for (var g2 = 0; g2 < L && !(AL[H[((r1 % L) + L) % L]] || { classList: { contains: function () { return true; } } }).classList.contains('has'); g2++) r1 += dir; var rf = ((r1 % L) + L) % L;   // (onward past days still to come)   // (from where the swipe began: once round and one on)
+    // (back: no further than the 1st; from the 1st, on into the month before: John, 11 Nov 2026)
+    if (dir < 0) { if (r0 <= 0) { me._r0 = null; me.cross(-1); return; } r1 = 0; } for (var g2 = 0; g2 < L && !(AL[H[((r1 % L) + L) % L]] || { classList: { contains: function () { return true; } } }).classList.contains('has'); g2++) r1 += dir; var rf = ((r1 % L) + L) % L;   // (onward past days still to come)   // (from where the swipe began: once round and one on)
     // (one motion: off at the swipe's own speed, slowing evenly all the way round the month, to rest on the next day)
     var rs = rankOf(me._d0 + ((me._xs || .5) - .5) / NB), S = r1 - rs, vr = Math.max(4, (v0 || 0) / NB);   // (ranks a second)
     var T = Math.max(1500, Math.min(2200, 2 * Math.abs(S) / vr * 1000)), m = Math.max(.8, Math.min(2.6, vr * T / 1000 / Math.abs(S)));   // (the film through the month quickly: John, 10 Nov 2026)
@@ -4224,21 +4254,33 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
       var rotN = ad * st + XR, cx = g.cx, ry = g.ry, yT = g.yT, yS = g.yS, half = D * .385, th2 = R * .018, F2 = function (n) { return n.toFixed(1); };
       var P = function (t, y0) { return F2(cx + R * Math.sin(t)) + ',' + F2(y0 + g.ryAt(y0) * Math.cos(t)); };
       var edge = function (a0, a1, y0, y1) { var n = 10, pts = [], j; for (j = 0; j <= n; j++) pts.push(P(a0 + (a1 - a0) * j / n, y0)); for (j = n; j >= 0; j--) pts.push(P(a0 + (a1 - a0) * j / n, y1)); return 'M' + pts.join('L') + 'Z'; };
-      var sh = function (c) { var k = Math.max(0, Math.min(1, c)), r = Math.round(13 + 30 * k), gg = Math.round(12 + 26 * k), b = Math.round(13 + 28 * k); return 'rgb(' + r + ',' + gg + ',' + b + ')'; };
+      var sh = function (c) { var k = Math.pow(Math.max(0, Math.min(1, c)), .8), r = Math.round(14 + 40 * k), gg = Math.round(15 + 41 * k), b = Math.round(18 + 44 * k); return 'rgb(' + r + ',' + gg + ',' + b + ')'; };   // (matte charcoal, not gloss: John, 11 Nov 2026)
       // (the same shapes moved each frame, not new ones made: a Fire Stick's time went on making and placing them: John, 10 Nov 2026)
       var hn = [], hf = [], put = function (svg, list) {
         var ks = svg._ps || (svg._ps = []);
         while (ks.length < list.length) { var e = document.createElementNS('http://www.w3.org/2000/svg', 'path'); svg.appendChild(e); ks.push(e); }
-        for (var q = 0; q < ks.length; q++) { var w = list[q] || ['', 'none'], el = ks[q]; if (el._d !== w[0]) { el._d = w[0]; el.setAttribute('d', w[0]); } if (el._f !== w[1]) { el._f = w[1]; el.setAttribute('fill', w[1]); } }
+        for (var q = 0; q < ks.length; q++) { var w = list[q] || ['', 'none'], el = ks[q]; if (el._d !== w[0]) { el._d = w[0]; el.setAttribute('d', w[0]); } if (el._f !== w[1]) { el._f = w[1]; el.setAttribute('fill', w[1]); } if (el._o !== !!w[2]) { el._o = !!w[2]; if (w[2]) el.setAttribute('data-o', '1'); else el.removeAttribute('data-o'); } }
       };
       if (NS._ps && !NS.contains(NS._ps[0])) NS._ps = null; if (FS._ps && !FS.contains(FS._ps[0])) FS._ps = null;
       for (var i = 0; i < NB; i++) {
         var m = ((i * D - rotN) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, a0 = Math.max(-Math.PI / 2, m - half), a1 = Math.min(Math.PI / 2, m + half);
         if (a1 > a0) {
           hn.push([edge(a0, a1, yT, yS), sh(Math.cos(m))]);
+          // (each panel between the slits framed in brass, a medallion at its heart and studs at its corners, as a Victorian maker's
+          // drum: John, 11 Nov 2026: "some decoration between the slits to make it look ornate and like a Victorian thing of beauty")
+          var cm = Math.cos(m), pw = a1 - a0;
+          if (cm > .1 && pw > D * .5) {
+            var al = (.3 + .65 * cm).toFixed(2), brass = 'rgba(214,176,92,' + al + ')', dk = 'rgba(16,17,20,' + al + ')';
+            var ins = pw * .15, lw2 = pw * .04, hgt = yS - yT, yt = yT + hgt * .09, yb = yS - hgt * .09, th3 = Math.max(1.2, hgt * .012), ym = (yT + yS) / 2, hh = hgt * .15, aw = pw * .24;
+            hn.push([edge(a0 + ins, a0 + ins + lw2, yt, yb), brass, 1]); hn.push([edge(a1 - ins - lw2, a1 - ins, yt, yb), brass, 1]);   // (the frame's sides)
+            hn.push([edge(a0 + ins, a1 - ins, yt, yt + th3), brass, 1]); hn.push([edge(a0 + ins, a1 - ins, yb - th3, yb), brass, 1]);   // (its top and foot)
+            var dia2 = function (t, y, a, hy) { return 'M' + P(t, y - hy) + 'L' + P(t + a, y) + 'L' + P(t, y + hy) + 'L' + P(t - a, y) + 'Z'; };
+            hn.push([dia2(m, ym, aw, hh), brass, 1]); hn.push([dia2(m, ym, aw * .5, hh * .5), dk, 1]); if (!TV) hn.push([dia2(m, ym, aw * .18, hh * .18), brass, 1]);   // (the medallion)
+            (TV ? [] : [[a0 + ins + lw2 / 2, yt], [a1 - ins - lw2 / 2, yt], [a0 + ins + lw2 / 2, yb], [a1 - ins - lw2 / 2, yb]]).forEach(function (q) { hn.push([dia2(q[0], q[1], pw * .045, hgt * .025), brass, 1]); });   // (the studs)
+          }
           // (the wall's thickness, on the edge that turns towards you)
           var ex = m > 0 ? a0 : a1, ew = th2 * Math.abs(Math.sin(ex)) / R * 6;
-          if (Math.abs(Math.sin(ex)) > .05 && ex > -Math.PI / 2 && ex < Math.PI / 2) hn.push([edge(m > 0 ? ex - ew : ex, m > 0 ? ex : ex + ew, yT, yS), 'rgba(70,62,60,.9)']);
+          if (Math.abs(Math.sin(ex)) > .05 && ex > -Math.PI / 2 && ex < Math.PI / 2) hn.push([edge(m > 0 ? ex - ew : ex, m > 0 ? ex : ex + ew, yT, yS), 'rgba(201,162,74,.92)']);
         }
         // (the far wall's slit, a hole: dark through to the room, its cut edge lit on the side facing you)
         var fm = (((i + .5) * D - rotN) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cf = Math.cos(fm);
@@ -4266,16 +4308,18 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     var LC = me._lc && me._lc.isConnected ? me._lc : (me._lc = $('#cal .zlgc')), lw = me._lw || 300, LI = me._art && me._art.logo;
     if (me._l0 == null || !LC || LC._l0 !== 1) { me._l0 = a; if (LC) LC._l0 = 1; }   // (centred where the drum first comes to rest)
     var my = (g.yS + g.yB) / 2;
-    if (LC && LI) {
-      var cx2 = LC._x || (LC._x = LC.getContext('2d')), dp = ZDPR(), ox = +LC.dataset.x, oy = +LC.dataset.y, lh = lw / 9.49, sw = lw / 24, sx = LI.width / lw;
+    if (LC && LI && !(TV && sp > .15 && (me._bf = (me._bf || 0) + 1) % 2)) {   // (a TV, the drum turning: the band every other frame, blurred by its speed anyway)
+      var cx2 = LC._x || (LC._x = LC.getContext('2d')), dp = LC.width / (+LC.style.width.replace('px', '') || LC.width), ox = +LC.dataset.x, oy = +LC.dataset.y, lh = me._lh || lw / 9.49, KS = me._lq ? 6 : 24, sw = lw / KS, sx = LI.width / lw, LQ = me._lq || 4;   // (the brass band: 10 slices a length is plenty, and light on a TV)
       cx2.setTransform(1, 0, 0, 1, 0, 0); cx2.clearRect(0, 0, LC.width, LC.height);
-      for (var q = 0; q < 4; q++) for (var k = 0; k < 24; k++) {
-        var th = ((q * Math.PI / 2 - (ad - me._l0) * st - XR + .5 * D + ((k + .5) / 24 - .5) * lw / R) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
+      for (var q = 0; q < LQ; q++) for (var k = 0; k < KS; k++) {
+        var th = ((q * 2 * Math.PI / LQ - (ad - me._l0) * st - XR + .5 * D + ((k + .5) / KS - .5) * lw / R) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
         if (cs < .06) continue;
         var w = sw + .6;
-        cx2.globalAlpha = Math.min(1, cs * 1.4);
-        cx2.setTransform(dp * cs, 0, 0, dp, dp * (g.cx + R * Math.sin(th) - ox), dp * (my + g.ryAt(my) * cs - oy));
-        cx2.drawImage(LI, k * sw * sx, 0, Math.min(LI.width - k * sw * sx, w * sx), LI.height, -w / 2, -lh / 2, w, lh);
+        cx2.globalAlpha = Math.min(1, .25 + cs * 1.2);
+        // (each strip tilted to the drum's curve where it lies, so the brass runs round in one curve, not in steps: John, 11 Nov 2026:
+        // "The brass finish on the zoetrope is all straight lines - there is a step between each panel. It would be a curved line")
+        cx2.setTransform(dp * cs, -dp * g.ryAt(my) / R * Math.sin(th), 0, dp, dp * (g.cx + R * Math.sin(th) - ox), dp * (my + g.ryAt(my) * cs - oy));
+        cx2.drawImage(LI, k * sw * sx, 0, Math.min(LI.width - k * sw * sx, (w + .4) * sx), LI.height, -w / 2, -lh / 2, w + .4, lh);
       }
       cx2.globalAlpha = 1;
     }
@@ -5213,7 +5257,7 @@ function drawAccount() {
   var ng = $('#notego'); if (ng) ng.onclick = function () { (on ? notesOff() : notesOn()).then(function () { profTab(); }).catch(oops); };
   $('#mailgo').onclick = addEmail;
   $('#leadgo').onclick = function () { closeSheet(); window.ZLED = 0; TMUS.ok = true; musicCtx(); THEMEFX.picture.leader(true); };   // (Grifflix's opening again, with its sound: a tap allows it, an iPhone too)
-  $('#musgo').onclick = function () { TMUS.on = !TMUS.on; store.set('grifflix-music', TMUS.on ? 'on' : 'off'); if (!TMUS.on) musicHush(); toast(TMUS.on ? 'Theme music on' : 'Theme music off'); drawAccount(); };
+  $('#musgo').onclick = function () { TMUS.on = !TMUS.on; store.set('grifflix-music', TMUS.on ? 'on' : 'off'); if (!TMUS.on) musicHush(); var tb = $('#tmute'); if (tb) { tb.outerHTML = muteBtn(); $('#tmute').onclick = muteToggle; } toast(TMUS.on ? 'Theme music on' : 'Theme music off'); drawAccount(); };
   $('#tvcode').onclick = function () { var b = this; if (DEMO) return toast('Not in the demo.'); wcall({ op: 'tvcode' }).then(function (j) { b.outerHTML = '<span class="tvcode">' + j.code + '</span><span class="profp"> for ' + j.minutes + ' minutes, once</span>'; }).catch(oops); };
   $('#signout').onclick = function () {
     var b = this; if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Tap again to sign out'; return; }
