@@ -6,7 +6,7 @@ to send smoothly over Wi-Fi and to phones. So, ahead of time, this converts the 
   * a format browsers can't play (XviD/DivX, MPEG-2, VC-1, AV1, VP9, 10-bit H.264...)
   * too big: bigger than 1080p (John, 7 Nov 2026: "1080p is big enough for me"), or over 20 Mbps
 into H.264 at up to 1080p (quality 20, at most 8 Mbps and never more than the original), with sound that plays everywhere (AAC stereo, and the
-original surround kept alongside). Files that already play as they are, and HEVC within those limits, are left alone.
+original surround kept alongside). Files that already play as they are, and 8-bit HEVC within those limits, are left alone (10-bit HEVC is converted).
 
 Safe:
   * it pauses whenever someone is watching (streaming comes first), and runs at low priority
@@ -116,8 +116,9 @@ def why(ms):
         return 'too big (%.0f Mbps)' % mbps
     if vc == 'h264' and bits <= 8 and '10' not in prof:
         return None
-    if vc in ('hevc', 'h265'):
-        return None
+    if vc in ('hevc', 'h265') and bits <= 8 and '10' not in prof:
+        return None   # (8-bit HEVC: the devices that play HEVC play it; 10-bit HEVC, which many browsers and TV sticks can't, is converted:
+                      # the Mac mini can't convert it as it plays (John, 11 Nov 2026: Rushmore, HEVC 10-bit, stuck at 40 seconds))
     return 'format (%s%s)' % (vc or '?', ', 10-bit' if bits > 8 or '10' in prof else '')
 
 
