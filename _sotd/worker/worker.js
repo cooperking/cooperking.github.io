@@ -5249,6 +5249,13 @@ async function memberSpotify(request, url, env, answer) {
       const r = await spCall(env, who.id, rec, 'PUT', '/me/player', { device_ids: [String(b.device || '')], play: true });
       return answer(r.status < 300 ? 200 : 409, r.status < 300 ? { ok: true } : { why: r.why || 'other', error: r.msg });
     }
+    if (b.op === 'queue') {   // what Spotify will play next, as it has it (John, 11 Nov 2026: the app showing a different song from Spotify's): the song now, then its queue
+      const r = await spCall(env, who.id, rec, 'GET', '/me/player/queue');
+      if (r.status === 204 || !r.json) return answer(200, { none: true });
+      if (r.status !== 200) return answer(409, { why: r.why || 'other', error: r.msg });
+      const id = x => (x && x.linked_from && x.linked_from.id) || (x && x.id) || '';
+      return answer(200, { track: id(r.json.currently_playing), q: (r.json.queue || []).map(id).filter(Boolean).slice(0, 50) });
+    }
     if (b.op === 'seek') { const r = await spCall(env, who.id, rec, 'PUT', '/me/player/seek?position_ms=' + Math.max(0, b.ms | 0)); return answer(r.status < 300 ? 200 : 409, r.status < 300 ? { ok: true } : { why: r.why || 'other', error: r.msg }); }
     if (b.op === 'state') {
       const r = await spCall(env, who.id, rec, 'GET', '/me/player?market=from_token');   // (market: a song Spotify swapped for its own country's copy says which it was, linked_from)

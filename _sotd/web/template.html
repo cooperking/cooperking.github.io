@@ -4239,6 +4239,39 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       });
     }, left + 400);
   }
+  // what Spotify will really play next (its queue), as the list the page follows: the page's own calendar order isn't
+  // Spotify's when the songs were sent from another list or another device (John, 11 Nov 2026: "the song playing in the
+  // app when playing on a spotify is wrong still")
+  function spxQueueSync() {
+    if (SPX.native || !SPX.track) return;
+    var t0 = SPX.track;
+    spCall({ op: 'queue' }).then(function (j) {
+      if (j.status !== 200 || !j.track || !j.q || SPX.track !== t0 || j.track !== t0) return;
+      var nx = j.q.filter(function (t, i, a) { return t !== t0 && a.indexOf(t) === i && songOf(t); });   // (the ones the page knows, in Spotify's order)
+      var i0 = SPX.list.indexOf(t0);
+      if (!nx.length || (i0 >= 0 && SPX.list[i0 + 1] === nx[0])) return;   // (Spotify's next is the page's next already: its own, longer, list kept)
+      SPX.list = [t0].concat(nx);
+      queue = { list: SPX.list.slice(), i: 0, name: (queue && queue.name) || 'Spotify', back: null, order: SPX.list.slice(), heard: {} };   // (the page's own next song the same as Spotify's, so stepping on to where Spotify has got to never sends another)
+      spLog('Spotify’s own next songs taken as the list: ' + nx.length);
+    }).catch(function () {});
+  }
+  function spxFollowing() { return !!(coverObj && coverObj.sp && SPX.track && !SPX.native); }
+  function spxSkip(dir) {   // the mini player's next and back while Spotify plays: Spotify itself skips, and the page follows it
+    spLog('sent to Spotify: ' + (dir > 0 ? 'next' : 'previous'));
+    spCall({ op: dir > 0 ? 'next' : 'prev' }).then(function (j) {
+      if (j.status !== 200) { toast(j.error || 'Spotify didn’t skip'); return; }
+      setTimeout(function () {
+        spxState().then(function (k) {
+          if (k.status !== 200 || !k.track || k.track === SPX.track) return;   // (back near a song's start: Spotify starts it again, nothing to follow)
+          var at = SPX.list.indexOf(SPX.track), to = SPX.list.indexOf(k.track);
+          SPX.catchUp = k.track; SPX.pos = k.pos || 0; SPX.at = Date.now(); SPX.dur = k.dur || 0; SPX.playing = !!k.playing; SPX.skips = 0;
+          if (to > at && at >= 0) { SPX.track = k.track; coverState(0); spxQueueSync(); return; }   // (on: the page steps on to it, sending nothing)
+          if (to >= 0 && to === at - 1 && typeof goDay === 'function') { SPX.track = k.track; goDay(-flip()); return; }   // (back one: the page steps back to it)
+          spxRefollow('skipped');   // (anything else: followed afresh)
+        }).catch(function () {});
+      }, 1200);
+    }).catch(function () { toast('Couldn’t reach Spotify just now'); });
+  }
   function spxRefollow(why) {   // Spotify changed elsewhere (another device, or Spotify itself): this page lets go and follows what it's playing now, sending nothing
     spLog('Spotify changed elsewhere (' + why + '): following it here');
     clearInterval(SPX.poll); SPX.catchUp = null;
@@ -4260,7 +4293,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
           if (SPX.native && SPX.list.indexOf(j.track) < 0 && (SPX.skips || 0) < 3) { SPX.skips = (SPX.skips || 0) + 1; spxCmd('next'); return; }   // (an old song still in the phone's queue from before: skipped)
           if (SPX.list.indexOf(j.track) > SPX.list.indexOf(SPX.track)) {   // Spotify moved on by itself: the page follows (its next song is this one)
             SPX.catchUp = j.track; SPX.track = j.track; SPX.pos = j.pos; SPX.at = Date.now(); SPX.dur = j.dur; SPX.playing = j.playing; SPX.skips = 0;
-            spxTopUp(); coverState(0); return;
+            spxTopUp(); coverState(0); spxQueueSync(); return;
           }
           if (j.playing && byTrack[j.track]) { spxRefollow('another song of the calendar'); return; }   // (another device, say: followed, not fought)
           SPX.other = true; SPX.playing = false; clearInterval(SPX.poll); coverState(2); return;   // (something else chosen in Spotify itself: left playing, no longer followed; Play here sends this song again)
@@ -6266,8 +6299,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     bgOff(); closeDialog(sheet, true); resumeForget(); nowStop();
   });
   // back and forward go as a swipe does: to the card on the left or the right (Play all, newest first: left is the day before)
-  document.getElementById('fabnext').addEventListener('click', function () { if (RESUME) resumeGo(false, 1); else if (bgOn) goDay(1); });
-  document.getElementById('fabprev').addEventListener('click', function () { if (RESUME) resumeGo(false, -1); else if (bgOn) goDay(-1); });
+  document.getElementById('fabnext').addEventListener('click', function () { if (spxFollowing()) spxSkip(1); else if (RESUME) resumeGo(false, 1); else if (bgOn) goDay(1); });
+  document.getElementById('fabprev').addEventListener('click', function () { if (spxFollowing()) spxSkip(-1); else if (RESUME) resumeGo(false, -1); else if (bgOn) goDay(-1); });
 
   // ---- what's playing, kept through a reload or a visit away from the calendar (members): saved as it plays; on the
   // calendar's next opening My playlist's box shows it, paused where it was (a phone won't start sound by itself), and
@@ -11657,6 +11690,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       // (playing on one of their speakers: that speaker is the one chosen, for this visit, so the page follows Spotify there
       // (its time, its next songs) whatever they chose for songs with files: John, 5 Nov 2026, "it doesn't synch with the time of the song")
       if (k.did && !/Smartphone|Tablet/.test(k.dtype || '')) { SPX.pick = k.did; SPX.pickPhone = false; spkDraw(); }
+      spxQueueSync();
       spLog('picked up (' + why + '): Spotify playing “' + (byTrack[k.track].title || k.track) + '” on ' + (k.device || 'a device') + ', ' + SPX.list.length + ' in its list');
       NOW.from = ''; root.classList.remove('nowelse'); PICK.follow = true;   // (not "on your iPhone": Spotify's, followed here quietly)
       PICK.force = true;
