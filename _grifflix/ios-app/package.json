@@ -3,11 +3,11 @@
   "private": true,
   "description": "Grifflix as an iPhone app (TestFlight): the site in the app's own browser, films playing full screen and to AirPlay. Built by .github/workflows/grifflix-ios.yml.",
   "dependencies": {
-    "@capacitor/app": "^7.0.0",
-    "@capacitor/core": "^7.4.0",
-    "@capacitor/ios": "^7.4.0"
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/ios": "^8.6.0"
   },
   "devDependencies": {
-    "@capacitor/cli": "^7.4.0"
+    "@capacitor/cli": "^8.6.0"
   }
 }
