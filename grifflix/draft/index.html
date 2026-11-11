@@ -1844,7 +1844,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'b51176e08709' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '1c26cdaee38f' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5632,8 +5632,15 @@ window.addEventListener('pagehide', saveProgress);
   P.toggle = toggle; P.skip = skip;
   ['play', 'pause'].forEach(function (ev) { v.addEventListener(ev, state); });
   ['timeupdate', 'progress', 'durationchange', 'seeking'].forEach(function (ev) { v.addEventListener(ev, paint); });
-  v.addEventListener('waiting', function () { el.classList.add('wait'); });
-  ['playing', 'canplay', 'seeked', 'pause', 'emptied'].forEach(function (ev) { v.addEventListener(ev, function () { el.classList.remove('wait'); }); });
+  // (still waiting after 20 seconds: say why, rather than a spinner for ever (John, 11 Nov 2026: "my latest film got stuck on 40
+  // seconds, despite it being a good quality file"): a file the Mac mini has to convert as it plays, faster than it can)
+  var stuckT = 0, unstuck = function () { clearTimeout(stuckT); stuckT = 0; var m = $('#pmsg'); if (m.dataset.stuck) { m.classList.remove('on'); delete m.dataset.stuck; } };
+  v.addEventListener('waiting', function () { el.classList.add('wait'); clearTimeout(stuckT); stuckT = setTimeout(function () {
+    if (!el.classList.contains('wait') || !el.classList.contains('on')) return;
+    var m = $('#pmsg'); m.dataset.stuck = 1; m.classList.add('on');
+    m.innerHTML = 'Still loading…<br><small style="display:block;max-width:34em;margin:10px auto 0;font-size:15px;line-height:1.5;opacity:.85">The Mac mini is struggling to send this film. A new film’s file is often one it has to convert as it plays, which it can’t do fast enough; it converts new films first each night, and then they play smoothly. Try again tomorrow, or another film for now.</small>';
+  }, 20000); });
+  ['playing', 'canplay', 'seeked', 'pause', 'emptied'].forEach(function (ev) { v.addEventListener(ev, function () { el.classList.remove('wait'); unstuck(); }); });
   $('#pplay').onclick = toggle; $('#pbig').onclick = function (e) { e.stopPropagation(); toggle(); };
   // (the film's place: pressed or dragged anywhere along it, the time shown above the finger; let go, it goes there)
   var at = function (e) { var r = seek.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };
