@@ -3590,10 +3590,20 @@ THEMEFX.jaws = {
 var CALM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 function fxTween(me, to, dur) {
   var now = performance.now();
-  if (me._at == null) { me._at = me._from = me._to = to; me._t0 = now - 1e4; me.draw(to, now); }
-  me._from = me._at; me._to = to; me._t0 = now; me._dur = CALM ? 1 : dur || 800;
+  if (me._at == null) {   // (the first placing at once, without the days' fade: each began seen and faded to its place, so far days blinked
+    // across the screen as the page opened: John, 11 Nov 2026: "it's when the page is loading - the images are flashing")
+    var all = me.all || []; all.forEach(function (el) { el.style.transition = 'none'; });
+    me._at = me._from = me._to = to; me._t0 = now - 1e4; me.draw(to, now);
+    if (all[0]) { void all[0].offsetWidth; requestAnimationFrame(function () { all.forEach(function (el) { el.style.transition = ''; }); }); }
+  }
+  // (a new step while it's still moving carries on at the speed it had, not a fresh push each step, which surged and stuttered
+  // under a trackpad's run of steps: John, 11 Nov 2026: "The inception movement is now very jittery too" ... "chrome")
+  var D = CALM ? 1 : dur || 800, d = to - me._at, v = 0, k = 3;
+  if (me._raf && me._dur > 1) { var q = Math.min(1, (now - me._t0) / me._dur), kq = me._k == null ? 3 : me._k; v = (me._to - me._from) * (kq + 2 * (3 - 2 * kq) * q + 3 * (kq - 2) * q * q) / me._dur; }
+  if (Math.abs(d) > 1e-6 && v) { if (v * D / d > 3) D = 3 * d / v; k = Math.max(-3, v * D / d); }
+  me._from = me._at; me._to = to; me._t0 = now; me._dur = D; me._k = k;
   if (!me._raf) me._raf = requestAnimationFrame(function step(t) {
-    var p = Math.min(1, (t - me._t0) / me._dur), e = 1 - Math.pow(1 - p, 3);
+    var p = Math.min(1, (t - me._t0) / me._dur), k = me._k, e = k * p + (3 - 2 * k) * p * p + (k - 2) * p * p * p;   // (from its own speed to rest; from still, the ease-out as before)
     me._at = me._from + (me._to - me._from) * e;
     var more = me.draw(me._at, t) || p < 1;
     me._raf = more && me.all && me.all[0] && me.all[0].isConnected ? requestAnimationFrame(step) : 0;
@@ -3684,7 +3694,11 @@ THEMEFX.fold = {
     me.all.forEach(function (el, j) {   // (the days, standing in the street: their foot on it, their head along its up)
       var k = j - a, t = me.tf + k * me.sp, b = me.S(g, me.P(t, 0, 0, phi)), h = me.S(g, me.P(t, 0, 3, phi));
       var dx = h[0] - b[0], dy = h[1] - b[1], len = Math.sqrt(dx * dx + dy * dy), o = Math.min(clamp01((t - (me.tf - me.sp * .8)) / (me.sp * .8)), t > tm - 1 ? 0 : 1);   // (the day you've left fades as you pass it)
-      if (b[2] < .4 || h[2] < .4) o = 0;
+      // (no day coming up to the lens as the street folds when the month opens, sweeping the screen huge and half see-through, nor
+      // blinking out and back: each fades as it nears the camera or grows too big, and those going overhead wait for the fold to
+      // be nearly done: John, 11 Nov 2026: "it's when the page is loading - the images are flashing")
+      o *= clamp01((Math.min(b[2], h[2]) - .5) / 1.5) * clamp01((3 - len / 300) / .8);
+      if (phi < 1 && t > me.L - 1) o *= clamp01((phi - .8) / .2);
       vAt(el, (b[0] + h[0]) / 2, (b[1] + h[1]) / 2, len / 300, Math.atan2(dx, -dy) * 180 / Math.PI, o, 900 - Math.round(Math.min(b[2], 80) * 10));
     });
     return phi < 1;
@@ -4287,7 +4301,9 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
         if (cs < .06) continue;
         var w = sw + .6;
         cx2.globalAlpha = Math.min(1, .25 + cs * 1.2);
-        cx2.setTransform(dp * cs, 0, 0, dp, dp * (g.cx + R * Math.sin(th) - ox), dp * (my + g.ryAt(my) * cs - oy));
+        // (each strip tilted to the drum's curve where it lies, so the brass runs round in one curve, not in steps: John, 11 Nov 2026:
+        // "The brass finish on the zoetrope is all straight lines - there is a step between each panel. It would be a curved line")
+        cx2.setTransform(dp * cs, -dp * g.ryAt(my) / R * Math.sin(th), 0, dp, dp * (g.cx + R * Math.sin(th) - ox), dp * (my + g.ryAt(my) * cs - oy));
         cx2.drawImage(LI, k * sw * sx, 0, Math.min(LI.width - k * sw * sx, (w + .4) * sx), LI.height, -w / 2, -lh / 2, w + .4, lh);
       }
       cx2.globalAlpha = 1;
