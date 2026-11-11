@@ -1224,7 +1224,8 @@ html.mob .tlamp { top: 512px; width: 540px; height: 236px; }
 html.mob .tring { top: 520px; width: 580px; height: 262px; }
 html.mob .tday { width: 50px; height: 68px; margin: -34px 0 0 -25px; line-height: 68px; font-size: 12px; }   /* (a phone: the posters seated round the table's lit edge, not on it, room between them: John, 10 Nov 2026) */
 html.mob .tcentre { top: 800px; }
-html.mob[data-theme=table] #cal .thv, html.mob[data-theme=table] #cal .thstage { overflow: visible !important; }   /* (a phone: the day's name under the table, not inside it: John, 8 Nov 2026) */
+html.mob[data-theme=table] #cal .thv, html.mob[data-theme=table] #cal .thstage { overflow: visible !important; }
+html.mob[data-theme=picture] #cal .thv { overflow: visible !important; } html.mob[data-theme=picture] #cal .thstage { overflow-x: clip !important; overflow-y: visible !important; }   /* (a phone: the projector's light out of the stage, from the calendar page under the drum: John, 11 Nov 2026) */   /* (a phone: the day's name under the table, not inside it: John, 8 Nov 2026) */
 html.mob .tcentre h2 { font-size: 56px; max-width: 520px; }
 html.mob .tcentre .k { font-size: 20px; } html.mob .tcentre .y { font-size: 28px; }
 html.mob .th-globe .vday { width: 84px; height: 110px; }
@@ -1302,7 +1303,7 @@ html[data-theme=reel] .leaf2 i { background: none; color: #f4ecd8; }
 html[data-theme=reel] .leaf2 b { color: #f4ecd8; background: #3a3a3a; margin: 0 0 .08em; }
 /* March, Cherbourg: an umbrella's canopy over the day */
 html[data-theme=umbrellas] .leaf2 { border: 0; border-radius: .5em .5em .08em .08em; background: #fff; }
-html[data-theme=umbrellas] .leaf2 i { height: .3em; padding: 0; background: repeating-conic-gradient(from 0deg at 50% 100%, #e30613 0 22.5deg, #ffe600 22.5deg 45deg); color: transparent; }
+html[data-theme=umbrellas] .leaf2 i { height: auto; padding: .55em 0 .45em; background: repeating-conic-gradient(from -90deg at 50% 130%, #e30613 0 15deg, #ffe600 15deg 30deg); color: #fff; text-shadow: 0 0 .25em rgba(0, 0, 0, .75), 0 0 .08em #000; }   /* (an umbrella's canopy over the date, the month on it, in its place: John, 11 Nov 2026: "Umbrellas of Cherbourg theme has a misaligned date") */
 html[data-theme=umbrellas] .leaf2 b { color: #000; }
 html[data-theme=fold] .hinfo .w > span { letter-spacing: -.01em; }
 html[data-theme=fold]:not(.mob) .hinfo .w { font-size: 70px; } html[data-theme=fold]:not(.mob) .hinfo { max-width: 600px; }
@@ -1760,7 +1761,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '1b623f9e5f99' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '0b3df1df008e' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -3950,7 +3951,7 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     // (painted round the band four times, in thin upright slices so it bends round the drum and follows its curve)
     // (drawn on one canvas, slice by slice, rather than as 96 moving pieces of page: a Fire Stick spent its time restyling them; John, 10 Nov 2026)
     var my0 = (g.yS + g.yB) / 2, bx0 = Math.floor(cx - R - lw / 24 - 4), by0 = Math.floor(my0 - g.ryAt(my0) - lh / 2 - 4), bw0 = Math.ceil(2 * R + lw / 12 + 8), bh0 = Math.ceil(2 * g.ryAt(my0) + lh + 8);   // (just the band, not the screen)
-    h += '<canvas class="zlgc" data-x="' + bx0 + '" data-y="' + by0 + '" width="' + Math.round(bw0 * ZDPR()) + '" height="' + Math.round(bh0 * ZDPR()) + '" style="left:' + bx0 + 'px;top:' + by0 + 'px;width:' + bw0 + 'px;height:' + bh0 + 'px"></canvas>';
+    // (no lettering on the band now: John, 11 Nov 2026: "Grifflix on the drum is old logo styles, we don't need the logo")
     this._lw = lw;
     return h + '</div>';
   },
