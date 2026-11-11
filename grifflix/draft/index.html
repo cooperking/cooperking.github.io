@@ -354,6 +354,7 @@ html.tv .pmenu button:focus, html.tv .pmenu button:focus-visible { outline: 0 !i
 .profh { margin: 0 0 4px; font: 600 11px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .profh i { font-style: normal; color: var(--fg-2); }
 .profp { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--fg-2); }
+.pklist { list-style: none; margin: 10px 0 0; padding: 0; } .pklist li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14.5px; color: var(--fg); } .pklist small { color: var(--fg-2); }   /* (passkeys) */
 .profsteps { margin: 10px 0 0; padding-left: 22px; font-size: 14.5px; line-height: 1.55; color: var(--fg-2); } .profsteps li { margin: 0 0 10px; padding-left: 4px; } .profsteps b { color: var(--fg); font-weight: 600; }   /* (the Fire TV Stick's steps) */
 .modes { display: grid; gap: 8px; margin-top: 10px; }
 .mode { display: grid; gap: 2px; padding: 11px 14px; border: 1px solid var(--line); border-radius: 0; background: rgba(255, 255, 255, .04); text-align: left; color: var(--fg-2); }
@@ -1864,7 +1865,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '32c45f82fea0' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '3724c6f647c1' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2463,11 +2464,12 @@ function welcome(why) {
   $('#main').innerHTML = '<section class="welcome"><h1 class="wlogo">Grifflix</h1>' + (msg ? '<p>' + esc(msg) + '</p>' : '') +
     (signin ? '<form class="signin" id="signin"><p class="how">Sign in with your 6-letter code, or paste your invitation link.</p>' +
       '<input id="code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="Code or invitation link" aria-label="Code or invitation link">' +
-      '<button class="pill on" type="submit">Sign in</button></form>' : '') +
+      '<button class="pill on" type="submit">Sign in</button></form>' + pkButton() : '') +
     '<div class="acts">' + (TOKEN && !signin ? '<button class="pill on" onclick="location.reload()">Try again</button>' : '') +
     '</div></section>';   // (no demo: John, 9 Nov 2026)
   var f = $('#signin');
   if (f) f.onsubmit = function (e) { e.preventDefault(); join($('#code').value); };
+  pkWire();
 }
 
 /* signing in: Grifflix's own members (the Worker's /g/join), with an invitation or a 6-letter code from a member's
@@ -2488,6 +2490,48 @@ function codeFrom(text) {
   if (/^\s*[A-Za-z0-9]{3}[\s-]?[A-Za-z0-9]{3}\s*$/.test(t)) return t.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
   if (/^[\w-]{16,}$/.test(t)) return t;
   return '';
+}
+// ---- passkeys (John, 11 Nov 2026: "Can we add passkeys now?"): a member saves one in their Profile (Face ID, a fingerprint, the
+// phone's or computer's lock, kept by iCloud Keychain or their Google account), then any of their devices signs in with it, no code
+var PK_OK = !!(window.PublicKeyCredential && navigator.credentials && navigator.credentials.create) && !TV;
+var b2u = function (b) { return btoa(String.fromCharCode.apply(null, new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+var u2b = function (s) { s = String(s).replace(/-/g, '+').replace(/_/g, '/'); var r = atob(s + '==='.slice((s.length + 3) % 4)), a = new Uint8Array(r.length); for (var i = 0; i < r.length; i++) a[i] = r.charCodeAt(i); return a.buffer; };
+function wpost(path, body) { return fetch(WORKER + '/g/' + path, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, TOKEN ? { Authorization: 'Bearer ' + TOKEN } : {}), body: JSON.stringify(body) })
+  .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || 'That didn’t work.'); e.j = j; throw e; } return j; }); }); }
+function pkButton() { return PK_OK ? '<div class="acts" style="margin-top:12px;justify-content:center"><button class="pill" id="pkgo" type="button">Sign in with a passkey</button></div>' : ''; }
+function pkWire() { var b = $('#pkgo'); if (b) b.onclick = pkSignin; }
+function pkSignin() {
+  wpost('passkey/signin', { op: 'begin' }).then(function (r) {
+    var o = r.options; return navigator.credentials.get({ publicKey: { challenge: u2b(o.challenge), rpId: o.rpId, userVerification: o.userVerification, timeout: o.timeout } });
+  }).then(function (c) {
+    if (!c) throw new Error('');
+    var x = c.response;
+    return wpost('passkey/signin', { op: 'finish', id: b2u(c.rawId), clientDataJSON: b2u(x.clientDataJSON), authenticatorData: b2u(x.authenticatorData), signature: b2u(x.signature), userHandle: x.userHandle ? b2u(x.userHandle) : '', device: deviceId() });
+  }).then(function (j) { store.set('grifflix-member', j.token); TOKEN = j.token; toast('Welcome, ' + (j.name || '').split(' ')[0]); setTimeout(function () { location.replace(location.pathname); }, 700); })
+    .catch(function (e) { if (e && (e.name === 'NotAllowedError' || e.name === 'AbortError' || !e.message)) return; toast(e.message || 'That passkey didn’t work. Try again, or use a code.'); });
+}
+function pkSec(list) {
+  var el = $('#pksec'); if (!el) return;
+  if (!list) { fetch(WORKER + '/g/passkey', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { return r.json(); }).then(function (j) { pkSec(j.passkeys || []); }).catch(function () { el.innerHTML = '<p class="profh">Passkeys</p><p class="profp">Couldn’t look just now.</p>'; }); return; }
+  var when = function (t) { try { return new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return ''; } };
+  el.innerHTML = '<p class="profh">Passkeys</p><p class="profp">' + (list.length ? 'Sign in on any of your devices with Face ID, a fingerprint or your screen lock, no code needed.' : 'Save a passkey, and next time (on this or your other devices) you sign in with Face ID, a fingerprint or your screen lock, no code needed.') + '</p>' +
+    (list.length ? '<ul class="pklist">' + list.map(function (p) { return '<li><span>' + esc(p.name) + '<small> · saved ' + esc(when(p.at)) + (p.used ? ', last used ' + esc(when(p.used)) : '') + '</small></span><button class="pill" data-pkrm="' + esc(p.id) + '">Remove</button></li>'; }).join('') + '</ul>' : '') +
+    '<div class="acts" style="margin-top:8px"><button class="pill" id="pkadd">' + (list.length ? 'Add another' : 'Add a passkey') + '</button></div>';
+  $('#pkadd').onclick = function () {
+    var b = this; b.disabled = true;
+    wpost('passkey', { op: 'begin' }).then(function (r) {
+      var o = r.options; o.challenge = u2b(o.challenge); o.user.id = u2b(o.user.id); o.excludeCredentials = (o.excludeCredentials || []).map(function (c) { return { type: c.type, id: u2b(c.id) }; });
+      return navigator.credentials.create({ publicKey: o });
+    }).then(function (c) {
+      var nm = /iPhone/.test(navigator.userAgent) ? 'iPhone' : /iPad/.test(navigator.userAgent) ? 'iPad' : /Android/.test(navigator.userAgent) ? 'Android' : /Mac/.test(navigator.userAgent) ? 'Mac' : /Windows/.test(navigator.userAgent) ? 'Windows' : 'This device';
+      return wpost('passkey', { op: 'save', clientDataJSON: b2u(c.response.clientDataJSON), attestationObject: b2u(c.response.attestationObject), name: nm });
+    }).then(function (j) { pkSec(j.passkeys || []); toast('Passkey saved'); })
+      .catch(function (e) { b.disabled = false; if (e && (e.name === 'NotAllowedError' || e.name === 'AbortError')) return; toast((e && e.name === 'InvalidStateError') ? 'This device has a passkey for Grifflix already.' : (e && e.message) || 'That didn’t work.'); });
+  };
+  $$('[data-pkrm]').forEach(function (x) { x.onclick = function () {
+    if (!x.dataset.sure) { x.dataset.sure = 1; x.textContent = 'Tap again'; return; }
+    wpost('passkey', { op: 'remove', id: x.dataset.pkrm }).then(function (j) { pkSec(j.passkeys || []); toast('Passkey removed'); }).catch(oops);
+  }; });
 }
 function join(text) {
   var code = codeFrom(text);
@@ -5337,6 +5381,7 @@ function drawAccount() {
       '<li><b>Sign in.</b> In Grifflix, press the remote’s <b>menu button</b> (three lines) → <b>Sign in with a code</b>, and type the code from here:</li></ol>' +
       '<div class="acts" style="margin-top:8px"><button class="pill" id="tvcode">Get a code</button></div>' +
       '<p class="profp" style="margin-top:10px">Grifflix is then on the Fire TV’s home screen (under <b>Your Apps &amp; Channels</b>; hold OK on it to move it to the front). New versions: Grifflix asks when there’s one; or the menu button → <b>Check for a new version</b>. The same code signs in any other device too.</p></div>') +
+    (TV || DEMO || !PK_OK ? '' : '<div class="profsec" id="pksec"><p class="profh">Passkeys</p><p class="profp">Looking…</p></div>') +
     (TV || DEMO ? '' : '<div class="profsec" id="hhsec"><p class="profh">Household</p><p class="profp">Looking…</p></div>') +
     '<div class="profsec"><p class="profh">This device</p><p class="profp">Signed in as ' + esc(ME.name || '') + '. ' + codecLine() + '</p><div class="acts" style="margin-top:8px"><button class="pill" id="signout">Sign out</button></div></div>';
   $$('[data-gpush],[data-gmail]').forEach(function (b) { b.onclick = function () {
@@ -5349,7 +5394,7 @@ function drawAccount() {
   $('#leadgo').onclick = function () { closeSheet(); window.ZLED = 0; TMUS.ok = true; musicCtx(); THEMEFX.picture.leader(true); };   // (Grifflix's opening again, with its sound: a tap allows it, an iPhone too)
   $('#musgo').onclick = function () { TMUS.on = !TMUS.on; store.set('grifflix-music', TMUS.on ? 'on' : 'off'); if (!TMUS.on) musicHush(); muteBtn(); toast(TMUS.on ? 'Theme music on' : 'Theme music off'); drawAccount(); };
   $('#tvcode').onclick = function () { var b = this; if (DEMO) return toast('Not in the demo.'); wcall({ op: 'tvcode' }).then(function (j) { b.outerHTML = '<span class="tvcode">' + j.code + '</span><span class="profp"> for ' + j.minutes + ' minutes, once</span>'; }).catch(oops); };
-  hhSec();
+  hhSec(); pkSec();
   $('#signout').onclick = function () {
     var b = this; if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Tap again to sign out'; return; }
     wcall({ op: 'signout' }).catch(function () {}).then(function () { store.set('grifflix-member', null); location.replace(location.pathname); });
@@ -5557,8 +5602,8 @@ function trailerKeys(k) {   // a remote, on a trailer
 function signInSheet() {
   openSheet('<div class="form" style="position:relative">' + X + '<h2 style="color:var(--fg)">Sign in</h2>' +
     '<p class="ov" style="margin-top:0">With your 6-letter code or your invitation link.</p>' +
-    '<form class="signin" id="signin2" style="margin-top:14px"><input id="code2" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="Code or invitation link" aria-label="Code or invitation link"><button class="pill on" type="submit">Sign in</button></form></div>');
-  $('#signin2').onsubmit = function (e) { e.preventDefault(); join($('#code2').value); };
+    '<form class="signin" id="signin2" style="margin-top:14px"><input id="code2" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="Code or invitation link" aria-label="Code or invitation link"><button class="pill on" type="submit">Sign in</button></form>' + pkButton() + '</div>');
+  $('#signin2').onsubmit = function (e) { e.preventDefault(); join($('#code2').value); }; pkWire();
   setTimeout(function () { var c = $('#code2'); if (c && !TV) c.focus(); }, 60);
 }
 function play(it, queue, fromStart) {

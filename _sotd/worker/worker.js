@@ -61,6 +61,7 @@ export default {
     const url = new URL(request.url);
     if (url.hostname === G_LINK_HOST) {   // grifflix.co.uk: Grifflix's own links (invitations, a day's film) and nothing of the songs' (John, 9 Nov 2026: "it still said song of the day in the link")
       if (url.pathname === '/g/ping') return new Response('grifflix', { headers: { 'Cache-Control': 'no-store' } });
+      if (url.pathname === '/.well-known/webauthn') return new Response(JSON.stringify({ origins: G_WA_ORIGINS }), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600', 'Access-Control-Allow-Origin': '*' } });   // (Grifflix's passkeys work on the apps' address too)
       try {
         if (url.pathname.startsWith('/gi/')) return await gInvitePage(url, env);
         if (url.pathname.startsWith('/gs/')) return await gSharePage(url, env);
@@ -1645,6 +1646,85 @@ async function gSignIn(env, all, id, body) {   // a new sign-in for this member 
   await gSave(env, all);
   return token;
 }
+// ---------- Grifflix's passkeys (John, 11 Nov 2026: "Can we add passkeys now?"): a member saves one in their Profile (Face ID, a
+// fingerprint, the phone's or computer's lock), kept by iCloud Keychain or their Google account; any device then signs in with it, no
+// code. Grifflix's own (grifflix.co.uk), apart from the songs': the same checks as theirs (above), its own members (gmembers). The
+// apps' address (cooperking.github.io) may use them too: /.well-known/webauthn on grifflix.co.uk says so
+const G_WA_ORIGINS = ['https://grifflix.co.uk', 'https://cooperking.github.io'];
+const gRp = env => env.G_WA_RP || 'grifflix.co.uk';
+function gWaClient(body, type, env) {
+  let c;
+  try { c = JSON.parse(new TextDecoder().decode(unb64url(body.clientDataJSON))); } catch (e) { return null; }
+  return c && c.type === type && (G_WA_ORIGINS.includes(c.origin) || (env.G_WA_ORIGIN && c.origin === env.G_WA_ORIGIN)) && typeof c.challenge === 'string' ? c : null;
+}
+async function gPasskeys(request, env, who, b, answer) {   // a signed-in member's own: GET the list; POST begin, save, remove
+  const all = who.all, id = who.id, m = all[id];
+  if (!env.ADMIN_KEY) return answer(503, { error: 'Passkeys aren’t set up yet.' });
+  if (request.method === 'GET') return answer(200, { passkeys: passkeyList(m), rpId: gRp(env) });
+  if (b.op === 'begin') {
+    return answer(200, { options: {
+      challenge: await waChallenge(env, 'gsave|' + id),
+      rp: { id: gRp(env), name: 'Grifflix' },
+      user: { id: b64url(new TextEncoder().encode(id)), name: m.name, displayName: m.name },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+      authenticatorSelection: { residentKey: 'required', requireResidentKey: true, userVerification: 'preferred' },
+      excludeCredentials: (m.passkeys || []).map(p => ({ type: 'public-key', id: p.id })),
+      attestation: 'none', timeout: PASSKEY_MS } });
+  }
+  if (b.op === 'remove') {
+    m.passkeys = (m.passkeys || []).filter(p => p.id !== b.id);
+    await gSave(env, all);
+    return answer(200, { ok: true, passkeys: passkeyList(m) });
+  }
+  if (b.op !== 'save') return answer(400, { error: 'Say what to do.' });
+  const c = gWaClient(b, 'webauthn.create', env);
+  if (!c || !await waChallengeOk(env, c.challenge, 'gsave|' + id)) return answer(400, { error: 'That took too long, or didn’t come from Grifflix. Try again.' });
+  let ad, key;
+  try {
+    const att = cbor(unb64url(b.attestationObject))[0];
+    ad = authData(att.get('authData'));
+    if (!ad.cred || !ad.cose) throw new Error('no passkey');
+    key = coseJwk(ad.cose);
+  } catch (e) { return answer(400, { error: /site can use/.test(e.message) ? e.message : 'That passkey couldn’t be read. Try again.' }); }
+  if (b64url(ad.rp) !== b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(gRp(env)))) || !(ad.flags & 1)) return answer(400, { error: 'That passkey isn’t for Grifflix.' });
+  const cid = b64url(ad.cred);
+  if (Object.values(all).some(x => (x.passkeys || []).some(p => p.id === cid))) return answer(409, { error: 'That passkey is saved already.' });
+  m.passkeys = m.passkeys || [];
+  if (m.passkeys.length >= PASSKEYS_MAX) return answer(400, { error: 'That’s ' + PASSKEYS_MAX + ' passkeys already. Remove one first.' });
+  const name = String(b.name || '').replace(/\s+/g, ' ').trim().slice(0, 40) || 'A passkey';
+  m.passkeys.unshift({ id: cid, alg: key.alg, jwk: key.jwk, count: ad.count, at: Date.now(), name, synced: !!(ad.flags & 0x10) });
+  await gSave(env, all);
+  return answer(200, { ok: true, passkeys: passkeyList(m) });
+}
+async function gPasskeySignin(request, env, b, answer) {   // anyone: POST begin (a challenge), finish (the signature checked: this device signed in)
+  if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
+  if (!env.ADMIN_KEY) return answer(503, { error: 'Passkeys aren’t set up yet.' });
+  if (b.op === 'begin') return answer(200, { options: { challenge: await waChallenge(env, 'gsignin'), rpId: gRp(env), userVerification: 'preferred', timeout: PASSKEY_MS } });
+  if (b.op !== 'finish') return answer(400, { error: 'Say what to do.' });
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown', failKey = 'gjoinfail:' + ip + ':' + new Date().toISOString().slice(0, 13), fails = Number(await env.SOTD.get(failKey)) || 0;
+  if (fails >= 20) return answer(429, { error: 'Too many tries from here this hour.' });
+  const fail = async (status, error, extra) => { await env.SOTD.put(failKey, String(fails + 1), { expirationTtl: 7200 }); return answer(status, Object.assign({ error }, extra || {})); };
+  const c = gWaClient(b, 'webauthn.get', env);
+  if (!c || !await waChallengeOk(env, c.challenge, 'gsignin')) return fail(400, 'That took too long, or didn’t come from Grifflix. Try again.');
+  const all = await gAll(env);
+  let uid = '';
+  try { uid = new TextDecoder().decode(unb64url(b.userHandle)); } catch (e) {}
+  const id = all[uid] && (all[uid].passkeys || []).some(p => p.id === b.id) ? uid : Object.keys(all).find(k => (all[k].passkeys || []).some(p => p.id === b.id));
+  if (!id) return fail(404, 'This passkey isn’t on Grifflix any more. Sign in with a code from your Profile on another device, or ask John for a new invitation.', { unknown: true });
+  const m = all[id], pk = m.passkeys.find(p => p.id === b.id);
+  let ad, ok = false;
+  try {
+    const adb = unb64url(b.authenticatorData);
+    ad = authData(adb);
+    const cd = new Uint8Array(await crypto.subtle.digest('SHA-256', unb64url(b.clientDataJSON)));
+    const data = new Uint8Array(adb.length + 32); data.set(adb); data.set(cd, adb.length);
+    ok = b64url(ad.rp) === b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(gRp(env)))) && !!(ad.flags & 1) && await pkVerify(pk, data, unb64url(b.signature));
+  } catch (e) { ok = false; }
+  if (!ok) return fail(403, 'That passkey didn’t check out. Try again.');
+  if ((pk.count || ad.count) && ad.count <= (pk.count || 0)) return fail(403, 'That passkey looks copied. Sign in with a code from your Profile on another device instead.');
+  pk.count = ad.count; pk.used = Date.now();
+  return answer(200, { token: await gSignIn(env, all, id, b), name: m.name });   // (gSignIn keeps the change)
+}
 function gInviteGone(inv) { return !inv ? 'This invitation isn’t valid.' : inv.until < Date.now() ? 'This invitation has run out.' : inv.uses >= G_INVITE_USES ? 'This invitation has been used ' + G_INVITE_USES + ' times already.' : ''; }
 async function gInvite(env, all, id) {   // a new invitation for a member: its code (in the link), kept only as a hash
   const code = randomCode(18);
@@ -1732,6 +1812,7 @@ async function grifflix(request, url, env) {
     return answer(200, out);
   }
   const b = request.method === 'POST' ? await request.json().catch(() => ({})) : {};
+  if (route === 'passkey/signin') return gPasskeySignin(request, env, b, answer);
   if (route === 'join') {   // an invitation's code, or a 6-letter code from a member's Profile (a TV's)
     if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown', failKey = 'gjoinfail:' + ip + ':' + new Date().toISOString().slice(0, 13), fails = Number(await env.SOTD.get(failKey)) || 0;
@@ -1766,6 +1847,7 @@ async function grifflix(request, url, env) {
     return { id: who.id, name: m.name, owner: who.owner, gpush: gMode(m, 'gpush'), gmail: gMode(m, 'gmail'), email: m.email || '', devices: Object.values(subs).filter(x => x.m === who.id).length, key: (await vapidKeys(env)).pub };
   };
   if (route === 'me') return answer(200, await view());
+  if (route === 'passkey') return gPasskeys(request, env, who, b, answer);
   if (request.method !== 'POST' && !['lists', 'calendars', 'calendar'].includes(route)) return answer(405, { error: 'Use POST.' });
   if (route === 'signout') { delete m.devices[who.hash]; await gSave(env, all); return answer(200, { ok: true }); }
   if (route === 'tvcode') {   // a code for a TV (or any device) to sign in as them: one use, 15 minutes
