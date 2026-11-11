@@ -161,8 +161,10 @@ def gather():
     first = sorted([x for x in out if x['id'] in soon], key=lambda x: soon[x['id']])
     new = sorted([x for x in out if x['id'] not in soon and x['added'] >= cut], key=lambda x: x['added'], reverse=True)
     rest = sorted([x for x in out if x['id'] not in soon and x['added'] < cut], key=lambda x: (x['lib'] != 'movies', -x['rating'], x['name']))
+    tomorrow = time.strftime('%Y-%m-%d', time.localtime(time.time() + 86400))
     for x in first:
         x['why'] += ' · Movie of the Day ' + soon[x['id']]
+        x['urgent'] = soon[x['id']] <= tomorrow   # (today's and tomorrow's: converted at once, any hour, not waiting for the night)
     out[:] = first + new + rest
     return out
 
@@ -290,7 +292,7 @@ def convert(item, ffmpeg, ffprobe, st):
         while p.poll() is None:
             time.sleep(20)
             show(why_ if paused else '')
-            why_ = 'someone is watching' if watching() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() else '')
+            why_ = 'someone is watching' if watching() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() and not item.get('urgent') else '')
             if why_ and not paused:
                 p.send_signal(signal.SIGSTOP); paused = True; log('  paused: ' + why_)
             elif not why_ and paused:
@@ -453,7 +455,7 @@ follow_up(st)
 for n, it in enumerate(items):
     RUN['n'] = n
     RUN['next'] = [{'name': x['name'], 'why': x['why'], 'gb': x['gb'], 'mins': x['mins']} for x in items[n:n + 12]]   # (what's coming, for the admin page)
-    if not night():
+    if not night() and not it.get('urgent'):   # (today's or tomorrow's Movie of the Day doesn't wait for the night: John, 11 Nov 2026, Rushmore on the Fire Stick)
         log('waiting for %d am' % NIGHT[0])
         while not night():
             now('waiting', why='waiting for %d am' % NIGHT[0])
