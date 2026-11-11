@@ -729,7 +729,7 @@ def make_handler(g):
             arranged = self.arrange()
             extra = LIST_FIELDS + ',People,Taglines,RemoteTrailers'
             ep_fields = 'Overview,RunTimeTicks,ImageTags,ParentBackdropImageTags,SeriesPrimaryImageTag,DateCreated,PremiereDate,ProductionYear'
-            quick = 'Etag,ChildCount,RecursiveItemCount,Path'
+            quick = 'Etag,ChildCount,RecursiveItemCount,Path,ProviderIds'
             making = lambda i: '.grifflix-converting.' in (i.get('Path') or '')   # (a film being converted: not until it's ready)
             libs = g.st.get('libraries', {})
             old = {} if q.get('full') == '1' else (load(EXPORT_CACHE, {}).get('items') or {})
@@ -766,6 +766,8 @@ def make_handler(g):
                     for o in resolve(raw, extra):
                         items[o['id']] = o
                     lists[key] = [i['Id'] for i in raw if i['Id'] in items]
+                    if key == 'movies':
+                        self.extras(raw, items, lists)
             sets = g.items(Recursive='true', IncludeItemTypes='BoxSet', SortBy='SortName', Fields=quick).get('Items', [])
             for o in resolve(sets, extra):
                 items[o['id']] = o
@@ -823,6 +825,45 @@ def make_handler(g):
             log('Update: %d new, %d changed, %d gone (%d read in full)' % (count['new'], count['changed'], count['removed'], count['read']))
             self.send_json(200, {'v': 1, 'at': int(time.time()), 'items': items, 'lists': lists, 'sets': members, 'series': series, 'changes': count, 'personal': personal,
                                  'motd': {'days': days, 'notes': dict(c.get('notes', {})), 'ext': ext}})
+
+        @staticmethod
+        def extras(raw, items, lists):
+            """A disc's extras that Jellyfin took for films (a featurette, an interview, a file named as it came: no film's
+            details found for it, and no year or a file's name): not films in the lists or the search, but the extras of
+            the film beside them in the same folder (or the folder above), played from that film's page (John, 11 Nov
+            2026: "It should only search within actual films. And features/extras should be viewable from the film page")."""
+            def ided(i):
+                p = i.get('ProviderIds') or {}
+                return any(p.get(k) for k in ('Tmdb', 'Imdb', 'Tvdb'))
+            def filey(n):
+                return ' ' not in n and bool(re.search(r'\w[._]\w|-[A-Za-z0-9]+$', n))
+            words = lambda n: set(w for w in re.split(r'[^a-z0-9]+', (n or '').lower()) if len(w) > 2)
+            for i in raw:   # (each time from scratch: what was kept last time isn't changed)
+                if i['Id'] in items:
+                    items[i['Id']] = {k: v for k, v in items[i['Id']].items() if k not in ('extra', 'of', 'extras')}
+            films = [i for i in raw if i['Id'] in items and ided(i)]
+            by_dir = {}
+            for f in films:
+                by_dir.setdefault(os.path.dirname(f.get('Path') or ''), []).append(f)
+            for e in raw:
+                o = items.get(e['Id'])
+                if not o or ided(e) or not (not o.get('year') or filey(e.get('Name') or '')):
+                    continue
+                o['extra'] = 1
+                d, parent = os.path.dirname(e.get('Path') or ''), None
+                for _ in range(3):   # (its own folder, then up to two above: an Extras folder inside the film's)
+                    near = by_dir.get(d) or []
+                    if near:
+                        parent = max(near, key=lambda f: len(words(f.get('Name')) & (words(e.get('Name')) | words(e.get('Path')))))
+                        break
+                    up = os.path.dirname(d)
+                    if not up or up == d:
+                        break
+                    d = up
+                if parent:
+                    o['of'] = parent['Id']
+                    items[parent['Id']].setdefault('extras', []).append(e['Id'])
+            lists['movies'] = [i for i in lists.get('movies', []) if not items.get(i, {}).get('extra')]
 
         def api_convert(self, me, user, q, b):
             """John's: how the conversions are going (convert.py's files in ~/Grifflix), for the admin page."""

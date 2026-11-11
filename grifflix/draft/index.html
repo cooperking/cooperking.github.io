@@ -224,6 +224,7 @@ html.tv .sheet .people { font-size: var(--crfs, 15px); }
 .sheet textarea { border-radius: 12px; min-height: 76px; resize: vertical; font: italic 400 17px/1.45 var(--serif); }
 .eps { margin-top: 24px; }
 .eps .tabs { margin: 0 0 12px; }
+.xtras .xh { margin: 0 0 12px; font: 500 12px/1 var(--kfont); letter-spacing: .26em; text-transform: uppercase; color: var(--muted); }
 .ep { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 14px; align-items: start; width: 100%; padding: 10px; border: 0; background: none; text-align: left; }
 .ep .pic { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: rgba(255, 255, 255, .08); }
 .ep .pic img { width: 100%; height: 100%; object-fit: cover; }
@@ -312,10 +313,7 @@ html.tv .player.idle .tvbar { opacity: 0; }
 html.tv #pbar { flex: 1; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .25); }
 html.tv #pbar i { display: block; height: 100%; width: 0; border-radius: 2px; background: #fff; }
 html.tv .tvbar .hint { color: rgba(255, 255, 255, .6); font-size: 13px; letter-spacing: .04em; }
-html.tv :focus { outline: 3px solid #fff !important; outline-offset: 3px; box-shadow: 0 0 0 7px rgba(20, 8, 24, .6); }
 html.tv .card:focus, html.tv .day:focus { transform: scale(1.06); z-index: 2; transition: transform .15s ease; }
-html.tv .card:focus { outline: none !important; box-shadow: none; }
-html.tv .card:focus .pic { outline: 3px solid #fff; outline-offset: 3px; }
 html.tv .wrap { max-width: none; padding-left: 48px; padding-right: 48px; }
 html.tv .bar-top { position: relative; top: 0; }
 .list-title { display: flex; align-items: center; gap: 10px; margin: 0 4px 12px; }
@@ -408,8 +406,7 @@ html.tv .grid { gap: 10px 12px; } html.tv .dow { gap: 10px 12px; }
 html.tv .day .cap .t { font-size: 17px; }
 html.tv .day .cap .s { font-size: 12px; letter-spacing: .06em; }
 html.tv .day .num { font-size: 13px; }
-html.tv .card:focus, html.tv .day:focus { transform: scale(1.1); box-shadow: 0 14px 34px rgba(0, 0, 0, .55); transition: transform .15s ease, box-shadow .15s ease; }
-html.tv .day.has:focus { box-shadow: none; }
+html.tv .card:focus, html.tv .day:focus { transform: scale(1.1); transition: transform .15s ease; }
 /* John's Futura (his web fonts, kept by the Worker for Grifflix's pages): Book, Bold, Light */
 @font-face { font-family: "GFutura"; font-weight: 400; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/futura-book-webfont.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/futura-book-webfont.woff") format("woff"); }
 @font-face { font-family: "GFutura"; font-weight: 700; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/futura-bold-webfont.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/futura-bold-webfont.woff") format("woff"); }
@@ -442,7 +439,6 @@ html.table .tring { background: radial-gradient(ellipse at center, rgba(255, 255
    the words (Search, Browse...) back when you go up from it */
 html.tv.barhide:not(.table):not(.hall) .bar-top { display: none; }
 html.tv:not(.table):not(.hall) .hero::before { content: "GRIFFLIX"; font: 700 13px/1 var(--kfont); letter-spacing: .55em; color: var(--fg-2); margin-right: 8px; align-self: center; }
-html.tv .day:focus, html.tv .card:focus .pic, html.tv :focus { outline: 2px solid rgb(var(--kink)) !important; outline-offset: 4px; }
 /* the table, as the mock-up John chose: the whole screen, the ring of light above, the month's days round the table */
 html.table #main.homeview #hero, html.table #main.homeview #mnav, html.table #main.homeview #cals, html.table #main.homeview .rows { display: none; }
 html.table .bar-top { position: fixed; top: 36px; left: 64px; right: 64px; z-index: 30; }
@@ -478,7 +474,6 @@ html[data-theme=corridor]:not(.mob) .hinfo { width: max-content; max-width: min(
 .hday .hn { position: absolute; left: 0; top: calc(100% + 12px); font: 500 16px/1 var(--kfont); letter-spacing: .32em; text-transform: uppercase; color: var(--fg); white-space: nowrap; }
 .hday.slab { background: #000; }   /* (2001's monolith: a surprise still to come) */
 .hday.empty { background: none; box-shadow: inset 0 0 0 2px rgba(var(--kink), .5); color: var(--fg); font: 300 80px/1 var(--kfont); }
-html.tv .hday:focus { outline: 3px solid rgb(var(--kink)) !important; outline-offset: 8px; box-shadow: none; }
 .hinfo { position: absolute; left: 64px; bottom: 64px; width: 44%; max-width: 560px; pointer-events: none; color: var(--fg); }
 .hinfo .w { font: 700 84px/.9 var(--kfont); text-transform: uppercase; letter-spacing: .01em; margin-left: -4px; }   /* (the day, as The Shining's title cards: TUESDAY) */
 .hinfo .k { margin-top: 16px; font: 500 14px/1.3 var(--kfont); letter-spacing: .34em; text-transform: uppercase; color: var(--fg-2); }
@@ -491,7 +486,6 @@ html.table .cal { position: relative; height: 470px !important; min-height: 0; b
 .tday { position: absolute; width: 46px; height: 62px; margin: -31px 0 0 -23px; padding: 0; border: 0; border-radius: 0; background: rgba(0, 0, 0, .3) center/cover; color: var(--fg-2); font: 500 10px/62px var(--kfont); text-align: center; transition: left .5s cubic-bezier(.3, .7, .2, 1), top .5s cubic-bezier(.3, .7, .2, 1), transform .5s cubic-bezier(.3, .7, .2, 1), opacity .4s; box-shadow: 0 6px 18px rgba(0, 0, 0, .45); }
 .tday.has { color: transparent; }
 div.tday { background: rgba(var(--kink), .06); box-shadow: inset 0 0 0 1px rgba(var(--kink), .14); }
-html.tv .tday:focus { outline: 3px solid rgb(var(--kink)) !important; outline-offset: 4px; box-shadow: 0 16px 40px rgba(0, 0, 0, .6); }
 .tcentre { position: absolute; left: 0; right: 0; top: 300px; text-align: center; pointer-events: none; }
 .tcentre .k { font: 500 15px/1 var(--kfont); letter-spacing: .5em; text-transform: uppercase; color: var(--fg-2); }
 .tcentre h2 { margin: 12px auto 6px; max-width: 760px; font: 700 52px/1 var(--kfont); text-transform: uppercase; letter-spacing: .04em; color: var(--fg); }
@@ -501,7 +495,6 @@ html.tv .tday:focus { outline: 3px solid rgb(var(--kink)) !important; outline-of
 /* the months' themes on the TV (besides the corridor and the table): each its own way with the month's days */
 html.hall .th { position: absolute; inset: 0; }
 .th .vday { position: absolute; left: 0; top: 0; padding: 0; border: 0; border-radius: 0; background: rgba(var(--kink), .08) center/cover; background-image: var(--p); color: var(--fg); transition: transform .7s cubic-bezier(.3, .7, .2, 1), opacity .5s, filter .5s; }
-html.tv .th .vday:focus { outline: 3px solid rgb(var(--kink)) !important; outline-offset: 6px; box-shadow: none; }
 .th .vday .vn { position: absolute; left: 0; top: calc(100% + 10px); font: 500 13px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; white-space: nowrap; color: var(--fg); }
 .th .vday.slab { background: #000; }
 .th .vday.empty { background: none; box-shadow: inset 0 0 0 2px rgba(var(--kink), .5); }
@@ -540,14 +533,12 @@ html[data-theme=reel] .hinfo h2 { color: #ebdeca; }
 .th-umbrellas .um { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, #1d1d1b 0 4%, transparent 5%), repeating-conic-gradient(var(--u1) 0 22.5deg, var(--u2) 22.5deg 45deg); transition: opacity .2s; }
 #cal.drag .um { transition: none; }
 .th-umbrellas .vday.front .um { opacity: 0; }
-html.tv .th-umbrellas .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px rgb(var(--kink)), 10px 14px 0 rgba(0, 0, 0, .16); }
 /* the fold (Inception): Paris folding over onto itself, seen from its street; the days standing in it */
 .th-fold .vday, .th-stairs .vday, .th-lane .vday { transition: opacity .25s; will-change: transform; }   /* (these three move their days themselves, frame by frame) */
 .th-fold .vday { width: 200px; height: 300px; box-shadow: 0 8px 22px rgba(0, 0, 0, .5); }
 .th-fold .vday:not(.front) { filter: saturate(.45) brightness(.82); }
 .th-fold .vday:not(.front) .vn { display: none; }
 .th-fold .vday .vn { color: #a8bcc3; letter-spacing: .32em; }
-html.tv .th-fold .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #f01d24, 0 8px 22px rgba(0, 0, 0, .5); }
 .fcity { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
 .fcity polygon { stroke-linejoin: round; }
 .fcity .pv1 { fill: #1f4c5e; } .fcity .pv2 { fill: #2d5f72; } .fcity .ln { fill: #a8bcc3; opacity: .55; }   /* (the one-sheet's teal and steel) */
@@ -558,7 +549,6 @@ html.tv .th-fold .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #f01
 .th-stairs .vday:not(.front) { filter: grayscale(1) contrast(1.05) brightness(.8); }
 .th-stairs .vday:not(.front) .vn { display: none; }
 .th-stairs .vday .vn { color: #f4e6cb; }
-html.tv .th-stairs .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #f3da54, 0 10px 26px rgba(0, 0, 0, .6); }
 .sstairs { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
 .sstairs .ri { fill: #29241e; } .sstairs .tr { fill: #f4e6cb; } .sstairs .ed { stroke: #29241e; stroke-width: 1.2; fill: none; }   /* (the one-sheet's film-strip black and its cream) */
 .sstairs .rail { stroke: #29241e; stroke-width: 15; fill: none; stroke-linejoin: round; } .sstairs .holes { stroke: #f4e6cb; stroke-width: 5; stroke-dasharray: 4 7; fill: none; } .sstairs .bal { stroke: #29241e; stroke-width: 2; }   /* (the banister: the poster's film strip) */
@@ -570,7 +560,6 @@ html.tv .th-stairs .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #f
 .th-lane .vday:not(.front) { filter: saturate(.7) brightness(.82); }
 .th-lane .vday:not(.front) .vn { display: none; }
 .th-lane .vday .vn { color: #1a120a; font-weight: 700; }   /* (on the wood) */
-html.tv .th-lane .vday:focus { outline: 0 !important; box-shadow: 0 0 0 4px #1a120a, 0 8px 20px rgba(0, 0, 0, .5); }
 .llane { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
 .llane .rt { fill: #743c1a; stroke: #5a2c12; stroke-width: 1.5; }
 .llane .pg { transform-box: fill-box; transform-origin: 50% 100%; }
@@ -654,7 +643,6 @@ html.tv .th-fold .vday:not(.front) { filter: none; opacity: .85; }
 .th-picture .vday.front { box-shadow: 0 0 0 1.5px #e9c46a, 0 24px 50px rgba(0, 0, 0, .65), 0 0 60px rgba(233, 196, 106, .18); }
 .th-picture .vday.soon { background: #1a1416; box-shadow: inset 0 0 0 2px rgba(233, 196, 106, .4), 0 18px 40px rgba(0, 0, 0, .55); }
 .th-picture .vday.soon .cs { color: #e9c46a; }
-html.tv .th-picture .vday:focus { outline: 0 !important; }
 html[data-theme=picture] .hinfo h2 { color: #e9c46a; }
 html[data-theme=picture] .hinfo .w > span { letter-spacing: -.01em; }
 html[data-theme=picture]:not(.mob) .tinspo { max-width: 760px; white-space: nowrap; } html.mob[data-theme=picture] .tinspo { font-size: 12px !important; letter-spacing: -.005em; }   /* (its three credits on one line) */
@@ -717,7 +705,6 @@ html.tv .zglow i { animation: none; filter: blur(60px) saturate(1.7) brightness(
 .th-hotel .vday.front .lid { transform: translate(-30px, -40px) rotate(-28deg); }
 .th-hotel .vday.soon .cs { color: #6c77b8; font-size: min(18px, 11cqw); z-index: 2; }
 .th-hotel .vday.soon u { display: none; }
-html.tv .th-hotel .vday:focus { outline: 0 !important; box-shadow: 0 0 0 3px #d61302; }
 html[data-theme=hotel] .hinfo h2 { color: #d61302; }
 html[data-theme=hotel] .leaf2 { border-color: #6c77b8; background: #f498b5; }
 html[data-theme=hotel] .leaf2 i { background: #6c77b8; color: #fff; }
@@ -739,7 +726,6 @@ html[data-theme=hotel] .leaf2 b { color: #5a3d4e; }
 .th-bedford .vday:not(.front) { filter: brightness(.68) saturate(.8); }
 .th-bedford .vday.soon .cs { top: 22px; bottom: auto; height: 150px; color: #2b2420; font-size: min(22px, 12cqw); }
 .th-bedford .vday.soon .sf u { background: #f6d47f; }
-html.tv .th-bedford .vday:focus { outline: 0 !important; filter: drop-shadow(0 0 10px #f6d47f); }
 html[data-theme=bedford] .hinfo { width: max-content; max-width: min(620px, 44vw); padding: 24px 30px 20px; margin: 0 0 -20px -30px; background: #f9ead1; color: #0b4946; box-shadow: 0 10px 30px rgba(0, 0, 0, .35); }   /* (the day's words on the 1946 one-sheet's paper) */
 html[data-theme=bedford] .hinfo .w > span { color: #e8402a; text-shadow: .04em .04em 0 rgba(103, 91, 62, .35); }
 html[data-theme=bedford] .hinfo .k, html[data-theme=bedford] .hinfo .y { color: #675b3e; }
@@ -758,7 +744,6 @@ html[data-theme=bedford] .leaf2 b { color: #0b4946; }
 @keyframes rain { from { transform: translateY(-50%); } to { transform: translateY(0); } }
 .th-code .vday.front .rain { opacity: 1; color: #eaffef; }
 .th-code .cdn { position: absolute; left: -4px; right: -4px; bottom: 30px; padding: 3px 0; background: var(--bg); font: 400 12px/1 "Share Tech Mono", monospace; color: #2bff6a; }
-html.tv .th-code .vday:focus { outline: 1px solid #eaffef !important; outline-offset: 0; }
 .codepic { position: absolute; left: calc(72% - 145px); top: calc(45% - 217px); width: 290px; height: 435px; background: #000 center/cover; z-index: 5; box-shadow: 0 0 0 1px #2bff6a; }
 html[data-theme=code] .hinfo { color: #2bff6a; }
 html[data-theme=code]:not(.mob) .hinfo .w { font-size: 56px; } html[data-theme=code]:not(.mob) .hinfo h2 { font-size: 34px; } html[data-theme=code]:not(.mob) .hinfo { max-width: 470px; }   /* (OCR-A is wide) */
@@ -786,7 +771,6 @@ html[data-theme=slices] .hinfo .w { font-size: 64px; }
 .th-moon .vday { -webkit-mask: none; clip-path: circle(50% at 50% 50%); }
 .th-moon .vday .mn { display: none; }
 .th-moon .vday.none { opacity: .55 !important; }
-html.tv .th-moon .vday:focus { outline: 0 !important; clip-path: none; box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px #fff; }
 html.tv .th-moon .vday:focus .msh { border-radius: 50%; }
 /* the day's poster, whole and square-cornered, above its words (John, 9 Nov 2026: "just put the poster on the screen above the title, not circular") */
 .mposter { display: block; height: min(252px, 25vh); aspect-ratio: 2 / 3; margin: 0 0 min(22px, 2.4vh); background: #0c2f3b center / cover; box-shadow: 0 0 0 1px rgba(243, 234, 203, .45), 0 14px 30px rgba(0, 0, 0, .4); pointer-events: auto; cursor: pointer; position: relative; }
@@ -805,7 +789,6 @@ html.tv .th-moon .vday:focus .msh { border-radius: 50%; }
 .th-credits .vday { width: 740px; height: 60px; background: none; display: flex; align-items: center; gap: 22px; transform-origin: 0 50%; text-align: left; }
 .th-credits .cn { flex: none; width: 44px; text-align: right; font: 300 22px/1 var(--kfont); }
 .th-credits .ct { font: 700 44px/1.1 var(--kfont); text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-html.tv .th-credits .vday:focus { outline: 0 !important; }
 .th-credits .vday.front .ct { box-shadow: inset 0 -4px 0 rgb(var(--kink)); }
 .cposter { position: absolute; left: 64px; top: 110px; width: 260px; height: 390px; background: rgba(var(--kink), .08) center/cover; }
 html[data-theme=credits] .hinfo { width: 260px; bottom: 46px; }
@@ -833,7 +816,6 @@ html[data-theme=autumn] .hinfo { top: 112px; bottom: auto; }
 .th-globe .vday.soon { background: none !important; box-shadow: none; }   /* (still newsprint, a little duller) */
 .th-globe .vday.soon .np u { background: repeating-linear-gradient(#b9b2a2 0 2px, #cfc8b8 2px 4px); }
 .th-globe .vday .cs, .th-globe .vday:not(.front) .vn { display: none; }
-html.tv .th-globe .vday:focus { outline: 0 !important; box-shadow: none; } html.tv .th-globe .vday:focus .np { box-shadow: 0 0 0 3px #fff, 0 6px 14px rgba(0, 0, 0, .35); }
 .gsoon { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; font: 400 44px/1 var(--tfont); text-transform: uppercase; color: #fff; text-shadow: 0 2px 10px rgba(0, 0, 0, .4); }
 .gsoon[hidden] { display: none; }
 .globe { position: absolute; left: calc(73% - 150px); top: calc(55% - 150px); width: 300px; height: 300px; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 50% 60%, rgba(255, 255, 255, .08), rgba(255, 255, 255, .03) 62%, rgba(255, 255, 255, .2) 100%); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .6); transform-origin: 50% 100%; }
@@ -913,7 +895,6 @@ html.mob .tcal { height: auto !important; }
 .tcap .tctx b { display: block; margin-bottom: 3px; font: 500 11px/1.3 var(--kfont); font-style: normal; letter-spacing: .32em; text-transform: uppercase; color: var(--fg); }
 .tcap .tctx i { font-style: normal; color: var(--fg); }
 .tcap .tctx span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-html.tv .tcap .tcarr:focus, html.tv .tcap .tctx:focus { outline: 2px solid rgb(var(--kink)) !important; outline-offset: -2px; }
 #mnav .tcap { margin-top: 14px; }
 html:not(.mob) .tcal > .tcap { grid-column: 1; grid-row: 1 / 3; justify-self: end; align-self: end; width: min(480px, 44%); margin-bottom: 4px; position: relative; z-index: 2; }   /* (over the month's heading, which shares its row: its arrows answer: John, 9 Nov 2026) */
 .tcal h2 { margin: 0; }
@@ -1049,7 +1030,6 @@ html.phone #barnav { gap: 10px; margin: 0 2px 0 10px !important; }
 .homeic { flex: none; display: grid; place-items: center; width: 30px; height: 30px; margin: 0 14px 0 -18px; padding: 0; border: 0; background: none; color: var(--fg); cursor: pointer; opacity: .85; }
 .homeic svg { width: 17px; height: 17px; }
 .homeic:hover, .homeic:focus-visible { opacity: 1; }
-html.tv .homeic:focus { outline: 2px solid rgb(var(--kink)) !important; outline-offset: 2px; }
 #shhome { position: fixed; z-index: 80; margin: 0; }
 html.hall .bar-top > .homeic, html.table .bar-top > .homeic { margin-left: -18px !important; }   /* (close to the name: GRIFFLIX's wide spacing leaves room after its X) */
 html.phone .bar-top .homeic, html.phone.hall .bar-top > .homeic, html.phone.table .bar-top > .homeic { width: 24px; margin: 0 2px 0 -6px !important; } html.phone .bar-top .homeic svg { width: 15px; height: 15px; }
@@ -1059,15 +1039,12 @@ html.tv #barnav { margin-left: 34px !important; }
 #barnav button { background: none; border: 0; padding: 6px 2px; margin: 0; cursor: pointer; color: var(--fg); font: 500 12px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; }
 #barnav button:focus-visible { outline: 2px solid rgb(var(--kink)); outline-offset: 4px; }
 html.tv #barnav button { font-size: 15px; padding: 8px 12px; }
-html.tv #barnav button:focus { outline: none !important; box-shadow: none !important; background: #fff; color: #000; }
 html.phone #barnav button { font-size: 10.5px; letter-spacing: .13em; padding: 6px 0; }
 #barnav button.on, #shnav button.on { text-decoration: underline; text-underline-offset: 7px; text-decoration-thickness: 1px; }
 html.phone #shnav { gap: 10px !important; } html.phone #shnav button { font-size: 10.5px !important; letter-spacing: .13em !important; padding: 6px 0; }
 #shnav button { background: none; border: 0; padding: 6px 2px; margin: 0; cursor: pointer; color: var(--fg); font: 500 12px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; }
 #shnav button:focus-visible { outline: 2px solid rgb(var(--kink)); outline-offset: 4px; }
 html.tv #shnav button { font-size: 15px; padding: 8px 12px; }
-html.tv #shnav button:focus { outline: none !important; box-shadow: none !important; background: #fff; color: #000; }
-html.tv #shbrand:focus { outline: none !important; box-shadow: none !important; background: #fff; color: #000 !important; }
 /* the TV: no X (Back closes), and no second set of words on the calendar (John, 8 Nov 2026: "we probably don't need the x") */
 html.tv #sheet .close, html.tv #sheet .tctools { display: none !important; }
 html.phone #shnav { gap: 14px; } html.phone #shnav button { font-size: 11px; letter-spacing: .2em; }
@@ -1118,7 +1095,6 @@ html.tv .tctools { top: 28px; right: 84px; gap: 12px; }
 html.tv .tctools .ico { width: 48px; height: 48px; }
 html.mob .tctools { top: max(10px, env(safe-area-inset-top)); right: 58px; }
 html.tv #sheet input::placeholder { color: rgba(var(--kink), .55) !important; opacity: 1; }
-html.tv #sheet input:focus { outline: 4px solid rgb(var(--kink)) !important; outline-offset: 3px; }
 html.tv #sheet .form p, html.tv #sheet .form .stat, html.tv #sheet .form label { font-size: 26px !important; line-height: 1.45 !important; max-width: 60ch !important; }
 html.tv #sheet .form .pill, html.tv #sheet .form button.go { min-height: 64px; padding: 0 30px; font-size: 20px !important; }
 html.tv #sheet .res .t { font-size: 24px !important; }
@@ -1132,14 +1108,11 @@ html.tv #sheet .res .s { font-size: 16px !important; }
    search result filled white (John, 8 Nov 2026: "a white line outside of the film ... can't all be seen, so looks messy";
    "selections on search are highlighted strangely") */
 html.tv #sheet .strip { grid-auto-columns: 136px; gap: 20px; padding: 10px 10px 14px; scroll-padding: 0 12px; }
-html.tv #sheet .card:focus { transform: none !important; outline: none !important; box-shadow: none !important; }
-html.tv #sheet .card:focus .pic { outline: 3px solid #fff !important; outline-offset: 3px; box-shadow: none; }
+html.tv #sheet .card:focus { transform: none !important; }
 html.tv #sheet .card .t { font: 600 15px/1.2 var(--kfont) !important; letter-spacing: .04em !important; margin-top: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 html.tv #sheet .card .s { font-size: 12px !important; }
 html.tv #bgrid .nowrows .row h2, html.tv #sheet .row h2 { font-size: 21px !important; }
 html.tv #sheet .res { border-radius: 4px; }
-html.tv #sheet .res:focus { outline: none !important; box-shadow: none !important; background: #fff !important; }
-html.tv #sheet .res:focus .t, html.tv #sheet .res:focus .s { color: #000 !important; }
 /* a computer or a TV: the calendar the whole screen, over the theme (John, 8 Nov 2026: "calendar is going in front of theme but
    not covering it so it looks odd - it should also be full screen and have titles in boxes - like song of the day") */
 html:not(.phone) #sheet:has(.tcal) { position: fixed; inset: 0; width: 100vw; height: 100%; max-width: none; max-height: none; margin: 0; border: 0; padding: 0; }
@@ -1210,9 +1183,8 @@ html.mob .tcd span { display: none; }
 .tcd span { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 6px 5px; background: linear-gradient(transparent, rgba(0, 0, 0, .75)); font: 600 10px/1.15 var(--sans); color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tcd.secret { background: #000; }
 .tcd.today { box-shadow: inset 0 0 0 2px rgb(var(--kink)); }
-html.tv .tcd:focus { outline: 3px solid rgb(var(--kink)) !important; outline-offset: 2px; box-shadow: none; transform: scale(1.08); z-index: 2; }
+html.tv .tcd:focus { transform: scale(1.08); z-index: 2; }
 .bsheet { padding: 20px 30px 30px; }
-html.tv .tinspo:focus { outline: 2px solid rgb(var(--kink)) !important; outline-offset: 6px; box-shadow: none; color: var(--fg); }
 
 /* each theme on a stage: the whole screen on a TV or computer; on a phone, cut to the theme's own part and scaled */
 .thstage, .thv { position: absolute; inset: 0; }
@@ -1427,7 +1399,6 @@ html.mob[data-theme=bars] .hinfo { margin-left: 0; left: 0 !important; right: 0 
 .th-bars .vday:not(.front) .vn { display: none; }
 .th-bars .vday .vn { top: auto; bottom: -24px; color: #fec402; }
 
-html.tv .th-bars .vday:focus { outline: 0 !important; }
 #cal.drag .th-bars .vday { transition: none; }
 html[data-theme=bars] .leaf2 { border-color: #fff; background: repeating-linear-gradient(0deg, transparent 0 .1em, rgba(255, 255, 255, .25) .1em .14em); }
 html[data-theme=bars] .leaf2 i { background: #fec402; color: #000; }
@@ -1442,7 +1413,6 @@ html[data-theme=oz] .hinfo .w > span { color: #f2c230; }
 .th-oz .vday { width: 200px; height: 300px; box-shadow: 0 0 0 4px #f3c623, 0 14px 0 rgba(0, 0, 0, .18); background-color: #f3c623; }
 .th-oz .vday .vn { color: #fff; }
 .th-oz .vday:not(.front) .vn { display: none; }
-html.tv .th-oz .vday:focus { outline: 0 !important; box-shadow: 0 0 0 6px #b3122e, 0 14px 0 rgba(0, 0, 0, .18); }
 html[data-theme=oz] .leaf2 { border-color: #f3c623; background: #fff; }
 html[data-theme=oz] .leaf2 i { background: #b3122e; color: #fff; }
 html[data-theme=oz] .leaf2 b { color: #0f7b3e; }
@@ -1472,7 +1442,6 @@ html[data-theme=jaws] .leaf2 b { color: #051725; }
 .th-tron .vday.front { box-shadow: 0 0 0 4px #cff6ff, 0 0 30px #3fd8ff; }
 .th-tron .vday .vn { color: #3fd8ff; font-family: var(--tfont); letter-spacing: .2em; }
 .th-tron .vday:not(.front) .vn { display: none; }
-html.tv .th-tron .vday:focus { outline: 0 !important; }
 html[data-theme=tron] .hinfo .w > span { color: #cff6ff; text-shadow: 0 0 .08em #3fd8ff, 0 0 .3em rgba(70, 215, 255, .7); }
 html[data-theme=tron] .hinfo h2 { color: #3fd8ff; }
 html[data-theme=tron] .leaf2 { border-color: #3fd8ff; box-shadow: 0 0 .08em #3fd8ff; background: #030b1a; }
@@ -1659,7 +1628,18 @@ html.gxproj .zcurt::before { opacity: 1; }
 .vtog span { position: relative; padding: 7px 14px 6px; text-align: center; letter-spacing: .3em; text-indent: .3em; transition: color .35s ease; }
 .vtog.vt-cal span:first-child, .vtog.vt-thm span:last-child { color: var(--bg); }
 html.phone .vtog span { padding: 6px 8px 5px; letter-spacing: .13em; text-indent: .13em; }
-html.tv #barnav button.vtog:focus { background: none; color: var(--fg); box-shadow: 0 0 0 2px #fff !important; }
+/* the switch square, as every other button of the bar (John, 11 Nov 2026: "the theme calendar toggle is rounded") */
+#barnav button.vtog, #shnav button.vtog, .vtog::before { border-radius: 0 !important; }
+/* the TV: one highlight for whatever's chosen, everywhere: a white ring a little out from it, a dark band between, so it reads on
+   a light picture or a dark room; the same thickness and gap however large the chosen thing is drawn (--ks: one over its scale)
+   (John, 11 Nov 2026: "highlighting can sometimes be a white box sometimes a white border, depending on the theme. Either way
+   the spacing isn't correct. It's still not always clear what is being selected") */
+html.tv :focus { --kf: var(--ks, 1); outline: calc(4px * var(--kf)) solid #fff !important; outline-offset: calc(6px * var(--kf)) !important; box-shadow: 0 0 0 calc(6px * var(--kf)) rgba(0, 0, 0, .7) !important; }
+html.tv .card:focus, html.tv #sheet .card:focus { outline: none !important; box-shadow: none !important; }
+html.tv .card:focus .pic { outline: 4px solid #fff !important; outline-offset: 6px; box-shadow: 0 0 0 6px rgba(0, 0, 0, .7) !important; }
+html.tv .th-globe .vday:focus { outline: none !important; box-shadow: none !important; }
+html.tv .th-globe .vday:focus .np { outline: calc(4px * var(--ks, 1)) solid #fff; outline-offset: calc(6px * var(--ks, 1)); box-shadow: 0 0 0 calc(6px * var(--ks, 1)) rgba(0, 0, 0, .7), 0 6px 14px rgba(0, 0, 0, .35); }
+html.tv .th-picture .vday:focus { outline: none !important; box-shadow: none !important; }   /* (behind the screen: the screen's ring shows it) */
 .tcap { display: none !important; }   /* (no theme caption on the calendar: John, 10 Nov 2026: "we don't need the theme caption on the calendar") */
 .ztop { position: absolute; left: 0; top: 0; z-index: 5; pointer-events: none; overflow: visible; }
 .ztop .zinb { fill: var(--gx-band, #0d0c0f); } .ztop .zbrim { fill: none; stroke: rgba(255, 244, 226, .28); stroke-width: 1.3; }
@@ -1723,7 +1703,7 @@ html[data-theme=picture] .zpost { background: #000; } html[data-theme=picture] .
 html.gxproj .th-picture .zcin { box-shadow: 0 0 0 6px #000, 0 0 110px 44px rgba(255, 240, 215, .38), 0 30px 160px 50px rgba(255, 236, 205, .18) !important; }
 /* (the TV: the day you're on is the film behind the screen, so the screen itself shows it's chosen, a cream ring and an orange glow
    round its black edge: John, 10 Nov 2026: "it needs to be clear on firestick what's highlighted - it's not on Grifflix theme") */
-html.tv.tvfront .th-picture .zcin { box-shadow: 0 0 0 6px #000, 0 0 0 13px #fbf6ec, 0 0 0 16px #f08a4b, 0 0 40px 18px rgba(240, 138, 75, .7), 0 0 110px 44px rgba(255, 240, 215, .38) !important; }
+html.tv.tvfront .th-picture .zcin { box-shadow: 0 0 0 6px #000, 0 0 0 12px rgba(0, 0, 0, .7), 0 0 0 16px #fff, 0 0 110px 44px rgba(255, 240, 215, .38) !important; }
 /* (Vertigo: the day and its film in the credits' clean lettering, clear, a white line round each letter: John, 10 Nov 2026) */
 html[data-theme=spiral] .hinfo .w, html[data-theme=spiral] .hinfo .w > span, html[data-theme=spiral] .hinfo h2 { font-family: "Special Gothic Expanded One", "Archivo Black", Futura, sans-serif !important; font-weight: 400 !important; text-transform: uppercase; letter-spacing: .04em; color: transparent !important; -webkit-text-stroke: 1.6px #fff; paint-order: stroke; text-shadow: none !important; }
 html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
@@ -1776,7 +1756,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'c606128bebe0' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '236777839f1f' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -1874,6 +1854,10 @@ function getJSON1(u) {   // one try, given up after 30 seconds without an answer
   return fetch(u, ac ? { cache: 'no-cache', signal: ac.signal } : { cache: 'no-cache' }).then(function (r) { if (!r.ok) { var e = new Error('Grifflix’s films aren’t on the site yet: John’s Update puts them there.'); e.status = r.status; throw e; } return r.json(); })
     .then(function (j) { clearTimeout(tm); return j; }, function (e) { clearTimeout(tm); throw e; });
 }
+// a disc's extra Jellyfin took for a film: marked so by the Mac's Update, or (till then) a file's own name with no year;
+// not a film in the lists or the search, but played from its film's page (John, 11 Nov 2026: "It should only search within actual films")
+function isExtra(i) { return !!i && (!!i.extra || (!i.year && i.type === 'movie' && !/\s/.test(i.name || '') && /\w[._]\w|-[A-Za-z0-9]+$/.test(i.name || ''))); }
+function extraName(i) { return String(i.name || '').replace(/-[A-Za-z0-9]+$/, '').replace(/[._]+/g, ' ').trim(); }
 function library() {
   if (!LIBP) LIBP = getJSON(DATA + 'library.json').then(function (L) {
     var tag = function (it) { land(it); var t = it.tags || {}; if (it.poster && t.poster) PICTAG[it.poster + 'Primary'] = t.poster; if (it.backdrop && t.backdrop) PICTAG[it.backdrop + 'Backdrop'] = t.backdrop; if (it.thumb && t.thumb) PICTAG[it.thumb + 'Thumb'] = t.thumb; };
@@ -2054,12 +2038,12 @@ function fromSite(path) {   // what the site's own files answer (null: a thing o
   return library().then(function (L) {
     var I = L.items, get = function (ids) { return ids.map(function (i) { return I[i]; }).filter(Boolean); };
     if (name === 'home') {
-      var newest = function (ids) { return get(ids).sort(SORTS.added).slice(0, 24); };
+      var newest = function (ids) { return get(ids).filter(function (i) { return !isExtra(i); }).sort(SORTS.added).slice(0, 24); };
       return { movies: newest(L.movies), tv: newest(L.tv) };
     }
     if (name === 'items') {
       var ff = {}; try { ff = JSON.parse(q.get('f') || '{}') || {}; } catch (e) {}
-      var all = sfSort(get(L[q.get('lib') === 'tv' ? 'tv' : 'movies']).filter(fits(q.get('genre'), q.get('mood'))).filter(sfFits(ff)), q.get('sort') || 'name', +q.get('dir') || 1), start = +q.get('start') || 0, n = +q.get('limit') || 120;
+      var all = sfSort(get(L[q.get('lib') === 'tv' ? 'tv' : 'movies']).filter(function (i) { return !isExtra(i); }).filter(fits(q.get('genre'), q.get('mood'))).filter(sfFits(ff)), q.get('sort') || 'name', +q.get('dir') || 1), start = +q.get('start') || 0, n = +q.get('limit') || 120;
       return { items: all.slice(start, start + n), total: all.length };
     }
     if (name === 'collections') return { collections: get(L.collections) };
@@ -2074,7 +2058,7 @@ function fromSite(path) {   // what the site's own files answer (null: a thing o
     }
     if (name === 'search') {
       var t = (q.get('q') || '').toLowerCase().trim(), words = t.split(/\s+/);
-      var hits = Object.keys(I).map(function (k) { return I[k]; }).filter(function (i) { if (i.type !== 'movie' && i.type !== 'series') return false; var n = (i.name || '').toLowerCase(); return words.every(function (w) { return n.indexOf(w) >= 0; }); });
+      var hits = Object.keys(I).map(function (k) { return I[k]; }).filter(function (i) { if ((i.type !== 'movie' && i.type !== 'series') || isExtra(i)) return false; var n = (i.name || '').toLowerCase(); return words.every(function (w) { return n.indexOf(w) >= 0; }); });
       hits.sort(function (a, b) { var an = (a.name || '').toLowerCase(), bn = (b.name || '').toLowerCase(); return (bn.indexOf(t) === 0) - (an.indexOf(t) === 0) || SORTS.name(a, b); });
       return { items: hits.slice(0, 40) };
     }
@@ -3099,6 +3083,7 @@ function themeShow(at, force) {   // the theme at any point between days; the ne
     themeOther(b);
   }
   T.fx.place(all, at, T.c, b);
+  if (TV) { var ae = document.activeElement; if (ae && ae.dataset && ae.dataset.day && all.indexOf(ae) >= 0) { var sm = /scale\(([\d.]+)/.exec(ae.style.transform || ''), ks = sm && +sm[1] > .05 ? 1 / +sm[1] : 1; if (Math.abs(ks - (ae._ks || 1)) > .01) { ae._ks = ks; ae.style.setProperty('--ks', ks.toFixed(3)); } } }
   // (never more posters than the month has days, in any theme: the day you're on in the middle, the days either side, its own month's
   // or the next's or last's, up to the month's count; the rest out of sight: John, 9 Nov 2026: "there shouldn't ever be more posters
   // than there would be in that month on a theme")
@@ -3156,15 +3141,17 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
     if (el) el.click(); }; });
   $('#tcprev').onclick = function () { calStep(-1); }; $('#tcnext').onclick = function () { calStep(1); };
   wireCap('#sheetIn', calStep);
-  if (S.calKeep) { var kb = $('#' + S.calKeep); if (kb && kb.disabled) kb = $('#' + (S.calKeep === 'tcprev' ? 'tcnext' : 'tcprev')); S.calKeep = null; if (kb && !kb.disabled) { kb.focus({ preventScroll: true }); setTimeout(function () { if (dlg.open && kb.isConnected) kb.focus({ preventScroll: true }); }, 220); return; } }   // (again once the theme behind has followed the month)
+  if (S.calKeep) { var kb = $('#' + S.calKeep); if (kb && kb.disabled) kb = $('#' + (S.calKeep === 'tcprev' ? 'tcnext' : 'tcprev')); S.calKeep = null; if (kb && !kb.disabled) { kb.focus({ preventScroll: true }); setTimeout(function () { if (dlg.open && kb.isConnected && !$('#sheetIn').contains(document.activeElement)) kb.focus({ preventScroll: true }); }, 220); return; } }   // (only if something behind took it as the theme followed the month)
+  if (S.calLand) { var ds = $$('#sheetIn .tcd.has'), fl = S.calLand === 'last' ? ds[ds.length - 1] : ds[0]; S.calLand = null; if (TV && fl) fl.focus({ preventScroll: true }); return; }   // (a month stepped to: straight to its day, once)
   if (TV) setTimeout(function () { var f = (S.calDay && $('#sheetIn .tcd.has[data-day="' + S.calDay + '"]')) || $('#sheetIn .tcd.today.has') || $$('#sheetIn .tcd.has').pop(); if (f) f.focus(); }, 60);   // (back from a day: on that day, not the last)
 }
-function calStep(d) {   // the calendar pop-up: the month before or after (the theme behind it follows)
+function calStep(d, land) {   // the calendar pop-up: the month before or after (the theme behind it follows); land: 'first' or 'last' day chosen there
   if (!S.step || !S.step(d)) return false;
-  var ae = document.activeElement; S.calKeep = ae && /^(tcprev|tcnext)$/.test(ae.id) ? ae.id : null;   // (an arrow chosen: kept chosen, to go on through the months: John, 8 Nov 2026)
+  // (an arrow chosen: it stays chosen, to go on through the months, never by way of a day (John, 8 and 11 Nov 2026: "the movement
+  // between months goes first to the first of the month and then jumps back to the arrows: it should be the arrows"); otherwise a day)
+  var ae = document.activeElement, keep = ae && /^(tcprev|tcnext)$/.test(ae.id) ? ae.id : null; S.calKeep = keep; S.calLand = keep ? null : (land || 'first');
   calSheet();
   var el = $('#sheetIn'); if (el && el.animate) el.animate([{ transform: 'translateX(' + (d * 48) + 'px)', opacity: .35 }, { transform: 'none', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.7,.2,1)' });
-  if (TV && !S.calKeep) { var f = $('#sheetIn .tcd.has'); if (f) f.focus(); }
   return true;
 }
 function sheetStep(d) { return $('#sheetIn .tcal') ? calStep(d) : dayStep(d); }   // (a swipe on a pop-up: a month on the calendar, a day on a day's page)
@@ -4901,6 +4888,15 @@ function bodyHTML(it, ctx) {
     });
     h += '</div>';
   }
+  var xs = !PUBLIC && LIB && it.extras ? it.extras.map(function (id) { return LIB.items[id]; }).filter(Boolean) : [];
+  if (xs.length) {   // (the film's extras, members only: John, 11 Nov 2026: "features/extras should be viewable from the film page")
+    h += '<div class="eps xtras"><h3 class="xh">Extras</h3>';
+    xs.forEach(function (x) {
+      var src = img(x.thumb || x.backdrop || x.poster, x.thumb ? 'Thumb' : (x.backdrop ? 'Backdrop' : 'Primary'), 320);
+      h += '<button class="ep" data-xt="' + x.id + '"><div class="pic">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '') + progBar(x) + '</div><div><div class="s">' + (x.mins ? x.mins + ' min' : 'Extra') + '</div><div class="t">' + esc(extraName(x)) + '</div></div></button>';
+    });
+    h += '</div>';
+  }
   if (SITEEDIT && ctx.date && S.calData && S.calData.mine) {
     h += '<div class="owner"><h3>' + (S.calData.id === 'motd' ? 'Your Movie of the Day' : 'Your calendar') + '</h3>' + (NOTES ? '<textarea id="onote" placeholder="A note about why (optional)">' + esc(ctx.note || '') + '</textarea>' : '') +
       '<div class="acts" style="margin-top:0">' + (NOTES ? '<button class="pill on" id="osave">Save note</button>' : '') + '<button class="pill" id="ochange">Change film</button><button class="pill" id="oclear">Take it off</button></div></div>';
@@ -4929,6 +4925,7 @@ function wireBody(it, ctx) {
   on('acoll', function () { collPicker(it); });
   on('ashare', function () { var d = ctx.date && S.cal === 'motd' && S.calData.days[ctx.date] && S.calData.days[ctx.date].id === it.id ? ctx.date : shareDayOf(it); if (d) shareDay(d, it); });   // (only a film on the calendar: anyone may see it)
   $$('[data-season]').forEach(function (b) { b.onclick = function () { ctx.season = b.dataset.season; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); }; });
+  $$('[data-xt]').forEach(function (b) { b.onclick = function () { var x = LIB && LIB.items[b.dataset.xt]; if (x) play(x); }; });
   $$('[data-ep]').forEach(function (b) { b.onclick = function () { var i = it.episodes.map(function (e) { return e.id; }).indexOf(b.dataset.ep); play(it.episodes[i], it.episodes.slice(i + 1)); }; });
   on('osave', function () { api('calendar', { op: 'set', id: S.cal, date: ctx.date, note: $('#onote').value }).then(function (c) { S.calData = c; ctx.note = c.notes[ctx.date]; toast('Saved'); }); });
   on('ochange', function () { pickFor(ctx.date); });
@@ -5582,7 +5579,7 @@ document.addEventListener('keydown', function (e) {
     e.preventDefault();
     var days = $$('#sheetIn .tcd.has'), at = days.indexOf(ae), to = days[at + (k === 'right' ? 1 : -1)];
     if (to) { to.focus(); to.scrollIntoView({ block: 'nearest' }); return; }
-    if (calStep(k === 'right' ? 1 : -1)) setTimeout(function () { var ds = $$('#sheetIn .tcd.has'), f = k === 'right' ? ds[0] : ds[ds.length - 1]; if (f) f.focus(); }, 280);
+    calStep(k === 'right' ? 1 : -1, k === 'right' ? 'first' : 'last');
     return;
   }
   if (ae && ae.id === 'tinspo') {   // the caption: back up (or along) to the day you were on
