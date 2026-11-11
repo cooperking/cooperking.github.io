@@ -614,7 +614,9 @@ html.tv .th-picture .zamb { filter: blur(18px) saturate(1.4) brightness(.42); }
 .tshare { position: fixed; z-index: 27; right: 52px; bottom: 104px; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(var(--kink), .35); background: color-mix(in srgb, var(--bg) 72%, #000); color: var(--fg); padding: 0; cursor: pointer; }
 .tshare svg { width: 15px; height: 15px; }
 html.mob .tshare { right: 16px; bottom: auto; top: max(66px, calc(env(safe-area-inset-top) + 64px)); border: 0; background: none; } html.mob .tinspo { right: 52px !important; }
-html.tv .tshare, html.tv #sharecal, html.tv #ashare, html.tv #shnative { display: none !important; }   /* (no sharing on the TV: John, 10 Nov 2026) */
+.tmute { right: 94px; } html.mob .tmute { right: 52px; } html.tv .tmute { right: 52px; display: grid !important; }   /* (the music on and off, left of the share button) */
+html.mob:has(#tmute) .tinspo { right: 88px !important; }
+html.tv .tshare:not(.tmute), html.tv #sharecal, html.tv #ashare, html.tv #shnative { display: none !important; }   /* (no sharing on the TV: John, 10 Nov 2026) */
 .zlt { position: absolute; left: 0; top: 0; z-index: 105; font-family: var(--kfont); font-weight: 700; line-height: 1; color: #ece7dd; text-transform: uppercase; pointer-events: none; will-change: transform; backface-visibility: hidden; -webkit-backface-visibility: hidden; text-shadow: 0 0 1px rgba(0, 0, 0, .5); }   /* (the logo's own Futura, bold, as the bar's GRIFFLIX: John, 10 Nov 2026) */
 html.public .bar-top [data-go="search"], html.public .bar-top [data-go="browse"], html.public .bar-top .members, html.public #refresh, html.public #refresh2, html.public #rows, html.public .tinspo .tfilm { display: none !important; }   /* (signed out: no library, no search) */
 #shwho { cursor: pointer; line-height: 1; } #shwho svg { display: block; width: 15px; height: 15px; } #shwho.whoico svg { width: 22px; height: 22px; }   /* (no sharing links until they're sorted: John, 10 Nov 2026) */
@@ -1761,7 +1763,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '28fdd5848b3d' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '51354dfc133c' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2818,7 +2820,7 @@ function themeCaption(m) {   // a small caption under the month: the film the th
     '<span class="mbmid"><span class="mbhint">or swipe</span><span class="mbmon"><button class="mbm" id="mbmprev" aria-label="The month before"' + (mi > 0 ? '' : ' disabled') + '>‹ ' + mn(ms[mi - 1]).slice(0, 3) + '</button>' +
     '<button class="mbm" id="mbmnext" aria-label="The month after"' + (mi >= 0 && mi < ms.length - 1 ? '' : ' disabled') + '>' + mn(ms[mi + 1]).slice(0, 3) + ' ›</button></span></span>' +
     '<button class="pill" id="mbnext" aria-label="The day after">Day after ›</button></div>' : '';
-  var sh = '<button class="ico tshare" id="tshare" aria-label="Share this month’s theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button>';
+  var sh = muteBtn() + '<button class="ico tshare" id="tshare" aria-label="Share this month’s theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button>';
   return (id ? '<button class="tinspo link" id="tinspo" data-fid="' + id + '">' + txt + ' ›</button>' : '<div class="tinspo" id="tinspo">' + txt + '</div>') + sh + nav;
 }
 function capBar(m, y, prev, next) {   // the theme's caption on the calendar too, ‹ › to the month before or after, its theme with it (John, 9 Nov 2026: "Can the theme caption remain on the page when the calendar is up, with arrows to jump to the next or previous one")
@@ -2841,7 +2843,20 @@ function mobnavFit() {   // a phone's day and month buttons fitted to its width:
 }
 addEventListener('resize', function () { if (MOB()) mobnavFit(); });
 if (document.fonts) document.fonts.ready.then(function () { if (MOB()) mobnavFit(); });
+// (the music on and off from the theme's page itself, beside the share button: John, 11 Nov 2026: "can we have a place on the
+// screen to mute and unmute the background music?"; the same setting as the profile's Theme music, kept on this device)
+function muteBtn() {
+  return '<button class="ico tshare tmute" id="tmute" aria-label="' + (TMUS.on ? 'Turn the music off' : 'Turn the music on') + '" aria-pressed="' + !TMUS.on + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/>' +
+    (TMUS.on ? '<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>' : '<path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/>') + '</svg></button>';
+}
+function muteToggle() {
+  TMUS.on = !TMUS.on; store.set('grifflix-music', TMUS.on ? 'on' : 'off');
+  if (TMUS.on) { TMUS.ok = true; musicCtx(); var k = TMUS.k; TMUS.k = null; if (k) themeMusic(k); } else musicHush();
+  var b = $('#tmute'); if (b) { var f = document.activeElement === b; b.outerHTML = muteBtn(); b = $('#tmute'); b.onclick = muteToggle; if (f) b.focus(); }
+  toast(TMUS.on ? 'Music on' : 'Music off');
+}
 function wireCaption() {
+  var tm = $('#tmute'); if (tm && !tm.onclick) tm.onclick = muteToggle;
   var ts = $('#tshare'); if (ts && !ts.onclick) ts.onclick = function () { shareMonth(S.month); };
   var bp = $('#mbprev'), bn = $('#mbnext'); if (bp && !bp.onclick) { bp.onclick = function () { themeStep(-1); }; bn.onclick = function () { themeStep(1); }; }
   var mp = $('#mbmprev'), mx = $('#mbmnext'); if (mp && !mp.onclick) { mp.onclick = function () { themeMonth(-1); }; mx.onclick = function () { themeMonth(1); }; }
@@ -5242,7 +5257,7 @@ function drawAccount() {
   var ng = $('#notego'); if (ng) ng.onclick = function () { (on ? notesOff() : notesOn()).then(function () { profTab(); }).catch(oops); };
   $('#mailgo').onclick = addEmail;
   $('#leadgo').onclick = function () { closeSheet(); window.ZLED = 0; TMUS.ok = true; musicCtx(); THEMEFX.picture.leader(true); };   // (Grifflix's opening again, with its sound: a tap allows it, an iPhone too)
-  $('#musgo').onclick = function () { TMUS.on = !TMUS.on; store.set('grifflix-music', TMUS.on ? 'on' : 'off'); if (!TMUS.on) musicHush(); toast(TMUS.on ? 'Theme music on' : 'Theme music off'); drawAccount(); };
+  $('#musgo').onclick = function () { TMUS.on = !TMUS.on; store.set('grifflix-music', TMUS.on ? 'on' : 'off'); if (!TMUS.on) musicHush(); var tb = $('#tmute'); if (tb) { tb.outerHTML = muteBtn(); $('#tmute').onclick = muteToggle; } toast(TMUS.on ? 'Theme music on' : 'Theme music off'); drawAccount(); };
   $('#tvcode').onclick = function () { var b = this; if (DEMO) return toast('Not in the demo.'); wcall({ op: 'tvcode' }).then(function (j) { b.outerHTML = '<span class="tvcode">' + j.code + '</span><span class="profp"> for ' + j.minutes + ' minutes, once</span>'; }).catch(oops); };
   $('#signout').onclick = function () {
     var b = this; if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Tap again to sign out'; return; }
