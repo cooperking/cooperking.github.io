@@ -1656,6 +1656,7 @@ html.tv .th-picture .vday:focus { outline: none !important; box-shadow: none !im
 .zw[data-n]:not([data-n=""])::before { content: attr(data-n); position: absolute; inset: 0; display: grid; place-items: center; font: 500 22px/1 var(--kfont); color: rgba(255, 244, 226, .35); }
 html .zlogo.zol, html.gxown .zlogo.zol { background: none !important; -webkit-mask: none !important; mask: none !important; background-image: var(--gx-outline) !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; }
 .zlgc { position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; }
+.zdc { position: absolute; z-index: 10; pointer-events: none; }   /* (the zoetrope, drawn whole on one canvas) */
 .zlg { position: absolute; left: 0; top: 0; z-index: 3; background-image: var(--gx-outline); background-repeat: no-repeat; will-change: transform; pointer-events: none; }
 .zhs { transform-origin: 50% 50%; }
 .zstripc { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; } .zstripc polygon { fill: var(--gx-strip, #f3e8d2); }
@@ -3939,52 +3940,35 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     h += '<div class="zbeam" style="left:' + F(g.scx - g.sw) + 'px;top:' + F(st0 - g.sh * .2) + 'px;width:' + F(g.sw * 2) + 'px;height:' + F(g.sh * 1.9) + 'px"></div>' +
       '<div class="zstagef" id="zstagef" style="left:' + F(sl) + 'px;top:' + F(st0) + 'px;width:' + F(g.sw) + 'px;height:' + F(g.sh) + 'px"><div class="zcin"><i class="zpost on" id="zpost"></i><i class="ztrain" id="ztrain"></i><i class="zflick"></i></div>' +
       '<i class="zcurt l"></i><i class="zcurt r"></i></div>';
-    // (below it, the zoetrope up close: inside, the far wall in the lamp's light)
-    h += '<div class="zback" style="' + mk + 'left:' + F(cx - R) + 'px;top:' + F(g.yT) + 'px;width:' + F(2 * R) + 'px;height:' + F(g.yS - g.yT + 2 * ry) + 'px"></div>';
-    // (Muybridge's horse (The Horse in Motion, 1878), big, in front of the films going by)
-    // (the strip: black figures on its paper, a frame apart, as Muybridge's horse on a zoetrope's strip; smaller: John, 10 Nov 2026)
-    var hh = (g.yS - g.yT) * .64, hw = hh * 150 / 91, NH = Math.ceil(2 * R / (hw * 1.25)) | 1;
-    h += '<div class="zpaper" id="zpaper" style="' + mk + 'left:' + F(cx - R) + 'px;top:' + F(g.yT) + 'px;width:' + F(2 * R) + 'px;height:' + F(g.yS - g.yT + 2 * ry) + 'px">';
-    // (the horses on the far wall's strip, one to each slit, round its curve: smaller towards the sides, the middle furthest back and
-    // highest (John, 10 Nov 2026: "Horses are working as a 2 D strip ... rather than appearing on the 3D drum"); they stay where they
-    // are as it turns, galloping, as a zoetrope's horse is seen)
-    var NBh = this.nb(c), Dh = 2 * Math.PI / NBh; hw = Math.min(hw, R * Dh * 1.0); hh = hw * 91 / 150;   // (bigger horses, narrower slits: John, 10 Nov 2026)
-    // (the paper strip round the far wall: curving, higher and narrower in the middle where it's furthest away)
-    var pc = g.pcy - g.yT + ry * .35, cv = ry * 1.05, sk = function (ca) { return .78 + .22 * (1 - ca); }, top = [], bot = [];
-    for (var j = 0; j <= 48; j++) { var aa = -Math.PI / 2 + j / 48 * Math.PI, c2 = Math.cos(aa), xx = R + R * Math.sin(aa), hb = hh * .72 * sk(c2);
-      top.push(F(xx) + ',' + F(pc - cv * c2 - hb)); bot.unshift(F(xx) + ',' + F(pc - cv * c2 + hb)); }
-    h += '<svg class="zstripc" width="' + F(2 * R) + '" height="' + F(g.yS - g.yT + 2 * ry) + '"><polygon points="' + top.concat(bot).join(' ') + '"/></svg>';
-    // (the far wall's own slits, the same ones seen over the top, and a horse between each pair, placed as the drum turns (draw))
-    for (var i = 0; i < NBh; i++) h += '<i class="zbsl"></i><i class="zhs" style="width:' + F(hw) + 'px;height:' + F(hh) + 'px;background-size:' + F(hw * 15) + 'px ' + F(hh) + 'px"></i>';
-    this._hz = { hw: hw, hh: hh, pc: pc, cv: cv };
-    h += '</div>';
-    // (the open top: the inside of the far side, seen a little from above, its rim curving round behind; its slits drawn as it turns)
-    var rt = g.yT - 18 * g.f;
-    h += '<svg class="ztop" width="' + c.W + '" height="' + c.H + '"><defs><linearGradient id="zin2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".05"/><stop offset=".6" stop-color="#000" stop-opacity=".25"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></linearGradient></defs>' +
-      '<ellipse class="zinb" cx="' + F(cx) + '" cy="' + F(rt) + '" rx="' + F(R) + '" ry="' + F(ry) + '"/><ellipse cx="' + F(cx) + '" cy="' + F(rt) + '" rx="' + F(R) + '" ry="' + F(ry) + '" fill="url(#zin2)"/>' +
-      '<path class="zbrim" d="M' + F(cx - R) + ',' + F(rt) + ' A' + F(R) + ' ' + F(ry) + ' 0 0 1 ' + F(cx + R) + ',' + F(rt) + '"/></svg>';
-    h += '<i class="zshad" style="left:' + F(g.scx - g.sw * .42) + 'px;top:' + F(rt - ry * .9) + 'px;width:' + F(g.sw * .84) + 'px;height:' + F(ry * 2.2) + 'px"></i>';   // (the screen's shadow on the drum, hovering above it)
-    for (var kb = 0, NBb = this.nb(c); kb < NBb; kb++) h += '<i class="zbs" style="height:' + F(ry * .9) + 'px"></i>';
-    // (the near wall: its slits, a rim above them, a band below with GRIFFLIX round it)
-    h += '<svg class="zfar" id="zfar" width="' + c.W + '" height="' + c.H + '"></svg>';   // (the far wall's slits, drawn as it turns)
-    h += '<div class="zfrontw" style="' + mkAt(0) + '">';
-    h += '<svg class="znear" id="znear" width="' + c.W + '" height="' + c.H + '"></svg>';   // (the near wall between its slits, drawn as it turns)
-    var NB = this.nb(c), PWd = R * 2 * Math.PI / NB * .58;
-    for (var k = 0; k < NB; k++) h += '<i class="zw" style="width:' + F(PWd) + 'px;height:' + F(g.yS - g.yT) + 'px"></i>';
-    h += '<svg class="zdrum" width="' + c.W + '" height="' + c.H + '"><defs><linearGradient id="zlac" x1="0" x2="1"><stop offset="0" stop-color="#0e0f12"/><stop offset=".18" stop-color="#1e2024"/><stop offset=".5" stop-color="#33363b"/><stop offset=".82" stop-color="#1e2024"/><stop offset="1" stop-color="#0e0f12"/></linearGradient></defs>' +
-      '<path fill="url(#zlac)" d="M' + F(cx - R) + ',' + F(g.yT - 18 * g.f) + ' ' + arc(0, g.yT - 18 * g.f) + F(cx + R) + ',' + F(g.yT - 18 * g.f) + ' L' + F(cx + R) + ',' + F(g.yT) + ' ' + arc(1, g.yT) + F(cx - R) + ',' + F(g.yT) + ' Z"/>' +
-      '<path fill="url(#zlac)" d="M' + F(cx - R) + ',' + F(g.yS) + ' ' + arc(0, g.yS) + F(cx + R) + ',' + F(g.yS) + ' L' + F(cx + R) + ',' + F(g.yB) + ' ' + arc(1, g.yB) + F(cx - R) + ',' + F(g.yB) + ' Z"/>' +
-      ['yT18', 'yT', 'yS', 'yB'].map(function (k) { var y = k === 'yT18' ? g.yT - 18 * g.f : g[k]; return '<path class="zrim" d="M' + F(cx - R) + ',' + F(y) + ' ' + arc(0, y) + F(cx + R) + ',' + F(y) + '"/>'; }).join('') + '</svg>';
-    // (the GRIFFLIX logo itself painted round the band, twice, turning with the drum: John, 10 Nov 2026: "put the new grifflix logo properly on there")
-    // (brass round the band instead: pinstripes, and a row of diamonds and studs, eight times round, joined, turning with the drum: John,
-    // 11 Nov 2026: "3 with brass trims but it's still quite boring to look at")
-    var ON = 8, lw = 2 * Math.PI * R / ON, lh = (g.yB - g.yS) * .8;
-    // (painted round the band four times, in thin upright slices so it bends round the drum and follows its curve)
-    // (drawn on one canvas, slice by slice, rather than as 96 moving pieces of page: a Fire Stick spent its time restyling them; John, 10 Nov 2026)
-    var my0 = (g.yS + g.yB) / 2, bx0 = Math.floor(cx - R - lw / 24 - 4), by0 = Math.floor(my0 - g.ryAt(my0) - lh / 2 - 4), bw0 = Math.ceil(2 * R + lw / 12 + 8), bh0 = Math.ceil(2 * g.ryAt(my0) + lh + 8);   // (just the band, not the screen)
-    h += '<canvas class="zlgc" data-x="' + bx0 + '" data-y="' + by0 + '" width="' + Math.round(bw0 * (TV ? 1 : ZDPR())) + '" height="' + Math.round(bh0 * (TV ? 1 : ZDPR())) + '" style="left:' + bx0 + 'px;top:' + by0 + 'px;width:' + bw0 + 'px;height:' + bh0 + 'px"></canvas>';
-    this._lw = lw; this._lh = lh; this._lq = ON;
-    return h + '</div>';
+    // (the zoetrope drawn whole, as one piece, on one canvas: one cylinder lit from one side, its inside, the strip and the horses
+    // seen through its slits, its walls, brass and bands all one surface, rather than a dozen flat layers stacked: John, 11 Nov 2026:
+    // "the separate parts are all stuck on in 2D and so doesn't look like a 3D object - should it all be drawn as one piece")
+    var rt = g.yT - 18 * g.f, NBh = this.nb(c), Dh = 2 * Math.PI / NBh;
+    var hh = (g.yS - g.yT) * .64, hw = Math.min(hh * 150 / 91, R * Dh); hh = hw * 91 / 150;   // (the horses: bigger, a slit apart)
+    this._hz = { hw: hw, hh: hh, pc: g.pcy - g.yT + ry * .35, cv: ry * 1.05 };
+    var ON = 8; this._lw = 2 * Math.PI * R / ON; this._lh = (g.yB - g.yS) * .8; this._lq = ON;   // (the band's brass, eight lengths round)
+    var bx = Math.floor(cx - R - 14), by = Math.floor(rt - ry - 14), bw = Math.ceil(2 * R + 28), bh = Math.ceil(g.yB + g.ryAt(g.yB) * 2.6 + 18 - by), dpr = TV ? 1 : ZDPR();
+    var cvs = function (id) { return '<canvas class="zdc" id="' + id + '" data-x="' + bx + '" data-y="' + by + '" data-w="' + bw + '" data-h="' + bh + '" width="' + Math.round(bw * dpr) + '" height="' + Math.round(bh * dpr) + '" style="left:' + bx + 'px;top:' + by + 'px;width:' + bw + 'px;height:' + bh + 'px"></canvas>'; };
+    h += cvs('zdcs') + cvs('zdc');   // (its inside, painted once; and all that moves, each frame)
+    return h;
+  },
+  // (the drum's one light, from above the screen and a little to the left, as the projector's: how each part of the surface takes it,
+  // across the drum, the same for the charcoal, the brass and the strip inside; made once, as the light doesn't turn with the drum)
+  shades: function (x, cx, R) {
+    var nm = function (v) { var l = Math.hypot(v[0], v[1], v[2]); return [v[0] / l, v[1] / l, v[2] / l]; }, L = nm([-.3, .65, .7]), H = nm([L[0], L[1], L[2] + 1]);
+    var col = function (base, amb, dif, spk, pw, inner, sx, al) {   // (the colour a surface takes at sx, -1 at the drum's left edge to 1 at its right)
+      var nx = inner ? -sx : sx, nz = Math.sqrt(Math.max(0, 1 - sx * sx));
+      var d = Math.max(0, nx * L[0] + nz * L[2]), hl = Math.pow(Math.max(0, nx * H[0] + nz * H[2]), pw), k = amb + dif * d;
+      return 'rgba(' + base.map(function (b0) { return Math.min(255, Math.round(b0 * k + 255 * spk * hl)); }).join(',') + ',' + (al == null ? 1 : al) + ')';
+    };
+    var mk = function (base, amb, dif, spk, pw, inner) {
+      var gr = x.createLinearGradient(cx - R, 0, cx + R, 0);
+      for (var i = 0; i <= 40; i++) gr.addColorStop(i / 40, col(base, amb, dif, spk, pw, inner, i / 20 - 1));
+      return gr;
+    };
+    var B = [[44, 46, 52], .38, .95, .06, 10], M = [[206, 164, 76], .42, .8, .5, 16];
+    return { wall: mk.apply(null, B), brass: mk.apply(null, M), paper: mk([238, 226, 204], .62, .42, 0, 1, true),
+      wallAt: function (t, al) { return col(B[0], B[1], B[2], B[3], B[4], false, Math.sin(t), al); }, brassAt: function (t, al) { return col(M[0], M[1], M[2], M[3], M[4], false, Math.sin(t), al); } };
   },
   // (the pictures the drum is painted from: the horse's frames in black, GRIFFLIX in the band's lettering colour)
   art: function () {
@@ -4003,8 +3987,9 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
       var dot = function (cx0, r) { x.beginPath(); x.arc(cx0, H / 2, r, 0, 2 * Math.PI); x.fill(); };
       for (var n = 0; n < 3; n++) { var c0 = W * (n + .5) / 3; dia(c0, 18); dot(c0 - W / 12, 3.2); dot(c0 + W / 12, 3.2); }
       [0, W].forEach(function (e) { dot(e, 4); });   // (a stud where one length meets the next)
-      A.logo = cv; A.ok++; try { if (me.all && $('#cal .zlgc')) me.draw(me._last || 0); } catch (e) {}
+      A.logo = cv; A.ok++; try { if (me.all && $('#zdc')) me.draw(me._last || 0); } catch (e) {}
     })();
+    var hi = new Image(); hi.onload = function () { A.horse = tint(hi, '#000'); try { if (me.all && $('#zdc')) me.draw(me._last || 0); } catch (e) {} }; hi.src = '/grifflix/img/muybridge-horse.webp';   // (Muybridge's horse, 15 frames, in black)
     return A;
   },
   ready: function (c) {
@@ -4170,9 +4155,7 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     if (me._la != null) { var v = Math.abs(ad - me._la) / Math.max(8, t - me._lt) * 1000, tg = Math.min(1, v / .5); me._sp += (tg - me._sp) * (tg > me._sp ? .45 : .09); }
     me._la = ad; me._lt = t; me._last = a;
     var sp = me._gal ? 1 : me._sp || 0, XR = (me._xs || 0) * D, veil = me._gal ? Math.max(0, Math.min(1, ((me._w || 0) - 5) / 12)) : 0;
-    var FW = me._fw && me._fw.isConnected ? me._fw : (me._fw = $('#cal .zfrontw'));
-    if (FW && FW._veil !== veil.toFixed(2)) { FW._veil = veil.toFixed(2); FW.style.filter = veil > .01 ? 'blur(' + (veil * 2.6).toFixed(2) + 'px)' : ''; }   // (galloping: the drum's turn beyond the day's, a slit at a time)
-    if (!me._gal && sp > .004 && !me._zraf) me._zraf = requestAnimationFrame(function () { me._zraf = 0; if (me.all && $('#zpaper')) me.draw(me._last); });   // (its own frame, not the move's: the slits close up again after a spin)
+    if (!me._gal && sp > .004 && !me._zraf) me._zraf = requestAnimationFrame(function () { me._zraf = 0; if (me.all && $('#zdc')) me.draw(me._last); });   // (its own frame, not the move's: the slits close up again after a spin)
     // (the days along the film strip behind the screen, the day you're on behind it, the ones before and after showing either side; it runs
     // with the drum, speeding up and slowing with it, as a change of day spins it: John, 10 Nov 2026: "It should move like the zoetrope
     // does, showing the previous film next to the screen")
@@ -4196,133 +4179,127 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     });
     pos = pr;
     var ZF = me._zf && me._zf.isConnected ? me._zf : (me._zf = $('#zfilm')); if (ZF) ZF.style.backgroundPositionX = (-pos * 256).toFixed(1) + 'px';   // (the holes running with the film, a whole number of holes a frame, so the loop never jumps)
-    // (the horse, galloping in place as the drum turns, flickering as each slit goes by; standing when it stops)
-    var pp = me._pp && me._pp.isConnected ? me._pp : (me._pp = $('#zpaper')), wo = '1';
-    if (pp) {
-      var ph = ((ad * st / D) % 1 + 1) % 1, fl = 1 - Math.min(1, sp * 1.5) * .35 * (1 - Math.abs(Math.cos(Math.PI * ph)));
-      pp.style.opacity = '1';   // (no fading: the drum solid, the far side seen only through the slits and over the top: John, 10 Nov 2026: "If it was done properly the effect would actually be achieved without fading")
-      // (turning, the wall blurs and the strip's seen whole through it, as the eye sees a zoetrope; at rest only through the slits)
-      wo = (1 - .74 * veil).toFixed(3);   // (fast, the wall a veil the strip is seen through)
-      var step = Math.floor(ad * 15), hs = me._hs && me._hs[0] && me._hs[0].isConnected ? me._hs : (me._hs = $$('#cal .zhs'));
-      // (the far wall: its slits, and the horses between them on the strip, going round with the drum; turning, seen a slit at a time, as
-      // a zoetrope is, so the horse stays in its place and gallops: John, 10 Nov 2026: "the top slits which you see over the top are the
-      // same slits that are between the horses")
-      var Z = me._hz || { hw: 60, hh: 36, pc: 60, cv: 10 }, rot = ad * st + XR, rq = rot, R0 = g.Rv;   // (all of it turning together, as one drum)
-      var BL = me._bl && me._bl[0] && me._bl[0].isConnected ? me._bl : (me._bl = $$('#cal .zbsl')), ang = function (v) { return ((v % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI; };
-      var skf = function (c) { return .78 + .22 * (1 - c); };
-      var strobe = veil > .3, rH = strobe ? ad * st : rq, passed = Math.floor(Math.abs(me._xs || 0));
-      var BSop = (1 - veil).toFixed(3);
-      hs.forEach(function (hz, k) {
-        var th = ang(k * D - rH), c = -Math.cos(th);
-        if (c < .03) { if (hz._v !== 0) { hz.style.visibility = 'hidden'; hz._v = 0; } } else {
-          if (hz._v !== 1) { hz.style.visibility = ''; hz._v = 1; } var sc = skf(c);
-          hz.style.transform = 'translate(' + (R0 + R0 * Math.sin(th) - Z.hw / 2).toFixed(1) + 'px,' + (Z.pc - Z.hh / 2 - Z.cv * c).toFixed(1) + 'px) scale(' + (c * sc).toFixed(3) + ',' + sc.toFixed(3) + ')';
-          var n = (Math.floor(k * 15 / NB) + (strobe ? passed : 0)) % 15; if (hz._n !== n) { hz._n = n; hz.style.backgroundPosition = (-n * Z.hw).toFixed(1) + 'px 0'; } }
-        var bl = BL[k]; if (!bl) return; if (bl._op !== BSop) { bl._op = BSop; bl.style.opacity = BSop; } var tb = ang((k + .5) * D - rq), cb = -Math.cos(tb);
-        if (cb < .03) { if (bl._v !== 0) { bl.style.visibility = 'hidden'; bl._v = 0; } return; } if (bl._v !== 1) { bl.style.visibility = ''; bl._v = 1; }
-        var bw = Math.max(1, R0 * D * .42 * cb), bot = Z.pc - Z.cv * cb + Z.hh * .9 * skf(cb);
-        bl.style.transform = 'translate(' + (R0 + R0 * Math.sin(tb) - bw / 2).toFixed(1) + 'px,0) scaleX(' + (bw / 4).toFixed(3) + ')'; bl.style.height = Math.max(0, bot).toFixed(1) + 'px';
+    me.drum(g, ad, XR, sp, veil, a);
+  },
+  drum: function (g, ad, XR, sp, veil, a) {
+    // (two canvases: the inside, painted once, and everything that moves on one canvas over it, so only one changes each frame)
+    var me = this, CV = me._cv && me._cv.isConnected ? me._cv : (me._cv = $('#zdc')), CB = CV; if (!CV) return;
+    var xf = CV._x || (CV._x = CV.getContext('2d')), x = xf, ox = +CV.dataset.x, oy = +CV.dataset.y, cw = +CV.dataset.w, ch = +CV.dataset.h, dp = CV.width / cw;
+    xf.setTransform(dp, 0, 0, dp, -ox * dp, -oy * dp); xf.globalAlpha = 1; xf.globalCompositeOperation = 'source-over'; xf.clearRect(ox, oy, cw, ch);
+    var PI = Math.PI, NB = me.nb(me.c), D = 2 * PI / NB, st = 2 * PI, R = g.Rv, cx = g.cx, ry = g.ry, yT = g.yT, yS = g.yS, yB = g.yB, rt = yT - 18 * g.f, A = me._art || {};
+    var G = CV._g || (CV._g = me.shades(xf, cx, R)), Z = me._hz || { hw: 60, hh: 36, pc: 60, cv: 10 };
+    var ang = function (v) { return ((v % (2 * PI)) + 3 * PI) % (2 * PI) - PI; }, X = function (t) { return cx + R * Math.sin(t); }, Y = function (t, y) { return y + g.ryAt(y) * Math.cos(t); };
+    var strip = function (a0, a1, y0, y1) {   // (a piece of the drum's surface between two angles and two heights, curved with it)
+      var n = Math.max(2, Math.ceil((a1 - a0) / .06)), j, t; x.moveTo(X(a0), Y(a0, y0));
+      for (j = 1; j <= n; j++) { t = a0 + (a1 - a0) * j / n; x.lineTo(X(t), Y(t, y0)); }
+      for (j = n; j >= 0; j--) { t = a0 + (a1 - a0) * j / n; x.lineTo(X(t), Y(t, y1)); } x.closePath();
+    };
+    var dia = function (t, y, aw, hy) { x.moveTo(X(t), Y(t, y - hy)); x.lineTo(X(t + aw), Y(t + aw, y)); x.lineTo(X(t), Y(t, y + hy)); x.lineTo(X(t - aw), Y(t - aw, y)); x.closePath(); };
+    var vg = function (y0, y1, stops) { var gr = x.createLinearGradient(0, y0, 0, y1); stops.forEach(function (q) { gr.addColorStop(q[0], q[1]); }); return gr; };
+    var rotN = ad * st + XR, half = D * .385, sw2 = D * .115, wo = 1 - .74 * veil, fso = 1 - (me._gal ? Math.max(0, Math.min(1, ((me._w || 0) - 3) / 8)) : 0);
+    var ryB = g.ryAt(yB), cut = 1.4;
+    // (what doesn't change as it turns, painted once and kept: the inside with its strip's paper, and the wall itself with its brass bands;
+    // each frame only the slits cut through, the horses and the panels' brass: a TV has time for no more)
+    var bake = function (el, paint) { var o = document.createElement('canvas'); o.width = el.width; o.height = el.height; var q = o.getContext('2d'); q.setTransform(dp, 0, 0, dp, -ox * dp, -oy * dp); var x0 = x; x = q; paint(q, me.shades(q, cx, R)); x = x0; return o; };
+    var CS = $('#zdcs'); if (CS && !CS._done) { CS._done = 1; var bgc = bake(CB, function (x, S) {
+      // (its shadow on the floor, under it)
+      x.save(); x.translate(cx, yB + ryB * .9); x.scale(1, ryB * 1.5 / R);
+      var fs = x.createRadialGradient(0, 0, R * .5, 0, 0, R * 1.08); fs.addColorStop(0, 'rgba(0,0,0,.42)'); fs.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = fs; x.beginPath(); x.arc(0, 0, R * 1.08, 0, 2 * PI); x.fill(); x.restore();
+      // (inside, over the top: the far wall's inner face, lit at its rim, into shadow below)
+      x.beginPath(); x.ellipse(cx, rt, R, ry, 0, 0, 2 * PI); x.fillStyle = S.paper; x.fill();
+      x.fillStyle = vg(rt - ry, rt + ry, [[0, 'rgba(0,0,0,.04)'], [.6, 'rgba(0,0,0,.3)'], [1, 'rgba(0,0,0,.55)']]); x.fill();
+      // (the strip's paper, seen through the slits, in the near wall's shadow at its top and foot)
+      x.fillStyle = S.paper; x.fillRect(cx - R, yT - ry, 2 * R, yS - yT + 3 * ry);
+      x.fillStyle = vg(yT, yS + ry, [[0, 'rgba(40,30,20,.45)'], [.25, 'rgba(40,30,20,.08)'], [.75, 'rgba(40,30,20,.05)'], [1, 'rgba(40,30,20,.35)']]); x.fillRect(cx - R, yT - ry, 2 * R, yS - yT + 3 * ry);
+      // (the screen's shadow, falling over the drum's open top)
+      x.save(); x.translate(g.scx, rt + ry * .2); x.scale(1, ry * 1.1 / (g.sw * .42));
+      var ss = x.createRadialGradient(0, 0, 0, 0, 0, g.sw * .42); ss.addColorStop(0, 'rgba(20,14,10,.5)'); ss.addColorStop(.55, 'rgba(20,14,10,.22)'); ss.addColorStop(1, 'rgba(20,14,10,0)'); x.fillStyle = ss; x.beginPath(); x.arc(0, 0, g.sw * .42, 0, 2 * PI); x.fill(); x.restore();
+    }); CS.getContext('2d').drawImage(bgc, 0, 0); }
+    if (!CV._wl) CV._wl = bake(CV, function (x, S) {
+      // (the near wall, one piece from its rim to its foot, lit from above, darker to its foot)
+      x.beginPath(); strip(-PI / 2, PI / 2, rt, yB); x.fillStyle = S.wall; x.fill();
+      x.fillStyle = vg(rt, yB + ryB, [[0, 'rgba(255,255,255,.06)'], [.35, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,.38)']]); x.fill();
+      // (the brass bands round it: a moulding at the rim, above and below the slits, and at the foot, each a curve lit along its length)
+      x.strokeStyle = S.brass; x.lineCap = 'butt';
+      [[rt, 3.2], [yT, 2.6], [yS, 2.6], [yB, 3.2]].forEach(function (q) {
+        var yy = q[0], e = g.ryAt(yy); x.lineWidth = q[1]; x.beginPath(); x.ellipse(cx, yy, R, e, 0, 0, PI); x.stroke();
+        x.save(); x.globalAlpha = .45; x.lineWidth = .9; x.strokeStyle = 'rgba(255,240,205,.9)'; x.beginPath(); x.ellipse(cx, yy - q[1] * .35, R, e, 0, .12 * PI, .88 * PI); x.stroke(); x.restore();   // (its highlight)
       });
-      me._rq = rq;
-    }
-    // (the near wall's slits, sweeping past)
-    var W = me._zw && me._zw[0] && me._zw[0].isConnected ? me._zw : (me._zw = $$('#cal .zw')), R = g.Rv;
-    W.forEach(function (b, i) {
-      var th = ((i * D - ad * st - XR) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
-      // (only the panels you can see carry posters: the day you're on at the front, the days before it to the left and after it to the
-      // right (John, 10 Nov 2026: "you only need as many posters as you can actually see"); a panel takes its day's poster while it's
-      // round the back, out of sight, so the new days come round as the drum turns)
-      // (turning, the outside plain black, no posters to catch the eye; they come back as it stops: John, 10 Nov 2026)
-      var turning = me._gal || ($('#cal') && $('#cal').classList.contains('drag'));
-      if (turning) { if (b._pu !== 'spin') { b._pu = 'spin'; b.style.backgroundImage = 'none'; b.dataset.n = ''; } }
-      else if (b._pu == null || b._pu === 'spin' || cs < .04 || sp <= .004) {
-        var off = ((i + NB / 2) % NB + NB) % NB - NB / 2, el = me.all && me.all[Math.round(me._tgt != null ? me._tgt : ad) + off], pu = el ? el.style.getPropertyValue('--p') : '';
-        var key = (el ? el.dataset.day || el.dataset.n : '') + '|' + pu; if (b._pu !== key) { b._pu = key; b.style.backgroundImage = pu && pu !== 'none' ? pu : 'none'; b.dataset.n = el && !(pu && pu !== 'none') ? (el.dataset.n || '') : ''; }
-      }
-      if (cs < .04) { if (b._v !== 0) { b.style.visibility = 'hidden'; b._v = 0; } return; } if (b._v !== 1) { b.style.visibility = ''; b._v = 1; }
-      var x0 = R * Math.sin(th - D * .29), x1 = R * Math.sin(th + D * .29);   // (the panels, and the wider slits between them to see through: John, 10 Nov 2026)
-      var pw0 = parseFloat(b.style.width) || 10;
-      b.style.transform = 'translate(' + (g.cx + x0).toFixed(1) + 'px,' + (g.yT + g.ry * cs).toFixed(1) + 'px) scaleX(' + ((x1 - x0) / pw0).toFixed(3) + ')';
-      b.style.setProperty('--dk', Math.min(.85, .9 * (1 - cs)).toFixed(2)); if (b._wo !== wo) { b._wo = wo; b.style.opacity = wo; }
+      x.globalAlpha = .9; x.lineWidth = 2; x.beginPath(); x.ellipse(cx, rt, R, ry, 0, PI, 2 * PI); x.stroke(); x.globalAlpha = 1;   // (the rim going round behind)
+      var my0 = (yS + yB) / 2, kv0 = (me._lh || (yB - yS) * .8) / 60, b0 = my0 - 30 * kv0; x.fillStyle = S.brass; x.beginPath();   // (the band's pinstripes, all the way round)
+      [[3, 2.5], [8, 1], [51, 1], [54.5, 2.5]].forEach(function (r) { strip(-PI / 2, PI / 2, b0 + r[0] * kv0, b0 + (r[0] + r[1]) * kv0); }); x.fill();
     });
-    // (the drum's walls drawn as they are: each piece of the near wall between two slits curved with the drum, its top and foot on the
-    // rim's and the band's curves, lighter facing you, darker turning away, the wall's thickness seen at each slit's edge; the far wall's
-    // slits, holes through to the room, curved with it, their cut edges catching the light: John, 10 Nov 2026: "the blocks between slits
-    // are just 2D rectangles. They don't join up with the drum. The back ones don't have the illusion of being a hole either")
-    (function () {
-      var NS = $('#znear'), FS = $('#zfar'); if (!NS || !FS) return;
-      var rotN = ad * st + XR, cx = g.cx, ry = g.ry, yT = g.yT, yS = g.yS, half = D * .385, th2 = R * .018, F2 = function (n) { return n.toFixed(1); };
-      var P = function (t, y0) { return F2(cx + R * Math.sin(t)) + ',' + F2(y0 + g.ryAt(y0) * Math.cos(t)); };
-      var edge = function (a0, a1, y0, y1) { var n = 10, pts = [], j; for (j = 0; j <= n; j++) pts.push(P(a0 + (a1 - a0) * j / n, y0)); for (j = n; j >= 0; j--) pts.push(P(a0 + (a1 - a0) * j / n, y1)); return 'M' + pts.join('L') + 'Z'; };
-      var sh = function (c) { var k = Math.pow(Math.max(0, Math.min(1, c)), .8), r = Math.round(14 + 40 * k), gg = Math.round(15 + 41 * k), b = Math.round(18 + 44 * k); return 'rgb(' + r + ',' + gg + ',' + b + ')'; };   // (matte charcoal, not gloss: John, 11 Nov 2026)
-      // (the same shapes moved each frame, not new ones made: a Fire Stick's time went on making and placing them: John, 10 Nov 2026)
-      var hn = [], hf = [], put = function (svg, list) {
-        var ks = svg._ps || (svg._ps = []);
-        while (ks.length < list.length) { var e = document.createElementNS('http://www.w3.org/2000/svg', 'path'); svg.appendChild(e); ks.push(e); }
-        for (var q = 0; q < ks.length; q++) { var w = list[q] || ['', 'none'], el = ks[q]; if (el._d !== w[0]) { el._d = w[0]; el.setAttribute('d', w[0]); } if (el._f !== w[1]) { el._f = w[1]; el.setAttribute('fill', w[1]); } if (el._o !== !!w[2]) { el._o = !!w[2]; if (w[2]) el.setAttribute('data-o', '1'); else el.removeAttribute('data-o'); } }
-      };
-      if (NS._ps && !NS.contains(NS._ps[0])) NS._ps = null; if (FS._ps && !FS.contains(FS._ps[0])) FS._ps = null;
-      for (var i = 0; i < NB; i++) {
-        var m = ((i * D - rotN) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, a0 = Math.max(-Math.PI / 2, m - half), a1 = Math.min(Math.PI / 2, m + half);
-        if (a1 > a0) {
-          hn.push([edge(a0, a1, yT, yS), sh(Math.cos(m))]);
-          // (each panel between the slits framed in brass, a medallion at its heart and studs at its corners, as a Victorian maker's
-          // drum: John, 11 Nov 2026: "some decoration between the slits to make it look ornate and like a Victorian thing of beauty")
-          var cm = Math.cos(m), pw = a1 - a0;
-          if (cm > .1 && pw > D * .5) {
-            var al = (.3 + .65 * cm).toFixed(2), brass = 'rgba(214,176,92,' + al + ')', dk = 'rgba(16,17,20,' + al + ')';
-            var ins = pw * .15, lw2 = pw * .04, hgt = yS - yT, yt = yT + hgt * .09, yb = yS - hgt * .09, th3 = Math.max(1.2, hgt * .012), ym = (yT + yS) / 2, hh = hgt * .15, aw = pw * .24;
-            hn.push([edge(a0 + ins, a0 + ins + lw2, yt, yb), brass, 1]); hn.push([edge(a1 - ins - lw2, a1 - ins, yt, yb), brass, 1]);   // (the frame's sides)
-            hn.push([edge(a0 + ins, a1 - ins, yt, yt + th3), brass, 1]); hn.push([edge(a0 + ins, a1 - ins, yb - th3, yb), brass, 1]);   // (its top and foot)
-            var dia2 = function (t, y, a, hy) { return 'M' + P(t, y - hy) + 'L' + P(t + a, y) + 'L' + P(t, y + hy) + 'L' + P(t - a, y) + 'Z'; };
-            hn.push([dia2(m, ym, aw, hh), brass, 1]); hn.push([dia2(m, ym, aw * .5, hh * .5), dk, 1]); if (!TV) hn.push([dia2(m, ym, aw * .18, hh * .18), brass, 1]);   // (the medallion)
-            (TV ? [] : [[a0 + ins + lw2 / 2, yt], [a1 - ins - lw2 / 2, yt], [a0 + ins + lw2 / 2, yb], [a1 - ins - lw2 / 2, yb]]).forEach(function (q) { hn.push([dia2(q[0], q[1], pw * .045, hgt * .025), brass, 1]); });   // (the studs)
-          }
-          // (the wall's thickness, on the edge that turns towards you)
-          var ex = m > 0 ? a0 : a1, ew = th2 * Math.abs(Math.sin(ex)) / R * 6;
-          if (Math.abs(Math.sin(ex)) > .05 && ex > -Math.PI / 2 && ex < Math.PI / 2) hn.push([edge(m > 0 ? ex - ew : ex, m > 0 ? ex : ex + ew, yT, yS), 'rgba(201,162,74,.92)']);
-        }
-        // (the far wall's slit, a hole: dark through to the room, its cut edge lit on the side facing you)
-        var fm = (((i + .5) * D - rotN) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cf = Math.cos(fm);
-        if (cf < -.04) {
-          var fw = D * .11, b0 = fm - fw, b1 = fm + fw;
-          hf.push([edge(b0, b1, yT, yS), '#030304']);
-          var cut = fm > 0 ? b0 : b1, cw = .012 + .02 * Math.abs(Math.sin(fm));
-          hf.push([edge(fm > 0 ? cut : cut - cw, fm > 0 ? cut + cw : cut, yT, yS), 'rgba(120,108,92,.55)']);
-        }
-      }
-      put(NS, hn); put(FS, hf);
-      var op = (1 - .74 * (me._gal ? Math.max(0, Math.min(1, ((me._w || 0) - 5) / 12)) : 0)).toFixed(3); NS.style.opacity = op; FS.style.opacity = (1 - (me._gal ? Math.max(0, Math.min(1, ((me._w || 0) - 3) / 8)) : 0)).toFixed(3);
-    })();
-    // (the far side's slits, seen over the near rim, turning the other way across)
-    var BS = me._bs && me._bs[0] && me._bs[0].isConnected ? me._bs : (me._bs = $$('#cal .zbs')), rt = g.yT - 18 * g.f;
-    var bso = (1 - (me._gal ? Math.max(0, Math.min(1, ((me._w || 0) - 5) / 12)) : 0)).toFixed(3);
-    BS.forEach(function (b, i) {
-      if (b._op !== bso) { b._op = bso; b.style.opacity = bso; }
-      var th = (((i + .5) * D - (me._rq != null ? me._rq : ad * st + XR)) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
-      if (cs > -.03) { if (b._v !== 0) { b.style.visibility = 'hidden'; b._v = 0; } return; } if (b._v !== 1) { b.style.visibility = ''; b._v = 1; }
-      var w = Math.max(1, R * D * .42 * -cs);
-      b.style.transform = 'translate(' + (g.cx + R * Math.sin(th) - w / 2).toFixed(1) + 'px,' + (rt + g.ry * cs + 2).toFixed(1) + 'px) scaleX(' + (w / 4).toFixed(3) + ')';
-    });
-    // (the logo round the band below the slits, turning with them, centred at rest)
-    var LC = me._lc && me._lc.isConnected ? me._lc : (me._lc = $('#cal .zlgc')), lw = me._lw || 300, LI = me._art && me._art.logo;
-    if (me._l0 == null || !LC || LC._l0 !== 1) { me._l0 = a; if (LC) LC._l0 = 1; }   // (centred where the drum first comes to rest)
-    var my = (g.yS + g.yB) / 2;
-    if (LC && LI && !(TV && sp > .15 && (me._bf = (me._bf || 0) + 1) % 2)) {   // (a TV, the drum turning: the band every other frame, blurred by its speed anyway)
-      var cx2 = LC._x || (LC._x = LC.getContext('2d')), dp = LC.width / (+LC.style.width.replace('px', '') || LC.width), ox = +LC.dataset.x, oy = +LC.dataset.y, lh = me._lh || lw / 9.49, KS = me._lq ? 6 : 24, sw = lw / KS, sx = LI.width / lw, LQ = me._lq || 4;   // (the brass band: 10 slices a length is plenty, and light on a TV)
-      cx2.setTransform(1, 0, 0, 1, 0, 0); cx2.clearRect(0, 0, LC.width, LC.height);
-      for (var q = 0; q < LQ; q++) for (var k = 0; k < KS; k++) {
-        var th = ((q * 2 * Math.PI / LQ - (ad - me._l0) * st - XR + .5 * D + ((k + .5) / KS - .5) * lw / R) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI, cs = Math.cos(th);
-        if (cs < .06) continue;
-        var w = sw + .6;
-        cx2.globalAlpha = Math.min(1, .25 + cs * 1.2);
-        // (each strip tilted to the drum's curve where it lies, so the brass runs round in one curve, not in steps: John, 11 Nov 2026:
-        // "The brass finish on the zoetrope is all straight lines - there is a step between each panel. It would be a curved line")
-        cx2.setTransform(dp * cs, -dp * g.ryAt(my) / R * Math.sin(th), 0, dp, dp * (g.cx + R * Math.sin(th) - ox), dp * (my + g.ryAt(my) * cs - oy));
-        cx2.drawImage(LI, k * sw * sx, 0, Math.min(LI.width - k * sw * sx, (w + .4) * sx), LI.height, -w / 2, -lh / 2, w + .4, lh);
-      }
-      cx2.globalAlpha = 1;
+    // (the near wall, the slits cut through it; spinning fast it thins to a veil the horses show through)
+    x.setTransform(1, 0, 0, 1, 0, 0); x.drawImage(CV._wl, 0, 0); x.setTransform(dp, 0, 0, dp, -ox * dp, -oy * dp);
+    x.globalCompositeOperation = 'destination-out'; x.beginPath();
+    for (var i0 = 0; i0 < NB; i0++) { var s0 = ang((i0 + .5) * D - rotN), h0 = Math.max(-PI / 2, s0 - sw2), h1 = Math.min(PI / 2, s0 + sw2); if (h1 > h0) strip(h0, h1, yT + cut, yS - cut); }
+    x.fill(); if (wo < .99) { x.globalAlpha = 1 - wo; x.beginPath(); strip(-PI / 2, PI / 2, yT + cut, yS - cut); x.fill(); x.globalAlpha = 1; }
+    x.globalCompositeOperation = 'source-over';
+    // (the wall's thickness, seen at each slit's edge on the side towards you; the brass on each panel, lit by the same light: all of each
+    // kind drawn together, in one go, a handful of shapes a frame rather than dozens)
+    var E = [], P = [];
+    for (var i = 0; i < NB; i++) {
+      var s1 = ang((i + .5) * D - rotN), e0 = s1 > 0 ? s1 + sw2 : s1 - sw2;
+      if (Math.abs(Math.sin(e0)) > .05 && Math.abs(e0) < PI / 2 - .02) E.push([s1, e0, .11 * Math.abs(Math.sin(e0))]);
+      var m = ang(i * D - rotN), pa0 = Math.max(-PI / 2, m - half), pa1 = Math.min(PI / 2, m + half);
+      if (Math.cos(m) > .1 && pa1 - pa0 > D * .5) P.push([m, pa0, pa1]);
     }
+    x.globalAlpha = wo;
+    x.fillStyle = 'rgb(17,18,21)'; x.beginPath(); E.forEach(function (e) { strip(e[0] > 0 ? e[1] - e[2] : e[1], e[0] > 0 ? e[1] : e[1] + e[2], yT + cut, yS - cut); }); x.fill();   // (the cut faces, in the slit's shadow)
+    x.fillStyle = G.brass; x.beginPath(); E.forEach(function (e) { var el = e[0] > 0 ? e[1] - e[2] : e[1] + e[2], ed = .006; strip(e[0] > 0 ? el : el - ed, e[0] > 0 ? el + ed : el, yT + cut, yS - cut); });   // (their lit edges)
+    x.fill();
+    // (the panels' brass: one panel's, painted once at the front, then set on each panel, narrowed and tilted to where it stands on the curve)
+    var PS = CV._ps || (CV._ps = (function () {
+      var hg = yS - yT, yt = yT + hg * .09, yb = yS - hg * .09, th3 = Math.max(1.2, hg * .012), ym = (yT + yS) / 2, hy = hg * .15, pa0 = -half, pa1 = half, pw = pa1 - pa0, ins = pw * .15, lw2 = pw * .04, aw = pw * .24;
+      var W = 2 * R * Math.sin(half) + 4, H = yS - yT + ry + 4, o = document.createElement('canvas'); o.width = Math.ceil(W * dp); o.height = Math.ceil(H * dp);
+      var q = o.getContext('2d'), x0 = x; x = q; q.setTransform(dp, 0, 0, dp, -(cx - W / 2) * dp, -(yT - 2) * dp); var S = me.shades(q, cx, R);
+      q.fillStyle = S.brass; q.beginPath(); strip(pa0 + ins, pa0 + ins + lw2, yt, yb); strip(pa1 - ins - lw2, pa1 - ins, yt, yb); strip(pa0 + ins, pa1 - ins, yt, yt + th3); strip(pa0 + ins, pa1 - ins, yb - th3, yb); dia(0, ym, aw, hy);
+      if (!TV) [[pa0 + ins + lw2 / 2, yt], [pa1 - ins - lw2 / 2, yt], [pa0 + ins + lw2 / 2, yb], [pa1 - ins - lw2 / 2, yb]].forEach(function (c2) { dia(c2[0], c2[1], pw * .045, hg * .025); });
+      q.fill(); q.fillStyle = 'rgba(14,15,18,.9)'; q.beginPath(); dia(0, ym, aw * .5, hy * .5); q.fill();
+      if (!TV) { q.fillStyle = S.brass; q.beginPath(); dia(0, ym, aw * .18, hy * .18); q.fill(); }
+      x = x0; return { c: o, w: W, h: H };
+    })());
+    P.forEach(function (q) {
+      var m = q[0], cm = Math.cos(m); if (cm < .17) return;
+      x.globalAlpha = (.3 + .7 * cm) * wo;
+      x.setTransform(dp * cm, -dp * ry / R * Math.sin(m), 0, dp, dp * (X(m) - ox), dp * (yT - 2 + ry * (cm - 1) - oy));
+      x.drawImage(PS.c, -PS.w / 2, 0, PS.w, PS.h);
+    });
+    x.setTransform(dp, 0, 0, dp, -ox * dp, -oy * dp);
+    x.globalAlpha = 1;
+    // (the band below the slits: its pinstripes painted with the wall; its diamonds, dots and studs going round with the drum, drawn on its curve)
+    var lw = me._lw || 300, LQ = me._lq || 8, my = (yS + yB) / 2, kv = (me._lh || lw / 9.49) / 60, ka = lw / 360 / R; if (me._l0 == null) me._l0 = a;
+    var bdk = [], ell = function (t, rr) { var c1 = Math.cos(t); x.moveTo(X(t) + rr * ka * R * c1, Y(t, my)); x.ellipse(X(t), Y(t, my), Math.max(.3, rr * ka * R * c1), rr * kv, 0, 0, 2 * PI); };
+    x.fillStyle = G.brass; x.beginPath();
+    for (var q = 0; q < LQ; q++) {
+      var b0 = q * 2 * PI / LQ - (ad - me._l0) * st - XR + .5 * D;
+      for (var n2 = 0; n2 < 3; n2++) {
+        var tc = ang(b0 + ((n2 + .5) / 3 - .5) * lw / R); if (Math.cos(tc) < .08) continue;
+        dia(tc, my, 18 * .72 * ka, 18 * kv); bdk.push(tc);
+        ell(ang(tc - 30 * ka), 3.2); ell(ang(tc + 30 * ka), 3.2);
+      }
+      var tq = ang(b0 - .5 * lw / R); if (Math.cos(tq) >= .08) ell(tq, 4);   // (a stud where one length meets the next)
+    }
+    x.fill(); x.fillStyle = '#1a1b1f'; x.beginPath(); bdk.forEach(function (tc) { dia(tc, my, 18 * .45 * .72 * ka, 18 * .45 * kv); }); x.fill();
+    // (inside, behind the wall, seen through its slits: the horses on the strip and the far wall's own slits)
+    x.globalCompositeOperation = 'destination-over';
+    x.save(); x.beginPath(); x.rect(cx - R, yT - ry, 2 * R, yS - yT + 3 * ry); x.clip();
+    var strobe = veil > .3, rH = strobe ? ad * st : rotN, passed = Math.floor(Math.abs(me._xs || 0)), HI = A.horse && (CB._hi && CB._hi._src === A.horse ? CB._hi : (CB._hi = (function () {   // (the horse's frames made the size they're drawn, once: shrinking the whole picture every frame took most of a TV's time)
+      var o = document.createElement('canvas'), H0 = Math.max(8, Math.ceil(Z.hh * dp)), W0 = Math.ceil(A.horse.width * H0 / A.horse.height / 15) * 15; o.width = W0; o.height = H0;
+      o.getContext('2d').drawImage(A.horse, 0, 0, W0, H0); o._src = A.horse; return o; })())), fw0 = HI ? HI.width / 15 : 0, skf = function (c0) { return .78 + .22 * (1 - c0); };
+    for (var k = 0; k < NB; k++) {
+      var th = ang(k * D - rH), c0 = -Math.cos(th);
+      if (HI && c0 >= .03) { var sc = skf(c0), w = Z.hw * c0 * sc, hgt = Z.hh * sc, n = (Math.floor(k * 15 / NB) + (strobe ? passed : 0)) % 15;
+        x.globalAlpha = .55 + .45 * c0; x.drawImage(HI, n * fw0, 0, fw0, HI.height, X(th) - w / 2, yT + Z.pc - Z.cv * c0 - hgt / 2, w, hgt); x.globalAlpha = 1; }
+      var fm = ang((k + .5) * D - rotN), cf = Math.cos(fm);
+      if (cf < -.04 && fso > .01) {   // (the far wall's slit, a hole through to the room, its cut edge catching the light)
+        x.globalAlpha = fso; x.beginPath(); strip(fm - D * .11, fm + D * .11, yT, yS); x.fillStyle = '#030304'; x.fill();
+        var fc = fm > 0 ? fm - D * .11 : fm + D * .11, cwd = .012 + .02 * Math.abs(Math.sin(fm));
+        x.beginPath(); strip(fm > 0 ? fc : fc - cwd, fm > 0 ? fc + cwd : fc, yT, yS); x.fillStyle = 'rgba(150,132,104,.6)'; x.fill(); x.globalAlpha = 1;
+      }
+    }
+    x.restore();
+    x.globalCompositeOperation = 'source-over';
   },
   leader: function (asked) {   // (a film leader: 3, 2, 1, a flash, GRIFFLIX; the first visit each day; a tap skips it)
     // (the first visit of the day only; home, GRIFFLIX and reloads don't replay it. ?leader=1 always plays it: admin's preview. John, 9 Nov 2026)
