@@ -260,6 +260,19 @@ html.tv .sheet .people { font-size: var(--crfs, 15px); }
 .player .msg.on { display: grid; }
 .player .nextup { position: absolute; right: 20px; bottom: 90px; display: none; }
 .player .nextup.on { display: inline-flex; }
+.player .top #ptv { color: #fff; } .player .top #ptv + #pcast { margin-left: 8px; } .player .top #ptv:not([hidden]) { margin-left: auto; }
+/* the phone as the Fire TV's remote, once a film's sent to it */
+.tvrem { position: fixed; inset: 0; z-index: 120; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: max(30px, env(safe-area-inset-top)) 24px max(30px, env(safe-area-inset-bottom)); background: radial-gradient(120% 80% at 50% 0%, #1c3550, #0a0c10 70%); color: #fff; text-align: center; }
+.tvrem.on { display: flex; }
+.tvrem .k { font: 600 11px/1 var(--kfont); letter-spacing: .3em; text-transform: uppercase; color: #f08a4b; }
+.tvrem h2 { margin: 0; font: 500 28px/1.2 var(--serif); color: #fff; } .tvrem .sub { margin-top: -12px; font: 400 15px/1.4 var(--serif); color: rgba(255, 255, 255, .7); }
+.tvrem .bar { display: flex; align-items: center; gap: 12px; width: min(560px, 100%); font: 500 13px/1 var(--kfont); font-variant-numeric: tabular-nums; } .tvrem .bar span { min-width: 48px; } .tvrem .bar span:last-child { text-align: right; }
+.tvrem input[type=range] { flex: 1; accent-color: #f08a4b; }
+.tvrem .row { display: flex; align-items: center; gap: 30px; } .tvrem .row .pb { width: 60px; height: 60px; } .tvrem .row .pb svg { width: 32px; height: 32px; }
+.tvrem .row .pbig { width: 84px; height: 84px; border: 1.5px solid rgba(255, 255, 255, .8); } .tvrem .row .pbig svg { width: 38px; height: 38px; }
+.tvrem .acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; } .tvrem .acts .pill { color: #fff; border-color: rgba(255, 255, 255, .5); }
+.tvrem .x { position: absolute; top: max(14px, env(safe-area-inset-top)); right: 16px; color: #fff; border-color: rgba(255, 255, 255, .45); }
+.tvrem .none { font: italic 400 18px/1.4 var(--serif); color: rgba(255, 255, 255, .75); }
 /* the player's own controls, the same on a computer, a phone and the TV (John, 11 Nov 2026: "Can we work on a better video player -
    it doesn't have good controls"): the film's place to drag, the time gone and left, play, back 10 and on 30, sound, subtitles,
    speed, picture in picture and the whole screen; Grifflix's orange for how far through */
@@ -1826,7 +1839,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
   <div class="ptap" id="ptap"></div>
   <div class="pmid"><button class="pb pskip" data-sk="-10" aria-label="Back 10 seconds"></button><button class="pb pbig" id="pbig" aria-label="Play"></button><button class="pb pskip" data-sk="30" aria-label="On 30 seconds"></button></div>
   <div class="pspin" aria-hidden="true"></div><div class="pflash" id="pflash" aria-hidden="true"></div>
-  <div class="top"><button class="ico" id="pclose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button><div><div class="t" id="ptitle"></div><div class="s" id="psub"></div></div><button class="ico" id="pcast" aria-label="Play on a TV" title="Play on a TV (AirPlay or Chromecast)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><path d="M2 12a9 9 0 0 1 8 8M2 16a5 5 0 0 1 4 4"/><path d="M2 20h.01"/></svg></button></div>
+  <div class="top"><button class="ico" id="pclose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button><div><div class="t" id="ptitle"></div><div class="s" id="psub"></div></div><button class="ico" id="ptv" aria-label="Play on the Fire TV" title="Play on the Fire TV" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="13"/><path d="M8 21h8M12 17v4"/></svg></button><button class="ico" id="pcast" aria-label="Play on a TV" title="Play on a TV (AirPlay or Chromecast)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><path d="M2 12a9 9 0 0 1 8 8M2 16a5 5 0 0 1 4 4"/><path d="M2 20h.01"/></svg></button></div>
   <div class="msg" id="pmsg"></div>
   <button class="pill on nextup" id="pnext">Next episode</button>
   <div class="pctl" id="pctl">
@@ -1838,6 +1851,12 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
     <div class="pmenu" id="pmenu" role="menu" hidden></div>
   </div>
 </div>
+<div class="tvrem" id="tvrem" role="dialog" aria-label="The Fire TV's remote"><button class="ico x" id="trx" aria-label="Close (the film carries on on the TV)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  <div class="k" id="trk">On the TV</div><h2 id="trt"></h2><div class="sub" id="trs"></div>
+  <div class="bar"><span id="trc">0:00</span><input type="range" id="trr" min="0" max="1" step="1" value="0" aria-label="Where in the film"><span id="tre"></span></div>
+  <div class="row"><button class="pb" id="trb" aria-label="Back 10 seconds"></button><button class="pb pbig" id="trp" aria-label="Pause"></button><button class="pb" id="trf" aria-label="On 30 seconds"></button></div>
+  <div class="none" id="trn" hidden>Nothing’s playing on the TV just now.</div>
+  <div class="acts"><button class="pill" id="trhere">Watch here instead</button><button class="pill" id="trstop">Stop on the TV</button></div></div>
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.15/hls.min.js"></script>
@@ -5071,6 +5090,7 @@ function wireBody(it, ctx) {
     play(it);
   });
   on('afrom0', function () { play(it, null, true); });
+  TVP.offer(it);
   on('atrailer', function () { trailer(it); });
   on('adown', function () {   // the film's own file, to keep (John, 8 Nov 2026: "Can members be allowed to download films to their device")
     api('download?id=' + it.id).then(function (d) {
@@ -5520,7 +5540,7 @@ function play(it, queue, fromStart) {
   if (!it) return;
   if (PUBLIC) return signInSheet();
   closeSheet();
-  P.it = it; P.queue = queue || []; P.reset(it);
+  P.it = it; P.queue = queue || []; P.reset(it); if (P.tvCheck) P.tvCheck();
   $('#ptitle').textContent = showName(it); $('#psub').textContent = it.type === 'episode' ? subOf(it) : (it.year || '');
   $('#pmsg').classList.remove('on'); $('#pnext').classList.remove('on');
   P.el.classList.add('on'); document.documentElement.style.overflow = 'hidden'; coverCheck();
@@ -5535,7 +5555,7 @@ function play(it, queue, fromStart) {
   ask().then(function (info) {
     $('#pmsg').classList.remove('on');
     P.info = info;
-    var v = P.v, start = fromStart ? 0 : (info.pos || 0);
+    var v = P.v, start = P.startAt != null ? P.startAt : fromStart ? 0 : (info.pos || 0); P.startAt = null;   // (sent from a phone: from where it was)
     while (v.firstChild) v.removeChild(v.firstChild);
     (info.subs || []).forEach(function (s, i) { var t = document.createElement('track'); t.kind = 'subtitles'; t.label = s.label; t.srclang = s.lang || 'en'; t.src = gwUrl(s.url); v.appendChild(t); });
     P.subsInit();
@@ -5749,6 +5769,113 @@ window.addEventListener('pagehide', saveProgress);
     if ('mediaSession' in navigator) try { navigator.mediaSession.metadata = new MediaMetadata({ title: showName(it), artist: it.type === 'episode' ? subOf(it) : (it.year ? String(it.year) : ''), album: 'Grifflix', artwork: it.poster ? [{ src: img(it.poster, 'Primary', 342), sizes: '342x513' }] : [] }); } catch (e) {}
   };
   state(); paint();
+})();
+// ---- Play on the TV (John, 11 Nov 2026: "Is it possible for the fire stick to receive a cast film ... Build that"): a phone (or
+// computer) sends a film to the member's Fire TV with Grifflix open, from where it was, and then works it as a remote. Through the
+// Mac mini (tvhere / tvs / tvsend): the TV waits there for word, and says what it's playing
+var TVP = (function () {
+  var TVI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="13"/><path d="M8 21h8M12 17v4"/></svg>';
+  var ok = function () { return !TV && !PUBLIC && !DEMO && GW; }, cache = null, cacheAt = 0;
+  function tvs(fresh) {
+    if (!ok()) return Promise.resolve([]);
+    if (!fresh && cache && Date.now() - cacheAt < 15000) return Promise.resolve(cache);
+    return mac('tvs').then(function (r) { cache = r.tvs || []; cacheAt = Date.now(); return cache; }).catch(function () { return []; });
+  }
+  function target(it) {   // (a series: its next episode, as Play would)
+    if (it.type !== 'series') return it;
+    return (it.episodes || []).filter(function (e) { return e.id === it.next; })[0] || (it.episodes || [])[0] || null;
+  }
+  function pick(list) {   // (more than one TV: which)
+    if (list.length === 1) return Promise.resolve(list[0]);
+    return new Promise(function (done) {
+      openSheet('<div class="form" style="position:relative">' + X + '<h2 style="color:var(--fg)">Which TV?</h2><div class="acts" style="flex-direction:column;align-items:stretch">' +
+        list.map(function (t, i) { return '<button class="pill" data-tvi="' + i + '">' + TVI + esc(t.name) + (t.state ? ' · playing ' + esc(t.state.name || '') : '') + '</button>'; }).join('') + '</div></div>');
+      $$('[data-tvi]').forEach(function (b) { b.onclick = function () { closeSheet(); done(list[+b.dataset.tvi]); }; });
+    });
+  }
+  function send(it, pos) {
+    var t0 = target(it); if (!t0) return toast('No episodes yet.');
+    tvs(true).then(function (list) {
+      if (!list.length) return toast('No Fire TV has Grifflix open just now: open it on the TV, then try again.');
+      return pick(list).then(function (tv) {
+        return mac('tvsend', { dev: tv.dev, cmd: 'play', id: t0.id, pos: pos != null ? pos : (t0.pos || 0) }).then(function () { closeSheet(); remote(tv, t0); });
+      });
+    }).catch(function (e) { toast(e.message); });
+  }
+  // (the remote)
+  var R = { tv: null, it: null, T: 0, st: null, dragging: false }, el = $('#tvrem');
+  var IC = { play: '<svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>', pause: '<svg viewBox="0 0 24 24"><path d="M6.5 4h4v16h-4zM13.5 4h4v16h-4z" fill="currentColor"/></svg>' };
+  $('#trb').innerHTML = $('[data-sk="-10"]').innerHTML; $('#trf').innerHTML = $('[data-sk="30"]').innerHTML;
+  function word(cmd, x) { if (!R.tv) return Promise.resolve(); return mac('tvsend', Object.assign({ dev: R.tv.dev, cmd: cmd }, x || {})).then(function () { setTimeout(look, 900); }).catch(function (e) { toast(e.message); }); }
+  function draw() {
+    var s = R.st, playing = !!(s && s.id);
+    $('#trn').hidden = playing; ['#trb', '#trp', '#trf', '#trr', '#trstop'].forEach(function (q) { $(q).disabled = !playing; });
+    $('#trk').textContent = 'On ' + (R.tv ? R.tv.name : 'the TV');
+    $('#trt').textContent = playing ? s.name || showName(R.it) : showName(R.it); $('#trs').textContent = playing ? (s.sub || '') : '';
+    if (!playing) return;
+    $('#trp').innerHTML = s.paused ? IC.play : IC.pause; $('#trp').setAttribute('aria-label', s.paused ? 'Play' : 'Pause');
+    var r = $('#trr'); r.max = Math.max(1, s.dur || 0); if (!R.dragging) r.value = s.pos || 0;
+    $('#trc').textContent = clock(R.dragging ? +r.value : s.pos || 0); $('#tre').textContent = s.dur ? '−' + clock(Math.max(0, s.dur - (R.dragging ? +r.value : s.pos || 0))) : '';
+  }
+  function look() {
+    if (!el.classList.contains('on')) return;
+    tvs(true).then(function (list) {
+      var t = list.filter(function (x) { return R.tv && x.dev === R.tv.dev; })[0];
+      if (!t) { R.st = null; draw(); $('#trn').textContent = 'The TV isn’t on Grifflix any more.'; return; }
+      R.st = t.state; if (R.st && R.st.paused === false && R.st.pos != null) R.st.pos += Math.min(10, t.ago || 0); draw();
+    });
+  }
+  function remote(tv, it) {
+    R.tv = tv; R.it = it; R.st = { id: it.id, name: showName(it), pos: it.pos || 0, dur: it.secs || 0, paused: false };
+    $('#trn').textContent = 'Nothing’s playing on the TV just now.';
+    el.classList.add('on'); draw(); clearInterval(R.T); R.T = setInterval(look, 2000); setTimeout(look, 2500);
+  }
+  function shut() { el.classList.remove('on'); clearInterval(R.T); }
+  $('#trx').onclick = shut;
+  $('#trp').onclick = function () { if (!R.st) return; var p = R.st.paused; R.st.paused = !p; draw(); word(p ? 'resume' : 'pause'); };
+  $('#trb').onclick = function () { word('skip', { s: -10 }); }; $('#trf').onclick = function () { word('skip', { s: 30 }); };
+  var rr = $('#trr'); rr.oninput = function () { R.dragging = true; draw(); }; rr.onchange = function () { R.dragging = false; word('seek', { to: +rr.value }); };
+  $('#trstop').onclick = function () { word('stop').then(function () { R.st = null; draw(); }); };
+  $('#trhere').onclick = function () {   // (back to this device, from where the TV was)
+    var s = R.st, it = R.it; word('stop'); shut();
+    if (s && s.id && s.id !== it.id) { api('item?id=' + s.id).then(function (x) { P.startAt = s.pos || 0; play(x); }).catch(function (e) { toast(e.message); }); return; }
+    P.startAt = s ? s.pos || 0 : null; play(it);
+  };
+  // (the buttons: on a film's page beside Play, and in the player's top bar, when a TV has Grifflix open)
+  function offer(it) {
+    if (!ok() || PUBLIC || it.ext || !$('#aplay')) return;
+    tvs().then(function (list) { var a = $('#aplay'); if (!list.length || !a || $('#atv')) return;
+      a.insertAdjacentHTML('afterend', '<button class="pill" id="atv">' + TVI + 'On the TV</button>'); $('#atv').onclick = function () { send(it); }; });
+  }
+  var pb = $('#ptv');
+  pb.onclick = function () { var it = P.it, pos = P.v.currentTime || 0; if (!it) return; stopPlayer(); send(it, pos); };
+  P.tvCheck = function () { pb.hidden = true; if (ok()) tvs().then(function (list) { pb.hidden = !list.length || !P.el.classList.contains('on'); }); };
+  return { offer: offer, send: send, tvs: tvs };
+})();
+// (the Fire TV's side: Grifflix open on it waits at the Mac mini for its phone's word, and says what it's playing)
+var TVLINK = (function () {
+  if (!TV) return { report: function () {} };
+  var dev = store.get('grifflix-tvid'); if (!dev) { dev = 'tv-' + Math.random().toString(36).slice(2, 10); store.set('grifflix-tvid', dev); }
+  var name = 'Fire TV ' + dev.slice(-4).toUpperCase(), busy = false, last = '';
+  var state = function () { var v = P.v, it = P.it; if (!P.el.classList.contains('on') || !it) return null;
+    return { id: it.id, name: showName(it), sub: it.type === 'episode' ? subOf(it) : (it.year ? String(it.year) : ''), pos: Math.round(v.currentTime || 0), dur: Math.round(isFinite(v.duration) && v.duration ? v.duration : (P.info && P.info.secs) || 0), paused: v.paused }; };
+  var live = function () { return !PUBLIC && !DEMO && GW && !document.hidden; };
+  function report(force) { if (!live()) return; var s = state(), k = JSON.stringify(s && [s.id, s.paused, Math.floor((s.pos || 0) / 5)]); if (!force && k === last) return; last = k; mac('tvhere', { dev: dev, name: name, state: s }).catch(function () {}); }
+  function run(c) {
+    if (c.cmd === 'play') { if (trailerOn()) trailerClose(); api('item?id=' + c.id).then(function (it) { P.startAt = c.pos || 0; play(it); setTimeout(function () { report(true); }, 3000); }).catch(function () {}); return; }
+    if (!P.el.classList.contains('on')) return;
+    if (c.cmd === 'pause') P.v.pause(); else if (c.cmd === 'resume') P.v.play().catch(function () {});
+    else if (c.cmd === 'seek' && c.to != null) P.v.currentTime = c.to; else if (c.cmd === 'skip' && c.s) P.skip(c.s); else if (c.cmd === 'stop') stopPlayer();
+    wake(); setTimeout(function () { report(true); }, 400);
+  }
+  function loop() {
+    if (busy || !live()) return; busy = true;
+    mac('tvhere', { dev: dev, name: name, state: state(), wait: 20 }).then(function (r) { busy = false; (r.cmds || []).forEach(run); setTimeout(loop, 60); },
+      function () { busy = false; setTimeout(loop, 8000); });
+  }
+  setInterval(loop, 5000); document.addEventListener('visibilitychange', function () { if (!document.hidden) setTimeout(loop, 500); });
+  ['play', 'pause', 'seeked', 'timeupdate', 'emptied'].forEach(function (ev) { P.v.addEventListener(ev, function () { report(ev !== 'timeupdate'); }); });
+  return { report: report };
 })();
 
 /* ------------------------------------------------------------------ the demo: made-up films, kept on this device */
