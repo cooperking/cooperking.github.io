@@ -5662,12 +5662,24 @@ function play(it, queue, fromStart) {
     var begin = function () { if (start > 5) try { v.currentTime = start; } catch (e) {} v.play().catch(function () {}); };
     if (P.hls) { P.hls.destroy(); P.hls = null; }
     if (info.direct && !Q.has('hls')) { v.src = gwUrl(info.direct); v.addEventListener('loadedmetadata', begin, { once: true }); }
-    else if (v.canPlayType('application/vnd.apple.mpegurl')) { v.src = gwUrl(info.hls); v.addEventListener('loadedmetadata', begin, { once: true }); }
+    // (a stream in pieces: Apple's own player on Apple's devices; elsewhere the page's own (hls.js), which the page sizes. The Fire TV's
+    // browser view also says it plays these streams itself, but hands them to Android's player, which draws the film full screen and
+    // stretched whatever the page says: the page's frame then showed a cut-out of it (John, 11 Nov 2026: "It's put bars and cut it off"))
+    var native = v.canPlayType('application/vnd.apple.mpegurl') && (!(window.Hls && Hls.isSupported()) || /Apple/.test(navigator.vendor || '') || store.get('grifflix-tvhls') === 'native');
+    if (native) { v.src = gwUrl(info.hls); v.addEventListener('loadedmetadata', begin, { once: true }); }
     else if (window.Hls && Hls.isSupported()) {
       P.hls = new Hls({ startPosition: start > 5 ? start : -1, maxBufferLength: 40 });
       P.hls.loadSource(gwUrl(info.hls)); P.hls.attachMedia(v);
       P.hls.on(Hls.Events.MANIFEST_PARSED, function () { v.play().catch(function () {}); });
-      P.hls.on(Hls.Events.ERROR, function (e, d) { if (d.fatal) { $('#pmsg').textContent = 'It won’t play just now (' + d.details + ').'; $('#pmsg').classList.add('on'); } });
+      P.hls.on(Hls.Events.ERROR, function (e, d) {
+        if (!d.fatal) return;
+        if (v.canPlayType('application/vnd.apple.mpegurl') && P.it === it) {   // (the page's player can't on this device: its own after all, from here, and from now on)
+          var at = v.currentTime || start; store.set('grifflix-tvhls', 'native'); P.hls.destroy(); P.hls = null;
+          v.src = gwUrl(info.hls); v.addEventListener('loadedmetadata', function () { if (at > 5) try { v.currentTime = at; } catch (x) {} v.play().catch(function () {}); }, { once: true });
+          return;
+        }
+        $('#pmsg').textContent = 'It won’t play just now (' + d.details + ').'; $('#pmsg').classList.add('on');
+      });
     } else { $('#pmsg').textContent = 'This browser can’t play it.'; $('#pmsg').classList.add('on'); }
     clearInterval(P.saveT); P.saveT = setInterval(saveProgress, 10000);
     if (HW && HW.hevc && !P.noHw) {   // (trusting the TV's hardware over its browser: if the film doesn't get going, the Mac converts it after all, and this TV isn't trusted again)
