@@ -188,6 +188,32 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public int build() { return myBuild(); }
 
+        /** What the Fire TV's own hardware decodes, which its browser view under-reports (John, 11 Nov 2026: the browser
+         *  part said no to HEVC, so the Mac mini converted films the stick could play itself). */
+        @JavascriptInterface
+        public String codecs() {
+            boolean hevc = false, hevc10 = false; String name = "";
+            try {
+                android.media.MediaCodecList list = new android.media.MediaCodecList(android.media.MediaCodecList.REGULAR_CODECS);
+                for (android.media.MediaCodecInfo ci : list.getCodecInfos()) {
+                    if (ci.isEncoder()) continue;
+                    String n = ci.getName().toLowerCase(java.util.Locale.ROOT);
+                    if (n.startsWith("omx.google.") || n.startsWith("c2.android.") || n.contains(".sw.")) continue;   // (software decoders: too slow for a film)
+                    for (String t : ci.getSupportedTypes()) {
+                        if (!"video/hevc".equalsIgnoreCase(t)) continue;
+                        hevc = true; if (name.length() == 0) name = ci.getName();
+                        for (android.media.MediaCodecInfo.CodecProfileLevel pl : ci.getCapabilitiesForType(t).profileLevels)
+                            if (pl.profile == android.media.MediaCodecInfo.CodecProfileLevel.HEVCProfileMain10) hevc10 = true;
+                    }
+                }
+            } catch (Throwable e) { Log.w("Grifflix", "codecs", e); }
+            try {
+                JSONObject o = new JSONObject();
+                o.put("hevc", hevc); o.put("hevc10", hevc10); o.put("decoder", name);
+                return o.toString();
+            } catch (Exception e) { return "{}"; }
+        }
+
         @JavascriptInterface
         public void keyboard() {   // the page's search box chosen with OK: Fire TV's keyboard up for it
             runOnUiThread(new Runnable() {
