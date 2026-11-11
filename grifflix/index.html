@@ -260,6 +260,57 @@ html.tv .sheet .people { font-size: var(--crfs, 15px); }
 .player .msg.on { display: grid; }
 .player .nextup { position: absolute; right: 20px; bottom: 90px; display: none; }
 .player .nextup.on { display: inline-flex; }
+/* the player's own controls, the same on a computer, a phone and the TV (John, 11 Nov 2026: "Can we work on a better video player -
+   it doesn't have good controls"): the film's place to drag, the time gone and left, play, back 10 and on 30, sound, subtitles,
+   speed, picture in picture and the whole screen; Grifflix's orange for how far through */
+.player { cursor: default; } .player.idle { cursor: none; }
+.player video { position: absolute; inset: 0; object-fit: contain; }
+.player video::cue { background: rgba(0, 0, 0, .62); color: #fff; font-family: var(--sans); }
+.ptap { position: absolute; inset: 0; z-index: 1; }
+.player .top { z-index: 3; transition: opacity .3s; }
+.player .nextup { z-index: 3; bottom: 128px; }
+.pctl { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: 48px max(20px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); background: linear-gradient(transparent, rgba(0, 0, 0, .8)); color: #fff; transition: opacity .3s; }
+.player.idle .pctl, .player.idle .pmid { opacity: 0; pointer-events: none; }
+.pseekrow { display: flex; align-items: center; gap: 14px; font: 500 12.5px/1 var(--kfont); letter-spacing: .06em; font-variant-numeric: tabular-nums; }
+.pseekrow > span { min-width: 52px; } .pseekrow > span:last-child { text-align: right; }
+.pseek { position: relative; flex: 1; height: 26px; cursor: pointer; touch-action: none; outline: 0; }
+.pseek .ptr { position: absolute; left: 0; right: 0; top: 50%; height: 4px; margin-top: -2px; background: rgba(255, 255, 255, .22); transition: height .15s, margin .15s; }
+.pseek:hover .ptr, .pseek.drag .ptr, .pseek:focus-visible .ptr { height: 6px; margin-top: -3px; }
+.pbuf, .pfill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; } .pbuf { background: rgba(255, 255, 255, .32); } .pfill { background: #f08a4b; }
+.pknob { position: absolute; top: 50%; left: 0; width: 15px; height: 15px; margin: -7.5px 0 0 -7.5px; border-radius: 50%; background: #fff; transform: scale(0); transition: transform .15s; pointer-events: none; }
+.pseek:hover .pknob, .pseek.drag .pknob, .pseek:focus-visible .pknob { transform: scale(1); }
+.ptip { position: absolute; bottom: 26px; left: 0; display: none; padding: 6px 8px; transform: translateX(-50%); background: rgba(10, 12, 16, .9); font: 500 12.5px/1 var(--kfont); white-space: nowrap; pointer-events: none; }
+.pseek.drag .ptip { display: block; } @media (hover: hover) { .pseek:hover .ptip { display: block; } }
+.prow { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+.pb { display: inline-grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; background: none; color: #fff; cursor: pointer; opacity: .88; }
+.pb:hover, .pb:focus-visible { opacity: 1; } .pb:focus-visible { outline: 2px solid #fff; outline-offset: -3px; }
+.pb svg { width: 24px; height: 24px; } .pb.on { color: #f08a4b; } .pb[hidden] { display: none; }
+.prate { width: auto; min-width: 44px; padding: 0 6px; font: 600 13px/1 var(--kfont); letter-spacing: .04em; }
+.pgap { flex: 1; } .phint { display: none; }
+.pvol { display: inline-flex; align-items: center; } .pvol input { width: 0; opacity: 0; margin: 0; accent-color: #f08a4b; transition: width .2s, opacity .2s; }
+.pvol:hover input, .pvol input:focus-visible { width: 90px; opacity: 1; margin: 0 8px 0 2px; }
+.pmenu { position: absolute; right: max(20px, env(safe-area-inset-right)); bottom: calc(100% - 40px); min-width: 200px; max-height: 50vh; overflow: auto; padding: 8px 0; background: rgba(12, 14, 18, .95); border: 1px solid rgba(255, 255, 255, .18); }
+.pmenu h4 { margin: 6px 16px 8px; font: 600 11px/1 var(--kfont); letter-spacing: .2em; text-transform: uppercase; color: rgba(255, 255, 255, .6); }
+.pmenu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 16px; border: 0; background: none; color: #fff; font: 400 15px/1.2 var(--sans); text-align: left; cursor: pointer; }
+.pmenu button:hover, .pmenu button:focus-visible { background: rgba(255, 255, 255, .1); outline: 0; }
+.pmenu button i { width: 14px; font-style: normal; color: #f08a4b; }
+.pmid { position: absolute; left: 50%; top: 50%; z-index: 2; display: flex; align-items: center; gap: 48px; transform: translate(-50%, -50%); transition: opacity .3s; pointer-events: none; }
+.pmid .pb { pointer-events: auto; width: 60px; height: 60px; } .pmid .pb svg { width: 34px; height: 34px; }
+.pmid .pbig { width: 80px; height: 80px; border: 1.5px solid rgba(255, 255, 255, .8); background: rgba(0, 0, 0, .4); } .pmid .pbig svg { width: 36px; height: 36px; }
+@media (pointer: fine) { .pmid .pskip { display: none; } .player:not(.paused) .pmid { opacity: 0; pointer-events: none; } }
+@media (pointer: coarse) { .pvol { display: none; } }
+.player.wait .pbig { visibility: hidden; }
+.pspin { position: absolute; left: 50%; top: 50%; z-index: 2; display: none; width: 56px; height: 56px; margin: -28px 0 0 -28px; border: 3px solid rgba(255, 255, 255, .22); border-top-color: #f08a4b; border-radius: 50%; animation: pspin .9s linear infinite; pointer-events: none; }
+.player.wait .pspin { display: block; } @keyframes pspin { to { transform: rotate(360deg); } }
+.pflash { position: absolute; top: 50%; z-index: 2; padding: 12px 16px; transform: translateY(-50%); background: rgba(0, 0, 0, .55); font: 600 15px/1 var(--kfont); letter-spacing: .06em; color: #fff; opacity: 0; transition: opacity .35s; pointer-events: none; }
+.pflash.on { opacity: 1; transition: none; }
+@media (max-width: 600px) { .pseekrow { gap: 10px; font-size: 11.5px; } .pseekrow > span { min-width: 44px; } .prow .pb[data-sk] { display: none; } .pmid { gap: 36px; } }
+html.tv .pctl { padding: 50px 56px 34px; } html.tv .pb { width: 56px; height: 56px; } html.tv .pb svg { width: 28px; height: 28px; }
+html.tv .pseekrow { font-size: 17px; } html.tv .pseek { height: 30px; } html.tv .pknob { transform: scale(1); }
+html.tv .pvol, html.tv #ppip, html.tv #pfs, html.tv .pmid .pskip { display: none !important; } html.tv .phint { display: inline; margin-left: 18px; color: rgba(255, 255, 255, .6); font: 500 14px/1 var(--kfont); letter-spacing: .04em; }
+html.tv .player:not(.paused) .pmid { opacity: 0; } html.tv .pmenu button { font-size: 20px; padding: 14px 22px; }
+html.tv .player .pb:focus, html.tv .player .pb:focus-visible { outline: 2px solid #fff !important; outline-offset: -2px !important; box-shadow: none !important; opacity: 1; }   /* (the player's own highlight on the TV: a plain ring, and a lit row in its menus) */
+html.tv .pmenu button:focus, html.tv .pmenu button:focus-visible { outline: 0 !important; box-shadow: inset 4px 0 0 #f08a4b !important; background: rgba(255, 255, 255, .16) !important; }
 
 /* the signed-out welcome, and messages */
 .welcome { max-width: 620px; margin: 12vh auto 0; text-align: center; }
@@ -1638,6 +1689,22 @@ html.gxproj .zcurt::before { opacity: 1; }
 html.phone .vtog span { padding: 6px 8px 5px; letter-spacing: .13em; text-indent: .13em; }
 /* the switch square, as every other button of the bar (John, 11 Nov 2026: "the theme calendar toggle is rounded") */
 #barnav button.vtog, #shnav button.vtog, .vtog::before { border-radius: 0 !important; }
+/* the bar on every phone, down to the smallest (320 wide): a little tighter, the draft's tag a yellow dot, and on the smallest no
+   separate home (the switch does it) (John, 11 Nov 2026: "make sure the bar works for all screens") */
+@media (max-width: 440px) {
+  html .bar-top { gap: 6px !important; }
+  html .bar-top .brand, html.phone .bar-top .brand { letter-spacing: .22em !important; }
+  html.phone #barnav { margin: 0 0 0 6px !important; }
+  html.phone .vtog span { padding: 6px 6px 5px; letter-spacing: .08em; text-indent: .08em; }
+  html .bar-top .drafttag { flex: none; width: 9px; height: 9px; min-height: 0; padding: 0; font-size: 0; border-radius: 50%; margin: 0 0 0 2px !important; }
+  html.phone .bar-top .ico, html.tview.hall .bar-top .ico.tmute, html.tview.table .bar-top .ico.tmute { width: 28px !important; padding: 0 !important; }
+}
+@media (max-width: 374px) {
+  html .bar-top .brand, html.phone .bar-top .brand { font-size: 11px !important; letter-spacing: .14em !important; }
+  html .bar-top .homeic { display: none !important; }
+  html.phone .vtog span { padding: 6px 5px 5px; letter-spacing: .04em; text-indent: .04em; font-size: 9.5px; }
+  html.phone .bar-top .ico, html.tview.hall .bar-top .ico.tmute, html.tview.table .bar-top .ico.tmute { width: 26px !important; }
+}
 /* the TV: one highlight for whatever's chosen, everywhere: a white ring a little out from it, a dark band between, so it reads on
    a light picture or a dark room; the same thickness and gap however large the chosen thing is drawn (--ks: one over its scale)
    (John, 11 Nov 2026: "highlighting can sometimes be a white box sometimes a white border, depending on the theme. Either way
@@ -1754,11 +1821,21 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <dialog id="sheet"><div class="sheet" id="sheetIn"></div></dialog>
 
 <div class="player" id="player">
-  <video id="vid" controls playsinline crossorigin="anonymous"></video>
+  <video id="vid" playsinline crossorigin="anonymous"></video>
+  <div class="ptap" id="ptap"></div>
+  <div class="pmid"><button class="pb pskip" data-sk="-10" aria-label="Back 10 seconds"></button><button class="pb pbig" id="pbig" aria-label="Play"></button><button class="pb pskip" data-sk="30" aria-label="On 30 seconds"></button></div>
+  <div class="pspin" aria-hidden="true"></div><div class="pflash" id="pflash" aria-hidden="true"></div>
   <div class="top"><button class="ico" id="pclose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button><div><div class="t" id="ptitle"></div><div class="s" id="psub"></div></div><button class="ico" id="pcast" aria-label="Play on a TV" title="Play on a TV (AirPlay or Chromecast)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><path d="M2 12a9 9 0 0 1 8 8M2 16a5 5 0 0 1 4 4"/><path d="M2 20h.01"/></svg></button></div>
   <div class="msg" id="pmsg"></div>
   <button class="pill on nextup" id="pnext">Next episode</button>
-  <div class="tvbar"><div id="pbar"><i></i></div><span id="ptime"></span><span class="hint">OK pause · ◀ 10 s · 30 s ▶</span></div>
+  <div class="pctl" id="pctl">
+    <div class="pseekrow"><span id="ptcur">0:00</span><div class="pseek" id="pseek" role="slider" tabindex="0" aria-label="Where in the film" aria-valuemin="0"><div class="ptr"><div class="pbuf"></div><div class="pfill"></div></div><div class="pknob"></div><div class="ptip"></div></div><span id="ptend"></span></div>
+    <div class="prow"><button class="pb" id="pplay" aria-label="Play"></button><button class="pb" data-sk="-10" aria-label="Back 10 seconds"></button><button class="pb" data-sk="30" aria-label="On 30 seconds"></button>
+      <span class="pvol"><button class="pb" id="pmute" aria-label="Mute"></button><input type="range" id="pvolr" min="0" max="1" step="0.05" value="1" aria-label="Volume"></span>
+      <span class="phint">OK pause · ◀ 10 s · 30 s ▶</span><span class="pgap"></span>
+      <button class="pb" id="psubs" aria-label="Subtitles" aria-haspopup="menu" hidden></button><button class="pb prate" id="prate" aria-label="Speed" aria-haspopup="menu">1×</button><button class="pb" id="ppip" aria-label="Picture in picture" hidden></button><button class="pb" id="pfs" aria-label="Full screen"></button></div>
+    <div class="pmenu" id="pmenu" role="menu" hidden></div>
+  </div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -1766,7 +1843,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '01d392e1ce8f' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '3eb028390a53' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5426,7 +5503,7 @@ function play(it, queue, fromStart) {
   if (!it) return;
   if (PUBLIC) return signInSheet();
   closeSheet();
-  P.it = it; P.queue = queue || [];
+  P.it = it; P.queue = queue || []; P.reset(it);
   $('#ptitle').textContent = showName(it); $('#psub').textContent = it.type === 'episode' ? subOf(it) : (it.year || '');
   $('#pmsg').classList.remove('on'); $('#pnext').classList.remove('on');
   P.el.classList.add('on'); document.documentElement.style.overflow = 'hidden'; coverCheck();
@@ -5444,6 +5521,7 @@ function play(it, queue, fromStart) {
     var v = P.v, start = fromStart ? 0 : (info.pos || 0);
     while (v.firstChild) v.removeChild(v.firstChild);
     (info.subs || []).forEach(function (s, i) { var t = document.createElement('track'); t.kind = 'subtitles'; t.label = s.label; t.srclang = s.lang || 'en'; t.src = gwUrl(s.url); v.appendChild(t); });
+    P.subsInit();
     var begin = function () { if (start > 5) try { v.currentTime = start; } catch (e) {} v.play().catch(function () {}); };
     if (P.hls) { P.hls.destroy(); P.hls = null; }
     if (info.direct && !Q.has('hls')) { v.src = gwUrl(info.direct); v.addEventListener('loadedmetadata', begin, { once: true }); }
@@ -5500,10 +5578,154 @@ $('#pclose').onclick = stopPlayer;
 P.v.addEventListener('ended', function () { saveProgress(); if (P.queue.length) { var n = P.queue.shift(); play(n, P.queue); } else stopPlayer(); });
 P.v.addEventListener('timeupdate', function () { var left = (P.v.duration || 0) - P.v.currentTime; $('#pnext').classList.toggle('on', P.queue.length > 0 && P.v.duration > 0 && left < 40); });
 $('#pnext').onclick = function () { saveProgress(); var n = P.queue.shift(); play(n, P.queue); };
-var wake = function () { P.el.classList.remove('idle'); clearTimeout(P.idleT); P.idleT = setTimeout(function () { if (!P.v.paused) P.el.classList.add('idle'); }, 3000); };
+var wake = function () { P.el.classList.remove('idle'); clearTimeout(P.idleT); P.idleT = setTimeout(function () { if (!P.v.paused && $('#pmenu').hidden && !P.over) P.el.classList.add('idle'); else wake(); }, 3000); };
 P.el.addEventListener('mousemove', wake); P.el.addEventListener('touchstart', wake, { passive: true });
-document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && P.el.classList.contains('on') && !document.fullscreenElement) stopPlayer(); });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && P.el.classList.contains('on') && !document.fullscreenElement) { if (!$('#pmenu').hidden) { P.menu(); return; } stopPlayer(); } });
 window.addEventListener('pagehide', saveProgress);
+// ---- the player's controls (John, 11 Nov 2026: "Can we work on a better video player - it doesn't have good controls")
+(function () {
+  var v = P.v, el = P.el, seek = $('#pseek'), fill = $('#pseek .pfill'), buf = $('#pseek .pbuf'), knob = $('#pseek .pknob'), tip = $('#pseek .ptip'), menu = $('#pmenu'), drag = null;
+  var S2 = function (d, x) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + d + (x || '') + '</svg>'; };
+  var num = function (n, x) { return '<text x="' + x + '" y="15.6" font-size="7.2" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none" font-family="Futura, Jost, sans-serif">' + n + '</text>'; };
+  var IC = {
+    play: S2('<path d="M7 4.5v15l13-7.5z" fill="currentColor" stroke="none"/>'), pause: S2('<path d="M6.5 4h4v16h-4zM13.5 4h4v16h-4z" fill="currentColor" stroke="none"/>'),
+    back: S2('<path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5"/><path d="M4 3.5V8h4.5"/>', num(10, 12.6)), fwd: S2('<path d="M19.5 12a7.5 7.5 0 1 1-2.4-5.5"/><path d="M20 3.5V8h-4.5"/>', num(30, 11.4)),
+    vol: S2('<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>'), mute: S2('<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/>'),
+    subs: S2('<rect x="3" y="5" width="18" height="14" rx="1"/><path d="M7 11h4M13 11h4M7 15h6M15 15h2"/>'),
+    pip: S2('<rect x="3" y="5" width="18" height="14"/><rect x="12" y="11" width="7" height="6" fill="currentColor" stroke="none"/>'),
+    fs: S2('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'), fsx: S2('<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>')
+  };
+  var dur = function () { return isFinite(v.duration) && v.duration ? v.duration : (P.info && P.info.secs) || 0; };
+  var fsEl = function () { return document.fullscreenElement || document.webkitFullscreenElement; };
+  $$('[data-sk]').forEach(function (b) { b.innerHTML = +b.dataset.sk < 0 ? IC.back : IC.fwd; b.onclick = function (e) { e.stopPropagation(); skip(+b.dataset.sk); }; });
+  $('#psubs').innerHTML = IC.subs; $('#ppip').innerHTML = IC.pip;
+  function paint() {
+    var d = dur(), t = drag != null ? drag * d : v.currentTime, f = d ? Math.max(0, Math.min(1, t / d)) : 0, b = 0;
+    fill.style.width = knob.style.left = (f * 100).toFixed(3) + '%';
+    try { for (var i = 0; i < v.buffered.length; i++) if (v.buffered.start(i) <= v.currentTime + 2) b = Math.max(b, v.buffered.end(i)); } catch (e) {}
+    buf.style.width = (d ? Math.min(1, b / d) * 100 : 0).toFixed(2) + '%';
+    $('#ptcur').textContent = clock(t || 0); $('#ptend').textContent = d ? '−' + clock(Math.max(0, d - t)) : '';
+    seek.setAttribute('aria-valuemax', Math.round(d)); seek.setAttribute('aria-valuenow', Math.round(t || 0)); seek.setAttribute('aria-valuetext', clock(t || 0) + ' of ' + clock(d));
+  }
+  function state() {
+    var p = v.paused; el.classList.toggle('paused', p);
+    [$('#pplay'), $('#pbig')].forEach(function (b) { b.innerHTML = p ? IC.play : IC.pause; b.setAttribute('aria-label', p ? 'Play' : 'Pause'); });
+    if (p) wake();
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = p ? 'paused' : 'playing';
+  }
+  function toggle() { if (v.paused) v.play().catch(function () {}); else v.pause(); wake(); }
+  function skip(sec) { var d = dur(); v.currentTime = Math.max(0, Math.min((d || 1e9) - 1, v.currentTime + sec)); paint(); wake(); flash(sec); }
+  var flT = 0; function flash(sec) {   // (how far it jumped, on the side it went)
+    var f = $('#pflash'); f.textContent = (sec < 0 ? '« ' : '') + Math.abs(sec) + ' s' + (sec > 0 ? ' »' : ''); f.style.left = sec < 0 ? '12%' : ''; f.style.right = sec > 0 ? '12%' : '';
+    f.classList.add('on'); clearTimeout(flT); flT = setTimeout(function () { f.classList.remove('on'); }, 450);
+  }
+  P.toggle = toggle; P.skip = skip;
+  ['play', 'pause'].forEach(function (ev) { v.addEventListener(ev, state); });
+  ['timeupdate', 'progress', 'durationchange', 'seeking'].forEach(function (ev) { v.addEventListener(ev, paint); });
+  v.addEventListener('waiting', function () { el.classList.add('wait'); });
+  ['playing', 'canplay', 'seeked', 'pause', 'emptied'].forEach(function (ev) { v.addEventListener(ev, function () { el.classList.remove('wait'); }); });
+  $('#pplay').onclick = toggle; $('#pbig').onclick = function (e) { e.stopPropagation(); toggle(); };
+  // (the film's place: pressed or dragged anywhere along it, the time shown above the finger; let go, it goes there)
+  var at = function (e) { var r = seek.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };
+  var tipAt = function (f) { tip.textContent = clock(f * dur()); tip.style.left = (f * 100).toFixed(2) + '%'; };
+  seek.addEventListener('pointerdown', function (e) { e.preventDefault(); try { seek.setPointerCapture(e.pointerId); } catch (x) {} seek.classList.add('drag'); drag = at(e); tipAt(drag); paint(); wake(); });
+  seek.addEventListener('pointermove', function (e) { var f = at(e); tipAt(f); if (drag != null) { drag = f; paint(); wake(); } });
+  var release = function () { if (drag == null) return; var d = dur(); if (d) v.currentTime = Math.min(d - .5, drag * d); drag = null; seek.classList.remove('drag'); paint(); };
+  seek.addEventListener('pointerup', release); seek.addEventListener('pointercancel', release);
+  seek.addEventListener('keydown', function (e) { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); skip(e.key === 'ArrowLeft' ? -10 : 10); } });
+  // (the sound, kept on this device)
+  var vr = $('#pvolr'), mb = $('#pmute');
+  var vpaint = function () { mb.innerHTML = v.muted || !v.volume ? IC.mute : IC.vol; mb.setAttribute('aria-label', v.muted ? 'Sound on' : 'Mute'); vr.value = v.muted ? 0 : v.volume; };
+  try { var sv = parseFloat(store.get('grifflix-vol')); if (sv >= 0 && sv <= 1) v.volume = sv; } catch (e) {}
+  vr.oninput = function () { v.volume = +vr.value; v.muted = !+vr.value; store.set('grifflix-vol', String(v.volume)); };
+  mb.onclick = function () { v.muted = !v.muted; if (!v.muted && !v.volume) v.volume = .6; };
+  v.addEventListener('volumechange', vpaint); vpaint();
+  // (the whole screen; an iPhone's own full screen where a page can't have it)
+  var fsPaint = function () { var on = !!fsEl(); $('#pfs').innerHTML = on ? IC.fsx : IC.fs; $('#pfs').setAttribute('aria-label', on ? 'Leave full screen' : 'Full screen'); };
+  function fsToggle() {
+    if (fsEl()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+    var go = el.requestFullscreen ? el.requestFullscreen() : el.webkitRequestFullscreen ? el.webkitRequestFullscreen() : (v.webkitEnterFullscreen && v.webkitEnterFullscreen());
+    if (go && go.then) go.then(function () { try { if (matchMedia('(pointer: coarse)').matches) screen.orientation.lock('landscape').catch(function () {}); } catch (e) {} }).catch(function () {});
+  }
+  $('#pfs').onclick = fsToggle; document.addEventListener('fullscreenchange', fsPaint); document.addEventListener('webkitfullscreenchange', fsPaint); fsPaint();
+  // (picture in picture: the film in a corner while they do something else)
+  var pipOk = (document.pictureInPictureEnabled && v.requestPictureInPicture) || (v.webkitSupportsPresentationMode && v.webkitSupportsPresentationMode('picture-in-picture'));
+  $('#ppip').hidden = !pipOk || TV;
+  $('#ppip').onclick = function () {
+    if (document.pictureInPictureElement) document.exitPictureInPicture().catch(function () {});
+    else if (v.requestPictureInPicture) v.requestPictureInPicture().catch(function () {});
+    else if (v.webkitSetPresentationMode) v.webkitSetPresentationMode(v.webkitPresentationMode === 'picture-in-picture' ? 'inline' : 'picture-in-picture');
+  };
+  // (the menus: subtitles and speed)
+  var SP = [.75, 1, 1.25, 1.5, 2], tracks = function () { return Array.prototype.filter.call(v.textTracks || [], function (t) { return t.kind === 'subtitles' || t.kind === 'captions'; }); };
+  function setSubs(i, keep) {
+    tracks().forEach(function (t, j) { t.mode = j === i ? 'showing' : 'disabled'; });
+    var t = tracks()[i]; $('#psubs').classList.toggle('on', !!t);
+    if (keep) store.set('grifflix-subs', t ? (t.language || t.label || 'on') : 'off');
+  }
+  P.subsInit = function () {   // (a film's subtitles: on if they were last time, in the same language)
+    var ts = tracks(), want = store.get('grifflix-subs'); $('#psubs').hidden = !ts.length;
+    var i = want && want !== 'off' ? ts.findIndex(function (t) { return t.language === want || t.label === want; }) : -1;
+    if (want && want !== 'off' && i < 0 && ts.length) i = 0;
+    setSubs(i, false);
+  };
+  P.menu = function (kind, from) {
+    if (!kind || menu.dataset.k === kind && !menu.hidden) { menu.hidden = true; menu.dataset.k = ''; wake(); return; }
+    var h = '';
+    if (kind === 'subs') { var ts = tracks(), on = ts.findIndex(function (t) { return t.mode === 'showing'; });
+      h = '<h4>Subtitles</h4><button role="menuitemradio" data-i="-1"><i>' + (on < 0 ? '✓' : '') + '</i>Off</button>' + ts.map(function (t, j) { return '<button role="menuitemradio" data-i="' + j + '"><i>' + (on === j ? '✓' : '') + '</i>' + esc(t.label || t.language || 'Subtitles ' + (j + 1)) + '</button>'; }).join(''); }
+    else h = '<h4>Speed</h4>' + SP.map(function (r) { return '<button role="menuitemradio" data-r="' + r + '"><i>' + (v.playbackRate === r ? '✓' : '') + '</i>' + (r === 1 ? 'Normal' : r + '×') + '</button>'; }).join('');
+    menu.innerHTML = h; menu.hidden = false; menu.dataset.k = kind; wake();
+    $$('#pmenu button').forEach(function (b) { b.onclick = function (e) { e.stopPropagation();
+      if (b.dataset.i != null) setSubs(+b.dataset.i, true); else { v.playbackRate = +b.dataset.r; $('#prate').textContent = (+b.dataset.r) + '×'; }
+      P.menu(); if (from) from.focus(); }; });
+    var cur = $('#pmenu button i:not(:empty)'); (cur ? cur.parentNode : $('#pmenu button')).focus();
+  };
+  $('#psubs').onclick = function (e) { e.stopPropagation(); P.menu('subs', this); };
+  $('#prate').onclick = function (e) { e.stopPropagation(); P.menu('rate', this); };
+  // (a tap on the picture: on a phone, the controls shown or hidden, and a double tap at either side back or on 10 seconds; with a
+  // mouse, a click plays or pauses and a double click is the whole screen)
+  var tap = $('#ptap'), last = 0, tapT = 0;
+  tap.addEventListener('click', function (e) {
+    if (!menu.hidden) { P.menu(); return; }
+    var coarse = matchMedia('(pointer: coarse)').matches, now = Date.now(), w = el.clientWidth, side = e.clientX < w * .35 ? -1 : e.clientX > w * .65 ? 1 : 0;
+    if (now - last < 300) { clearTimeout(tapT); last = coarse && side ? now : 0; if (coarse) { if (side) skip(side * 10); } else fsToggle(); return; }
+    last = now;
+    tapT = setTimeout(function () { if (!coarse) return toggle(); if (el.classList.contains('idle')) wake(); else if (!v.paused) { clearTimeout(P.idleT); el.classList.add('idle'); } }, coarse ? 280 : 230);
+  });
+  $('#pctl').addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') P.over = true; });
+  $('#pctl').addEventListener('pointerleave', function () { P.over = false; });
+  el.addEventListener('click', function (e) { if (!menu.hidden && !menu.contains(e.target) && !e.target.closest('#psubs, #prate')) P.menu(); });
+  // (keys on a computer: space or K play and pause, the arrows 10 seconds and the sound, M mute, F the whole screen, C subtitles)
+  document.addEventListener('keydown', function (e) {
+    if (TV || !el.classList.contains('on') || e.metaKey || e.ctrlKey || e.altKey) return;
+    var t = e.target, tag = (t && t.tagName) || '', k = e.key;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag) && !(t.type === 'range' && /^[kmfc ]$/i.test(k))) return;
+    if (tag === 'BUTTON' && (k === ' ' || k === 'Enter')) return;
+    if (k === ' ' || k === 'k' || k === 'K') toggle();
+    else if (k === 'ArrowLeft' || k === 'j' || k === 'J') skip(-10);
+    else if (k === 'ArrowRight' || k === 'l' || k === 'L') skip(10);
+    else if (k === 'ArrowUp' || k === 'ArrowDown') { v.muted = false; v.volume = Math.max(0, Math.min(1, v.volume + (k === 'ArrowUp' ? .1 : -.1))); store.set('grifflix-vol', String(v.volume)); }
+    else if (k === 'm' || k === 'M') v.muted = !v.muted;
+    else if (k === 'f' || k === 'F') fsToggle();
+    else if ((k === 'c' || k === 'C') && tracks().length) setSubs(tracks().some(function (x) { return x.mode === 'showing'; }) ? -1 : Math.max(0, tracks().findIndex(function (x) { return x.language === store.get('grifflix-subs'); })), true);
+    else return;
+    e.preventDefault(); wake();
+  });
+  // (the phone's lock screen and a keyboard's media keys: the film's name, play, pause and the jumps)
+  if ('mediaSession' in navigator) {
+    var ms = navigator.mediaSession, H = function (a, f) { try { ms.setActionHandler(a, f); } catch (e) {} };
+    H('play', function () { v.play().catch(function () {}); }); H('pause', function () { v.pause(); });
+    H('seekbackward', function () { skip(-10); }); H('seekforward', function () { skip(30); });
+    H('seekto', function (d) { if (d && d.seekTime != null) { v.currentTime = d.seekTime; paint(); } });
+  }
+  P.reset = function (it) {   // (a new film: the controls as new)
+    drag = null; menu.hidden = true; menu.dataset.k = ''; v.playbackRate = 1; $('#prate').textContent = '1×'; $('#psubs').hidden = true; $('#psubs').classList.remove('on');
+    el.classList.add('paused'); el.classList.remove('wait', 'idle'); state(); paint();
+    if ('mediaSession' in navigator) try { navigator.mediaSession.metadata = new MediaMetadata({ title: showName(it), artist: it.type === 'episode' ? subOf(it) : (it.year ? String(it.year) : ''), album: 'Grifflix', artwork: it.poster ? [{ src: img(it.poster, 'Primary', 342), sizes: '342x513' }] : [] }); } catch (e) {}
+  };
+  state(); paint();
+})();
 
 /* ------------------------------------------------------------------ the demo: made-up films, kept on this device */
 var Demo = (function () {
@@ -5639,8 +5861,8 @@ function moveFocus(dir) {
 function playerKeys(k) {
   var v = P.v; wake();
   if (k === 'play' || k === 'ok') { if (v.paused) v.play().catch(function () {}); else v.pause(); return true; }
-  if (k === 'rew' || k === 'left') { v.currentTime = Math.max(0, v.currentTime - 10); return true; }
-  if (k === 'ff' || k === 'right') { v.currentTime = Math.min((v.duration || 1e9) - 1, v.currentTime + 30); return true; }
+  if (k === 'rew' || k === 'left') { P.skip(-10); return true; }
+  if (k === 'ff' || k === 'right') { P.skip(30); return true; }
   return false;
 }
 document.addEventListener('keydown', function (e) {
@@ -5650,9 +5872,10 @@ document.addEventListener('keydown', function (e) {
   var ae = document.activeElement, inText = /^(INPUT|TEXTAREA|SELECT)$/.test((ae || {}).tagName || '');
   if (trailerOn()) { if (k === 'up' || k === 'down') { if (TP.peek) TP.peek(); var c = $('#tpclose'); if (c) c.focus(); e.preventDefault(); return; } if (document.activeElement && document.activeElement.id === 'tpclose' && k === 'ok') return; e.preventDefault(); trailerKeys(k); return; }
   if (P.el.classList.contains('on') && (!ae || ae === P.v || ae === document.body || !P.el.contains(ae))) {
-    if (k === 'up' || k === 'down') { wake(); $('#pclose').focus(); e.preventDefault(); return; }
+    if (k === 'up' || k === 'down') { wake(); $('#pplay').focus(); e.preventDefault(); return; }   // (up to the controls: play first)
     if (playerKeys(k)) { e.preventDefault(); return; }
   }
+  if (P.el.classList.contains('on') && ae && ae.closest && ae.closest('#pctl') && !ae.closest('#pmenu') && k === 'down') { ae.blur(); wake(); e.preventDefault(); return; }   // (down from the controls: the remote back to pause and the jumps)
   if (ae && ae.classList && /\b(vday|hday|tday)\b/.test(ae.className)) {   // the month's theme: right and left through its days (and on into the next month's); up to the bar's words
     if (k === 'left' || k === 'right') { e.preventDefault(); themeStep(k === 'right' ? 1 : -1); return; }
     if (k === 'up') { e.preventDefault(); document.documentElement.classList.remove('barhide'); var u = barSearch(); if (u) u.focus(); return; }
@@ -5712,7 +5935,7 @@ window.grifflixTV = {
 };
 if (TV) {
   P.v.controls = false;   // (a remote can't work the browser's own controls: the bar below is the page's)
-  P.v.addEventListener('timeupdate', function () { if (P.v.duration) { $('#pbar i').style.width = (P.v.currentTime / P.v.duration * 100).toFixed(2) + '%'; $('#ptime').textContent = clock(P.v.currentTime) + ' / ' + clock(P.v.duration); } });
+  $('#pseek').tabIndex = -1;   // (the remote moves the film with left and right, not by its bar)
   ['play', 'pause'].forEach(function (ev) { P.v.addEventListener(ev, function () { try { if (window.GRIFFLIXTV && GRIFFLIXTV.playing) GRIFFLIXTV.playing(ev === 'play'); } catch (x) {} wake(); }); });
   dlg.addEventListener('close', function () { setTimeout(function () { var d = $('#cal button.front') || $('.day.today'); if (d && !P.el.classList.contains('on') && !dlg.open) d.focus(); }, 30); });
 }
