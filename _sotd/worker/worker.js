@@ -171,6 +171,13 @@ export default {
       if (m.spu !== u && !(m.spus || []).includes(u)) { if (m.spu) m.spus = (m.spus || []).concat(u); else m.spu = u; await env.SOTD.put('members', JSON.stringify(all)); }
       await env.SOTD.delete('diagCollab3');   // (the listing again, with his name on them)
     })().catch(e => console.log('spuAnt: ' + (e && e.message))));
+    ctx.waitUntil((async () => {   // once: what the Worker holds for today's song's files (John, 11 Nov 2026: "today's song is playing as a preview not the files")
+      if (!env.MEDIA || await env.SOTD.get('diagLickin1')) return;
+      await env.SOTD.put('diagLickin1', String(Date.now()));
+      const t = '5epksFujwUqHRJGQPPVeUK', c = await catalog(env), all = (await env.SOTD.get('members', 'json')) || {}, owner = await env.SOTD.get('owner');
+      const out = { cat: c[t] || null, a: !!(await env.MEDIA.head('a/' + t + '.mp3')), l: !!(await env.MEDIA.head('l/' + t + '.m4a')), v: !!(await env.MEDIA.head('v/' + t + '.mp4')), h: !!(await env.MEDIA.head('h/' + t + '.mp4')), see: owner && all[owner] ? mediaFor(all[owner]) : null, adminKey: !!env.ADMIN_KEY };
+      await env.MEDIA.put('diag/lickin.json', JSON.stringify(out, null, 1), { httpMetadata: { contentType: 'application/json' } });
+    })().catch(e => console.log('diagLickin: ' + (e && e.message))));
     ctx.waitUntil((async () => {   // once: Collaborations' songs, their added dates, days and captions, for checking
       if (await env.SOTD.get('diagCollab4')) return;
       await env.SOTD.put('diagCollab4', String(Date.now()));
