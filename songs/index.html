@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="sotd-build" content="eccb007c6187">
+<meta name="sotd-build" content="55d015df32aa">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 275 so far">
 <meta name="theme-color" content="#ec135b">
@@ -4272,7 +4272,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var t0 = SPX.track;
     spCall({ op: 'queue' }).then(function (j) {
       if (j.status !== 200 || !j.track || !j.q || SPX.track !== t0 || j.track !== t0) return;
-      var nx = j.q.filter(function (t, i, a) { return t !== t0 && a.indexOf(t) === i && songOf(t); });   // (the ones the page knows, in Spotify's order)
+      var nx = j.q.filter(function (t, i, a) { return t !== t0 && a.indexOf(t) === i && byTrack[t]; });   // (the ones on the calendar showing, in Spotify's order)
       var i0 = SPX.list.indexOf(t0);
       if (!nx.length || (i0 >= 0 && SPX.list[i0 + 1] === nx[0])) return;   // (Spotify's next is the page's next already: its own, longer, list kept)
       SPX.list = [t0].concat(nx);
@@ -4282,7 +4282,6 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
   }
   function spxFollowing() { return !!(coverObj && coverObj.sp && SPX.track && !SPX.native); }
   function spxSkip(dir) {   // the mini player's next and back while Spotify plays: Spotify itself skips, and the page follows it
-    spLog('sent to Spotify: ' + (dir > 0 ? 'next' : 'previous'));
     spCall({ op: dir > 0 ? 'next' : 'prev' }).then(function (j) {
       if (j.status !== 200) { toast(j.error || 'Spotify didn’t skip'); return; }
       setTimeout(function () {
@@ -11706,6 +11705,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       var st0 = RESUME || (function () { try { return JSON.parse(localStorage.getItem(RES_KEY) || 'null'); } catch (e) { return null; } })();
       var nr = NOW.rec && NOW.rec.dev !== deviceId() && NOW.rec.q && NOW.rec.q.list && NOW.rec.q.list.indexOf(k.track) >= 0 ? NOW.rec.q : null;   // (the device working Spotify now: its list, shuffled or not)
       var q = nr || (st0 && st0.q && st0.q.list && st0.q.list.indexOf(k.track) >= 0 ? st0.q : null);   // (else the list it was playing here, if this song's in it)
+      queue = null; if (!q) q = { list: songs.filter(function (x) { return x.d && x.d <= todayIso && !x.f; }).sort(function (a, b) { return a.d > b.d ? -1 : a.d < b.d ? 1 : 0; }).map(function (x) { return x.track; }), name: 'Spotify', back: null };   // (else the calendar's from this song: the page always has a list of its own to step along, the same as the one it follows Spotify by: John, 11 Nov 2026, the mini player gone after next)
       RESUME = { t: k.track, pos: Math.floor((k.pos || 0) / 1000), at: Date.now(), q: q };
       queue = null;
       if (q) { var ql = q.list.filter(function (t) { return byTrack[t]; }); queue = { list: ql, i: ql.indexOf(k.track), name: q.name, back: q.back, order: (q.order || ql).filter(function (t) { return byTrack[t]; }), heard: {} }; }
@@ -11720,6 +11720,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       NOW.from = ''; root.classList.remove('nowelse'); PICK.follow = true;   // (not "on your iPhone": Spotify's, followed here quietly)
       PICK.force = true;
       try { resumeGo(false); } finally { PICK.force = false; }   // (out of sight: My playlist's box, playing; the song's spxLoad finds it playing and follows)
+      if (queue && queue.list.indexOf(k.track) >= 0) SPX.list = queue.list.slice();   // (the page's list and the one Spotify's followed by: the same, songs before this one too, for back)
       resumeAt = 0; resumeFor = '';
       spxShowDev();
       return true;
