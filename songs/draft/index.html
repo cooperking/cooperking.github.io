@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="sotd-build" content="c75a1ee705b4">
+<meta name="sotd-build" content="815c762dd20a">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A song a day, 257 so far">
 <meta name="theme-color" content="#ec135b">
@@ -5726,7 +5726,20 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     var m = /^#(\d{1,2})-(\d{4})$/.exec(location.hash);
     return m && +m[1] >= 1 && +m[1] <= 12 ? key(+m[2], +m[1] - 1) : null;
   }
+  // a link to a day (an email's, a notification's, a share's) waits for a signed-in member's details before it opens
+  // and plays, so it plays their whole song, never the preview first (John, 11 Nov 2026: "it shouldn't start playing
+  // until sign in details are confirmed either way"); five seconds at most
+  var MWAIT = [];
+  function memberPending() { var tok = ''; try { tok = localStorage.getItem(MKEY) || ''; } catch (e) {} return !!tok && !!MBASE && !MEMBER && !memberLoad.done; }
+  function memberReady() { memberLoad.done = true; var w = MWAIT; MWAIT = []; w.forEach(function (f) { try { f(); } catch (e) {} }); }
   function openFromHash() {
+    if (memberPending()) {
+      var go = function () { if (go.ran) return; go.ran = true; openFromHashNow(); };
+      MWAIT.push(go); setTimeout(go, 5000); return;
+    }
+    openFromHashNow();
+  }
+  function openFromHashNow() {
     if (UPL.on && /^#\d{1,2}-\d{1,2}(-\d{4})?$/.test(location.hash)) { UPL.linked = true; UPLREQ++; uplBack(true); }   // (a day on John's calendar, linked while a member's is showing: John's, at that day)
     var mk = monthFromHash();
     if (mk) {
@@ -12366,13 +12379,13 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     try { tok = localStorage.getItem(MKEY) || ''; } catch (e) {}
     famSync();
     clearTimeout(memberLoad.t);
-    if (!tok || !MBASE || !window.fetch) return;
+    if (!tok || !MBASE || !window.fetch) { memberReady(); return; }
     fetch(MBASE + '/members/me', { headers: { Authorization: 'Bearer ' + tok, 'X-Device': deviceId(), 'X-App': appSays() }, cache: 'no-store' }).then(function (r) {
       if (r.status === 401) { try { localStorage.removeItem(MKEY); } catch (e) {} dlClear(); famSync(); if (MEMBER) { MEMBER = null; memberApply(); } return null; }
       return r.ok ? r.json() : null;
     }).then(function (j) {
-      if (!j) return;
-      MEMBER = j; dlPrune(j.see); memberApply(); ownUpgrade(); mainCapDraw(); impResume(); famSync(); resumeInit(); nowFetch(); nowLine(); noteSync(); noteOffer(); spLoad();
+      if (!j) { memberReady(); return; }
+      MEMBER = j; dlPrune(j.see); memberApply(); ownUpgrade(); setTimeout(memberReady, 0); mainCapDraw(); impResume(); famSync(); resumeInit(); nowFetch(); nowLine(); noteSync(); noteOffer(); spLoad();
       if (!TV) { unreadSet(j.unread); readTapped(); bellSet(j.bell); bellWanted(); mmWanted(); }
       uplMark(); uplWaitCount(); if (UPL.on && !uplPls().some(function (p) { return p.id === UPL.on; })) uplBack(); uplWanted();
       if (appAfterJoin) { appAfterJoin = false; if (appCan()) setTimeout(appOffer, 600); }
@@ -12381,7 +12394,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       if (mc !== OWNC_SIG) { OWNC_SIG = mc; render(); if (idx.open) renderIndex(); }
       memberLoad.t = setTimeout(memberLoad, Math.max(60e3, j.exp * 1000 - Date.now() - 30 * 60e3));
       memberLoad.at = Date.now();
-    }).catch(function () {});
+    }).catch(function () { memberReady(); });
   }
   // a song that started as its preview before the member's files were known (a link from an email or a notification
   // opens and plays at once): their whole song from here on, from the same moment (John, 11 Nov 2026: "it plays the
