@@ -850,7 +850,14 @@ html.tv .th-globe .vday:focus { outline: 0 !important; box-shadow: none; } html.
 /* each theme its own type (John: "fonts for the themes don't have to stick to the futura if it's not relevant") */
 html[data-theme] .hinfo .w, html[data-theme] .hinfo h2, .th-credits .ct { font-family: var(--tfont); font-weight: var(--tw); text-transform: var(--ttt); font-style: var(--tfs); }
 html[data-theme=table] .tcentre h2 { font-family: var(--tfont); font-weight: var(--tw); font-size: 64px; letter-spacing: .04em; }
-html[data-theme=globe] .hinfo .w { color: transparent; -webkit-text-stroke: 2px #fff; }   /* (Kane's main title: outlined capitals) */
+html[data-theme=globe] .hinfo .w { color: transparent; -webkit-text-stroke: 2px #fff; }
+/* (behind it all, the hand holding the globe, black and white; the globe on the picture's, held, so no stand: John, 11 Nov 2026) */
+html[data-theme=globe] { --bg: #0b0b0b !important; }
+html[data-theme=globe], html[data-theme=globe] body { background: #0b0b0b url("/grifflix/img/kane-hand.jpg") 70.5% 53.1% / cover no-repeat fixed !important; }
+html[data-theme=globe] .gbase { display: none; }
+html[data-theme=globe] .globe { box-shadow: none; }
+html[data-theme=globe] .hinfo { width: max-content; max-width: min(600px, 44vw); padding: 22px 28px 18px; margin: 0 0 -18px -28px; background: rgba(6, 6, 6, .84); box-shadow: 0 10px 30px rgba(0, 0, 0, .45); }   /* (the words on black, clear of the sleeve) */
+html.mob.mob[data-theme=globe] .hinfo.hinfo { max-width: none; width: auto; margin: 0; padding: 12px 14px; top: auto !important; bottom: calc(84px + env(safe-area-inset-bottom)) !important; }   /* (a phone: under the hand, above the day buttons) */   /* (Kane's main title: outlined capitals) */
 html[data-theme=pinboard] .string polyline { stroke: #cf424b; }   /* (the UK one-sheet's red) */
 html[data-theme=pinboard] .th-pinboard .vday::before { background: #cf424b; }
 html[data-theme=pinboard] .hinfo h2 { color: #cf424b; }
@@ -1355,8 +1362,8 @@ html[data-theme=autumn] .leaf2 b { color: #1d1d1b; }
 html[data-theme=table] .leaf2 { border-width: .02em; }
 /* December, Citizen Kane: the date on a plain card in the poster's red and white (no baubles: John, 9 Nov 2026: "Citizen Kane's
    baubles are leftover from a christmas theme, but not relevant to the film") */
-html[data-theme=globe] .leaf2 { border-color: #fff; background: #a8161a; }
-html[data-theme=globe] .leaf2 i { background: #fff; color: #a8161a; }
+html[data-theme=globe] .leaf2 { border-color: #fff; background: #0b0b0b; }   /* (no red: black and white, as the picture: John, 11 Nov 2026) */
+html[data-theme=globe] .leaf2 i { background: #fff; color: #0b0b0b; }
 html[data-theme=globe] .leaf2 b { color: #fff; }
 
 html.mob .tcentre .leaf2 { font-size: 72px; }
@@ -2193,7 +2200,7 @@ var THEMES = [   // each its film's own lettering and colour, researched (John, 
   // Dr. Strangelove: Pablo Ferro's tall thin titles, drawn by hand on glass, over black and white
   { key: 'table', mob: [60, 0, 1220, 620], name: 'The Table', film: 'Dr. Strangelove', year: 1964, by: 'Kubrick; titles by Pablo Ferro', bg: '#0a0a0a', ink: '#fff', font: '"Amatic SC", sans-serif', tw: 700 },
   // Citizen Kane: its main title's outlined condensed capitals (League Gothic, the free revival of Alternate Gothic: John, 8 Nov 2026); the red title band of the 1941 Style A poster
-  { key: 'globe', mob: [40, 60, 1240, 640], name: 'The Snow Globe', film: 'Citizen Kane', year: 1941, by: 'Orson Welles', bg: '#a8161a', ink: '#fff', font: '"GF-globe", "League Gothic", sans-serif', tw: 400 }
+  { key: 'globe', mob: [40, 60, 1240, 640], name: 'The Snow Globe', film: 'Citizen Kane', year: 1941, by: 'Orson Welles', bg: '#0b0b0b', ink: '#fff', font: '"GF-globe", "League Gothic", sans-serif', tw: 400 }
 ];
 var THEMEFONTS = 'https://fonts.googleapis.com/css2?family=Bowlby+One&family=Arimo:wght@400&family=Della+Respira&family=Special+Gothic+Expanded+One&family=Londrina+Solid:wght@400;900&family=Share+Tech+Mono&family=Archivo+Narrow:wght@600&family=Anton&family=IM+Fell+English+SC&family=Cinzel:wght@700&family=Tilt+Neon&family=Yuji+Syuku&family=Amatic+SC:wght@700&family=Big+Shoulders:wght@400;700&family=League+Gothic&family=News+Cycle:wght@700&family=Federant&family=Space+Mono:wght@400;700&family=Archivo+Black&family=Orbitron:wght@800&family=Montserrat:wght@800&family=Big+Shoulders+Stencil:wght@800&family=Lobster&family=UnifrakturMaguntia&family=Titan+One&family=Arvo:wght@700&family=Marcellus&family=Stint+Ultra+Condensed&family=Special+Elite&display=swap';
 function themeEarly() {   // (before the films arrive: the page already laid out as this month's theme)
@@ -2282,6 +2289,7 @@ function monthTint(m) {   // the month's theme's one flat colour, and its ink: b
   var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = t.bg;
 }
 window.addEventListener('resize', function () { setTimeout(zBeamFit, 120); });
+window.addEventListener('resize', function () { setTimeout(function () { if ($('#globe')) THEMEFX.globe.fit(); }, 160); });   // (Kane's globe kept on the picture's)
 function gxLights() { monthTint(S.month ? +S.month.slice(5, 7) - 1 : new Date().getMonth()); }
 function lightsDown() {   // the zoetrope's theme, open: the projector on, its beam and the screen's light, the room as it is (John, 10 Nov
   // 2026: "I just wanted the projector lighting on, not the lights down effect")
@@ -3029,9 +3037,9 @@ function themeStart(fx, c) {
   var cal0 = $('#cal'); if (cal0 && !cal0._noscroll) { cal0._noscroll = 1; cal0.addEventListener('scroll', function () { if (cal0.scrollTop || cal0.scrollLeft) { cal0.scrollTop = 0; cal0.scrollLeft = 0; } }); }   // (a day taking the focus never scrolls the theme away)
   $$('#cal .vday').forEach(function (el) { var u = (el.style.getPropertyValue('--p') || '').match(/url\(["']?([^"')]+)/); if (u) (new Image()).src = u[1]; });   // (every poster ready before it's wanted)
   if (fx.ready) fx.ready(c);
-  $$('#cal .snow').forEach(function (h) { var kane = !!h.closest('.th-globe'); snowfall(h, kane ? { alpha: .5, density: .00012 } : { density: .0006, big: 4.6 });
+  $$('#cal .snow').forEach(function (h) { var kane = !!h.closest('.th-globe'); snowfall(h, kane ? { alpha: .75, density: .00034, big: 3.4 } : { density: .0006, big: 4.6 });   // (Kane's heavier, in and out of the globe: John, 11 Nov 2026)
     if (!kane && h.parentNode) { var fr = document.createElement('div'); fr.className = 'snow snowfront'; h.parentNode.appendChild(fr); snowfall(fr, { near: true, density: .000035, big: 7, alpha: .85, slow: 1.15 }); } });   // (and a few large, soft, near flakes in front of the street)
-  $$('#cal .gsnow').forEach(function (h) { snowfall(h, { density: .0042, slow: .4, big: 3.6, wind: 0 }); });
+  $$('#cal .gsnow').forEach(function (h) { snowfall(h, { density: .0075, slow: .4, big: 3.6, wind: 0 }); });
   $$('#cal button.vday, #cal button.hday, #cal button.tday').forEach(function (b) { b.onclick = function () { daySheet(b.dataset.day); }; b.addEventListener('focus', function () { themeTurn(b); }); });
   var was = S.resumeDay && $('#cal button[data-day="' + S.resumeDay + '"]'); S.resumeDay = null;   // (reloaded: the day you were on)
   themeTurn(was || $('#cal .today.has') || $$('#cal button.has:not([data-om])').pop() || $('#cal button[data-day]:not([data-om])') || $('#cal button[data-day]'));   // (a month opened: on one of its own days)
@@ -4372,7 +4380,19 @@ THEMEFX.globe = { own: true,   // (the whole month laid out at once: its own day
   },
   decor: function () { return '<div class="snow"></div><div class="globe" id="globe"><div class="gpic" id="gpic"></div><div class="gsoon" id="gsoon" hidden>Coming<br>soon</div><i class="gpile"></i><div class="gsnow"></div><i class="gshine"></i></div><div class="gbase"></div>'; },
   swipe: function (c) { return { x: 1, y: 0, px: c.mob ? 24 : 40 }; },
+  // (the room behind: a hand holding the globe, as the film opens on it; the globe itself where the picture's is, wherever the
+  // picture's cropped to fill the screen: John, 11 Nov 2026: "have the snowglobe be where the globe is in the picture")
+  pic: { w: 1373, h: 809, cx: 968, cy: 430, d: 254, px: .705, py: .531 },
+  fit: function () {
+    var gl = $('#globe'), par = gl && gl.offsetParent; if (!par) return;
+    var vw = document.documentElement.clientWidth || innerWidth, vh = document.documentElement.clientHeight || innerHeight, pr = par.getBoundingClientRect(), sc = pr.width / (par.offsetWidth || 1) || 1;
+    var P = this.pic, s = Math.max(vw / P.w, vh / P.h), ox = (vw - P.w * s) * P.px, oy = (vh - P.h * s) * P.py;
+    var d = P.d * s / sc, x = (ox + P.cx * s - pr.left) / sc, y = (oy + P.cy * s - pr.top) / sc, k = [vw, vh, Math.round(pr.left), Math.round(pr.top), Math.round(sc * 1000)].join();
+    if (gl._fit === k) return; gl._fit = k;
+    gl.style.left = (x - d / 2).toFixed(1) + 'px'; gl.style.top = (y - d / 2).toFixed(1) + 'px'; gl.style.width = gl.style.height = d.toFixed(1) + 'px';
+  },
   place: function (all, at, c, b) {
+    this.fit();
     var x0 = c.mob ? 34 : 90, x1 = c.mob ? 746 : c.W - 90, n = Math.max(1, all.length - 1), me = this;
     var base = c.mob ? 140 : 175;   // (the front pages scattered along the top, each turned a little)
     all.forEach(function (el, j) { var d = +el.dataset.n, nf = near(j - at); vAt(el, x0 + (x1 - x0) * j / n, base + Math.sin(j * 1.7) * (c.mob ? 14 : 22), 1 + .55 * nf, (seeded(d * 3) - .5) * 18 * (1 - nf), 1, el === b ? 50 : 10 + (j % 5)); });
