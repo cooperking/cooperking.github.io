@@ -12346,7 +12346,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       return r.ok ? r.json() : null;
     }).then(function (j) {
       if (!j) return;
-      MEMBER = j; dlPrune(j.see); memberApply(); mainCapDraw(); impResume(); famSync(); resumeInit(); nowFetch(); nowLine(); noteSync(); noteOffer(); spLoad();
+      MEMBER = j; dlPrune(j.see); memberApply(); ownUpgrade(); mainCapDraw(); impResume(); famSync(); resumeInit(); nowFetch(); nowLine(); noteSync(); noteOffer(); spLoad();
       if (!TV) { unreadSet(j.unread); readTapped(); bellSet(j.bell); bellWanted(); mmWanted(); }
       uplMark(); uplWaitCount(); if (UPL.on && !uplPls().some(function (p) { return p.id === UPL.on; })) uplBack(); uplWanted();
       if (appAfterJoin) { appAfterJoin = false; if (appCan()) setTimeout(appOffer, 600); }
@@ -12356,6 +12356,22 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       memberLoad.t = setTimeout(memberLoad, Math.max(60e3, j.exp * 1000 - Date.now() - 30 * 60e3));
       memberLoad.at = Date.now();
     }).catch(function () {});
+  }
+  // a song that started as its preview before the member's files were known (a link from an email or a notification
+  // opens and plays at once): their whole song from here on, from the same moment (John, 11 Nov 2026: "it plays the
+  // preview when linked from an email, which it should never do if a person is signed in")
+  function ownUpgrade() {
+    try {
+      var s = (playing && playing.s) || (vplay && vplay.cover && vplay.el && vplay.el.sotd && vplay.el.sotd.s) || null;
+      if (!s || (coverObj && coverObj.sp)) return;   // (nothing playing here, or Spotify playing it)
+      var own = ownSong(s), cur = audio.currentSrc || audio.getAttribute('src') || '';
+      if (!own || !cur || cur.indexOf('/m/') >= 0 || cur.indexOf('__offline') >= 0) return;   // (already the whole song)
+      var t = audio.currentTime || 0, on = !audio.paused;
+      audio.loop = false; audio.src = own + (t > 1 ? '#t=' + t.toFixed(2) : '');
+      if (on) { var p = audio.play(); if (p && p.catch) p.catch(function () {}); }
+      if (typeof setState === 'function' && playing) setState();
+      if (typeof spLog === 'function') spLog('the whole song now (it started as the preview before your files were known)');
+    } catch (e) {}
   }
   // back to the calendar after a minute or more: the member's again (John's own files and covers added since play now)
   function memberAgain() {
