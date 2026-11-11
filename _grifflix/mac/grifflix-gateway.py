@@ -56,6 +56,9 @@ def log(*a):
     print(time.strftime('%Y-%m-%d %H:%M:%S'), *a, flush=True)
 
 
+CONV_SEEN = {}   # (files convert.py made or kept, looked at once: path → what they are)
+
+
 def load(path, default):
     try:
         with open(path) as f:
@@ -894,9 +897,33 @@ def make_handler(g):
                 except Exception:
                     pass
             done = st.get('done') or {}
+            # (each film's original and what it became, so John can see what the converting did: John, 11 Nov 2026: "what was the
+            # original and what was it converted to?"; for films done before convert.py noted it, looked at now, once)
+            def look(path):
+                if not path or not os.path.exists(path):
+                    return None
+                if path in CONV_SEEN:
+                    return CONV_SEEN[path]
+                import shutil
+                fp = next((c for c in ['/Applications/Jellyfin.app/Contents/MacOS/ffprobe', '/usr/local/bin/ffprobe', '/opt/homebrew/bin/ffprobe', shutil.which('ffprobe')] if c and os.path.exists(c)), None)
+                if not fp:
+                    return None
+                try:
+                    import subprocess
+                    info = json.loads(subprocess.run([fp, '-v', 'error', '-print_format', 'json', '-show_format', '-show_streams', path], capture_output=True, text=True, timeout=20).stdout or '{}')
+                except Exception:
+                    return None
+                v = next((x for x in info.get('streams') or [] if x.get('codec_type') == 'video' and not (x.get('disposition') or {}).get('attached_pic')), {})
+                vc = (v.get('codec_name') or '?').replace('h264', 'H.264').replace('hevc', 'HEVC').replace('mpeg4', 'MPEG-4 (XviD/DivX)').replace('mpeg2video', 'MPEG-2').replace('vc1', 'VC-1')
+                if '10' in (v.get('pix_fmt') or '') or '10' in (v.get('profile') or ''):
+                    vc += ' 10-bit'
+                CONV_SEEN[path] = {'v': vc, 'w': v.get('width') or 0, 'h': v.get('height') or 0, 'mbps': round(float((info.get('format') or {}).get('bit_rate') or 0) / 1e6, 1), 'gb': round(os.path.getsize(path) / 1e9, 1)}
+                return CONV_SEEN[path]
+            rows = sorted(done.values(), key=lambda x: -(x.get('at') or 0))[:60]
             self.send_json(200, {'now': cur, 'alive': alive, 'done': len(done), 'failed': [{'name': x.get('name'), 'why': x.get('why')} for x in (st.get('failed') or {}).values()][:20],
-                                 'recent': [{'name': x.get('name'), 'at': x.get('at'), 'mins': x.get('mins')} for x in sorted(done.values(), key=lambda x: -(x.get('at') or 0))[:6]],
-                                 'log': tail})
+                                 'recent': [{'name': x.get('name'), 'at': x.get('at'), 'mins': x.get('mins'), 'why': x.get('why'),
+                                             'before': x.get('before') or look(x.get('kept')), 'after': x.get('after') or look(x.get('to'))} for x in rows],
+                                 'next': (cur or {}).get('next') or [], 'log': tail})
 
         def api_originals(self, me, user, q, b):
             """John's: the originals convert.py kept in "Grifflix Originals" (what they take, the drive's free space), and

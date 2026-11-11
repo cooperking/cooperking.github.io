@@ -90,6 +90,7 @@ h1 em { font-style: normal; font-weight: 400; }
 .changes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .changes li { padding: 10px 12px; border-radius: 12px; background: var(--tile); font-size: 14px; color: var(--fg); }
 .changes li .when { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
+.cvl { max-height: 560px; overflow: auto; } .cvl .cvba { display: block; margin-top: 2px; font-size: 12px; color: var(--fg); } .cvl .cvh { font: 600 11px/1 var(--sans, sans-serif); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding-top: 14px; }   /* (the conversions: before and after; the queue) */
 .cvbar { height: 8px; border-radius: 99px; background: var(--tile); overflow: hidden; margin: 4px 0 14px; }
 .cvbar span { display: block; height: 100%; width: 0; background: currentColor; border-radius: 99px; transition: width .6s; }
 .state, .links { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -315,7 +316,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <h2 id="allhead">Looking…</h2>
         <ul class="changes" id="alllist"></ul>
         <p class="stat">One button: the Mac’s Grifflix files brought up to date (if there’s an update), the films brought over from the Mac, and, if the draft has changes, <b>the draft put live for everyone</b> (listed above). Look at the Preview first.</p>
-        <div class="state"><button class="btn primary" id="allgo" type="button">Update everything</button><a class="btn" href="https://grifflix.co.uk/preview" target="_blank" rel="noopener">Preview</a></div>
+        <div class="state"><button class="btn primary" id="allgo" type="button">Update everything</button><a class="btn" href="https://grifflix.co.uk/preview" target="grifflix-preview" rel="noopener">Preview</a></div>
       </section>
       <section class="card" data-tab="members">
         <div class="kicker">Members</div>
@@ -337,7 +338,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <h2 id="cvhead">Looking…</h2>
         <p class="stat" id="cvsay"></p>
         <div class="cvbar" id="cvbar" hidden><span id="cvfill"></span></div>
-        <ul class="changes" id="cvlist"></ul>
+        <ul class="changes cvl" id="cvlist"></ul>
         <p class="stat" id="orsay" style="margin-top:14px"></p>
         <div class="state"><button class="btn" id="orsee" type="button" hidden>The originals</button></div>
       </section>
@@ -366,7 +367,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat" style="margin:0 0 6px">Drag one onto any month above (a theme can be on as many months as you like). Drag a month here, or tap its ×, to put it back as it was.</p>
         <div class="tspare" id="tspare" data-dz="spare"></div>
         <div class="state"><button class="btn primary" id="tmsave" type="button" disabled>Saved</button></div>
-        <div class="thxview" id="thxview" hidden><div class="row"><b id="thxname"></b><span class="state"><button class="btn" id="thxlead" type="button" hidden>Play the 3 2 1</button><a class="btn" id="thxopen" target="_blank" rel="noopener">Open it full screen</a></span></div><div class="thxfmt" id="thxfmt" role="group" aria-label="Shown on"><button type="button" data-fmt="computer" class="on">Computer</button><button type="button" data-fmt="iphone">iPhone</button><button type="button" data-fmt="ipad">iPad</button><button type="button" data-fmt="tv">TV</button></div><div class="thxbox" id="thxbox"><iframe id="thxf" title="The theme, working" loading="lazy" allow="autoplay"></iframe></div></div>
+        <div class="thxview" id="thxview" hidden><div class="row"><b id="thxname"></b><span class="state"><button class="btn" id="thxlead" type="button" hidden>Play the 3 2 1</button><a class="btn" id="thxopen" target="grifflix-preview" rel="noopener">Open it full screen</a></span></div><div class="thxfmt" id="thxfmt" role="group" aria-label="Shown on"><button type="button" data-fmt="computer" class="on">Computer</button><button type="button" data-fmt="iphone">iPhone</button><button type="button" data-fmt="ipad">iPad</button><button type="button" data-fmt="tv">TV</button></div><div class="thxbox" id="thxbox"><iframe id="thxf" title="The theme, working" loading="lazy" allow="autoplay"></iframe></div></div>
         <p class="stat">Saving puts each month’s theme film on its 1st: Grifflix’s own copy, or its trailer if Grifflix hasn’t got it (that film goes on your <a href="#requests">Requests</a>). <b>Update everything</b> puts them on the site.</p>
       </section>
       <section class="card" data-tab="films">
@@ -847,7 +848,11 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         $('#cvhead').innerHTML = n && n.state === 'finished' ? 'All <em>converted</em>' : 'Not <em>running</em>';
         $('#cvsay').textContent = c.done + ' converted so far' + (c.failed.length ? ', ' + c.failed.length + ' couldn’t be' : '') + '.';
       }
-      $('#cvlist').innerHTML = c.recent.map(function (x) { return '<li>' + esc(x.name) + '<span class="when">' + esc(when(x.at * 1000)) + (x.mins ? ' · ' + x.mins + ' min' : '') + '</span></li>'; }).join('') +
+      // (each film: what the original was, what it became, and why: John, 11 Nov 2026: "what was the original and what was it converted to?")
+      var fl = function (f) { return f ? (f.w ? f.w + '×' + f.h + ' ' : '') + esc(f.v) + (f.mbps ? ', ' + f.mbps + ' Mbps' : '') + (f.gb ? ', ' + f.gb + ' GB' : '') : ''; };
+      $('#cvlist').innerHTML = (c.next && c.next.length ? '<li class="cvh">Next, in order</li>' + c.next.map(function (x, i) { return '<li>' + (i ? '' : '<b>Now:</b> ') + esc(x.name) + '<span class="when">' + esc(x.why || '') + (x.gb ? ' · ' + x.gb + ' GB' : '') + '</span></li>'; }).join('') + '<li class="cvh">Done</li>' : '') +
+        c.recent.map(function (x) { return '<li>' + esc(x.name) + '<span class="when">' + esc(when(x.at * 1000)) + (x.mins ? ' · ' + x.mins + ' min' : '') + (x.why ? ' · ' + esc(x.why) : '') + '</span>' +
+          (x.before || x.after ? '<span class="cvba">' + (x.before ? 'Was ' + fl(x.before) : 'Original deleted') + (x.after ? ' → now ' + fl(x.after) : '') + '</span>' : '') + '</li>'; }).join('') +
         c.failed.slice(0, 5).map(function (x) { return '<li><b>Couldn’t:</b> ' + esc(x.name) + '<span class="when">' + esc(String(x.why || '').slice(0, 90)) + '</span></li>'; }).join('');
       clearTimeout(convert.t); convert.t = setTimeout(convert, c.alive ? 30000 : 120000);
     }).catch(function (e) {
