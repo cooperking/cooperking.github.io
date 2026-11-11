@@ -5329,7 +5329,7 @@ function profile() {
   if (PUBLIC) return signInSheet();
   if (!ME) return;
   if (TV) {   // the TV: who's signed in and Sign out, nothing else (John, 8 Nov 2026)
-    openSheet('<div class="form tvprof" style="position:relative">' + X + '<p class="profp tvwho">Signed in as <b>' + esc(ME.name || 'you') + '</b></p><div class="acts"><button class="pill" id="tvlead">Play the 3 2 1</button><button class="pill on" id="signout">Sign out</button></div></div>');
+    openSheet('<div class="form tvprof" style="position:relative">' + X + '<p class="profp tvwho">Signed in as <b>' + esc(ME.name || 'you') + '</b>' + codecLine() + '</p><div class="acts"><button class="pill" id="tvlead">Play the 3 2 1</button><button class="pill on" id="signout">Sign out</button></div></div>');
     $('#tvlead').onclick = function () { closeSheet(); window.ZLED = 0; THEMEFX.picture.leader(true); };   // (John, 9 Nov 2026: "how can I get the firestick to reload the 3 2 1")
     var so = $('#signout'); so.onclick = function () {
       if (!so.dataset.sure) { so.dataset.sure = 1; so.textContent = 'Press again to sign out'; return; }
