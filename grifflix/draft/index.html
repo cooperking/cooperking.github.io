@@ -260,6 +260,7 @@ html.tv .sheet .people { font-size: var(--crfs, 15px); }
 .player .msg.on { display: grid; }
 .player .nextup { position: absolute; right: 20px; bottom: 90px; display: none; }
 .player .nextup.on { display: inline-flex; }
+.player .top [hidden] { display: none !important; }   /* (the TV and cast buttons only where they work: never on the Fire TV) */
 .player .top #ptv { color: #fff; } .player .top #ptv + #pcast { margin-left: 8px; } .player .top #ptv:not([hidden]) { margin-left: auto; }
 /* the phone as the Fire TV's remote, once a film's sent to it */
 .tvrem { position: fixed; inset: 0; z-index: 120; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: max(30px, env(safe-area-inset-top)) 24px max(30px, env(safe-area-inset-bottom)); background: radial-gradient(120% 80% at 50% 0%, #1c3550, #0a0c10 70%); color: #fff; text-align: center; }
@@ -1863,7 +1864,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'cd6a6b612d15' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '04f0449cd006' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5788,9 +5789,11 @@ var TVP = (function () {
   function pick(list) {   // (more than one TV: which)
     if (list.length === 1) return Promise.resolve(list[0]);
     return new Promise(function (done) {
-      openSheet('<div class="form" style="position:relative">' + X + '<h2 style="color:var(--fg)">Which TV?</h2><div class="acts" style="flex-direction:column;align-items:stretch">' +
-        list.map(function (t, i) { return '<button class="pill" data-tvi="' + i + '">' + TVI + esc(t.name) + (t.state ? ' · playing ' + esc(t.state.name || '') : '') + '</button>'; }).join('') + '</div></div>');
+      openSheet('<div class="form"><h2 style="color:var(--fg)">Which TV?</h2><div class="acts" style="flex-direction:column;align-items:stretch">' +
+        list.map(function (t, i) { return '<button class="pill" data-tvi="' + i + '">' + TVI + esc(t.name) + (t.state ? ' · playing ' + esc(t.state.name || '') : '') + '</button>'; }).join('') +
+        '<button class="pill" id="tvcancel" style="margin-top:8px">Cancel</button></div></div>');
       $$('[data-tvi]').forEach(function (b) { b.onclick = function () { closeSheet(); done(list[+b.dataset.tvi]); }; });
+      $('#tvcancel').onclick = function () { closeSheet(); };
     });
   }
   function send(it, pos) {
