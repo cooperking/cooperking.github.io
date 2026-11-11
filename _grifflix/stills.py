@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Grifflix's share stills: a day's (its month's theme with the day's film at the front), a month's (its theme with its films)
-and Grifflix's own (the zoetrope), drawn from the site signed out, in a browser, at 1200 x 630, and put where the Worker keeps
+and Grifflix's own (the zoetrope), drawn from the site signed out, in a browser (laid out at 1600 x 840, saved at 1200 x 630), and put where the Worker keeps
 the share cards (R2: grifflix/cards/<key>.jpg), over any card a member's page drew. Run by .github/workflows/grifflix-stills.yml.
 
   python3 _grifflix/stills.py              those not drawn yet, and today's, this month's and Grifflix's own again
@@ -52,7 +52,7 @@ def url_for(key, page):
 
 async def draw(browser, key, page_path):
     """The still as JPEG bytes and what the page says of it, or None when the page didn't draw it as a still."""
-    ctx = await browser.new_context(viewport={'width': 1200, 'height': 630}, device_scale_factor=1)
+    ctx = await browser.new_context(viewport={'width': 1600, 'height': 840}, device_scale_factor=0.75)   # (laid out as a computer's screen, saved at 1200 x 630)
     page = await ctx.new_page()
     try:
         await page.goto(url_for(key, page_path), wait_until='domcontentloaded', timeout=60000)
@@ -119,11 +119,18 @@ async def main():
     async with async_playwright() as pw:
         browser = await pw.chromium.launch()
         sem = asyncio.Semaphore(4)
+        probe = await draw(browser, 'cal', a.page)   # (a page without the still mode draws none: nothing to do till it's live)
+        if not probe[0]:
+            print('The page drew no still: it has no still mode yet (the draft put live), or it isn\'t answering. Nothing sent.')
+            await browser.close(); return
 
         async def one(key):
             nonlocal sent
-            async with sem:
-                jpg, info = await draw(browser, key, a.page)
+            if key == 'cal':
+                jpg, info = probe
+            else:
+                async with sem:
+                    jpg, info = await draw(browser, key, a.page)
             if not jpg:
                 failed.append(key); return
             if a.out:
