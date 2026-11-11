@@ -314,8 +314,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="kicker">Updates</div>
         <h2 id="allhead">Looking…</h2>
         <ul class="changes" id="alllist"></ul>
-        <p class="stat">One button: the Mac’s Grifflix files brought up to date (if there’s an update), the films brought over from the Mac, and, if the draft has changes, <b>the draft put live for everyone</b> (listed above). Try the draft first.</p>
-        <div class="state"><button class="btn primary" id="allgo" type="button">Update everything</button><a class="btn" href="/grifflix/draft/" target="_blank" rel="noopener">Try the draft</a></div>
+        <p class="stat">One button: the Mac’s Grifflix files brought up to date (if there’s an update), the films brought over from the Mac, and, if the draft has changes, <b>the draft put live for everyone</b> (listed above). Look at the Preview first.</p>
+        <div class="state"><button class="btn primary" id="allgo" type="button">Update everything</button><a class="btn" href="https://grifflix.co.uk/preview" target="_blank" rel="noopener">Preview</a></div>
       </section>
       <section class="card" data-tab="members">
         <div class="kicker">Members</div>
@@ -598,7 +598,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     Promise.all([page('/grifflix/draft/index.html'), page('/grifflix/index.html'), gh('/commits?path=grifflix/index.html&per_page=1'), gh('/commits?path=_grifflix/web/template.html&per_page=30')]).then(function (r) {
       var same = r[0] === r[1], lastLive = r[2][0] ? r[2][0].commit.committer.date : '1970-01-01', waiting = (r[3] || []).filter(function (c) { return c.commit.committer.date > lastLive; });
       $('#dlhead').innerHTML = same ? 'The live page <em>is</em> the draft' : (waiting.length || 'Some') + ' change' + (waiting.length === 1 ? '' : 's') + ' <em>waiting</em>';
-      $('#dlsay').textContent = same ? 'Nothing waiting to go live. Last put live ' + (r[2][0] ? when(lastLive) : '—') + '.' : 'On the draft, not yet live. Try the draft, then Publish puts all of it live together.';
+      $('#dlsay').textContent = same ? 'Nothing waiting to go live. Last put live ' + (r[2][0] ? when(lastLive) : '—') + '.' : 'On the preview, not yet live. Look at the Preview, then Update everything puts all of it live together.';
       $('#changes').innerHTML = same ? '' : waiting.map(function (c) { return '<li>' + esc(c.commit.message.split('\n')[0].replace(/^Grifflix(\s+page)?:\s*/i, '')) + '<span class="when">' + when(c.commit.committer.date) + '</span></li>'; }).join('');
       WAIT.page = same ? null : (waiting.length || 1) + ' change' + (waiting.length === 1 ? '' : 's') + ' to the page'; summary();
       if (watching && same) { clearInterval(watching); watching = null; toast('Live now'); }
