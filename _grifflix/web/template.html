@@ -5337,7 +5337,7 @@ function drawAccount() {
       '<li><b>Sign in.</b> In Grifflix, press the remote’s <b>menu button</b> (three lines) → <b>Sign in with a code</b>, and type the code from here:</li></ol>' +
       '<div class="acts" style="margin-top:8px"><button class="pill" id="tvcode">Get a code</button></div>' +
       '<p class="profp" style="margin-top:10px">Grifflix is then on the Fire TV’s home screen (under <b>Your Apps &amp; Channels</b>; hold OK on it to move it to the front). New versions: Grifflix asks when there’s one; or the menu button → <b>Check for a new version</b>. The same code signs in any other device too.</p></div>') +
-    '<div class="profsec"><p class="profh">This device</p><p class="profp">Signed in as ' + esc(ME.name || '') + '.</p><div class="acts" style="margin-top:8px"><button class="pill" id="signout">Sign out</button></div></div>';
+    '<div class="profsec"><p class="profh">This device</p><p class="profp">Signed in as ' + esc(ME.name || '') + '. ' + codecLine() + '</p><div class="acts" style="margin-top:8px"><button class="pill" id="signout">Sign out</button></div></div>';
   $$('[data-gpush],[data-gmail]').forEach(function (b) { b.onclick = function () {
     var k = b.dataset.gpush ? 'gpush' : 'gmail', v = b.dataset[k], body = { op: 'prefs' }; body[k] = v;
     if (DEMO) { g[k] = v; return drawAccount(); }
@@ -5477,6 +5477,13 @@ var HEVC = (function () {
     return !!(window.MediaSource && MediaSource.isTypeSupported('video/mp4; codecs="hvc1.1.6.L120.90"'));
   } catch (e) { return false; }
 })();
+function codecLine() {   // (what this device says it can play, for working out why a film won't: John, 11 Nov 2026: "was it encoding unnecessarily?")
+  var v = document.createElement('video'), ms = function (c) { try { return !!(window.MediaSource && MediaSource.isTypeSupported(c)); } catch (e) { return false; } };
+  var yn = function (b) { return b ? 'yes' : 'no'; }, cp = function (c) { try { return v.canPlayType(c) || 'no'; } catch (e) { return 'no'; } };
+  return '<span style="display:block;margin-top:6px;font-size:12.5px;opacity:.8">Films it plays as they are: HEVC ' + yn(HEVC) + ', 10-bit HEVC ' + yn(HEVC10) +
+    ' <span style="opacity:.75">(streamed: hvc1 ' + yn(ms('video/mp4; codecs="hvc1.1.6.L120.90"')) + ', hev1 ' + yn(ms('video/mp4; codecs="hev1.1.6.L120.90"')) + ', 10-bit ' + yn(ms('video/mp4; codecs="hvc1.2.4.L120.90"')) +
+    '; whole file: ' + cp('video/mp4; codecs="hvc1.1.6.L120.90"') + ', 10-bit ' + cp('video/mp4; codecs="hvc1.2.4.L120.90"') + '; native HLS ' + (cp('application/vnd.apple.mpegurl')) + ')</span></span>';
+}
 var HEVC10 = (function () {   // (and 10-bit HEVC (Main 10), which some that play HEVC can't: John, 11 Nov 2026: Rushmore stuck at 40 seconds)
   try {
     var v = document.createElement('video'), c = 'video/mp4; codecs="hvc1.2.4.L120.90"';
