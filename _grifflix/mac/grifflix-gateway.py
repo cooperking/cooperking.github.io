@@ -57,6 +57,10 @@ def log(*a):
 
 
 CONV_SEEN = {}   # (files convert.py made or kept, looked at once: path → what they are)
+# Play on the TV (John, 11 Nov 2026: "Is it possible for the fire stick to receive a cast film ... Build that"): each member's Fire
+# TVs with Grifflix open, kept in memory (a TV that's gone is forgotten), and what their phones ask them to do
+TVS = {}   # uid → dev → {name, seen, state, at, q}
+TVC = threading.Condition()
 
 
 def load(path, default):
@@ -907,6 +911,56 @@ def make_handler(g):
                 if start >= (r.get('TotalRecordCount') or 0):
                     break
             self.send_json(200, {'films': rows})
+
+        def api_tvhere(self, me, user, q, b):
+            """A Fire TV with Grifflix open: says it's there (and what it's playing), and waits up to 20 seconds for its phone's word."""
+            dev = str(b.get('dev') or '')
+            if not re.match(r'^[\w-]{6,40}$', dev):
+                return self.send_json(400, {'error': 'Not here.'})
+            wait = max(0.0, min(25.0, float(b.get('wait') or 0)))
+            with TVC:
+                t = TVS.setdefault(me['uid'], {}).setdefault(dev, {'q': []})
+                t['name'], t['seen'] = str(b.get('name') or 'Fire TV')[:40], time.time()
+                if 'state' in b:
+                    t['state'], t['at'] = (b['state'] if isinstance(b['state'], dict) else None), time.time()
+                end = time.time() + wait
+                while wait and not t['q'] and time.time() < end:
+                    TVC.wait(max(.1, end - time.time()))
+                    t['seen'] = time.time()
+                cmds, t['q'] = t['q'], []
+            return self.send_json(200, {'cmds': cmds})
+
+        def api_tvs(self, me, user, q, b):
+            """The member's Fire TVs with Grifflix open just now, and what each is playing."""
+            now = time.time()
+            with TVC:
+                tvs = [{'dev': d, 'name': t.get('name'), 'state': t.get('state'), 'ago': round(now - t.get('at', now))}
+                       for d, t in (TVS.get(me['uid']) or {}).items() if now - t.get('seen', 0) < 45]
+            return self.send_json(200, {'tvs': tvs})
+
+        def api_tvsend(self, me, user, q, b):
+            """A phone's word to one of its member's Fire TVs: play a film (from a place), pause, carry on, go to, jump, stop."""
+            dev, cmd = str(b.get('dev') or ''), str(b.get('cmd') or '')
+            if cmd not in ('play', 'pause', 'resume', 'seek', 'skip', 'stop'):
+                return self.send_json(400, {'error': 'Not here.'})
+            c = {'cmd': cmd, 'at': time.time()}
+            if cmd == 'play':
+                if not re.match(r'^[0-9a-f]{32}$', str(b.get('id') or '')):
+                    return self.send_json(400, {'error': 'Not here.'})
+                c['id'] = g.now_id(str(b['id']))
+            for k in ('pos', 'to', 's'):
+                if k in b:
+                    try:
+                        c[k] = float(b[k])
+                    except (TypeError, ValueError):
+                        pass
+            with TVC:
+                t = (TVS.get(me['uid']) or {}).get(dev)
+                if not t or time.time() - t.get('seen', 0) > 45:
+                    return self.send_json(404, {'error': 'That TV isn’t on Grifflix just now: open Grifflix on it.'})
+                t['q'] = (t['q'] + [c])[-10:]
+                TVC.notify_all()
+            return self.send_json(200, {'ok': True})
 
         def api_convert(self, me, user, q, b):
             """John's: how the conversions are going (convert.py's files in ~/Grifflix), for the admin page."""
