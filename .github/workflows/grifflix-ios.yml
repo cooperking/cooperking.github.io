@@ -53,7 +53,7 @@ jobs:
         working-directory: _grifflix/ios-app
         run: |
           npm install --no-audit --no-fund
-          npx cap add ios
+          npx cap add ios --packagemanager CocoaPods   # (Capacitor 8 would make a Swift Package project; build.sh builds the CocoaPods workspace)
           bash customise.sh
           npx cap sync ios
       - name: Build, and send to TestFlight when the Apple keys are there

@@ -340,6 +340,7 @@ html.tv .pmenu button:focus, html.tv .pmenu button:focus-visible { outline: 0 !i
 .profh { margin: 0 0 4px; font: 600 11px/1.2 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .profh i { font-style: normal; color: var(--fg-2); }
 .profp { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--fg-2); }
+.profsteps { margin: 10px 0 0; padding-left: 22px; font-size: 14.5px; line-height: 1.55; color: var(--fg-2); } .profsteps li { margin: 0 0 10px; padding-left: 4px; } .profsteps b { color: var(--fg); font-weight: 600; }   /* (the Fire TV Stick's steps) */
 .modes { display: grid; gap: 8px; margin-top: 10px; }
 .mode { display: grid; gap: 2px; padding: 11px 14px; border: 1px solid var(--line); border-radius: 0; background: rgba(255, 255, 255, .04); text-align: left; color: var(--fg-2); }
 .mode b { font: 600 14px/1.3 var(--sans); color: var(--fg); }
@@ -5305,7 +5306,16 @@ function drawAccount() {
     '<div class="profsec"><p class="profh">Theme music</p><p class="profp">' + (TMUS.on ? 'On this device.' : 'Off on this device.') +
       (TMUS.on && TMUS.k && TMUS.list && TMUS.list[TMUS.k] ? ' This month: <b>' + esc(TMUS.list[TMUS.k].title) + '</b>, ' + esc(TMUS.list[TMUS.k].artist) + '.' : '') +
       '</p><div class="acts" style="margin-top:8px"><button class="pill" id="musgo">' + (TMUS.on ? 'Turn off' : 'Turn on') + '</button><button class="pill" id="leadgo">Play the 3 2 1</button></div></div>' +
-    '<div class="profsec"><p class="profh">A TV</p><p class="profp">To sign in on a TV (or another device), get a code and type it there.</p><div class="acts" style="margin-top:8px"><button class="pill" id="tvcode">Get a code</button></div></div>' +
+    // (how to put Grifflix on a Fire TV Stick, step by step, for every member: John, 11 Nov 2026: "can you put clear instructions in the
+    // members profile area of how to install the fire stick app")
+    (TV ? '<div class="profsec"><p class="profh">Another device</p><p class="profp">To sign in on another device, get a code and type it there.</p><div class="acts" style="margin-top:8px"><button class="pill" id="tvcode">Get a code</button></div></div>' :
+    '<div class="profsec"><p class="profh">Grifflix on a Fire TV Stick</p><p class="profp">About five minutes, once. With the TV’s remote:</p><ol class="profsteps">' +
+      '<li><b>Get Downloader.</b> On the Fire TV’s home screen, choose <b>Find</b> (the magnifying glass), search for <b>Downloader</b> and install it (free, an orange icon).</li>' +
+      '<li><b>Let it install apps.</b> <b>Settings</b> → <b>My Fire TV</b> (on some, <b>Device &amp; Software</b>) → <b>Developer options</b> → <b>Install unknown apps</b> → turn <b>Downloader</b> on. (No Developer options? <b>Settings</b> → <b>My Fire TV</b> → <b>About</b>, then press OK on the Fire TV’s name seven times, and go back.)</li>' +
+      '<li><b>Download Grifflix.</b> Open Downloader, choose the address box, type <b>grifflix.co.uk/tv</b> and choose <b>Go</b>. When it’s downloaded, choose <b>Install</b>, then <b>Open</b>. (Downloader then offers to delete the download file: choose <b>Delete</b>, it’s no longer needed.)</li>' +
+      '<li><b>Sign in.</b> In Grifflix, press the remote’s <b>menu button</b> (three lines) → <b>Sign in with a code</b>, and type the code from here:</li></ol>' +
+      '<div class="acts" style="margin-top:8px"><button class="pill" id="tvcode">Get a code</button></div>' +
+      '<p class="profp" style="margin-top:10px">Grifflix is then on the Fire TV’s home screen (under <b>Your Apps &amp; Channels</b>; hold OK on it to move it to the front). New versions: Grifflix asks when there’s one; or the menu button → <b>Check for a new version</b>. The same code signs in any other device too.</p></div>') +
     '<div class="profsec"><p class="profh">This device</p><p class="profp">Signed in as ' + esc(ME.name || '') + '.</p><div class="acts" style="margin-top:8px"><button class="pill" id="signout">Sign out</button></div></div>';
   $$('[data-gpush],[data-gmail]').forEach(function (b) { b.onclick = function () {
     var k = b.dataset.gpush ? 'gpush' : 'gmail', v = b.dataset[k], body = { op: 'prefs' }; body[k] = v;
@@ -5622,8 +5632,15 @@ window.addEventListener('pagehide', saveProgress);
   P.toggle = toggle; P.skip = skip;
   ['play', 'pause'].forEach(function (ev) { v.addEventListener(ev, state); });
   ['timeupdate', 'progress', 'durationchange', 'seeking'].forEach(function (ev) { v.addEventListener(ev, paint); });
-  v.addEventListener('waiting', function () { el.classList.add('wait'); });
-  ['playing', 'canplay', 'seeked', 'pause', 'emptied'].forEach(function (ev) { v.addEventListener(ev, function () { el.classList.remove('wait'); }); });
+  // (still waiting after 20 seconds: say why, rather than a spinner for ever (John, 11 Nov 2026: "my latest film got stuck on 40
+  // seconds, despite it being a good quality file"): a file the Mac mini has to convert as it plays, faster than it can)
+  var stuckT = 0, unstuck = function () { clearTimeout(stuckT); stuckT = 0; var m = $('#pmsg'); if (m.dataset.stuck) { m.classList.remove('on'); delete m.dataset.stuck; } };
+  v.addEventListener('waiting', function () { el.classList.add('wait'); clearTimeout(stuckT); stuckT = setTimeout(function () {
+    if (!el.classList.contains('wait') || !el.classList.contains('on')) return;
+    var m = $('#pmsg'); m.dataset.stuck = 1; m.classList.add('on');
+    m.innerHTML = 'Still loading…<br><small style="display:block;max-width:34em;margin:10px auto 0;font-size:15px;line-height:1.5;opacity:.85">The Mac mini is struggling to send this film. A new film’s file is often one it has to convert as it plays, which it can’t do fast enough; it converts new films first each night, and then they play smoothly. Try again tomorrow, or another film for now.</small>';
+  }, 20000); });
+  ['playing', 'canplay', 'seeked', 'pause', 'emptied'].forEach(function (ev) { v.addEventListener(ev, function () { el.classList.remove('wait'); unstuck(); }); });
   $('#pplay').onclick = toggle; $('#pbig').onclick = function (e) { e.stopPropagation(); toggle(); };
   // (the film's place: pressed or dragged anywhere along it, the time shown above the finger; let go, it goes there)
   var at = function (e) { var r = seek.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };

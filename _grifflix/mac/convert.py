@@ -93,6 +93,13 @@ def save_state(st):
 
 # ---------------------------------------------------------------- which need it
 
+def load_json(path):
+    try:
+        return json.load(open(path))
+    except (OSError, ValueError):
+        return {}
+
+
 def why(ms):
     streams = g(ms, 'MediaStreams', [])
     v = next((x for x in streams if g(x, 'Type') == 'Video'), None)
@@ -123,7 +130,7 @@ def gather():
         start = 0
         while True:
             r = call('GET', '/Users/%s/Items' % s['jf_user_id'], ParentId=libs[lib], Recursive='true', IncludeItemTypes=types,
-                     Fields='MediaSources,Path,ProductionYear,CommunityRating', StartIndex=start, Limit=300, SortBy='SortName')
+                     Fields='MediaSources,Path,ProductionYear,CommunityRating,DateCreated', StartIndex=start, Limit=300, SortBy='SortName')
             for it in g(r, 'Items', []):
                 ms = (g(it, 'MediaSources') or [{}])[0]
                 w = why(ms)
@@ -131,11 +138,31 @@ def gather():
                     name = g(it, 'Name') if types == 'Movie' else '%s S%02dE%02d' % (g(it, 'SeriesName'), g(it, 'ParentIndexNumber', 0), g(it, 'IndexNumber', 0))
                     out.append({'id': g(it, 'Id'), 'name': name, 'year': g(it, 'ProductionYear', ''), 'lib': lib, 'why': w,
                                 'path': g(it, 'Path'), 'mins': round((g(it, 'RunTimeTicks') or 0) / 6e8), 'rating': g(it, 'CommunityRating') or 0,
-                                'gb': round(os.path.getsize(g(it, 'Path')) / 1e9, 1)})
+                                'gb': round(os.path.getsize(g(it, 'Path')) / 1e9, 1), 'added': g(it, 'DateCreated') or ''})
             start += 300
             if start >= g(r, 'TotalRecordCount', 0):
                 break
-    out.sort(key=lambda x: (x['lib'] != 'movies', -x['rating'], x['name']))
+    # (films added in the last fortnight first, newest first: they're the ones about to be watched, and until they're converted the
+    # Mac mini has to convert them as they play, which it can't keep up with (John, 11 Nov 2026: "my latest film got stuck on 40
+    # seconds"); then the best-rated films, then episodes)
+    # (first of all, Movie of the Day's films from today for three weeks, in their order: everyone watches those (John, 11 Nov 2026:
+    # Rushmore, the day's film, stuck at 40 seconds))
+    soon = {}
+    try:
+        cal = (load_json(os.path.join(APP, 'data.json')).get('calendars') or {}).get('motd') or {}
+        today, last = time.strftime('%Y-%m-%d'), time.strftime('%Y-%m-%d', time.localtime(time.time() + 21 * 86400))
+        for d, i in sorted((cal.get('days') or {}).items()):
+            if today <= d <= last and i not in soon:
+                soon[i] = d
+    except Exception:
+        pass
+    cut = time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime(time.time() - 14 * 86400))
+    first = sorted([x for x in out if x['id'] in soon], key=lambda x: soon[x['id']])
+    new = sorted([x for x in out if x['id'] not in soon and x['added'] >= cut], key=lambda x: x['added'], reverse=True)
+    rest = sorted([x for x in out if x['id'] not in soon and x['added'] < cut], key=lambda x: (x['lib'] != 'movies', -x['rating'], x['name']))
+    for x in first:
+        x['why'] += ' · Movie of the Day ' + soon[x['id']]
+    out[:] = first + new + rest
     return out
 
 
