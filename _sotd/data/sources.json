@@ -3663,6 +3663,25 @@
 "job":"Song moods and genres",
 "at":"2026-11-10T09:51:16+00:00"
 }
+},
+"5epksFujwUqHRJGQPPVeUK":{
+"v":1,
+"n":275,
+"title":"A Lickin",
+"artist":"Breastfist",
+"album":"Tickly Shimmers",
+"artists":[
+"1S5IMPzZInvjin164cJ0Zs"
+],
+"song":null,
+"albumPage":null,
+"checked":"2026-11-11",
+"run":{
+"id":42991523875,
+"n":782,
+"job":"Song moods and genres",
+"at":"2026-11-11T09:01:10+00:00"
+}
 }
 },
 "artists":{
@@ -16611,6 +16630,57 @@
 }
 ],
 "url":"https://musicbrainz.org/artist/874afdfd-c2ba-4f4e-95e2-1e5da10d9522"
+}
+},
+"1S5IMPzZInvjin164cJ0Zs":{
+"name":"Breastfist",
+"qid":null,
+"found":"name",
+"wiki":null,
+"checked":"2026-11-11",
+"mb":{
+"mbid":"81b5a9d1-b3ca-4a75-96c7-76481413e758",
+"name":"Breastfist",
+"type":"Group",
+"ended":false,
+"members":[
+{
+"name":"Bill Campbell",
+"from":null,
+"to":null,
+"ended":false,
+"roles":[]
+},
+{
+"name":"Alan Hampton",
+"from":null,
+"to":null,
+"ended":false,
+"roles":[]
+},
+{
+"name":"Frank LoCrasto",
+"from":null,
+"to":null,
+"ended":false,
+"roles":[]
+},
+{
+"name":"Ryan Scott",
+"from":null,
+"to":null,
+"ended":false,
+"roles":[]
+},
+{
+"name":"Al Street",
+"from":null,
+"to":null,
+"ended":false,
+"roles":[]
+}
+],
+"url":"https://musicbrainz.org/artist/81b5a9d1-b3ca-4a75-96c7-76481413e758"
 }
 }
 },
