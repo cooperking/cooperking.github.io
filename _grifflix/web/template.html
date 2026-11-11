@@ -1638,6 +1638,22 @@ html.gxproj .zcurt::before { opacity: 1; }
 html.phone .vtog span { padding: 6px 8px 5px; letter-spacing: .13em; text-indent: .13em; }
 /* the switch square, as every other button of the bar (John, 11 Nov 2026: "the theme calendar toggle is rounded") */
 #barnav button.vtog, #shnav button.vtog, .vtog::before { border-radius: 0 !important; }
+/* the bar on every phone, down to the smallest (320 wide): a little tighter, the draft's tag a yellow dot, and on the smallest no
+   separate home (the switch does it) (John, 11 Nov 2026: "make sure the bar works for all screens") */
+@media (max-width: 440px) {
+  html .bar-top { gap: 6px !important; }
+  html .bar-top .brand, html.phone .bar-top .brand { letter-spacing: .22em !important; }
+  html.phone #barnav { margin: 0 0 0 6px !important; }
+  html.phone .vtog span { padding: 6px 6px 5px; letter-spacing: .08em; text-indent: .08em; }
+  html .bar-top .drafttag { flex: none; width: 9px; height: 9px; min-height: 0; padding: 0; font-size: 0; border-radius: 50%; margin: 0 0 0 2px !important; }
+  html.phone .bar-top .ico, html.tview.hall .bar-top .ico.tmute, html.tview.table .bar-top .ico.tmute { width: 28px !important; padding: 0 !important; }
+}
+@media (max-width: 374px) {
+  html .bar-top .brand, html.phone .bar-top .brand { font-size: 11px !important; letter-spacing: .14em !important; }
+  html .bar-top .homeic { display: none !important; }
+  html.phone .vtog span { padding: 6px 5px 5px; letter-spacing: .04em; text-indent: .04em; font-size: 9.5px; }
+  html.phone .bar-top .ico, html.tview.hall .bar-top .ico.tmute, html.tview.table .bar-top .ico.tmute { width: 26px !important; }
+}
 /* the TV: one highlight for whatever's chosen, everywhere: a white ring a little out from it, a dark band between, so it reads on
    a light picture or a dark room; the same thickness and gap however large the chosen thing is drawn (--ks: one over its scale)
    (John, 11 Nov 2026: "highlighting can sometimes be a white box sometimes a white border, depending on the theme. Either way
