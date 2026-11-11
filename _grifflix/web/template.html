@@ -5556,7 +5556,11 @@ function clock(s) { s = Math.round(s); var h = Math.floor(s / 3600), m = Math.fl
 /* ------------------------------------------------------------------ the player */
 /* can this device play HEVC (H.265) itself? iPhones, iPads, Macs' Safari, Apple TV, Fire TV: yes; most Chrome and Firefox: no.
    If it can, those films are only repackaged; if not, the old Mac would have to convert them (too slow). */
-var HEVC = (function () {
+var HW = (function () {   // (the Fire TV app asks the stick's own hardware: its browser view says no to HEVC it can play: John, 11 Nov 2026)
+  try { if (window.GRIFFLIXTV && GRIFFLIXTV.codecs && store.get('grifflix-hwhevc') !== 'bad') return JSON.parse(GRIFFLIXTV.codecs()) || null; } catch (e) {}
+  return null;
+})();
+var HEVC = HW && HW.hevc ? true : (function () {
   try {
     var v = document.createElement('video');
     if (v.canPlayType('application/vnd.apple.mpegurl') && v.canPlayType('video/mp4; codecs="hvc1.1.6.L120.90"')) return true;
@@ -5568,9 +5572,10 @@ function codecLine() {   // (what this device says it can play, for working out 
   var yn = function (b) { return b ? 'yes' : 'no'; }, cp = function (c) { try { return v.canPlayType(c) || 'no'; } catch (e) { return 'no'; } };
   return '<span style="display:block;margin-top:6px;font-size:12.5px;opacity:.8">Films it plays as they are: HEVC ' + yn(HEVC) + ', 10-bit HEVC ' + yn(HEVC10) +
     ' <span style="opacity:.75">(streamed: hvc1 ' + yn(ms('video/mp4; codecs="hvc1.1.6.L120.90"')) + ', hev1 ' + yn(ms('video/mp4; codecs="hev1.1.6.L120.90"')) + ', 10-bit ' + yn(ms('video/mp4; codecs="hvc1.2.4.L120.90"')) +
-    '; whole file: ' + cp('video/mp4; codecs="hvc1.1.6.L120.90"') + ', 10-bit ' + cp('video/mp4; codecs="hvc1.2.4.L120.90"') + '; native HLS ' + (cp('application/vnd.apple.mpegurl')) + ')</span></span>';
+    '; whole file: ' + cp('video/mp4; codecs="hvc1.1.6.L120.90"') + ', 10-bit ' + cp('video/mp4; codecs="hvc1.2.4.L120.90"') + '; native HLS ' + (cp('application/vnd.apple.mpegurl')) +
+    (HW ? '; the TV’s hardware: HEVC ' + yn(HW.hevc) + ', 10-bit ' + yn(HW.hevc10) : window.GRIFFLIXTV && GRIFFLIXTV.codecs ? '; the TV’s hardware: not used here (a film wouldn’t start with it)' : '') + ')</span></span>';
 }
-var HEVC10 = (function () {   // (and 10-bit HEVC (Main 10), which some that play HEVC can't: John, 11 Nov 2026: Rushmore stuck at 40 seconds)
+var HEVC10 = HW && HW.hevc10 ? true : (function () {   // (and 10-bit HEVC (Main 10), which some that play HEVC can't: John, 11 Nov 2026: Rushmore stuck at 40 seconds)
   try {
     var v = document.createElement('video'), c = 'video/mp4; codecs="hvc1.2.4.L120.90"';
     if (v.canPlayType('application/vnd.apple.mpegurl') && v.canPlayType(c)) return true;
@@ -5640,7 +5645,8 @@ function play(it, queue, fromStart) {
   P.el.classList.add('on'); document.documentElement.style.overflow = 'hidden'; coverCheck();
   if (DEMO) { $('#pmsg').textContent = 'In the demo there’s nothing to play. Once the Mac mini is connected, “' + showName(it) + '” plays here.'; $('#pmsg').classList.add('on'); return; }
   var tries = 0, ask = function () {   // (the Mac asleep: it wakes to the first knock; tell them, and knock again for a minute)
-    return api('play?id=' + it.id + (HEVC ? '&hevc=1' + (HEVC10 ? '&hevc10=1' : '') : '')).catch(function (e) {
+    var h = HEVC && !P.noHw;
+    return api('play?id=' + it.id + (h ? '&hevc=1' + (HEVC10 ? '&hevc10=1' : '') : '')).catch(function (e) {
       if (e && (e.status === 401 || e.status === 403 || e.status === 404) || ++tries > 8 || P.it !== it) throw e;
       $('#pmsg').textContent = 'Waking the Mac mini… (a moment)'; $('#pmsg').classList.add('on');
       return new Promise(function (ok) { setTimeout(ok, 6000); }).then(ask);
@@ -5664,6 +5670,20 @@ function play(it, queue, fromStart) {
       P.hls.on(Hls.Events.ERROR, function (e, d) { if (d.fatal) { $('#pmsg').textContent = 'It won’t play just now (' + d.details + ').'; $('#pmsg').classList.add('on'); } });
     } else { $('#pmsg').textContent = 'This browser can’t play it.'; $('#pmsg').classList.add('on'); }
     clearInterval(P.saveT); P.saveT = setInterval(saveProgress, 10000);
+    if (HW && HW.hevc && !P.noHw) {   // (trusting the TV's hardware over its browser: if the film doesn't get going, the Mac converts it after all, and this TV isn't trusted again)
+      var t0 = Date.now(), gone = false, fall = function () {
+        if (gone || P.it !== it) return; gone = true; clearInterval(P.hwT); v.removeEventListener('error', fall);
+        store.set('grifflix-hwhevc', 'bad'); HW = null; HEVC = false; HEVC10 = false;
+        P.noHw = true; P.startAt = Math.max(start, v.currentTime || 0); play(it, P.queue, fromStart);
+      };
+      v.addEventListener('error', fall, { once: true });
+      clearInterval(P.hwT); P.hwT = setInterval(function () {
+        if (P.it !== it || gone) return clearInterval(P.hwT);
+        if (v.currentTime > (start > 5 ? start : 0) + 3 && v.readyState >= 3) { clearInterval(P.hwT); v.removeEventListener('error', fall); return; }   // (going: fine)
+        if (v.paused && v.readyState >= 2) t0 = Date.now();   // (paused by hand: not a failure)
+        if (Date.now() - t0 > 25000) fall();
+      }, 1000);
+    }
   }).catch(function (e) { $('#pmsg').textContent = (e && e.message) || 'It won’t play just now.'; $('#pmsg').classList.add('on'); });
 }
 function saveProgress() { if (P.it && P.v.currentTime > 0 && !DEMO && !PUBLIC) api('progress', { id: P.it.id, pos: P.v.currentTime, secs: P.v.duration || (P.info && P.info.secs) || 0 }).then(function () { P.it.pos = P.v.currentTime; }).catch(function () {}); }
