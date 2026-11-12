@@ -48,7 +48,9 @@ SOFTWARE = [('grifflix-gateway.py', os.path.join(APP_DIR, 'grifflix-gateway.py')
             ('motd-fill.py', os.path.expanduser('~/Grifflix/motd-fill.py'), 'Movie of the Day'),
             ('fix-series.py', os.path.expanduser('~/Grifflix/fix-series.py'), ''),
             ('plex-collections.py', os.path.expanduser('~/Grifflix/plex-collections.py'), ''),
-            ('streaming-report.py', os.path.expanduser('~/Grifflix/streaming-report.py'), '')]   # what John's last Update sent (so the next reads only what's new)
+            ('streaming-report.py', os.path.expanduser('~/Grifflix/streaming-report.py'), ''),
+            ('poster-add.py', os.path.expanduser('~/Grifflix/poster-add.py'), 'Criterion images'),   # (John's own posters on their films: 12 Nov 2026)
+            ('criterion.py', os.path.expanduser('~/Grifflix/criterion.py'), 'Criterion Films')]   # what John's last Update sent (so the next reads only what's new)
 LIBS = {'movies': ('Movies', 'movies'), 'tv': ('TV', 'tvshows'), 'home': ('Home videos', 'homevideos')}
 
 
@@ -1362,7 +1364,7 @@ def make_handler(g):
                         pass
                     if old == got[name]:
                         continue
-                    if old is None and name not in ('grifflix-gateway.py', 'convert.py'):
+                    if old is None and name not in ('grifflix-gateway.py', 'convert.py', 'poster-add.py', 'criterion.py'):
                         continue   # (a script John hasn't got on this Mac stays away)
                     os.makedirs(os.path.dirname(dest), exist_ok=True)
                     if old is not None:
