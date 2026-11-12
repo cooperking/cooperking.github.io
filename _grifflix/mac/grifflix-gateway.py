@@ -13,7 +13,7 @@ Python 3 standard library only, so it runs on the Mac's own /usr/bin/python3.
   grifflix-gateway.py setup --movies DIR --tv DIR --home DIR   Jellyfin's first-run setup, done for you
   grifflix-gateway.py serve                                     the gateway (the LaunchAgent runs this)
 """
-import base64, hashlib, hmac, http.client, json, os, re, secrets, sys, threading, time, urllib.parse, urllib.request
+import base64, hashlib, hmac, http.client, inspect, json, os, re, secrets, sys, threading, time, urllib.parse, urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 APP_DIR = os.environ.get('GRIFFLIX_DIR') or os.path.expanduser('~/Library/Application Support/Grifflix')
@@ -837,8 +837,9 @@ def make_handler(g):
                             def send_json(c, code, body):
                                 c.out = (code, body)
 
-                            def __getattr__(c, n):
-                                return getattr(H, n).__get__(c)
+                            def __getattr__(c, n):   # (the handler's own methods, bound to this stand-in; its static ones as they are)
+                                a = inspect.getattr_static(H, n)
+                                return a.__func__ if isinstance(a, staticmethod) else getattr(H, n).__get__(c)
                         cap = Cap()
                         qq = {k: v for k, v in q.items() if k != 'bg'}
                         def run():
@@ -1016,8 +1017,9 @@ def make_handler(g):
                             def send_json(c, code, body):
                                 c.out = (code, body)
 
-                            def __getattr__(c, n):
-                                return getattr(H, n).__get__(c)
+                            def __getattr__(c, n):   # (the handler's own methods, bound to this stand-in; its static ones as they are)
+                                a = inspect.getattr_static(H, n)
+                                return a.__func__ if isinstance(a, staticmethod) else getattr(H, n).__get__(c)
                         cap = Cap()
 
                         def run():
