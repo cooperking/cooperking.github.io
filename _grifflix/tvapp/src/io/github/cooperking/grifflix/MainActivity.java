@@ -236,6 +236,10 @@ public class MainActivity extends Activity {
             stopService(new Intent(MainActivity.this, TvListener.class));
         }
 
+        /** A film that reached the page while Grifflix was off the screen: Grifflix to the front to play it. */
+        @JavascriptInterface
+        public void openFor(String cmd) { if (cmd != null && cmd.length() > 0) TvListener.open(getApplicationContext(), cmd); }
+
         @JavascriptInterface
         public String pending() { String c = TvListener.pendingCmd; TvListener.pendingCmd = null; return c == null ? "" : c; }
 

@@ -101,7 +101,7 @@ public class TvListener extends Service {
                 JSONArray cmds = new JSONObject(b.toString("UTF-8")).optJSONArray("cmds");
                 for (int i = 0; cmds != null && i < cmds.length(); i++) {
                     JSONObject cmd = cmds.getJSONObject(i);
-                    if ("play".equals(cmd.optString("cmd")) && !appVisible) open(cmd.toString());   // (only a film to play opens it; pause and the like need it open)
+                    if ("play".equals(cmd.optString("cmd")) && !appVisible) open(this, cmd.toString());   // (only a film to play opens it; pause and the like need it open)
                 }
                 Thread.sleep(200);
             } catch (InterruptedException e) {
@@ -113,11 +113,11 @@ public class TvListener extends Service {
         }
     }
 
-    void open(String cmd) {
+    static void open(Context c, String cmd) {   // (Grifflix to the front, to play the film once it's there)
         pendingCmd = cmd;
-        Intent i = new Intent(this, MainActivity.class);
+        Intent i = new Intent(c, MainActivity.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         i.putExtra("tvcmd", true);
-        try { startActivity(i); } catch (Exception e) { Log.w(TAG, "couldn't open Grifflix (Display over other apps?)", e); }
+        try { c.startActivity(i); } catch (Exception e) { Log.w(TAG, "couldn't open Grifflix (Display over other apps?)", e); }
     }
 }

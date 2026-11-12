@@ -1942,7 +1942,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '958e0e8f1424' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '4ffbda971000' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6181,9 +6181,15 @@ var TVLINK = (function () {
   var name = 'Fire TV ' + dev.slice(-4).toUpperCase(), busy = false, last = '';
   var state = function () { var v = P.v, it = P.it; if (!P.el.classList.contains('on') || !it) return null;
     return { id: it.id, name: showName(it), sub: it.type === 'episode' ? subOf(it) : (it.year ? String(it.year) : ''), pos: Math.round(v.currentTime || 0), dur: Math.round(isFinite(v.duration) && v.duration ? v.duration : (P.info && P.info.secs) || 0), paused: v.paused }; };
-  var live = function () { return !PUBLIC && !DEMO && GW && !document.hidden; };
+  // (the Fire TV app says when it leaves the screen: its page isn't told it's hidden, and went on taking films to play unseen.
+  //  John, 12 Nov 2026: "it plays but only in the background - the app didn't open, so I only knew by the sound")
+  var live = function () { return !PUBLIC && !DEMO && GW && !document.hidden && !window.TVAWAY; };
   function report(force) { if (!live()) return; var s = state(), k = JSON.stringify(s && [s.id, s.paused, Math.floor((s.pos || 0) / 5)]); if (!force && k === last) return; last = k; mac('tvhere', { dev: dev, name: name, state: s }).catch(function () {}); }
   function run(c) {
+    if (window.TVAWAY) {   // (Grifflix off the screen: a film is the app's to open Grifflix for; the rest wait)
+      if (c.cmd === 'play') try { if (window.GRIFFLIXTV && GRIFFLIXTV.openFor) { GRIFFLIXTV.openFor(JSON.stringify(c)); return; } } catch (e) {}
+      if (c.cmd !== 'play') return;
+    }
     if (c.cmd === 'play') { if (trailerOn()) trailerClose(); api('item?id=' + c.id).then(function (it) { P.startAt = c.pos || 0; play(it); setTimeout(function () { report(true); }, 3000); }).catch(function () {}); return; }
     if (!P.el.classList.contains('on')) return;
     if (c.cmd === 'pause') P.v.pause(); else if (c.cmd === 'resume') P.v.play().catch(function () {});
@@ -6391,8 +6397,8 @@ function barSearch() {   // up into the bar lands on Search first (John, 8 Nov 2
   return $('#barnav [data-nv="search"]') || $('.bar-top button');
 }
 window.grifflixTV = {
-  away: function () { allQuiet(); leaderNewDay.away = Date.now(); },   // (the app left: Home, or another app)
-  here: function () { if (TMUS.ctx && TMUS.ctx.state === 'suspended') try { TMUS.ctx.resume(); } catch (e) {} leaderNewDay(); freshCheck(); },   // (back to it)
+  away: function () { window.TVAWAY = true; allQuiet(); leaderNewDay.away = Date.now(); },   // (the app left: Home, or another app)
+  here: function () { window.TVAWAY = false; if (TMUS.ctx && TMUS.ctx.state === 'suspended') try { TMUS.ctx.resume(); } catch (e) {} leaderNewDay(); freshCheck(); },   // (back to it)
   key: function (k) {
     if (trailerOn()) return trailerKeys(k);
     if (P.el.classList.contains('on')) return playerKeys(k);
