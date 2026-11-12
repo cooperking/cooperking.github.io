@@ -374,15 +374,22 @@ def convert(item, ffmpeg, ffprobe, st):
         os.remove(tmp)
         raise RuntimeError('the new file is %.0f s long, the original %.0f s: kept the original' % (new_dur, dur))
 
-    # the original out of the library, kept; the new one in its place (moved in only now, whole and checked)
-    keep_at = os.path.join(os.path.dirname(root.rstrip('/')), 'Grifflix Originals', os.path.basename(root.rstrip('/')), os.path.relpath(src, root))
-    os.makedirs(os.path.dirname(keep_at), exist_ok=True)
-    shutil.move(src, keep_at)
+    # the new one in the original's place (moved in only now, whole and checked), and the original deleted: John keeps his own backups
+    # (John, 12 Nov 2026: "delete all originals automatically - I have backups so it's fine"); kept in Grifflix Originals only if
+    # the setting keep_originals is on
+    before = brief(info, src)
+    if s.get('keep_originals'):
+        keep_at = os.path.join(os.path.dirname(root.rstrip('/')), 'Grifflix Originals', os.path.basename(root.rstrip('/')), os.path.relpath(src, root))
+        os.makedirs(os.path.dirname(keep_at), exist_ok=True)
+        shutil.move(src, keep_at)
+    else:
+        keep_at = None
+        os.remove(src)
     shutil.move(tmp, dst)   # (the same drive: a rename)
     mins = (time.time() - t0) / 60
-    log('  done in %d min: %.1f GB → %.1f GB; original kept in %s' % (mins, item['gb'], os.path.getsize(dst) / 1e9, os.path.dirname(keep_at)))
+    log('  done in %d min: %.1f GB → %.1f GB; original %s' % (mins, item['gb'], os.path.getsize(dst) / 1e9, ('kept in ' + os.path.dirname(keep_at)) if keep_at else 'deleted'))
     st['done'][item['id']] = {'name': item['name'], 'from': src, 'to': dst, 'kept': keep_at, 'at': int(time.time()), 'mins': round(mins),
-                              'why': item['why'], 'before': brief(info, keep_at), 'after': brief(probe(ffprobe, dst), dst)}
+                              'why': item['why'], 'before': before, 'after': brief(probe(ffprobe, dst), dst)}
     if dst != src:   # a new name: Jellyfin will make it a new item; noted, so everything follows it once it's seen
         try:   # (when it was first added: the new item keeps it, so a converted film isn't "new")
             added = g(call('GET', '/Users/%s/Items/%s' % (s['jf_user_id'], item['id'])) or {}, 'DateCreated')
