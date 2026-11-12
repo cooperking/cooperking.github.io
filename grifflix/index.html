@@ -1935,7 +1935,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '7e01d1496260' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '829aea8571b6' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2993,7 +2993,7 @@ function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 w
   document.addEventListener('touchstart', function (e) {
     clearTimeout(fling); if (!on(e) || e.touches.length > 1) { G = null; return; }
     var t = e.touches[0], el = e.target;
-    G = { x0: t.clientX, y0: t.clientY, last: 0, ax: null, live: false, trail: [] }; moved = false; gestStart();
+    G = { x0: t.clientX, y0: t.clientY, last: 0, ax: null, live: false, trail: [], n: 0 }; moved = false; gestStart();
     var done = function () { el.removeEventListener('touchmove', move); el.removeEventListener('touchend', end); el.removeEventListener('touchcancel', end); };
     var end = function () { done(); lift(); };
     el.addEventListener('touchmove', move, { passive: false }); el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
@@ -3004,13 +3004,17 @@ function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 w
     e.preventDefault();
     var pos = G.ax === 'x' ? t.clientX : t.clientY;
     G.trail.push([pos, Date.now()]); if (G.trail.length > 6) G.trail.shift();
-    while (Math.abs(pos - G.last) >= STEP) { var dir = pos < G.last ? 1 : -1; G.last += dir > 0 ? -STEP : STEP; if (!themeStep(dir, true)) break; }   // (finger up or left: the day after)
+    // (a day the moment the finger has gone a little way, then another each third of the screen it goes on: an ordinary swipe one day,
+    // not two (John, 12 Nov 2026: "The theme scroll is going from today to the day before yesterday"))
+    var step = G.n ? Math.max(STEP, (G.ax === 'x' ? innerWidth : innerHeight) / 3) : STEP;
+    while (Math.abs(pos - G.last) >= step) { var dir = pos < G.last ? 1 : -1; G.last += dir > 0 ? -step : step; G.n++; if (!themeStep(dir, true)) break; step = Math.max(STEP, (G.ax === 'x' ? innerWidth : innerHeight) / 3); }   // (finger up or left: the day after)
   }
   function lift() {
     if (!G) return; var g = G; G = null; if (!g.live || g.trail.length < 2) return;
     var a = g.trail[0], b = g.trail[g.trail.length - 1], v = (b[0] - a[0]) / Math.max(1, b[1] - a[1]);
-    if (Math.abs(v) < .6 || Date.now() - b[1] > 80) return;
-    var n = Math.min(10, Math.round(Math.abs(v) * 3)), dir = v < 0 ? 1 : -1, gap = 70;
+    if (!g.n && Math.abs(b[0] - (g.ax === 'x' ? g.x0 : g.y0)) >= 24) { themeStep(b[0] - (g.ax === 'x' ? g.x0 : g.y0) < 0 ? 1 : -1, true); return; }   // (a short flick: one day)
+    if (Math.abs(v) < 1.6 || Date.now() - b[1] > 80) return;   // (only a really fast flick runs on, through more days)
+    var n = Math.min(10, Math.round((Math.abs(v) - 1.2) * 3)), dir = v < 0 ? 1 : -1, gap = 70;
     var go = function () { if (n-- <= 0 || !themeStep(dir, true)) return; gap *= 1.25; fling = setTimeout(go, gap); };
     fling = setTimeout(go, gap);
   }
@@ -5621,6 +5625,9 @@ function codecLine() {   // (what this device says it can play, for working out 
     '; whole file: ' + cp('video/mp4; codecs="hvc1.1.6.L120.90"') + ', 10-bit ' + cp('video/mp4; codecs="hvc1.2.4.L120.90"') + '; native HLS ' + (cp('application/vnd.apple.mpegurl')) +
     (HW ? '; the TV’s hardware: HEVC ' + yn(HW.hevc) + ', 10-bit ' + yn(HW.hevc10) : window.GRIFFLIXTV && GRIFFLIXTV.codecs ? '; the TV’s hardware: not used here (a film wouldn’t start with it)' : '') + ')</span></span>';
 }
+var AC3 = (function () {   // (whether this device plays AC3 / E-AC3 surround sound itself: Safari does, Chrome mostly doesn't)
+  try { var v = document.createElement('video'); return !!(v.canPlayType('audio/mp4; codecs="ac-3"') && v.canPlayType('audio/mp4; codecs="ec-3"')); } catch (e) { return false; }
+})();
 var HEVC10 = HW && HW.hevc10 ? true : (function () {   // (and 10-bit HEVC (Main 10), which some that play HEVC can't: John, 11 Nov 2026: Rushmore stuck at 40 seconds)
   try {
     var v = document.createElement('video'), c = 'video/mp4; codecs="hvc1.2.4.L120.90"';
@@ -5692,7 +5699,7 @@ function play(it, queue, fromStart) {
   if (DEMO) { $('#pmsg').textContent = 'In the demo there’s nothing to play. Once the Mac mini is connected, “' + showName(it) + '” plays here.'; $('#pmsg').classList.add('on'); return; }
   var tries = 0, ask = function () {   // (the Mac asleep: it wakes to the first knock; tell them, and knock again for a minute)
     var h = HEVC && !P.noHw;
-    return api('play?id=' + it.id + (h ? '&hevc=1' + (HEVC10 ? '&hevc10=1' : '') : '') + '&kind=' + encodeURIComponent(devKind())).catch(function (e) {
+    return api('play?id=' + it.id + (h ? '&hevc=1' + (HEVC10 ? '&hevc10=1' : '') : '') + (AC3 ? '&ac3=1' : '') + (P.noDirect === it.id ? '&nodirect=1' : '') + '&kind=' + encodeURIComponent(devKind())).catch(function (e) {
       if (e && (e.status === 401 || e.status === 403 || e.status === 404) || ++tries > 8 || P.it !== it) throw e;
       $('#pmsg').textContent = 'Waking the Mac mini… (a moment)'; $('#pmsg').classList.add('on');
       return new Promise(function (ok) { setTimeout(ok, 6000); }).then(ask);
@@ -5712,7 +5719,8 @@ function play(it, queue, fromStart) {
     // browser view also says it plays these streams itself, but hands them to Android's player, which draws the film full screen and
     // stretched whatever the page says: the page's frame then showed a cut-out of it (John, 11 Nov 2026: "It's put bars and cut it off"))
     var native = v.canPlayType('application/vnd.apple.mpegurl') && (!(window.Hls && Hls.isSupported()) || /Apple/.test(navigator.vendor || '') || store.get('grifflix-tvhls') === 'native');
-    if (native) { v.src = gwUrl(info.hls); v.addEventListener('loadedmetadata', begin, { once: true }); }
+    if (info.direct && !Q.has('hls')) {}   // (the whole file, above: not then swapped for the stream, as it was from 11 Nov 2026 to 12 Nov, when nothing played whole)
+    else if (native) { v.src = gwUrl(info.hls); v.addEventListener('loadedmetadata', begin, { once: true }); }
     else if (window.Hls && Hls.isSupported()) {
       P.hls = new Hls({ startPosition: start > 5 ? start : -1, maxBufferLength: 40 });
       P.hls.loadSource(gwUrl(info.hls)); P.hls.attachMedia(v);
@@ -5729,7 +5737,21 @@ function play(it, queue, fromStart) {
     } else { $('#pmsg').textContent = 'This browser can’t play it.'; $('#pmsg').classList.add('on'); }
     clearInterval(P.saveT); P.saveT = setInterval(saveProgress, 10000);
     howLook(info, it);
-    if (HW && HW.hevc && !P.noHw) {   // (trusting the TV's hardware over its browser: if the film doesn't get going, the Mac converts it after all, and this TV isn't trusted again)
+    if (info.direct && !info.hv && P.noDirect !== it.id) {   // (the whole file not getting going in 20 seconds, or failing: the stream instead, from where it was;
+      // the stream is the media server's, which plays more kinds of file: John, 12 Nov 2026, "make sure this is addressed properly in all players")
+      var d0 = Date.now(), dgone = false, dfall = function () {
+        if (dgone || P.it !== it) return; dgone = true; clearInterval(P.dT); v.removeEventListener('error', dfall);
+        P.noDirect = it.id; P.startAt = Math.max(start, v.currentTime || 0); play(it, P.queue, fromStart);
+      };
+      v.addEventListener('error', dfall, { once: true });
+      clearInterval(P.dT); P.dT = setInterval(function () {
+        if (P.it !== it || dgone) return clearInterval(P.dT);
+        if (v.currentTime > (start > 5 ? start : 0) + 3 && v.readyState >= 3) { clearInterval(P.dT); v.removeEventListener('error', dfall); return; }
+        if (v.paused && v.readyState >= 2) d0 = Date.now();
+        if (Date.now() - d0 > 20000) dfall();
+      }, 1000);
+    }
+    if (HW && HW.hevc && !P.noHw && info.hv) {   // (trusting the TV's hardware over its browser: if the film doesn't get going, the Mac converts it after all, and this TV isn't trusted again)
       var t0 = Date.now(), gone = false, fall = function () {
         if (gone || P.it !== it) return; gone = true; clearInterval(P.hwT); v.removeEventListener('error', fall);
         store.set('grifflix-hwhevc', 'bad'); HW = null; HEVC = false; HEVC10 = false;
@@ -5875,7 +5897,16 @@ window.addEventListener('pagehide', saveProgress);
   v.addEventListener('waiting', function () { el.classList.add('wait'); clearTimeout(stuckT); stuckT = setTimeout(function () {
     if (!el.classList.contains('wait') || !el.classList.contains('on')) return;
     var m = $('#pmsg'); m.dataset.stuck = 1; m.classList.add('on');
-    m.innerHTML = 'Still loading…<br><small style="display:block;max-width:34em;margin:10px auto 0;font-size:15px;line-height:1.5;opacity:.85">The Mac mini is struggling to send this film. A new film’s file is often one it has to convert as it plays, which it can’t do fast enough; it converts new films first each night, and then they play smoothly. Try again tomorrow, or another film for now.</small>';
+    var say = function (t) { if (m.dataset.stuck) m.innerHTML = 'Still loading…<br><small style="display:block;max-width:34em;margin:10px auto 0;font-size:15px;line-height:1.5;opacity:.85">' + t + '</small>'; };
+    var conv = 'The Mac mini is converting this film as it plays, and can’t do it fast enough. It converts new films first each night, and then they play smoothly. Try again tomorrow, or another film for now.';
+    say('The Mac mini is struggling to send this film.');
+    // (which it is, from the Mac: converting, or sending it as it is and the connection can't carry it (John, 12 Nov 2026: "It says but
+    // information says playing as is"))
+    if (P.info && P.info.ps && !DEMO) api('playing?ps=' + encodeURIComponent(P.info.ps)).then(function (j) {
+      if (!j || !j.how) return say(conv);
+      if (j.how === 'conv') return say(conv);
+      say('The Mac mini is sending this film as it is (it isn’t converting it), but it isn’t arriving fast enough. The Mac may be busy for a moment, or this device’s connection may be slow (on mobile data, try Wi-Fi). It usually catches up if left a minute.');
+    }).catch(function () { say(conv); });
   }, 20000); });
   ['playing', 'canplay', 'seeked', 'pause', 'emptied'].forEach(function (ev) { v.addEventListener(ev, function () { el.classList.remove('wait'); unstuck(); }); });
   $('#pplay').onclick = toggle; $('#pbig').onclick = function (e) { e.stopPropagation(); toggle(); };
