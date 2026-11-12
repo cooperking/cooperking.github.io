@@ -1235,67 +1235,85 @@ def make_handler(g):
                 return self.send_json(403, {'error': 'Only John.'})
             have = load(INSTALLED, {})
             if b.get('op') != 'update':
-                return self.send_json(200, {'sha': have.get('sha', ''), 'at': have.get('at', 0), 'files': have.get('files', [])})
+                return self.send_json(200, {'sha': have.get('sha', ''), 'at': have.get('at', 0), 'files': have.get('files', []), 'last': load(os.path.join(APP_DIR, 'update-result.json'), None)})
 
-            def fetch(url):
-                req = urllib.request.Request(url, headers={'User-Agent': 'Grifflix gateway', 'Accept': 'application/vnd.github+json'})
-                with urllib.request.urlopen(req, timeout=60, context=tls()) as r:
-                    return r.read()
-            try:
-                sha = json.loads(fetch('https://api.github.com/repos/%s/commits/main' % REPO))['sha']
-                got = {}
+            def work():
+                def fetch(url):
+                    req = urllib.request.Request(url, headers={'User-Agent': 'Grifflix gateway', 'Accept': 'application/vnd.github+json'})
+                    with urllib.request.urlopen(req, timeout=60, context=tls()) as r:
+                        return r.read()
+                try:
+                    sha = json.loads(fetch('https://api.github.com/repos/%s/commits/main' % REPO))['sha']
+                    got = {}
+                    for name, dest, mark in SOFTWARE:
+                        src = fetch('https://raw.githubusercontent.com/%s/%s/_grifflix/mac/%s' % (REPO, sha, name)).decode('utf-8')
+                        compile(src, name, 'exec')   # (a file that isn't whole Python stops it all)
+                        if mark and mark not in src:
+                            raise ValueError('%s isn’t what it should be' % name)
+                        got[name] = src
+                except Exception as e:
+                    log('Update the Mac: couldn’t fetch:', repr(e))
+                    return {'status': 502, 'error': 'Couldn’t get the new files from GitHub (%s). Nothing was changed.' % str(e)[:120], 'at': int(time.time())}
+                changed = []
                 for name, dest, mark in SOFTWARE:
-                    src = fetch('https://raw.githubusercontent.com/%s/%s/_grifflix/mac/%s' % (REPO, sha, name)).decode('utf-8')
-                    compile(src, name, 'exec')   # (a file that isn't whole Python stops it all)
-                    if mark and mark not in src:
-                        raise ValueError('%s isn’t what it should be' % name)
-                    got[name] = src
-            except Exception as e:
-                log('Update the Mac: couldn’t fetch:', repr(e))
-                return self.send_json(502, {'error': 'Couldn’t get the new files from GitHub (%s). Nothing was changed.' % str(e)[:120]})
-            changed = []
-            for name, dest, mark in SOFTWARE:
-                old = None
-                try:
-                    with open(dest, encoding='utf-8') as f:
-                        old = f.read()
-                except OSError:
-                    pass
-                if old == got[name]:
-                    continue
-                if old is None and name not in ('grifflix-gateway.py', 'convert.py'):
-                    continue   # (a script John hasn't got on this Mac stays away)
-                os.makedirs(os.path.dirname(dest), exist_ok=True)
-                if old is not None:
-                    with open(dest + '.prev', 'w', encoding='utf-8') as f:
-                        f.write(old)
-                with open(dest + '.new', 'w', encoding='utf-8') as f:
-                    f.write(got[name])
-                os.replace(dest + '.new', dest)
-                changed.append(name)
-            save(INSTALLED, {'sha': sha, 'at': int(time.time()), 'files': [n for n, _, _ in SOFTWARE]})
-            restarted = False
-            if 'convert.py' in changed:   # the converter running: started again with its new file, as it was started
-                cur = load(os.path.expanduser('~/Grifflix/convert-now.json'), None) or {}
-                try:
-                    pid = int(cur.get('pid') or 0)
-                    if pid and cur.get('state') != 'finished':
-                        os.kill(pid, 0)
-                        os.kill(pid, 15)
-                        time.sleep(3)
-                        import subprocess
-                        args = cur.get('args') or ['go', 'now']
-                        out = open(os.path.expanduser('~/Grifflix/convert.out'), 'a')
-                        awake = ['/usr/bin/caffeinate', '-i'] if os.path.exists('/usr/bin/caffeinate') else []   # (the Mac kept awake while it converts)
-                        subprocess.Popen(awake + [sys.executable, os.path.expanduser('~/Grifflix/convert.py')] + [str(a) for a in args],
-                                         stdout=out, stderr=out, stdin=subprocess.DEVNULL, start_new_session=True, cwd=os.path.expanduser('~/Grifflix'))
-                        restarted = True
-                except (OSError, ValueError) as e:
-                    log('Update the Mac: the converter couldn’t be started again:', e)
-            log('Update the Mac: %s (%s)%s' % (sha[:7], ', '.join(changed) or 'nothing changed', '; converter started again' if restarted else ''))
-            self.send_json(200, {'sha': sha, 'changed': changed, 'converter': restarted, 'restarting': 'grifflix-gateway.py' in changed})
-            if 'grifflix-gateway.py' in changed:
-                threading.Timer(1.5, lambda: os._exit(0)).start()   # (launchd starts the new gateway)
+                    old = None
+                    try:
+                        with open(dest, encoding='utf-8') as f:
+                            old = f.read()
+                    except OSError:
+                        pass
+                    if old == got[name]:
+                        continue
+                    if old is None and name not in ('grifflix-gateway.py', 'convert.py'):
+                        continue   # (a script John hasn't got on this Mac stays away)
+                    os.makedirs(os.path.dirname(dest), exist_ok=True)
+                    if old is not None:
+                        with open(dest + '.prev', 'w', encoding='utf-8') as f:
+                            f.write(old)
+                    with open(dest + '.new', 'w', encoding='utf-8') as f:
+                        f.write(got[name])
+                    os.replace(dest + '.new', dest)
+                    changed.append(name)
+                save(INSTALLED, {'sha': sha, 'at': int(time.time()), 'files': [n for n, _, _ in SOFTWARE]})
+                restarted = False
+                if 'convert.py' in changed:   # the converter running: started again with its new file, as it was started
+                    cur = load(os.path.expanduser('~/Grifflix/convert-now.json'), None) or {}
+                    try:
+                        pid = int(cur.get('pid') or 0)
+                        if pid and cur.get('state') != 'finished':
+                            os.kill(pid, 0)
+                            os.kill(pid, 15)
+                            time.sleep(3)
+                            import subprocess
+                            args = cur.get('args') or ['go', 'now']
+                            out = open(os.path.expanduser('~/Grifflix/convert.out'), 'a')
+                            awake = ['/usr/bin/caffeinate', '-i'] if os.path.exists('/usr/bin/caffeinate') else []   # (the Mac kept awake while it converts)
+                            subprocess.Popen(awake + [sys.executable, os.path.expanduser('~/Grifflix/convert.py')] + [str(a) for a in args],
+                                             stdout=out, stderr=out, stdin=subprocess.DEVNULL, start_new_session=True, cwd=os.path.expanduser('~/Grifflix'))
+                            restarted = True
+                    except (OSError, ValueError) as e:
+                        log('Update the Mac: the converter couldn’t be started again:', e)
+                log('Update the Mac: %s (%s)%s' % (sha[:7], ', '.join(changed) or 'nothing changed', '; converter started again' if restarted else ''))
+                return {'status': 200, 'sha': sha, 'changed': changed, 'converter': restarted, 'restarting': 'grifflix-gateway.py' in changed, 'at': int(time.time())}
+
+            def finish(r):
+                save(os.path.join(APP_DIR, 'update-result.json'), r)
+                if r.get('restarting'):
+                    threading.Timer(1.5, lambda: os._exit(0)).start()   # (launchd starts the new gateway)
+
+            if b.get('bg'):   # (the work done after answering: fetching from GitHub can outlast the 100 seconds Cloudflare waits for an answer,
+                # and the admin page said the Mac wasn't answering though it was: John, 12 Nov 2026. The page watches /health for the new version)
+                def run():
+                    try:
+                        r = work()
+                    except Exception as e:
+                        r = {'status': 500, 'error': str(e)[:200], 'at': int(time.time())}
+                    finish(r)
+                threading.Thread(target=run, daemon=True).start()
+                return self.send_json(202, {'started': True, 'sha': have.get('sha', '')})
+            r = work()
+            self.send_json(r.get('status', 200), r)
+            finish(r)
 
         def arrange(self):
             """ARRANGE made so in Jellyfin: each named box set and series inside its collection. Returns what it put in."""
