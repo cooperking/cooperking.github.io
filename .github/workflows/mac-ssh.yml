@@ -26,7 +26,11 @@ jobs:
           import json, os, sys, urllib.request, urllib.error
           TOK, ACC, POLICY = os.environ['CF_TOKEN'], os.environ['ACC'], os.environ.get('POLICY') or 'Me'
           if not TOK.strip(): sys.exit('CF_SSH_TOKEN is missing: add it under Settings → Secrets and variables → Actions.')
+          import re
           lines = [l.strip() for l in TOK.splitlines() if l.strip()]   # (pasted with a line break, or with more than the token)
+          # (Cloudflare's "test this token" command copied with it: the token is the word after "Bearer", else any token-like word)
+          picked = re.findall(r'Bearer\s+([A-Za-z0-9_\-]{30,})', TOK) + [w for w in re.findall(r'[A-Za-z0-9_\-]{35,}', TOK) if not re.fullmatch(r'[0-9a-f]{32}', w)]
+          if picked and any(' ' in l for l in lines): print('(CF_SSH_TOKEN has more than the token in it: trying the token-like parts)'); lines = list(dict.fromkeys(picked))
           def get(path, t):
               req = urllib.request.Request('https://api.cloudflare.com/client/v4' + path, headers={'Authorization': 'Bearer ' + t})
               try:
