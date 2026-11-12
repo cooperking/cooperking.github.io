@@ -726,11 +726,26 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     if (!GW) return Promise.reject(new Error('The Mac mini isn’t connected.'));
     say('Getting the films from the Mac…');
     var text, snap;
-    return fetch(GW + '/api/export' + (full ? '?full=1' : ''), { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) {
-      if (r.status === 404) throw new Error('The Mac mini needs its update first.');
-      if (!r.ok) throw new Error('The Mac mini said ' + r.status);
-      return r.text();
-    }, function () { throw new Error('The Mac mini isn’t answering: is it on?'); }).then(function (t) {
+    // (the Mac makes the list after answering, and this asks again until it's ready: on the old Mac, busy repackaging, it could take longer
+    // than the 100 seconds the link to it waits, and this said the Mac wasn't answering: John, 12 Nov 2026)
+    var t0 = Date.now(), misses = 0;
+    var ask = function () {
+      return fetch(GW + '/api/export?bg=1' + (full ? '&full=1' : ''), { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) {
+        misses = 0;
+        if (r.status === 404) throw new Error('The Mac mini needs its update first.');
+        if (r.status === 202) {
+          if (Date.now() - t0 > 20 * 60000) throw new Error('The Mac is still listing the films: try again in a few minutes.');
+          say('The Mac is listing the films… (' + Math.round((Date.now() - t0) / 1000) + ' s)');
+          return new Promise(function (ok) { setTimeout(ok, 4000); }).then(ask);
+        }
+        if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.error || 'The Mac mini said ' + r.status); });
+        return r.text();
+      }, function () {
+        if (++misses > 3) throw new Error('The Mac mini isn’t answering: is it on?');
+        return new Promise(function (ok) { setTimeout(ok, 5000); }).then(ask);   // (a slow answer or a moment's restart: asked again)
+      });
+    };
+    return ask().then(function (t) {
       text = t; snap = JSON.parse(t);
       say('Sending them to the site…');
       return fetch(WORKER + '/g/snapshot', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: text })
