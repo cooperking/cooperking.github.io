@@ -108,6 +108,7 @@ def load_json(path):
         return {}
 
 
+SHRINK = 'to make smaller'   # (a file that plays, much bigger than it need be: converted once, compactly, at the end of the queue)
 REPACK = 'to repackage'   # (a film whose picture plays as it is, put in an MP4 with sound every device plays: the picture copied, not converted)
 
 
@@ -129,8 +130,6 @@ def why(ms):
         return REPACK + ' (%s file)' % cont0[0].upper()
     if w > MAX_W + 8 or h > MAX_H + 8:
         return 'bigger than 1080p (%dx%d)' % (w, h)
-    if mbps > MAX_MBPS:
-        return 'too big (%.0f Mbps)' % mbps
     if (vc == 'h264' or vc in ('hevc', 'h265')) and bits <= 8 and '10' not in prof:
         # (the picture plays as it is (8-bit H.264; 8-bit HEVC on the devices that play HEVC; 10-bit HEVC, which many browsers and TV
         # sticks can't, is converted: John, 11 Nov 2026, Rushmore). It must also be in an MP4 with sound every device plays, or a device
@@ -143,6 +142,12 @@ def why(ms):
             return REPACK + ' (%s file)' % ((cont[0] if cont else '?').upper())
         if a and (g(a, 'Codec') or '').lower() not in ('aac', 'mp3'):
             return REPACK + ' (%s sound)' % ((g(a, 'Codec') or '?').upper())
+        # (a file much bigger than its picture needs: made smaller, once, at the careful setting, last of all (John, 12 Nov 2026:
+        # "converted to a smaller size without losing noticeable quality", "I don't want to convert films twice"). Grifflix's own
+        # conversions are all under 8 Mbps, so never made again; HEVC is already efficient, so only far bigger ones)
+        thr = (8.5 if h >= 900 else 5 if h >= 600 else 3) * (1.6 if vc in ('hevc', 'h265') else 1)
+        if mbps > thr:
+            return SHRINK + ' (%.1f Mbps)' % mbps
         return None
     return 'format (%s%s)' % (vc or '?', ', 10-bit' if bits > 8 or '10' in prof else '')
 
@@ -162,7 +167,7 @@ def gather():
                 w = why(ms)
                 if w and g(it, 'Path') and os.path.exists(g(it, 'Path')):
                     name = g(it, 'Name') if types == 'Movie' else '%s S%02dE%02d' % (g(it, 'SeriesName'), g(it, 'ParentIndexNumber', 0), g(it, 'IndexNumber', 0))
-                    out.append({'id': g(it, 'Id'), 'name': name, 'year': g(it, 'ProductionYear', ''), 'lib': lib, 'why': w, 'mode': 'remux' if w.startswith(REPACK) else 'convert',
+                    out.append({'id': g(it, 'Id'), 'name': name, 'year': g(it, 'ProductionYear', ''), 'lib': lib, 'why': w, 'mode': 'remux' if w.startswith(REPACK) else 'shrink' if w.startswith(SHRINK) else 'convert',
                                 'path': g(it, 'Path'), 'mins': round((g(it, 'RunTimeTicks') or 0) / 6e8), 'rating': g(it, 'CommunityRating') or 0,
                                 'gb': round(os.path.getsize(g(it, 'Path')) / 1e9, 1), 'added': g(it, 'DateCreated') or ''})
             start += 300
@@ -314,12 +319,16 @@ def convert(item, ffmpeg, ffprobe, st):
     # (the picture's rate: never more than the original had (a small or old file isn't made big, which adds nothing), and at most 8 Mbps,
     # plenty for 1080p (John, 11 Nov 2026: "Some of the conversions are still coming out a very large file size Braveheart 8gb"))
     src_kbps = int(v.get('bit_rate') or 0) / 1000 or (float((info.get('format') or {}).get('bit_rate') or 0) / 1000 - 192 * max(1, len(audio)))
-    cap = int(max(1500, min(8000, src_kbps * 1.05 if src_kbps > 0 else 8000)))
+    # (compact and careful, once: x264's slow preset at quality 21, at most 6 Mbps at 1080p, 3.5 at 720p, 2 below, never more than the
+    # original had: much smaller with no difference to see (John, 12 Nov 2026); slower to make, so done once and never again)
+    oh = min(int(v.get('height') or 1080), MAX_H)
+    top = 6000 if oh >= 900 else 3500 if oh >= 600 else 2000
+    cap = int(max(1200, min(top, src_kbps if src_kbps > 0 else top)))
     cmd += ['-map_metadata', '0', '-map_chapters', '0']
     if remux:   # (the picture copied as it is; HEVC labelled hvc1, as Apple's devices need, not hev1)
         cmd += ['-c:v', 'copy', '-disposition:v:0', 'default'] + (['-tag:v', 'hvc1'] if v.get('codec_name') == 'hevc' else [])
     else:
-        cmd += ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-maxrate', '%dk' % cap, '-bufsize', '%dk' % (cap * 2),
+        cmd += ['-c:v', 'libx264', '-preset', 'slow', '-crf', '21', '-maxrate', '%dk' % cap, '-bufsize', '%dk' % (cap * 2),
                 '-profile:v', 'high', '-level', '4.1', '-pix_fmt', 'yuv420p', '-vf', vf, '-disposition:v:0', 'default']
     if main_a:
         cmd += ['-c:a:0', 'aac', '-b:a:0', '192k', '-ac:a:0', '2', '-metadata:s:a:0', 'title=Stereo', '-disposition:a:0', 'default']
@@ -369,6 +378,10 @@ def convert(item, ffmpeg, ffprobe, st):
         if os.path.exists(tmp):
             os.remove(tmp)
         raise RuntimeError('ffmpeg: ' + ''.join(err_tail[-3:]).strip()[-300:])
+    if item.get('mode') == 'shrink' and os.path.getsize(tmp) > os.path.getsize(src) * 0.75:   # (made smaller only if it really is: else the original stays)
+        a_, b_ = os.path.getsize(src) / 1e9, os.path.getsize(tmp) / 1e9
+        os.remove(tmp)
+        raise RuntimeError('made smaller, it saved too little (%.1f GB → %.1f GB): the original kept as it is' % (a_, b_))
     new_dur = float((probe(ffprobe, tmp).get('format') or {}).get('duration') or 0)
     if abs(new_dur - dur) > max(3, dur * .01):
         os.remove(tmp)
@@ -513,7 +526,10 @@ def ordered(rest):
     # the Day's, then the rest: John, 12 Nov 2026, "repackaged only first, no conversions until all repackaging is complete")
     others = [x for x in rest if x['id'] not in pin]
     if P['remux_first']:
-        others = [x for x in others if x.get('mode') == 'remux'] + [x for x in others if x.get('mode') != 'remux']
+        others = [x for x in others if x.get('mode') == 'remux'] + [x for x in others if x.get('mode') not in ('remux', 'shrink')]  + \
+            sorted([x for x in others if x.get('mode') == 'shrink'], key=lambda x: -x.get('gb', 0))   # (making smaller last of all, the biggest first)
+    else:
+        others = [x for x in others if x.get('mode') != 'shrink'] + sorted([x for x in others if x.get('mode') == 'shrink'], key=lambda x: -x.get('gb', 0))
     return first + others
 
 

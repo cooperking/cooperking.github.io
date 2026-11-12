@@ -1055,14 +1055,14 @@ def make_handler(g):
                         why = 'to repackage (%s file), the picture untouched' % cont[0].upper()
                     elif w > 1928 or h > 1088:
                         why = 'bigger than 1080p'
-                    elif mbps > 20:
-                        why = 'over 20 Mbps'
                     elif not ((vc in ('hevc', 'h265') and bits <= 8 and '10' not in (v.get('Profile') or '')) or (vc == 'h264' and bits <= 8 and '10' not in (v.get('Profile') or ''))):
                         why = 'format browsers can’t play'
                     elif not any(c in ('mp4', 'm4v', 'mov') for c in (ms.get('Container') or '').lower().split(',')):
                         why = 'to repackage (%s file), the picture untouched' % ((ms.get('Container') or '?').split(',')[0].upper())
                     elif au and (au[0].get('Codec') or '').lower() not in ('aac', 'mp3'):
                         why = 'to repackage (%s sound), the picture untouched' % (au[0].get('Codec') or '?').upper()
+                    elif mbps > (8.5 if h >= 900 else 5 if h >= 600 else 3) * (1.6 if vc in ('hevc', 'h265') else 1):   # (as convert.py: made smaller, once, last)
+                        why = 'to make smaller (%s Mbps)' % mbps
                     cv = made.get(os.path.normcase(it.get('Path') or ''))
                     # (picture subtitles (Blu-ray PGS, DVD VobSub): an MP4 can't hold them, so repackaging leaves them in the original: John, 12 Nov 2026)
                     pics = [x for x in ss if x.get('Type') == 'Subtitle' and not x.get('IsTextSubtitleStream') and not x.get('IsExternal')]
