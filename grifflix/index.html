@@ -326,6 +326,45 @@ html.tv .player:not(.paused) .pmid { opacity: 0; } html.tv .pmenu button { font-
 html.tv .player .pb:focus, html.tv .player .pb:focus-visible { outline: 2px solid #fff !important; outline-offset: -2px !important; box-shadow: none !important; opacity: 1; }   /* (the player's own highlight on the TV: a plain ring, and a lit row in its menus) */
 html.tv .pmenu button:focus, html.tv .pmenu button:focus-visible { outline: 0 !important; box-shadow: inset 4px 0 0 #f08a4b !important; background: rgba(255, 255, 255, .16) !important; }
 
+/* the player in Grifflix's own look (John, 11 Nov 2026: "can we make the player look better"): round buttons, a cream play in the
+   middle, the film's name in the logo's spaced capitals, soft shade behind the controls, a fuller line with a cream knob; on the TV
+   the chosen button lit cream, to be seen from the sofa */
+.player .top { padding: max(22px, env(safe-area-inset-top)) max(26px, env(safe-area-inset-right)) 70px max(26px, env(safe-area-inset-left)); gap: 16px; background: linear-gradient(rgba(0, 0, 0, .72), rgba(0, 0, 0, .3) 55%, transparent); }
+.player .top .t { font: 600 17px/1.15 var(--kfont); letter-spacing: .22em; text-transform: uppercase; color: #f3e8d2; }
+.player .top .s { margin-top: 5px; font: italic 400 15px/1.2 var(--serif); letter-spacing: 0; text-transform: none; color: rgba(243, 232, 210, .72); }
+.player .top .ico { width: 46px; height: 46px; border: 0 !important; border-radius: 50%; background: rgba(255, 255, 255, .12); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: #fff; }
+.player .top .ico:hover, .player .top .ico:focus-visible { background: rgba(255, 255, 255, .24); }
+.player .top .ico svg { width: 22px; height: 22px; }
+.player .top #pcast.on { background: #f3e8d2; color: #173a5e; }
+.player.paused::after { content: ""; position: absolute; inset: 0; z-index: 1; background: rgba(0, 0, 0, .28); pointer-events: none; }
+.pctl { padding: 90px max(28px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(28px, env(safe-area-inset-left)); background: linear-gradient(transparent, rgba(0, 0, 0, .35) 35%, rgba(0, 0, 0, .82)); }
+.pseekrow { gap: 16px; font: 600 13px/1 var(--kfont); letter-spacing: .1em; color: rgba(243, 232, 210, .92); }
+.pseek .ptr { height: 5px; margin-top: -2.5px; border-radius: 3px; overflow: hidden; background: rgba(255, 255, 255, .2); }
+.pseek:hover .ptr, .pseek.drag .ptr, .pseek:focus-visible .ptr { height: 7px; margin-top: -3.5px; }
+.pfill { border-radius: 3px; }
+.pknob { width: 17px; height: 17px; margin: -8.5px 0 0 -8.5px; background: #f3e8d2; box-shadow: 0 0 0 4px rgba(240, 138, 75, .35), 0 2px 8px rgba(0, 0, 0, .5); transform: scale(.7); }
+.pseek:hover .pknob, .pseek.drag .pknob, .pseek:focus-visible .pknob { transform: scale(1); }
+.ptip { border-radius: 4px; color: #f3e8d2; }
+.prow { gap: 8px; margin-top: 8px; }
+.pb { border-radius: 50%; opacity: .9; transition: background .15s, color .15s, transform .15s; }
+.pb:hover { background: rgba(255, 255, 255, .12); }
+#pplay { width: 52px; height: 52px; background: #f3e8d2; color: #173a5e; opacity: 1; } #pplay svg { width: 24px; height: 24px; } #pplay:hover { background: #fff; }
+.prate { border-radius: 22px; }
+.pmenu { border-radius: 10px; border-color: rgba(243, 232, 210, .18); background: rgba(14, 22, 34, .94); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.pmid { gap: 56px; }
+.pmid .pskip { background: rgba(255, 255, 255, .12); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.pmid .pbig { width: 92px; height: 92px; border: 0; opacity: 1; background: #f3e8d2; color: #173a5e; box-shadow: 0 10px 40px rgba(0, 0, 0, .45); } .pmid .pbig svg { width: 38px; height: 38px; margin-left: 3px; }
+.pmid .pbig:hover { background: #fff; transform: scale(1.04); }
+.pspin { border-color: rgba(243, 232, 210, .2); border-top-color: #f08a4b; }
+.pflash { border-radius: 30px; padding: 12px 20px; }
+html.tv .pctl { padding: 110px 64px 40px; } html.tv .pseekrow { font-size: 18px; } html.tv .pknob { transform: scale(1.1); }
+html.tv .player .top { padding: 34px 64px 80px; } html.tv .player .top .t { font-size: 22px; } html.tv .player .top .s { font-size: 18px; }
+html.tv .player .top .ico { width: 56px; height: 56px; }
+html.tv #pplay { width: 64px; height: 64px; } html.tv #pplay svg { width: 30px; height: 30px; }
+html.tv .phint { color: rgba(243, 232, 210, .6) !important; letter-spacing: .12em !important; text-transform: uppercase; font-size: 13px !important; }
+html.tv .player .pb:focus, html.tv .player .pb:focus-visible, html.tv .player .top .ico:focus, html.tv .player .top .ico:focus-visible { outline: 0 !important; background: #f3e8d2 !important; color: #173a5e !important; transform: scale(1.12); box-shadow: 0 0 0 4px rgba(240, 138, 75, .55) !important; opacity: 1; }
+html.tv .pseek:focus-visible .ptr, html.tv .pseek:focus .ptr { box-shadow: 0 0 0 3px rgba(240, 138, 75, .55); }
+
 /* the signed-out welcome, and messages */
 .welcome { max-width: 620px; margin: 12vh auto 0; text-align: center; }
 .welcome h1 { margin: 0; font: 700 clamp(30px, 6vw, 52px)/1 "GFutura", "futura-pt", "Futura PT", "Futura", "Jost", sans-serif !important; letter-spacing: .55em !important; margin-right: -.55em; text-transform: uppercase !important; color: var(--fg); }   /* (as the logo: Futura, spaced as it is) */
@@ -1889,7 +1928,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '78bc47626f2e' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: 'b379ad413f73' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
