@@ -5883,9 +5883,7 @@ window.addEventListener('pagehide', saveProgress);
     if (P.info && P.info.ps && !DEMO) api('playing?ps=' + encodeURIComponent(P.info.ps)).then(function (j) {
       if (!j || !j.how) return say(conv);
       if (j.how === 'conv') return say(conv);
-      var rate = (j.src || '').match(/([\d.]+) Mbps/);
-      say('The Mac mini is sending this film as it is (it isn’t converting it), but the connection can’t carry it fast enough' + (rate ? ': its file needs ' + rate[1] + ' Mbps' : '') +
-        '. That’s the Mac’s home internet sending it, or this device’s own connection (on mobile data, try Wi-Fi). It may catch up if left a minute.');
+      say('The Mac mini is sending this film as it is (it isn’t converting it), but it isn’t arriving fast enough. The Mac may be busy for a moment, or this device’s connection may be slow (on mobile data, try Wi-Fi). It usually catches up if left a minute.');
     }).catch(function () { say(conv); });
   }, 20000); });
   ['playing', 'canplay', 'seeked', 'pause', 'emptied'].forEach(function (ev) { v.addEventListener(ev, function () { el.classList.remove('wait'); unstuck(); }); });
