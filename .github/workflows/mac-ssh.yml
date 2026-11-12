@@ -25,7 +25,16 @@ jobs:
         run: |
           import json, os, sys, urllib.request, urllib.error
           TOK, ACC, POLICY = os.environ['CF_TOKEN'], os.environ['ACC'], os.environ.get('POLICY') or 'Me'
-          if not TOK: sys.exit('CF_SSH_TOKEN is missing: add it under Settings → Secrets and variables → Actions.')
+          if not TOK.strip(): sys.exit('CF_SSH_TOKEN is missing: add it under Settings → Secrets and variables → Actions.')
+          lines = [l.strip() for l in TOK.splitlines() if l.strip()]   # (pasted with a line break, or with more than the token)
+          def works(t):
+              req = urllib.request.Request('https://api.cloudflare.com/client/v4/accounts/%s/cfd_tunnel?per_page=1' % ACC, headers={'Authorization': 'Bearer ' + t})
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as r: return json.load(r).get('success')
+              except Exception: return False
+          TOK = next((l for l in lines if ' ' not in l and works(l)), None)
+          if not TOK: sys.exit('CF_SSH_TOKEN doesn\'t work (%d line(s) in it): make the token again, with Cloudflare Tunnel: Edit, and paste only the token.' % len(lines))
+          if len(lines) > 1: print('(CF_SSH_TOKEN has %d lines: used the one that works)' % len(lines))
           def cf(method, path, body=None, ok_fail=False):
               req = urllib.request.Request('https://api.cloudflare.com/client/v4' + path, method=method,
                   data=json.dumps(body).encode() if body is not None else None,
