@@ -1935,7 +1935,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '7e01d1496260' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'd920e91ddac1' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5875,7 +5875,18 @@ window.addEventListener('pagehide', saveProgress);
   v.addEventListener('waiting', function () { el.classList.add('wait'); clearTimeout(stuckT); stuckT = setTimeout(function () {
     if (!el.classList.contains('wait') || !el.classList.contains('on')) return;
     var m = $('#pmsg'); m.dataset.stuck = 1; m.classList.add('on');
-    m.innerHTML = 'Still loading…<br><small style="display:block;max-width:34em;margin:10px auto 0;font-size:15px;line-height:1.5;opacity:.85">The Mac mini is struggling to send this film. A new film’s file is often one it has to convert as it plays, which it can’t do fast enough; it converts new films first each night, and then they play smoothly. Try again tomorrow, or another film for now.</small>';
+    var say = function (t) { if (m.dataset.stuck) m.innerHTML = 'Still loading…<br><small style="display:block;max-width:34em;margin:10px auto 0;font-size:15px;line-height:1.5;opacity:.85">' + t + '</small>'; };
+    var conv = 'The Mac mini is converting this film as it plays, and can’t do it fast enough. It converts new films first each night, and then they play smoothly. Try again tomorrow, or another film for now.';
+    say('The Mac mini is struggling to send this film.');
+    // (which it is, from the Mac: converting, or sending it as it is and the connection can't carry it (John, 12 Nov 2026: "It says but
+    // information says playing as is"))
+    if (P.info && P.info.ps && !DEMO) api('playing?ps=' + encodeURIComponent(P.info.ps)).then(function (j) {
+      if (!j || !j.how) return say(conv);
+      if (j.how === 'conv') return say(conv);
+      var rate = (j.src || '').match(/([\d.]+) Mbps/);
+      say('The Mac mini is sending this film as it is (it isn’t converting it), but the connection can’t carry it fast enough' + (rate ? ': its file needs ' + rate[1] + ' Mbps' : '') +
+        '. That’s the Mac’s home internet sending it, or this device’s own connection (on mobile data, try Wi-Fi). It may catch up if left a minute.');
+    }).catch(function () { say(conv); });
   }, 20000); });
   ['playing', 'canplay', 'seeked', 'pause', 'emptied'].forEach(function (ev) { v.addEventListener(ev, function () { el.classList.remove('wait'); unstuck(); }); });
   $('#pplay').onclick = toggle; $('#pbig').onclick = function (e) { e.stopPropagation(); toggle(); };
