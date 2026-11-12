@@ -1935,7 +1935,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '27df75d393e6' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'e2a640142e28' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2993,7 +2993,7 @@ function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 w
   document.addEventListener('touchstart', function (e) {
     clearTimeout(fling); if (!on(e) || e.touches.length > 1) { G = null; return; }
     var t = e.touches[0], el = e.target;
-    G = { x0: t.clientX, y0: t.clientY, last: 0, ax: null, live: false, trail: [] }; moved = false; gestStart();
+    G = { x0: t.clientX, y0: t.clientY, last: 0, ax: null, live: false, trail: [], n: 0 }; moved = false; gestStart();
     var done = function () { el.removeEventListener('touchmove', move); el.removeEventListener('touchend', end); el.removeEventListener('touchcancel', end); };
     var end = function () { done(); lift(); };
     el.addEventListener('touchmove', move, { passive: false }); el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
@@ -3004,13 +3004,17 @@ function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 w
     e.preventDefault();
     var pos = G.ax === 'x' ? t.clientX : t.clientY;
     G.trail.push([pos, Date.now()]); if (G.trail.length > 6) G.trail.shift();
-    while (Math.abs(pos - G.last) >= STEP) { var dir = pos < G.last ? 1 : -1; G.last += dir > 0 ? -STEP : STEP; if (!themeStep(dir, true)) break; }   // (finger up or left: the day after)
+    // (a day the moment the finger has gone a little way, then another each third of the screen it goes on: an ordinary swipe one day,
+    // not two (John, 12 Nov 2026: "The theme scroll is going from today to the day before yesterday"))
+    var step = G.n ? Math.max(STEP, (G.ax === 'x' ? innerWidth : innerHeight) / 3) : STEP;
+    while (Math.abs(pos - G.last) >= step) { var dir = pos < G.last ? 1 : -1; G.last += dir > 0 ? -step : step; G.n++; if (!themeStep(dir, true)) break; step = Math.max(STEP, (G.ax === 'x' ? innerWidth : innerHeight) / 3); }   // (finger up or left: the day after)
   }
   function lift() {
     if (!G) return; var g = G; G = null; if (!g.live || g.trail.length < 2) return;
     var a = g.trail[0], b = g.trail[g.trail.length - 1], v = (b[0] - a[0]) / Math.max(1, b[1] - a[1]);
-    if (Math.abs(v) < .6 || Date.now() - b[1] > 80) return;
-    var n = Math.min(10, Math.round(Math.abs(v) * 3)), dir = v < 0 ? 1 : -1, gap = 70;
+    if (!g.n && Math.abs(b[0] - (g.ax === 'x' ? g.x0 : g.y0)) >= 24) { themeStep(b[0] - (g.ax === 'x' ? g.x0 : g.y0) < 0 ? 1 : -1, true); return; }   // (a short flick: one day)
+    if (Math.abs(v) < 1.6 || Date.now() - b[1] > 80) return;   // (only a really fast flick runs on, through more days)
+    var n = Math.min(10, Math.round((Math.abs(v) - 1.2) * 3)), dir = v < 0 ? 1 : -1, gap = 70;
     var go = function () { if (n-- <= 0 || !themeStep(dir, true)) return; gap *= 1.25; fling = setTimeout(go, gap); };
     fling = setTimeout(go, gap);
   }
