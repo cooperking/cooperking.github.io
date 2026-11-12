@@ -520,7 +520,10 @@ class Gateway:
             o.update(how='asis', say='Playing as it is: the picture untouched, only repackaged' + sound)
             return o
         src = p.get('src') or {}
-        if src.get('v') not in ('h264', 'hevc', 'h265'):
+        plays = (src.get('v') == 'h264' and src.get('bits', 8) <= 8) or (src.get('v') in ('hevc', 'h265') and p.get('hevc') and (src.get('bits', 8) <= 8 or p.get('hevc10')))
+        if plays:
+            why = 'the media server chose to, though this device plays it as it is'
+        elif src.get('v') not in ('h264', 'hevc', 'h265'):
             why = 'its format (%s) isn’t one devices play' % (src.get('v') or '?').upper()
         elif src.get('v') in ('hevc', 'h265') and not p.get('hevc'):
             why = 'this device can’t play HEVC'
@@ -1392,10 +1395,16 @@ def make_handler(g):
             vs0 = next((x for x in ms.get('MediaStreams', []) if x.get('Type') == 'Video'), {}) or {}
             if hevc and ((vs0.get('BitDepth') or 8) > 8 or '10' in (vs0.get('Profile') or '')) and q.get('hevc10') != '1':
                 hevc = False   # (a 10-bit HEVC film to a device that plays only 8-bit HEVC: it couldn't show it; John, 11 Nov 2026: Rushmore)
-            hls = ('/v/%s/master.m3u8?' % iid) + urllib.parse.urlencode({
-                'MediaSourceId': msid, 'DeviceId': dev, 'PlaySessionId': ps, 'VideoCodec': 'h264,hevc' if hevc else 'h264', 'AudioCodec': 'aac,mp3',
-                'TranscodingMaxAudioChannels': 2, 'MaxStreamingBitrate': br, 'SegmentContainer': 'mp4', 'MinSegments': 1,
-                'BreakOnNonKeyFrames': 'True', 'RequireAvc': 'false', 'g': key})
+            v0c, v0b = (vs0.get('Codec') or '').lower(), vs0.get('BitDepth') or (10 if '10' in (vs0.get('Profile') or '') else 8)
+            plays = (v0c == 'h264' and v0b <= 8) or (v0c in ('hevc', 'h265') and hevc)   # (the device plays the picture as it is)
+            hq = {'MediaSourceId': msid, 'DeviceId': dev, 'PlaySessionId': ps, 'VideoCodec': 'h264,hevc' if hevc else 'h264', 'AudioCodec': 'aac,mp3',
+                  'TranscodingMaxAudioChannels': 2, 'MaxStreamingBitrate': br, 'SegmentContainer': 'mp4', 'MinSegments': 1,
+                  'BreakOnNonKeyFrames': 'True', 'RequireAvc': 'false', 'g': key}
+            if plays:   # (no rate limit then, and the picture copied: with a limit, the media server converts any file whose picture has no rate of its
+                # own recorded, as most MKV files haven't, though the device plays it: John, 12 Nov 2026, Rushmore converted for an iPhone that plays it)
+                del hq['MaxStreamingBitrate']
+                hq.update(AllowVideoStreamCopy='true', EnableAutoStreamCopy='true')
+            hls = ('/v/%s/master.m3u8?' % iid) + urllib.parse.urlencode(hq)
             direct = None
             vs = [s for s in ms.get('MediaStreams', []) if s.get('Type') == 'Video']
             aus = [s for s in ms.get('MediaStreams', []) if s.get('Type') == 'Audio']
