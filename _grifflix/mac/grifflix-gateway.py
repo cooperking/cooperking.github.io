@@ -365,7 +365,7 @@ class Gateway:
         self.origins = ORIGINS + self.st.get('extra_origins', [])
         self.pub_cache, self.home_paths, self.home_at = {}, [], 0
         self.list_cache = {}
-        self.plays, self.plays_lock, self.logdir, self.export_job = {}, threading.Lock(), None, {}   # (what's playing now, and the media server's logs: whether the Mac is converting)
+        self.plays, self.plays_lock, self.logdir, self.export_job, self.lib_job = {}, threading.Lock(), None, {}, {}   # (what's playing now, and the media server's logs: whether the Mac is converting)
 
     def is_public_set(self, iid):
         """A collection is for anyone to look at when anything in it is."""
@@ -1001,6 +1001,35 @@ def make_handler(g):
             it's been converted, and why it's waiting to be."""
             if not me.get('owner'):
                 return self.send_json(403, {'error': 'Only John.'})
+            if q.get('bg'):   # (made after answering, handed over when asked again: on a busy Mac it outlasted the 100 seconds the link waits,
+                # and the page said "Failed to fetch": John, 12 Nov 2026)
+                with g.plays_lock:
+                    J = g.lib_job
+                    if J.get('state') == 'done' and time.time() - J['at'] < 600:
+                        g.lib_job = {}
+                        return self.send_json(J['code'], J['body'])
+                    if J.get('state') != 'making' or time.time() - J.get('at', 0) > 1800:
+                        g.lib_job = J = {'state': 'making', 'at': time.time()}
+                        H = type(self)
+
+                        class Cap:
+                            def send_json(c, code, body):
+                                c.out = (code, body)
+
+                            def __getattr__(c, n):
+                                return getattr(H, n).__get__(c)
+                        cap = Cap()
+
+                        def run():
+                            try:
+                                H.api_library(cap, me, user, {}, b)
+                                code, body = getattr(cap, 'out', (500, {'error': 'Nothing was made.'}))
+                            except Exception as e:
+                                code, body = 500, {'error': 'The Mac couldn’t look at the library (%s).' % str(e)[:120]}
+                            with g.plays_lock:
+                                g.lib_job = {'state': 'done', 'code': code, 'body': body, 'at': time.time()}
+                        threading.Thread(target=run, daemon=True).start()
+                return self.send_json(202, {'making': True})
             lid = (g.st.get('libraries') or {}).get('movies')
             if not lid:
                 return self.send_json(200, {'films': []})
@@ -1299,7 +1328,11 @@ def make_handler(g):
                     with urllib.request.urlopen(req, timeout=60, context=tls()) as r:
                         return r.read()
                 try:
-                    sha = json.loads(fetch('https://api.github.com/repos/%s/commits/main' % REPO))['sha']
+                    try:
+                        sha = json.loads(fetch('https://api.github.com/repos/%s/commits/main' % REPO))['sha']
+                    except Exception:   # (GitHub's API refuses a home connection that has asked too often: the latest commit from its feed instead)
+                        feed = fetch('https://github.com/%s/commits/main.atom' % REPO).decode('utf-8', 'replace')
+                        sha = re.search(r'Commit/([0-9a-f]{40})', feed).group(1)
                     got = {}
                     for name, dest, mark in SOFTWARE:
                         src = fetch('https://raw.githubusercontent.com/%s/%s/_grifflix/mac/%s' % (REPO, sha, name)).decode('utf-8')

@@ -827,7 +827,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     }).catch(function (e) { if (e && e.message === 'old') { $('#swsay').innerHTML = 'To update the Mac from here, it needs this one last Terminal command (from Claude); after that, it’s this button.'; } });
   }
   function stepMac(say) {   // the Mac's Grifflix files from GitHub, if there's an update; back when its gateway has restarted
-    if (!WAIT.mac || !GW) return Promise.resolve('');
+    // (asked every time: the Mac itself sees whether there's anything new. It was skipped when this page's own look at GitHub failed, as
+    // GitHub limits how often a home connection may ask, so the Mac went without its updates while the page said it was done: John, 12 Nov 2026)
+    if (!GW) return Promise.resolve('');
     say('Updating the Mac…');
     var hdr = { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' };
     var health = function () { return fetch(GW + '/health', { cache: 'no-store' }).then(function (r) { return r.json(); }); };
@@ -845,8 +847,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
               ok(said || (l.changed && l.changed.length ? 'the Mac updated' + (l.converter ? ' (its converter carries on)' : '') : 'the Mac updated'));
             });
           }).catch(function () {
-            if (++tries % 5 === 0) fetch(GW + '/api/software', { headers: hdr }).then(function (r) { return r.json(); }).then(function (sw) {
-              var l = sw.last; if (l && l.error && l.at * 1000 > t0) { tries = 999; no(new Error(l.error)); }
+            if (++tries % 3 === 0) fetch(GW + '/api/software', { headers: hdr }).then(function (r) { return r.json(); }).then(function (sw) {
+              var l = sw.last; if (!l || l.at * 1000 <= t0 || tries >= 999) return;
+              if (l.error) { tries = 999; no(new Error(l.error)); }
+              else if (!l.restarting) { tries = 999; software(); ok(l.changed && l.changed.length ? 'the Mac updated' : 'the Mac was already up to date'); }   // (nothing to restart for)
             }).catch(function () {});
             if (tries < 80) setTimeout(wait, 3000); else if (tries < 999) no(new Error('The Mac hasn’t finished updating yet: look again in a few minutes.'));
           });
@@ -1012,7 +1016,16 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   }
   $('#lbgo').onclick = function () {
     var b = this; if (!GW) return toast('The Mac mini isn’t answering.'); b.disabled = true; b.textContent = 'Looking…';
-    fetch(GW + '/api/library', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (r.status === 404) throw new Error('Update the Mac (Update everything) to see the library here.'); if (!r.ok) throw new Error('The Mac mini isn’t answering.'); return r.json(); }).then(function (j) {
+    var t0 = Date.now(), misses = 0, ask = function () {   // (made by the Mac in the background on a busy day, asked for again till it's ready)
+      return fetch(GW + '/api/library?bg=1', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) {
+        misses = 0;
+        if (r.status === 404) throw new Error('Update the Mac (Update everything) to see the library here.');
+        if (r.status === 202) { if (Date.now() - t0 > 15 * 60000) throw new Error('The Mac is still looking: try again in a few minutes.'); b.textContent = 'Looking… (' + Math.round((Date.now() - t0) / 1000) + ' s)'; return new Promise(function (ok) { setTimeout(ok, 4000); }).then(ask); }
+        if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.error || 'The Mac mini isn’t answering.'); });
+        return r.json();
+      }, function () { if (++misses > 3) throw new Error('The Mac mini isn’t answering.'); return new Promise(function (ok) { setTimeout(ok, 5000); }).then(ask); });
+    };
+    ask().then(function (j) {
       LB.all = (j.films || []).map(function (x) { x.g = lbGrade(x); return x; }); $('#lbui').hidden = false; b.textContent = 'Look again'; b.disabled = false;
       $('#lbq').oninput = lbDraw; $('#lbsort').onchange = lbDraw; lbDraw();
     }).catch(function (e) { b.disabled = false; b.textContent = 'Look at the library'; toast(e.message); });
