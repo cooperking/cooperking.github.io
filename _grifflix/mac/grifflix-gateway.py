@@ -1030,7 +1030,7 @@ def make_handler(g):
                     elif au and (au[0].get('Codec') or '').lower() not in ('aac', 'mp3'):
                         why = 'to repackage (%s sound), the picture untouched' % (au[0].get('Codec') or '?').upper()
                     cv = made.get(os.path.normcase(it.get('Path') or ''))
-                    rows.append({'id': it.get('Id'), 'n': it.get('Name'), 'y': it.get('ProductionYear') or '', 'w': w, 'h': h, 'v': vc, 'b': bits, 'mbps': mbps,
+                    rows.append({'id': it.get('Id'), 'n': it.get('Name'), 'y': it.get('ProductionYear') or '', 'w': w, 'h': h, 'v': vc, 'b': bits, 'mbps': mbps, 'c': (ms.get('Container') or '').lower().split(',')[0],
                                  'gb': round((ms.get('Size') or 0) / 1e9, 1), 'mins': round((it.get('RunTimeTicks') or 0) / 6e8),
                                  'a': ', '.join(sorted(set('%s %s' % ((x.get('Codec') or '?').upper(), {1: 'mono', 2: 'stereo', 6: '5.1', 8: '7.1'}.get(x.get('Channels') or 0, '%sch' % (x.get('Channels') or '?'))) for x in au[:4]))),
                                  'conv': bool(cv), 'was': (cv or {}).get('before'), 'why': '' if cv else why})
@@ -1167,6 +1167,23 @@ def make_handler(g):
             if not me.get('owner'):
                 return self.send_json(403, {'error': 'Only John.'})
             home = os.path.expanduser('~/Grifflix')
+            pf = os.path.join(home, 'convert-priority.json')   # (John's order: films to do next, and repackaging all first; convert.py reads it before each film)
+            P = load(pf, {}) or {}
+            P.setdefault('pins', []); P.setdefault('remux_first', True)
+            op = b.get('op')
+            if op in ('pin', 'unpin', 'remux_first', 'up'):
+                iid = str(b.get('id') or '')
+                if op in ('pin', 'unpin', 'up') and not re.match(r'^[0-9a-f]{32}$', iid):
+                    return self.send_json(400, {'error': 'Which film?'})
+                P['pins'] = [x for x in P['pins'] if x.get('id') != iid] if op in ('unpin', 'pin', 'up') else P['pins']
+                if op == 'pin':
+                    P['pins'].append({'id': iid, 'name': str(b.get('name') or '')[:120]})
+                elif op == 'up':
+                    P['pins'].insert(0, {'id': iid, 'name': str(b.get('name') or '')[:120]})
+                elif op == 'remux_first':
+                    P['remux_first'] = bool(b.get('on'))
+                os.makedirs(home, exist_ok=True)
+                save(pf, P)
             st = load(os.path.join(home, 'convert-state.json'), {})
             cur = load(os.path.join(home, 'convert-now.json'), None)
             alive = False
@@ -1217,7 +1234,7 @@ def make_handler(g):
             self.send_json(200, {'now': cur, 'alive': alive, 'done': len(done), 'failed': [{'name': x.get('name'), 'why': x.get('why')} for x in (st.get('failed') or {}).values()][:20],
                                  'recent': [{'name': x.get('name'), 'at': x.get('at'), 'mins': x.get('mins'), 'why': x.get('why'),
                                              'before': x.get('before') or look(x.get('kept')), 'after': x.get('after') or look(x.get('to'))} for x in rows],
-                                 'next': (cur or {}).get('next') or [], 'log': tail})
+                                 'next': (cur or {}).get('next') or [], 'left': (cur or {}).get('left'), 'pins': P['pins'], 'remux_first': P['remux_first'], 'log': tail})
 
         def api_originals(self, me, user, q, b):
             """John's: the originals convert.py kept in "Grifflix Originals" (what they take, the drive's free space), and
