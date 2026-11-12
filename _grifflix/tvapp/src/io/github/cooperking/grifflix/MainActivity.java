@@ -87,6 +87,14 @@ public class MainActivity extends Activity {
         web.requestFocus();
         if (saved != null) web.restoreState(saved); else web.loadUrl(HOME);
         new File(getCacheDir(), ApkProvider.NAME).delete();   // an update already installed (this is it)
+        TvListener.start(this);   // (Play on the TV with Grifflix closed: see TvListener)
+    }
+
+    @Override
+    protected void onNewIntent(Intent i) {   // opened by the listener for a film sent from a phone: the page plays it
+        super.onNewIntent(i);
+        setIntent(i);
+        if (web != null) web.evaluateJavascript("try{window.__gfxTvPull&&__gfxTvPull();}catch(e){}", null);
     }
 
     void makeWeb() {
@@ -212,6 +220,40 @@ public class MainActivity extends Activity {
                 o.put("hevc", hevc); o.put("hevc10", hevc10); o.put("decoder", name);
                 return o.toString();
             } catch (Exception e) { return "{}"; }
+        }
+
+        /** Play on the TV while Grifflix is closed: the page hands over where the Mac mini is and its sign-in, once signed in. */
+        @JavascriptInterface
+        public void listen(String gw, String tok, String dev, String name) {
+            if (gw == null || tok == null || dev == null || !gw.startsWith("https://")) return;
+            prefs.edit().putString("tv_gw", gw).putString("tv_tok", tok).putString("tv_dev", dev).putString("tv_name", name == null ? "Fire TV" : name).apply();
+            TvListener.start(MainActivity.this);
+        }
+
+        @JavascriptInterface
+        public void unlisten() {   // (signed out)
+            prefs.edit().remove("tv_gw").remove("tv_tok").remove("tv_dev").remove("tv_name").apply();
+            stopService(new Intent(MainActivity.this, TvListener.class));
+        }
+
+        @JavascriptInterface
+        public String pending() { String c = TvListener.pendingCmd; TvListener.pendingCmd = null; return c == null ? "" : c; }
+
+        /** Newer Fire OS opens an app from the background only with "Display over other apps" allowed. */
+        @JavascriptInterface
+        public boolean canOpen() { return Build.VERSION.SDK_INT < 29 || Settings.canDrawOverlays(MainActivity.this); }
+
+        @JavascriptInterface
+        public void openOverlaySettings() {
+            runOnUiThread(new Runnable() {
+                public void run() {
+                    try { startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()))); }
+                    catch (Exception e) {
+                        try { startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()))); }
+                        catch (Exception x) { Toast.makeText(MainActivity.this, "Settings > Applications > Grifflix", Toast.LENGTH_LONG).show(); }
+                    }
+                }
+            });
         }
 
         @JavascriptInterface
@@ -423,7 +465,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        TvListener.appVisible = true;
         web.onResume();
+        web.evaluateJavascript("try{window.__gfxTvPull&&__gfxTvPull();}catch(e){}", null);
         // (back to it: the page looks for a new version and picks it up: John, 10 Nov 2026: "make the fire tv update each time")
         web.evaluateJavascript("try{window.grifflixTV&&grifflixTV.here&&grifflixTV.here();}catch(e){}", null);
         if (System.currentTimeMillis() - lastCheck > 20L * 60 * 1000) { lastCheck = System.currentTimeMillis(); later.postDelayed(autoCheck, 3000); }
@@ -443,6 +487,7 @@ public class MainActivity extends Activity {
             + "try{window.grifflixTV&&grifflixTV.away&&grifflixTV.away();}catch(e){}"
             + "[].forEach.call(document.querySelectorAll('audio,video'),function(a){try{a.pause();}catch(e){}});})()", null);
         web.onPause();
+        TvListener.appVisible = false;
         super.onStop();
     }
 

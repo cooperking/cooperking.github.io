@@ -1767,14 +1767,33 @@ async function grifflix(request, url, env) {
     if (!tok) return answer(503, { error: 'Requests aren’t set up yet: John needs to add the TMDB key.' });
     const q = String(url.searchParams.get('q') || '').trim().slice(0, 80);
     if (q.length < 2) return answer(200, { films: [] });
-    const m = /^(.*?)\s*\(?((?:19|20)\d\d)\)?$/.exec(q), qs = new URLSearchParams({ query: m && m[1] ? m[1] : q, include_adult: 'false', language: 'en-GB' });
-    if (m && m[1]) qs.set('year', m[2]);
+    const m = /^(.*?)\s*\(?((?:19|20)\d\d)\)?$/.exec(q), text = (m && m[1] ? m[1] : q).replace(/\s+/g, ' '), year = m && m[1] ? m[2] : '';
     const jwt = tok.length > 60;   // (TMDB's long read-access token, else its short API key)
-    if (!jwt) qs.set('api_key', tok);
-    const r = await fetch('https://api.themoviedb.org/3/search/movie?' + qs, { headers: jwt ? { Authorization: 'Bearer ' + tok, Accept: 'application/json' } : { Accept: 'application/json' } });
-    if (!r.ok) return answer(502, { error: 'TMDB didn’t answer just now.' });
-    const j = await r.json();
-    return answer(200, { films: (j.results || []).slice(0, 12).map(f => ({ tmdb: f.id, name: f.title, year: (f.release_date || '').slice(0, 4), poster: f.poster_path || '', overview: String(f.overview || '').slice(0, 220) })) });
+    // (TMDB matches words only as typed, so a few spellings are tried at once and the nearest titles come first: John, 12 Nov 2026:
+    //  "can the request search be a bit cleverer - for example finding the film backrooms by typing in back room?")
+    const flip = w => /ies$/.test(w) ? w.slice(0, -3) + 'y' : /s$/.test(w) && !/ss$/.test(w) ? w.slice(0, -1) : /y$/.test(w) ? w.slice(0, -1) + 'ies' : w + 's';
+    let words = text.toLowerCase().replace(/[^\w\s']/g, ' ').split(/\s+/).filter(Boolean);
+    if (words[0] === 'the' && words.length > 1) words = words.slice(1);   // ("the" is left out of the joined-up tries)
+    const last = words.length - 1, joined = words.join('');
+    const tries = [text, joined, flip(joined), words.slice(0, last).concat(flip(words[last])).join(' '), words.join(' ')];
+    for (let i = 0; i + 1 < words.length && tries.length < 9; i++) tries.push(words.slice(0, i).concat(words[i] + words[i + 1], words.slice(i + 2)).join(' '));   // (two words that are one)
+    const uniq = [...new Set(tries.filter(t => t && t.length > 1).map(t => t.toLowerCase()))].slice(0, 7);
+    const one = t => { const qs = new URLSearchParams({ query: t, include_adult: 'false', language: 'en-GB' }); if (year) qs.set('year', year); if (!jwt) qs.set('api_key', tok);
+      return fetch('https://api.themoviedb.org/3/search/movie?' + qs, { headers: jwt ? { Authorization: 'Bearer ' + tok, Accept: 'application/json' } : { Accept: 'application/json' } })
+        .then(r => r.ok ? r.json() : null).catch(() => null); };
+    const got = await Promise.all(uniq.map(one));
+    if (!got[0] && got.every(x => !x)) return answer(502, { error: 'TMDB didn’t answer just now.' });
+    const squash = x => String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, 'and').replace(/^the\s+/, '').replace(/[^a-z0-9]/g, '');
+    const sing = x => x.replace(/(ies|s)$/, ''), want = squash(text);
+    const seen = new Map();
+    got.forEach((j, k) => (j && j.results || []).forEach((f, i) => {
+      const t = squash(f.title), o = squash(f.original_title);
+      const near = t === want || o === want ? 0 : sing(t) === sing(want) ? 1 : t.startsWith(want) || sing(t).startsWith(sing(want)) ? 2 : t.includes(sing(want)) ? 3 : 4;
+      const score = near * 1000 + k * 40 + i * 3 - Math.min(60, Math.log10(1 + (f.vote_count || 0)) * 12);
+      const was = seen.get(f.id); if (!was || score < was.score) seen.set(f.id, { f, score });
+    }));
+    const films = [...seen.values()].sort((x, y) => x.score - y.score).slice(0, 12).map(({ f }) => ({ tmdb: f.id, name: f.title, year: (f.release_date || '').slice(0, 4), poster: f.poster_path || '', overview: String(f.overview || '').slice(0, 220) }));
+    return answer(200, { films });
   }
   if (route === 'request') {   // a member's request: GET their own, POST one more (into John's list, marked with who asked)
     const w = await gWho(request, env);
