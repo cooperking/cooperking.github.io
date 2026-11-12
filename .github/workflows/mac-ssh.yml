@@ -1,0 +1,98 @@
+# The Mac mini's terminal in a browser, from anywhere, through Grifflix's own Cloudflare tunnel (John, 12 Nov 2026: Tailscale
+# needs a newer macOS than the Mac mini has). Run by hand. It makes ssh.<Grifflix's domain>: an Access application only John's
+# "Me" policy lets in, shown as a terminal in the browser; the tunnel's route to the Mac's SSH; and its DNS record, in that order,
+# so the Mac's SSH is never reachable before Access guards it. Needs CF_SSH_TOKEN (Access: Apps and Policies Edit, Cloudflare
+# Tunnel Edit, Zone Read, DNS Edit) and CLOUDFLARE_ACCOUNT_ID. Running it again changes nothing that's already right.
+name: Mac mini terminal (Cloudflare)
+on:
+  workflow_dispatch:
+    inputs:
+      policy:
+        description: The Access policy that lets you in (made in the dashboard)
+        default: Me
+permissions:
+  contents: read
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set it up
+        env:
+          CF_TOKEN: ${{ secrets.CF_SSH_TOKEN }}
+          ACC: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          POLICY: ${{ github.event.inputs.policy }}
+        shell: python3 {0}
+        run: |
+          import json, os, sys, urllib.request, urllib.error
+          TOK, ACC, POLICY = os.environ['CF_TOKEN'], os.environ['ACC'], os.environ.get('POLICY') or 'Me'
+          if not TOK: sys.exit('CF_SSH_TOKEN is missing: add it under Settings → Secrets and variables → Actions.')
+          def cf(method, path, body=None, ok_fail=False):
+              req = urllib.request.Request('https://api.cloudflare.com/client/v4' + path, method=method,
+                  data=json.dumps(body).encode() if body is not None else None,
+                  headers={'Authorization': 'Bearer ' + TOK, 'Content-Type': 'application/json'})
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r: j = json.load(r)
+              except urllib.error.HTTPError as e:
+                  j = json.loads(e.read() or b'{}')
+              if not j.get('success'):
+                  if ok_fail: return None
+                  sys.exit('%s %s failed: %s' % (method, path, json.dumps(j.get('errors'))))
+              return j.get('result')
+
+          # the tunnel: Grifflix's, the one that's connected and set up from the dashboard
+          tunnels = [t for t in cf('GET', '/accounts/%s/cfd_tunnel?is_deleted=false&per_page=50' % ACC) or []]
+          for t in tunnels: print('tunnel: %s (%s, %s)' % (t.get('name'), t.get('status'), t.get('config_src')))
+          live = [t for t in tunnels if t.get('status') in ('healthy', 'degraded') and t.get('config_src') == 'cloudflare'] or \
+                 [t for t in tunnels if t.get('config_src') == 'cloudflare']
+          if len(live) != 1: sys.exit('Expected one dashboard-managed tunnel, found %d.' % len(live))
+          T = live[0]; TID = T['id']
+          conf = cf('GET', '/accounts/%s/cfd_tunnel/%s/configurations' % (ACC, TID)).get('config') or {}
+          ingress = conf.get('ingress') or []
+          hosts = [r['hostname'] for r in ingress if r.get('hostname')]
+          print('tunnel %s serves: %s' % (T['name'], ', '.join(hosts) or 'nothing yet'))
+
+          # the domain: the zone Grifflix's gateway is on
+          zones = cf('GET', '/zones?per_page=50') or []
+          Z = next((z for z in sorted(zones, key=lambda z: -len(z['name'])) for h in hosts if h == z['name'] or h.endswith('.' + z['name'])), None)
+          if not Z: sys.exit('None of this account\'s domains (%s) matches the tunnel\'s.' % ', '.join(z['name'] for z in zones))
+          HOST = 'ssh.' + Z['name']
+          print('the terminal will be at https://' + HOST)
+
+          # 1. Access first: only the chosen policy is let in
+          pols = cf('GET', '/accounts/%s/access/policies?per_page=100' % ACC) or []
+          P = next((p for p in pols if p.get('name', '').strip().lower() == POLICY.strip().lower()), None)
+          if not P: sys.exit('No Access policy called "%s" (found: %s).' % (POLICY, ', '.join(p.get('name', '') for p in pols)))
+          if P.get('decision') != 'allow': sys.exit('The policy "%s" isn\'t an Allow policy.' % POLICY)
+          apps = cf('GET', '/accounts/%s/access/apps?per_page=100' % ACC) or []
+          mine = [a for a in apps if a.get('domain', '').split('/')[0] == HOST or
+                  any(d.get('uri', '').split('/')[0] == HOST for d in a.get('destinations') or [])]
+          body = {'name': 'Mac mini SSH', 'type': 'ssh', 'domain': HOST, 'session_duration': '24h',
+                  'app_launcher_visible': False, 'policies': [{'id': P['id'], 'precedence': 1}]}
+          if mine:
+              A = mine[0]; print('Access application already there: %s (%s)' % (A.get('name'), A.get('type')))
+              if A.get('type') != 'ssh' or not any(p.get('id') == P['id'] for p in A.get('policies') or []):
+                  r = cf('PUT', '/accounts/%s/access/apps/%s' % (ACC, A['id']), body, ok_fail=True)
+                  if r is None: sys.exit('Couldn\'t turn the existing application (%s) into a browser terminal: delete it in the dashboard and run this again.' % A.get('name'))
+                  print('  made a browser terminal, behind "%s"' % P['name'])
+          else:
+              cf('POST', '/accounts/%s/access/apps' % ACC, body); print('Access application made: Mac mini SSH, behind "%s"' % P['name'])
+          check = [a for a in cf('GET', '/accounts/%s/access/apps?per_page=100' % ACC) or [] if a.get('domain', '').split('/')[0] == HOST]
+          if not check or not check[0].get('policies'): sys.exit('The Access application isn\'t in place with its policy: stopping before the tunnel route.')
+
+          # 2. the tunnel's route to the Mac's SSH (just before its last, catch-all rule)
+          if any(r.get('hostname') == HOST for r in ingress):
+              print('tunnel route already there')
+          else:
+              rest = [r for r in ingress if r.get('hostname')]; tail = [r for r in ingress if not r.get('hostname')] or [{'service': 'http_status:404'}]
+              conf['ingress'] = rest + [{'hostname': HOST, 'service': 'ssh://localhost:22'}] + tail
+              cf('PUT', '/accounts/%s/cfd_tunnel/%s/configurations' % (ACC, TID), {'config': conf}); print('tunnel route made: %s → ssh://localhost:22' % HOST)
+
+          # 3. its DNS record, to the tunnel
+          want = TID + '.cfargotunnel.com'
+          recs = cf('GET', '/zones/%s/dns_records?name=%s' % (Z['id'], HOST)) or []
+          if any(r.get('content') == want for r in recs): print('DNS record already there')
+          elif recs: sys.exit('%s already points elsewhere (%s): not changed.' % (HOST, recs[0].get('content')))
+          else:
+              cf('POST', '/zones/%s/dns_records' % Z['id'], {'type': 'CNAME', 'name': HOST, 'content': want, 'proxied': True, 'comment': 'Mac mini terminal (Grifflix tunnel)'})
+              print('DNS record made')
+          print('\nDone: open https://%s on the iPhone, sign in with your email, then the Mac\'s user name and password.' % HOST)
