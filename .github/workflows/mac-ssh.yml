@@ -19,6 +19,7 @@ jobs:
       - name: Set it up
         env:
           CF_TOKEN: ${{ secrets.CF_SSH_TOKEN }}
+          CF_DNS_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           ACC: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           POLICY: ${{ github.event.inputs.policy }}
         shell: python3 {0}
@@ -57,10 +58,10 @@ jobs:
           TOK = found
           if not TOK: sys.exit('CF_SSH_TOKEN doesn\'t work for the tunnel (see above).')
           if len(lines) > 1: print('(CF_SSH_TOKEN has %d lines: used the one that works)' % len(lines))
-          def cf(method, path, body=None, ok_fail=False):
+          def cf(method, path, body=None, ok_fail=False, tok=None):
               req = urllib.request.Request('https://api.cloudflare.com/client/v4' + path, method=method,
                   data=json.dumps(body).encode() if body is not None else None,
-                  headers={'Authorization': 'Bearer ' + TOK, 'Content-Type': 'application/json'})
+                  headers={'Authorization': 'Bearer ' + (tok or TOK), 'Content-Type': 'application/json'})
               try:
                   with urllib.request.urlopen(req, timeout=60) as r: j = json.load(r)
               except urllib.error.HTTPError as e:
@@ -124,6 +125,12 @@ jobs:
           if any(r.get('content') == want for r in recs): print('DNS record already there')
           elif recs: sys.exit('%s already points elsewhere (%s): not changed.' % (HOST, recs[0].get('content')))
           else:
-              cf('POST', '/zones/%s/dns_records' % Z['id'], {'type': 'CNAME', 'name': HOST, 'content': want, 'proxied': True, 'comment': 'Mac mini terminal (Grifflix tunnel)'})
+              rec = {'type': 'CNAME', 'name': HOST, 'content': want, 'proxied': True, 'comment': 'Mac mini terminal (Grifflix tunnel)'}
+              made = cf('POST', '/zones/%s/dns_records' % Z['id'], rec, ok_fail=True)
+              other = (os.environ.get('CF_DNS_TOKEN') or '').strip()
+              if made is None and other:   # (this token can't edit DNS: the Worker's deploy token, for this one record)
+                  print('this token can\'t edit DNS: trying the Worker\'s deploy token')
+                  made = cf('POST', '/zones/%s/dns_records' % Z['id'], rec, ok_fail=True, tok=other)
+              if made is None: sys.exit('Couldn\'t make the DNS record: add a CNAME "ssh" → %s (proxied) in the dashboard, or give CF_SSH_TOKEN Zone → DNS → Edit.' % want)
               print('DNS record made')
           print('\nDone: open https://%s on the iPhone, sign in with your email, then the Mac\'s user name and password.' % HOST)
