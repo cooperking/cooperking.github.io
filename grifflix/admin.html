@@ -1001,12 +1001,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   }
   function lbDraw() {
     // (and what's waiting: to repackage (the MKVs), and to convert, to choose what's done next: John, 12 Nov 2026, "I can't see the mkv to prioritise them")
-    var isRp = function (x) { return /^to repackage/.test(x.why || ''); }, isCv = function (x) { return !!x.why && !isRp(x); };
-    var all = LB.all || [], cnt = { bad: 0, ok: 0, good: 0, rp: 0, cv: 0, ps: 0 }; all.forEach(function (x) { cnt[x.g.q]++; if (isRp(x)) cnt.rp++; if (isCv(x)) cnt.cv++; if (x.ps) cnt.ps++; });
-    $('#lbchips').innerHTML = [['rp', 'To repackage'], ['cv', 'To convert'], ['ps', 'Picture subtitles'], ['bad', 'Replace'], ['ok', 'OK'], ['good', 'Good'], ['all', 'All']].map(function (c) { return '<button type="button" data-f="' + c[0] + '" aria-pressed="' + (LB.f === c[0]) + '">' + c[1] + ' ' + (c[0] === 'all' ? all.length : cnt[c[0]]) + '</button>'; }).join('');
+    var isRp = function (x) { return /^to repackage/.test(x.why || ''); }, isSh = function (x) { return /^to make smaller/.test(x.why || ''); }, isCv = function (x) { return !!x.why && !isRp(x) && !isSh(x); };
+    var all = LB.all || [], cnt = { bad: 0, ok: 0, good: 0, rp: 0, cv: 0, sh: 0, ps: 0 }; all.forEach(function (x) { cnt[x.g.q]++; if (isRp(x)) cnt.rp++; if (isCv(x)) cnt.cv++; if (isSh(x)) cnt.sh++; if (x.ps) cnt.ps++; });
+    $('#lbchips').innerHTML = [['rp', 'To repackage'], ['cv', 'To convert'], ['sh', 'To make smaller'], ['ps', 'Picture subtitles'], ['bad', 'Replace'], ['ok', 'OK'], ['good', 'Good'], ['all', 'All']].map(function (c) { return '<button type="button" data-f="' + c[0] + '" aria-pressed="' + (LB.f === c[0]) + '">' + c[1] + ' ' + (c[0] === 'all' ? all.length : cnt[c[0]]) + '</button>'; }).join('');
     Array.prototype.forEach.call(document.querySelectorAll('#lbchips button'), function (b) { b.onclick = function () { LB.f = b.dataset.f; LB.n = 150; lbDraw(); }; });
     var qq = ($('#lbq').value || '').trim().toLowerCase(), so = $('#lbsort').value, rank = { bad: 0, ok: 1, good: 2 };
-    var L = all.filter(function (x) { return (LB.f === 'all' || (LB.f === 'rp' ? isRp(x) : LB.f === 'cv' ? isCv(x) : LB.f === 'ps' ? !!x.ps : x.g.q === LB.f)) && (!qq || (x.n || '').toLowerCase().indexOf(qq) >= 0); });
+    var L = all.filter(function (x) { return (LB.f === 'all' || (LB.f === 'rp' ? isRp(x) : LB.f === 'cv' ? isCv(x) : LB.f === 'sh' ? isSh(x) : LB.f === 'ps' ? !!x.ps : x.g.q === LB.f)) && (!qq || (x.n || '').toLowerCase().indexOf(qq) >= 0); });
     L.sort(so === 'big' ? function (p, q) { return q.gb - p.gb; } : so === 'az' ? function (p, q) { return (p.n || '').localeCompare(q.n || ''); } : function (p, q) { return rank[p.g.q] - rank[q.g.q] || p.g.bpp - q.g.bpp; });
     var vn = function (v) { return { h264: 'H.264', hevc: 'HEVC', h265: 'HEVC', mpeg4: 'MPEG-4 (XviD/DivX)', mpeg2video: 'MPEG-2', vc1: 'VC-1', av1: 'AV1', vp9: 'VP9' }[v] || (v || '?').toUpperCase(); };
     var fl = function (f) { return f ? (f.w ? f.w + '×' + f.h + ' ' : '') + esc(f.v) + (f.mbps ? ', ' + f.mbps + ' Mbps' : '') + (f.gb ? ', ' + f.gb + ' GB' : '') : ''; };
@@ -1022,8 +1022,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       b.disabled = true; cvPost({ op: 'pin', id: b.dataset.lbnext, name: b.dataset.n }).then(function (j) { cvOrder(j); b.textContent = 'Next ✓'; toast(b.dataset.n + ': done next'); }).catch(function (e) { b.disabled = false; toast(e.message); });
     }; });
     // (the library at a glance: how many MKVs, and how many films waiting to be repackaged or converted)
-    var mkv = all.filter(function (x) { return x.c === 'mkv' || x.c === 'matroska'; }).length, rp = all.filter(function (x) { return /^to repackage/.test(x.why || ''); }).length, cv = all.filter(function (x) { return x.why && !/^to repackage/.test(x.why); }).length;
-    $('#lbsum').innerHTML = all.length ? '<b>' + mkv + '</b> MKV file' + (mkv === 1 ? '' : 's') + ' · <a href="#" data-lbf="rp"><b>' + rp + '</b> to repackage</a> (minutes each) · <a href="#" data-lbf="cv"><b>' + cv + '</b> to convert</a> (hours each)' : '';
+    var mkv = all.filter(function (x) { return x.c === 'mkv' || x.c === 'matroska'; }).length, rp = cnt.rp, cv = cnt.cv;
+    // (what making the big ones smaller would free: each at about 4.5 Mbps at 1080p, 2.8 at 720p, 1.6 below, with its sound)
+    var free = all.filter(isSh).reduce(function (t, x) { var r = x.h >= 900 ? 4.5 : x.h >= 600 ? 2.8 : 1.6, est = (x.mins || 100) * 60 * (r + .5) / 8 / 1000; return t + Math.max(0, (x.gb || 0) - est); }, 0);
+    $('#lbsum').innerHTML = all.length ? '<b>' + mkv + '</b> MKV file' + (mkv === 1 ? '' : 's') + ' · <a href="#" data-lbf="rp"><b>' + rp + '</b> to repackage</a> (minutes each) · <a href="#" data-lbf="cv"><b>' + cv + '</b> to convert</a> (hours each) · <a href="#" data-lbf="sh"><b>' + cnt.sh + '</b> to make smaller</a> (last; about <b>' + (free >= 1000 ? (free / 1000).toFixed(1) + ' TB' : Math.round(free) + ' GB') + '</b> freed)' : '';
     Array.prototype.forEach.call(document.querySelectorAll('[data-lbf]'), function (a) { a.onclick = function (e) { e.preventDefault(); LB.f = a.dataset.lbf; LB.n = 150; lbDraw(); }; });
     $('#lbhead').innerHTML = all.length + ' films: <em>' + cnt.bad + ' to replace</em>';
   }
