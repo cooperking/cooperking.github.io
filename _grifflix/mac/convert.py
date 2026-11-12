@@ -173,25 +173,32 @@ def gather():
     # seconds"); then the best-rated films, then episodes)
     # (first of all, Movie of the Day's films from today for three weeks, in their order: everyone watches those (John, 11 Nov 2026:
     # Rushmore, the day's film, stuck at 40 seconds))
-    soon = {}
+    # (every Movie of the Day film before the rest of the library: today's and those to come in date order, then the past ones, latest
+    # first; with repackaging first, theirs are the first MKVs done (John, 12 Nov 2026: "prioritise mkv repackaging on the films of the day first"))
+    soon, past = {}, {}
     try:
         cal = (load_json(os.path.join(APP, 'data.json')).get('calendars') or {}).get('motd') or {}
-        today, last = time.strftime('%Y-%m-%d'), time.strftime('%Y-%m-%d', time.localtime(time.time() + 21 * 86400))
+        today = time.strftime('%Y-%m-%d')
         for d, i in sorted((cal.get('days') or {}).items()):
-            if today <= d <= last and i not in soon:
+            if d >= today and i not in soon:
                 soon[i] = d
+        for d, i in sorted((cal.get('days') or {}).items(), reverse=True):
+            if d < today and i not in soon and i not in past:
+                past[i] = d
     except Exception:
         pass
     cut = time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime(time.time() - 14 * 86400))
-    first = sorted([x for x in out if x['id'] in soon], key=lambda x: soon[x['id']])
+    first = sorted([x for x in out if x['id'] in soon], key=lambda x: soon[x['id']]) + \
+        sorted([x for x in out if x['id'] in past], key=lambda x: past[x['id']], reverse=True)
+    soon = dict(soon, **{k: v for k, v in past.items() if k not in soon})   # (out of the groups below)
     new = sorted([x for x in out if x['id'] not in soon and x['added'] >= cut], key=lambda x: x['added'], reverse=True)
     rest = sorted([x for x in out if x['id'] not in soon and x['added'] < cut], key=lambda x: (x['lib'] != 'movies', -x['rating'], x['name']))
     # (the quick ones, repackaging, before the slow ones in each group: a few minutes each, and then they play everywhere)
     new.sort(key=lambda x: x.get('mode') != 'remux'); rest.sort(key=lambda x: x.get('mode') != 'remux')
-    tomorrow = time.strftime('%Y-%m-%d', time.localtime(time.time() + 86400))
+    tomorrow, today = time.strftime('%Y-%m-%d', time.localtime(time.time() + 86400)), time.strftime('%Y-%m-%d')
     for x in first:
         x['why'] += ' · Movie of the Day ' + soon[x['id']]
-        x['urgent'] = soon[x['id']] <= tomorrow   # (today's and tomorrow's: converted at once, any hour, not waiting for the night)
+        x['urgent'] = today <= soon[x['id']] <= tomorrow   # (today's and tomorrow's: converted at once, any hour, not waiting for the night)
     out[:] = first + new + rest
     return out
 
