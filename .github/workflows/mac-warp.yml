@@ -1,0 +1,103 @@
+# The Mac mini from the iPhone's own apps (a-Shell's ssh and scp, Jellyfin's page) from anywhere, through Grifflix's Cloudflare
+# tunnel and Cloudflare's iPhone app, Cloudflare One Agent (John, 12 Nov 2026). Run by hand. It lets the tunnel carry private
+# traffic to the Mac's home address only; lets only John's "Me" policy sign the app in; and sends only that address through it,
+# everything else on the phone going the usual way. Needs CF_SSH_TOKEN with Cloudflare Tunnel Edit, Access: Apps and Policies
+# Edit and Zero Trust Edit. Running it again changes nothing that's already right.
+name: Mac mini from the iPhone's apps (Cloudflare One Agent)
+on:
+  workflow_dispatch:
+    inputs:
+      mac:
+        description: The Mac mini's address at home
+        default: 192.168.68.125
+      policy:
+        description: The Access policy that lets you in
+        default: Me
+permissions:
+  contents: read
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set it up
+        env:
+          CF_TOKEN: ${{ secrets.CF_SSH_TOKEN }}
+          ACC: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          MAC: ${{ github.event.inputs.mac }}
+          POLICY: ${{ github.event.inputs.policy }}
+        shell: python3 {0}
+        run: |
+          import ipaddress, json, os, re, sys, urllib.request, urllib.error
+          ACC, POLICY = os.environ['ACC'], os.environ.get('POLICY') or 'Me'
+          MAC = str(ipaddress.ip_address((os.environ.get('MAC') or '192.168.68.125').strip()))
+          NET = MAC + '/32'
+          raw = os.environ['CF_TOKEN']
+          toks = re.findall(r'Bearer\s+([A-Za-z0-9_\-]{30,})', raw) + [l.strip() for l in raw.splitlines() if l.strip() and ' ' not in l.strip()]
+          if not toks: sys.exit('CF_SSH_TOKEN is missing.')
+          TOK = toks[0]
+          fails = []
+          def cf(method, path, body=None, need=''):
+              req = urllib.request.Request('https://api.cloudflare.com/client/v4' + path, method=method,
+                  data=json.dumps(body).encode() if body is not None else None,
+                  headers={'Authorization': 'Bearer ' + TOK, 'Content-Type': 'application/json'})
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r: j = json.load(r)
+              except urllib.error.HTTPError as e:
+                  try: j = json.loads(e.read() or b'{}')
+                  except Exception: j = {'errors': [{'message': 'HTTP %d' % e.code}]}
+              if not j.get('success'):
+                  m = '; '.join(str(x.get('message')) for x in j.get('errors') or []) or 'failed'
+                  print('  ! %s %s: %s%s' % (method, path.split('?')[0], m, (' (the token needs %s)' % need) if need else ''))
+                  fails.append(path); return None
+              return j.get('result')
+
+          # the tunnel
+          tunnels = cf('GET', '/accounts/%s/cfd_tunnel?is_deleted=false&per_page=50' % ACC) or []
+          live = [t for t in tunnels if t.get('config_src') == 'cloudflare' and t.get('status') in ('healthy', 'degraded')]
+          if len(live) != 1: sys.exit('Expected one connected, dashboard-managed tunnel; found %d.' % len(live))
+          T = live[0]; TID = T['id']; print('tunnel: %s' % T['name'])
+
+          # 1. only John's policy may sign the app in (device enrolment)
+          pols = cf('GET', '/accounts/%s/access/policies?per_page=100' % ACC, need='Access: Apps and Policies') or []
+          P = next((p for p in pols if p.get('name', '').strip().lower() == POLICY.lower() and p.get('decision') == 'allow'), None)
+          if not P: sys.exit('No Allow policy called "%s".' % POLICY)
+          apps = cf('GET', '/accounts/%s/access/apps?per_page=100' % ACC) or []
+          W = next((a for a in apps if a.get('type') == 'warp'), None)
+          body = {'type': 'warp', 'name': 'Warp Login App', 'policies': [{'id': P['id'], 'precedence': 1}], 'session_duration': '720h'}
+          if W:
+              if any(p.get('id') == P['id'] for p in W.get('policies') or []): print('app sign-in: already only "%s"' % P['name'])
+              elif W.get('policies'): print('app sign-in: already has its own rules (%s): left as it is' % ', '.join(p.get('name', '?') for p in W['policies']))
+              elif cf('PUT', '/accounts/%s/access/apps/%s' % (ACC, W['id']), dict(body, domain=W.get('domain')), need='Access: Apps and Policies'): print('app sign-in: "%s" only' % P['name'])
+          elif cf('POST', '/accounts/%s/access/apps' % ACC, body, need='Access: Apps and Policies'):
+              print('app sign-in: made, "%s" only' % P['name'])
+
+          # 2. the app sends only the Mac's address through Cloudflare (Include mode), so the rest of the phone is untouched
+          inc = cf('GET', '/accounts/%s/devices/policy/include' % ACC, need='Zero Trust: Edit')
+          if inc is not None:
+              if any(x.get('address') == NET for x in inc or []): print('app sends through Cloudflare: %s (already)' % NET)
+              else:
+                  new = [x for x in inc or [] if x.get('address')] + [{'address': NET, 'description': 'Mac mini (Grifflix)'}]
+                  if cf('PUT', '/accounts/%s/devices/policy/include' % ACC, new, need='Zero Trust: Edit'): print('app sends through Cloudflare: only %s' % ', '.join(x['address'] for x in new))
+
+          prof = cf('GET', '/accounts/%s/devices/policy' % ACC, need='Zero Trust: Edit') or {}
+          if prof:
+              print('app profile: include %s; exclude %d ranges' % ([x.get('address') for x in prof.get('include') or []], len(prof.get('exclude') or [])))
+              blocked = [x.get('address') for x in prof.get('exclude') or [] if x.get('address') and ipaddress.ip_address(MAC) in ipaddress.ip_network(x['address'], strict=False)]
+              if blocked and not prof.get('include'): print('  ! the app still leaves %s out (%s): set Split Tunnels to "Include IPs and domains" in Zero Trust → Team & Resources → Devices → Device profiles → Default' % (MAC, ', '.join(blocked))); fails.append('split')
+
+          # 3. the tunnel carries private traffic, to the Mac only
+          conf = (cf('GET', '/accounts/%s/cfd_tunnel/%s/configurations' % (ACC, TID), need='Cloudflare Tunnel') or {}).get('config') or {}
+          if conf and not (conf.get('warp-routing') or {}).get('enabled'):
+              conf['warp-routing'] = {'enabled': True}
+              if cf('PUT', '/accounts/%s/cfd_tunnel/%s/configurations' % (ACC, TID), {'config': conf}, need='Cloudflare Tunnel'): print('tunnel: private traffic on')
+          elif conf: print('tunnel: private traffic already on')
+          routes = cf('GET', '/accounts/%s/teamnet/routes?is_deleted=false&per_page=100' % ACC, need='Cloudflare Tunnel') or []
+          if any(r.get('network') == NET for r in routes): print('tunnel route: %s (already)' % NET)
+          elif cf('POST', '/accounts/%s/teamnet/routes' % ACC, {'network': NET, 'tunnel_id': TID, 'comment': 'Mac mini (Grifflix)'}, need='Cloudflare Tunnel'):
+              print('tunnel route: %s → %s' % (NET, T['name']))
+
+          org = cf('GET', '/accounts/%s/access/organizations' % ACC) or {}
+          team = (org.get('auth_domain') or '').split('.')[0]
+          if fails: sys.exit('\nNot finished: see the ! lines above.')
+          print('\nDone. On the iPhone: install "Cloudflare One Agent", sign in with the team name %s and your email, switch it on;'
+                ' then in a-Shell: ssh johngriffiths@%s (and Jellyfin at http://%s:8096).' % (team or '(see Zero Trust → Settings)', MAC, MAC))
