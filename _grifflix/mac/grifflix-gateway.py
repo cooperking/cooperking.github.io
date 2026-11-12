@@ -365,7 +365,7 @@ class Gateway:
         self.origins = ORIGINS + self.st.get('extra_origins', [])
         self.pub_cache, self.home_paths, self.home_at = {}, [], 0
         self.list_cache = {}
-        self.plays, self.plays_lock, self.logdir = {}, threading.Lock(), None   # (what's playing now, and the media server's logs: whether the Mac is converting)
+        self.plays, self.plays_lock, self.logdir, self.export_job = {}, threading.Lock(), None, {}   # (what's playing now, and the media server's logs: whether the Mac is converting)
 
     def is_public_set(self, iid):
         """A collection is for anyone to look at when anything in it is."""
@@ -822,6 +822,36 @@ def make_handler(g):
             (the Worker keeps them, and shows each at 8am on its day): only the days already revealed go on the site."""
             if not me.get('owner'):
                 return self.send_json(403, {'error': 'Only John.'})
+            if q.get('bg'):   # (made after answering, and handed over when it's ready: on the old Mac, busy repackaging films, it could
+                # take longer than the 100 seconds the link to the Mac waits, and the admin page said the Mac wasn't answering: John, 12 Nov 2026)
+                J = g.export_job
+                with g.plays_lock:
+                    if J.get('state') == 'done':   # (kept until it's taken, never thrown away: the Mac counts what it made as sent)
+                        code, body = J['code'], J['body']
+                        g.export_job = {}
+                        return self.send_json(code, body)
+                    if J.get('state') != 'making':
+                        g.export_job = J = {'state': 'making', 'at': time.time()}
+                        H = type(self)
+                        class Cap:   # (the export run on its own: what it would have sent kept; its other helpers, as they are)
+                            def send_json(c, code, body):
+                                c.out = (code, body)
+
+                            def __getattr__(c, n):
+                                return getattr(H, n).__get__(c)
+                        cap = Cap()
+                        qq = {k: v for k, v in q.items() if k != 'bg'}
+                        def run():
+                            try:
+                                H.api_export(cap, me, user, qq, b)
+                                code, body = getattr(cap, 'out', (500, {'error': 'Nothing was made.'}))
+                            except Exception as e:
+                                log('Export failed:', repr(e))
+                                code, body = 500, {'error': 'The Mac couldn’t list the films (%s).' % str(e)[:120]}
+                            with g.plays_lock:
+                                g.export_job = {'state': 'done', 'code': code, 'body': body, 'at': time.time()}
+                        threading.Thread(target=run, daemon=True).start()
+                return self.send_json(202, {'making': True, 'since': int(J.get('at') or time.time())})
             # Only what's new or changed is read in full: the Mac remembers what it sent last time (each item's Jellyfin
             # Etag, which changes with its details or pictures). John, 8 Nov 2026: "almost every image and collection will
             # be the same; a few more films or series might be added". ?full=1 reads everything again.
