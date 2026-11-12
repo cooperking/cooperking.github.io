@@ -805,20 +805,44 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   function stepMac(say) {   // the Mac's Grifflix files from GitHub, if there's an update; back when its gateway has restarted
     if (!WAIT.mac || !GW) return Promise.resolve('');
     say('Updating the Mac…');
-    return fetch(GW + '/api/software', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: '{"op":"update"}' })
-      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'The Mac said ' + r.status); return j; }); }, function () { throw new Error('The Mac mini isn’t answering: is it on?'); })
-      .then(function (j) {
-        var said = j.changed.length ? 'the Mac updated' + (j.converter ? ' (its converter carries on)' : '') : '';
-        if (!j.restarting) { software(); return said; }
-        say('The Mac is restarting…');
-        return new Promise(function (ok, no) {
-          var tries = 0, wait = function () {
-            fetch(GW + '/health', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (h) { if (h.sha !== j.sha.slice(0, 7)) throw 0; software(); mac(); ok(said); })
-              .catch(function () { if (++tries < 40) setTimeout(wait, 3000); else no(new Error('The Mac hasn’t come back yet: try again in a minute.')); });
-          };
-          setTimeout(wait, 3000);
-        });
+    var hdr = { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' };
+    var health = function () { return fetch(GW + '/health', { cache: 'no-store' }).then(function (r) { return r.json(); }); };
+    // (the Mac does the update after answering, and this watches for its new version: fetching from GitHub could outlast the
+    // 100 seconds the link to the Mac waits, and this said the Mac wasn't answering though it was: John, 12 Nov 2026)
+    var watch = function (from, said) {
+      say('The Mac is updating…');
+      return new Promise(function (ok, no) {
+        var tries = 0, wait = function () {
+          health().then(function (h) {
+            if (!h.sha || h.sha === from) throw 0;
+            say('The Mac is restarting…');
+            return fetch(GW + '/api/software', { headers: hdr }).then(function (r) { return r.json(); }).catch(function () { return {}; }).then(function (sw) {
+              var l = sw.last || {}; software(); mac();
+              ok(said || (l.changed && l.changed.length ? 'the Mac updated' + (l.converter ? ' (its converter carries on)' : '') : 'the Mac updated'));
+            });
+          }).catch(function () {
+            if (++tries % 5 === 0) fetch(GW + '/api/software', { headers: hdr }).then(function (r) { return r.json(); }).then(function (sw) {
+              var l = sw.last; if (l && l.error && l.at * 1000 > t0) { tries = 999; no(new Error(l.error)); }
+            }).catch(function () {});
+            if (tries < 80) setTimeout(wait, 3000); else if (tries < 999) no(new Error('The Mac hasn’t finished updating yet: look again in a few minutes.'));
+          });
+        };
+        setTimeout(wait, 3000);
       });
+    };
+    var t0 = Date.now() - 5000;
+    return health().catch(function () { return {}; }).then(function (h0) {
+      var from = (h0 && h0.sha) || '';
+      return fetch(GW + '/api/software', { method: 'POST', headers: hdr, body: '{"op":"update","bg":true}' }).then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (j) {
+          if (r.status === 202 && j.started) return watch(from);
+          if (!r.ok) throw new Error(j.error || 'The Mac said ' + r.status);
+          var said = j.changed && j.changed.length ? 'the Mac updated' + (j.converter ? ' (its converter carries on)' : '') : '';
+          if (!j.restarting) { software(); return said; }
+          return watch(from, said);
+        });
+      }, function () { return watch(from); });   // (no answer in time: it may be updating all the same; watched for a few minutes)
+    });
   }
 
   // ---- Futura (John's web fonts): into Grifflix's own storage on the Worker, for its pages only
