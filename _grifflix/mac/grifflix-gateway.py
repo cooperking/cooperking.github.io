@@ -990,6 +990,10 @@ def make_handler(g):
                         why = 'over 20 Mbps'
                     elif not ((vc in ('hevc', 'h265') and bits <= 8 and '10' not in (v.get('Profile') or '')) or (vc == 'h264' and bits <= 8 and '10' not in (v.get('Profile') or ''))):
                         why = 'format browsers can’t play'
+                    elif not any(c in ('mp4', 'm4v', 'mov') for c in (ms.get('Container') or '').lower().split(',')):
+                        why = 'to repackage (%s file), the picture untouched' % ((ms.get('Container') or '?').split(',')[0].upper())
+                    elif au and (au[0].get('Codec') or '').lower() not in ('aac', 'mp3'):
+                        why = 'to repackage (%s sound), the picture untouched' % (au[0].get('Codec') or '?').upper()
                     cv = made.get(os.path.normcase(it.get('Path') or ''))
                     rows.append({'id': it.get('Id'), 'n': it.get('Name'), 'y': it.get('ProductionYear') or '', 'w': w, 'h': h, 'v': vc, 'b': bits, 'mbps': mbps,
                                  'gb': round((ms.get('Size') or 0) / 1e9, 1), 'mins': round((it.get('RunTimeTicks') or 0) / 6e8),
@@ -1426,8 +1430,11 @@ def make_handler(g):
             direct = None
             vs = [s for s in ms.get('MediaStreams', []) if s.get('Type') == 'Video']
             aus = [s for s in ms.get('MediaStreams', []) if s.get('Type') == 'Audio']
-            if (ms.get('Container') or '') in ('mp4', 'm4v', 'mov') and vs and (vs[0].get('Codec') or '') in (('h264', 'hevc') if hevc else ('h264',)) \
-                    and all((a.get('Codec') or '') in ('aac', 'mp3', 'ac3', 'eac3') for a in aus[:1]):
+            # (the whole file, when it's an MP4 whose picture and first sound this device plays as they are: the surest way to play
+            # anywhere. AC3 and E-AC3 only where the device says it plays them (Safari does, Chrome doesn't): John, 12 Nov 2026)
+            snd = ('aac', 'mp3') + (('ac3', 'eac3') if q.get('ac3') == '1' else ())
+            if not q.get('nodirect') and any(c in ('mp4', 'm4v', 'mov') for c in (ms.get('Container') or '').split(',')) and vs and plays \
+                    and all((a.get('Codec') or '') in snd for a in aus[:1]):
                 direct = '/v/%s/stream?' % iid + urllib.parse.urlencode({'Static': 'true', 'MediaSourceId': msid, 'g': key})
             subs = [{'label': s.get('DisplayTitle') or s.get('Language') or 'Subtitles', 'lang': s.get('Language') or '',
                      'url': '/v/%s/%s/Subtitles/%d/0/Stream.vtt?g=%s' % (iid, msid, s['Index'], key)}
@@ -1442,7 +1449,7 @@ def make_handler(g):
                                'src': srcd, 'srcdesc': '%s%s%s' % ({'hevc': 'HEVC', 'h264': 'H.264'}.get(srcd['v'], srcd['v'].upper()), ' 10-bit' if srcd['bits'] > 8 else '', ', %s Mbps' % srcd['mbps'] if srcd['mbps'] else ''),
                                'hevc': hevc, 'hevc10': q.get('hevc10') == '1', 'br': br, 'kind': (q.get('kind') or '')[:40], 'at': time.time(), 'seen': time.time()}
             g.watched()
-            self.send_json(200, {'hls': hls, 'direct': direct, 'subs': subs, 'ps': ps, 'device': dev,
+            self.send_json(200, {'hls': hls, 'direct': direct, 'hv': bool(hevc and v0c in ('hevc', 'h265')), 'subs': subs, 'ps': ps, 'device': dev,
                                  'pos': user['progress'].get(iid, {}).get('pos', 0), 'secs': round((it.get('RunTimeTicks') or 0) / 1e7)})
 
         def api_playing(self, me, user, q, b):
