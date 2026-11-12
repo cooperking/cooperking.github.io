@@ -95,6 +95,7 @@ h1 em { font-style: normal; font-weight: 400; }
 .lbchips button[aria-pressed="true"] { background: var(--fg); color: var(--bg, #173a5e); }
 .lbl { max-height: 640px; overflow: auto; } .lbl .q { display: inline-block; margin-left: 8px; padding: 2px 6px; font: 600 10px/1.2 var(--sans, sans-serif); letter-spacing: .1em; text-transform: uppercase; vertical-align: 2px; }
 .lbl .q.good { background: #2f6b46; color: #fff; } .lbl .q.ok { background: #8a6d1f; color: #fff; } .lbl .q.bad { background: #8c2f2a; color: #fff; }
+.pnd { margin-top: 6px; font-size: 12px; color: var(--muted); } .pnd summary { cursor: pointer; } .pnd code { display: block; margin-top: 6px; padding: 8px; background: rgba(0, 0, 0, .25); font: 11px/1.45 ui-monospace, Menlo, monospace; white-space: pre-wrap; word-break: break-all; color: var(--fg); }
 .lbl .spec { display: block; margin-top: 2px; font-size: 12.5px; color: var(--fg); } .lbl .why2 { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }   /* (the library: each film's file and its grade) */
 .hh { padding: 12px 0; border-top: 1px solid var(--line); } .hh:first-child { border-top: 0; } .hh .name { max-width: 260px; } .hhm { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 10px 0; } .hhm label { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; color: var(--fg); }   /* (households) */
 .gcode { display: inline-flex; align-items: center; gap: 6px; margin-right: 6px; font-size: 13px; color: var(--muted); } .gcode b { font: 600 18px/1 var(--sans, sans-serif); letter-spacing: .18em; color: var(--fg); }   /* (a member's code from John) */
@@ -980,7 +981,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       $('#pnlist').innerHTML = L.map(function (x) {
         var tag = x.how === 'conv' ? '<span class="q bad">Converting</span>' : x.how === 'asis' ? '<span class="q good">As it is</span>' : '<span class="q ok">Starting</span>';
         return '<li>' + esc(x.film) + tag + '<span class="spec">' + esc(x.who) + (x.device ? ' · ' + esc(x.device) : '') + (x.src ? ' · the file: ' + esc(x.src) : '') + '</span>' +
-          '<span class="why2">' + esc(x.say) + (x.how === 'conv' && x.speed ? ' · the Mac at ' + x.speed + '× ' + (x.speed >= 1 ? '(keeping up)' : '(slower than the film: it will stop to catch up)') : '') + '</span></li>';
+          '<span class="why2">' + esc(x.say) + (x.how === 'conv' && x.speed ? ' · the Mac at ' + x.speed + '× ' + (x.speed >= 1 ? '(keeping up)' : '(slower than the film: it will stop to catch up)') : '') + '</span>' +
+          // (the facts, for working out why: what the device asked the media server for, and the media server's own command; John, 12 Nov 2026:
+          // "can we do a thorough check rather than guessing")
+          (x.asked || x.cmd ? '<details class="pnd"><summary>Details</summary>' + (x.asked ? '<code>Asked for: ' + esc(x.asked) + '</code>' : '') + (x.cmd ? '<code>Media server: ' + esc(x.cmd) + '</code>' : '') + '</details>' : '') + '</li>';
       }).join('') + (j.other ? '<li>Something else is being converted too<span class="why2">' + j.other + ' started outside Grifflix (the media server’s own app).</span></li>' : '');
       b.disabled = false; b.textContent = 'Look again';
       clearTimeout(PN); PN = setTimeout(function () { if (!document.hidden && $('#pnlist').offsetParent) pnLook(); }, 10000);   // (kept current while it's on screen)

@@ -501,7 +501,9 @@ class Gateway:
             vc = re.search(r'-(?:codec|c):v(?::0)?\s+(\S+)', head)
             ac = re.search(r'-(?:codec|c):a(?::0)?\s+(\S+)', head)
             sp = re.findall(r'speed=\s*([\d.]+)x', tail)
-            out.append({'id': m.group(0) if m else '', 'v': vc.group(1) if vc else '', 'a': ac.group(1) if ac else '',
+            cl = next((l for l in head.splitlines() if 'ffmpeg' in l and ' -i ' in l), '')
+            cl = re.sub(r'file:"[^"]*"', 'file:…', re.sub(r'https?://\S+', '…', cl))[:900]
+            out.append({'id': m.group(0) if m else '', 'v': vc.group(1) if vc else '', 'a': ac.group(1) if ac else '', 'cmd': cl, 'log': n,
                         'speed': float(sp[-1]) if sp else None, 'at': st.st_mtime})
         return sorted(out, key=lambda e: -e['at'])
 
@@ -512,6 +514,9 @@ class Gateway:
             o.update(how='asis', say='Playing as it is: the whole file, straight from the Mac mini')
             return o
         e = next((x for x in encs if x['id'] in (p['iid'], p.get('msid'))), None)
+        o['asked'] = p.get('asked', '')
+        if e:
+            o['cmd'], o['log'] = e.get('cmd', ''), e.get('log', '')
         if not e:
             o.update(how='wait', say='Starting…')
             return o
@@ -1729,6 +1734,11 @@ def make_handler(g):
         def video(self, rest, q, method):
             if not re.match(r'^[0-9a-f]{32}/[\w./-]+$', rest) or '..' in rest:
                 return self.send_json(404, {'error': 'Not here.'})
+            if rest.endswith('.m3u8') or '/stream' in rest:   # (what the device asked the media server for, for Playing now's details)
+                with g.plays_lock:
+                    p = g.plays.get(q.get('PlaySessionId') or '') or next((x for x in g.plays.values() if x['iid'] == rest[:32] and time.time() - x['seen'] < 90), None)
+                    if p is not None:
+                        p['asked'] = (rest.split('/', 1)[-1] + '?' + '&'.join('%s=%s' % (k, v) for k, v in sorted(q.items()) if k not in ('g', 'api_key', 'DeviceId', 'PlaySessionId', 'MediaSourceId')))[:400]
             self.passthrough(method, '/Videos/' + rest + ('?' + urllib.parse.urlencode(q) if q else ''), m3u8key=self.path)
 
         def passthrough(self, method, path, cache='no-store', m3u8key=None):
