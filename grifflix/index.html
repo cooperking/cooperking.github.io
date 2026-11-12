@@ -372,6 +372,13 @@ html.tv .pseek:focus-visible .ptr, html.tv .pseek:focus .ptr { box-shadow: 0 0 0
 .phow.conv::before { background: #f08a4b; } .phow.wait::before { background: rgba(243, 232, 210, .4); }
 .phow[hidden] { display: none; } html.tv .phow { font-size: 13px; }
 
+/* a member's film requests (Profile, Requests) */
+.rqq { flex: 1; width: 100%; padding: 12px 14px; border: 1px solid var(--line); background: transparent; color: inherit; font: 400 16px/1.2 var(--sans); }
+.rqres { margin-top: 10px; } .rqrow { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.rqrow img, .rqnp { flex: none; width: 46px; height: 69px; object-fit: cover; background: rgba(127,127,127,.2); }
+.rqrow > div { flex: 1; min-width: 0; font-size: 15px; } .rqrow i { opacity: .7; } .rqrow small { display: block; margin-top: 3px; font-size: 12.5px; opacity: .75; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rqrow .pill { flex: none; } .rqok { color: #f08a4b; font-weight: 600; opacity: 1; }
+
 /* the signed-out welcome, and messages */
 .welcome { max-width: 620px; margin: 12vh auto 0; text-align: center; }
 .welcome h1 { margin: 0; font: 700 clamp(30px, 6vw, 52px)/1 "GFutura", "futura-pt", "Futura PT", "Futura", "Jost", sans-serif !important; letter-spacing: .55em !important; margin-right: -.55em; text-transform: uppercase !important; color: var(--fg); }   /* (as the logo: Futura, spaced as it is) */
@@ -1935,7 +1942,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '67e4fd5a1c53' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '7228d0b6cfcc' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5388,6 +5395,52 @@ var STANDALONE = (window.matchMedia && matchMedia('(display-mode: standalone)').
 function swReg() { var own = location.hostname === 'grifflix.co.uk'; return navigator.serviceWorker.register(own ? '/sw.js' : '/grifflix/sw.js', { scope: own ? '/' : '/grifflix/' }).then(function () { return navigator.serviceWorker.ready; }); }   // (on grifflix.co.uk the whole site)
 function b64key(k) { var p = '='.repeat((4 - k.length % 4) % 4), raw = atob((k + p).replace(/-/g, '+').replace(/_/g, '/')), a = new Uint8Array(raw.length); for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i); return a; }
 function deviceSub() { return NOTE_OK ? navigator.serviceWorker.getRegistration('/grifflix/').then(function (r) { return r ? r.pushManager.getSubscription() : null; }).catch(function () { return null; }) : Promise.resolve(null); }
+// a member's film requests: found on TMDB, sent to John's list of films to get (John, 12 Nov 2026: "a requests tab on the members page,
+// linked to tmdb, so they can send me a request for a film to get"); a film already in Grifflix says so instead
+function reqTab(el) {
+  el.innerHTML = '<div class="profsec"><p class="profh">Ask for a film</p><p class="profp">A film Grifflix hasn’t got: find it, and John gets your request.</p>' +
+    '<div class="acts" style="margin-top:8px"><input type="search" id="rqq" class="rqq" placeholder="A film’s name (and year)" autocomplete="off" enterkeyhint="search"></div><div id="rqres" class="rqres"></div></div>' +
+    '<div class="profsec"><p class="profh">Your requests</p><div id="rqmine" class="rqres"><p class="profp">Looking…</p></div></div>';
+  var have = {}, norm = function (n) { return String(n || '').toLowerCase().replace(/^the\s+/, '').replace(/[^a-z0-9]+/g, ''); };
+  var libP = library().then(function (L) { Object.keys(L.items).forEach(function (k) { var it = L.items[k]; if (it.type === 'movie') have[norm(it.name) + '|' + (it.year || '')] = it; }); }).catch(function () {});
+  var inG = function (f) { return have[norm(f.name) + '|' + (f.year || '')]; };
+  var poster = function (p) { return p ? '<img src="https://image.tmdb.org/t/p/w185' + esc(p) + '" alt="" loading="lazy">' : '<span class="rqnp"></span>'; };
+  var call = function (path, body) {
+    return fetch(WORKER + '/g/' + path, body ? { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: { Authorization: 'Bearer ' + TOKEN } })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'That didn’t work.'); return j; }); });
+  };
+  var mineIds = {};
+  var drawMine = function (L) {
+    mineIds = {}; L.forEach(function (f) { if (f.tmdb) mineIds[f.tmdb] = 1; });
+    libP.then(function () {
+      var m = $('#rqmine'); if (!m) return;
+      m.innerHTML = L.length ? L.slice().reverse().map(function (f) { var g = inG(f);
+        return '<div class="rqrow">' + poster(f.poster) + '<div><b>' + esc(f.name) + '</b>' + (f.year ? ' <i>' + f.year + '</i>' : '') + '<small>' + (g ? '<span class="rqok">In Grifflix now</span>' : 'Asked for ' + esc(new Date(f.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }))) + '</small></div>' +
+          (g ? '<button class="pill on" data-rqplay="' + esc(g.id) + '">Look</button>' : '<button class="pill" data-rqno="' + f.tmdb + '">Withdraw</button>') + '</div>'; }).join('') : '<p class="profp">None yet.</p>';
+      $$('[data-rqplay]', m).forEach(function (b) { b.onclick = function () { api('item?id=' + b.dataset.rqplay).then(function (it) { if (it) itemSheet(it); }).catch(oops); }; });
+      $$('[data-rqno]', m).forEach(function (b) { b.onclick = function () { b.disabled = true; call('request', { op: 'withdraw', tmdb: +b.dataset.rqno }).then(function (j) { drawMine(j.films || []); toast('Withdrawn'); }).catch(oops); }; });
+    });
+  };
+  call('request').then(function (j) { drawMine(j.films || []); }).catch(function (e) { var m = $('#rqmine'); if (m) m.innerHTML = '<p class="profp">' + esc(e.message) + '</p>'; });
+  var t = 0, seq = 0, res = $('#rqres');
+  var search = function () {
+    var q = $('#rqq').value.trim(), my = ++seq; if (q.length < 2) { res.innerHTML = ''; return; }
+    res.innerHTML = '<p class="profp">Looking…</p>';
+    Promise.all([call('tmdb?q=' + encodeURIComponent(q)), libP]).then(function (r) {
+      if (my !== seq) return; var F = r[0].films || [];
+      res.innerHTML = F.length ? F.map(function (f) { var g = inG(f), asked = mineIds[f.tmdb];
+        return '<div class="rqrow">' + poster(f.poster) + '<div><b>' + esc(f.name) + '</b>' + (f.year ? ' <i>' + f.year + '</i>' : '') + (f.overview ? '<small>' + esc(f.overview) + '</small>' : '') + '</div>' +
+          (g ? '<button class="pill on" data-rqplay="' + esc(g.id) + '">In Grifflix</button>' : asked ? '<button class="pill" disabled>Asked for</button>' : '<button class="pill" data-rqask="' + f.tmdb + '">Request</button>') + '</div>'; }).join('') : '<p class="profp">Nothing found on TMDB by that name.</p>';
+      $$('[data-rqplay]', res).forEach(function (b) { b.onclick = function () { api('item?id=' + b.dataset.rqplay).then(function (it) { if (it) itemSheet(it); }).catch(oops); }; });
+      $$('[data-rqask]', res).forEach(function (b) { b.onclick = function () {
+        var f = F.filter(function (x) { return String(x.tmdb) === b.dataset.rqask; })[0]; b.disabled = true; b.textContent = 'Sending…';
+        call('request', { tmdb: f.tmdb, name: f.name, year: f.year, poster: f.poster }).then(function (j) { b.textContent = 'Asked for'; drawMine(j.films || []); toast('Sent to John: ' + f.name); }).catch(function (e) { b.disabled = false; b.textContent = 'Request'; oops(e); });
+      }; });
+    }).catch(function (e) { if (my === seq) res.innerHTML = '<p class="profp">' + esc(e.message) + '</p>'; });
+  };
+  $('#rqq').oninput = function () { clearTimeout(t); t = setTimeout(search, 450); };
+  $('#rqq').onkeydown = function (e) { if (e.key === 'Enter') { clearTimeout(t); search(); } };
+}
 function profile() {
   S.sheetNow = { k: 'profile' };
   if (PUBLIC) return signInSheet();
@@ -5405,7 +5458,7 @@ function profile() {
   openSheet('<div class="form prof" style="position:relative"><div class="profhead"><span class="chiplabel">Profile</span>' + admin + X.replace('ico close', 'ico close profx') + '</div>' +
     '<h2 class="profname">' + esc(ME.name || 'You') + '</h2>' +
     (ME.libraries ? '<div class="chips" style="margin-top:6px">' + ['movies', 'tv'].map(function (k) { return '<span>' + (ME.libraries[k] || 0) + ' ' + { movies: 'films', tv: 'series' }[k] + '</span>'; }).join('') + '</div>' : '') +
-    '<div class="tabs proftabs">' + [['list', 'My list']].concat(NOTES ? [['cals', 'Calendars']] : [], [['account', 'Account']]).map(function (t) { return '<button class="pill' + (PROF.tab === t[0] ? ' on' : '') + '" data-ptab="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>' +
+    '<div class="tabs proftabs">' + [['list', 'My list']].concat(NOTES ? [['cals', 'Calendars']] : [], [['req', 'Requests'], ['account', 'Account']]).map(function (t) { return '<button class="pill' + (PROF.tab === t[0] ? ' on' : '') + '" data-ptab="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>' +
     '<div id="profbody"></div>' + (DEMO ? '<div class="acts"><a class="pill" href="?demo=0">Leave the demo</a></div>' : '') + '</div>');
   $$('[data-ptab]').forEach(function (b) { b.onclick = function () { PROF.tab = b.dataset.ptab; $$('[data-ptab]').forEach(function (x) { x.classList.toggle('on', x === b); }); profTab(); }; });
   profTab();
@@ -5423,6 +5476,7 @@ function profTab() {
       $('#profall').onclick = function () { closeSheet(); location.hash = '#lists'; };
     }).catch(oops);
   }
+  if (PROF.tab === 'req') return reqTab(el);
   if (PROF.tab === 'cals') {
     var mine = S.cals.filter(function (c) { return c.mine && c.id !== 'motd'; });
     el.innerHTML = '<div class="profsec"><p class="profh">Your calendars</p>' + (mine.length ? mine.map(function (c) { return '<div class="acts" style="margin-top:8px"><button class="pill" data-gocal="' + c.id + '">' + esc(c.name) + ' · ' + c.count + '</button><button class="pill" data-shcal="' + c.id + '" data-on="' + (c.shared ? 1 : 0) + '">' + (c.shared ? 'Family can see it' : 'Only you') + '</button><button class="pill" data-delcal="' + c.id + '">Delete</button></div>'; }).join('') : '<p class="profp">None yet. Make one from the calendar (+ New calendar), or put a film on one from its page.</p>') + '</div>' +
