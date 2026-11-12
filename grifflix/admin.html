@@ -358,6 +358,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="state"><button class="btn" id="orsee" type="button" hidden>The originals</button></div>
       </section>
       <section class="card" data-tab="films">
+        <div class="kicker">Playing now</div>
+        <h2 id="pnhead">What’s <em>playing</em></h2>
+        <p class="stat" id="pnsay">Who’s watching what, on which device, and whether the Mac mini is converting it as it plays (slow work for the old Mac) or sending it as it is.</p>
+        <ul class="changes lbl" id="pnlist"></ul>
+        <div class="state"><button class="btn" id="pngo" type="button">Look</button></div>
+      </section>
+      <section class="card" data-tab="films">
         <div class="kicker">Library</div>
         <h2 id="lbhead">Every film’s <em>quality</em></h2>
         <p class="stat" id="lbsay">Each film’s file as it is on the Mac: its picture, format, rate, size and sound, graded <b>Good</b>, <b>OK</b> or <b>Replace</b> (standard definition, or too little picture for its size), with those converted and those waiting to be.</p>
@@ -936,6 +943,26 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       $('#lbq').oninput = lbDraw; $('#lbsort').onchange = lbDraw; lbDraw();
     }).catch(function (e) { b.disabled = false; b.textContent = 'Look at the library'; toast(e.message); });
   };
+
+  // ---- playing now: whether the Mac mini is converting what's being watched (John, 12 Nov 2026: "How do I know a film isn't being
+  // converted by the Mac mini?")
+  var PN = null;
+  function pnLook() {
+    var b = $('#pngo'); if (!GW) return toast('The Mac mini isn’t answering.');
+    b.disabled = true;
+    fetch(GW + '/api/playing', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (r.status === 404) throw new Error('Update the Mac (Update everything) to see what’s playing here.'); if (!r.ok) throw new Error('The Mac mini isn’t answering.'); return r.json(); }).then(function (j) {
+      var L = j.playing || [], conv = L.filter(function (x) { return x.how === 'conv'; }).length;
+      $('#pnhead').innerHTML = L.length ? L.length + ' playing: <em>' + (conv ? conv + ' converted by the Mac' : 'none converted') + '</em>' : 'Nothing <em>playing</em>';
+      $('#pnlist').innerHTML = L.map(function (x) {
+        var tag = x.how === 'conv' ? '<span class="q bad">Converting</span>' : x.how === 'asis' ? '<span class="q good">As it is</span>' : '<span class="q ok">Starting</span>';
+        return '<li>' + esc(x.film) + tag + '<span class="spec">' + esc(x.who) + (x.device ? ' · ' + esc(x.device) : '') + (x.src ? ' · the file: ' + esc(x.src) : '') + '</span>' +
+          '<span class="why2">' + esc(x.say) + (x.how === 'conv' && x.speed ? ' · the Mac at ' + x.speed + '× ' + (x.speed >= 1 ? '(keeping up)' : '(slower than the film: it will stop to catch up)') : '') + '</span></li>';
+      }).join('') + (j.other ? '<li>Something else is being converted too<span class="why2">' + j.other + ' started outside Grifflix (the media server’s own app).</span></li>' : '');
+      b.disabled = false; b.textContent = 'Look again';
+      clearTimeout(PN); PN = setTimeout(function () { if (!document.hidden && $('#pnlist').offsetParent) pnLook(); }, 10000);   // (kept current while it's on screen)
+    }).catch(function (e) { b.disabled = false; toast(e.message); });
+  }
+  $('#pngo').onclick = pnLook;
 
   // ---- households: who lives together, so they share their Fire TVs (John, 11 Nov 2026: "Camilla and I share a house but the tv is
   // signed in as me and we are both members")

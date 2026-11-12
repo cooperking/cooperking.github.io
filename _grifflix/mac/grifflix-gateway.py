@@ -365,6 +365,7 @@ class Gateway:
         self.origins = ORIGINS + self.st.get('extra_origins', [])
         self.pub_cache, self.home_paths, self.home_at = {}, [], 0
         self.list_cache = {}
+        self.plays, self.plays_lock, self.logdir = {}, threading.Lock(), None   # (what's playing now, and the media server's logs: whether the Mac is converting)
 
     def is_public_set(self, iid):
         """A collection is for anyone to look at when anything in it is."""
@@ -451,6 +452,79 @@ class Gateway:
     def now_id(self, iid):
         """A film's id now: convert.py's new file has a new one, and the site's copy keeps the old until John's Update."""
         return (self.store.d.get('remap') or {}).get(iid, iid)
+
+    def encodes(self):
+        """What the media server's converter (ffmpeg) is doing now, from its own logs: for each film being streamed, whether the
+        picture and sound are copied as they are or converted (and to what), and how fast against the film (1x keeps up)
+        (John, 12 Nov 2026: "How do I know a film isn't being converted by the Mac mini?")."""
+        if self.logdir is None:
+            try:
+                self.logdir = (self.jf.call('GET', '/System/Info') or {}).get('LogPath') or ''
+            except Exception:
+                self.logdir = ''
+            if not self.logdir:
+                for d in ('~/.local/share/jellyfin/log', '~/Library/Application Support/jellyfin/log', '~/.config/jellyfin/log'):
+                    if os.path.isdir(os.path.expanduser(d)):
+                        self.logdir = os.path.expanduser(d)
+                        break
+        out, now = [], time.time()
+        try:
+            names = os.listdir(self.logdir) if self.logdir else []
+        except Exception:
+            names = []
+        for n in names:
+            if not n.startswith('FFmpeg.') or 'Transcode' not in n and 'Remux' not in n and 'DirectStream' not in n:
+                continue
+            f = os.path.join(self.logdir, n)
+            try:
+                st = os.stat(f)
+                if now - st.st_mtime > 40:   # (finished, or stopped)
+                    continue
+                with open(f, 'rb') as fh:
+                    head = fh.read(24000).decode('utf-8', 'replace')
+                    fh.seek(max(0, st.st_size - 6000))
+                    tail = fh.read().decode('utf-8', 'replace')
+            except Exception:
+                continue
+            m = re.search(r'[0-9a-f]{32}', n)
+            vc = re.search(r'-(?:codec|c):v(?::0)?\s+(\S+)', head)
+            ac = re.search(r'-(?:codec|c):a(?::0)?\s+(\S+)', head)
+            sp = re.findall(r'speed=\s*([\d.]+)x', tail)
+            out.append({'id': m.group(0) if m else '', 'v': vc.group(1) if vc else '', 'a': ac.group(1) if ac else '',
+                        'speed': float(sp[-1]) if sp else None, 'at': st.st_mtime})
+        return sorted(out, key=lambda e: -e['at'])
+
+    def play_state(self, p, encs):
+        """In words: is this film playing as it is, or being converted, and why."""
+        o = {'who': p['who'], 'film': p['name'], 'device': p.get('kind') or '', 'src': p.get('srcdesc') or ''}
+        if p['mode'] == 'direct':
+            o.update(how='asis', say='Playing as it is: the whole file, straight from the Mac mini')
+            return o
+        e = next((x for x in encs if x['id'] in (p['iid'], p.get('msid'))), None)
+        if not e:
+            o.update(how='wait', say='Starting…')
+            return o
+        sound = '' if e['a'] in ('', 'copy') else ' (the sound made stereo, which is light work)'
+        if e['v'] == 'copy':
+            o.update(how='asis', say='Playing as it is: the picture untouched, only repackaged' + sound)
+            return o
+        src = p.get('src') or {}
+        if src.get('v') not in ('h264', 'hevc', 'h265'):
+            why = 'its format (%s) isn’t one devices play' % (src.get('v') or '?').upper()
+        elif src.get('v') in ('hevc', 'h265') and not p.get('hevc'):
+            why = 'this device can’t play HEVC'
+        elif src.get('v') in ('hevc', 'h265') and src.get('bits', 8) > 8 and not p.get('hevc10'):
+            why = 'this device can’t play 10-bit HEVC'
+        elif src.get('bits', 8) > 8:
+            why = '10-bit H.264, which devices can’t play'
+        elif src.get('mbps') and src['mbps'] * 1e6 > p.get('br', 2e7):
+            why = 'it’s over this device’s rate (%s Mbps)' % src['mbps']
+        else:
+            why = 'the media server chose to'
+        enc = {'libx264': 'H.264', 'h264_videotoolbox': 'H.264 (with the Mac’s graphics chip)', 'libx265': 'HEVC'}.get(e['v'], e['v'])
+        o.update(how='conv', why=why, speed=e['speed'],
+                 say='Converted by the Mac mini as it plays, to %s: %s' % (enc, why) + sound)
+        return o
 
     def forget(self):
         self.list_cache.clear()
@@ -1320,8 +1394,35 @@ def make_handler(g):
             subs = [{'label': s.get('DisplayTitle') or s.get('Language') or 'Subtitles', 'lang': s.get('Language') or '',
                      'url': '/v/%s/%s/Subtitles/%d/0/Stream.vtt?g=%s' % (iid, msid, s['Index'], key)}
                     for s in ms.get('MediaStreams', []) if s.get('Type') == 'Subtitle' and s.get('IsTextSubtitleStream')]
+            v0 = vs0 or {}
+            srcd = {'v': (v0.get('Codec') or '').lower(), 'bits': v0.get('BitDepth') or (10 if '10' in (v0.get('Profile') or '') else 8),
+                    'mbps': round((ms.get('Bitrate') or v0.get('BitRate') or 0) / 1e6, 1)}
+            with g.plays_lock:   # (what's playing, for "Playing now": kept while its progress comes in)
+                for k in [k for k, x in g.plays.items() if time.time() - x['seen'] > 120 or (x['uid'] == me['uid'] and x.get('kind') == q.get('kind'))]:
+                    del g.plays[k]
+                g.plays[ps] = {'uid': me['uid'], 'who': me['name'], 'iid': iid, 'msid': msid, 'name': it.get('Name') or '', 'mode': 'direct' if direct else 'stream',
+                               'src': srcd, 'srcdesc': '%s%s%s' % ({'hevc': 'HEVC', 'h264': 'H.264'}.get(srcd['v'], srcd['v'].upper()), ' 10-bit' if srcd['bits'] > 8 else '', ', %s Mbps' % srcd['mbps'] if srcd['mbps'] else ''),
+                               'hevc': hevc, 'hevc10': q.get('hevc10') == '1', 'br': br, 'kind': (q.get('kind') or '')[:40], 'at': time.time(), 'seen': time.time()}
             self.send_json(200, {'hls': hls, 'direct': direct, 'subs': subs, 'ps': ps, 'device': dev,
                                  'pos': user['progress'].get(iid, {}).get('pos', 0), 'secs': round((it.get('RunTimeTicks') or 0) / 1e7)})
+
+        def api_playing(self, me, user, q, b):
+            """Whether a film is playing as it is or being converted by the Mac mini: a member's own (ps), or, for John, everything
+            playing now (the admin page's Playing now)."""
+            encs = g.encodes()
+            with g.plays_lock:
+                live = {k: dict(x) for k, x in g.plays.items() if time.time() - x['seen'] < 90}
+            if q.get('ps'):
+                p = live.get(q['ps'])
+                if not p or (p['uid'] != me['uid'] and not me.get('owner')):
+                    return self.send_json(200, {'how': ''})
+                return self.send_json(200, g.play_state(p, encs))
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            rows = [g.play_state(p, encs) for p in sorted(live.values(), key=lambda x: -x['at'])]
+            known = set(x for p in live.values() for x in (p['iid'], p.get('msid')))
+            others = [e for e in encs if e['id'] not in known]   # (converting for something Grifflix didn't start: the media server's own app)
+            self.send_json(200, {'playing': rows, 'other': len(others)})
 
         def api_download(self, me, user, q, b):
             """A member's link to keep a film on their phone or computer (John, 8 Nov 2026: "Can members be allowed to download
@@ -1348,6 +1449,8 @@ def make_handler(g):
             self.send_json(200, {'downloads': bool(st.get('downloads'))})
 
         def api_stop(self, me, user, q, b):
+            with g.plays_lock:
+                g.plays.pop(str(b.get('ps') or ''), None)
             try:
                 g.jf.call('DELETE', '/Videos/ActiveEncodings', query={'DeviceId': b.get('device'), 'PlaySessionId': b.get('ps')})
             except Exception:
@@ -1358,6 +1461,10 @@ def make_handler(g):
             iid, pos, secs = g.now_id(str(b.get('id', ''))), float(b.get('pos') or 0), float(b.get('secs') or 0)
             if not re.match(r'^[0-9a-f]{32}$', iid):
                 return self.send_json(400, {'error': 'Which?'})
+            with g.plays_lock:
+                for x in g.plays.values():
+                    if x['uid'] == me['uid'] and x['iid'] == iid:
+                        x['seen'] = time.time()
             with g.store.lock:
                 done = bool(secs and pos > secs * 0.92)
                 user['progress'][iid] = {'pos': 0 if done else round(pos), 'at': int(time.time()), 'done': done}
