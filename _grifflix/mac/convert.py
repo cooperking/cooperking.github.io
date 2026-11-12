@@ -33,6 +33,7 @@ JF = s.get('jellyfin', 'http://127.0.0.1:8096')
 GW = 'http://127.0.0.1:%s' % s.get('port', 8097)
 STATE = os.path.join(HOME, 'convert-state.json')
 LOG = os.path.join(HOME, 'convert.log')
+PRIO = os.path.join(HOME, 'convert-priority.json')   # John's say in the order, from the admin page: films pinned to go next, and repackaging all first
 NOW = os.path.join(HOME, 'convert-now.json')   # what it's doing this minute, for the admin page (through the gateway)
 RUN = {'n': 0, 'total': 0, 'started': int(time.time()), 'args': sys.argv[1:]}   # (args: so the admin page's Update the Mac starts it again the same way)
 MAX_W, MAX_H, MAX_MBPS = 1920, 1080, 20
@@ -461,6 +462,38 @@ if CMD != 'go':
     print('Each one, with why: ~/Grifflix/convert-plan.csv\nTo start:  nohup caffeinate -i python3 ~/Grifflix/convert.py go > ~/Grifflix/convert.out 2>&1 &')
     sys.exit()
 
+def prio():
+    try:
+        p = json.load(open(PRIO))
+    except (OSError, ValueError):
+        p = {}
+    return {'pins': [x for x in (p.get('pins') or []) if isinstance(x, dict) and x.get('id')], 'remux_first': p.get('remux_first', True)}
+
+
+def ordered(rest):
+    """What's left, in John's order: the films he pinned, in his order; then (unless he's turned it off) every repackaging before
+    any conversion, as they're quick and put the library right first (John, 12 Nov 2026: "repackage all mkv files first and then go
+    to conversions - let me prioritise too"); otherwise as gathered (Movie of the Day's films, new ones, then the best-rated)."""
+    P = prio()
+    pin = [x['id'] for x in P['pins']]
+    first = sorted([x for x in rest if x['id'] in pin], key=lambda x: pin.index(x['id']))
+    others = [x for x in rest if x['id'] not in pin]
+    if P['remux_first']:
+        others = [x for x in others if x.get('mode') == 'remux'] + [x for x in others if x.get('mode') != 'remux']
+    return first + others
+
+
+def unpin(iid):
+    try:
+        p = json.load(open(PRIO))
+        p['pins'] = [x for x in (p.get('pins') or []) if x.get('id') != iid]
+        tmp = PRIO + '.tmp'
+        json.dump(p, open(tmp, 'w'))
+        os.replace(tmp, PRIO)
+    except (OSError, ValueError):
+        pass
+
+
 ffmpeg, ffprobe = tools()
 if 'libx264' not in subprocess.run([ffmpeg, '-hide_banner', '-encoders'], capture_output=True, text=True).stdout:
     sys.exit('This ffmpeg has no H.264 encoder. Tell Claude.')
@@ -487,9 +520,14 @@ leftovers()
 log('starting: %d to convert' % len(items))
 RUN['total'] = len(items)
 follow_up(st)
-for n, it in enumerate(items):
+rest, n = list(items), -1
+while rest:   # (the order looked at again before each film: a film John pins goes next, without starting anything again)
+    rest = ordered(rest)
+    it = rest.pop(0)
+    n += 1
     RUN['n'] = n
-    RUN['next'] = [{'name': x['name'], 'why': x['why'], 'gb': x['gb'], 'mins': x['mins']} for x in items[n:n + 12]]   # (what's coming, for the admin page)
+    RUN['next'] = [{'id': x['id'], 'name': x['name'], 'why': x['why'], 'gb': x['gb'], 'mins': x['mins'], 'mode': x.get('mode')} for x in [it] + rest[:11]]   # (what's coming, for the admin page)
+    RUN['left'] = {'remux': sum(1 for x in [it] + rest if x.get('mode') == 'remux'), 'convert': sum(1 for x in [it] + rest if x.get('mode') != 'remux')}
     if not night() and not it.get('urgent'):   # (today's or tomorrow's Movie of the Day doesn't wait for the night: John, 11 Nov 2026, Rushmore on the Fire Stick)
         log('waiting for %d am' % NIGHT[0])
         while not night():
@@ -501,6 +539,7 @@ for n, it in enumerate(items):
         log('  FAILED', it['name'], e)
         st['failed'][it['id']] = {'name': it['name'], 'why': str(e)[:300], 'path': it['path']}
         save_state(st)
+    unpin(it['id'])   # (done, or failed: off John's list)
     for _ in range(9):   # (each film's follow-up straight away, once Jellyfin has the new file: its date added, collections, lists)
         if not st['remap']:
             break

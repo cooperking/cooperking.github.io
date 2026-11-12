@@ -95,6 +95,9 @@ h1 em { font-style: normal; font-weight: 400; }
 .lbchips button[aria-pressed="true"] { background: var(--fg); color: var(--bg, #173a5e); }
 .lbl { max-height: 640px; overflow: auto; } .lbl .q { display: inline-block; margin-left: 8px; padding: 2px 6px; font: 600 10px/1.2 var(--sans, sans-serif); letter-spacing: .1em; text-transform: uppercase; vertical-align: 2px; }
 .lbl .q.good { background: #2f6b46; color: #fff; } .lbl .q.ok { background: #8a6d1f; color: #fff; } .lbl .q.bad { background: #8c2f2a; color: #fff; }
+.cvord { margin: 14px 0 6px; } .cvsw { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; cursor: pointer; } .cvsw input { margin-top: 4px; width: 18px; height: 18px; accent-color: #f08a4b; } .cvsw small { display: block; color: var(--muted); font-size: 12.5px; }
+.cvpin { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 14px; } .cvpin b { flex: 1; font-weight: 500; } .cvpin button, .lbnext { border: 1px solid var(--line, rgba(255,255,255,.3)); background: none; color: inherit; font: 600 11px/1 var(--sans, sans-serif); letter-spacing: .08em; text-transform: uppercase; padding: 6px 9px; cursor: pointer; }
+.lbnext { margin-left: 8px; } .lbnext[disabled] { opacity: .5; }
 .pnd { margin-top: 6px; font-size: 12px; color: var(--muted); } .pnd summary { cursor: pointer; } .pnd code { display: block; margin-top: 6px; padding: 8px; background: rgba(0, 0, 0, .25); font: 11px/1.45 ui-monospace, Menlo, monospace; white-space: pre-wrap; word-break: break-all; color: var(--fg); }
 .lbl .spec { display: block; margin-top: 2px; font-size: 12.5px; color: var(--fg); } .lbl .why2 { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }   /* (the library: each film's file and its grade) */
 .hh { padding: 12px 0; border-top: 1px solid var(--line); } .hh:first-child { border-top: 0; } .hh .name { max-width: 260px; } .hhm { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 10px 0; } .hhm label { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; color: var(--fg); }   /* (households) */
@@ -354,6 +357,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <h2 id="cvhead">Looking…</h2>
         <p class="stat" id="cvsay"></p>
         <div class="cvbar" id="cvbar" hidden><span id="cvfill"></span></div>
+        <div class="cvord" id="cvord" hidden>
+          <label class="cvsw"><input type="checkbox" id="cvrf"> <span>Repackage every MKV first, then the conversions <small>(repackaging takes minutes a film, converting hours)</small></span></label>
+          <div id="cvpins"></div>
+        </div>
         <ul class="changes cvl" id="cvlist"></ul>
         <p class="stat" id="orsay" style="margin-top:14px"></p>
         <div class="state"><button class="btn" id="orsee" type="button" hidden>The originals</button></div>
@@ -372,6 +379,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="state"><button class="btn" id="lbgo" type="button">Look at the library</button></div>
         <div id="lbui" hidden>
           <div class="lbbar"><span class="lbchips" id="lbchips"></span><select id="lbsort" class="name"><option value="worst">Worst first</option><option value="big">Biggest files</option><option value="az">A to Z</option></select><input type="search" id="lbq" class="name" placeholder="A film’s name" autocomplete="off"></div>
+          <p class="stat" id="lbsum" style="margin:10px 0 0"></p>
           <ul class="changes lbl" id="lblist"></ul>
           <div class="state"><button class="btn" id="lbmore" type="button" style="display:none">More</button></div>
         </div>
@@ -913,9 +921,28 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   };
 
   // ---- conversions (convert.py on the Mac): the film it's on and how far, and those done
+  // (John's say in the order: repackaging all first, and films pinned to go next; John, 12 Nov 2026: "repackage all mkv files first and
+  // then go to conversions - let me prioritise too")
+  function cvPost(body) {
+    return fetch(GW + '/api/convert', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (r) { if (r.status === 404) throw new Error('Update the Mac (Update everything) first.'); if (!r.ok) throw new Error('The Mac mini isn’t answering.'); return r.json(); });
+  }
+  function cvOrder(c) {
+    if (!('remux_first' in c)) return;   // (an older Mac)
+    $('#cvord').hidden = false; var rf = $('#cvrf'); rf.checked = !!c.remux_first;
+    rf.onchange = function () { cvPost({ op: 'remux_first', on: rf.checked }).then(function (j) { cvOrder(j); toast(rf.checked ? 'Repackaging every MKV first' : 'Movie of the Day’s films and new ones first, as before'); }).catch(function (e) { toast(e.message); }); };
+    var L = c.left ? ' <small style="color:var(--muted)">(' + c.left.remux + ' to repackage, ' + c.left.convert + ' to convert)</small>' : '';
+    $('#cvpins').innerHTML = (c.pins && c.pins.length ? '<p class="stat" style="margin:12px 0 0">Doing next, in this order' + L + ':</p>' + c.pins.map(function (x, i) {
+      return '<div class="cvpin"><b>' + (i + 1) + '. ' + esc(x.name || 'A film') + '</b>' + (i ? '<button type="button" data-cvup="' + x.id + '" data-n="' + esc(x.name || '') + '">To the top</button>' : '') + '<button type="button" data-cvun="' + x.id + '">Remove</button></div>';
+    }).join('') : '<p class="stat" style="margin:12px 0 0">To have a film done next, find it in the Library (Films) and tap <b>Do next</b>.' + L + '</p>');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-cvun],[data-cvup]'), function (b) { b.onclick = function () {
+      cvPost(b.dataset.cvun ? { op: 'unpin', id: b.dataset.cvun } : { op: 'up', id: b.dataset.cvup, name: b.dataset.n }).then(function (j) { cvOrder(j); }).catch(function (e) { toast(e.message); });
+    }; });
+  }
   function convert() {
     if (!GW) return;
     fetch(GW + '/api/convert', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (r.status === 404) throw new Error('old'); if (!r.ok) throw 0; return r.json(); }).then(function (c) {
+      cvOrder(c);
       var n = c.now, bar = $('#cvbar');
       bar.hidden = !(n && c.alive && (n.state === 'converting' || n.state === 'paused'));
       if (n && c.alive && (n.state === 'converting' || n.state === 'paused')) {
@@ -971,9 +998,16 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     $('#lblist').innerHTML = L.slice(0, LB.n).map(function (x) {
       return '<li>' + esc(x.n) + (x.y ? ' <span class="when" style="display:inline">(' + x.y + ')</span>' : '') + '<span class="q ' + x.g.q + '">' + { bad: 'Replace', ok: 'OK', good: 'Good' }[x.g.q] + '</span>' +
         '<span class="spec">' + x.g.res + (x.w ? ' · ' + x.w + '×' + x.h : '') + ' · ' + vn(x.v) + (x.b > 8 ? ' 10-bit' : '') + (x.mbps ? ' · ' + x.mbps + ' Mbps' : '') + (x.gb ? ' · ' + x.gb + ' GB' : '') + (x.mins ? ' · ' + x.mins + ' min' : '') + (x.a ? ' · ' + esc(x.a) : '') + '</span>' +
-        '<span class="why2">' + [x.g.why ? esc(x.g.why) : '', x.conv ? 'converted' + (x.was ? ' (was ' + fl(x.was) + ')' : '') : '', x.why ? 'waiting to convert: ' + esc(x.why) : ''].filter(Boolean).join(' · ') + '</span></li>';
+        '<span class="why2">' + [x.g.why ? esc(x.g.why) : '', x.conv ? 'converted' + (x.was ? ' (was ' + fl(x.was) + ')' : '') : '', x.why ? (/^to repackage/.test(x.why) ? esc(x.why) : 'waiting to convert: ' + esc(x.why)) : ''].filter(Boolean).join(' · ') +
+        (x.why && !x.conv ? '<button type="button" class="lbnext" data-lbnext="' + x.id + '" data-n="' + esc(x.n) + '">Do next</button>' : '') + '</span></li>';
     }).join('') || '<li>None.</li>';
     $('#lbmore').style.display = L.length <= LB.n ? 'none' : ''; $('#lbmore').onclick = function () { LB.n += 150; lbDraw(); };
+    Array.prototype.forEach.call(document.querySelectorAll('[data-lbnext]'), function (b) { b.onclick = function () {
+      b.disabled = true; cvPost({ op: 'pin', id: b.dataset.lbnext, name: b.dataset.n }).then(function (j) { cvOrder(j); b.textContent = 'Next ✓'; toast(b.dataset.n + ': done next'); }).catch(function (e) { b.disabled = false; toast(e.message); });
+    }; });
+    // (the library at a glance: how many MKVs, and how many films waiting to be repackaged or converted)
+    var mkv = all.filter(function (x) { return x.c === 'mkv' || x.c === 'matroska'; }).length, rp = all.filter(function (x) { return /^to repackage/.test(x.why || ''); }).length, cv = all.filter(function (x) { return x.why && !/^to repackage/.test(x.why); }).length;
+    $('#lbsum').innerHTML = all.length ? '<b>' + mkv + '</b> MKV file' + (mkv === 1 ? '' : 's') + ' · <b>' + rp + '</b> to repackage (minutes each) · <b>' + cv + '</b> to convert (hours each)' : '';
     $('#lbhead').innerHTML = all.length + ' films: <em>' + cnt.bad + ' to replace</em>';
   }
   $('#lbgo').onclick = function () {
