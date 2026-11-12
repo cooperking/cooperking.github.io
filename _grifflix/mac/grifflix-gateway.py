@@ -453,6 +453,17 @@ class Gateway:
         """A film's id now: convert.py's new file has a new one, and the site's copy keeps the old until John's Update."""
         return (self.store.d.get('remap') or {}).get(iid, iid)
 
+    def watched(self):
+        """A note for convert.py that someone is watching through Grifflix (the media server's own list of who's watching never shows
+        Grifflix's films, so the converter didn't pause for them: John, 12 Nov 2026, a film stalling at 00:30 while it converted)."""
+        try:
+            f = os.path.expanduser('~/Grifflix/watching')
+            with open(f, 'a'):
+                pass
+            os.utime(f, None)
+        except Exception:
+            pass
+
     def encodes(self):
         """What the media server's converter (ffmpeg) is doing now, from its own logs: for each film being streamed, whether the
         picture and sound are copied as they are or converted (and to what), and how fast against the film (1x keeps up)
@@ -1403,6 +1414,7 @@ def make_handler(g):
                 g.plays[ps] = {'uid': me['uid'], 'who': me['name'], 'iid': iid, 'msid': msid, 'name': it.get('Name') or '', 'mode': 'direct' if direct else 'stream',
                                'src': srcd, 'srcdesc': '%s%s%s' % ({'hevc': 'HEVC', 'h264': 'H.264'}.get(srcd['v'], srcd['v'].upper()), ' 10-bit' if srcd['bits'] > 8 else '', ', %s Mbps' % srcd['mbps'] if srcd['mbps'] else ''),
                                'hevc': hevc, 'hevc10': q.get('hevc10') == '1', 'br': br, 'kind': (q.get('kind') or '')[:40], 'at': time.time(), 'seen': time.time()}
+            g.watched()
             self.send_json(200, {'hls': hls, 'direct': direct, 'subs': subs, 'ps': ps, 'device': dev,
                                  'pos': user['progress'].get(iid, {}).get('pos', 0), 'secs': round((it.get('RunTimeTicks') or 0) / 1e7)})
 
@@ -1465,6 +1477,7 @@ def make_handler(g):
                 for x in g.plays.values():
                     if x['uid'] == me['uid'] and x['iid'] == iid:
                         x['seen'] = time.time()
+            g.watched()
             with g.store.lock:
                 done = bool(secs and pos > secs * 0.92)
                 user['progress'][iid] = {'pos': 0 if done else round(pos), 'at': int(time.time()), 'done': done}

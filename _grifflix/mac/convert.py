@@ -208,6 +208,11 @@ def brief(info, path):
 
 
 def watching():
+    try:   # (someone watching through Grifflix: the gateway's note, kept fresh every 10 seconds of a film; the media server never lists them)
+        if time.time() - os.path.getmtime(os.path.join(HOME, 'watching')) < 75:
+            return True
+    except OSError:
+        pass
     try:
         return any(g(x, 'NowPlayingItem') for x in call('GET', '/Sessions') or [])
     except Exception:
