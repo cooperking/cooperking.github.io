@@ -357,6 +357,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <h2 id="cvhead">Looking…</h2>
         <p class="stat" id="cvsay"></p>
         <div class="cvbar" id="cvbar" hidden><span id="cvfill"></span></div>
+        <p class="stat" id="cvdisks" hidden></p>
         <div class="cvord" id="cvord" hidden>
           <label class="cvsw"><input type="checkbox" id="cvrf"> <span>Repackage every MKV first, then the conversions <small>(repackaging takes minutes a film, converting hours)</small></span></label>
           <div id="cvpins"></div>
@@ -947,6 +948,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     if (!GW) return;
     fetch(GW + '/api/convert', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (r.status === 404) throw new Error('old'); if (!r.ok) throw 0; return r.json(); }).then(function (c) {
       cvOrder(c);
+      if (c.disks && c.disks.length) {   // (each disk's free space, and a warning before one fills: John, 12 Nov 2026, the Mac's own disk filled unnoticed)
+        var gb = function (b) { return b >= 1e12 ? (b / 1e12).toFixed(1) + ' TB' : Math.round(b / 1e9) + ' GB'; };
+        $('#cvdisks').hidden = false;
+        $('#cvdisks').innerHTML = 'Free space: ' + c.disks.map(function (d) {
+          var low = d.free < Math.max(10e9, d.total * .05);
+          return (low ? '<b style="color:#f08a4b">' : '<b>') + esc(d.name) + ' ' + gb(d.free) + '</b>' + (low ? ' <span style="color:#f08a4b">(nearly full: films may stop playing; free some space)</span>' : '');
+        }).join(' · ');
+      }
       var n = c.now, bar = $('#cvbar');
       bar.hidden = !(n && c.alive && (n.state === 'converting' || n.state === 'paused'));
       if (n && c.alive && (n.state === 'converting' || n.state === 'paused')) {

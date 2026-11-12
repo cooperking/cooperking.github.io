@@ -280,6 +280,9 @@ def convert(item, ffmpeg, ffprobe, st):
     os.makedirs(work, exist_ok=True)
     tmp = os.path.join(work, os.path.basename(base) + '.grifflix-converting' + ('.mkv' if mkv else '.mp4'))
     # room: the new file (at most about the original's size) and the original kept
+    sysfree = shutil.disk_usage('/').free   # (the Mac's own disk too: full, nothing on the Mac can write, and films stop playing: John, 12 Nov 2026)
+    if sysfree < 5e9:
+        raise SystemExit('The Mac’s own disk is nearly full (%.1f GB free): stopped, so it doesn’t fill. Free some space on it, then it carries on by itself.' % (sysfree / 1e9))
     free = shutil.disk_usage(os.path.dirname(src)).free
     if free < os.path.getsize(src) * 1.2 + 5e9:
         raise SystemExit('The drive is nearly full (%.0f GB free). Delete some of “Grifflix Originals” once you’ve checked them, then run again.' % (free / 1e9))

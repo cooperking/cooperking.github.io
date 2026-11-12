@@ -1266,6 +1266,7 @@ def make_handler(g):
             self.send_json(200, {'now': cur, 'alive': alive, 'done': len(done), 'failed': [{'name': x.get('name'), 'why': x.get('why')} for x in (st.get('failed') or {}).values()][:20],
                                  'recent': [{'name': x.get('name'), 'at': x.get('at'), 'mins': x.get('mins'), 'why': x.get('why'),
                                              'before': x.get('before') or look(x.get('kept')), 'after': x.get('after') or look(x.get('to'))} for x in rows],
+                                 'disks': disks(),
                                  'next': (cur or {}).get('next') or [], 'left': (cur or {}).get('left'), 'pins': P['pins'], 'remux_first': P['remux_first'], 'log': tail})
 
         def api_originals(self, me, user, q, b):
@@ -1889,6 +1890,27 @@ def make_handler(g):
             return '\n'.join(out) + '\n'
 
     return H
+
+
+def disks():
+    """Free space on the Mac's own disk and the drives its films are on, for the admin page (John, 12 Nov 2026: the Mac's own disk
+    filled up unnoticed, and nothing on the Mac could write)."""
+    import shutil
+    out, seen = [], set()
+    paths = ['/'] + ['/Volumes/' + v for v in (os.listdir('/Volumes') if os.path.isdir('/Volumes') else [])]
+    for pth in paths:
+        try:
+            st = os.stat(pth)
+            if st.st_dev in seen:
+                continue
+            seen.add(st.st_dev)
+            u = shutil.disk_usage(pth)
+            if u.total < 20e9:   # (small system volumes: not worth showing)
+                continue
+            out.append({'name': 'The Mac’s own disk' if pth == '/' else os.path.basename(pth), 'free': u.free, 'total': u.total})
+        except OSError:
+            pass
+    return out
 
 
 def keep_converting():
