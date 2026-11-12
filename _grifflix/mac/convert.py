@@ -502,11 +502,12 @@ def ordered(rest):
     P = prio()
     pin = [x['id'] for x in P['pins']]
     first = sorted([x for x in rest if x['id'] in pin], key=lambda x: pin.index(x['id']))
-    fresh = [x for x in rest if x['id'] not in pin and x.get('new')]   # (just brought in: before everything but John's pins)
-    others = [x for x in rest if x['id'] not in pin and not x.get('new')]
+    # (every repackaging before any conversion, new films' too: within each, as gathered, so films just brought in first, then Movie of
+    # the Day's, then the rest: John, 12 Nov 2026, "repackaged only first, no conversions until all repackaging is complete")
+    others = [x for x in rest if x['id'] not in pin]
     if P['remux_first']:
         others = [x for x in others if x.get('mode') == 'remux'] + [x for x in others if x.get('mode') != 'remux']
-    return first + fresh + others
+    return first + others
 
 
 def unpin(iid):
