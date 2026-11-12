@@ -1919,7 +1919,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
     <div class="prow"><button class="pb" id="pplay" aria-label="Play"></button><button class="pb" data-sk="-10" aria-label="Back 10 seconds"></button><button class="pb" data-sk="30" aria-label="On 30 seconds"></button>
       <span class="pvol"><button class="pb" id="pmute" aria-label="Mute"></button><input type="range" id="pvolr" min="0" max="1" step="0.05" value="1" aria-label="Volume"></span>
       <span class="phint">OK pause · ◀ 10 s · 30 s ▶</span><span class="pgap"></span>
-      <button class="pb" id="psubs" aria-label="Subtitles" aria-haspopup="menu" hidden></button><button class="pb prate" id="prate" aria-label="Speed" aria-haspopup="menu">1×</button><button class="pb" id="ppip" aria-label="Picture in picture" hidden></button><button class="pb" id="pfs" aria-label="Full screen"></button></div>
+      <button class="pb" id="phowb" aria-label="Is the Mac mini converting it?" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5" stroke-linecap="round"/></svg></button><button class="pb" id="psubs" aria-label="Subtitles" aria-haspopup="menu" hidden></button><button class="pb prate" id="prate" aria-label="Speed" aria-haspopup="menu">1×</button><button class="pb" id="ppip" aria-label="Picture in picture" hidden></button><button class="pb" id="pfs" aria-label="Full screen"></button></div>
     <div class="pmenu" id="pmenu" role="menu" hidden></div>
   </div>
 </div>
@@ -5752,8 +5752,9 @@ function devKind() {   // (what this is, in a word or two, for the admin page's 
   var w = /[?&]app=/.test(location.search) ? 'app' : /Edg\//.test(u) ? 'Edge' : /Firefox\//.test(u) ? 'Firefox' : /Chrome\//.test(u) ? 'Chrome' : /Safari\//.test(u) ? 'Safari' : '';
   return d + (w ? ' · ' + w : '');
 }
-function howLook(info, it) {   // whether the Mac mini is converting this film, by its name, a little after it starts and now and then
-  var el = $('#phow'); el.hidden = true; el.className = 'phow'; clearTimeout(P.howT);
+P.showHow = store.get('grifflix-showhow') === 'on';   // (the line only when asked for, with the player's i button: John, 12 Nov 2026: "It can't be there - at most it can be an option that reveals it")
+function howLook(info, it, now) {   // whether the Mac mini is converting this film, by its name, a little after it starts and now and then
+  var el = $('#phow'); if (!now) { el.hidden = true; el.className = 'phow'; el.textContent = ''; } clearTimeout(P.howT);
   if (DEMO || !info || !info.ps) return;
   var look = function (n) {
     if (P.it !== it || P.info !== info) return;
@@ -5762,11 +5763,11 @@ function howLook(info, it) {   // whether the Mac mini is converting this film, 
       el.textContent = j.how === 'asis' ? 'Playing as it is' : j.how === 'wait' ? 'Starting…' :
         'Converted by the Mac mini' + (j.why ? ': ' + j.why : '') + (j.speed ? ' · ' + (j.speed >= 1 ? 'keeping up' : 'slower than the film, it may stop') + ' (' + j.speed + '×)' : '');
       el.title = j.say || '';
-      el.className = 'phow ' + j.how; el.hidden = false;
+      el.className = 'phow ' + j.how; el.hidden = !P.showHow;
       if (j.how === 'wait' || j.how === 'conv') P.howT = setTimeout(function () { look(n + 1); }, n < 3 ? 6000 : 30000);
     }).catch(function () {});   // (an older Mac: nothing shown)
   };
-  P.howT = setTimeout(function () { look(0); }, info.direct ? 1500 : 7000);
+  P.howT = setTimeout(function () { look(0); }, now ? 0 : info.direct ? 1500 : 7000);
 }
 function saveProgress() { if (P.it && P.v.currentTime > 0 && !DEMO && !PUBLIC) api('progress', { id: P.it.id, pos: P.v.currentTime, secs: P.v.duration || (P.info && P.info.secs) || 0 }).then(function () { P.it.pos = P.v.currentTime; }).catch(function () {}); }
 function stopPlayer() {
@@ -5933,6 +5934,14 @@ window.addEventListener('pagehide', saveProgress);
       if (b.dataset.i != null) setSubs(+b.dataset.i, true); else { v.playbackRate = +b.dataset.r; $('#prate').textContent = (+b.dataset.r) + '×'; }
       P.menu(); if (from) from.focus(); }; });
     var cur = $('#pmenu button i:not(:empty)'); (cur ? cur.parentNode : $('#pmenu button')).focus();
+  };
+  $('#phowb').classList.toggle('on', P.showHow); $('#phowb').setAttribute('aria-pressed', P.showHow ? 'true' : 'false');
+  $('#phowb').onclick = function (e) {
+    e.stopPropagation(); P.showHow = !P.showHow; store.set('grifflix-showhow', P.showHow ? 'on' : 'off');
+    this.classList.toggle('on', P.showHow); this.setAttribute('aria-pressed', P.showHow ? 'true' : 'false');
+    var el = $('#phow'); if (!P.showHow) { el.hidden = true; return; }
+    if (el.textContent) el.hidden = false;
+    if (P.info && P.it) howLook(P.info, P.it, true);
   };
   $('#psubs').onclick = function (e) { e.stopPropagation(); P.menu('subs', this); };
   $('#prate').onclick = function (e) { e.stopPropagation(); P.menu('rate', this); };
