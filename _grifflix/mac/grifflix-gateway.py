@@ -1773,8 +1773,8 @@ def make_handler(g):
 
 def keep_converting():
     """The converter kept going: started again if it isn't running (after the Mac restarts, or if the restart after Update everything
-    didn't take), unless it finished everything in the last 12 hours. It still converts only at night, but for today's and tomorrow's
-    Movie of the Day (John, 12 Nov 2026: "it said nothing was being converted right now, which is odd")."""
+    didn't take), unless it finished everything in the last 12 hours; any time the Mac isn't in use, pausing while anyone watches
+    (John, 12 Nov 2026: "it said nothing was being converted right now, which is odd")."""
     home = os.path.expanduser('~/Grifflix')
     time.sleep(180)   # (not straight after starting: an Update starts the converter itself)
     while True:
@@ -1794,7 +1794,7 @@ def keep_converting():
                 import subprocess
                 running = 'convert.py' in subprocess.run(['ps', '-axo', 'command'], capture_output=True, text=True, timeout=10).stdout
                 if not running:
-                    args = [a for a in (cur.get('args') or ['go']) if a in ('go', 'now')] or ['go']
+                    args = ['go', 'now']   # (any time it isn't in use: John, 12 Nov 2026, "That 2am 8am rule was changed to any time not in use")
                     awake = ['/usr/bin/caffeinate', '-i'] if os.path.exists('/usr/bin/caffeinate') else []
                     out = open(os.path.join(home, 'convert.out'), 'a')
                     subprocess.Popen(awake + [sys.executable, script] + args, stdout=out, stderr=out, stdin=subprocess.DEVNULL,
