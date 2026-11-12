@@ -1048,7 +1048,10 @@ def make_handler(g):
                     bits = v.get('BitDepth') or 8
                     mbps = round((ms.get('Bitrate') or v.get('BitRate') or 0) / 1e6, 1)
                     why = ''
-                    if w > 1928 or h > 1088:
+                    cont = [c for c in (ms.get('Container') or '').lower().split(',') if c]
+                    if cont and not any(c in ('mp4', 'm4v', 'mov') for c in cont):   # (every MKV repackaged first, the picture as it is, converted after if need be: John, 12 Nov 2026)
+                        why = 'to repackage (%s file), the picture untouched' % cont[0].upper()
+                    elif w > 1928 or h > 1088:
                         why = 'bigger than 1080p'
                     elif mbps > 20:
                         why = 'over 20 Mbps'
