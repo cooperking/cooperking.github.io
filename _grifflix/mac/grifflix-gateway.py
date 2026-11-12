@@ -1064,7 +1064,10 @@ def make_handler(g):
                     elif au and (au[0].get('Codec') or '').lower() not in ('aac', 'mp3'):
                         why = 'to repackage (%s sound), the picture untouched' % (au[0].get('Codec') or '?').upper()
                     cv = made.get(os.path.normcase(it.get('Path') or ''))
+                    # (picture subtitles (Blu-ray PGS, DVD VobSub): an MP4 can't hold them, so repackaging leaves them in the original: John, 12 Nov 2026)
+                    pics = [x for x in ss if x.get('Type') == 'Subtitle' and not x.get('IsTextSubtitleStream') and not x.get('IsExternal')]
                     rows.append({'id': it.get('Id'), 'n': it.get('Name'), 'y': it.get('ProductionYear') or '', 'w': w, 'h': h, 'v': vc, 'b': bits, 'mbps': mbps, 'c': (ms.get('Container') or '').lower().split(',')[0],
+                                 'ps': ', '.join(sorted(set((x.get('DisplayTitle') or x.get('Language') or '?').split(' - ')[0] for x in pics)))[:120],
                                  'gb': round((ms.get('Size') or 0) / 1e9, 1), 'mins': round((it.get('RunTimeTicks') or 0) / 6e8),
                                  'a': ', '.join(sorted(set('%s %s' % ((x.get('Codec') or '?').upper(), {1: 'mono', 2: 'stereo', 6: '5.1', 8: '7.1'}.get(x.get('Channels') or 0, '%sch' % (x.get('Channels') or '?'))) for x in au[:4]))),
                                  'conv': bool(cv), 'was': (cv or {}).get('before'), 'why': '' if cv else why})
