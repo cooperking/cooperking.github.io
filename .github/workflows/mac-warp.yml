@@ -72,7 +72,9 @@ jobs:
               print('app sign-in: made, "%s" only' % P['name'])
 
           # 2. the app sends only the Mac's address through Cloudflare (Include mode), so the rest of the phone is untouched
+          n0 = len(fails)
           inc = cf('GET', '/accounts/%s/devices/policy/include' % ACC, need='Zero Trust: Edit')
+          if inc is None and len(fails) == n0: inc = []   # (none yet: Cloudflare answers with nothing)
           if inc is not None:
               if any(x.get('address') == NET for x in inc or []): print('app sends through Cloudflare: %s (already)' % NET)
               else:
