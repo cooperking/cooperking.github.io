@@ -365,6 +365,13 @@ html.tv .phint { color: rgba(243, 232, 210, .6) !important; letter-spacing: .12e
 html.tv .player .pb:focus, html.tv .player .pb:focus-visible, html.tv .player .top .ico:focus, html.tv .player .top .ico:focus-visible { outline: 0 !important; background: #f3e8d2 !important; color: #173a5e !important; transform: scale(1.12); box-shadow: 0 0 0 4px rgba(240, 138, 75, .55) !important; opacity: 1; }
 html.tv .pseek:focus-visible .ptr, html.tv .pseek:focus .ptr { box-shadow: 0 0 0 3px rgba(240, 138, 75, .55); }
 
+/* whether the Mac mini is converting the film (John, 12 Nov 2026: "How do I know a film isn't being converted by the Mac mini?") */
+.player .top { align-items: flex-start; }
+.phow { display: flex; align-items: center; gap: 8px; margin-top: 10px; font: 600 11px/1.3 var(--kfont); letter-spacing: .14em; text-transform: uppercase; color: rgba(243, 232, 210, .82); max-width: 70vw; }
+.phow::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: #7cc59a; }
+.phow.conv::before { background: #f08a4b; } .phow.wait::before { background: rgba(243, 232, 210, .4); }
+.phow[hidden] { display: none; } html.tv .phow { font-size: 13px; }
+
 /* the signed-out welcome, and messages */
 .welcome { max-width: 620px; margin: 12vh auto 0; text-align: center; }
 .welcome h1 { margin: 0; font: 700 clamp(30px, 6vw, 52px)/1 "GFutura", "futura-pt", "Futura PT", "Futura", "Jost", sans-serif !important; letter-spacing: .55em !important; margin-right: -.55em; text-transform: uppercase !important; color: var(--fg); }   /* (as the logo: Futura, spaced as it is) */
@@ -1904,7 +1911,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
   <div class="ptap" id="ptap"></div>
   <div class="pmid"><button class="pb pskip" data-sk="-10" aria-label="Back 10 seconds"></button><button class="pb pbig" id="pbig" aria-label="Play"></button><button class="pb pskip" data-sk="30" aria-label="On 30 seconds"></button></div>
   <div class="pspin" aria-hidden="true"></div><div class="pflash" id="pflash" aria-hidden="true"></div>
-  <div class="top"><button class="ico" id="pclose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button><div><div class="t" id="ptitle"></div><div class="s" id="psub"></div></div><button class="ico" id="ptv" aria-label="Play on the Fire TV" title="Play on the Fire TV" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="13"/><path d="M8 21h8M12 17v4"/></svg></button><button class="ico" id="pcast" aria-label="Play on a TV" title="Play on a TV (AirPlay or Chromecast)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><path d="M2 12a9 9 0 0 1 8 8M2 16a5 5 0 0 1 4 4"/><path d="M2 20h.01"/></svg></button></div>
+  <div class="top"><button class="ico" id="pclose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button><div><div class="t" id="ptitle"></div><div class="s" id="psub"></div><div class="phow" id="phow" hidden></div></div><button class="ico" id="ptv" aria-label="Play on the Fire TV" title="Play on the Fire TV" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="13"/><path d="M8 21h8M12 17v4"/></svg></button><button class="ico" id="pcast" aria-label="Play on a TV" title="Play on a TV (AirPlay or Chromecast)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><path d="M2 12a9 9 0 0 1 8 8M2 16a5 5 0 0 1 4 4"/><path d="M2 20h.01"/></svg></button></div>
   <div class="msg" id="pmsg"></div>
   <button class="pill on nextup" id="pnext">Next episode</button>
   <div class="pctl" id="pctl">
@@ -1912,7 +1919,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
     <div class="prow"><button class="pb" id="pplay" aria-label="Play"></button><button class="pb" data-sk="-10" aria-label="Back 10 seconds"></button><button class="pb" data-sk="30" aria-label="On 30 seconds"></button>
       <span class="pvol"><button class="pb" id="pmute" aria-label="Mute"></button><input type="range" id="pvolr" min="0" max="1" step="0.05" value="1" aria-label="Volume"></span>
       <span class="phint">OK pause · ◀ 10 s · 30 s ▶</span><span class="pgap"></span>
-      <button class="pb" id="psubs" aria-label="Subtitles" aria-haspopup="menu" hidden></button><button class="pb prate" id="prate" aria-label="Speed" aria-haspopup="menu">1×</button><button class="pb" id="ppip" aria-label="Picture in picture" hidden></button><button class="pb" id="pfs" aria-label="Full screen"></button></div>
+      <button class="pb" id="phowb" aria-label="Is the Mac mini converting it?" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5" stroke-linecap="round"/></svg></button><button class="pb" id="psubs" aria-label="Subtitles" aria-haspopup="menu" hidden></button><button class="pb prate" id="prate" aria-label="Speed" aria-haspopup="menu">1×</button><button class="pb" id="ppip" aria-label="Picture in picture" hidden></button><button class="pb" id="pfs" aria-label="Full screen"></button></div>
     <div class="pmenu" id="pmenu" role="menu" hidden></div>
   </div>
 </div>
@@ -1928,7 +1935,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'b379ad413f73' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '7e01d1496260' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5685,7 +5692,7 @@ function play(it, queue, fromStart) {
   if (DEMO) { $('#pmsg').textContent = 'In the demo there’s nothing to play. Once the Mac mini is connected, “' + showName(it) + '” plays here.'; $('#pmsg').classList.add('on'); return; }
   var tries = 0, ask = function () {   // (the Mac asleep: it wakes to the first knock; tell them, and knock again for a minute)
     var h = HEVC && !P.noHw;
-    return api('play?id=' + it.id + (h ? '&hevc=1' + (HEVC10 ? '&hevc10=1' : '') : '')).catch(function (e) {
+    return api('play?id=' + it.id + (h ? '&hevc=1' + (HEVC10 ? '&hevc10=1' : '') : '') + '&kind=' + encodeURIComponent(devKind())).catch(function (e) {
       if (e && (e.status === 401 || e.status === 403 || e.status === 404) || ++tries > 8 || P.it !== it) throw e;
       $('#pmsg').textContent = 'Waking the Mac mini… (a moment)'; $('#pmsg').classList.add('on');
       return new Promise(function (ok) { setTimeout(ok, 6000); }).then(ask);
@@ -5721,6 +5728,7 @@ function play(it, queue, fromStart) {
       });
     } else { $('#pmsg').textContent = 'This browser can’t play it.'; $('#pmsg').classList.add('on'); }
     clearInterval(P.saveT); P.saveT = setInterval(saveProgress, 10000);
+    howLook(info, it);
     if (HW && HW.hevc && !P.noHw) {   // (trusting the TV's hardware over its browser: if the film doesn't get going, the Mac converts it after all, and this TV isn't trusted again)
       var t0 = Date.now(), gone = false, fall = function () {
         if (gone || P.it !== it) return; gone = true; clearInterval(P.hwT); v.removeEventListener('error', fall);
@@ -5737,11 +5745,35 @@ function play(it, queue, fromStart) {
     }
   }).catch(function (e) { $('#pmsg').textContent = (e && e.message) || 'It won’t play just now.'; $('#pmsg').classList.add('on'); });
 }
+function devKind() {   // (what this is, in a word or two, for the admin page's Playing now)
+  var u = navigator.userAgent;
+  if (TV) return 'Fire TV';
+  var d = /iPhone/.test(u) ? 'iPhone' : /iPad/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1) ? 'iPad' : /Android/.test(u) ? 'Android' : /Macintosh/.test(u) ? 'Mac' : /Windows/.test(u) ? 'Windows' : 'computer';
+  var w = /[?&]app=/.test(location.search) ? 'app' : /Edg\//.test(u) ? 'Edge' : /Firefox\//.test(u) ? 'Firefox' : /Chrome\//.test(u) ? 'Chrome' : /Safari\//.test(u) ? 'Safari' : '';
+  return d + (w ? ' · ' + w : '');
+}
+P.showHow = store.get('grifflix-showhow') === 'on';   // (the line only when asked for, with the player's i button: John, 12 Nov 2026: "It can't be there - at most it can be an option that reveals it")
+function howLook(info, it, now) {   // whether the Mac mini is converting this film, by its name, a little after it starts and now and then
+  var el = $('#phow'); if (!now) { el.hidden = true; el.className = 'phow'; el.textContent = ''; } clearTimeout(P.howT);
+  if (DEMO || !info || !info.ps) return;
+  var look = function (n) {
+    if (P.it !== it || P.info !== info) return;
+    api('playing?ps=' + encodeURIComponent(info.ps)).then(function (j) {
+      if (P.it !== it || !j || !j.how) return;
+      el.textContent = j.how === 'asis' ? 'Playing as it is' : j.how === 'wait' ? 'Starting…' :
+        'Converted by the Mac mini' + (j.why ? ': ' + j.why : '') + (j.speed ? ' · ' + (j.speed >= 1 ? 'keeping up' : 'slower than the film, it may stop') + ' (' + j.speed + '×)' : '');
+      el.title = j.say || '';
+      el.className = 'phow ' + j.how; el.hidden = !P.showHow;
+      if (j.how === 'wait' || j.how === 'conv') P.howT = setTimeout(function () { look(n + 1); }, n < 3 ? 6000 : 30000);
+    }).catch(function () {});   // (an older Mac: nothing shown)
+  };
+  P.howT = setTimeout(function () { look(0); }, now ? 0 : info.direct ? 1500 : 7000);
+}
 function saveProgress() { if (P.it && P.v.currentTime > 0 && !DEMO && !PUBLIC) api('progress', { id: P.it.id, pos: P.v.currentTime, secs: P.v.duration || (P.info && P.info.secs) || 0 }).then(function () { P.it.pos = P.v.currentTime; }).catch(function () {}); }
 function stopPlayer() {
   var tf = $('#player iframe.trailer');
   if (tf) { tf.remove(); P.v.classList.remove('hide'); P.el.classList.remove('on', 'trailering'); document.documentElement.style.overflow = ''; return; }
-  saveProgress(); clearInterval(P.saveT);
+  saveProgress(); clearInterval(P.saveT); clearTimeout(P.howT);
   if (P.info && !DEMO) api('stop', { ps: P.info.ps, device: P.info.device }).catch(function () {});
   if (P.hls) { P.hls.destroy(); P.hls = null; }
   P.v.pause(); P.v.removeAttribute('src'); P.v.load();
@@ -5902,6 +5934,14 @@ window.addEventListener('pagehide', saveProgress);
       if (b.dataset.i != null) setSubs(+b.dataset.i, true); else { v.playbackRate = +b.dataset.r; $('#prate').textContent = (+b.dataset.r) + '×'; }
       P.menu(); if (from) from.focus(); }; });
     var cur = $('#pmenu button i:not(:empty)'); (cur ? cur.parentNode : $('#pmenu button')).focus();
+  };
+  $('#phowb').classList.toggle('on', P.showHow); $('#phowb').setAttribute('aria-pressed', P.showHow ? 'true' : 'false');
+  $('#phowb').onclick = function (e) {
+    e.stopPropagation(); P.showHow = !P.showHow; store.set('grifflix-showhow', P.showHow ? 'on' : 'off');
+    this.classList.toggle('on', P.showHow); this.setAttribute('aria-pressed', P.showHow ? 'true' : 'false');
+    var el = $('#phow'); if (!P.showHow) { el.hidden = true; return; }
+    if (el.textContent) el.hidden = false;
+    if (P.info && P.it) howLook(P.info, P.it, true);
   };
   $('#psubs').onclick = function (e) { e.stopPropagation(); P.menu('subs', this); };
   $('#prate').onclick = function (e) { e.stopPropagation(); P.menu('rate', this); };
