@@ -2257,8 +2257,8 @@ function api(path, body) {
 var MEMO = {};
 function apiMemo(path, draw) { return api(path).then(function (d) { draw(d); return d; }); }   // (the site's files: the browser keeps them)
 function refreshAll() {   // look again: the site's files and the pictures fetched afresh, staying where you are (the page, month, day, pop-up)
-  var f = $('#cal button.front') || $('#cal .today');
-  try { sessionStorage.setItem('grifflix-resume', JSON.stringify({ m: S.month, d: f && f.dataset.day, s: dlg.open ? S.sheetNow : null, y: scrollY, t: Date.now() })); } catch (e) {}
+  var f = $('#cal button.front') || $('#cal .today'), stale = typeof dayStale === 'function' && dayStale();   // (a new day since it loaded: back on today, not the day you were on)
+  try { sessionStorage.setItem('grifflix-resume', JSON.stringify(stale ? { t: 0 } : { m: S.month, d: f && f.dataset.day, s: dlg.open ? S.sheetNow : null, y: scrollY, t: Date.now() })); } catch (e) {}
   forgetMemo();
   try { if (window.caches) caches.delete('gfx-pics-v1'); } catch (e) {}
   location.reload();
@@ -3207,7 +3207,21 @@ function musicBeep(at) {   // (the leader's beep on each number, at its moment o
 ['pointerdown', 'keydown', 'touchend'].forEach(function (ev) { addEventListener(ev, function () {   // (the first tap or key lets it play)
   if (TMUS.ok) return; TMUS.ok = true; musicCtx(); var k = TMUS.k; TMUS.k = null; if (k) themeMusic(k);
 }, true); });
-document.addEventListener('visibilitychange', function () { if (document.hidden) { allQuiet(); } else { leaderNewDay(); freshCheck(); } });
+document.addEventListener('visibilitychange', function () { if (document.hidden) { allQuiet(); } else { if (dayCheck()) return; leaderNewDay(); freshCheck(); } });
+// (a new day, or 8 o'clock come, since the page was loaded: the page loaded afresh, on today. A Fire Stick keeps the app's page open for
+// days, so it went on showing yesterday, and its own reload kept the day you were on: John, 12 Nov 2026, "going into the app or
+// refreshing still doesn't automatically do it")
+var LOADED = { day: TODAY, h: londonHour() };
+function londonHour() { try { return +new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: 'numeric', hour12: false }).format(new Date()) % 24; } catch (e) { return new Date().getHours(); } }
+function dayStale() { return iso(new Date()) !== LOADED.day || (LOADED.h < 8 && londonHour() >= 8); }
+function dayCheck() {
+  if (!dayStale()) return false;
+  var tp = $('#tplayer'), busy = (P && P.el && P.el.classList.contains('on')) || (tp && !tp.hidden) || (dlg && dlg.open);
+  if (busy) return false;   // (never over a film, a trailer or a pop-up: the next look, once it's closed)
+  try { sessionStorage.removeItem('grifflix-resume'); } catch (e) {}
+  location.reload(); return true;
+}
+setInterval(function () { if (!document.hidden) dayCheck(); }, 60000);
 function allQuiet() {   // (the page left: every sound off at once, the theme's, the leader's, the projector's whirr)
   musicHush(true);
   [].forEach.call(document.querySelectorAll('audio'), function (a) { try { a.pause(); } catch (e) {} });
