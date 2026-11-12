@@ -1935,7 +1935,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'e2a640142e28' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '829aea8571b6' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5625,6 +5625,9 @@ function codecLine() {   // (what this device says it can play, for working out 
     '; whole file: ' + cp('video/mp4; codecs="hvc1.1.6.L120.90"') + ', 10-bit ' + cp('video/mp4; codecs="hvc1.2.4.L120.90"') + '; native HLS ' + (cp('application/vnd.apple.mpegurl')) +
     (HW ? '; the TV’s hardware: HEVC ' + yn(HW.hevc) + ', 10-bit ' + yn(HW.hevc10) : window.GRIFFLIXTV && GRIFFLIXTV.codecs ? '; the TV’s hardware: not used here (a film wouldn’t start with it)' : '') + ')</span></span>';
 }
+var AC3 = (function () {   // (whether this device plays AC3 / E-AC3 surround sound itself: Safari does, Chrome mostly doesn't)
+  try { var v = document.createElement('video'); return !!(v.canPlayType('audio/mp4; codecs="ac-3"') && v.canPlayType('audio/mp4; codecs="ec-3"')); } catch (e) { return false; }
+})();
 var HEVC10 = HW && HW.hevc10 ? true : (function () {   // (and 10-bit HEVC (Main 10), which some that play HEVC can't: John, 11 Nov 2026: Rushmore stuck at 40 seconds)
   try {
     var v = document.createElement('video'), c = 'video/mp4; codecs="hvc1.2.4.L120.90"';
@@ -5696,7 +5699,7 @@ function play(it, queue, fromStart) {
   if (DEMO) { $('#pmsg').textContent = 'In the demo there’s nothing to play. Once the Mac mini is connected, “' + showName(it) + '” plays here.'; $('#pmsg').classList.add('on'); return; }
   var tries = 0, ask = function () {   // (the Mac asleep: it wakes to the first knock; tell them, and knock again for a minute)
     var h = HEVC && !P.noHw;
-    return api('play?id=' + it.id + (h ? '&hevc=1' + (HEVC10 ? '&hevc10=1' : '') : '') + '&kind=' + encodeURIComponent(devKind())).catch(function (e) {
+    return api('play?id=' + it.id + (h ? '&hevc=1' + (HEVC10 ? '&hevc10=1' : '') : '') + (AC3 ? '&ac3=1' : '') + (P.noDirect === it.id ? '&nodirect=1' : '') + '&kind=' + encodeURIComponent(devKind())).catch(function (e) {
       if (e && (e.status === 401 || e.status === 403 || e.status === 404) || ++tries > 8 || P.it !== it) throw e;
       $('#pmsg').textContent = 'Waking the Mac mini… (a moment)'; $('#pmsg').classList.add('on');
       return new Promise(function (ok) { setTimeout(ok, 6000); }).then(ask);
@@ -5716,7 +5719,8 @@ function play(it, queue, fromStart) {
     // browser view also says it plays these streams itself, but hands them to Android's player, which draws the film full screen and
     // stretched whatever the page says: the page's frame then showed a cut-out of it (John, 11 Nov 2026: "It's put bars and cut it off"))
     var native = v.canPlayType('application/vnd.apple.mpegurl') && (!(window.Hls && Hls.isSupported()) || /Apple/.test(navigator.vendor || '') || store.get('grifflix-tvhls') === 'native');
-    if (native) { v.src = gwUrl(info.hls); v.addEventListener('loadedmetadata', begin, { once: true }); }
+    if (info.direct && !Q.has('hls')) {}   // (the whole file, above: not then swapped for the stream, as it was from 11 Nov 2026 to 12 Nov, when nothing played whole)
+    else if (native) { v.src = gwUrl(info.hls); v.addEventListener('loadedmetadata', begin, { once: true }); }
     else if (window.Hls && Hls.isSupported()) {
       P.hls = new Hls({ startPosition: start > 5 ? start : -1, maxBufferLength: 40 });
       P.hls.loadSource(gwUrl(info.hls)); P.hls.attachMedia(v);
@@ -5733,7 +5737,21 @@ function play(it, queue, fromStart) {
     } else { $('#pmsg').textContent = 'This browser can’t play it.'; $('#pmsg').classList.add('on'); }
     clearInterval(P.saveT); P.saveT = setInterval(saveProgress, 10000);
     howLook(info, it);
-    if (HW && HW.hevc && !P.noHw) {   // (trusting the TV's hardware over its browser: if the film doesn't get going, the Mac converts it after all, and this TV isn't trusted again)
+    if (info.direct && !info.hv && P.noDirect !== it.id) {   // (the whole file not getting going in 20 seconds, or failing: the stream instead, from where it was;
+      // the stream is the media server's, which plays more kinds of file: John, 12 Nov 2026, "make sure this is addressed properly in all players")
+      var d0 = Date.now(), dgone = false, dfall = function () {
+        if (dgone || P.it !== it) return; dgone = true; clearInterval(P.dT); v.removeEventListener('error', dfall);
+        P.noDirect = it.id; P.startAt = Math.max(start, v.currentTime || 0); play(it, P.queue, fromStart);
+      };
+      v.addEventListener('error', dfall, { once: true });
+      clearInterval(P.dT); P.dT = setInterval(function () {
+        if (P.it !== it || dgone) return clearInterval(P.dT);
+        if (v.currentTime > (start > 5 ? start : 0) + 3 && v.readyState >= 3) { clearInterval(P.dT); v.removeEventListener('error', dfall); return; }
+        if (v.paused && v.readyState >= 2) d0 = Date.now();
+        if (Date.now() - d0 > 20000) dfall();
+      }, 1000);
+    }
+    if (HW && HW.hevc && !P.noHw && info.hv) {   // (trusting the TV's hardware over its browser: if the film doesn't get going, the Mac converts it after all, and this TV isn't trusted again)
       var t0 = Date.now(), gone = false, fall = function () {
         if (gone || P.it !== it) return; gone = true; clearInterval(P.hwT); v.removeEventListener('error', fall);
         store.set('grifflix-hwhevc', 'bad'); HW = null; HEVC = false; HEVC10 = false;

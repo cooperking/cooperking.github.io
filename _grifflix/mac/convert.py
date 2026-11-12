@@ -107,6 +107,9 @@ def load_json(path):
         return {}
 
 
+REPACK = 'to repackage'   # (a film whose picture plays as it is, put in an MP4 with sound every device plays: the picture copied, not converted)
+
+
 def why(ms):
     streams = g(ms, 'MediaStreams', [])
     v = next((x for x in streams if g(x, 'Type') == 'Video'), None)
@@ -121,11 +124,19 @@ def why(ms):
         return 'bigger than 1080p (%dx%d)' % (w, h)
     if mbps > MAX_MBPS:
         return 'too big (%.0f Mbps)' % mbps
-    if vc == 'h264' and bits <= 8 and '10' not in prof:
+    if (vc == 'h264' or vc in ('hevc', 'h265')) and bits <= 8 and '10' not in prof:
+        # (the picture plays as it is (8-bit H.264; 8-bit HEVC on the devices that play HEVC; 10-bit HEVC, which many browsers and TV
+        # sticks can't, is converted: John, 11 Nov 2026, Rushmore). It must also be in an MP4 with sound every device plays, or a device
+        # can only have it through the media server's repackaging as it plays, which devices often fail on (John, 12 Nov 2026: "Playing
+        # as it is" but not playing): then it's repackaged here, the picture copied untouched, which takes minutes, not hours)
+        cont = [c.strip() for c in (g(ms, 'Container') or '').lower().split(',') if c.strip()]
+        auds = [x for x in streams if g(x, 'Type') == 'Audio']
+        a = next((x for x in auds if g(x, 'IsDefault')), auds[0] if auds else None)
+        if not any(c in ('mp4', 'm4v', 'mov') for c in cont):
+            return REPACK + ' (%s file)' % ((cont[0] if cont else '?').upper())
+        if a and (g(a, 'Codec') or '').lower() not in ('aac', 'mp3'):
+            return REPACK + ' (%s sound)' % ((g(a, 'Codec') or '?').upper())
         return None
-    if vc in ('hevc', 'h265') and bits <= 8 and '10' not in prof:
-        return None   # (8-bit HEVC: the devices that play HEVC play it; 10-bit HEVC, which many browsers and TV sticks can't, is converted:
-                      # the Mac mini can't convert it as it plays (John, 11 Nov 2026: Rushmore, HEVC 10-bit, stuck at 40 seconds))
     return 'format (%s%s)' % (vc or '?', ', 10-bit' if bits > 8 or '10' in prof else '')
 
 
@@ -144,7 +155,7 @@ def gather():
                 w = why(ms)
                 if w and g(it, 'Path') and os.path.exists(g(it, 'Path')):
                     name = g(it, 'Name') if types == 'Movie' else '%s S%02dE%02d' % (g(it, 'SeriesName'), g(it, 'ParentIndexNumber', 0), g(it, 'IndexNumber', 0))
-                    out.append({'id': g(it, 'Id'), 'name': name, 'year': g(it, 'ProductionYear', ''), 'lib': lib, 'why': w,
+                    out.append({'id': g(it, 'Id'), 'name': name, 'year': g(it, 'ProductionYear', ''), 'lib': lib, 'why': w, 'mode': 'remux' if w.startswith(REPACK) else 'convert',
                                 'path': g(it, 'Path'), 'mins': round((g(it, 'RunTimeTicks') or 0) / 6e8), 'rating': g(it, 'CommunityRating') or 0,
                                 'gb': round(os.path.getsize(g(it, 'Path')) / 1e9, 1), 'added': g(it, 'DateCreated') or ''})
             start += 300
@@ -168,6 +179,8 @@ def gather():
     first = sorted([x for x in out if x['id'] in soon], key=lambda x: soon[x['id']])
     new = sorted([x for x in out if x['id'] not in soon and x['added'] >= cut], key=lambda x: x['added'], reverse=True)
     rest = sorted([x for x in out if x['id'] not in soon and x['added'] < cut], key=lambda x: (x['lib'] != 'movies', -x['rating'], x['name']))
+    # (the quick ones, repackaging, before the slow ones in each group: a few minutes each, and then they play everywhere)
+    new.sort(key=lambda x: x.get('mode') != 'remux'); rest.sort(key=lambda x: x.get('mode') != 'remux')
     tomorrow = time.strftime('%Y-%m-%d', time.localtime(time.time() + 86400))
     for x in first:
         x['why'] += ' · Movie of the Day ' + soon[x['id']]
@@ -239,8 +252,13 @@ def convert(item, ffmpeg, ffprobe, st):
     if not v or not dur:
         raise RuntimeError('couldn’t read it')
     base, ext = os.path.splitext(src)
-    mkv = ext.lower() == '.mkv'   # (an .mkv stays .mkv: the same name, so Jellyfin keeps it as the same film)
-    dst = base + ('.mkv' if mkv else '.mp4')
+    # (always an MP4: the one kind of file every browser, phone and TV plays whole; an .mkv no browser does. A new name, so Jellyfin makes it
+    # a new item, and calendars, lists, progress and collections follow it (the remap below): John, 12 Nov 2026)
+    mkv = False
+    dst = base + '.mp4'
+    pf = (v.get('pix_fmt') or '')
+    remux = item.get('mode') == 'remux' and v.get('codec_name') in ('h264', 'hevc') and '10' not in pf and '12' not in pf \
+        and int(v.get('width') or 0) <= MAX_W + 8 and int(v.get('height') or 0) <= MAX_H + 8
     # the new file is made outside the libraries ("Grifflix Converting", beside them on the same drive), so Jellyfin
     # doesn't list it as a new film while it's being made (John, 8 Nov 2026: Back to the Future showed as newest at 11%)
     roots = [l for vf_ in call('GET', '/Library/VirtualFolders') or [] for l in g(vf_, 'Locations', [])]
@@ -271,9 +289,12 @@ def convert(item, ffmpeg, ffprobe, st):
     # plenty for 1080p (John, 11 Nov 2026: "Some of the conversions are still coming out a very large file size Braveheart 8gb"))
     src_kbps = int(v.get('bit_rate') or 0) / 1000 or (float((info.get('format') or {}).get('bit_rate') or 0) / 1000 - 192 * max(1, len(audio)))
     cap = int(max(1500, min(8000, src_kbps * 1.05 if src_kbps > 0 else 8000)))
-    cmd += ['-map_metadata', '0', '-map_chapters', '0',
-            '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-maxrate', '%dk' % cap, '-bufsize', '%dk' % (cap * 2),
-            '-profile:v', 'high', '-level', '4.1', '-pix_fmt', 'yuv420p', '-vf', vf, '-disposition:v:0', 'default']
+    cmd += ['-map_metadata', '0', '-map_chapters', '0']
+    if remux:   # (the picture copied as it is; HEVC labelled hvc1, as Apple's devices need, not hev1)
+        cmd += ['-c:v', 'copy', '-disposition:v:0', 'default'] + (['-tag:v', 'hvc1'] if v.get('codec_name') == 'hevc' else [])
+    else:
+        cmd += ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-maxrate', '%dk' % cap, '-bufsize', '%dk' % (cap * 2),
+                '-profile:v', 'high', '-level', '4.1', '-pix_fmt', 'yuv420p', '-vf', vf, '-disposition:v:0', 'default']
     if main_a:
         cmd += ['-c:a:0', 'aac', '-b:a:0', '192k', '-ac:a:0', '2', '-metadata:s:a:0', 'title=Stereo', '-disposition:a:0', 'default']
         for n in range(1, len(keep) + 1):
@@ -284,7 +305,7 @@ def convert(item, ffmpeg, ffprobe, st):
         cmd += ['-c:s', 'mov_text', '-movflags', '+faststart']
     cmd += ['-max_muxing_queue_size', '9999', tmp]
 
-    log('converting', item['name'], '(%s, %s min, %s GB)' % (item['why'], item['mins'], item['gb']))
+    log('repackaging' if remux else 'converting', item['name'], '(%s, %s min, %s GB)' % (item['why'], item['mins'], item['gb']))
     t0, paused = time.time(), False
     p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, preexec_fn=lambda: os.nice(15))
     err_tail, at = [], [0.0]
