@@ -1758,6 +1758,51 @@ async function grifflix(request, url, env) {
     const list = await env.MEDIA.list({ prefix: 'grifflix/fonts/' }).catch(() => ({ objects: [] }));
     return answer(200, { ok: true, fonts: (list.objects || []).map(o => o.key.slice(15)) });
   }
+  // (members' requests for films to get, found on TMDB, into John's film requests (John, 12 Nov 2026: "a requests tab on the members
+  // page, linked to tmdb, so they can send me a request for a film to get"); the search is TMDB's, with the Worker's own key (TMDB_TOKEN))
+  if (route === 'tmdb') {
+    const w = await gWho(request, env);
+    if (!w) return answer(401, { error: 'Sign in to Grifflix first.' });
+    const tok = env.TMDB_TOKEN;
+    if (!tok) return answer(503, { error: 'Requests aren’t set up yet: John needs to add the TMDB key.' });
+    const q = String(url.searchParams.get('q') || '').trim().slice(0, 80);
+    if (q.length < 2) return answer(200, { films: [] });
+    const m = /^(.*?)\s*\(?((?:19|20)\d\d)\)?$/.exec(q), qs = new URLSearchParams({ query: m && m[1] ? m[1] : q, include_adult: 'false', language: 'en-GB' });
+    if (m && m[1]) qs.set('year', m[2]);
+    const jwt = tok.length > 60;   // (TMDB's long read-access token, else its short API key)
+    if (!jwt) qs.set('api_key', tok);
+    const r = await fetch('https://api.themoviedb.org/3/search/movie?' + qs, { headers: jwt ? { Authorization: 'Bearer ' + tok, Accept: 'application/json' } : { Accept: 'application/json' } });
+    if (!r.ok) return answer(502, { error: 'TMDB didn’t answer just now.' });
+    const j = await r.json();
+    return answer(200, { films: (j.results || []).slice(0, 12).map(f => ({ tmdb: f.id, name: f.title, year: (f.release_date || '').slice(0, 4), poster: f.poster_path || '', overview: String(f.overview || '').slice(0, 220) })) });
+  }
+  if (route === 'request') {   // a member's request: GET their own, POST one more (into John's list, marked with who asked)
+    const w = await gWho(request, env);
+    if (!w) return answer(401, { error: 'Sign in to Grifflix first.' });
+    const me = w.all[w.id] || {}, who = me.name || 'A member';
+    let L = JSON.parse(await env.SOTD.get('gfreq') || '[]');
+    const mine = () => L.filter(x => (x.by || []).includes(w.id)).map(x => ({ name: x.name, year: x.year, tmdb: x.tmdb || null, poster: x.poster || '', at: x.at }));
+    if (request.method === 'POST') {
+      const b = await request.json().catch(() => ({}));
+      if (b.op === 'withdraw') {
+        const i = L.findIndex(x => x.tmdb && x.tmdb === +b.tmdb);
+        if (i >= 0) { L[i].by = (L[i].by || []).filter(x => x !== w.id); L[i].who = (L[i].who || []).filter(x => x !== who); if (!L[i].by.length && /^Requested by/.test(L[i].why || '')) L.splice(i, 1); else if (L[i].who) L[i].why = L[i].who.length ? 'Requested by ' + L[i].who.join(', ') : L[i].why; }
+        await env.SOTD.put('gfreq', JSON.stringify(L)); return answer(200, { films: mine() });
+      }
+      const tmdb = +b.tmdb, name = String(b.name || '').trim().slice(0, 120), year = /^\d{4}$/.test(String(b.year || '')) ? +b.year : null;
+      if (!tmdb || !name) return answer(400, { error: 'Which film?' });
+      const day = 'gfreqn:' + w.id + ':' + new Date().toISOString().slice(0, 10), n = Number(await env.SOTD.get(day)) || 0;
+      if (n >= 20) return answer(429, { error: 'That’s 20 requests today: more tomorrow.' });
+      const key = x => String(x.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '') + '|' + (x.year || '');
+      let i = L.findIndex(x => (x.tmdb && x.tmdb === tmdb) || key(x) === key({ name, year }));
+      if (i < 0) { L.push({ name, year, tmdb, poster: String(b.poster || '').slice(0, 80), why: '', at: Date.now(), by: [], who: [] }); i = L.length - 1; }
+      const f = L[i]; f.tmdb = f.tmdb || tmdb; f.by = f.by || []; f.who = f.who || [];
+      if (!f.by.includes(w.id)) { f.by.push(w.id); f.who.push(who); }
+      f.why = 'Requested by ' + f.who.join(', ') + (f.why && !/^Requested by/.test(f.why) ? ' · ' + f.why : '');
+      L = L.slice(-300); await env.SOTD.put('gfreq', JSON.stringify(L)); await env.SOTD.put(day, String(n + 1), { expirationTtl: 172800 });
+    }
+    return answer(200, { films: mine() });
+  }
   if (route === 'frequests') {   // John's film requests: films to get for Grifflix (a month's theme film it hasn't, or his own: John, 9 Nov 2026)
     const w = await gWho(request, env);
     if (!w || !w.owner) return answer(403, { error: 'Only John.' });

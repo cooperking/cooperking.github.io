@@ -42,5 +42,6 @@ jobs:
           MAILER_KEY: ${{ secrets.MAILER_KEY }}
           SPOTIFY_USERS_URL: ${{ secrets.SOTD_SPOTIFY_USERS_URL }}
           SPOTIFY_USERS_TOKEN: ${{ secrets.SOTD_SPOTIFY_USERS_TOKEN }}
+          TMDB_TOKEN: ${{ secrets.TMDB_TOKEN }}
           ADD_NOW: ${{ inputs.add_now && 'true' || '' }}
         run: python3 _sotd/worker_deploy.py

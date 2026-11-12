@@ -182,7 +182,8 @@ def after_upload(base, before, code):
     spusers = (('SPOTIFY_USERS_URL', 'SPOTIFY_USERS_URL'), ('SPOTIFY_USERS_TOKEN', 'SPOTIFY_USERS_TOKEN'))
     if not all(os.environ.get(e, '').strip() for _n, e in spusers):
         spusers = ()
-    for name, env_name in (('APNS_KEY_ID', 'APNS_KEY_ID'), ('APNS_KEY', 'APNS_KEY_P8'), ('APPLE_TEAM_ID', 'APPLE_TEAM_ID')) + gmail + stats + spusers:
+    tmdb = (('TMDB_TOKEN', 'TMDB_TOKEN'),)   # (Grifflix's film requests: members search TMDB through the Worker, with John's TMDB key)
+    for name, env_name in (('APNS_KEY_ID', 'APNS_KEY_ID'), ('APNS_KEY', 'APNS_KEY_P8'), ('APPLE_TEAM_ID', 'APPLE_TEAM_ID')) + gmail + stats + spusers + tmdb:
         val = ACCOUNT if env_name == '=account' else os.environ.get(env_name, '').strip()
         if not val:
             continue
