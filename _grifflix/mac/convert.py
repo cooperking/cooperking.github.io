@@ -195,9 +195,9 @@ def gather():
         d = soon.get(x['id']) or past.get(x['id'])
         k = round((time.mktime(time.strptime(d, '%Y-%m-%d')) - t0) / 86400)
         return (abs(k), k < 0)
-    first = sorted([x for x in out if x['id'] in soon or x['id'] in past], key=near)
+    first = sorted([x for x in out if (x['id'] in soon or x['id'] in past) and x['added'] < cut], key=near)
     soon = dict(soon, **{k: v for k, v in past.items() if k not in soon})   # (out of the groups below)
-    new = sorted([x for x in out if x['id'] not in soon and x['added'] >= cut], key=lambda x: x['added'], reverse=True)
+    new = sorted([x for x in out if x['added'] >= cut], key=lambda x: x['added'], reverse=True)
     rest = sorted([x for x in out if x['id'] not in soon and x['added'] < cut], key=lambda x: (x['lib'] != 'movies', -x['rating'], x['name']))
     # (the quick ones, repackaging, before the slow ones in each group: a few minutes each, and then they play everywhere)
     new.sort(key=lambda x: x.get('mode') != 'remux'); rest.sort(key=lambda x: x.get('mode') != 'remux')
@@ -205,7 +205,11 @@ def gather():
     for x in first:
         x['why'] += ' · Movie of the Day ' + soon[x['id']]
         x['urgent'] = today <= soon[x['id']] <= tomorrow   # (today's and tomorrow's: converted at once, any hour, not waiting for the night)
-    out[:] = first + new + rest
+    for x in new:
+        x['new'] = True
+    # (films John has just brought in come first of all, newest first: John, 12 Nov 2026, "any new movie I bring in - these should go
+    # to the top of the queue"; then Movie of the Day's, then the rest)
+    out[:] = new + [x for x in first if x not in new] + rest
     return out
 
 
@@ -498,10 +502,11 @@ def ordered(rest):
     P = prio()
     pin = [x['id'] for x in P['pins']]
     first = sorted([x for x in rest if x['id'] in pin], key=lambda x: pin.index(x['id']))
-    others = [x for x in rest if x['id'] not in pin]
+    fresh = [x for x in rest if x['id'] not in pin and x.get('new')]   # (just brought in: before everything but John's pins)
+    others = [x for x in rest if x['id'] not in pin and not x.get('new')]
     if P['remux_first']:
         others = [x for x in others if x.get('mode') == 'remux'] + [x for x in others if x.get('mode') != 'remux']
-    return first + others
+    return first + fresh + others
 
 
 def unpin(iid):
@@ -542,7 +547,19 @@ log('starting: %d to convert' % len(items))
 RUN['total'] = len(items)
 follow_up(st)
 rest, n = list(items), -1
-while rest:   # (the order looked at again before each film: a film John pins goes next, without starting anything again)
+looked = time.time()
+while rest:
+    if time.time() - looked > 1800:   # (every half hour, a look for films brought in since: they go to the top, not to the end of the queue)
+        looked = time.time()
+        try:
+            have = set(x['id'] for x in rest)
+            add = [i for i in gather() if i.get('new') and i['id'] not in have and i['id'] not in st['done'] and i['id'] not in st['failed']]
+            if add:
+                log('%d just brought in: to the top of the queue' % len(add))
+                rest = add + rest
+                RUN['total'] = RUN.get('total', 0) + len(add)
+        except Exception as e:
+            log('  couldn’t look for new films:', e)   # (the order looked at again before each film: a film John pins goes next, without starting anything again)
     rest = ordered(rest)
     it = rest.pop(0)
     n += 1
