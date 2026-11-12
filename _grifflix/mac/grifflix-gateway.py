@@ -1771,8 +1771,43 @@ def make_handler(g):
     return H
 
 
+def keep_converting():
+    """The converter kept going: started again if it isn't running (after the Mac restarts, or if the restart after Update everything
+    didn't take), unless it finished everything in the last 12 hours. It still converts only at night, but for today's and tomorrow's
+    Movie of the Day (John, 12 Nov 2026: "it said nothing was being converted right now, which is odd")."""
+    home = os.path.expanduser('~/Grifflix')
+    time.sleep(180)   # (not straight after starting: an Update starts the converter itself)
+    while True:
+        try:
+            script = os.path.join(home, 'convert.py')
+            cur = load(os.path.join(home, 'convert-now.json'), None) or {}
+            alive = False
+            try:
+                pid = int(cur.get('pid') or 0)
+                if pid:
+                    os.kill(pid, 0)
+                    alive = cur.get('state') != 'finished'
+            except (OSError, ValueError):
+                alive = False
+            recently_done = cur.get('state') == 'finished' and time.time() - (cur.get('at') or 0) < 12 * 3600
+            if os.path.exists(script) and not alive and not recently_done:
+                import subprocess
+                running = 'convert.py' in subprocess.run(['ps', '-axo', 'command'], capture_output=True, text=True, timeout=10).stdout
+                if not running:
+                    args = [a for a in (cur.get('args') or ['go']) if a in ('go', 'now')] or ['go']
+                    awake = ['/usr/bin/caffeinate', '-i'] if os.path.exists('/usr/bin/caffeinate') else []
+                    out = open(os.path.join(home, 'convert.out'), 'a')
+                    subprocess.Popen(awake + [sys.executable, script] + args, stdout=out, stderr=out, stdin=subprocess.DEVNULL,
+                                     start_new_session=True, cwd=home)
+                    log('The converter wasn’t running: started again (%s)' % ' '.join(args))
+        except Exception as e:
+            log('Keeping the converter going:', e)
+        time.sleep(600)
+
+
 def serve():
     g = Gateway()
+    threading.Thread(target=keep_converting, daemon=True).start()
     port = int(g.st.get('port', 8097))
     srv = ThreadingHTTPServer(('127.0.0.1', port), make_handler(g))
     srv.daemon_threads = True

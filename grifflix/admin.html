@@ -890,7 +890,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         $('#cvsay').textContent = c.done + ' converted so far. Restart the converter with its update to see how far each film is.';
       } else {
         $('#cvhead').innerHTML = n && n.state === 'finished' ? 'All <em>converted</em>' : 'Not <em>running</em>';
-        $('#cvsay').textContent = c.done + ' converted so far' + (c.failed.length ? ', ' + c.failed.length + ' couldn’t be' : '') + '.';
+        $('#cvsay').textContent = c.done + ' converted so far' + (c.failed.length ? ', ' + c.failed.length + ' couldn’t be' : '') + '.' + (n && n.state === 'finished' ? '' : ' The Mac starts it again by itself within 10 minutes (once it has its latest update).');
       }
       // (each film: what the original was, what it became, and why: John, 11 Nov 2026: "what was the original and what was it converted to?")
       var fl = function (f) { return f ? (f.w ? f.w + '×' + f.h + ' ' : '') + esc(f.v) + (f.mbps ? ', ' + f.mbps + ' Mbps' : '') + (f.gb ? ', ' + f.gb + ' GB' : '') : ''; };
