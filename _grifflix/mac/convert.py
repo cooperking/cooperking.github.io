@@ -188,8 +188,14 @@ def gather():
     except Exception:
         pass
     cut = time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime(time.time() - 14 * 86400))
-    first = sorted([x for x in out if x['id'] in soon], key=lambda x: soon[x['id']]) + \
-        sorted([x for x in out if x['id'] in past], key=lambda x: past[x['id']], reverse=True)
+    # (in order of how near its day is to today, either way, the coming one first at the same distance: today's, tomorrow's, yesterday's,
+    # and so on, so the past ones aren't all left until every one to come is done (John, 12 Nov 2026: "it should prioritise any on the list"))
+    t0 = time.mktime(time.strptime(today, '%Y-%m-%d'))
+    def near(x):
+        d = soon.get(x['id']) or past.get(x['id'])
+        k = round((time.mktime(time.strptime(d, '%Y-%m-%d')) - t0) / 86400)
+        return (abs(k), k < 0)
+    first = sorted([x for x in out if x['id'] in soon or x['id'] in past], key=near)
     soon = dict(soon, **{k: v for k, v in past.items() if k not in soon})   # (out of the groups below)
     new = sorted([x for x in out if x['id'] not in soon and x['added'] >= cut], key=lambda x: x['added'], reverse=True)
     rest = sorted([x for x in out if x['id'] not in soon and x['added'] < cut], key=lambda x: (x['lib'] != 'movies', -x['rating'], x['name']))
