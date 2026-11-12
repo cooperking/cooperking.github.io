@@ -121,6 +121,12 @@ def why(ms):
     bits = g(v, 'BitDepth', 8) or 8
     prof = (g(v, 'Profile') or '').lower()
     mbps = (g(ms, 'Bitrate') or g(v, 'BitRate') or 0) / 1e6
+    # (every MKV, and any other file that isn't an MP4, is repackaged first, the picture copied as it is, even if it's to be converted
+    # later: the whole library put right quickly, then the slow conversions (John, 12 Nov 2026: "I want all MKV's repackaged before they
+    # are converted, even if they also need converting later"). Once it's an MP4, the next look finds what's still to convert)
+    cont0 = [c.strip() for c in (g(ms, 'Container') or '').lower().split(',') if c.strip()]
+    if cont0 and not any(c in ('mp4', 'm4v', 'mov') for c in cont0):
+        return REPACK + ' (%s file)' % cont0[0].upper()
     if w > MAX_W + 8 or h > MAX_H + 8:
         return 'bigger than 1080p (%dx%d)' % (w, h)
     if mbps > MAX_MBPS:
@@ -258,8 +264,7 @@ def convert(item, ffmpeg, ffprobe, st):
     mkv = False
     dst = base + '.mp4'
     pf = (v.get('pix_fmt') or '')
-    remux = item.get('mode') == 'remux' and v.get('codec_name') in ('h264', 'hevc') and '10' not in pf and '12' not in pf \
-        and int(v.get('width') or 0) <= MAX_W + 8 and int(v.get('height') or 0) <= MAX_H + 8
+    remux = item.get('mode') == 'remux'   # (the picture as it is, whatever it is: converted later if it needs to be)
     # the new file is made outside the libraries ("Grifflix Converting", beside them on the same drive), so Jellyfin
     # doesn't list it as a new film while it's being made (John, 8 Nov 2026: Back to the Future showed as newest at 11%)
     roots = [l for vf_ in call('GET', '/Library/VirtualFolders') or [] for l in g(vf_, 'Locations', [])]
@@ -536,16 +541,34 @@ while rest:   # (the order looked at again before each film: a film John pins go
     try:
         convert(it, ffmpeg, ffprobe, st)
     except RuntimeError as e:
-        log('  FAILED', it['name'], e)
-        st['failed'][it['id']] = {'name': it['name'], 'why': str(e)[:300], 'path': it['path']}
-        save_state(st)
+        if it.get('mode') == 'remux':   # (a picture an MP4 can't hold as it is: converted instead, in its turn, not given up on)
+            log('  couldn’t repackage', it['name'], '(%s): it will be converted instead' % str(e)[:160])
+            it['mode'] = 'convert'
+            it['why'] = 'format (couldn’t be repackaged as it is)'
+            rest.append(it)
+        else:
+            log('  FAILED', it['name'], e)
+            st['failed'][it['id']] = {'name': it['name'], 'why': str(e)[:300], 'path': it['path']}
+            save_state(st)
     unpin(it['id'])   # (done, or failed: off John's list)
     for _ in range(9):   # (each film's follow-up straight away, once Jellyfin has the new file: its date added, collections, lists)
         if not st['remap']:
             break
         time.sleep(10)
         follow_up(st)
-RUN['n'] = len(items)
+    if not rest:   # (the queue done: a look again, as the films just repackaged may still need converting, now as MP4s, under their new ids)
+        for _ in range(9):
+            if not st['remap']:
+                break
+            time.sleep(20)
+            follow_up(st)
+        time.sleep(60)
+        more = [i for i in gather() if i['id'] not in st['done'] and i['id'] not in st['failed'] and i['id'] != it['id']]
+        if more:
+            log('%d more to do (films repackaged that also need converting, or new ones)' % len(more))
+            rest = more
+            RUN['total'] = n + 1 + len(more)
+RUN['n'] = n + 1
 now('finished')
 time.sleep(30)
 follow_up(st)
