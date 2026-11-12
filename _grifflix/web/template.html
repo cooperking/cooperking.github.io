@@ -2058,6 +2058,7 @@ function mac(path, body) {   // the Mac mini: playing, and a member's own things
     .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || (r.status >= 500 ? 'The Mac mini isn’t answering just now: try again in a few minutes.' : 'The Mac mini said ' + r.status)); e.status = r.status; throw e; } return j; }); },
       function () { throw new Error('The Mac mini isn’t answering just now: try again in a few minutes.'); });
 }
+function canOpen() { try { return !(window.GRIFFLIXTV && GRIFFLIXTV.canOpen) || GRIFFLIXTV.canOpen(); } catch (e) { return true; } }   // (the Fire TV app: may it open itself for Play on the TV)
 function soon(p, ms) { return Promise.race([p, new Promise(function (ok, no) { setTimeout(function () { no(new Error('slow')); }, ms || 6000); })]); }
 function motdCal() {   // Movie of the Day: the site's file, and from the Worker any newer day (and, for John, those to come)
   if (!DAYSP) DAYSP = getJSON(DATA + 'days.json').catch(function () { return { days: {}, notes: {} }; });
@@ -5446,10 +5447,12 @@ function profile() {
   if (PUBLIC) return signInSheet();
   if (!ME) return;
   if (TV) {   // the TV: who's signed in and Sign out, nothing else (John, 8 Nov 2026)
-    openSheet('<div class="form tvprof" style="position:relative">' + X + '<p class="profp tvwho">Signed in as <b>' + esc(ME.name || 'you') + '</b>' + codecLine() + '</p><div class="acts"><button class="pill" id="tvlead">Play the 3 2 1</button><button class="pill on" id="signout">Sign out</button></div></div>');
+    openSheet('<div class="form tvprof" style="position:relative">' + X + '<p class="profp tvwho">Signed in as <b>' + esc(ME.name || 'you') + '</b>' + codecLine() + '</p>' + (canOpen() ? '' : '<p class="profp">To open by itself when a film is sent from a phone, Grifflix needs <b>Display over other apps</b>.</p>') + '<div class="acts">' + (canOpen() ? '' : '<button class="pill" id="tvover">Allow it</button>') + '<button class="pill" id="tvlead">Play the 3 2 1</button><button class="pill on" id="signout">Sign out</button></div></div>');
+    if ($('#tvover')) $('#tvover').onclick = function () { closeSheet(); try { GRIFFLIXTV.openOverlaySettings(); } catch (e) {} };
     $('#tvlead').onclick = function () { closeSheet(); window.ZLED = 0; THEMEFX.picture.leader(true); };   // (John, 9 Nov 2026: "how can I get the firestick to reload the 3 2 1")
     var so = $('#signout'); so.onclick = function () {
       if (!so.dataset.sure) { so.dataset.sure = 1; so.textContent = 'Press again to sign out'; return; }
+      try { window.GRIFFLIXTV && GRIFFLIXTV.unlisten && GRIFFLIXTV.unlisten(); } catch (e) {}
       wcall({ op: 'signout' }).catch(function () {}).then(function () { store.set('grifflix-member', null); location.replace(location.pathname); });
     };
     setTimeout(function () { so.focus(); }, 60); return;
@@ -6192,7 +6195,18 @@ var TVLINK = (function () {
     mac('tvhere', { dev: dev, name: name, state: state(), wait: 20 }).then(function (r) { busy = false; (r.cmds || []).forEach(run); setTimeout(loop, 60); },
       function () { busy = false; setTimeout(loop, 8000); });
   }
-  setInterval(loop, 5000); document.addEventListener('visibilitychange', function () { if (!document.hidden) setTimeout(loop, 500); });
+  setInterval(loop, 5000); document.addEventListener('visibilitychange', function () { if (!document.hidden) { setTimeout(loop, 500); pull(); } });
+  // (Grifflix closed: the app's own listener waits at the Mac mini instead, and opens Grifflix for a film sent from a phone.
+  //  John, 12 Nov 2026: "Is there any way to have it automatically open the app on the fire tv if it's not open?")
+  var told = '';
+  function hand() { try { var k = GW + '|' + TOKEN; if (live() && TOKEN && window.GRIFFLIXTV && GRIFFLIXTV.listen && told !== k) { GRIFFLIXTV.listen(GW, TOKEN, dev, name); told = k; } } catch (e) {} }
+  setInterval(hand, 5000); setTimeout(hand, 1500);
+  var tries = 0;
+  function pull() {
+    var c = ''; try { c = window.GRIFFLIXTV && GRIFFLIXTV.pending ? GRIFFLIXTV.pending() : ''; } catch (e) {}
+    if (c) { try { c = JSON.parse(c); } catch (e) { c = null; } if (c) { tries = 0; (function go() { if (live() && TOKEN) run(c); else if (++tries < 30) setTimeout(go, 1000); })(); } }
+  }
+  window.__gfxTvPull = pull; setTimeout(pull, 800);
   ['play', 'pause', 'seeked', 'timeupdate', 'emptied'].forEach(function (ev) { P.v.addEventListener(ev, function () { report(ev !== 'timeupdate'); }); });
   return { report: report };
 })();
