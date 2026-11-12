@@ -1440,6 +1440,8 @@ def make_handler(g):
             self.send_json(200, {'items': [item_out(i, user['progress']) for i in shown(r.get('Items', []))]})
 
         def api_play(self, me, user, q, b):
+            g.watched()   # (first of all, before the media server is asked anything: the converter pauses, and the disk is the film's; a busy
+            # converter kept the media server from answering in time, so a film never started and the converter never paused: John, 12 Nov 2026)
             iid = g.now_id(q['id'])
             ps = secrets.token_hex(8)
             key = make_key(g.st['secret'], me['uid'])

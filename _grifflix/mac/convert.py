@@ -307,6 +307,8 @@ def convert(item, ffmpeg, ffprobe, st):
 
     log('repackaging' if remux else 'converting', item['name'], '(%s, %s min, %s GB)' % (item['why'], item['mins'], item['gb']))
     t0, paused = time.time(), False
+    if os.path.exists('/usr/sbin/taskpolicy'):   # (macOS's background priority: its reading and writing give way to the media server and
+        cmd = ['/usr/sbin/taskpolicy', '-b'] + cmd   # the films being watched, not only its processor time: John, 12 Nov 2026, a film wouldn't start)
     p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, preexec_fn=lambda: os.nice(15))
     err_tail, at = [], [0.0]
     def read_err():
