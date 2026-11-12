@@ -45,6 +45,13 @@ ANYTIME = len(sys.argv) > 2 and sys.argv[2] == 'now'
 
 def night():
     return ANYTIME or NIGHT[0] <= time.localtime().tm_hour < NIGHT[1]
+
+
+def _stopped(signum, frame):   # (stopped, as Update everything does: tidied up like Ctrl-C, its ffmpeg ended and the half-made file removed,
+    raise KeyboardInterrupt     # not left behind frozen; John, 12 Nov 2026)
+
+
+signal.signal(signal.SIGTERM, _stopped)   # (not SIGHUP: started with nohup, it must outlive the SSH session)
 os.makedirs(HOME, exist_ok=True)
 
 
