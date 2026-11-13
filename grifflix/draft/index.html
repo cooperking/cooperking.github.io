@@ -1965,7 +1965,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'd61469693c5a' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '835d82936aaa' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6173,7 +6173,7 @@ window.addEventListener('pagehide', saveProgress);
       res.innerHTML = ''; sel.disabled = true;
       say.outerHTML = '<div class="psfwork" id="psfwork"><i></i><span>Asking the Mac mini…</span></div>';
       var work = $('#psfwork span');
-      mac('subs', { op: 'add', id: it.id, file_id: x.file_id, lang: lang }).then(function (r) {
+      mac('subs', { op: 'add', id: it.id, file_id: x.file_id, lang: lang, exact: !!x.exact }).then(function (r) {
         job = r.job;
         (function poll() {
           if (gone) return;
