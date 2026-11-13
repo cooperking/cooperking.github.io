@@ -6104,12 +6104,14 @@ window.addEventListener('pagehide', saveProgress);
     subs.forEach(function (s2) { var t = document.createElement('track'); t.kind = 'subtitles'; t.label = s2.label; t.srclang = s2.lang || 'en'; t.src = gwUrl(s2.url); v.appendChild(t); });
     setTimeout(function () { $('#psubs').hidden = !subs.length && !canFind(); var i = subs.findIndex(function (x) { return x.sid === pickSid; }); setSubs(i, i >= 0); P.subMove = 0; try { v.currentTime = at; } catch (e) {} }, 50);
   }
-  // (lining up by hand: pause just after a line is said and tap it; a second, later on, sets any drift right too: John, 13 Nov 2026)
+  // (lining up by hand: pause just as a line starts and tap it; a second, later on, sets any drift right too: John, 13 Nov 2026)
   var syncPairs = {};
   function lineUp() {
     var ts = tracks(), on = ts.findIndex(function (t) { return t.mode === 'showing'; }), si = ((P.info && P.info.subs) || [])[on];
     if (on < 0 || !si || !si.ext) return;
-    var cues = Array.prototype.slice.call(ts[on].cues || []), box = $('#psf'), wasPlaying = !v.paused, now = v.currentTime;
+    // (the moment of the pause, less a moment's reaction, longer in the film's time when it was playing faster: John, 13 Nov 2026,
+    // "can I do it playing at double speed?")
+    var cues = Array.prototype.slice.call(ts[on].cues || []), box = $('#psf'), wasPlaying = !v.paused, now = Math.max(0, v.currentTime - 0.3 * Math.max(1, v.playbackRate || 1));
     if (!cues.length) { toast('Their lines are still loading: try again in a moment'); return; }
     v.pause();
     var mmss = function (t) { t = Math.max(0, Math.round(t)); var h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, s2 = t % 60; return (h ? h + ':' + (m < 10 ? '0' : '') : '') + m + ':' + (s2 < 10 ? '0' : '') + s2; };
@@ -6117,7 +6119,7 @@ window.addEventListener('pagehide', saveProgress);
     var done = (syncPairs[si.sid] || []).length;
     box.innerHTML = '<div class="psfin"><header><b>Line them up</b><button type="button" id="psfx" aria-label="Close">×</button></header>' +
       '<p class="psfsay">' + (done ? 'Lined up from ' + done + ' line' + (done > 1 ? 's' : '') + '. If they drift later in the film, do it again there: that sets the drift right too.' :
-        'Pause just after someone speaks, then tap the line they said. Once near the start and once near the end sets right any drift too.') + ' Paused at ' + mmss(now) + '.</p>' +
+        'Pause just as someone starts to speak, then tap the line they said. A film in parts (like Fantasia): one line at the start of each part. Otherwise once near the start and once near the end sets right any drift too.') + ' Paused at ' + mmss(now) + '.</p>' +
       '<div class="psfbar"><input type="search" id="psfq" placeholder="Find a line by its words" autocomplete="off"></div><ul id="psfres"></ul></div>';
     box.hidden = false;
     var close = function () { box.hidden = true; box.innerHTML = ''; if (wasPlaying) v.play().catch(function () {}); wake(); };
@@ -6138,7 +6140,7 @@ window.addEventListener('pagehide', saveProgress);
     draw('');
     function pickLine(i) {
       clearTimeout(nudgeT); var pend = nudgeSum; nudgeSum = 0;
-      var pairs = (syncPairs[si.sid] = (syncPairs[si.sid] || []).filter(function (x) { return Math.abs(x[1] - now) > 20; }).concat([[i, Math.max(0, now - 0.35)]]));
+      var pairs = (syncPairs[si.sid] = (syncPairs[si.sid] || []).filter(function (x) { return Math.abs(x[1] - now) > 20; }).concat([[i, now]]));
       $('#psfres').innerHTML = ''; $('.psf .psfsay').textContent = 'Lining them up…';
       (Math.abs(pend) >= .05 ? mac('subs', { op: 'shift', id: P.it.id, sid: si.sid, secs: pend }) : Promise.resolve()).then(function () {
         return mac('subs', { op: 'sync', id: P.it.id, sid: si.sid, pairs: pairs });
@@ -6173,7 +6175,7 @@ window.addEventListener('pagehide', saveProgress);
     var w = P.subWork; if (!w) return;
     toast('Adding them…');
     mac('subs', { op: 'keep', id: w.film, job: w.job }).then(function (r) { P.subWork = null; setTracks(r.subs || [], r.pick != null ? r.subs[r.pick].sid : null);
-      setTimeout(function () { toast('Now pause just after a line is said and tap it'); lineUp(); }, 1500); })
+      setTimeout(function () { toast('Now pause just as a line starts and tap it'); lineUp(); }, 1500); })
       .catch(function (e) { toast(e.message || 'Couldn’t add them'); });
   }
   var LANGS = null;
