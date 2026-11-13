@@ -1970,7 +1970,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '2412e7e53d6b' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '1b49aa273e80' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5224,6 +5224,9 @@ function bodyHTML(it, ctx) {
     h += '<button class="ico" id="aheart" aria-label="Save for later">' + HEART(it.hearted) + '</button>';
     if (NOTES) h += '<button class="pill" id="aaddpl">+ Playlist</button><button class="pill" id="aaddcal">+ My calendar</button>';
     if (ME && ME.owner && it.type !== 'video') h += '<button class="pill" id="acoll">Collections</button>';
+    // (John's: the Mac mini to do this one next, when it needs anything: John, 13 Nov 2026, "a convert now option to films if I need them sooner")
+    if (ME && ME.owner && it.conv) h += '<button class="pill" id="aconv" title="' + esc('The Mac mini will ' + it.conv.replace(/^to /, '')) + '"' + (it.convNow || it.convNext ? ' disabled' : '') + '>' +
+      (it.convNow ? 'Converting now' : it.convNext ? 'Next to convert ✓' : 'Convert next') + '</button>';
     if (ME && ME.downloads && !TV && !isSeries) h += '<button class="pill" id="adown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5M5 21h14"/></svg>Download</button>';
   }
   if (!it.ext && shareDayOf(it)) h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button></div>';
@@ -5259,6 +5262,12 @@ function wireBody(it, ctx) {
     play(it);
   });
   on('afrom0', function () { play(it, null, true); });
+  on('aconv', function () {
+    var b = $('#aconv'); b.disabled = true; b.textContent = 'Putting it next…';
+    mac('convert', { op: 'up', id: it.id, name: it.name }).then(function () { b.textContent = 'Next to convert ✓'; it.convNext = true;
+      toast(it.name + ' is next for the Mac mini (' + it.conv.replace(/^to /, '') + '), after the one it’s on'); })
+      .catch(function (e) { b.disabled = false; b.textContent = 'Convert next'; toast(e.message || 'Couldn’t reach the Mac mini'); });
+  });
   TVP.offer(it);
   on('atrailer', function () { trailer(it); });
   on('adown', function () {   // the film's own file, to keep (John, 8 Nov 2026: "Can members be allowed to download films to their device")
@@ -6063,7 +6072,7 @@ window.addEventListener('pagehide', saveProgress);
       if (on >= 0) h += '<hr><div class="pnudge"><button data-n="-0.5" aria-label="Subtitles half a second earlier">− ½ s</button><span>' + (P.subMove ? (P.subMove > 0 ? '+' : '−') + Math.abs(P.subMove).toFixed(1) + ' s' : 'In time?') + '</span><button data-n="0.5" aria-label="Subtitles half a second later">+ ½ s</button></div>';
       var si = on >= 0 ? ((P.info && P.info.subs) || [])[on] || {} : {};
       if (si.ext) h += '<button data-sync="1"><i></i>Line up by a line…</button>';
-      if (si.mine) h += '<button data-del="' + si.sid + '"><i></i>Remove these subtitles</button>';
+      if (si.mine && ME && ME.owner) h += '<button data-del="' + si.sid + '"><i></i>Remove these subtitles</button>';   // (John only: John, 13 Nov 2026)
       var sw = P.subWork && P.it && P.subWork.film === P.it.id ? P.subWork : null;
       if (sw && !sw.unsure) h += '<hr><div class="psubwork"><b>Finding subtitles</b><span>' + esc(sw.say) + '</span></div>';
       if (sw && sw.unsure) h += '<hr><div class="psubwork"><b>Not added</b><span>' + esc(sw.say) + '</span></div><button data-f="1"><i></i>Choose others…</button><button data-keep="1"><i></i>Add the nearest anyway, to line up by hand</button>';
