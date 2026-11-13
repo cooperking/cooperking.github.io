@@ -20,7 +20,8 @@ try:   # (subtitles: found on OpenSubtitles and timed to the film; John, 13 Nov 
     import subtitles as SUBS
 except Exception:
     SUBS = None
-SUBJOBS, SUBRUN, SUBDAY = {}, threading.Lock(), {}   # (subtitle jobs by id; one timed at a time; each member's adds today)
+SUBJOBS, SUBRUN, SUBDAY = {}, threading.Lock(), {}
+HEARING = {}   # (films being heard now, ahead of a choice: path -> threading.Event, set when done)   # (subtitle jobs by id; one timed at a time; each member's adds today)
 
 APP_DIR = os.environ.get('GRIFFLIX_DIR') or os.path.expanduser('~/Library/Application Support/Grifflix')
 SETTINGS = os.path.join(APP_DIR, 'settings.json')
@@ -1669,6 +1670,7 @@ def make_handler(g):
                 except Exception as e:
                     return self.send_json(502, {'error': str(e)})
                 o = g.st.get('opensubs') or {}
+                self.subs_listen(path)   # (the film heard now, while the list is looked at: a choice is then quick)
                 return self.send_json(200, {'results': res, 'remaining': o.get('remaining')})
             op = b.get('op')
             key = make_key(g.st['secret'], me['uid'])
@@ -1744,6 +1746,7 @@ def make_handler(g):
                         heard = None  # (where people speak, heard once for every try)
                         guide = None  # (subtitles made for this copy in any language, fetched once)
                         best = None   # (the nearest miss, to add anyway and line up by hand)
+                        shown = {}    # (the first, put on at once as it came)
                         hms = lambda x: '%d:%02d:%02d' % (x // 3600, x // 60 % 60, x % 60)
                         film_len = (it.get('RunTimeTicks') or 0) / 1e7
                         lengths = []   # (how long each tried runs, first line to last, against the film: John, 13 Nov 2026)
@@ -1763,6 +1766,14 @@ def make_handler(g):
                                 continue
                             if len(cues) < 3:
                                 continue
+                            if k == 0 and not shown:   # (on at once, as they came, while they're timed: John, 13 Nov 2026, "it takes much too long")
+                                try:
+                                    tmp_out = self.subs_write(path, lang, cues)
+                                    s0, p0 = self.subs_show(iid, tmp_out, key)
+                                    shown.update(path=tmp_out, subs=s0, pick=p0)
+                                    job.update(state='shown', subs=s0, pick=p0, say='On now, as they came; being timed to the film…')
+                                except Exception as e:
+                                    log('Subtitles: couldn’t show them at once:', repr(e))
                             span = cues[-1][1]
                             lengths.append('%s: last line at %s' % (cand['name'] or 'number %d' % (k + 1), hms(span)))
                             pre = pre + ('its last line at %s%s; ' % (hms(span), ', the film runs %s' % hms(film_len) if film_len else '') if len(tries) > 1 else '')
@@ -1785,11 +1796,12 @@ def make_handler(g):
                             if done is None:   # then by listening
                                 try:
                                     if heard is None:
-                                        heard = self.subs_heard(path)   # (heard before: kept, so another try is quick)
+                                        heard = self.subs_heard(path)   # (heard before, or while the list was looked at)
                                     if heard is None:
                                         job.update(state='listening', say=pre + 'listening to the film’s dialogue (a few minutes on the Mac mini, once for this film)…')
-                                        heard = SUBS.speech(ff, path)
-                                        self.subs_heard(path, heard)
+                                        heard = self.subs_listen(path, wait=True)
+                                        if heard is None:
+                                            raise RuntimeError('no sound heard')
                                     job.update(state='timing', say=pre + 'timing them to the film…')
                                     c2, r2 = SUBS.align(cues, heard)
                                     rep = r2
@@ -1823,6 +1835,13 @@ def make_handler(g):
                                 best = (rep.get('sure', 0), cues, rep)
                             log('Subtitles: try %d for %s not sure: %s' % (k + 1, it.get('Name'), rep))
                         if done is None:   # (none sure: nothing saved; others to choose, or the nearest added as it came to line up by hand)
+                            if shown.get('path') and os.path.exists(shown['path']):   # (the ones put on at once come off again: not confirmed)
+                                try:
+                                    os.remove(shown['path'])
+                                    gone_subs, _ = self.subs_show(iid, None, key)
+                                    job.update(subs=gone_subs, pick=None)
+                                except Exception as e:
+                                    log('Subtitles: couldn’t take them off again:', repr(e))
                             many = len(tries) > 1
                             job.update(state='unsure', _cues=best[1] if best else None, _lang=lang, timing=best[2] if best else rep,
                                        say=('Tried %d, and none could be confirmed to fit this copy of the film, so none has been added. ' % len(tries) if many else
@@ -1835,7 +1854,12 @@ def make_handler(g):
                             return
                         job.update(state='adding', say='Adding them to the film…')
                         out = self.subs_write(path, lang, done)
-                        subs, pick = self.subs_show(iid, out, key)
+                        if shown.get('path') == out:   # (already on: the timed ones in their place, the media server already knows the file)
+                            it2 = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,MediaSources'})
+                            subs = self.subs_out(iid, (it2.get('MediaSources') or [{}])[0], key)
+                            pick = next((i for i, x in enumerate(subs) if x['sid'] == (shown.get('subs') or [{}])[shown['pick']].get('sid')), shown.get('pick')) if shown.get('pick') is not None else None
+                        else:
+                            subs, pick = self.subs_show(iid, out, key)
                         log('Subtitles: %s added by %s (%s)' % (os.path.basename(out), me['name'], SUBS.describe(rep)))
                         say = 'Made for this very copy of the film, so kept as they came' if rep.get('exact') else SUBS.describe(rep) + (' (against %s)' % rep['by'] if rep.get('by') else '')
                         if len(tries) > 1:
@@ -1849,6 +1873,29 @@ def make_handler(g):
             for k in [k for k, x in SUBJOBS.items() if time.time() - x['at'] > 6 * 3600]:
                 del SUBJOBS[k]
             return self.send_json(200, {'job': jid})
+
+        def subs_listen(self, path, wait=False):
+            """What's heard of a film, from before or heard now (once, in the background); with wait, it waits for it."""
+            h = self.subs_heard(path)
+            if h is not None:
+                return h
+            ev = HEARING.get(path)
+            if ev is None:
+                ev = HEARING[path] = threading.Event()
+                def run():
+                    try:
+                        g.watched()
+                        self.subs_heard(path, SUBS.speech(self.ffmpeg_path(), path))
+                    except Exception as e:
+                        log('Subtitles: couldn’t hear', os.path.basename(path), repr(e))
+                    finally:
+                        ev.set()
+                        HEARING.pop(path, None)
+                threading.Thread(target=run, daemon=True).start()
+            if not wait:
+                return None
+            ev.wait(3600)
+            return self.subs_heard(path)
 
         def subs_heard(self, path, sig=None):
             """What was heard of a film's dialogue, kept beside the gateway's own files (about 70 KB a film), so trying other

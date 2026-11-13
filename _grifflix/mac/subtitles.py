@@ -144,7 +144,10 @@ class OpenSubs:
             x['like'] = likeness(hint, x['name'])
         # (the likeliest to fit first: made for this file, then those like this copy, then trusted uploaders and the most
         # downloaded; machine translations last)
-        out.sort(key=lambda x: (not x['exact'], -x['like'], x['machine'], not x['trusted'], -x['downloads']))
+        # (the obvious ones first: John, 13 Nov 2026, "subtitles don't work if they don't select the obvious best ones". Made for this
+        # file; then the same release (source and group); then by how many have used them, a little for likeness and trust)
+        out.sort(key=lambda x: (not x['exact'], x['like'] < 7, x['machine'],
+                                -(math.log10(1 + x['downloads']) + 0.15 * x['like'] + (0.5 if x['trusted'] else 0))))
         return out[:40]
 
     def exact_any(self, mhash):
@@ -503,21 +506,29 @@ def align(cues, sig, max_off=240.0):
         return cues, {'ok': False, 'why': 'too few lines to time'}
     P = _prefix(sig)
     span = (len(sig) / HZ)
-    # coarse: every ratio, a shift each second
+    # coarse: a shift each second, on at most 400 of the lines (spread through the film), the plain speed first and the other
+    # frame rates only if that isn't clearly it (quick on the old Mac mini: John, 13 Nov 2026, "it takes much too long")
+    few = cues if len(cues) <= 400 else [cues[int(i * len(cues) / 400)] for i in range(400)]
     rows = []
-    for r in FPS_RATIOS:
+    for r in [1.0] + [x for x in FPS_RATIOS if x != 1.0]:
         if cues[-1][1] * r > span + max_off:
             continue
         for k in range(int(-max_off), int(max_off) + 1):
-            rows.append((_score(P, cues, r, float(k)), r, float(k)))
+            rows.append((_score(P, few, r, float(k)), r, float(k)))
+        if r == 1.0 and len(rows) > 50:
+            sc_ = [x[0] for x in rows]
+            m_ = sum(sc_) / len(sc_)
+            sd_ = math.sqrt(sum((x - m_) ** 2 for x in sc_) / len(sc_)) or 1.0
+            if (max(sc_) - m_) / sd_ >= 10:   # (plainly a shift: the other speeds needn't be tried)
+                break
     if not rows:
         return cues, {'ok': False, 'why': 'the subtitles are longer than the film'}
     scores = [x[0] for x in rows]
     mean = sum(scores) / len(scores)
     sd = math.sqrt(sum((x - mean) ** 2 for x in scores) / len(scores)) or 1.0
     rows.sort(reverse=True)
-    # fine: the best few, to a tenth of a second
-    best = (rows[0][0], rows[0][1], rows[0][2])
+    # fine: the best few, to a tenth of a second (on all the lines; the score's measure from the sample's spread)
+    best = (-1e18, rows[0][1], rows[0][2])
     for sc, r, k in rows[:4]:
         for d in range(-12, 13):
             o = k + d / 10.0
@@ -525,7 +536,7 @@ def align(cues, sig, max_off=240.0):
             if v > best[0]:
                 best = (v, r, o)
     sc, r, off = best
-    z = (sc - mean) / sd
+    z = (_score(P, few, r, off) - mean) / sd
     orig = _score(P, cues, 1.0, 0.0)
     report = {'ratio': round(r, 5), 'shift': round(off, 2), 'sure': round(z, 1)}
     common = min(abs(r - x) for x in (1.0, 25 / 23.976, 23.976 / 25)) < 1e-4
@@ -549,10 +560,27 @@ def align(cues, sig, max_off=240.0):
         return bo, bv
     jump = None
     step = max(10, len(out) // 24)
-    for i in range(step, len(out) - step + 1, step):
+    # (searched for only where some five minutes of the film fit a shift of their own clearly better: quick to check)
+    odd = z < 12
+    if not odd:
+        i0 = 0
+        while i0 < len(out) and not odd:
+            i1 = i0
+            while i1 < len(out) and out[i1][0] - out[i0][0] < 300:
+                i1 += 1
+            ch = out[i0:i1]
+            if len(ch) >= 8:
+                base = _score(P, ch, 1.0, 0.0)
+                bv = max(_score(P, ch, 1.0, float(k)) for k in range(int(-max_off), int(max_off) + 1) if abs(k) > 2)
+                if bv > base + max(8.0, abs(base) * 0.3):
+                    odd = True
+            i0 = i1
+    for i in (range(step, len(out) - step + 1, step) if odd else ()):
         lo, lv = fit(out[:i])
         ro, rv = fit(out[i:])
-        if abs(lo - ro) >= 1.0 and lv + rv > whole + max(15.0, abs(whole) * 0.15) and (jump is None or lv + rv > jump[0]):
+        # (clearly better for the part that moves: a short part of a long film counts too)
+        part = min(_score(P, out[:i], 1.0, 0.0), _score(P, out[i:], 1.0, 0.0), key=abs)
+        if abs(lo - ro) >= 1.0 and lv + rv > whole + max(15.0, abs(whole) * 0.03, abs(part) * 0.3) and (jump is None or lv + rv > jump[0]):
             jump = (lv + rv, i, lo, ro)
     if jump:
         _, i, lo, ro = jump
