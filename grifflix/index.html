@@ -325,7 +325,7 @@ html.tv .sheet .people { font-size: var(--crfs, 15px); }
 .psf li button { display: block; width: 100%; padding: 11px 10px; border: 0; border-radius: 8px; background: none; color: #fff; text-align: left; cursor: pointer; font: 400 14px/1.35 var(--sans); }
 .psf li button:hover, .psf li button:focus-visible { background: rgba(255, 255, 255, .1); outline: 0; }
 .psf li .n { display: block; overflow-wrap: anywhere; } .psf li .m { display: block; margin-top: 3px; font-size: 12px; color: rgba(255, 255, 255, .55); }
-.psf li .x.l { background: #2d5f8a; }
+.psf li .x.l { background: #2d5f8a; } .psf li .x.n { background: #f3e8d2; color: #14202e; min-width: 1.6em; text-align: center; }
 .psf .psfauto { display: block; width: calc(100% - 20px); margin: 0 10px 10px; padding: 13px 14px; border: 0; border-radius: 10px; background: #f3e8d2; color: #14202e; text-align: left; cursor: pointer; font: 600 15px/1.3 var(--sans); }
 .psf .psfauto span { display: block; margin-top: 3px; font-weight: 400; font-size: 12.5px; color: rgba(20, 32, 46, .7); } .psf .psfauto:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .psf li .x { display: inline-block; margin-right: 6px; padding: 2px 7px; border-radius: 10px; background: #2e7d4f; color: #fff; font: 600 10.5px/1.4 var(--kfont); letter-spacing: .08em; text-transform: uppercase; vertical-align: 1px; }
@@ -1970,7 +1970,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'd5e2435e87d1' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '2412e7e53d6b' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6104,12 +6104,14 @@ window.addEventListener('pagehide', saveProgress);
     subs.forEach(function (s2) { var t = document.createElement('track'); t.kind = 'subtitles'; t.label = s2.label; t.srclang = s2.lang || 'en'; t.src = gwUrl(s2.url); v.appendChild(t); });
     setTimeout(function () { $('#psubs').hidden = !subs.length && !canFind(); var i = subs.findIndex(function (x) { return x.sid === pickSid; }); setSubs(i, i >= 0); P.subMove = 0; try { v.currentTime = at; } catch (e) {} }, 50);
   }
-  // (lining up by hand: pause just after a line is said and tap it; a second, later on, sets any drift right too: John, 13 Nov 2026)
+  // (lining up by hand: pause just as a line starts and tap it; a second, later on, sets any drift right too: John, 13 Nov 2026)
   var syncPairs = {};
   function lineUp() {
     var ts = tracks(), on = ts.findIndex(function (t) { return t.mode === 'showing'; }), si = ((P.info && P.info.subs) || [])[on];
     if (on < 0 || !si || !si.ext) return;
-    var cues = Array.prototype.slice.call(ts[on].cues || []), box = $('#psf'), wasPlaying = !v.paused, now = v.currentTime;
+    // (the moment of the pause, less a moment's reaction, longer in the film's time when it was playing faster: John, 13 Nov 2026,
+    // "can I do it playing at double speed?")
+    var cues = Array.prototype.slice.call(ts[on].cues || []), box = $('#psf'), wasPlaying = !v.paused, now = Math.max(0, v.currentTime - 0.3 * Math.max(1, v.playbackRate || 1));
     if (!cues.length) { toast('Their lines are still loading: try again in a moment'); return; }
     v.pause();
     var mmss = function (t) { t = Math.max(0, Math.round(t)); var h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, s2 = t % 60; return (h ? h + ':' + (m < 10 ? '0' : '') : '') + m + ':' + (s2 < 10 ? '0' : '') + s2; };
@@ -6117,7 +6119,7 @@ window.addEventListener('pagehide', saveProgress);
     var done = (syncPairs[si.sid] || []).length;
     box.innerHTML = '<div class="psfin"><header><b>Line them up</b><button type="button" id="psfx" aria-label="Close">×</button></header>' +
       '<p class="psfsay">' + (done ? 'Lined up from ' + done + ' line' + (done > 1 ? 's' : '') + '. If they drift later in the film, do it again there: that sets the drift right too.' :
-        'Pause just after someone speaks, then tap the line they said. Once near the start and once near the end sets right any drift too.') + ' Paused at ' + mmss(now) + '.</p>' +
+        'Pause just as someone starts to speak, then tap the line they said. A film in parts (like Fantasia): one line at the start of each part. Otherwise once near the start and once near the end sets right any drift too.') + ' Paused at ' + mmss(now) + '.</p>' +
       '<div class="psfbar"><input type="search" id="psfq" placeholder="Find a line by its words" autocomplete="off"></div><ul id="psfres"></ul></div>';
     box.hidden = false;
     var close = function () { box.hidden = true; box.innerHTML = ''; if (wasPlaying) v.play().catch(function () {}); wake(); };
@@ -6138,7 +6140,7 @@ window.addEventListener('pagehide', saveProgress);
     draw('');
     function pickLine(i) {
       clearTimeout(nudgeT); var pend = nudgeSum; nudgeSum = 0;
-      var pairs = (syncPairs[si.sid] = (syncPairs[si.sid] || []).filter(function (x) { return Math.abs(x[1] - now) > 20; }).concat([[i, Math.max(0, now - 0.35)]]));
+      var pairs = (syncPairs[si.sid] = (syncPairs[si.sid] || []).filter(function (x) { return Math.abs(x[1] - now) > 20; }).concat([[i, now]]));
       $('#psfres').innerHTML = ''; $('.psf .psfsay').textContent = 'Lining them up…';
       (Math.abs(pend) >= .05 ? mac('subs', { op: 'shift', id: P.it.id, sid: si.sid, secs: pend }) : Promise.resolve()).then(function () {
         return mac('subs', { op: 'sync', id: P.it.id, sid: si.sid, pairs: pairs });
@@ -6173,7 +6175,7 @@ window.addEventListener('pagehide', saveProgress);
     var w = P.subWork; if (!w) return;
     toast('Adding them…');
     mac('subs', { op: 'keep', id: w.film, job: w.job }).then(function (r) { P.subWork = null; setTracks(r.subs || [], r.pick != null ? r.subs[r.pick].sid : null);
-      setTimeout(function () { toast('Now pause just after a line is said and tap it'); lineUp(); }, 1500); })
+      setTimeout(function () { toast('Now pause just as a line starts and tap it'); lineUp(); }, 1500); })
       .catch(function (e) { toast(e.message || 'Couldn’t add them'); });
   }
   var LANGS = null;
@@ -6199,10 +6201,11 @@ window.addEventListener('pagehide', saveProgress);
         say.textContent = L.length ? 'Listed with the likeliest to fit this copy of the film first. Whichever is added, the Mac mini checks it fits and times it to the film.' : 'None found in this language.';
         // (the likeliest few, tried in turn by the Mac mini, the first that surely fits kept: no guessing which cut each is for)
         var auto = L.filter(function (x) { return !x.machine; }).slice(0, 4);
-        res.innerHTML = (auto.length > 1 ? '<li><button type="button" class="psfauto" id="psfauto">Choose the best one for me<span>The Mac mini tries up to ' + auto.length + ', the likeliest first, and keeps the first it can confirm fits this copy (one of today’s downloads each).</span></button></li>' : '') +
+        res.innerHTML = (auto.length > 1 ? '<li><button type="button" class="psfauto" id="psfauto">Choose the best one for me<span>The Mac mini tries those numbered 1 to ' + auto.length + ' below, in that order, and keeps the first it can confirm fits this copy.</span></button></li>' : '') +
           L.map(function (x, k) {
           var m = [x.downloads ? Number(x.downloads).toLocaleString() + ' downloads' : '', x.hi ? 'for the hard of hearing' : '', x.machine ? 'machine translated' : '', x.fps ? x.fps + ' fps' : ''].filter(Boolean).join(' · ');
-          return '<li><button type="button" data-k="' + k + '"><span class="n">' + (x.exact ? '<span class="x">Made for this file</span>' : x.like >= 5 ? '<span class="x l">Like your copy</span>' : '') + esc(x.name || 'Subtitles') + '</span>' + (m ? '<span class="m">' + esc(m) + '</span>' : '') + '</button></li>';
+          var ai = auto.length > 1 ? auto.indexOf(x) : -1;   // (which of them Choose for me tries, and in what order)
+          return '<li><button type="button" data-k="' + k + '"><span class="n">' + (ai >= 0 ? '<span class="x n">' + (ai + 1) + '</span>' : '') + (x.exact ? '<span class="x">Made for this file</span>' : x.like >= 5 ? '<span class="x l">Like your copy</span>' : '') + esc(x.name || 'Subtitles') + '</span>' + (m ? '<span class="m">' + esc(m) + '</span>' : '') + '</button></li>';
         }).join('');
         $$('#psfres button[data-k]').forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); add(L[+b.dataset.k]); }; });
         if ($('#psfauto')) $('#psfauto').onclick = function (e) { e.stopPropagation(); add(null, auto); };
