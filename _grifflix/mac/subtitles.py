@@ -87,7 +87,7 @@ class OpenSubs:
         self.save()
         return self.cfg['token']
 
-    def search(self, lang, mhash=None, tmdb=None, imdb=None, query=None, year=None, parent_tmdb=None, season=None, episode=None):
+    def search(self, lang, mhash=None, tmdb=None, imdb=None, query=None, year=None, parent_tmdb=None, season=None, episode=None, hint=''):
         """Subtitles for a film or an episode in one language: those made for this very file first."""
         if not self.cfg.get('key'):
             raise RuntimeError('Subtitles aren’t set up yet: John adds his OpenSubtitles details on the admin page.')
@@ -126,8 +126,11 @@ class OpenSubs:
         if query and len(found) < 5:
             ask({'languages': lang, 'query': query, 'year': year})
         out = [found[f] for f in order]
-        # (the surest first: made for this file, then trusted uploaders, then the most downloaded; machine translations last)
-        out.sort(key=lambda x: (not x['exact'], x['machine'], not x['trusted'], -x['downloads']))
+        for x in out:   # (how like this copy each one's release is: the same disc, picture size, encoding or group, or the same cut)
+            x['like'] = likeness(hint, x['name'])
+        # (the likeliest to fit first: made for this file, then those like this copy, then trusted uploaders and the most
+        # downloaded; machine translations last)
+        out.sort(key=lambda x: (not x['exact'], -x['like'], x['machine'], not x['trusted'], -x['downloads']))
         return out[:40]
 
     def exact_any(self, mhash):
@@ -161,6 +164,46 @@ class OpenSubs:
             return r.read()
 
 
+SOURCES = {'bluray': 'bluray', 'blu-ray': 'bluray', 'bdrip': 'bluray', 'brrip': 'bluray', 'bdremux': 'bluray', 'remux': 'bluray',
+           'web': 'web', 'webrip': 'web', 'webdl': 'web', 'web-dl': 'web', 'amzn': 'web', 'nf': 'web', 'dsnp': 'web',
+           'hdtv': 'tv', 'dvdrip': 'dvd', 'dvd': 'dvd', 'dvdscr': 'dvd', 'hddvd': 'hddvd'}
+CUTS = ('extended', 'theatrical', 'directors', 'director', 'uncut', 'remastered', 'roadshow', 'restored', 'criterion', 'final', 'special', 'imax', 'unrated')
+
+
+def _marks(name):
+    name = re.sub(r'\.(mkv|mp4|m4v|avi|srt|sub|ass)$', '', (name or '').strip(), flags=re.I)
+    w = re.findall(r'[a-z0-9]+(?:-[a-z0-9]+)?', name.lower().replace('.', ' ').replace('_', ' '))
+    res = next((x for x in w if re.fullmatch(r'(2160|1080|720|576|480)p', x)), '')
+    src = next((SOURCES[x] for x in w if x in SOURCES), '')
+    enc = next(('265' if x in ('x265', 'h265', 'hevc') else '264' if x in ('x264', 'h264', 'avc') else 'xvid' for x in w if x in ('x265', 'h265', 'hevc', 'x264', 'h264', 'avc', 'xvid', 'divx')), '')
+    grp = re.findall(r'-([a-z0-9]{2,15})\s*$', re.sub(r'\.(mkv|mp4|avi|srt)$', '', (name or '').lower().strip()))
+    grp = grp[0] if grp else (w[-1] if w and w[-1] not in SOURCES and not re.fullmatch(r'\d+p?|x26[45]|h26[45]|hevc|avc', w[-1]) else '')
+    cut = set(x for x in w if x in CUTS)
+    return res, src, enc, grp, cut
+
+
+def likeness(mine, theirs):
+    """How like this copy a subtitle's release is (0 to 10): the same source matters most (a Blu-ray and a DVD of a film are
+    often different cuts, or different speeds), then the same release group, picture size and encoding, and the same cut."""
+    if not mine or not theirs:
+        return 0
+    a, b = _marks(mine), _marks(theirs)
+    n = 0
+    if a[1] and a[1] == b[1]:
+        n += 4
+    elif a[1] and b[1]:
+        n -= 2
+    if a[3] and a[3] == b[3]:
+        n += 3
+    if a[0] and a[0] == b[0]:
+        n += 1
+    if a[2] and a[2] == b[2]:
+        n += 1
+    if a[4] or b[4]:
+        n += 1 if a[4] & b[4] else -1
+    return max(0, min(10, n))
+
+
 # ---------------------------------------------------------------- SRT
 
 TS = re.compile(r'(\d+):(\d\d):(\d\d)[,.](\d{1,3})\s*-->\s*(\d+):(\d\d):(\d\d)[,.](\d{1,3})')
@@ -186,9 +229,10 @@ def parse_srt(text):
         for i, l in enumerate(lines[:3]):
             m = TS.search(l)
             if m:
-                a = [int(x) for x in m.groups()]
-                s = a[0] * 3600 + a[1] * 60 + a[2] + int(str(a[3]).ljust(3, '0')[:3]) / 1000
-                e = a[4] * 3600 + a[5] * 60 + a[6] + int(str(a[7]).ljust(3, '0')[:3]) / 1000
+                g_ = m.groups()   # (milliseconds as written: "055" is 55 ms, and "5" or "50" is 500 ms)
+                ms = lambda x: int(x.ljust(3, '0')[:3]) / 1000
+                s = int(g_[0]) * 3600 + int(g_[1]) * 60 + int(g_[2]) + ms(g_[3])
+                e = int(g_[4]) * 3600 + int(g_[5]) * 60 + int(g_[6]) + ms(g_[7])
                 body = '\n'.join(lines[i + 1:]).strip()
                 if body and e > s:
                     cues.append([s, e, body])
@@ -385,19 +429,36 @@ def fit_pairs(pairs):
 
 
 def sync_file(path, pairs):
-    """The file's lines put where they were heard: pairs of (line number, when it's said in the film)."""
+    """The file's lines put where they were heard: pairs of (line number, when it's said in the film). One tap moves them all;
+    taps that agree with one steady drift set that; taps that don't (a film in parts, each out by its own amount, like
+    Fantasia's versions: John, 13 Nov 2026) each set the lines from there to the next tap."""
     with open(path, 'rb') as f:
         cues = parse_srt(decode(f.read()))
-    pts = [(cues[i][0], float(t)) for i, t in pairs if 0 <= i < len(cues)]
+    pts = sorted((cues[i][0], float(t)) for i, t in pairs if 0 <= i < len(cues))
     if not pts:
         raise RuntimeError('which line?')
-    r, off = fit_pairs(pts)
-    cues = [[max(0.0, s * r + off), max(0.05, e * r + off), t] for s, e, t in cues]
+    r, off = fit_pairs([(cues[i][0], float(t)) for i, t in pairs if 0 <= i < len(cues)])
+    worst = max(abs(t * r + off - f) for t, f in pts)
+    if len(pts) == 1 or worst < 1.0:
+        out = [[max(0.0, s * r + off), max(0.05, e * r + off), t] for s, e, t in cues]
+        how = {'ratio': round(r, 5), 'shift': round(off, 2), 'parts': 1}
+    else:   # (in parts: each tapped line's shift from it until the next tapped line; before the first, the first's)
+        out = []
+        for s_, e_, t_ in cues:
+            d = pts[0][1] - pts[0][0]
+            for t0, f0 in pts:
+                if t0 <= s_ + 1e-6:
+                    d = f0 - t0
+            out.append([max(0.0, s_ + d), max(0.05, e_ + d), t_])
+        for k in range(len(out) - 1):   # (no line running into the next where two parts meet)
+            if out[k][1] > out[k + 1][0]:
+                out[k][1] = max(out[k][0] + 0.3, out[k + 1][0] - 0.02)
+        how = {'ratio': 1.0, 'shift': round(pts[0][1] - pts[0][0], 2), 'parts': len(pts)}
     tmp = path + '.tmp'
     with open(tmp, 'w', encoding='utf-8') as f:
-        f.write(write_srt(cues))
+        f.write(write_srt(out))
     os.replace(tmp, path)
-    return {'ratio': round(r, 5), 'shift': round(off, 2), 'lines': len(cues)}
+    return dict(how, lines=len(cues))
 
 
 # ---------------------------------------------------------------- lining them up

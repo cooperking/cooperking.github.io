@@ -1641,9 +1641,10 @@ def make_handler(g):
                 try:
                     if it.get('Type') == 'Episode':
                         res = self.subs_client().search(lang, mhash=mh, parent_tmdb=ser.get('Tmdb'), season=it.get('ParentIndexNumber'), episode=it.get('IndexNumber'),
-                                                        query=it.get('SeriesName'))
+                                                        query=it.get('SeriesName'), hint=os.path.basename(path))
                     else:
-                        res = self.subs_client().search(lang, mhash=mh, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'))
+                        res = self.subs_client().search(lang, mhash=mh, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'),
+                                                        hint=os.path.basename(path))
                 except Exception as e:
                     return self.send_json(502, {'error': str(e)})
                 o = g.st.get('opensubs') or {}
@@ -1693,18 +1694,20 @@ def make_handler(g):
                 subs, pick = self.subs_show(iid, out, key)
                 j.update(state='done', say='Added as they came: now line them up by hand (subtitles menu, Line up by a line)', subs=subs, pick=pick, hand=True)
                 return self.send_json(200, {'ok': True, 'subs': subs, 'pick': pick})
-            if op != 'add':
+            if op not in ('add', 'auto'):
                 return self.send_json(400, {'error': 'Which?'})
-            fid = int(b.get('file_id') or 0)
-            exact = bool(b.get('exact'))   # (made for this very copy of the film, by its fingerprint)
+            # (one chosen, or "Choose for me": the likeliest few tried in turn, the first that surely fits this copy kept: John,
+            # 13 Nov 2026, "It's just guess work for me what the right cut is")
+            tries = [{'file_id': int(x.get('file_id') or 0), 'exact': bool(x.get('exact')), 'name': str(x.get('name') or '')[:120]}
+                     for x in ((b.get('tries') or [])[:4] if op == 'auto' else [b])]
+            tries = [x for x in tries if x['file_id']]
             lang = re.sub(r'[^a-z]', '', (b.get('lang') or 'en').lower().split('-')[0])[:3] or 'en'
-            if not fid or not path or not os.path.exists(path):
-                return self.send_json(400, {'error': 'That film’s file isn’t there.'})
+            if not tries or not path or not os.path.exists(path):
+                return self.send_json(400, {'error': 'That film’s file isn’t there.' if tries else 'Which subtitles?'})
             day = time.strftime('%Y-%m-%d')
             n = SUBDAY.get((me['uid'], day), 0)
             if n >= 15 and not me.get('owner'):   # (OpenSubtitles allows John's account only so many a day, shared by everyone)
                 return self.send_json(429, {'error': 'That’s 15 subtitles today: more tomorrow.'})
-            SUBDAY[(me['uid'], day)] = n + 1
             jid = secrets.token_hex(6)
             SUBJOBS[jid] = {'uid': me['uid'], 'state': 'waiting', 'say': 'Waiting its turn…', 'at': time.time()}
             refs = [x for x in ms.get('MediaStreams', []) if x.get('Type') == 'Subtitle' and x.get('IsTextSubtitleStream')
@@ -1712,62 +1715,98 @@ def make_handler(g):
             def run(job=SUBJOBS[jid]):
                 with SUBRUN:
                     try:
-                        job.update(state='getting', say='Getting the subtitles…')
-                        raw = self.subs_client().download(fid)
-                        cues = SUBS.parse_srt(SUBS.decode(raw))
-                        if not cues:
-                            raise RuntimeError('that file had no subtitles in it')
                         ff = self.ffmpeg_path()
                         g.watched()   # (the converter waits meanwhile: the film's disk is this job's)
-                        rep, done = {'ok': False, 'why': 'couldn’t be sure of the timing'}, None
-                        for ref in refs[:2]:   # first against the film's own subtitles, where it has any
+                        own = None    # (the film's own subtitles, read once)
+                        heard = None  # (where people speak, heard once for every try)
+                        guide = None  # (subtitles made for this copy in any language, fetched once)
+                        best = None   # (the nearest miss, to add anyway and line up by hand)
+                        done, rep, used = None, {}, None
+                        for k, cand in enumerate(tries):
+                            if SUBDAY.get((me['uid'], day), 0) >= 15 and not me.get('owner'):
+                                break
+                            SUBDAY[(me['uid'], day)] = SUBDAY.get((me['uid'], day), 0) + 1
+                            pre = 'Trying %d of %d%s: ' % (k + 1, len(tries), ' (%s)' % cand['name'] if cand['name'] else '') if len(tries) > 1 else ''
+                            job.update(state='getting', say=pre + 'getting them…')
                             try:
-                                job.update(state='timing', say='Timing them against the film’s own subtitles…')
-                                rc = self.subs_ref(ff, path, ref)
-                                if len(rc) >= 20:
-                                    n_ = int(max(rc[-1][1], cues[-1][1] * 1.1) * SUBS.HZ) + 600
-                                    c2, r2 = SUBS.align(cues, SUBS.cue_signal(rc, n_))
-                                    if r2.get('ok'):
-                                        done, rep = c2, dict(r2, by='the film’s own subtitles')
-                                        break
+                                cues = SUBS.parse_srt(SUBS.decode(self.subs_client().download(cand['file_id'])))
                             except Exception as e:
-                                log('Subtitles: couldn’t use the film’s own subtitles:', repr(e))
-                        if done is None:
-                            try:
-                                job.update(state='listening', say='Listening to the film’s dialogue to time them (a few minutes on the Mac mini)…')
-                                sig = SUBS.speech(ff, path)
-                                job.update(state='timing', say='Timing them to the film…')
-                                c2, r2 = SUBS.align(cues, sig)
-                                rep = r2
+                                rep = {'ok': False, 'why': str(e)[:120]}
+                                if 'download' in str(e).lower() or 'allowed' in str(e).lower():
+                                    break
+                                continue
+                            if len(cues) < 3:
+                                continue
+                            rep = {'ok': False, 'why': 'couldn’t be sure of the timing'}
+                            if own is None:
+                                own = []
+                                for ref in refs[:2]:
+                                    try:
+                                        rc = self.subs_ref(ff, path, ref)
+                                        if len(rc) >= 20:
+                                            own.append(rc)
+                                    except Exception as e:
+                                        log('Subtitles: couldn’t read the film’s own subtitles:', repr(e))
+                            for rc in own:   # first against the film's own subtitles
+                                job.update(state='timing', say=pre + 'timing them against the film’s own subtitles…')
+                                c2, r2 = SUBS.align(cues, SUBS.cue_signal(rc, int(max(rc[-1][1], cues[-1][1] * 1.1) * SUBS.HZ) + 600))
                                 if r2.get('ok'):
-                                    done = c2
-                            except Exception as e:
-                                rep = {'ok': False, 'why': 'couldn’t hear the film (%s)' % str(e)[:80]}
-                        if done is None and exact:   # (made for this very file: their timing is already its own)
-                            done, rep = cues, {'ok': True, 'exact': True}
-                        if done is None:   # (subtitles in any language made for this very file, as a guide: one of John's downloads)
-                            try:
-                                mh = SUBS.movie_hash(path)
-                                for rfid, rlang in [x for x in self.subs_client().exact_any(mh) if x[0] != fid][:1]:
-                                    job.update(state='timing', say='Timing them against subtitles made for this copy of the film…')
-                                    rc = SUBS.parse_srt(SUBS.decode(self.subs_client().download(rfid)))
-                                    if len(rc) >= 20:
-                                        n_ = int(max(rc[-1][1], cues[-1][1] * 1.1) * SUBS.HZ) + 600
-                                        c2, r2 = SUBS.align(cues, SUBS.cue_signal(rc, n_))
+                                    done, rep = c2, dict(r2, by='the film’s own subtitles')
+                                    break
+                            if done is None:   # then by listening
+                                try:
+                                    if heard is None:
+                                        job.update(state='listening', say=pre + 'listening to the film’s dialogue (a few minutes on the Mac mini, once)…')
+                                        heard = SUBS.speech(ff, path)
+                                    job.update(state='timing', say=pre + 'timing them to the film…')
+                                    c2, r2 = SUBS.align(cues, heard)
+                                    rep = r2
+                                    if r2.get('ok'):
+                                        done = c2
+                                except Exception as e:
+                                    heard = heard or []
+                                    rep = {'ok': False, 'why': 'couldn’t hear the film (%s)' % str(e)[:80]}
+                            if done is None and cand['exact']:   # (made for this very file: their timing is already its own)
+                                done, rep = cues, {'ok': True, 'exact': True}
+                            if done is None:   # then against subtitles in any language made for this copy (one download, once)
+                                try:
+                                    if guide is None:
+                                        guide = []
+                                        for rfid, rlang in [x for x in self.subs_client().exact_any(SUBS.movie_hash(path)) if x[0] not in [t['file_id'] for t in tries]][:1]:
+                                            rc = SUBS.parse_srt(SUBS.decode(self.subs_client().download(rfid)))
+                                            if len(rc) >= 20:
+                                                guide = [(rc, rlang)]
+                                    for rc, rlang in guide:
+                                        job.update(state='timing', say=pre + 'timing them against subtitles made for this copy…')
+                                        c2, r2 = SUBS.align(cues, SUBS.cue_signal(rc, int(max(rc[-1][1], cues[-1][1] * 1.1) * SUBS.HZ) + 600))
                                         if r2.get('ok'):
                                             done, rep = c2, dict(r2, by='subtitles made for this copy (%s)' % rlang)
-                            except Exception as e:
-                                log('Subtitles: couldn’t use a guide made for this copy:', repr(e))
-                        if done is None:   # (not sure: nothing saved; the member chooses another, or has them as they came to line up by hand)
-                            job.update(state='unsure', _cues=cues, _lang=lang, timing=rep,
-                                       say='Couldn’t be sure how these line up with this copy of the film, so they haven’t been added. They may be for a different version.')
-                            log('Subtitles: not added (not sure of the timing) for %s: %s' % (it.get('Name'), rep))
+                                except Exception as e:
+                                    guide = guide or []
+                                    log('Subtitles: couldn’t use a guide made for this copy:', repr(e))
+                            if done is not None:
+                                used = (k, cand)
+                                break
+                            if best is None or rep.get('sure', 0) > best[0]:
+                                best = (rep.get('sure', 0), cues, rep)
+                            log('Subtitles: try %d for %s not sure: %s' % (k + 1, it.get('Name'), rep))
+                        if done is None:   # (none sure: nothing saved; others to choose, or the nearest added as it came to line up by hand)
+                            many = len(tries) > 1
+                            job.update(state='unsure', _cues=best[1] if best else None, _lang=lang, timing=best[2] if best else rep,
+                                       say=('Tried %d, and none could be confirmed to fit this copy of the film, so none has been added. ' % len(tries) if many else
+                                            'Couldn’t be sure how these line up with this copy of the film, so they haven’t been added. ') +
+                                           ('They may all be for a different version (a film like this one often has several).' if many else 'They may be for a different version.'))
+                            if not best:
+                                job['_cues'] = None
+                            log('Subtitles: none added for %s (%d tried)' % (it.get('Name'), len(tries)))
                             return
                         job.update(state='adding', say='Adding them to the film…')
                         out = self.subs_write(path, lang, done)
                         subs, pick = self.subs_show(iid, out, key)
                         log('Subtitles: %s added by %s (%s)' % (os.path.basename(out), me['name'], SUBS.describe(rep)))
                         say = 'Made for this very copy of the film, so kept as they came' if rep.get('exact') else SUBS.describe(rep) + (' (against %s)' % rep['by'] if rep.get('by') else '')
+                        if len(tries) > 1:
+                            say = '%s fitted%s. %s' % (used[1]['name'] or 'Number %d' % (used[0] + 1), ' (the %s tried)' % ['first', 'second', 'third', 'fourth'][used[0]] if used[0] else '', say)
                         job.update(state='done', say=say + ('' if subs else ' (the media server is still adding them: start the film again in a minute)'),
                                    subs=subs, pick=pick, timing=rep)
                     except Exception as e:
