@@ -6173,7 +6173,7 @@ window.addEventListener('pagehide', saveProgress);
       res.innerHTML = ''; sel.disabled = true;
       say.outerHTML = '<div class="psfwork" id="psfwork"><i></i><span>Asking the Mac mini…</span></div>';
       var work = $('#psfwork span');
-      mac('subs', { op: 'add', id: it.id, file_id: x.file_id, lang: lang }).then(function (r) {
+      mac('subs', { op: 'add', id: it.id, file_id: x.file_id, lang: lang, exact: !!x.exact }).then(function (r) {
         job = r.job;
         (function poll() {
           if (gone) return;

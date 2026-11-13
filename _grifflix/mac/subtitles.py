@@ -130,6 +130,22 @@ class OpenSubs:
         out.sort(key=lambda x: (not x['exact'], x['machine'], not x['trusted'], -x['downloads']))
         return out[:40]
 
+    def exact_any(self, mhash):
+        """Subtitles in any language made for this very file (by its fingerprint): their timing fits it whatever the words, so
+        they can time others. The most downloaded first."""
+        if not mhash:
+            return []
+        j = self._req('GET', '/subtitles?' + urllib.parse.urlencode({'moviehash': mhash}))
+        out = []
+        for d in j.get('data') or []:
+            a = d.get('attributes') or {}
+            if not a.get('moviehash_match') or a.get('machine_translated') or a.get('ai_translated'):
+                continue
+            for f in a.get('files') or []:
+                if f.get('file_id'):
+                    out.append((a.get('download_count') or 0, f['file_id'], a.get('language') or ''))
+        return [(fid, lang) for _, fid, lang in sorted(out, reverse=True)]
+
     def download(self, file_id):
         """The subtitle file's bytes (one of John's daily OpenSubtitles downloads)."""
         base = 'https://%s/api/v1' % (self.cfg.get('base') or 'api.opensubtitles.com')
@@ -217,56 +233,126 @@ def _channels(ffmpeg, video, stream):
         return 0, ''
 
 
+SUB = 5   # (each tenth of a second heard as 5 slices, for how speech rises and falls with each syllable)
+
+
+def _levels(ffmpeg, video, stream, mix, nice, perchannel):
+    """Loudness in the voice range, 50 times a second, of each channel of a mix (pan filter): [[dB, ...] per channel]."""
+    n = mix.count('|c')
+    base = mix + ',highpass=f=250,lowpass=f=3200,aresample=8000,asetnsamples=n=%d:p=0,' % (8000 // (HZ * SUB))
+    if perchannel:
+        af = base + 'astats=metadata=1:reset=1:measure_perchannel=RMS_level:measure_overall=none,ametadata=mode=print:file=-'
+    else:
+        af = base + 'astats=metadata=1:reset=1,ametadata=mode=print:key=lavfi.astats.Overall.RMS_level:file=-'
+    cmd = [ffmpeg, '-hide_banner', '-nostats', '-v', 'error', '-i', video, '-map', '0:a:%d' % stream, '-vn', '-sn', '-dn', '-af', af, '-f', 'null', '-']
+    if nice and os.path.exists('/usr/sbin/taskpolicy'):
+        cmd = ['/usr/sbin/taskpolicy', '-b'] + cmd
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, preexec_fn=(lambda: os.nice(10)) if nice else None)
+    chans, t = [[] for _ in range(n if perchannel else 1)], None
+    rate = HZ * SUB
+    for line in p.stdout:
+        if line.startswith('frame:'):
+            m = re.search(r'pts_time:([\d.]+)', line)
+            t = float(m.group(1)) if m else None
+            continue
+        m = re.match(r'lavfi\.astats\.(\d+|Overall)\.RMS_level=(.*)', line.strip())
+        if not m or t is None:
+            continue
+        c = 0 if m.group(1) == 'Overall' else int(m.group(1)) - 1
+        if c >= len(chans):
+            continue
+        v = m.group(2).strip()
+        try:
+            v = max(-90.0, float(v)) if v not in ('-inf', 'inf', 'nan') else -90.0
+        except ValueError:
+            v = -90.0
+        L, i = chans[c], int(round(t * rate))
+        while len(L) < i:
+            L.append(L[-1] if L else -90.0)
+        L.append(v)
+    p.wait()
+    err = p.stderr.read().strip()[-200:]
+    return chans, err
+
+
 def speech(ffmpeg, video, stream=0, nice=True):
-    """Where people speak in the film, 10 readings a second (0 to 1). Only the dialogue: in 5.1 or 7.1 sound the centre channel,
-    which holds the voices and little else; in stereo what's in the middle of both. And judged against each half-minute's own
-    background, so loud music or a quiet film doesn't fool it (John, 13 Nov 2026: the first version, listening to everything,
-    couldn't be sure)."""
+    """Where people speak in the film, 10 readings a second (0 to 1). Speech, not just sound (John, 13 Nov 2026: "It's important it
+    works on difficult cases", Fantasia's few spoken words under a full orchestra):
+      * the dialogue: in 5.1 or 7.1 the centre channel, in stereo what's in the middle of both
+      * how much it stands out from the rest: the centre against the front pair, the middle against what's to either side;
+        narration sits alone in the middle while music spreads across every channel
+      * how it rises and falls: speech changes with each syllable, several times a second; music holds its notes
+      * each half-minute against its own background, so a loud score or a quiet film doesn't fool it."""
     ch, layout = _channels(ffmpeg, video, stream)
     if ch >= 3 and ('5.1' in layout or '7.1' in layout or '6.1' in layout or 'FC' in layout or ch >= 6):
-        pick = 'pan=mono|c0=FC,'
+        mix = 'pan=stereo|c0=FC|c1=0.5*FL+0.5*FR'      # (the dialogue, and the front pair beside it)
     elif ch == 2:
-        pick = 'pan=mono|c0=0.5*c0+0.5*c1,'
+        mix = 'pan=stereo|c0=0.5*c0+0.5*c1|c1=0.5*c0-0.5*c1'   # (the middle, and what's to either side)
     else:
-        pick = ''
-    af = (pick + 'highpass=f=250,lowpass=f=3200,aresample=8000,asetnsamples=n=%d:p=0,astats=metadata=1:reset=1,'
-          'ametadata=mode=print:key=lavfi.astats.Overall.RMS_level:file=-' % (8000 // HZ))
-    def run(af):
-        cmd = [ffmpeg, '-hide_banner', '-nostats', '-v', 'error', '-i', video, '-map', '0:a:%d' % stream, '-vn', '-sn', '-dn', '-af', af, '-f', 'null', '-']
-        if nice and os.path.exists('/usr/sbin/taskpolicy'):
-            cmd = ['/usr/sbin/taskpolicy', '-b'] + cmd
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, preexec_fn=(lambda: os.nice(10)) if nice else None)
-        lv, t = [], None
-        for line in p.stdout:
-            if line.startswith('frame:'):
-                m = re.search(r'pts_time:([\d.]+)', line)
-                t = float(m.group(1)) if m else None
-            elif 'RMS_level=' in line and t is not None:
-                v = line.split('=', 1)[1].strip()
-                i = int(round(t * HZ))
-                while len(lv) < i:
-                    lv.append(lv[-1] if lv else -90.0)
-                try:
-                    lv.append(max(-90.0, float(v)) if v not in ('-inf', 'inf', 'nan') else -90.0)
-                except ValueError:
-                    lv.append(-90.0)
-        p.wait()
-        return lv, p.stderr.read().strip()[-200:]
-    lv, err = run(af)
-    if len(lv) < HZ * 60 and pick:   # (that channel wasn't there after all: all of it)
-        lv, err = run(af[len(pick):])
-    if len(lv) < HZ * 60:
+        mix = 'pan=mono|c0=c0'
+    lv = None
+    two = mix.startswith('pan=stereo')
+    try:
+        chans, err = _levels(ffmpeg, video, stream, mix, nice, perchannel=two)
+        if len(chans[0]) >= HZ * SUB * 60 and (not two or len(chans) > 1 and len(chans[1]) >= HZ * SUB * 60):
+            lv = chans
+    except Exception as e:
+        err = str(e)
+    if lv is None and two:   # (an ffmpeg without per-channel measures: each heard on its own)
+        a, err = _levels(ffmpeg, video, stream, 'pan=mono|c0=' + mix.split('|c0=')[1].split('|c1=')[0], nice, False)
+        b2, _ = _levels(ffmpeg, video, stream, 'pan=mono|c0=' + mix.split('|c1=')[1], nice, False)
+        if len(a[0]) >= HZ * SUB * 60:
+            lv = [a[0], b2[0] if len(b2[0]) >= HZ * SUB * 60 else []]
+    if lv is None:   # (only the whole sound)
+        a, err = _levels(ffmpeg, video, stream, 'pan=mono|c0=c0', nice, False)
+        lv = [a[0], []] if len(a[0]) >= HZ * SUB * 60 else None
+    if lv is None:
         raise RuntimeError('couldn’t hear the film (%s)' % (err or 'no sound'))
-    # each half-minute against its own quiet: its tenth-quietest level, from it and its neighbours
+    main, other = lv[0], (lv[1] if len(lv) > 1 else [])
+    n = len(main) // SUB
+    # per tenth of a second: level; how much the loudness varies over half a second around it (a voice comes and goes with every
+    # syllable, a held chord doesn't); how fast it changes; and how much it stands out from the rest of the mix
+    lev, spr, mod, pro = [], [], [], []
+    for k in range(n):
+        seg = main[k * SUB:(k + 1) * SUB]
+        lev.append(sum(seg) / SUB)
+        win = main[max(0, k * SUB - 2 * SUB):k * SUB + 3 * SUB]
+        mu = sum(win) / len(win)
+        spr.append(math.sqrt(sum((x - mu) ** 2 for x in win) / len(win)))
+        prev = main[k * SUB - 1] if k else seg[0]
+        mod.append(sum(abs(x - y) for x, y in zip(seg, [prev] + seg[:-1])) / SUB)
+        if other and len(other) >= (k + 1) * SUB:
+            o = other[k * SUB:(k + 1) * SUB]
+            pro.append(sum(seg) / SUB - sum(o) / SUB)
+    def smooth(x, w):   # (a running mean over w readings, centred)
+        out, acc = [], 0.0
+        for i, v in enumerate(x):
+            acc += v
+            if i >= w:
+                acc -= x[i - w]
+            out.append(acc / min(i + 1, w))
+        h = w // 2
+        return out[h:] + [out[-1]] * h
+    mod = smooth(mod, 5)
+    if pro:
+        pro = smooth(pro, 3)
+    def norm(x):   # (against the film as a whole: its middle 0, its top tenth 1)
+        s2 = sorted(x)
+        md, sp = s2[len(s2) // 2], max(1e-6, s2[len(s2) * 9 // 10] - s2[len(s2) // 2])
+        return [0.0 if v < md else 1.0 if v > md + sp else (v - md) / sp for v in x]
+    spr, mod = norm(spr), norm(mod)
+    pro = norm(pro) if pro else []
     blk = 30 * HZ
     floors = []
-    for k in range(0, len(lv), blk):
-        part = sorted(lv[max(0, k - blk):k + 2 * blk])
+    for k in range(0, n, blk):   # (near-silence left out: each half-minute's own quiet)
+        part = sorted(lev[max(0, k - blk):k + 2 * blk])
         floors.append(part[len(part) // 10])
     out = []
-    for i, v in enumerate(lv):
-        x = (v - floors[i // blk] - 4.0) / 10.0
-        out.append(0.0 if x < 0 else 1.0 if x > 1 else x)
+    for i in range(n):
+        gate = (lev[i] - floors[i // blk] - 1.0) / 4.0
+        gate = 0.0 if gate < 0 else 1.0 if gate > 1 else gate
+        f = 0.5 * spr[i] + 0.5 * mod[i]
+        out.append(gate * (0.75 * f + 0.25 * pro[i] if pro else f))
     return out
 
 
@@ -367,7 +453,8 @@ def align(cues, sig, max_off=240.0):
     z = (sc - mean) / sd
     orig = _score(P, cues, 1.0, 0.0)
     report = {'ratio': round(r, 5), 'shift': round(off, 2), 'sure': round(z, 1)}
-    if z < 4.5:   # (not clearly better than chance: left as it came)
+    common = min(abs(r - x) for x in (1.0, 25 / 23.976, 23.976 / 25)) < 1e-4
+    if z < (6.0 if common else 7.5):   # (not clearly better than chance: left as it came; a rarer frame-rate change must be surer still)
         report.update(ok=False, why='couldn’t be sure of the timing, so left as it came')
         return cues, report
     out = [[s * r + off, e * r + off, t] for s, e, t in cues]
