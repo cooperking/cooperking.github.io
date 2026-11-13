@@ -7195,7 +7195,7 @@
     "r&b",
     "soul"
    ],
-   "checkWhy": "Mellow, but the audio sounds livelier than 93% of the songs",
+   "checkWhy": "Mellow, but the audio sounds livelier than 94% of the songs",
    "check": true
   },
   "3lJ70fh0ENq6hzgtOfOGYZ": {
@@ -19667,8 +19667,8 @@
    "moodFrom": "Claude (researched)",
    "sound": [
     "Energetic",
-    "Joyful",
-    "Playful"
+    "Playful",
+    "Joyful"
    ],
    "claude": [
     "Joyful",
@@ -20207,8 +20207,8 @@
    "moodFrom": "Claude (researched)",
    "sound": [
     "Playful",
-    "Joyful",
-    "Energetic"
+    "Energetic",
+    "Joyful"
    ],
    "claude": [
     "Playful",
@@ -22833,7 +22833,7 @@
    "sound": [
     "Dreamy",
     "Uplifting",
-    "Joyful"
+    "Playful"
    ],
    "claude": [
     "Joyful",
@@ -26607,7 +26607,7 @@
    "moodMix": [
     [
      "Playful",
-     33
+     34
     ],
     [
      "Joyful",
@@ -26625,7 +26625,7 @@
      [
       [
        "Playful",
-       33
+       34
       ],
       [
        "Joyful",
@@ -27436,12 +27436,12 @@
        25
       ],
       [
-       "Joyful",
+       "Playful",
        23
       ],
       [
-       "Playful",
-       23
+       "Joyful",
+       22
       ]
      ]
     ]
@@ -27449,8 +27449,8 @@
    "moodFrom": "Weighed up",
    "sound": [
     "Romantic",
-    "Joyful",
-    "Playful"
+    "Playful",
+    "Joyful"
    ],
    "listeners": "agree",
    "styles": [
@@ -28573,6 +28573,144 @@
     "rock",
     "synth-pop",
     "synthpop"
+   ],
+   "check": true
+  },
+  "6giNHdHbKvePUhj3mIaP9W": {
+   "n": 277,
+   "title": "Only For Tonight",
+   "artist": "Pearl Charles",
+   "moods": [
+    "Joyful",
+    "Uplifting"
+   ],
+   "moodMix": [
+    [
+     "Joyful",
+     26
+    ],
+    [
+     "Uplifting",
+     14
+    ],
+    [
+     "Playful",
+     10
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Joyful",
+       26
+      ],
+      [
+       "Uplifting",
+       14
+      ],
+      [
+       "Playful",
+       10
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Joyful",
+    "Uplifting",
+    "Playful"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Indie Rock",
+    "Pop Rock",
+    "Alternative Rock"
+   ],
+   "genres": [
+    "Rock"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Rock",
+     29
+    ],
+    [
+     "Pop",
+     25
+    ],
+    [
+     "Indie",
+     24
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Rock",
+       53
+      ],
+      [
+       "Folk",
+       33
+      ],
+      [
+       "Pop",
+       13
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Indie",
+       54
+      ],
+      [
+       "Pop",
+       44
+      ],
+      [
+       "Folk",
+       2
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Indie",
+       39
+      ],
+      [
+       "Pop",
+       25
+      ],
+      [
+       "Electronic",
+       13
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "desert rock",
+    "folk rock",
+    "garage pop",
+    "psych folk",
+    "psychedelic pop",
+    "rock"
    ],
    "check": true
   }
