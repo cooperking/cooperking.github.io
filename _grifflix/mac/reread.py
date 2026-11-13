@@ -4,6 +4,7 @@ nothing of its picture and sound (and the converter can't tell what it needs). (
 
   python3 reread.py Obsession          the films matching "Obsession": read again those it knows no picture of
   python3 reread.py Obsession all      every film matching, read again
+A film whose file has moved or been renamed: the library is scanned, so the media server finds it in its new place.
 """
 import json, os, sys, urllib.parse, urllib.request
 
@@ -25,7 +26,12 @@ r = jf('GET', '/Users/%s/Items' % s['jf_user_id'], SearchTerm=term, IncludeItemT
 items = r.get('Items', r.get('items', []))
 if not items:
     sys.exit('No film matching "%s" in the media server.' % term)
+scan = False
 for it in items:
+    if it.get('Path') and not os.path.exists(it['Path']):   # (its file moved or renamed: only a scan of the library finds it)
+        print('%s (%s): its file isn\'t there any more (%s)' % (it.get('Name'), it.get('ProductionYear', '?'), it['Path']))
+        scan = True
+        continue
     ms = (it.get('MediaSources') or [{}])[0]
     st = ms.get('MediaStreams') or []
     pic = any((x.get('Type') or x.get('type')) == 'Video' for x in st)
@@ -34,3 +40,6 @@ for it in items:
         jf('POST', '/Items/%s/Refresh' % it['Id'], metadataRefreshMode='FullRefresh', imageRefreshMode='Default',
            replaceAllMetadata='false', replaceAllImages='false')
         print('   asked the media server to read it again: give it a minute')
+if scan:
+    jf('POST', '/Library/Refresh')
+    print('\nAsked the media server to scan the library for moved and new files: give it a few minutes, then run this again.')
