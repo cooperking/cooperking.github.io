@@ -132,9 +132,7 @@ class OpenSubs:
         # the same kind (film or episode) and a title that matches)
         flat = lambda t: re.sub(r'[^a-z0-9]', '', (t or '').lower())
         want_kind = 'episode' if episode else 'movie'
-        def ours(x):
-            if x['exact']:
-                return True
+        def ours(x):   # (made for this file too: a wrongly tagged upload can carry this file's fingerprint and another film's lines)
             if tmdb and x.get('tmdb') and str(x['tmdb']) != str(tmdb) and not episode:
                 return False
             if x.get('kind') and x['kind'] != want_kind and x['kind'] != 'tvshow':
