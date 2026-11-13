@@ -523,17 +523,23 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         return '<li><div class="who"><b>' + esc(m.name) + (m.owner ? ' <span class="badge signed">You</span>' : '') + '</b><span>' + esc(st) + '</span><span class="prefs">' + esc(notes) + '</span></div>' +
           '<button class="btn small" data-pref="' + m.id + '">Change</button>' +
           (m.owner ? '' : '<button class="btn small" data-gcode="' + m.id + '">Code</button>') + (m.owner ? '' : '<button class="btn small primary" data-inv="' + m.id + '">' + (m.devices || m.invite ? 'New link' : 'Invite') + '</button><button class="btn small" data-rm="' + m.id + '">Remove</button>') +
-          '<div class="prefedit" id="pe-' + m.id + '" hidden><input type="email" class="name" placeholder="Their email address" value="' + esc(m.email || '') + '">' +
+          '<div class="prefedit" id="pe-' + m.id + '" hidden><input type="text" class="name" data-k="name" placeholder="Their name" value="' + esc(m.name || '') + '" autocomplete="off" aria-label="Name">' +
+          '<input type="email" class="name" data-k="email" placeholder="Their email address" value="' + esc(m.email || '') + '">' +
           '<label>Emails <select data-k="gmail">' + ['all', 'week', 'off'].map(function (v) { return '<option value="' + v + '"' + (m.gmail === v ? ' selected' : '') + '>' + MODE[v] + '</option>'; }).join('') + '</select></label>' +
           '<label>Notifications <select data-k="gpush">' + ['all', 'week', 'off'].map(function (v) { return '<option value="' + v + '"' + (m.gpush === v ? ' selected' : '') + '>' + MODE[v] + '</option>'; }).join('') + '</select></label>' +
           '<button class="btn small primary" data-save="' + m.id + '">Save</button></div></li>';
       }).join('');
       [].forEach.call(document.querySelectorAll('[data-pref]'), function (b) { b.onclick = function () { var e = $('#pe-' + b.dataset.pref); e.hidden = !e.hidden; }; });
       [].forEach.call(document.querySelectorAll('[data-save]'), function (b) { b.onclick = function () {
-        var e = $('#pe-' + b.dataset.save), email = e.querySelector('input').value.trim(), gmail = e.querySelector('[data-k=gmail]').value;
+        var e = $('#pe-' + b.dataset.save), email = e.querySelector('[data-k=email]').value.trim(), gmail = e.querySelector('[data-k=gmail]').value;
+        var name = e.querySelector('[data-k=name]').value.replace(/\s+/g, ' ').trim(), was = (MEM.filter(function (x) { return x.id === b.dataset.save; })[0] || {}).name;
+        if (!name) return toast('Their name first.');
         if (gmail !== 'off' && !email) return toast('Their email address first.');
         b.disabled = true;
-        g('admin', { op: 'setprefs', id: b.dataset.save, email: email, gmail: gmail, gpush: e.querySelector('[data-k=gpush]').value }).then(function (j) { toast('Saved'); members(j.members); })
+        // (their name put right too: John, 13 Nov 2026, "I can't change names of members. Need to as have typo")
+        (name !== was ? g('admin', { op: 'rename', id: b.dataset.save, name: name }) : Promise.resolve())
+          .then(function () { return g('admin', { op: 'setprefs', id: b.dataset.save, email: email, gmail: gmail, gpush: e.querySelector('[data-k=gpush]').value }); })
+          .then(function (j) { toast('Saved'); members(j.members); })
           .catch(function (x) { b.disabled = false; toast(x.message); });
       }; });
       [].forEach.call(document.querySelectorAll('[data-inv]'), function (b) { b.onclick = function () { invite({ op: 'newlink', id: b.dataset.inv }); }; });
