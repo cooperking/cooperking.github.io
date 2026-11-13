@@ -122,6 +122,8 @@ def why(ms):
     bits = g(v, 'BitDepth', 8) or 8
     prof = (g(v, 'Profile') or '').lower()
     mbps = (g(ms, 'Bitrate') or g(v, 'BitRate') or 0) / 1e6
+    if not mbps and g(ms, 'Size') and g(ms, 'RunTimeTicks'):   # (no rate recorded: from the file's size and length)
+        mbps = g(ms, 'Size') * 8 / (g(ms, 'RunTimeTicks') / 1e7) / 1e6
     # (every MKV, and any other file that isn't an MP4, is repackaged first, the picture copied as it is, even if it's to be converted
     # later: the whole library put right quickly, then the slow conversions (John, 12 Nov 2026: "I want all MKV's repackaged before they
     # are converted, even if they also need converting later"). Once it's an MP4, the next look finds what's still to convert)
