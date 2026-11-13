@@ -374,6 +374,17 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="state"><button class="btn" id="pngo" type="button">Look</button></div>
       </section>
       <section class="card" data-tab="films">
+        <div class="kicker">Subtitles</div>
+        <h2>Subtitles, <em>in time</em></h2>
+        <p class="stat" id="ossay">Members find subtitles for a film in the player (the subtitles button, then <b>Find subtitles…</b>). They come from OpenSubtitles, and the Mac mini times each one to the film’s sound. It needs your OpenSubtitles account and an API key, kept on the Mac only: make a free account at opensubtitles.com, then get a key at <a href="https://www.opensubtitles.com/en/consumers" target="_blank" rel="noopener">opensubtitles.com/en/consumers</a> (“New consumer”, any name).</p>
+        <div id="osform" style="display:grid;gap:8px;margin-top:12px">
+          <input type="text" id="oskey" class="name" placeholder="API key" autocomplete="off" spellcheck="false">
+          <input type="text" id="osuser" class="name" placeholder="OpenSubtitles username" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <input type="password" id="ospass" class="name" placeholder="OpenSubtitles password" autocomplete="new-password">
+        </div>
+        <div class="state"><button class="btn primary" id="osgo" type="button">Save</button></div>
+      </section>
+      <section class="card" data-tab="films">
         <div class="kicker">Library</div>
         <h2 id="lbhead">Every film’s <em>quality</em></h2>
         <p class="stat" id="lbsay">Each film’s file as it is on the Mac: its picture, format, rate, size and sound, graded <b>Good</b>, <b>OK</b> or <b>Replace</b> (standard definition, or too little picture for its size), with those converted and those waiting to be.</p>
@@ -1068,6 +1079,25 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     }).catch(function (e) { b.disabled = false; toast(e.message); });
   }
   $('#pngo').onclick = pnLook;
+  // (OpenSubtitles: John's key and account, kept on the Mac; John, 13 Nov 2026)
+  function osPaint(r) {
+    if (r.ready) $('#ossay').innerHTML = 'Set up with OpenSubtitles as <b>' + esc(r.user) + '</b>' + (r.remaining != null ? ': ' + r.remaining + (r.allowed ? ' of ' + r.allowed : '') + ' downloads left today (shared by everyone)' : '') + '. Members find subtitles in the player: the subtitles button, then <b>Find subtitles…</b>. To change the account, fill in the boxes again.';
+    if (r.user) $('#osuser').value = r.user;
+    $('#oskey').placeholder = r.keyset ? 'API key (saved: leave empty to keep it)' : 'API key';
+    $('#ospass').placeholder = r.ready ? 'Password (saved: leave empty to keep it)' : 'OpenSubtitles password';
+  }
+  function osLoad() { if (!GW) return; fetch(GW + '/api/subsetup', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { return r.json(); }).then(function (r) { if (!r.error) osPaint(r); }).catch(function () {}); }
+  $('#osgo').onclick = function () {
+    var b = $('#osgo'); if (!GW) return toast('The Mac mini isn’t answering.');
+    b.disabled = true; b.textContent = 'Checking…';
+    fetch(GW + '/api/subsetup', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: $('#oskey').value.trim(), user: $('#osuser').value.trim(), pass: $('#ospass').value }) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'Couldn’t save that.'); return j; }); })
+      .then(function (r) { $('#oskey').value = ''; $('#ospass').value = ''; osPaint(r); toast('Saved: OpenSubtitles is working'); })
+      .catch(function (e) { toast(e.message || 'Couldn’t save that.'); })
+      .then(function () { b.disabled = false; b.textContent = 'Save'; });
+  };
+  setTimeout(osLoad, 1500);
 
   // ---- households: who lives together, so they share their Fire TVs (John, 11 Nov 2026: "Camilla and I share a house but the tv is
   // signed in as me and we are both members")

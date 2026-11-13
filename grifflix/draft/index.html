@@ -308,6 +308,25 @@ html.tv .sheet .people { font-size: var(--crfs, 15px); }
 .pmenu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 16px; border: 0; background: none; color: #fff; font: 400 15px/1.2 var(--sans); text-align: left; cursor: pointer; }
 .pmenu button:hover, .pmenu button:focus-visible { background: rgba(255, 255, 255, .1); outline: 0; }
 .pmenu button i { width: 14px; font-style: normal; color: #f08a4b; }
+.pmenu hr { margin: 6px 0; border: 0; border-top: 1px solid rgba(255, 255, 255, .14); }
+.pmenu .pnudge { display: flex; align-items: center; gap: 4px; padding: 2px 8px 4px; } .pmenu .pnudge button { flex: 1; justify-content: center; padding: 10px 8px; font-size: 14px; border-radius: 8px; }
+.pmenu .pnudge span { min-width: 64px; text-align: center; font: 500 12px/1.2 var(--kfont); letter-spacing: .04em; color: rgba(255, 255, 255, .7); }
+/* finding subtitles (John, 13 Nov 2026): over the film, its search and what's happening */
+.psf { position: absolute; inset: 0; z-index: 6; display: grid; place-items: center; padding: 16px; background: rgba(0, 0, 0, .55); }
+.psf[hidden] { display: none; }
+.psf .psfin { width: min(560px, 100%); max-height: min(78vh, 640px); display: flex; flex-direction: column; background: rgba(14, 22, 34, .97); border: 1px solid rgba(243, 232, 210, .2); border-radius: 14px; color: #fff; overflow: hidden; }
+.psf header { display: flex; align-items: center; gap: 10px; padding: 16px 18px 10px; } .psf header b { flex: 1; font: 600 13px/1.2 var(--kfont); letter-spacing: .16em; text-transform: uppercase; color: rgba(243, 232, 210, .85); }
+.psf header button { width: 34px; height: 34px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .1); color: #fff; font-size: 18px; cursor: pointer; }
+.psf .psfbar { display: flex; gap: 8px; padding: 0 18px 10px; } .psf select { flex: 1; min-width: 0; padding: 9px 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, .2); background: #0e1622; color: #fff; font: 400 15px var(--sans); }
+.psf .psfsay { margin: 0 18px 10px; font: 400 14px/1.4 var(--sans); color: rgba(255, 255, 255, .75); } .psf .psfsay:empty { display: none; }
+.psf ul { list-style: none; margin: 0; padding: 0 10px 12px; overflow: auto; }
+.psf li button { display: block; width: 100%; padding: 11px 10px; border: 0; border-radius: 8px; background: none; color: #fff; text-align: left; cursor: pointer; font: 400 14px/1.35 var(--sans); }
+.psf li button:hover, .psf li button:focus-visible { background: rgba(255, 255, 255, .1); outline: 0; }
+.psf li .n { display: block; overflow-wrap: anywhere; } .psf li .m { display: block; margin-top: 3px; font-size: 12px; color: rgba(255, 255, 255, .55); }
+.psf li .x { display: inline-block; margin-right: 6px; padding: 2px 7px; border-radius: 10px; background: #2e7d4f; color: #fff; font: 600 10.5px/1.4 var(--kfont); letter-spacing: .08em; text-transform: uppercase; vertical-align: 1px; }
+.psf .psfwork { display: flex; align-items: center; gap: 12px; margin: 4px 18px 18px; font: 400 15px/1.4 var(--sans); }
+.psf .psfwork i { flex: none; width: 22px; height: 22px; border: 2.5px solid rgba(255, 255, 255, .22); border-top-color: #f08a4b; border-radius: 50%; animation: pspin 1s linear infinite; }
+html.tv .psf li button, html.tv .psf select { font-size: 19px; } html.tv .psf li button:focus { box-shadow: inset 4px 0 0 #f08a4b; background: rgba(255, 255, 255, .16); }
 .pmid { position: absolute; left: 50%; top: 50%; z-index: 2; display: flex; align-items: center; gap: 48px; transform: translate(-50%, -50%); transition: opacity .3s; pointer-events: none; }
 .pmid .pb { pointer-events: auto; width: 60px; height: 60px; } .pmid .pb svg { width: 34px; height: 34px; }
 .pmid .pbig { width: 80px; height: 80px; border: 1.5px solid rgba(255, 255, 255, .8); background: rgba(0, 0, 0, .4); } .pmid .pbig svg { width: 36px; height: 36px; }
@@ -1917,7 +1936,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
   <video id="vid" playsinline crossorigin="anonymous"></video>
   <div class="ptap" id="ptap"></div>
   <div class="pmid"><button class="pb pskip" data-sk="-10" aria-label="Back 10 seconds"></button><button class="pb pbig" id="pbig" aria-label="Play"></button><button class="pb pskip" data-sk="30" aria-label="On 30 seconds"></button></div>
-  <div class="pspin" aria-hidden="true"></div><div class="pflash" id="pflash" aria-hidden="true"></div>
+  <div class="pspin" aria-hidden="true"></div><div class="pflash" id="pflash" aria-hidden="true"></div><div class="psf" id="psf" role="dialog" aria-label="Find subtitles" hidden></div>
   <div class="top"><button class="ico" id="pclose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button><div><div class="t" id="ptitle"></div><div class="s" id="psub"></div><div class="phow" id="phow" hidden></div></div><button class="ico" id="ptv" aria-label="Play on the Fire TV" title="Play on the Fire TV" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="13"/><path d="M8 21h8M12 17v4"/></svg></button><button class="ico" id="pcast" aria-label="Play on a TV" title="Play on a TV (AirPlay or Chromecast)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><path d="M2 12a9 9 0 0 1 8 8M2 16a5 5 0 0 1 4 4"/><path d="M2 20h.01"/></svg></button></div>
   <div class="msg" id="pmsg"></div>
   <button class="pill on nextup" id="pnext">Next episode</button>
@@ -1942,7 +1961,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '4ffbda971000' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'ef8f9112315d' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6019,8 +6038,9 @@ window.addEventListener('pagehide', saveProgress);
     var t = tracks()[i]; $('#psubs').classList.toggle('on', !!t);
     if (keep) store.set('grifflix-subs', t ? (t.language || t.label || 'on') : 'off');
   }
+  var canFind = function () { return !PUBLIC && !DEMO && !!GW && !!(P.it && P.it.id) && !(P.it && P.it.ext); };   // (finding more subtitles: members, on the Mac's films)
   P.subsInit = function () {   // (a film's subtitles: on if they were last time, in the same language)
-    var ts = tracks(), want = store.get('grifflix-subs'); $('#psubs').hidden = !ts.length;
+    var ts = tracks(), want = store.get('grifflix-subs'); $('#psubs').hidden = !ts.length && !canFind(); P.subMove = 0;
     var i = want && want !== 'off' ? ts.findIndex(function (t) { return t.language === want || t.label === want; }) : -1;
     if (want && want !== 'off' && i < 0 && ts.length) i = 0;
     setSubs(i, false);
@@ -6029,14 +6049,86 @@ window.addEventListener('pagehide', saveProgress);
     if (!kind || menu.dataset.k === kind && !menu.hidden) { menu.hidden = true; menu.dataset.k = ''; wake(); return; }
     var h = '';
     if (kind === 'subs') { var ts = tracks(), on = ts.findIndex(function (t) { return t.mode === 'showing'; });
-      h = '<h4>Subtitles</h4><button role="menuitemradio" data-i="-1"><i>' + (on < 0 ? '✓' : '') + '</i>Off</button>' + ts.map(function (t, j) { return '<button role="menuitemradio" data-i="' + j + '"><i>' + (on === j ? '✓' : '') + '</i>' + esc(t.label || t.language || 'Subtitles ' + (j + 1)) + '</button>'; }).join(''); }
+      h = '<h4>Subtitles</h4><button role="menuitemradio" data-i="-1"><i>' + (on < 0 ? '✓' : '') + '</i>Off</button>' + ts.map(function (t, j) { return '<button role="menuitemradio" data-i="' + j + '"><i>' + (on === j ? '✓' : '') + '</i>' + esc(t.label || t.language || 'Subtitles ' + (j + 1)) + '</button>'; }).join('');
+      // (a line a touch early or late: moved half a second at a time; a subtitle file beside the film is moved for everyone: John, 13 Nov 2026)
+      if (on >= 0) h += '<hr><div class="pnudge"><button data-n="-0.5" aria-label="Subtitles half a second earlier">− ½ s</button><span>' + (P.subMove ? (P.subMove > 0 ? '+' : '−') + Math.abs(P.subMove).toFixed(1) + ' s' : 'In time?') + '</span><button data-n="0.5" aria-label="Subtitles half a second later">+ ½ s</button></div>';
+      if (canFind()) h += (on < 0 ? '<hr>' : '') + '<button data-f="1"><i></i>Find subtitles…</button>'; }
     else h = '<h4>Speed</h4>' + SP.map(function (r) { return '<button role="menuitemradio" data-r="' + r + '"><i>' + (v.playbackRate === r ? '✓' : '') + '</i>' + (r === 1 ? 'Normal' : r + '×') + '</button>'; }).join('');
     menu.innerHTML = h; menu.hidden = false; menu.dataset.k = kind; wake();
     $$('#pmenu button').forEach(function (b) { b.onclick = function (e) { e.stopPropagation();
-      if (b.dataset.i != null) setSubs(+b.dataset.i, true); else { v.playbackRate = +b.dataset.r; $('#prate').textContent = (+b.dataset.r) + '×'; }
+      if (b.dataset.n != null) { nudge(+b.dataset.n); P.menu(); P.menu('subs', from); var nb = $('#pmenu [data-n="' + b.dataset.n + '"]'); if (nb) nb.focus(); return; }
+      if (b.dataset.f) { P.menu(); findSubs(); return; }
+      if (b.dataset.i != null) { setSubs(+b.dataset.i, true); P.subMove = 0; } else { v.playbackRate = +b.dataset.r; $('#prate').textContent = (+b.dataset.r) + '×'; }
       P.menu(); if (from) from.focus(); }; });
     var cur = $('#pmenu button i:not(:empty)'); (cur ? cur.parentNode : $('#pmenu button')).focus();
   };
+  // (moving the showing subtitles: straight away here, and in the file itself for everyone when it's one beside the film)
+  var nudgeT = 0, nudgeSum = 0;
+  function nudge(d) {
+    var ts = tracks(), i = ts.findIndex(function (t) { return t.mode === 'showing'; }); if (i < 0) return;
+    var t = ts[i], info = ((P.info && P.info.subs) || [])[i] || {};
+    Array.prototype.slice.call(t.cues || []).forEach(function (c) { if (d > 0) { c.endTime += d; c.startTime += d; } else { c.startTime = Math.max(0, c.startTime + d); c.endTime = Math.max(c.startTime + .05, c.endTime + d); } });
+    P.subMove = Math.round(((P.subMove || 0) + d) * 10) / 10;
+    var say = $('#pflash'); say.textContent = 'Subtitles ' + Math.abs(d) + ' s ' + (d < 0 ? 'earlier' : 'later') + (info.ext ? '' : ' (here only)'); say.style.left = '50%'; say.style.right = 'auto'; say.style.transform = 'translate(-50%,-50%)';
+    say.classList.add('on'); clearTimeout(flT); flT = setTimeout(function () { say.classList.remove('on'); say.style.left = say.style.right = say.style.transform = ''; }, 900);
+    if (!info.ext || !P.it) return;
+    nudgeSum += d; clearTimeout(nudgeT);
+    nudgeT = setTimeout(function () { var n = nudgeSum; nudgeSum = 0; if (Math.abs(n) < .05) return;
+      mac('subs', { op: 'shift', id: P.it.id, sid: info.sid, secs: n }).catch(function (e) { toast(e.message || 'Couldn’t save the timing'); }); }, 1500);
+  }
+  var LANGS = null;
+  function findSubs() {
+    var box = $('#psf'), it = P.it, lang = store.get('grifflix-sublang') || 'en', wasPlaying = !v.paused, job = null, gone = false;
+    if (!it) return; v.pause();
+    box.innerHTML = '<div class="psfin"><header><b>Subtitles for ' + esc(showName(it)) + '</b><button type="button" id="psfx" aria-label="Close">×</button></header>' +
+      '<div class="psfbar"><select id="psflang" aria-label="Language"></select></div><p class="psfsay" id="psfsay"></p><ul id="psfres"></ul></div>';
+    box.hidden = false;
+    var close = function () { gone = true; box.hidden = true; box.innerHTML = ''; if (wasPlaying) v.play().catch(function () {}); wake(); $('#psubs').focus(); };
+    $('#psfx').onclick = function (e) { e.stopPropagation(); close(); };
+    box.onclick = function (e) { e.stopPropagation(); if (e.target === box && !job) close(); };
+    box.onkeydown = function (e) { if (e.key === 'Escape' || e.key === 'GoBack' || e.key === 'BrowserBack') { e.preventDefault(); e.stopPropagation(); if (!job) close(); } };
+    var sel = $('#psflang'), say = $('#psfsay'), res = $('#psfres');
+    var fill = function () { sel.innerHTML = LANGS.map(function (l) { return '<option value="' + l.code + '"' + (l.code === lang ? ' selected' : '') + '>' + esc(l.name) + '</option>'; }).join(''); };
+    (LANGS ? Promise.resolve() : mac('subs?langs=1').then(function (r) { LANGS = r.langs; })).then(fill).catch(function () { LANGS = [{ code: 'en', name: 'English' }]; fill(); });
+    sel.onchange = function () { lang = sel.value; store.set('grifflix-sublang', lang); look(); };
+    function look() {
+      say.textContent = 'Looking…'; res.innerHTML = '';
+      mac('subs?id=' + encodeURIComponent(it.id) + '&lang=' + encodeURIComponent(lang)).then(function (r) {
+        if (gone) return;
+        var L = r.results || [];
+        say.textContent = L.length ? (L[0].exact ? 'Those marked “Made for this file” fit this copy of the film as they are. Whichever you choose, the Mac mini times it to the film’s sound.' : 'None made for this very copy, so the Mac mini will time the one you choose to the film’s sound.') : 'None found in this language.';
+        res.innerHTML = L.map(function (x, k) {
+          var m = [x.downloads ? Number(x.downloads).toLocaleString() + ' downloads' : '', x.hi ? 'for the hard of hearing' : '', x.machine ? 'machine translated' : '', x.fps ? x.fps + ' fps' : ''].filter(Boolean).join(' · ');
+          return '<li><button type="button" data-k="' + k + '"><span class="n">' + (x.exact ? '<span class="x">Made for this file</span>' : '') + esc(x.name || 'Subtitles') + '</span>' + (m ? '<span class="m">' + esc(m) + '</span>' : '') + '</button></li>';
+        }).join('');
+        $$('#psfres button').forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); add(L[+b.dataset.k]); }; });
+        var f = $('#psfres button'); if (f) f.focus(); else sel.focus();
+      }).catch(function (e) { if (!gone) say.textContent = e.message || 'Couldn’t look just now.'; });
+    }
+    function add(x) {
+      res.innerHTML = ''; sel.disabled = true;
+      say.outerHTML = '<div class="psfwork" id="psfwork"><i></i><span>Asking the Mac mini…</span></div>';
+      var work = $('#psfwork span');
+      mac('subs', { op: 'add', id: it.id, file_id: x.file_id, lang: lang }).then(function (r) {
+        job = r.job;
+        (function poll() {
+          if (gone) return;
+          mac('subs?job=' + job).then(function (j) {
+            work.textContent = j.say || '…';
+            if (j.state === 'done') { job = null; $('#psfwork i').style.display = 'none';
+              if (j.subs && j.subs.length) { P.info.subs = j.subs; var at = v.currentTime;
+                $$('#vid track').forEach(function (t) { t.parentNode.removeChild(t); });
+                j.subs.forEach(function (s2) { var t = document.createElement('track'); t.kind = 'subtitles'; t.label = s2.label; t.srclang = s2.lang || 'en'; t.src = gwUrl(s2.url); v.appendChild(t); });
+                setTimeout(function () { $('#psubs').hidden = false; if (j.pick != null) setSubs(j.pick, true); P.subMove = 0; try { v.currentTime = at; } catch (e) {} }, 50); }
+              setTimeout(close, 3500); return; }
+            if (j.state === 'error') { job = null; $('#psfwork i').style.display = 'none'; work.textContent = 'Couldn’t add them: ' + (j.say || 'something went wrong'); return; }
+            setTimeout(poll, 2500);
+          }).catch(function () { setTimeout(poll, 5000); });
+        })();
+      }).catch(function (e) { $('#psfwork i').style.display = 'none'; work.textContent = e.message || 'Couldn’t add them.'; });
+    }
+    look();
+  }
   $('#phowb').classList.toggle('on', P.showHow); $('#phowb').setAttribute('aria-pressed', P.showHow ? 'true' : 'false');
   $('#phowb').onclick = function (e) {
     e.stopPropagation(); P.showHow = !P.showHow; store.set('grifflix-showhow', P.showHow ? 'on' : 'off');
@@ -6062,7 +6154,7 @@ window.addEventListener('pagehide', saveProgress);
   el.addEventListener('click', function (e) { if (!menu.hidden && !menu.contains(e.target) && !e.target.closest('#psubs, #prate')) P.menu(); });
   // (keys on a computer: space or K play and pause, the arrows 10 seconds and the sound, M mute, F the whole screen, C subtitles)
   document.addEventListener('keydown', function (e) {
-    if (TV || !el.classList.contains('on') || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (TV || !el.classList.contains('on') || e.metaKey || e.ctrlKey || e.altKey || !$('#psf').hidden) return;
     var t = e.target, tag = (t && t.tagName) || '', k = e.key;
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag) && !(t.type === 'range' && /^[kmfc ]$/i.test(k))) return;
     if (tag === 'BUTTON' && (k === ' ' || k === 'Enter')) return;
@@ -6360,6 +6452,12 @@ document.addEventListener('keydown', function (e) {
   var k = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', Enter: 'ok', MediaPlayPause: 'play', MediaFastForward: 'ff', MediaRewind: 'rew' }[e.key];
   if (!k) return;
   var ae = document.activeElement, inText = /^(INPUT|TEXTAREA|SELECT)$/.test((ae || {}).tagName || '');
+  if (!$('#psf').hidden) {   // (finding subtitles: up and down through the language and the list, OK to choose)
+    if (k === 'up' || k === 'down') { var fs = $$('#psf select, #psf button').filter(function (x) { return !x.disabled && x.offsetParent; }), i = fs.indexOf(ae);
+      var n = fs[Math.max(0, Math.min(fs.length - 1, i < 0 ? 0 : i + (k === 'down' ? 1 : -1)))]; if (n) n.focus(); e.preventDefault(); }
+    else if (k === 'left' || k === 'right') e.preventDefault();
+    return;
+  }
   if (trailerOn()) { if (k === 'up' || k === 'down') { if (TP.peek) TP.peek(); var c = $('#tpclose'); if (c) c.focus(); e.preventDefault(); return; } if (document.activeElement && document.activeElement.id === 'tpclose' && k === 'ok') return; e.preventDefault(); trailerKeys(k); return; }
   if (P.el.classList.contains('on') && (!ae || ae === P.v || ae === document.body || !P.el.contains(ae))) {
     if (k === 'up' || k === 'down') { wake(); $('#pplay').focus(); e.preventDefault(); return; }   // (up to the controls: play first)
