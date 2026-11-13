@@ -2635,6 +2635,15 @@ async function members(request, url, env) {
       await startJob(env, null, null, 0, null, true).catch(() => {});
       return answer(200, { ok: true, id: pid, n: songs.length });
     }
+    case 'name': {   // a member's name, changed by John (John, 13 Nov 2026: "Need to be able to change members names"): everywhere it's shown from now on
+      const m = all[body.id]; if (!m) return answer(404, { error: 'No such member.' });
+      const name = String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+      if (!name) return answer(400, { error: 'Give their name.' });
+      if (Object.entries(all).some(([k, x]) => k !== body.id && x && String(x.name || '').toLowerCase() === name.toLowerCase())) return answer(400, { error: 'Another member already has that name.' });
+      m.name = name; spWhoMem = null;
+      await env.SOTD.put('members', JSON.stringify(all));
+      return answer(200, { members: listing() });
+    }
     case 'spuser': {   // a member's Spotify username (John knows it: John, 4 Nov 2026), for their public playlists
       const m = all[body.id]; if (!m) return answer(404, { error: 'No such member.' });
       // several, one per line or with commas (John, 8 Nov 2026: "can more than one spotify account be added ... for when they have more than one"): the first is theirs for their public playlists; every one counts as theirs for who added a song

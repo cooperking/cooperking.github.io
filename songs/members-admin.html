@@ -492,6 +492,14 @@
           if (j.url) { if (w) w.location = j.url; else location.href = j.url; } else { if (w) w.close(); toast(j.error || 'Couldn’t open it'); }
         });
       });
+      var nm = button('Name', function () {   // (John, 13 Nov 2026: "Need to be able to change members names")
+        var v = window.prompt('Their name, as everyone sees it on the calendar:', m.name || '');
+        if (v == null || !v.trim() || v.trim() === m.name) return;
+        api('/members/admin', { op: 'name', id: m.id, name: v.trim() }).then(function (j) {
+          if (j.members) { MEMBERS = j.members; people(); toast('Now ' + v.trim()); }
+          else toast(j.error || 'Couldn’t change it');
+        });
+      });
       var su = m.owner ? null : button('Spotify username', function () {
         var v = window.prompt(m.name + '’s Spotify username, or their profile link (Spotify › their name › ••• › Share › Copy link). Someone with more than one account: all of them, with commas between. Leave it empty to clear it.', m.spu || '');
         if (v == null) return;
@@ -510,7 +518,7 @@
       });
       var acts = document.createElement('div'); acts.className = 'acts';
       acts.appendChild(button('Message', function () { notifyOne(m); }));   // to just them (their inbox, and their phone if notifications are on)
-      acts.appendChild(nl); acts.appendChild(tv); if (seeas) acts.appendChild(seeas); if (spb) acts.appendChild(spb); if (su) acts.appendChild(su); if (fm) acts.appendChild(fm); acts.appendChild(me); acts.appendChild(rm);
+      acts.appendChild(nl); acts.appendChild(nm); acts.appendChild(tv); if (seeas) acts.appendChild(seeas); if (spb) acts.appendChild(spb); if (su) acts.appendChild(su); if (fm) acts.appendChild(fm); acts.appendChild(me); acts.appendChild(rm);
       li.appendChild(who); li.appendChild(st); li.appendChild(info); if (m.apps && m.apps.length) li.appendChild(appsList(m)); li.appendChild(mailRow(m)); li.appendChild(seeRow(m)); if (!m.owner) li.appendChild(seenRow(m)); li.appendChild(acts); ul.appendChild(li);
     });
     newSeeDraw(); if (DRAFTS && DRAFTS.length) draftsDraw();
