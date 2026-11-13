@@ -1030,9 +1030,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     $('#lblist').innerHTML = L.slice(0, LB.n).map(function (x) {
       return '<li>' + esc(x.n) + (x.y ? ' <span class="when" style="display:inline">(' + x.y + ')</span>' : '') + '<span class="q ' + x.g.q + '">' + { bad: 'Replace', ok: 'OK', good: 'Good' }[x.g.q] + '</span>' +
         '<span class="spec">' + x.g.res + (x.w ? ' · ' + x.w + '×' + x.h : '') + ' · ' + vn(x.v) + (x.b > 8 ? ' 10-bit' : '') + (x.mbps ? ' · ' + x.mbps + ' Mbps' : '') + (x.gb ? ' · ' + x.gb + ' GB' : '') + (x.mins ? ' · ' + x.mins + ' min' : '') + (x.a ? ' · ' + esc(x.a) : '') + '</span>' +
-        '<span class="why2">' + [x.g.why ? esc(x.g.why) : '', x.conv ? 'converted' + (x.was ? ' (was ' + fl(x.was) + ')' : '') : '', x.why ? (/^to repackage/.test(x.why) ? esc(x.why) : 'waiting to convert: ' + esc(x.why)) : ''].filter(Boolean).join(' · ') +
+        '<span class="why2">' + [x.g.why ? esc(x.g.why) : '', x.conv ? (x.rp ? 'repackaged' : 'converted') + (x.was ? ' (was ' + fl(x.was) + ')' : '') : '', x.why ? (/^to (repackage|make smaller)/.test(x.why) ? esc(x.why) : 'waiting to convert: ' + esc(x.why)) : ''].filter(Boolean).join(' · ') +
         (x.ps ? '<span class="why2">Picture subtitles (' + esc(x.ps) + '): ' + (/^to repackage/.test(x.why || '') ? 'repackaging leaves them in the original, kept in Grifflix Originals' : 'in this file') + '</span>' : '') +
-        (x.why && !x.conv ? '<button type="button" class="lbnext" data-lbnext="' + x.id + '" data-n="' + esc(x.n) + '">Do next</button>' : '') + '</span></li>';
+        (x.why && (!x.conv || x.rp) ? '<button type="button" class="lbnext" data-lbnext="' + x.id + '" data-n="' + esc(x.n) + '">' + (/^to make smaller/.test(x.why) ? 'Make smaller next' : 'Do next') + '</button>' : '') + '</span></li>';
     }).join('') || '<li>None.</li>';
     $('#lbmore').style.display = L.length <= LB.n ? 'none' : ''; $('#lbmore').onclick = function () { LB.n += 150; lbDraw(); };
     Array.prototype.forEach.call(document.querySelectorAll('[data-lbnext]'), function (b) { b.onclick = function () {

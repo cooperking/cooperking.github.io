@@ -260,6 +260,8 @@ def conv_why(ms):
     w, h, vc = v.get('Width') or 0, v.get('Height') or 0, (v.get('Codec') or '').lower()
     bits = v.get('BitDepth') or 8
     mbps = round((ms.get('Bitrate') or v.get('BitRate') or 0) / 1e6, 1)
+    if not mbps and ms.get('Size') and ms.get('RunTimeTicks'):   # (no rate recorded: from the file's size and length)
+        mbps = round(ms['Size'] * 8 / (ms['RunTimeTicks'] / 1e7) / 1e6, 1)
     cont = [c for c in (ms.get('Container') or '').lower().split(',') if c]
     if cont and not any(c in ('mp4', 'm4v', 'mov') for c in cont):   # (every MKV repackaged first, the picture as it is, converted after if need be: John, 12 Nov 2026)
         return 'to repackage (%s file), the picture untouched' % cont[0].upper()
@@ -1094,7 +1096,11 @@ def make_handler(g):
                                  'ps': ', '.join(sorted(set((x.get('DisplayTitle') or x.get('Language') or '?').split(' - ')[0] for x in pics)))[:120],
                                  'gb': round((ms.get('Size') or 0) / 1e9, 1), 'mins': round((it.get('RunTimeTicks') or 0) / 6e8),
                                  'a': ', '.join(sorted(set('%s %s' % ((x.get('Codec') or '?').upper(), {1: 'mono', 2: 'stereo', 6: '5.1', 8: '7.1'}.get(x.get('Channels') or 0, '%sch' % (x.get('Channels') or '?'))) for x in au[:4]))),
-                                 'conv': bool(cv), 'was': (cv or {}).get('before'), 'why': '' if cv else why})
+                                 'conv': bool(cv), 'was': (cv or {}).get('before'),
+                                 # (a film only repackaged keeps what's still to do, making it smaller included: its picture is as it was
+                                 # (John, 13 Nov 2026: Obsession, nearly 30 GB, couldn't be made smaller); one converted here is done)
+                                 'rp': bool(cv) and str(cv.get('why') or '').startswith('to repackage'),
+                                 'why': why if not cv or str(cv.get('why') or '').startswith('to repackage') else ''})
                 start += 300
                 if start >= (r.get('TotalRecordCount') or 0):
                     break

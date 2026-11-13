@@ -1970,7 +1970,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '1b49aa273e80' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '3a5ec8515491' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5226,7 +5226,7 @@ function bodyHTML(it, ctx) {
     if (ME && ME.owner && it.type !== 'video') h += '<button class="pill" id="acoll">Collections</button>';
     // (John's: the Mac mini to do this one next, when it needs anything: John, 13 Nov 2026, "a convert now option to films if I need them sooner")
     if (ME && ME.owner && it.conv) h += '<button class="pill" id="aconv" title="' + esc('The Mac mini will ' + it.conv.replace(/^to /, '')) + '"' + (it.convNow || it.convNext ? ' disabled' : '') + '>' +
-      (it.convNow ? 'Converting now' : it.convNext ? 'Next to convert ✓' : 'Convert next') + '</button>';
+      (it.convNow ? 'Converting now' : it.convNext ? 'Next for the Mac mini ✓' : /^to make smaller/.test(it.conv) ? 'Make smaller next' : 'Convert next') + '</button>';
     if (ME && ME.downloads && !TV && !isSeries) h += '<button class="pill" id="adown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5M5 21h14"/></svg>Download</button>';
   }
   if (!it.ext && shareDayOf(it)) h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button></div>';
