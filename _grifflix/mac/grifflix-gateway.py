@@ -252,6 +252,28 @@ def b64(b):
     return base64.urlsafe_b64encode(b).decode().rstrip('=')
 
 
+def conv_why(ms):
+    """What the converter will do to a film (as convert.py decides), or '' if it plays everywhere as it is."""
+    ss = ms.get('MediaStreams') or []
+    v = next((x for x in ss if x.get('Type') == 'Video'), {}) or {}
+    au = [x for x in ss if x.get('Type') == 'Audio']
+    w, h, vc = v.get('Width') or 0, v.get('Height') or 0, (v.get('Codec') or '').lower()
+    bits = v.get('BitDepth') or 8
+    mbps = round((ms.get('Bitrate') or v.get('BitRate') or 0) / 1e6, 1)
+    cont = [c for c in (ms.get('Container') or '').lower().split(',') if c]
+    if cont and not any(c in ('mp4', 'm4v', 'mov') for c in cont):   # (every MKV repackaged first, the picture as it is, converted after if need be: John, 12 Nov 2026)
+        return 'to repackage (%s file), the picture untouched' % cont[0].upper()
+    if w > 1928 or h > 1088:
+        return 'bigger than 1080p'
+    if not ((vc in ('hevc', 'h265') and bits <= 8 and '10' not in (v.get('Profile') or '')) or (vc == 'h264' and bits <= 8 and '10' not in (v.get('Profile') or ''))):
+        return 'format browsers can’t play' if v else ''
+    if au and (au[0].get('Codec') or '').lower() not in ('aac', 'mp3'):
+        return 'to repackage (%s sound), the picture untouched' % (au[0].get('Codec') or '?').upper()
+    if mbps > (8.5 if h >= 900 else 5 if h >= 600 else 3) * (1.6 if vc in ('hevc', 'h265') else 1):   # (as convert.py: made smaller, once, last)
+        return 'to make smaller (%s Mbps)' % mbps
+    return ''
+
+
 def make_key(secret, uid):
     exp = int(time.time()) + KEY_HOURS * 3600
     body = '%s.%d' % (b64(uid.encode()), exp)
@@ -794,6 +816,12 @@ def make_handler(g):
             o['subs'] = [{'index': s['Index'], 'lang': s.get('Language') or '', 'title': s.get('DisplayTitle') or s.get('Language') or 'Subtitles'}
                          for s in ms.get('MediaStreams', []) if s.get('Type') == 'Subtitle' and s.get('IsTextSubtitleStream')]
             o['hearted'] = o['id'] in user['hearts']
+            if me.get('owner') and it.get('Type') in ('Movie', 'Episode'):   # (John, 13 Nov 2026: "a convert now option to films if I need them sooner")
+                o['conv'] = conv_why(ms)
+                P = load(os.path.expanduser('~/Grifflix/convert-priority.json'), {}) or {}
+                o['convNext'] = any(x.get('id') == it['Id'] for x in P.get('pins') or [])
+                now_ = load(os.path.expanduser('~/Grifflix/convert-now.json'), {}) or {}
+                o['convNow'] = bool(now_.get('name') and now_.get('name') == it.get('Name') and now_.get('state') in ('converting', 'paused'))
             self.send_json(200, o)
 
         # collections (John's, from Plex: Jellyfin's BoxSets), for members and visitors alike
@@ -1058,20 +1086,7 @@ def make_handler(g):
                     w, h, vc = v.get('Width') or 0, v.get('Height') or 0, (v.get('Codec') or '').lower()
                     bits = v.get('BitDepth') or 8
                     mbps = round((ms.get('Bitrate') or v.get('BitRate') or 0) / 1e6, 1)
-                    why = ''
-                    cont = [c for c in (ms.get('Container') or '').lower().split(',') if c]
-                    if cont and not any(c in ('mp4', 'm4v', 'mov') for c in cont):   # (every MKV repackaged first, the picture as it is, converted after if need be: John, 12 Nov 2026)
-                        why = 'to repackage (%s file), the picture untouched' % cont[0].upper()
-                    elif w > 1928 or h > 1088:
-                        why = 'bigger than 1080p'
-                    elif not ((vc in ('hevc', 'h265') and bits <= 8 and '10' not in (v.get('Profile') or '')) or (vc == 'h264' and bits <= 8 and '10' not in (v.get('Profile') or ''))):
-                        why = 'format browsers can’t play'
-                    elif not any(c in ('mp4', 'm4v', 'mov') for c in (ms.get('Container') or '').lower().split(',')):
-                        why = 'to repackage (%s file), the picture untouched' % ((ms.get('Container') or '?').split(',')[0].upper())
-                    elif au and (au[0].get('Codec') or '').lower() not in ('aac', 'mp3'):
-                        why = 'to repackage (%s sound), the picture untouched' % (au[0].get('Codec') or '?').upper()
-                    elif mbps > (8.5 if h >= 900 else 5 if h >= 600 else 3) * (1.6 if vc in ('hevc', 'h265') else 1):   # (as convert.py: made smaller, once, last)
-                        why = 'to make smaller (%s Mbps)' % mbps
+                    why = conv_why(ms)
                     cv = made.get(os.path.normcase(it.get('Path') or ''))
                     # (picture subtitles (Blu-ray PGS, DVD VobSub): an MP4 can't hold them, so repackaging leaves them in the original: John, 12 Nov 2026)
                     pics = [x for x in ss if x.get('Type') == 'Subtitle' and not x.get('IsTextSubtitleStream') and not x.get('IsExternal')]
@@ -1218,7 +1233,7 @@ def make_handler(g):
             P.setdefault('pins', []); P.setdefault('remux_first', True)
             op = b.get('op')
             if op in ('pin', 'unpin', 'remux_first', 'up'):
-                iid = str(b.get('id') or '')
+                iid = g.now_id(str(b.get('id') or ''))   # (a film's id as the site knows it, maybe from before its repackaging)
                 if op in ('pin', 'unpin', 'up') and not re.match(r'^[0-9a-f]{32}$', iid):
                     return self.send_json(400, {'error': 'Which film?'})
                 P['pins'] = [x for x in P['pins'] if x.get('id') != iid] if op in ('unpin', 'pin', 'up') else P['pins']
@@ -1678,7 +1693,9 @@ def make_handler(g):
                     return self.send_json(400, {'error': str(e)})
                 log('Subtitles: %s lined up by hand by %s from %d line(s): %s' % (os.path.basename(sp), me['name'], len(pairs), r))
                 return self.send_json(200, dict(r, ok=True, subs=self.subs_out(iid, ms, key)))
-            if op == 'delete':   # (subtitles added here, taken off: wrong, or to try others)
+            if op == 'delete':   # (subtitles added here, taken off: wrong, or to try others; John only: John, 13 Nov 2026)
+                if not me.get('owner'):
+                    return self.send_json(403, {'error': 'Only John takes subtitles off.'})
                 sp = file_of(b.get('sid'))
                 if not sp or '.Grifflix.' not in os.path.basename(sp):
                     return self.send_json(400, {'error': 'Only subtitles added in Grifflix can be taken off here.'})
