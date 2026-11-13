@@ -170,7 +170,7 @@ def gather():
                 ms = (g(it, 'MediaSources') or [{}])[0]
                 w = why(ms)
                 p_ = g(it, 'Path') or ''
-                if not g(ms, 'MediaStreams', []) and p_.lower().endswith(VIDEO) and os.path.exists(p_) and g(it, 'Id') not in REREAD:
+                if not any(g(x, 'Type') == 'Video' for x in g(ms, 'MediaStreams', [])) and p_.lower().endswith(VIDEO) and os.path.exists(p_) and g(it, 'Id') not in REREAD:
                     # (no picture known: the media server read the file while it was still being copied in, and the converter couldn't
                     # tell what it needs, so it was skipped (John, 13 Nov 2026: Obsession, copied in overnight). Read again: the next look has it)
                     REREAD.add(g(it, 'Id'))

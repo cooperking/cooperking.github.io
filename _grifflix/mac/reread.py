@@ -2,7 +2,7 @@
 """Has the media server read a film's file again: for a film it read while the file was still being copied in, so it knows
 nothing of its picture and sound (and the converter can't tell what it needs). (John, 13 Nov 2026: Obsession.)
 
-  python3 reread.py Obsession          the films matching "Obsession": read again those it has no details of
+  python3 reread.py Obsession          the films matching "Obsession": read again those it knows no picture of
   python3 reread.py Obsession all      every film matching, read again
 """
 import json, os, sys, urllib.parse, urllib.request
@@ -27,9 +27,10 @@ if not items:
     sys.exit('No film matching "%s" in the media server.' % term)
 for it in items:
     ms = (it.get('MediaSources') or [{}])[0]
-    n = len(ms.get('MediaStreams') or [])
-    print('%s (%s): %d streams, %s' % (it.get('Name'), it.get('ProductionYear', '?'), n, it.get('Path')))
-    if n == 0 or every:
+    st = ms.get('MediaStreams') or []
+    pic = any((x.get('Type') or x.get('type')) == 'Video' for x in st)
+    print('%s (%s): %d streams%s, %s' % (it.get('Name'), it.get('ProductionYear', '?'), len(st), '' if pic else ', NO PICTURE', it.get('Path')))
+    if not pic or every:
         jf('POST', '/Items/%s/Refresh' % it['Id'], metadataRefreshMode='FullRefresh', imageRefreshMode='Default',
            replaceAllMetadata='false', replaceAllImages='false')
         print('   asked the media server to read it again: give it a minute')
