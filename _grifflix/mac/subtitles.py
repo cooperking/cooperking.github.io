@@ -108,6 +108,7 @@ class OpenSubs:
                         continue
                     fd = a.get('feature_details') or {}
                     found[fid] = {'file_id': fid, 'name': a.get('release') or f.get('file_name') or '', 'lang': a.get('language') or lang,
+                                  'kind': (fd.get('feature_type') or '').lower(), 'tmdb': fd.get('tmdb_id') or fd.get('parent_tmdb_id') or '',
                                   'exact': exact, 'downloads': a.get('download_count') or 0, 'hi': bool(a.get('hearing_impaired')),
                                   'fps': a.get('fps') or 0, 'trusted': bool(a.get('from_trusted')),
                                   'machine': bool(a.get('machine_translated') or a.get('ai_translated')),
@@ -126,6 +127,21 @@ class OpenSubs:
         if query and len(found) < 5:
             ask({'languages': lang, 'query': query, 'year': year})
         out = [found[f] for f in order]
+        # (only this film's: a title search also finds others with the word in them, a TV episode among them (John, 13 Nov
+        # 2026: "Medium S01E15" for Fantasia). Kept: made for this file; the same film by its TMDB number; or, with no number,
+        # the same kind (film or episode) and a title that matches)
+        flat = lambda t: re.sub(r'[^a-z0-9]', '', (t or '').lower())
+        want_kind = 'episode' if episode else 'movie'
+        def ours(x):
+            if x['exact']:
+                return True
+            if tmdb and x.get('tmdb') and str(x['tmdb']) != str(tmdb) and not episode:
+                return False
+            if x.get('kind') and x['kind'] != want_kind and x['kind'] != 'tvshow':
+                return False
+            q_ = flat(query)
+            return not q_ or not x.get('title') or q_ in flat(x['title']) or flat(x['title']) in q_
+        out = [x for x in out if ours(x)]
         for x in out:   # (how like this copy each one's release is: the same disc, picture size, encoding or group, or the same cut)
             x['like'] = likeness(hint, x['name'])
         # (the likeliest to fit first: made for this file, then those like this copy, then trusted uploaders and the most
