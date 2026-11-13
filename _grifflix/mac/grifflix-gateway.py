@@ -1721,6 +1721,9 @@ def make_handler(g):
                         heard = None  # (where people speak, heard once for every try)
                         guide = None  # (subtitles made for this copy in any language, fetched once)
                         best = None   # (the nearest miss, to add anyway and line up by hand)
+                        hms = lambda x: '%d:%02d:%02d' % (x // 3600, x // 60 % 60, x % 60)
+                        film_len = (it.get('RunTimeTicks') or 0) / 1e7
+                        lengths = []   # (how long each tried runs, first line to last, against the film: John, 13 Nov 2026)
                         done, rep, used = None, {}, None
                         for k, cand in enumerate(tries):
                             if SUBDAY.get((me['uid'], day), 0) >= 15 and not me.get('owner'):
@@ -1737,6 +1740,9 @@ def make_handler(g):
                                 continue
                             if len(cues) < 3:
                                 continue
+                            span = cues[-1][1]
+                            lengths.append('%s: last line at %s' % (cand['name'] or 'number %d' % (k + 1), hms(span)))
+                            pre = pre + ('its last line at %s%s; ' % (hms(span), ', the film runs %s' % hms(film_len) if film_len else '') if len(tries) > 1 else '')
                             rep = {'ok': False, 'why': 'couldn’t be sure of the timing'}
                             if own is None:
                                 own = []
@@ -1756,8 +1762,11 @@ def make_handler(g):
                             if done is None:   # then by listening
                                 try:
                                     if heard is None:
-                                        job.update(state='listening', say=pre + 'listening to the film’s dialogue (a few minutes on the Mac mini, once)…')
+                                        heard = self.subs_heard(path)   # (heard before: kept, so another try is quick)
+                                    if heard is None:
+                                        job.update(state='listening', say=pre + 'listening to the film’s dialogue (a few minutes on the Mac mini, once for this film)…')
                                         heard = SUBS.speech(ff, path)
+                                        self.subs_heard(path, heard)
                                     job.update(state='timing', say=pre + 'timing them to the film…')
                                     c2, r2 = SUBS.align(cues, heard)
                                     rep = r2
@@ -1795,7 +1804,8 @@ def make_handler(g):
                             job.update(state='unsure', _cues=best[1] if best else None, _lang=lang, timing=best[2] if best else rep,
                                        say=('Tried %d, and none could be confirmed to fit this copy of the film, so none has been added. ' % len(tries) if many else
                                             'Couldn’t be sure how these line up with this copy of the film, so they haven’t been added. ') +
-                                           ('They may all be for a different version (a film like this one often has several).' if many else 'They may be for a different version.'))
+                                           ('They may all be for a different version (a film like this one often has several).' if many else 'They may be for a different version.') +
+                                           (' ' + '; '.join(lengths) + ('; the film runs %s.' % hms(film_len) if film_len else '.') if lengths else ''))
                             if not best:
                                 job['_cues'] = None
                             log('Subtitles: none added for %s (%d tried)' % (it.get('Name'), len(tries)))
@@ -1816,6 +1826,27 @@ def make_handler(g):
             for k in [k for k, x in SUBJOBS.items() if time.time() - x['at'] > 6 * 3600]:
                 del SUBJOBS[k]
             return self.send_json(200, {'job': jid})
+
+        def subs_heard(self, path, sig=None):
+            """What was heard of a film's dialogue, kept beside the gateway's own files (about 70 KB a film), so trying other
+            subtitles for it later doesn't mean listening again; made afresh if the film's file changes."""
+            try:
+                st = os.stat(path)
+                key = hashlib.sha1(('%s|%d|%d' % (path, st.st_size, int(st.st_mtime))).encode()).hexdigest()[:20]
+                d = os.path.join(APP_DIR, 'heard')
+                f = os.path.join(d, key + '.bin')
+                if sig is None:
+                    if not os.path.exists(f):
+                        return None
+                    with open(f, 'rb') as fh:
+                        return [x / 255.0 for x in fh.read()]
+                os.makedirs(d, exist_ok=True)
+                with open(f + '.tmp', 'wb') as fh:
+                    fh.write(bytes(max(0, min(255, int(round(v * 255)))) for v in sig))
+                os.replace(f + '.tmp', f)
+            except Exception as e:
+                log('Subtitles: couldn’t keep what was heard:', repr(e))
+            return None
 
         def ffmpeg_path(self):
             ff = 'ffmpeg'
