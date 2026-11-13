@@ -218,6 +218,43 @@ def gather():
     return out
 
 
+def fresh(out, st):
+    """Films John has just brought in, to the top, by when the converter first saw them, not by the media server's "date added":
+    that's the file's creation date, which a film made or downloaded long ago keeps when it's copied in, so it went in the
+    library's usual order (John, 13 Nov 2026: "I added a new mkv and it hasn't been added to the top"). A film is known by its
+    file's name without the extension, so the converter's own MP4 of a film isn't new. The first time, a film counts as just
+    brought in if its file arrived on the drive in the last three days (its change time: a copy can't keep that)."""
+    fs = st.get('first_seen')
+    seeding = fs is None
+    fs = fs or {}
+    made = set(os.path.splitext(d.get('to') or '')[0] for d in st.get('done', {}).values())
+    t = int(time.time())
+    for x in out:
+        k = os.path.splitext(x['path'])[0]
+        if k in fs:
+            continue
+        if k in made:
+            fs[k] = 0
+        elif seeding:
+            try:
+                fs[k] = int(os.stat(x['path']).st_ctime) if os.stat(x['path']).st_ctime > t - 3 * 86400 else 0   # (3 days: films moved in last week's tidy-up changed then)
+            except OSError:
+                fs[k] = 0
+        else:
+            fs[k] = t
+    st['first_seen'] = fs
+    try:
+        save_state(st)
+    except Exception:
+        pass
+    key = lambda x: fs.get(os.path.splitext(x['path'])[0], 0)
+    newer = sorted([x for x in out if key(x) > t - 14 * 86400], key=key, reverse=True)
+    for x in newer:
+        x['new'] = True
+    ids = set(x['id'] for x in newer)
+    return newer + [x for x in out if x['id'] not in ids]
+
+
 # ---------------------------------------------------------------- the tools
 
 def tools():
@@ -490,7 +527,7 @@ if CMD == 'status':
         print('  FAILED  %s: %s' % (x['name'], x['why']))
     sys.exit()
 
-items = [i for i in gather() if i['id'] not in st['done'] and i['id'] not in st['failed']]
+items = [i for i in fresh(gather(), st) if i['id'] not in st['done'] and i['id'] not in st['failed']]
 if CMD != 'go':
     with open(os.path.join(HOME, 'convert-plan.csv'), 'w', newline='') as f:
         w = csv.writer(f)
@@ -577,7 +614,7 @@ while rest:
         looked = time.time()
         try:
             have = set(x['id'] for x in rest)
-            add = [i for i in gather() if i.get('new') and i['id'] not in have and i['id'] not in st['done'] and i['id'] not in st['failed']]
+            add = [i for i in fresh(gather(), st) if i.get('new') and i['id'] not in have and i['id'] not in st['done'] and i['id'] not in st['failed']]
             if add:
                 log('%d just brought in: to the top of the queue' % len(add))
                 rest = add + rest
@@ -620,7 +657,7 @@ while rest:
             time.sleep(20)
             follow_up(st)
         time.sleep(60)
-        more = [i for i in gather() if i['id'] not in st['done'] and i['id'] not in st['failed'] and i['id'] != it['id']]
+        more = [i for i in fresh(gather(), st) if i['id'] not in st['done'] and i['id'] not in st['failed'] and i['id'] != it['id']]
         if more:
             log('%d more to do (films repackaged that also need converting, or new ones)' % len(more))
             rest = more
