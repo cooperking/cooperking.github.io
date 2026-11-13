@@ -152,6 +152,10 @@ def why(ms):
     return 'format (%s%s)' % (vc or '?', ', 10-bit' if bits > 8 or '10' in prof else '')
 
 
+REREAD = set()   # (films the media server was asked to read again, this run: once each)
+VIDEO = ('.mkv', '.mp4', '.m4v', '.avi', '.mov', '.ts', '.m2ts', '.webm', '.wmv', '.mpg', '.mpeg', '.flv', '.vob')
+
+
 def gather():
     libs = s.get('libraries', {})
     out = []
@@ -165,6 +169,17 @@ def gather():
             for it in g(r, 'Items', []):
                 ms = (g(it, 'MediaSources') or [{}])[0]
                 w = why(ms)
+                p_ = g(it, 'Path') or ''
+                if not g(ms, 'MediaStreams', []) and p_.lower().endswith(VIDEO) and os.path.exists(p_) and g(it, 'Id') not in REREAD:
+                    # (no picture known: the media server read the file while it was still being copied in, and the converter couldn't
+                    # tell what it needs, so it was skipped (John, 13 Nov 2026: Obsession, copied in overnight). Read again: the next look has it)
+                    REREAD.add(g(it, 'Id'))
+                    try:
+                        call('POST', '/Items/%s/Refresh' % g(it, 'Id'), metadataRefreshMode='FullRefresh', imageRefreshMode='Default',
+                             replaceAllMetadata='false', replaceAllImages='false')
+                        log('  %s: the media server had no details of its file (read while being copied in?): asked to read it again' % g(it, 'Name'))
+                    except Exception:
+                        pass
                 if w and g(it, 'Path') and os.path.exists(g(it, 'Path')):
                     name = g(it, 'Name') if types == 'Movie' else '%s S%02dE%02d' % (g(it, 'SeriesName'), g(it, 'ParentIndexNumber', 0), g(it, 'IndexNumber', 0))
                     out.append({'id': g(it, 'Id'), 'name': name, 'year': g(it, 'ProductionYear', ''), 'lib': lib, 'why': w, 'mode': 'remux' if w.startswith(REPACK) else 'shrink' if w.startswith(SHRINK) else 'convert',
