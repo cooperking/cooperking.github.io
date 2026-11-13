@@ -1401,7 +1401,8 @@ def make_handler(g):
                     except (OSError, ValueError) as e:
                         log('Update the Mac: the converter couldn’t be started again:', e)
                 log('Update the Mac: %s (%s)%s' % (sha[:7], ', '.join(changed) or 'nothing changed', '; converter started again' if restarted else ''))
-                return {'status': 200, 'sha': sha, 'changed': changed, 'converter': restarted, 'restarting': 'grifflix-gateway.py' in changed, 'at': int(time.time())}
+                return {'status': 200, 'sha': sha, 'changed': changed, 'converter': restarted, 'at': int(time.time()),
+                        'restarting': 'grifflix-gateway.py' in changed or 'subtitles.py' in changed}   # (the gateway loads subtitles.py as it starts)
 
             def finish(r):
                 save(os.path.join(APP_DIR, 'update-result.json'), r)
@@ -1574,6 +1575,17 @@ def make_handler(g):
                             'url': '/v/%s/%s/Subtitles/%d/0/Stream.vtt?g=%s%s' % (iid, msid, s['Index'], key, '&m=%d' % mark if mark else '')})
             return out
 
+        @staticmethod
+        def subs_ready():   # (subtitles.py installed after the gateway started: loaded now)
+            global SUBS
+            if SUBS is None:
+                try:
+                    import subtitles as _s
+                    SUBS = _s
+                except Exception:
+                    pass
+            return SUBS is not None
+
         def subs_client(self):
             o = g.st.setdefault('opensubs', {})
             return SUBS.OpenSubs(o, lambda: save(SETTINGS, g.st), tls())
@@ -1582,7 +1594,7 @@ def make_handler(g):
             """John's OpenSubtitles details (its API key, his account), kept here on the Mac only."""
             if not me.get('owner'):
                 return self.send_json(403, {'error': 'Only John sets this up.'})
-            if SUBS is None:
+            if not self.subs_ready():
                 return self.send_json(503, {'error': 'Update the Mac first (Update everything).'})
             o = g.st.setdefault('opensubs', {})
             if b:
@@ -1601,7 +1613,7 @@ def make_handler(g):
         def api_subs(self, me, user, q, b):
             """Subtitles: find them for a film (GET id, lang), add one (POST op=add), move one earlier or later (POST op=shift),
             and how an add is going (GET job). Any member (John, 13 Nov 2026)."""
-            if SUBS is None:
+            if not self.subs_ready():
                 return self.send_json(503, {'error': 'The Mac needs updating for subtitles (John: Update everything).'})
             if q.get('job'):
                 j = SUBJOBS.get(q['job'])
