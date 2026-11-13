@@ -1570,7 +1570,7 @@ def make_handler(g):
                 clean = re.sub(r'^Grifflix\s*-\s*|\s*-\s*(SUBRIP|SRT)\b|\s*-\s*External\b', '', label, flags=re.I).strip()
                 if '.Grifflix.' in os.path.basename(path):   # (one found and timed here: told apart from the film's own)
                     clean = (clean or s.get('Language') or 'Subtitles') + ' · timed to the film'
-                out.append({'label': clean or label,
+                out.append({'label': clean or label, 'mine': ext and '.Grifflix.' in os.path.basename(path),
                             'lang': s.get('Language') or '', 'sid': s['Index'], 'ext': ext,
                             'url': '/v/%s/%s/Subtitles/%d/0/Stream.vtt?g=%s%s' % (iid, msid, s['Index'], key, '&m=%d' % mark if mark else '')})
             return out
@@ -1619,7 +1619,7 @@ def make_handler(g):
                 j = SUBJOBS.get(q['job'])
                 if not j or j['uid'] != me['uid']:
                     return self.send_json(404, {'error': 'Not here.'})
-                return self.send_json(200, {k: v for k, v in j.items() if k != 'uid'})
+                return self.send_json(200, {k: v for k, v in j.items() if k != 'uid' and not k.startswith('_')})
             if not b and q.get('langs'):
                 return self.send_json(200, {'langs': [{'code': c, 'name': n} for c, n in SUBS.LANGS]})
             iid = g.now_id(str((b or q).get('id') or ''))
@@ -1649,11 +1649,16 @@ def make_handler(g):
                 o = g.st.get('opensubs') or {}
                 return self.send_json(200, {'results': res, 'remaining': o.get('remaining')})
             op = b.get('op')
-            if op == 'shift':   # (a subtitle file beside the film, every line earlier or later, for everyone)
-                ms = (it.get('MediaSources') or [{}])[0]
-                st = next((x for x in ms.get('MediaStreams', []) if x.get('Index') == int(b.get('sid', -1)) and x.get('Type') == 'Subtitle'), None)
+            key = make_key(g.st['secret'], me['uid'])
+            ms = (it.get('MediaSources') or [{}])[0]
+            def file_of(sid):   # (a subtitle file beside the film: its path, or '')
+                st = next((x for x in ms.get('MediaStreams', []) if x.get('Index') == int(sid if sid is not None else -1) and x.get('Type') == 'Subtitle'), None)
                 sp = (st or {}).get('Path') or ''
-                if not st or not st.get('IsExternal') or not sp.lower().endswith('.srt') or os.path.dirname(sp) != os.path.dirname(path):
+                ok = st and st.get('IsExternal') and sp.lower().endswith('.srt') and os.path.dirname(sp) == os.path.dirname(path) and os.path.exists(sp)
+                return sp if ok else ''
+            if op == 'shift':   # (a subtitle file beside the film, every line earlier or later, for everyone)
+                sp = file_of(b.get('sid'))
+                if not sp:
                     return self.send_json(400, {'error': 'Only subtitles added as files can be moved for everyone.'})
                 secs = max(-30.0, min(30.0, float(b.get('secs') or 0)))
                 if abs(secs) < 0.05:
@@ -1661,6 +1666,33 @@ def make_handler(g):
                 n = SUBS.shift_file(sp, secs)
                 log('Subtitles: %s moved %+.1f s by %s (%s)' % (os.path.basename(sp), secs, me['name'], it.get('Name')))
                 return self.send_json(200, {'ok': True, 'lines': n, 'm': int(os.path.getmtime(sp))})
+            if op == 'sync':   # (lined up by hand: lines tapped as they were said; one fixes a shift, two far apart a drift too)
+                sp = file_of(b.get('sid'))
+                if not sp:
+                    return self.send_json(400, {'error': 'Only subtitles added as files can be lined up for everyone.'})
+                pairs = [(int(x[0]), float(x[1])) for x in (b.get('pairs') or [])[:8] if isinstance(x, (list, tuple)) and len(x) == 2]
+                try:
+                    r = SUBS.sync_file(sp, pairs)
+                except Exception as e:
+                    return self.send_json(400, {'error': str(e)})
+                log('Subtitles: %s lined up by hand by %s from %d line(s): %s' % (os.path.basename(sp), me['name'], len(pairs), r))
+                return self.send_json(200, dict(r, ok=True, subs=self.subs_out(iid, ms, key)))
+            if op == 'delete':   # (subtitles added here, taken off: wrong, or to try others)
+                sp = file_of(b.get('sid'))
+                if not sp or '.Grifflix.' not in os.path.basename(sp):
+                    return self.send_json(400, {'error': 'Only subtitles added in Grifflix can be taken off here.'})
+                os.remove(sp)
+                log('Subtitles: %s taken off by %s' % (os.path.basename(sp), me['name']))
+                subs, _ = self.subs_show(iid, None, key)
+                return self.send_json(200, {'ok': True, 'subs': subs})
+            if op == 'keep':   # (subtitles it couldn't time: added as they came, to be lined up by hand)
+                j = SUBJOBS.get(str(b.get('job') or ''))
+                if not j or j['uid'] != me['uid'] or not j.get('_cues'):
+                    return self.send_json(404, {'error': 'Those have gone: choose them again.'})
+                out = self.subs_write(path, j['_lang'], j.pop('_cues'))
+                subs, pick = self.subs_show(iid, out, key)
+                j.update(state='done', say='Added as they came: now line them up by hand (subtitles menu, Line up by a line)', subs=subs, pick=pick, hand=True)
+                return self.send_json(200, {'ok': True, 'subs': subs, 'pick': pick})
             if op != 'add':
                 return self.send_json(400, {'error': 'Which?'})
             fid = int(b.get('file_id') or 0)
@@ -1674,7 +1706,8 @@ def make_handler(g):
             SUBDAY[(me['uid'], day)] = n + 1
             jid = secrets.token_hex(6)
             SUBJOBS[jid] = {'uid': me['uid'], 'state': 'waiting', 'say': 'Waiting its turn…', 'at': time.time()}
-            key = make_key(g.st['secret'], me['uid'])
+            refs = [x for x in ms.get('MediaStreams', []) if x.get('Type') == 'Subtitle' and x.get('IsTextSubtitleStream')
+                    and '.Grifflix.' not in os.path.basename(x.get('Path') or '')]   # (the film's own subtitles: the surest guide to timing)
             def run(job=SUBJOBS[jid]):
                 with SUBRUN:
                     try:
@@ -1683,43 +1716,43 @@ def make_handler(g):
                         cues = SUBS.parse_srt(SUBS.decode(raw))
                         if not cues:
                             raise RuntimeError('that file had no subtitles in it')
-                        job.update(state='listening', say='Listening to the film to time them (a few minutes on the Mac mini)…')
-                        ff = 'ffmpeg'
-                        try:
-                            enc = g.jf.call('GET', '/System/Configuration/encoding') or {}
-                            ff = enc.get('EncoderAppPath') or enc.get('EncoderAppPathDisplay') or ff
-                        except Exception:
-                            pass
-                        if not os.path.exists(ff):
-                            ff = next((c for c in ('/Applications/Jellyfin.app/Contents/MacOS/ffmpeg', '/usr/local/bin/ffmpeg', '/opt/homebrew/bin/ffmpeg') if os.path.exists(c)), 'ffmpeg')
-                        try:
-                            g.watched()   # (the converter waits meanwhile: the film's disk is this job's)
-                            sig = SUBS.speech(ff, path)
-                            job.update(state='timing', say='Timing them to the film…')
-                            cues, rep = SUBS.align(cues, sig)
-                        except Exception as e:
-                            rep = {'ok': False, 'why': 'couldn’t hear the film (%s), so the timing is as it came' % str(e)[:80]}
-                        stem = os.path.splitext(path)[0]
-                        out = '%s.Grifflix.%s.srt' % (stem, lang)   # (one of Grifflix's per language: a new one replaces it)
-                        with open(out + '.tmp', 'w', encoding='utf-8') as f:
-                            f.write(SUBS.write_srt(cues))
-                        os.replace(out + '.tmp', out)
+                        ff = self.ffmpeg_path()
+                        g.watched()   # (the converter waits meanwhile: the film's disk is this job's)
+                        rep, done = {'ok': False, 'why': 'couldn’t be sure of the timing'}, None
+                        for ref in refs[:2]:   # first against the film's own subtitles, where it has any
+                            try:
+                                job.update(state='timing', say='Timing them against the film’s own subtitles…')
+                                rc = self.subs_ref(ff, path, ref)
+                                if len(rc) >= 20:
+                                    n_ = int(max(rc[-1][1], cues[-1][1] * 1.1) * SUBS.HZ) + 600
+                                    c2, r2 = SUBS.align(cues, SUBS.cue_signal(rc, n_))
+                                    if r2.get('ok'):
+                                        done, rep = c2, dict(r2, by='the film’s own subtitles')
+                                        break
+                            except Exception as e:
+                                log('Subtitles: couldn’t use the film’s own subtitles:', repr(e))
+                        if done is None:
+                            try:
+                                job.update(state='listening', say='Listening to the film’s dialogue to time them (a few minutes on the Mac mini)…')
+                                sig = SUBS.speech(ff, path)
+                                job.update(state='timing', say='Timing them to the film…')
+                                c2, r2 = SUBS.align(cues, sig)
+                                rep = r2
+                                if r2.get('ok'):
+                                    done = c2
+                            except Exception as e:
+                                rep = {'ok': False, 'why': 'couldn’t hear the film (%s)' % str(e)[:80]}
+                        if done is None:   # (not sure: nothing saved; the member chooses another, or has them as they came to line up by hand)
+                            job.update(state='unsure', _cues=cues, _lang=lang, timing=rep,
+                                       say='Couldn’t be sure how these line up with this copy of the film, so they haven’t been added. They may be for a different version.')
+                            log('Subtitles: not added (not sure of the timing) for %s: %s' % (it.get('Name'), rep))
+                            return
                         job.update(state='adding', say='Adding them to the film…')
-                        g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'FullRefresh', 'ImageRefreshMode': 'Default',
-                                                                            'ReplaceAllMetadata': 'false', 'ReplaceAllImages': 'false'})
-                        subs, pick, end = [], None, time.time() + 90
-                        while time.time() < end:   # (until the media server has it, so the player can show it at once)
-                            time.sleep(3)
-                            it2 = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,MediaSources'})
-                            ms2 = (it2.get('MediaSources') or [{}])[0]
-                            new = next((x for x in ms2.get('MediaStreams', []) if (x.get('Path') or '') == out), None)
-                            if new:
-                                subs = self.subs_out(iid, ms2, key)
-                                pick = next((i for i, x in enumerate(subs) if x['sid'] == new.get('Index')), None)
-                                break
-                        g.forget()
+                        out = self.subs_write(path, lang, done)
+                        subs, pick = self.subs_show(iid, out, key)
                         log('Subtitles: %s added by %s (%s)' % (os.path.basename(out), me['name'], SUBS.describe(rep)))
-                        job.update(state='done', say=SUBS.describe(rep) + ('' if subs else ' (the media server is still adding them: start the film again in a minute)'),
+                        say = SUBS.describe(rep) + (' (against the film’s own subtitles)' if rep.get('by') else '')
+                        job.update(state='done', say=say + ('' if subs else ' (the media server is still adding them: start the film again in a minute)'),
                                    subs=subs, pick=pick, timing=rep)
                     except Exception as e:
                         log('Subtitles: couldn’t add:', repr(e))
@@ -1728,6 +1761,58 @@ def make_handler(g):
             for k in [k for k, x in SUBJOBS.items() if time.time() - x['at'] > 6 * 3600]:
                 del SUBJOBS[k]
             return self.send_json(200, {'job': jid})
+
+        def ffmpeg_path(self):
+            ff = 'ffmpeg'
+            try:
+                enc = g.jf.call('GET', '/System/Configuration/encoding') or {}
+                ff = enc.get('EncoderAppPath') or enc.get('EncoderAppPathDisplay') or ff
+            except Exception:
+                pass
+            if not os.path.exists(ff):
+                ff = next((c for c in ('/Applications/Jellyfin.app/Contents/MacOS/ffmpeg', '/usr/local/bin/ffmpeg', '/opt/homebrew/bin/ffmpeg') if os.path.exists(c)), 'ffmpeg')
+            return ff
+
+        def subs_ref(self, ff, path, st):
+            """One of the film's own text subtitles, as lines: from its file beside the film, or out of the film itself."""
+            sp = st.get('Path') or ''
+            if st.get('IsExternal') and sp and os.path.exists(sp):
+                with open(sp, 'rb') as f:
+                    raw = f.read()
+                if sp.lower().endswith('.srt'):
+                    return SUBS.parse_srt(SUBS.decode(raw))
+                src = sp
+                cmd = [ff, '-v', 'error', '-i', src, '-f', 'srt', '-']
+            else:
+                cmd = [ff, '-v', 'error', '-i', path, '-map', '0:%d' % st['Index'], '-f', 'srt', '-']
+            import subprocess
+            out = subprocess.run(cmd, capture_output=True, timeout=900).stdout
+            return SUBS.parse_srt(SUBS.decode(out))
+
+        def subs_write(self, path, lang, cues):
+            out = '%s.Grifflix.%s.srt' % (os.path.splitext(path)[0], lang)   # (one of Grifflix's per language: a new one replaces it)
+            with open(out + '.tmp', 'w', encoding='utf-8') as f:
+                f.write(SUBS.write_srt(cues))
+            os.replace(out + '.tmp', out)
+            return out
+
+        def subs_show(self, iid, out, key):
+            """The media server told of a subtitle file added or taken off; the film's subtitles once it has seen it (and which is new)."""
+            g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'FullRefresh', 'ImageRefreshMode': 'Default',
+                                                                'ReplaceAllMetadata': 'false', 'ReplaceAllImages': 'false'})
+            subs, pick, end = [], None, time.time() + 90
+            while time.time() < end:
+                time.sleep(3)
+                it2 = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,MediaSources'})
+                ms2 = (it2.get('MediaSources') or [{}])[0]
+                paths = [x.get('Path') or '' for x in ms2.get('MediaStreams', [])]
+                if (out and out in paths) or (not out and not any(p_ and not os.path.exists(p_) for p_ in paths)):
+                    subs = self.subs_out(iid, ms2, key)
+                    new = next((x for x in ms2.get('MediaStreams', []) if out and (x.get('Path') or '') == out), None)
+                    pick = next((i for i, x in enumerate(subs) if new and x['sid'] == new.get('Index')), None)
+                    break
+            g.forget()
+            return subs, pick
 
         def api_playing(self, me, user, q, b):
             """Whether a film is playing as it is or being converted by the Mac mini: a member's own (ps), or, for John, everything

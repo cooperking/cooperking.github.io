@@ -205,36 +205,113 @@ def shift_file(path, secs):
 
 # ---------------------------------------------------------------- hearing where people speak
 
+def _channels(ffmpeg, video, stream):
+    """The sound's channel count and layout (5.1, stereo...), from ffprobe beside ffmpeg."""
+    probe = os.path.join(os.path.dirname(ffmpeg), 'ffprobe') if os.path.dirname(ffmpeg) else 'ffprobe'
+    try:
+        out = subprocess.run([probe, '-v', 'error', '-select_streams', 'a:%d' % stream, '-show_entries', 'stream=channels,channel_layout',
+                              '-of', 'json', video], capture_output=True, text=True, timeout=60).stdout
+        st = (json.loads(out or '{}').get('streams') or [{}])[0]
+        return int(st.get('channels') or 0), st.get('channel_layout') or ''
+    except Exception:
+        return 0, ''
+
+
 def speech(ffmpeg, video, stream=0, nice=True):
-    """The film's sound as 10 loudness readings a second, in the voice range (dB), from the media server's ffmpeg."""
-    af = ('highpass=f=200,lowpass=f=3400,aresample=8000,asetnsamples=n=%d:p=0,astats=metadata=1:reset=1,'
+    """Where people speak in the film, 10 readings a second (0 to 1). Only the dialogue: in 5.1 or 7.1 sound the centre channel,
+    which holds the voices and little else; in stereo what's in the middle of both. And judged against each half-minute's own
+    background, so loud music or a quiet film doesn't fool it (John, 13 Nov 2026: the first version, listening to everything,
+    couldn't be sure)."""
+    ch, layout = _channels(ffmpeg, video, stream)
+    if ch >= 3 and ('5.1' in layout or '7.1' in layout or '6.1' in layout or 'FC' in layout or ch >= 6):
+        pick = 'pan=mono|c0=FC,'
+    elif ch == 2:
+        pick = 'pan=mono|c0=0.5*c0+0.5*c1,'
+    else:
+        pick = ''
+    af = (pick + 'highpass=f=250,lowpass=f=3200,aresample=8000,asetnsamples=n=%d:p=0,astats=metadata=1:reset=1,'
           'ametadata=mode=print:key=lavfi.astats.Overall.RMS_level:file=-' % (8000 // HZ))
-    cmd = [ffmpeg, '-hide_banner', '-nostats', '-v', 'error', '-i', video, '-map', '0:a:%d' % stream, '-vn', '-sn', '-dn', '-af', af, '-f', 'null', '-']
-    if nice and os.path.exists('/usr/sbin/taskpolicy'):
-        cmd = ['/usr/sbin/taskpolicy', '-b'] + cmd
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, preexec_fn=(lambda: os.nice(10)) if nice else None)
-    lv, t = [], None
-    for line in p.stdout:
-        if line.startswith('frame:'):
-            m = re.search(r'pts_time:([\d.]+)', line)
-            t = float(m.group(1)) if m else None
-        elif 'RMS_level=' in line and t is not None:
-            v = line.split('=', 1)[1].strip()
-            i = int(round(t * HZ))
-            while len(lv) < i:
-                lv.append(lv[-1] if lv else -90.0)
-            try:
-                lv.append(max(-90.0, float(v)) if v not in ('-inf', 'inf', 'nan') else -90.0)
-            except ValueError:
-                lv.append(-90.0)
-    p.wait()
+    def run(af):
+        cmd = [ffmpeg, '-hide_banner', '-nostats', '-v', 'error', '-i', video, '-map', '0:a:%d' % stream, '-vn', '-sn', '-dn', '-af', af, '-f', 'null', '-']
+        if nice and os.path.exists('/usr/sbin/taskpolicy'):
+            cmd = ['/usr/sbin/taskpolicy', '-b'] + cmd
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, preexec_fn=(lambda: os.nice(10)) if nice else None)
+        lv, t = [], None
+        for line in p.stdout:
+            if line.startswith('frame:'):
+                m = re.search(r'pts_time:([\d.]+)', line)
+                t = float(m.group(1)) if m else None
+            elif 'RMS_level=' in line and t is not None:
+                v = line.split('=', 1)[1].strip()
+                i = int(round(t * HZ))
+                while len(lv) < i:
+                    lv.append(lv[-1] if lv else -90.0)
+                try:
+                    lv.append(max(-90.0, float(v)) if v not in ('-inf', 'inf', 'nan') else -90.0)
+                except ValueError:
+                    lv.append(-90.0)
+        p.wait()
+        return lv, p.stderr.read().strip()[-200:]
+    lv, err = run(af)
+    if len(lv) < HZ * 60 and pick:   # (that channel wasn't there after all: all of it)
+        lv, err = run(af[len(pick):])
     if len(lv) < HZ * 60:
-        raise RuntimeError('couldn’t hear the film (%s)' % (p.stderr.read().strip()[-200:] or 'no sound'))
-    # speech: louder than the film's quiet parts by a margin; ±1 so silence under a subtitle counts against it
-    s = sorted(lv)
-    floor, high = s[len(s) // 5], s[len(s) * 9 // 10]
-    cut = floor + max(4.0, (high - floor) * 0.35)
-    return [1.0 if v > cut else 0.0 for v in lv]
+        raise RuntimeError('couldn’t hear the film (%s)' % (err or 'no sound'))
+    # each half-minute against its own quiet: its tenth-quietest level, from it and its neighbours
+    blk = 30 * HZ
+    floors = []
+    for k in range(0, len(lv), blk):
+        part = sorted(lv[max(0, k - blk):k + 2 * blk])
+        floors.append(part[len(part) // 10])
+    out = []
+    for i, v in enumerate(lv):
+        x = (v - floors[i // blk] - 4.0) / 10.0
+        out.append(0.0 if x < 0 else 1.0 if x > 1 else x)
+    return out
+
+
+def cue_signal(cues, n):
+    """Subtitles as the same 10-a-second readings: 1 while a line shows (for timing against the film's own subtitles)."""
+    sig = [0.0] * n
+    for s, e, _ in cues:
+        for i in range(max(0, int(s * HZ)), min(n, int(e * HZ) + 1)):
+            sig[i] = 1.0
+    return sig
+
+
+def fit_pairs(pairs):
+    """A ratio and shift from lines placed by hand: [(time in the file, when it's said in the film)], the latest last. One line: a
+    shift; two or more far enough apart: the drift too (snapped to a usual frame-rate difference when it's near one). Lines that
+    don't agree with each other (a wrong tap, or a version with a cut): the latest one, as a shift."""
+    latest = pairs[-1]
+    pairs = sorted(pairs)
+    if len(pairs) == 1 or pairs[-1][0] - pairs[0][0] < 300:
+        return 1.0, latest[1] - latest[0]
+    n = len(pairs)
+    mt, mf = sum(t for t, _ in pairs) / n, sum(f for _, f in pairs) / n
+    r = sum((t - mt) * (f - mf) for t, f in pairs) / (sum((t - mt) ** 2 for t, _ in pairs) or 1)
+    near = min(FPS_RATIOS, key=lambda x: abs(x - r))
+    if abs(near - r) < 0.002:
+        r = near
+    if not 0.94 < r < 1.06:   # (no film runs that much faster or slower: the taps disagree)
+        return 1.0, latest[1] - latest[0]
+    return r, mf - r * mt
+
+
+def sync_file(path, pairs):
+    """The file's lines put where they were heard: pairs of (line number, when it's said in the film)."""
+    with open(path, 'rb') as f:
+        cues = parse_srt(decode(f.read()))
+    pts = [(cues[i][0], float(t)) for i, t in pairs if 0 <= i < len(cues)]
+    if not pts:
+        raise RuntimeError('which line?')
+    r, off = fit_pairs(pts)
+    cues = [[max(0.0, s * r + off), max(0.05, e * r + off), t] for s, e, t in cues]
+    tmp = path + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        f.write(write_srt(cues))
+    os.replace(tmp, path)
+    return {'ratio': round(r, 5), 'shift': round(off, 2), 'lines': len(cues)}
 
 
 # ---------------------------------------------------------------- lining them up

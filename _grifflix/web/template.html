@@ -324,6 +324,10 @@ html.tv .sheet .people { font-size: var(--crfs, 15px); }
 .psf li button:hover, .psf li button:focus-visible { background: rgba(255, 255, 255, .1); outline: 0; }
 .psf li .n { display: block; overflow-wrap: anywhere; } .psf li .m { display: block; margin-top: 3px; font-size: 12px; color: rgba(255, 255, 255, .55); }
 .psf li .x { display: inline-block; margin-right: 6px; padding: 2px 7px; border-radius: 10px; background: #2e7d4f; color: #fff; font: 600 10.5px/1.4 var(--kfont); letter-spacing: .08em; text-transform: uppercase; vertical-align: 1px; }
+.psf .psfbtns { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 18px 18px; } .psf .psfbtns button { padding: 10px 16px; border-radius: 22px; border: 1px solid rgba(255, 255, 255, .3); background: none; color: #fff; font: 500 14px/1.2 var(--sans); cursor: pointer; }
+.psf .psfbtns button.go { background: #f3e8d2; border-color: #f3e8d2; color: #14202e; } .psf .psfbtns button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.psf input[type=search] { flex: 1; min-width: 0; padding: 9px 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, .2); background: #0e1622; color: #fff; font: 400 15px var(--sans); }
+.psf li button .t { display: inline-block; min-width: 54px; margin-right: 8px; color: #f08a4b; font: 500 12px/1 var(--kfont); letter-spacing: .04em; } .psf li.near button { background: rgba(240, 138, 75, .12); }
 .psf .psfwork { display: flex; align-items: center; gap: 12px; margin: 4px 18px 18px; font: 400 15px/1.4 var(--sans); }
 .psf .psfwork i { flex: none; width: 22px; height: 22px; border: 2.5px solid rgba(255, 255, 255, .22); border-top-color: #f08a4b; border-radius: 50%; animation: pspin 1s linear infinite; }
 html.tv .psf li button, html.tv .psf select { font-size: 19px; } html.tv .psf li button:focus { box-shadow: inset 4px 0 0 #f08a4b; background: rgba(255, 255, 255, .16); }
@@ -6052,12 +6056,21 @@ window.addEventListener('pagehide', saveProgress);
       h = '<h4>Subtitles</h4><button role="menuitemradio" data-i="-1"><i>' + (on < 0 ? '✓' : '') + '</i>Off</button>' + ts.map(function (t, j) { return '<button role="menuitemradio" data-i="' + j + '"><i>' + (on === j ? '✓' : '') + '</i>' + esc(t.label || t.language || 'Subtitles ' + (j + 1)) + '</button>'; }).join('');
       // (a line a touch early or late: moved half a second at a time; a subtitle file beside the film is moved for everyone: John, 13 Nov 2026)
       if (on >= 0) h += '<hr><div class="pnudge"><button data-n="-0.5" aria-label="Subtitles half a second earlier">− ½ s</button><span>' + (P.subMove ? (P.subMove > 0 ? '+' : '−') + Math.abs(P.subMove).toFixed(1) + ' s' : 'In time?') + '</span><button data-n="0.5" aria-label="Subtitles half a second later">+ ½ s</button></div>';
+      var si = on >= 0 ? ((P.info && P.info.subs) || [])[on] || {} : {};
+      if (si.ext) h += '<button data-sync="1"><i></i>Line up by a line…</button>';
+      if (si.mine) h += '<button data-del="' + si.sid + '"><i></i>Remove these subtitles</button>';
       if (canFind()) h += (on < 0 ? '<hr>' : '') + '<button data-f="1"><i></i>Find subtitles…</button>'; }
     else h = '<h4>Speed</h4>' + SP.map(function (r) { return '<button role="menuitemradio" data-r="' + r + '"><i>' + (v.playbackRate === r ? '✓' : '') + '</i>' + (r === 1 ? 'Normal' : r + '×') + '</button>'; }).join('');
     menu.innerHTML = h; menu.hidden = false; menu.dataset.k = kind; wake();
     $$('#pmenu button').forEach(function (b) { b.onclick = function (e) { e.stopPropagation();
       if (b.dataset.n != null) { nudge(+b.dataset.n); P.menu(); P.menu('subs', from); var nb = $('#pmenu [data-n="' + b.dataset.n + '"]'); if (nb) nb.focus(); return; }
       if (b.dataset.f) { P.menu(); findSubs(); return; }
+      if (b.dataset.sync) { P.menu(); lineUp(); return; }
+      if (b.dataset.del) {   // (subtitles added here, taken off: tap twice)
+        if (!b.dataset.sure) { b.dataset.sure = 1; b.lastChild.textContent = 'Tap again to remove them'; return; }
+        P.menu(); toast('Removing them…');
+        mac('subs', { op: 'delete', id: P.it.id, sid: +b.dataset.del }).then(function (r) { setTracks(r.subs || [], null); toast('Removed: Find subtitles to try others'); }).catch(function (e) { toast(e.message || 'Couldn’t remove them'); });
+        return; }
       if (b.dataset.i != null) { setSubs(+b.dataset.i, true); P.subMove = 0; } else { v.playbackRate = +b.dataset.r; $('#prate').textContent = (+b.dataset.r) + '×'; }
       P.menu(); if (from) from.focus(); }; });
     var cur = $('#pmenu button i:not(:empty)'); (cur ? cur.parentNode : $('#pmenu button')).focus();
@@ -6075,6 +6088,57 @@ window.addEventListener('pagehide', saveProgress);
     nudgeSum += d; clearTimeout(nudgeT);
     nudgeT = setTimeout(function () { var n = nudgeSum; nudgeSum = 0; if (Math.abs(n) < .05) return;
       mac('subs', { op: 'shift', id: P.it.id, sid: info.sid, secs: n }).catch(function (e) { toast(e.message || 'Couldn’t save the timing'); }); }, 1500);
+  }
+  function setTracks(subs, pickSid) {
+    P.info.subs = subs; var at = v.currentTime;
+    $$('#vid track').forEach(function (t) { t.parentNode.removeChild(t); });
+    subs.forEach(function (s2) { var t = document.createElement('track'); t.kind = 'subtitles'; t.label = s2.label; t.srclang = s2.lang || 'en'; t.src = gwUrl(s2.url); v.appendChild(t); });
+    setTimeout(function () { $('#psubs').hidden = !subs.length && !canFind(); var i = subs.findIndex(function (x) { return x.sid === pickSid; }); setSubs(i, i >= 0); P.subMove = 0; try { v.currentTime = at; } catch (e) {} }, 50);
+  }
+  // (lining up by hand: pause just after a line is said and tap it; a second, later on, sets any drift right too: John, 13 Nov 2026)
+  var syncPairs = {};
+  function lineUp() {
+    var ts = tracks(), on = ts.findIndex(function (t) { return t.mode === 'showing'; }), si = ((P.info && P.info.subs) || [])[on];
+    if (on < 0 || !si || !si.ext) return;
+    var cues = Array.prototype.slice.call(ts[on].cues || []), box = $('#psf'), wasPlaying = !v.paused, now = v.currentTime;
+    if (!cues.length) { toast('Their lines are still loading: try again in a moment'); return; }
+    v.pause();
+    var mmss = function (t) { t = Math.max(0, Math.round(t)); var h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, s2 = t % 60; return (h ? h + ':' + (m < 10 ? '0' : '') : '') + m + ':' + (s2 < 10 ? '0' : '') + s2; };
+    var plain = function (c) { return String(c.text || '').replace(/<[^>]*>/g, '').replace(/\{[^}]*\}/g, '').replace(/\s+/g, ' ').trim(); };
+    var done = (syncPairs[si.sid] || []).length;
+    box.innerHTML = '<div class="psfin"><header><b>Line them up</b><button type="button" id="psfx" aria-label="Close">×</button></header>' +
+      '<p class="psfsay">' + (done ? 'Lined up from ' + done + ' line' + (done > 1 ? 's' : '') + '. If they drift later in the film, do it again there: that sets the drift right too.' :
+        'Pause just after someone speaks, then tap the line they said. Once near the start and once near the end sets right any drift too.') + ' Paused at ' + mmss(now) + '.</p>' +
+      '<div class="psfbar"><input type="search" id="psfq" placeholder="Find a line by its words" autocomplete="off"></div><ul id="psfres"></ul></div>';
+    box.hidden = false;
+    var close = function () { box.hidden = true; box.innerHTML = ''; if (wasPlaying) v.play().catch(function () {}); wake(); };
+    $('#psfx').onclick = function (e) { e.stopPropagation(); close(); };
+    box.onclick = function (e) { e.stopPropagation(); if (e.target === box) close(); };
+    box.onkeydown = function (e) { if (e.key === 'Escape' || e.key === 'GoBack' || e.key === 'BrowserBack') { e.preventDefault(); e.stopPropagation(); close(); } };
+    var near = 0; cues.forEach(function (c, i) { if (Math.abs(c.startTime - now) < Math.abs(cues[near].startTime - now)) near = i; });
+    function draw(q) {
+      q = (q || '').toLowerCase();
+      var idx = q ? cues.map(function (c, i) { return i; }).filter(function (i) { return plain(cues[i]).toLowerCase().indexOf(q) >= 0; }).slice(0, 80)
+        : cues.map(function (c, i) { return i; }).slice(Math.max(0, near - 25), near + 25);
+      $('#psfres').innerHTML = idx.map(function (i) { return '<li' + (i === near && !q ? ' class="near"' : '') + '><button type="button" data-i="' + i + '"><span class="t">' + mmss(cues[i].startTime) + '</span>' + esc(plain(cues[i])) + '</button></li>'; }).join('') ||
+        '<li><button type="button" disabled>No line with those words</button></li>';
+      $$('#psfres button[data-i]').forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); pickLine(+b.dataset.i); }; });
+      if (!q) { var nb = $('#psfres li.near button'); if (nb) { nb.scrollIntoView({ block: 'center' }); nb.focus(); } }
+    }
+    $('#psfq').oninput = function () { draw(this.value); };
+    draw('');
+    function pickLine(i) {
+      clearTimeout(nudgeT); var pend = nudgeSum; nudgeSum = 0;
+      var pairs = (syncPairs[si.sid] = (syncPairs[si.sid] || []).filter(function (x) { return Math.abs(x[1] - now) > 20; }).concat([[i, Math.max(0, now - 0.35)]]));
+      $('#psfres').innerHTML = ''; $('.psf .psfsay').textContent = 'Lining them up…';
+      (Math.abs(pend) >= .05 ? mac('subs', { op: 'shift', id: P.it.id, sid: si.sid, secs: pend }) : Promise.resolve()).then(function () {
+        return mac('subs', { op: 'sync', id: P.it.id, sid: si.sid, pairs: pairs });
+      }).then(function (r) {
+        setTracks(r.subs || P.info.subs, si.sid);
+        toast(pairs.length > 1 && Math.abs((r.ratio || 1) - 1) > 1e-4 ? 'Lined up, drift and all, for everyone' : 'Lined up for everyone' + (pairs.length > 1 ? '' : ': if they drift later, line up one more there'));
+        close();
+      }).catch(function (e) { $('.psf .psfsay').textContent = e.message || 'Couldn’t line them up.'; });
+    }
   }
   var LANGS = null;
   function findSubs() {
@@ -6116,11 +6180,16 @@ window.addEventListener('pagehide', saveProgress);
           mac('subs?job=' + job).then(function (j) {
             work.textContent = j.say || '…';
             if (j.state === 'done') { job = null; $('#psfwork i').style.display = 'none';
-              if (j.subs && j.subs.length) { P.info.subs = j.subs; var at = v.currentTime;
-                $$('#vid track').forEach(function (t) { t.parentNode.removeChild(t); });
-                j.subs.forEach(function (s2) { var t = document.createElement('track'); t.kind = 'subtitles'; t.label = s2.label; t.srclang = s2.lang || 'en'; t.src = gwUrl(s2.url); v.appendChild(t); });
-                setTimeout(function () { $('#psubs').hidden = false; if (j.pick != null) setSubs(j.pick, true); P.subMove = 0; try { v.currentTime = at; } catch (e) {} }, 50); }
+              if (j.subs && j.subs.length) setTracks(j.subs, j.pick != null ? j.subs[j.pick].sid : null);
               setTimeout(close, 3500); return; }
+            if (j.state === 'unsure') { var jid = job; job = null; $('#psfwork i').style.display = 'none';
+              $('#psfwork').insertAdjacentHTML('afterend', '<div class="psfbtns"><button type="button" class="go" id="psfother">Choose others</button><button type="button" id="psfkeep">Add them anyway, to line up by hand</button></div>');
+              $('#psfother').onclick = function (e) { e.stopPropagation(); findSubs(); };
+              $('#psfkeep').onclick = function (e) { e.stopPropagation(); this.disabled = true; work.textContent = 'Adding them…';
+                mac('subs', { op: 'keep', id: it.id, job: jid }).then(function (r) { setTracks(r.subs || [], r.pick != null ? r.subs[r.pick].sid : null); gone = true; box.hidden = true; box.innerHTML = '';
+                  setTimeout(function () { toast('Now pause just after a line is said and tap it'); lineUp(); }, 600); })
+                  .catch(function (e2) { work.textContent = e2.message || 'Couldn’t add them.'; }); };
+              $('#psfother').focus(); return; }
             if (j.state === 'error') { job = null; $('#psfwork i').style.display = 'none'; work.textContent = 'Couldn’t add them: ' + (j.say || 'something went wrong'); return; }
             setTimeout(poll, 2500);
           }).catch(function () { setTimeout(poll, 5000); });
