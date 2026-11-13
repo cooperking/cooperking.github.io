@@ -325,7 +325,7 @@ html.tv .sheet .people { font-size: var(--crfs, 15px); }
 .psf li button { display: block; width: 100%; padding: 11px 10px; border: 0; border-radius: 8px; background: none; color: #fff; text-align: left; cursor: pointer; font: 400 14px/1.35 var(--sans); }
 .psf li button:hover, .psf li button:focus-visible { background: rgba(255, 255, 255, .1); outline: 0; }
 .psf li .n { display: block; overflow-wrap: anywhere; } .psf li .m { display: block; margin-top: 3px; font-size: 12px; color: rgba(255, 255, 255, .55); }
-.psf li .x.l { background: #2d5f8a; }
+.psf li .x.l { background: #2d5f8a; } .psf li .x.n { background: #f3e8d2; color: #14202e; min-width: 1.6em; text-align: center; }
 .psf .psfauto { display: block; width: calc(100% - 20px); margin: 0 10px 10px; padding: 13px 14px; border: 0; border-radius: 10px; background: #f3e8d2; color: #14202e; text-align: left; cursor: pointer; font: 600 15px/1.3 var(--sans); }
 .psf .psfauto span { display: block; margin-top: 3px; font-weight: 400; font-size: 12.5px; color: rgba(20, 32, 46, .7); } .psf .psfauto:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .psf li .x { display: inline-block; margin-right: 6px; padding: 2px 7px; border-radius: 10px; background: #2e7d4f; color: #fff; font: 600 10.5px/1.4 var(--kfont); letter-spacing: .08em; text-transform: uppercase; vertical-align: 1px; }
@@ -6201,10 +6201,11 @@ window.addEventListener('pagehide', saveProgress);
         say.textContent = L.length ? 'Listed with the likeliest to fit this copy of the film first. Whichever is added, the Mac mini checks it fits and times it to the film.' : 'None found in this language.';
         // (the likeliest few, tried in turn by the Mac mini, the first that surely fits kept: no guessing which cut each is for)
         var auto = L.filter(function (x) { return !x.machine; }).slice(0, 4);
-        res.innerHTML = (auto.length > 1 ? '<li><button type="button" class="psfauto" id="psfauto">Choose the best one for me<span>The Mac mini tries up to ' + auto.length + ', the likeliest first, and keeps the first it can confirm fits this copy (one of today’s downloads each).</span></button></li>' : '') +
+        res.innerHTML = (auto.length > 1 ? '<li><button type="button" class="psfauto" id="psfauto">Choose the best one for me<span>The Mac mini tries those numbered 1 to ' + auto.length + ' below, in that order, and keeps the first it can confirm fits this copy.</span></button></li>' : '') +
           L.map(function (x, k) {
           var m = [x.downloads ? Number(x.downloads).toLocaleString() + ' downloads' : '', x.hi ? 'for the hard of hearing' : '', x.machine ? 'machine translated' : '', x.fps ? x.fps + ' fps' : ''].filter(Boolean).join(' · ');
-          return '<li><button type="button" data-k="' + k + '"><span class="n">' + (x.exact ? '<span class="x">Made for this file</span>' : x.like >= 5 ? '<span class="x l">Like your copy</span>' : '') + esc(x.name || 'Subtitles') + '</span>' + (m ? '<span class="m">' + esc(m) + '</span>' : '') + '</button></li>';
+          var ai = auto.length > 1 ? auto.indexOf(x) : -1;   // (which of them Choose for me tries, and in what order)
+          return '<li><button type="button" data-k="' + k + '"><span class="n">' + (ai >= 0 ? '<span class="x n">' + (ai + 1) + '</span>' : '') + (x.exact ? '<span class="x">Made for this file</span>' : x.like >= 5 ? '<span class="x l">Like your copy</span>' : '') + esc(x.name || 'Subtitles') + '</span>' + (m ? '<span class="m">' + esc(m) + '</span>' : '') + '</button></li>';
         }).join('');
         $$('#psfres button[data-k]').forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); add(L[+b.dataset.k]); }; });
         if ($('#psfauto')) $('#psfauto').onclick = function (e) { e.stopPropagation(); add(null, auto); };
