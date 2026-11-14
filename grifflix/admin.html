@@ -356,6 +356,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="kicker">Conversions</div>
         <h2 id="cvhead">Looking…</h2>
         <p class="stat" id="cvsay"></p>
+        <details id="cvlogw" hidden style="margin:8px 0 0"><summary style="cursor:pointer;opacity:.75">What the converter last said</summary><pre id="cvlog" style="white-space:pre-wrap;word-break:break-word;font-size:12px;line-height:1.45;opacity:.85;margin:8px 0 0"></pre></details>
         <div class="cvbar" id="cvbar" hidden><span id="cvfill"></span></div>
         <p class="stat" id="cvdisks" hidden></p>
         <div class="cvord" id="cvord" hidden>
@@ -989,6 +990,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         $('#cvhead').innerHTML = n && n.state === 'finished' ? 'All <em>converted</em>' : 'Not <em>running</em>';
         $('#cvsay').textContent = c.done + ' converted so far' + (c.failed.length ? ', ' + c.failed.length + ' couldn’t be' : '') + '.' + (n && n.state === 'finished' ? '' : ' The Mac starts it again by itself within 10 minutes (once it has its latest update).');
       }
+      // (its last lines, so what it's doing can be seen from a phone, no terminal: John, 14 Nov 2026, stuck at 0% while away)
+      if (c.log && c.log.length) { $('#cvlogw').hidden = false; $('#cvlog').textContent = c.log.join('\n'); } else $('#cvlogw').hidden = true;
       // (each film: what the original was, what it became, and why: John, 11 Nov 2026: "what was the original and what was it converted to?")
       var fl = function (f) { return f ? (f.w ? f.w + '×' + f.h + ' ' : '') + esc(f.v) + (f.mbps ? ', ' + f.mbps + ' Mbps' : '') + (f.gb ? ', ' + f.gb + ' GB' : '') : ''; };
       $('#cvlist').innerHTML = (c.next && c.next.length ? '<li class="cvh">Next, in order</li>' + c.next.map(function (x, i) { return '<li>' + (i ? '' : '<b>Now:</b> ') + esc(x.name) + '<span class="when">' + esc(x.why || '') + (x.gb ? ' · ' + x.gb + ' GB' : '') + '</span></li>'; }).join('') + '<li class="cvh">Done</li>' : '') +
