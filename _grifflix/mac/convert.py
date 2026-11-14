@@ -414,10 +414,32 @@ def convert(item, ffmpeg, ffprobe, st):
                                 pct=round(min(99.9, at[0] / dur * 100), 1) if dur else 0, since=int(t0))
     show()
     try:
-        k = 0
+        k, work, mark, stuck_since = 0, 0.0, (0.0, 0), 0.0   # (work: seconds converting, not paused; mark: the last sign of progress)
+        STALL = int(os.environ.get('GRIFFLIX_STALL') or 1800)
         while p.poll() is None:
             time.sleep(5)
             k += 1
+            # (a film that makes no progress for 30 minutes of work is given up, what ffmpeg last said kept, and the next one done:
+            # Moonrise hung at 0% all day, the whole queue behind it: John, 14 Nov 2026, "It's never got above 0%")
+            if not paused:
+                work += 5
+                try:
+                    sz = os.path.getsize(tmp)
+                except OSError:
+                    sz = 0
+                if at[0] > mark[0] or sz > mark[1] + 1000000:
+                    mark, stuck_since = (at[0], sz), work
+                elif work - stuck_since > STALL:
+                    p.terminate()
+                    try:
+                        p.wait(30)
+                    except subprocess.TimeoutExpired:
+                        p.kill(); p.wait()
+                    if os.path.exists(tmp):
+                        os.remove(tmp)
+                    said = ' '.join(x.strip() for x in err_tail[-4:] if x.strip())[-300:]
+                    log('  no progress in 30 minutes: given up' + (' (ffmpeg: %s)' % said if said else ''))
+                    raise RuntimeError('no progress in 30 minutes, given up' + (': ' + said if said else ''))
             if k % 4 == 0:   # (how far it's got: every 20 seconds)
                 show(why_ if paused else '')
             why_ = 'someone is watching' if watching() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() and not item.get('urgent') else '')
