@@ -12,7 +12,12 @@
 #   grifflix-add --remove   stop doing it by itself
 #
 # Left alone (and said why): a film with no year in its name (the media server would guess, often wrong: rename it as
-# "Title (Year)"); TV episodes (S01E02); samples; a file still being copied in; a film already in Grifflix.
+# "Title (Year)"); TV episodes (S01E02); samples; a film already in Grifflix; and anything that may not have finished downloading
+# (John, 14 Nov 2026: "it should make sure it doesn't pick up half downloaded files"), which waits until all of these hold:
+#   * no download in progress beside it (.part, .crdownload, .download, .!qB, .aria2, .partial, .tmp files or folders)
+#   * not changed for 10 minutes
+#   * no program has it open (a browser or torrent app still writing it, or a torrent app still sharing it)
+#   * it reads as a whole film: its length can be read, and its last minutes play (with ffmpeg in ~/bin)
 setopt null_glob extended_glob
 SRC="${GRIFFLIX_FROM:-$HOME/Movies}"
 DRIVE="/Volumes/G-Drive"
@@ -21,6 +26,7 @@ SHARE="smb://johngriffiths@192.168.68.125/G-Drive"
 LABEL="io.github.cooperking.grifflix-add"
 AGENT="$HOME/Library/LaunchAgents/$LABEL.plist"
 LOG="$HOME/Library/Logs/grifflix-add.log"
+FF="${FFMPEG:-$HOME/bin/ffmpeg}"
 CHECK=0
 
 case "${1:-}" in
@@ -77,8 +83,18 @@ for f in "$SRC"/*.(mp4|mkv|m4v|mov|avi)(N.) "$SRC"/*/*.(mp4|mkv|m4v|mov|avi)(N.)
   [[ "$base" == (#i)*sample* ]] && continue
   [[ "$f" == "$SRC"/(TV|iMovie*|Photo Booth*|Final Cut*)/* ]] && continue
   if [[ "$base" =~ '[Ss][0-9]{1,2}[Ee][0-9]{1,2}' ]]; then say "Left: $base (a TV episode: films only)"; continue; fi
-  # (still being copied in: changed in the last 2 minutes)
-  if (( $(date +%s) - $(stat -f %m "$f") < 120 )); then (( QUIET )) || say "Waiting: $base (still being copied in)"; continue; fi
+  # (not finished downloading: each check in turn, cheapest first; it's simply tried again next time)
+  partial=( "${f:h}"/*.(part|crdownload|download|\!qB|aria2|partial|tmp)(N) "$f".(part|crdownload|aria2)(N) )
+  if [[ "${f:h}" == "$SRC" ]]; then partial=( "$f".(part|crdownload|aria2|download)(N) "${f:r}".*.(part|crdownload)(N) ); fi
+  if (( ${#partial} )); then (( QUIET )) || say "Waiting: $base (still downloading)"; continue; fi
+  if (( $(date +%s) - $(stat -f %m "$f") < 600 )); then (( QUIET )) || say "Waiting: $base (changed in the last 10 minutes)"; continue; fi
+  if lsof -t -- "$f" >/dev/null 2>&1; then (( QUIET )) || say "Waiting: $base (a program still has it open)"; continue; fi
+  if [[ -x "$FF" ]]; then
+    secs=$("$FF" -hide_banner -i "$f" 2>&1 | sed -n 's/.*Duration: \([0-9]*\):\([0-9]*\):\([0-9]*\).*/\1 \2 \3/p' | head -1 | awk '{print $1*3600+$2*60+$3}')
+    if [[ -z "$secs" || "$secs" -lt 60 ]] || (( $("$FF" -v error -nostdin -ss $(( secs > 300 ? secs - 180 : 0 )) -i "$f" -t 20 -map 0:v:0 -c copy -f framecrc - 2>/dev/null | awk -F'[ ,:/]+' '/^#tb 0/ {n=$3; d=$4} /^0,/ {p=$3} END {print (d && p*n/d > 5) ? 1 : 0}') == 0 )); then   # (the picture runs on past the 3-minutes-from-the-end mark: a half-downloaded film says it's whole but stops)
+      say "Waiting: $base (it doesn't read as a whole film yet: unfinished or damaged)"; continue
+    fi
+  fi
   title="$(name_of "$base")"
   [[ -z "$title" && "${f:h}" != "$SRC" ]] && title="$(name_of "${f:h:t}")"   # (the year may be in its folder's name)
   if [[ -z "$title" ]]; then say "Left: $base (no year in its name: rename it \"Title (Year)\")"; continue; fi
