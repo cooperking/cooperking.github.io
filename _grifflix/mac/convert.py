@@ -396,8 +396,9 @@ def convert(item, ffmpeg, ffprobe, st):
 
     log('repackaging' if remux else 'converting', item['name'], '(%s, %s min, %s GB)' % (item['why'], item['mins'], item['gb']))
     t0, paused = time.time(), False
-    if os.path.exists('/usr/sbin/taskpolicy'):   # (macOS's background priority: its reading and writing give way to the media server and
-        cmd = ['/usr/sbin/taskpolicy', '-b'] + cmd   # the films being watched, not only its processor time: John, 12 Nov 2026, a film wouldn't start)
+    # (no longer at macOS's background priority for the drive: whenever anything else used it (Spotlight, a copy over the network)
+    # that starved it to nothing, stuck at 0% for hours; it pauses the moment someone watches instead, checked every 5 seconds:
+    # John, 14 Nov 2026, "It doesn't need to run on lowest priority if is just pauses when a movie is playing anyway")
     p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, preexec_fn=lambda: os.nice(15))
     err_tail, at = [], [0.0]
     def read_err():
@@ -413,9 +414,12 @@ def convert(item, ffmpeg, ffprobe, st):
                                 pct=round(min(99.9, at[0] / dur * 100), 1) if dur else 0, since=int(t0))
     show()
     try:
+        k = 0
         while p.poll() is None:
-            time.sleep(20)
-            show(why_ if paused else '')
+            time.sleep(5)
+            k += 1
+            if k % 4 == 0:   # (how far it's got: every 20 seconds)
+                show(why_ if paused else '')
             why_ = 'someone is watching' if watching() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() and not item.get('urgent') else '')
             if why_ and not paused:
                 p.send_signal(signal.SIGSTOP); paused = True; log('  paused: ' + why_)
