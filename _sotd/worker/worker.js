@@ -7070,7 +7070,7 @@ async function uplRound(env, all, pid, rec, snd) {
   const now = Date.now(); data.roundAt = now; fresh.forEach(x => { data.ann[x.id] = now; });
   await env.SOTD.put('upl:' + pid, JSON.stringify(data));
   const ownerId = await env.SOTD.get('owner'), me = rec.o;
-  const to = Object.keys(all).filter(k => hasJoined(all[k]) && takesFrom(all, k, me, ownerId) && uplCan(all, k, rec));
+  const to = await uplOwnerToo(env, all, rec, fresh, Object.keys(all).filter(k => hasJoined(all[k]) && takesFrom(all, k, me, ownerId) && uplCan(all, k, rec)));
   if (!to.length) return;
   const name = all[me].name, pl = rec.cvt || uplName(all, rec), who = snd.who.map(k => all[k].name);
   const whoW = who.length > 1 ? who.slice(0, -1).join(', ') + ' and ' + who[who.length - 1] : who[0];
@@ -7083,7 +7083,8 @@ async function uplRound(env, all, pid, rec, snd) {
 }
 async function uplSendWeek(env, all, me, pid, rec, xs) {   // once a week: the week's songs in one message from its owner
   const ownerId = await env.SOTD.get('owner');
-  const to = Object.keys(all).filter(k => hasJoined(all[k]) && takesFrom(all, k, me, ownerId) && uplCan(all, k, rec));
+  const raw = (await uplSongs(env, pid)).songs || [], ids0 = new Set(xs.map(x => x.id));
+  const to = await uplOwnerToo(env, all, rec, raw.filter(y => ids0.has(y.id)), Object.keys(all).filter(k => hasJoined(all[k]) && takesFrom(all, k, me, ownerId) && uplCan(all, k, rec)));
   if (!to.length || !xs.length) return { inboxes: 0, sent: 0 };
   const name = all[me].name, pl = rec.cvt || uplName(all, rec), n = xs.length;
   const list = xs.slice(0, 8).map(x => x.title + ' – ' + x.artist).join('\n') + (n > 8 ? '\n…and ' + (n - 8) + ' more' : '');
@@ -7095,9 +7096,17 @@ async function uplSendWeek(env, all, me, pid, rec, xs) {   // once a week: the w
   return { inboxes: r.inboxes, sent: r.sent };
 }
 async function nfactOf(env, track) { return (await env.SOTD.get('nfact:' + track)) || ''; }   // the fact chosen at sign-off for a song's notification
+// the playlist's owner told too when its songs were added by someone else (John, 14 Nov 2026: "Why don't I get the
+// notifications about collaborations playlist updates?"): their own adds aren't news to them
+async function uplOwnerToo(env, all, rec, xs, to) {
+  if (!all[rec.o] || !hasJoined(all[rec.o]) || to.includes(rec.o)) return to;
+  const ids = await spWhoIds(env, all);
+  return xs.some(x => x && x.ab && ids[x.ab] !== rec.o) ? to.concat(rec.o) : to;
+}
 async function uplSend(env, all, me, pid, rec, x, d) {   // a song signed off: to the members, as a message from its owner
   const ownerId = await env.SOTD.get('owner');
-  const to = Object.keys(all).filter(k => hasJoined(all[k]) && takesFrom(all, k, me, ownerId) && uplCan(all, k, rec));
+  const raw = (await uplSongs(env, pid)).songs || [], xa = raw.find(y => y.id === x.id && y.a === x.a) || raw.find(y => y.id === x.id) || x;
+  const to = await uplOwnerToo(env, all, rec, [xa], Object.keys(all).filter(k => hasJoined(all[k]) && takesFrom(all, k, me, ownerId) && uplCan(all, k, rec)));
   if (!to.length) return { inboxes: 0, sent: 0 };
   const name = all[me].name, slug = d.slice(8, 10) + '-' + d.slice(5, 7) + '-' + d.slice(0, 4), pl = uplTitle(all, rec);
   const msg = { title: name + ': ' + x.title, subject: x.title, body: x.artist + ' · ' + pl, from: name, url: SITE_SONGS + '#u=' + pid + '&d=' + slug, tag: 'sotd-upl-' + pid + '-' + x.id };
