@@ -187,6 +187,20 @@ export default {
       const latest = (data.songs || []).slice().sort((a, b) => a.a < b.a ? 1 : -1).slice(0, 5).map(x => ({ a: x.a, t: x.title, ann: (data.ann || {})[x.id] || 0, rel: (data.rel || {})[x.id] || 0, w: uplWaiting(rec, data, x) }));
       await env.MEDIA.put('diag/collab-send.json', JSON.stringify({ send: uplSendOf(rec), share: uplShareOf(rec), mode: rec.mode, annDay: rec.annDay || '', ann: ann.map(t => new Date(t).toISOString()), latest, ownerIsJohn: rec.o === owner, johnPush: owner && all[owner] ? pushMode(all[owner]) : null, roundAt: data.roundAt || 0 }, null, 1), { httpMetadata: { contentType: 'application/json' } });
     })().catch(e => console.log('diagCollabSend: ' + (e && e.message))));
+    ctx.waitUntil((async () => {   // once: the 13 Nov 2026 round of Collaborations' new songs, to John too, as the members got it (John, 14 Nov 2026: "Can I see the notification and email that users would have got")
+      if (await env.SOTD.get('roundJohn1')) return;
+      await env.SOTD.put('roundJohn1', String(Date.now()));
+      const pid = 'hXXaGojDDcooDA', U = await uplAll(env), rec = U[pid], all = (await env.SOTD.get('members', 'json')) || {}; if (!rec || !all[rec.o]) return;
+      const data = await uplSongs(env, pid), at = data.roundAt || 0, ids = await spWhoIds(env, all);
+      const fresh = (data.songs || []).filter(x => (data.ann || {})[x.id] === at);
+      if (!fresh.length) return;
+      const snd = uplSendOf(rec), me = rec.o, name = all[me].name, pl = rec.cvt || uplName(all, rec), who = (snd.who || []).filter(k => all[k]).map(k => all[k].name);
+      const whoW = who.length > 1 ? who.slice(0, -1).join(', ') + ' and ' + who[who.length - 1] : who[0] || '';
+      const list = fresh.slice(0, 10).map(x => x.title + ' – ' + x.artist + (all[ids[x.ab]] ? ' (' + all[ids[x.ab]].name + ')' : '')).join('\n');
+      const msg = { title: pl + ': new songs from ' + whoW, subject: pl + ': new songs', body: list, from: name, url: SITE_SONGS + '#u=' + pid, tag: 'sotd-uplround-' + pid + '-' + at + '-john' };
+      if (fresh[fresh.length - 1].img) msg.icon = fresh[fresh.length - 1].img;
+      await pushAll(env, msg, [me], { kind: 'member', via: { t: 'member', id: me, name }, toNames: [name], fromId: me, toIds: [me] });
+    })().catch(e => console.log('roundJohn: ' + (e && e.message))));
     ctx.waitUntil((async () => {   // once: Collaborations' songs, their added dates, days and captions, for checking
       if (await env.SOTD.get('diagCollab4')) return;
       await env.SOTD.put('diagCollab4', String(Date.now()));
