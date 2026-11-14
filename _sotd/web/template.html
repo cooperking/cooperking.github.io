@@ -818,6 +818,10 @@ html.big .day.has.soon::after { font-size: 10px; top: 6px; }
 .ac-msgs .open { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: 1px 9px; align-items: start; padding: 8px 10px 2px; border: 0; background: none; color: var(--fg); text-align: left; cursor: pointer; font: inherit; }
 .ac-msgs .dot { grid-row: 1 / span 3; width: 8px; height: 8px; margin-top: 7px; border-radius: 50%; background: transparent; }
 .ac-msgs .cv { grid-column: 3; grid-row: 1 / span 3; width: 40px; height: 40px; border-radius: 6px; object-fit: cover; }
+.ac-msgs .mos { grid-column: 3; grid-row: 1 / span 3; width: 44px; height: 44px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 1px; border-radius: 7px; overflow: hidden; background: var(--line); }   /* a round's covers, four in a square */
+.ac-msgs .mos img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ac-msgs .mos.n2 img { grid-row: 1 / span 2; }
+.ac-msgs .mos.n3 img:first-child { grid-row: 1 / span 2; }
 .ac-msgs .pic { grid-column: 3; grid-row: 1 / span 3; width: auto; max-width: 64px; height: auto; max-height: 56px; border-radius: 6px; display: block; }   /* the whole picture, small, beside the words */
 /* a message opened (one with no link of its own): all of it, its whole picture */
 .msgv h3 { margin: -4px 0 0; font-family: var(--serif); font-weight: 500; font-size: 30px; line-height: 1.1; color: var(--fg); overflow-wrap: anywhere; }
@@ -831,6 +835,14 @@ html.big .day.has.soon::after { font-size: 10px; top: 6px; }
 #msgdlg .msgv-card .msgv-w { margin: -6px 0 0; color: #6b5a62; }
 #msgdlg .msgv-card .msgv-b { color: #4a3a42; font-size: 15.5px; }
 #msgdlg .msgv-card .msgv-pic img { width: 100%; max-height: none; border-radius: 14px; }
+#msgdlg .msgv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 16px 12px; margin: 4px 0 2px; }   /* a round's songs: each cover, its song, who put it up */
+#msgdlg .msgv-grid[hidden] { display: none; }
+#msgdlg .msgv-grid button { display: grid; gap: 2px; align-content: start; padding: 0; border: 0; background: none; color: #1d0b1e; text-align: left; cursor: pointer; font: inherit; }
+#msgdlg .msgv-grid .art { width: 100%; aspect-ratio: 1; border-radius: 12px; object-fit: cover; display: block; margin: 0 0 6px; box-shadow: 0 8px 20px rgba(0,0,0,.16); background: var(--bg); }
+#msgdlg .msgv-grid span.art { display: grid; place-items: center; color: #fff; font: 44px/1 var(--serif); }
+#msgdlg .msgv-grid .gt { font: 600 15px/1.25 var(--serif); overflow-wrap: anywhere; }
+#msgdlg .msgv-grid .ga { font-size: 13px; line-height: 1.3; color: #6b5a62; }
+#msgdlg .msgv-grid .gw { margin-top: 3px; font: 700 10px/1.2 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--bg); }
 #msgdlg .msgv-fact { padding: 14px 16px; border-radius: 12px; background: #f8f3f5; box-shadow: inset 4px 0 0 var(--bg); }
 #msgdlg .msgv-fact[hidden] { display: none; }
 #msgdlg .msgv-fact .k { margin: 0 0 6px; font: 700 11px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--bg); }
@@ -2278,6 +2290,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       <figure class="msgv-pic" id="msgpicf" hidden><img id="msgpic" alt=""></figure>
       <h3 id="msgh"></h3>
       <p class="msgv-w" id="msgw"></p>
+      <div class="msgv-grid" id="msggrid" hidden></div>
       <p class="msgv-b" id="msgb"></p>
       <div class="msgv-fact" id="msgfact" hidden><p class="k">Fact of the Day</p><p class="t" id="msgfactt"></p></div>
     </div>
@@ -8204,7 +8217,7 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     document.getElementById('msgw').textContent = (who ? who + ' · ' : '') + when;
     var where = !sent && x.u && msgWhere(x.u);   // (its song, a tap away, the message seen first: John, 5 Nov 2026, "the same one in the inbox opens a song immediately so you don't see it")
     document.getElementById('msggo').hidden = !where;
-    document.getElementById('msggo').textContent = x.c ? 'Open the song' : 'Open it';
+    document.getElementById('msggo').textContent = x.g ? 'Open the playlist' : x.c ? 'Open the song' : 'Open it';
     document.getElementById('msgreply').hidden = sent || !replyCan(x);
     document.getElementById('msgacts').hidden = !where && (sent || !replyCan(x));
     msgRx(x);
@@ -8212,13 +8225,38 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
     // words, the fact in its own card
     var body = String(x.b || ''), fm = /(?:^|\n)Fact of the Day: ([\s\S]+)$/.exec(body), fact = fm ? fm[1].trim() : '';
     if (fm) body = body.slice(0, fm.index).trim();
-    var b = document.getElementById('msgb'); b.textContent = body; b.hidden = !body;
+    var gs = Array.isArray(x.g) && x.g.length ? x.g : null;
+    msgGrid(gs, x);
+    var b = document.getElementById('msgb'); b.textContent = body; b.hidden = !body || !!gs;   // (a round's songs: the covers say it)
     document.getElementById('msgfact').hidden = !fact; document.getElementById('msgfactt').textContent = fact;
     var tint = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#e23a6e', fb = document.getElementById('msgfact'); fb.style.boxShadow = 'inset 4px 0 0 ' + tint; fb.querySelector('.k').style.color = tint;   // (the month's colour, as the email has it)
-    var pic = x.i || x.c || '', f = document.getElementById('msgpicf'), im = document.getElementById('msgpic');
+    var pic = gs ? '' : x.i || x.c || '', f = document.getElementById('msgpicf'), im = document.getElementById('msgpic');
     f.hidden = !pic; f.className = 'msgv-pic';
     if (pic) { im.onerror = function () { f.hidden = true; }; im.src = pic; } else im.removeAttribute('src');
     openLayer(msgDlg);
+  }
+  // a round of a playlist's new songs (John, 14 Nov 2026: "need to have pictures for all the songs put up, rendered in a
+  // good way"): each one's cover, song, artist and who put it up; a tap goes to its day
+  function msgGrid(gs, x) {
+    var gd = document.getElementById('msggrid'); gd.textContent = ''; gd.hidden = !gs;
+    (gs || []).forEach(function (it) {
+      var bt = document.createElement('button'); bt.type = 'button';
+      var art;
+      if (it.c) { art = document.createElement('img'); art.alt = ''; art.loading = 'lazy'; art.src = it.c; art.onerror = function () { var ph = document.createElement('span'); ph.className = 'art'; ph.textContent = '♫'; art.replaceWith(ph); }; }
+      else { art = document.createElement('span'); art.textContent = '♫'; }
+      art.className = 'art'; bt.appendChild(art);
+      [['gt', it.t], ['ga', it.a], ['gw', it.w]].forEach(function (p) { if (!p[1]) return; var e = document.createElement('span'); e.className = p[0]; e.textContent = p[1]; bt.appendChild(e); });
+      bt.setAttribute('aria-label', (it.t || '') + (it.a ? ', ' + it.a : '') + (it.w ? ', from ' + it.w : ''));
+      bt.addEventListener('click', function () { var u = it.u || x.u; closeDialog(msgDlg); if (u && msgWhere(u)) msgGo(u); });
+      gd.appendChild(bt);
+    });
+  }
+  function msgMos(b, x) {   // a round's covers, small, in a square beside the words (true when there were two or more)
+    var cs = (Array.isArray(x.g) ? x.g : []).map(function (it) { return it.c; }).filter(Boolean).slice(-4).reverse();
+    if (cs.length < 2) return false;
+    var m = document.createElement('span'); m.className = 'mos n' + cs.length;
+    cs.forEach(function (c) { var im = document.createElement('img'); im.alt = ''; im.loading = 'lazy'; im.src = c; im.onerror = function () { im.style.visibility = 'hidden'; }; m.appendChild(im); });
+    b.appendChild(m); return true;
   }
   msgDlg.addEventListener('close', function () {
     var m = MSG; MSG = null;
@@ -8280,7 +8318,8 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       b.querySelector('.t').textContent = x.t; if (x.b) b.querySelector('.b').textContent = x.b; b.querySelector('.w').textContent = (fl ? fl + ' · ' : '') + ago(x.at);
       b.setAttribute('aria-label', (x.r ? '' : 'New: ') + (fl ? fl.charAt(0).toLowerCase() + fl.slice(1) + ': ' : '') + x.t + (x.b ? '. ' + x.b : ''));
       // its picture, or else the song's cover, small beside the words
-      if (x.i) { var pi = document.createElement('img'); pi.className = 'pic'; pi.alt = ''; pi.loading = 'lazy'; pi.src = x.i; pi.onerror = function () { pi.remove(); }; b.appendChild(pi); }
+      if (msgMos(b, x)) b.setAttribute("data-g", "1");
+      else if (x.i) { var pi = document.createElement('img'); pi.className = 'pic'; pi.alt = ''; pi.loading = 'lazy'; pi.src = x.i; pi.onerror = function () { pi.remove(); }; b.appendChild(pi); }
       else if (x.c) { var cv = document.createElement('img'); cv.className = 'cv'; cv.alt = ''; cv.loading = 'lazy'; cv.src = x.c; cv.onerror = function () { cv.remove(); }; b.appendChild(cv); }
       var acts = document.createElement('div'); acts.className = 'acts2';
       var tg = document.createElement('button'); tg.type = 'button'; tg.textContent = x.r ? 'Mark unread' : 'Mark read';
@@ -11597,9 +11636,10 @@ dialog#index { width: min(560px, calc(100vw - 32px)); height: calc(100dvh - 32px
       b.querySelector('.t').textContent = x.t; if (x.b) b.querySelector('.b').textContent = x.b;
       b.querySelector('.w').textContent = sentTo(x.to) + ' · ' + ago(x.at);
       b.setAttribute('aria-label', x.t + (x.b ? '. ' + x.b : '') + '. ' + sentTo(x.to) + ', ' + ago(x.at));
-      if (x.i) { var pi = document.createElement('img'); pi.className = 'pic'; pi.alt = ''; pi.loading = 'lazy'; pi.src = x.i; pi.onerror = function () { pi.remove(); }; b.appendChild(pi); }
+      if (msgMos(b, x)) b.setAttribute("data-g", "1");
+      else if (x.i) { var pi = document.createElement('img'); pi.className = 'pic'; pi.alt = ''; pi.loading = 'lazy'; pi.src = x.i; pi.onerror = function () { pi.remove(); }; b.appendChild(pi); }
       else if (x.c) { var cv = document.createElement('img'); cv.className = 'cv'; cv.alt = ''; cv.loading = 'lazy'; cv.src = x.c; cv.onerror = function () { cv.remove(); }; b.appendChild(cv); }
-      b.addEventListener('click', function () { if (msgWhere(x.u)) msgGo(x.u); else msgOpen(x, true); });
+      b.addEventListener('click', function () { if (msgWhere(x.u) && !x.g) msgGo(x.u); else msgOpen(x, true); });   // (a round: its covers first)
       li.appendChild(b);
       if ((x.rx || []).length) { var ra = document.createElement('div'); ra.className = 'acts2'; var rr = document.createElement('span'); rr.className = 'rxrow'; rxChips(x, rr); ra.appendChild(rr); li.appendChild(ra); }
       ul.appendChild(li);

@@ -200,9 +200,31 @@ export default {
       const list = fresh.slice(0, 10).map(x => x.title + ' – ' + x.artist + (all[ids[x.ab]] ? ' (' + all[ids[x.ab]].name + ')' : '')).join('\n');
       const msg = { title: pl + ': new songs from ' + whoW, subject: pl + ': new songs', body: list, from: name, url: SITE_SONGS + '#u=' + pid, tag: 'sotd-uplround-' + pid + '-' + at + '-john' };
       if (fresh[fresh.length - 1].img) msg.icon = fresh[fresh.length - 1].img;
+      uplRoundPics(msg, all, ids, pid, rec, data, fresh, whoW, pl);
       const r = await pushAll(env, msg, [me], { kind: 'member', via: { t: 'member', id: me, name }, toNames: [name], fromId: me, toIds: [me] });
       await dlog({ msg, r, mail: mailMode(all[me]), push: pushMode(all[me]) });
     })().catch(async e => { console.log('roundJohn: ' + (e && e.message)); if (env.MEDIA) await env.MEDIA.put('diag/round-john.json', JSON.stringify({ error: String(e && (e.stack || e.message) || e) }), { httpMetadata: { contentType: 'application/json' } }).catch(() => {}); }));
+    ctx.waitUntil((async () => {   // once: the 13 Nov 2026 round's covers put into the inboxes and Sent it's already in, and to John again, to see the new email (John, 14 Nov 2026: "need to have pictures for all the songs put up")
+      if (await env.SOTD.get('roundPics1')) return;
+      await env.SOTD.put('roundPics1', String(Date.now()));
+      const pid = 'hXXaGojDDcooDA', U = await uplAll(env), rec = U[pid], all = (await env.SOTD.get('members', 'json')) || {}; if (!rec || !all[rec.o]) return;
+      const data = await uplSongs(env, pid), at = data.roundAt || 0, ids = await spWhoIds(env, all);
+      const fresh = (data.songs || []).filter(x => (data.ann || {})[x.id] === at); if (!fresh.length) return;
+      const snd = uplSendOf(rec), me = rec.o, name = all[me].name, pl = rec.cvt || uplName(all, rec), who = (snd.who || []).filter(k => all[k]).map(k => all[k].name);
+      const whoW = who.length > 1 ? who.slice(0, -1).join(', ') + ' and ' + who[who.length - 1] : who[0] || '';
+      const g = uplRoundSongs(all, ids, pid, rec, data, fresh), u = SITE_SONGS + '#u=' + pid, t = pl + ': new songs', fixed = [];
+      for (const key of Object.keys(all).map(k => 'inbox:' + k).concat('outbox:' + me)) {
+        const box = await env.SOTD.get(key, 'json'); if (!Array.isArray(box)) continue;
+        let ch = false; for (const x of box) if (x && x.u === u && x.t === t && !x.g) { x.g = g; ch = true; }
+        if (ch) { await env.SOTD.put(key, JSON.stringify(box)); fixed.push(key); }
+      }
+      const list = fresh.slice(0, 10).map(x => x.title + ' – ' + x.artist + (all[ids[x.ab]] ? ' (' + all[ids[x.ab]].name + ')' : '')).join('\n');
+      const msg = { title: pl + ': new songs from ' + whoW, subject: t, body: list, from: name, url: u, tag: 'sotd-uplround-' + pid + '-' + at + '-pics' };
+      if (fresh[fresh.length - 1].img) msg.icon = fresh[fresh.length - 1].img;
+      uplRoundPics(msg, all, ids, pid, rec, data, fresh, whoW, pl);
+      const r = await pushAll(env, msg, [me], { kind: 'member', via: { t: 'member', id: me, name }, toNames: [name], fromId: me, toIds: [me] });
+      if (env.MEDIA) await env.MEDIA.put('diag/round-pics.json', JSON.stringify({ at: new Date().toISOString(), fixed, n: g.length, nocover: g.filter(x => !x.c).length, r }, null, 1), { httpMetadata: { contentType: 'application/json' } });
+    })().catch(async e => { console.log('roundPics: ' + (e && e.message)); if (env.MEDIA) await env.MEDIA.put('diag/round-pics.json', JSON.stringify({ error: String(e && (e.stack || e.message) || e) }), { httpMetadata: { contentType: 'application/json' } }).catch(() => {}); }));
     ctx.waitUntil((async () => {   // once: Collaborations' songs, their added dates, days and captions, for checking
       if (await env.SOTD.get('diagCollab4')) return;
       await env.SOTD.put('diagCollab4', String(Date.now()));
@@ -4863,6 +4885,7 @@ async function pushAll(env, msg, to, meta) {   // to: only these members (else e
   const unread = await inboxAdd(env, to, inMsg, meta);   // into each one's inbox first (notifications on or not); their unread counts
   const m0 = meta || {}, cat = m0.kind === 'song' ? 'song' : m0.direct || (m0.kind === 'member' && (m0.toNames || (m0.via && m0.via.t === 'spotify'))) ? 'direct' : 'other';   // (to them alone: direct)
   await noteMail(env, to, Object.assign({ cta: cat === 'song' ? 'Listen' : '' }, mailMsg), cat).catch(e => console.log('noteMail: ' + (e && e.message)));   // (and by email, for those who asked)
+  if (msg.songs || msg.html) { msg = Object.assign({}, msg); delete msg.songs; delete msg.html; delete msg.htmlSmall; }   // (a phone: its words and one cover)
   let sent = 0, failed = 0; const gone = [], errors = [];
   const allM = (await env.SOTD.get('members', 'json')) || {}, gate = {};
   for (const mid of new Set(Object.values(subs).map(x => x.m))) if (!to || to.includes(mid)) gate[mid] = (m0.quiet || []).includes(mid) ? false : await pushGate(env, allM, mid, cat, msg);   // (quiet: inbox and email only)   // (as each chose for their devices)
@@ -4924,6 +4947,7 @@ async function inboxAdd(env, to, msg, meta) {
   const all = (await env.SOTD.get('members', 'json')) || {}, ids = (to || Object.keys(all)).filter(id => all[id]), out = {};
   const item = { id: randomCode(8), at: Date.now(), t: msg.subject || msg.title, b: msg.body || '', u: msg.url || '' };
   if (msg.gif || msg.image) item.i = msg.gif || msg.image; if (msg.icon) item.c = msg.icon;
+  if (Array.isArray(msg.songs) && msg.songs.length) item.g = msg.songs;   // (a round's songs, each with its cover)
   if (msg.from) item.f = msg.from;
   const m = meta || {};
   if (m.kind === 'song') item.s = 1;
@@ -7093,9 +7117,51 @@ async function uplRound(env, all, pid, rec, snd) {
   const list = fresh.slice(0, 10).map(x => x.title + ' – ' + x.artist + ' (' + all[ids[x.ab]].name + ')').join('\n') + (fresh.length > 10 ? '\n…and ' + (fresh.length - 10) + ' more' : '');
   const msg = { title: pl + ': new songs from ' + whoW, subject: pl + ': new songs', body: list, from: name, url: SITE_SONGS + '#u=' + pid, tag: 'sotd-uplround-' + pid + '-' + now };
   if (fresh[fresh.length - 1].img) msg.icon = fresh[fresh.length - 1].img;
+  uplRoundPics(msg, all, ids, pid, rec, data, fresh, whoW, pl);
   const names = to.filter(k => k !== me).map(k => all[k].name), every = ['members', 'public'].includes(uplShareOf(rec));
   const r = await pushAll(env, msg, to, { kind: 'member', via: { t: 'member', id: me, name }, toNames: every ? null : names, fromId: me, toIds: every ? 'all' : to });
   await sentAdd(env, me, msg, r, every ? 'all' : names);
+}
+// every song of a round with its cover, in the inbox and the email (John, 14 Nov 2026: "need to have pictures for all the
+// songs put up, rendered in a good way"): songs [{ t, a, w (who added it), c (cover), u (its day) }], the newest twelve
+function uplRoundSongs(all, ids, pid, rec, data, xs) {
+  const days = uplDays(data.songs || [], rec);
+  return xs.slice(-12).map(x => {
+    const i = (data.songs || []).indexOf(x), d = i >= 0 && days[i] ? days[i].d : '', it = { t: x.title || '', a: x.artist || '', w: (all[ids[x.ab]] || {}).name || '' };
+    if (x.img) it.c = x.img;
+    it.u = SITE_SONGS + '#u=' + pid + (d ? '&d=' + d.slice(8, 10) + '-' + d.slice(5, 7) + '-' + d.slice(0, 4) : '');
+    return it;
+  });
+}
+function uplRoundPics(msg, all, ids, pid, rec, data, xs, whoW, pl) {
+  msg.songs = uplRoundSongs(all, ids, pid, rec, data, xs);
+  const o = { head: 'New songs from ' + whoW, pl, songs: msg.songs, more: Math.max(0, xs.length - msg.songs.length), link: msg.url, tint: mailTint(msg.songs[0] && msg.songs[0].u) };
+  msg.html = roundMailHtml(o); msg.htmlSmall = roundMailHtml(o, true); msg.cta = 'See them';
+}
+// the email: who, the playlist, then the covers in a grid (two across; three, smaller, in a day's round-up), each with
+// its song, artist and who put it up, each a link to its day; a button for the playlist
+function roundMailHtml(o, small) {
+  const t = o.tint, n = small ? 3 : 2, w = small ? 112 : 236, rows = [];
+  for (let i = 0; i < o.songs.length; i += n) rows.push(o.songs.slice(i, i + n));
+  const cell = x => {
+    const img = mailImg(x.c), u = mailEsc(x.u || o.link);
+    const pic = img ? '<a href="' + u + '"><img src="' + mailEsc(img) + '" alt="" width="' + w + '" style="display:block;width:100%;max-width:' + w + 'px;height:auto;border:0;border-radius:' + (small ? 10 : 14) + 'px;box-shadow:0 8px 22px rgba(0,0,0,.16)"></a>'
+      : '<a href="' + u + '" style="display:block;width:100%;max-width:' + w + 'px;height:' + (small ? 90 : 160) + 'px;line-height:' + (small ? 90 : 160) + 'px;border-radius:' + (small ? 10 : 14) + 'px;background:' + t + ';color:#ffffff;text-align:center;text-decoration:none;font:' + (small ? 34 : 64) + 'px Georgia,serif">&#9835;</a>';
+    return '<td valign="top" width="' + Math.floor(100 / n) + '%" style="width:' + Math.floor(100 / n) + '%;max-width:' + w + 'px;padding:0 0 ' + (small ? 10 : 18) + 'px">' + pic
+      + '<p style="margin:' + (small ? '7px' : '10px') + ' 0 1px;font:600 ' + (small ? 13 : 16) + 'px/1.25 Georgia,\'Times New Roman\',serif;color:#1d0b1e">' + mailEsc(x.t) + '</p>'
+      + (x.a ? '<p style="margin:0;font:' + (small ? 12 : 14) + 'px/1.35 Helvetica,Arial,sans-serif;color:#6b5a62">' + mailEsc(x.a) + '</p>' : '')
+      + (x.w ? '<p style="margin:' + (small ? '3px' : '5px') + ' 0 0;font:700 ' + (small ? 9 : 10) + 'px/1.2 Helvetica,Arial,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:' + t + '">' + mailEsc(x.w) + '</p>' : '')
+      + '</td>';
+  };
+  const grid = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" align="center" style="width:100%;max-width:' + (n * w + (n + 1) * (small ? 8 : 14)) + 'px;margin:0 auto;table-layout:fixed;border-collapse:separate;border-spacing:' + (small ? 8 : 14) + 'px 0">'   // (two across on a phone too: they shrink to fit)
+    + rows.map(r => '<tr>' + r.map(cell).join('') + (r.length < n ? '<td></td>'.repeat(n - r.length) : '') + '</tr>').join('') + '</table>';
+  return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">'
+    + '<h1 style="margin:0 0 4px;font:500 ' + (small ? 19 : 27) + 'px/1.25 Georgia,\'Times New Roman\',serif;color:#1d0b1e;text-align:center">' + mailEsc(o.head) + '</h1>'
+    + (o.pl ? '<p style="margin:0 0 ' + (small ? 12 : 22) + 'px;font:13px/1.4 Helvetica,Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:' + t + ';text-align:center">on ' + mailEsc(o.pl) + '</p>' : '')
+    + grid
+    + (o.more ? '<p style="margin:0 0 6px;font:14px/1.4 Helvetica,Arial,sans-serif;color:#6b5a62;text-align:center">and ' + o.more + ' more</p>' : '')
+    + '<div style="margin:' + (small ? '6px' : '10px') + ' 0 0;text-align:center"><a href="' + mailEsc(o.link) + '" style="display:inline-block;padding:13px 26px;border-radius:999px;background:' + t + ';color:#ffffff;font:600 13px/1 Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none">See them</a></div>'
+    + '</td></tr></table>';
 }
 async function uplSendWeek(env, all, me, pid, rec, xs) {   // once a week: the week's songs in one message from its owner
   const ownerId = await env.SOTD.get('owner');
@@ -7171,6 +7237,7 @@ async function sentAdd(env, member, msg, r, to) {
   const box = (await sentList(env, member, false)).filter(x => x.id !== r.id);   // (made from the log just now: it's there already)
   const it = { id: r.id, at: r.at || Date.now(), t: msg.subject || msg.title, b: msg.body || '', u: msg.url || '', to };
   if (msg.gif || msg.image) it.i = msg.gif || msg.image; if (msg.icon) it.c = msg.icon;
+  if (Array.isArray(msg.songs) && msg.songs.length) it.g = msg.songs;
   box.unshift(it); box.length = Math.min(box.length, SENT_MAX);
   await kvSoft(env, 'outbox:' + member, JSON.stringify(box));
 }
