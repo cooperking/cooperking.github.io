@@ -450,7 +450,10 @@ a.card { display: block; text-decoration: none; color: inherit; }
 .collhead .kick { display: block; margin: 0 0 12px; }   /* (its own line, with room: the hero's kick pulled it into the title) */
 .colltitle { margin: 6px 0 8px; font: 700 clamp(38px, 6vw, 60px)/1 var(--kfont); letter-spacing: .04em; text-transform: uppercase; color: var(--fg); }
 .collhead .ov { margin: 12px 0 0; max-width: 60ch; color: var(--fg-2); }
-@media (max-width: 760px) { .collhead { grid-template-columns: 110px minmax(0, 1fr); gap: 16px; } }
+@media (max-width: 760px) { .collhead { grid-template-columns: 110px minmax(0, 1fr); gap: 16px; align-items: start; }
+  .colltitle { font-size: 30px !important; }
+  .collhead .tabs { flex-wrap: wrap !important; overflow: visible; gap: 8px; }   /* (Rename and Delete on their own lines, not cut off) */
+  .collhead .tabs .pill { font-size: 11px !important; } }
 .drafttag { margin-right: auto; margin-left: -4px; padding: 5px 10px; border-radius: 999px; background: #ffe500; color: #1b1020; font: 700 10.5px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; text-decoration: none; }
 .drafttag + * { margin-left: 0; }
 html.public .members { display: none !important; }
@@ -1227,7 +1230,9 @@ html.phone #shnav { gap: 14px; } html.phone #shnav button { font-size: 11px; let
 .sfpop .pill, .sfb { letter-spacing: .06em !important; font-size: 12px !important; }
 .sfg .pill { text-transform: none !important; font-size: 13px !important; letter-spacing: .02em !important; min-height: 34px !important; padding: 0 10px !important; }
 .sfb { min-width: 40px; justify-content: center; }
-@media (max-width: 760px) {   /* a phone: the panel a sheet from the foot of the screen */
+@media (max-width: 760px) {   /* a phone: the panel a sheet from the foot of the screen, over a dimmed page */
+  .sfdim { position: fixed; inset: 0; z-index: 59; background: rgba(0, 0, 0, .55); }
+  .sfdim[hidden] { display: none; }
   .sfpop { position: fixed; left: 0; right: 0; bottom: 0; top: auto; width: auto; max-height: 78vh; padding: 18px 16px calc(16px + env(safe-area-inset-bottom)); border-width: 1px 0 0; z-index: 60; }
 }
 html.tv .sfpop { width: 760px; max-height: 76vh; }
@@ -2168,7 +2173,17 @@ function sfBar() {   // the two icons, for a row of tabs
 }
 function sfWire(root, items, redraw) {   // the icons' panels: items are what's on the shelf now (for the filters' choices and counts)
   var pop = $('#sfpop', root), open = '', shelf = typeof items === 'function' ? items : function () { return items; };
-  var close = function () { pop.hidden = true; open = ''; };
+  // (a phone: the panel moved out of the row of tabs, which scrolls sideways: Safari kept it inside that row, behind the films:
+  // John, 14 Nov 2026, "the sort criteria is under the films so you can't choose")
+  var phone = window.matchMedia && matchMedia('(max-width: 760px)').matches, dim = null;
+  if (phone) {
+    var host = root.closest('dialog') || document.body;
+    $$('.sfpop.sfout, .sfdim', host).forEach(function (x) { if (!root.contains(x)) x.remove(); });
+    pop.classList.add('sfout'); host.appendChild(pop);
+    dim = document.createElement('div'); dim.className = 'sfdim'; dim.hidden = true; host.insertBefore(dim, pop);
+    dim.onclick = function () { close(); };
+  }
+  var close = function () { pop.hidden = true; open = ''; if (dim) dim.hidden = true; };
   var chips = function (key, list, multi) {
     return list.map(function (o) {
       var v = o[0], on = multi ? (SF.f[key] || []).indexOf(v) >= 0 : SF.f[key] === v;
@@ -2177,7 +2192,7 @@ function sfWire(root, items, redraw) {   // the icons' panels: items are what's 
   };
   var draw = function () {
     if (open === 'sort') {
-      pop.innerHTML = '<div class="sfh">Sort by</div>' + SK.map(function (k) { var on = SF.sort === k[0]; return '<button class="sfo' + (on ? ' on' : '') + '" data-sk="' + k[0] + '">' + k[1] + '<span>' + (on ? (SF.dir > 0 ? '↑' : '↓') : '') + '</span></button>'; }).join('') + '<p class="sfn">Choose it again to swap which way.</p>';
+      pop.innerHTML = '<div class="sfh">Sort by' + (phone ? '<button class="sfclear" id="sfdone">Done</button>' : '') + '</div>' + SK.map(function (k) { var on = SF.sort === k[0]; return '<button class="sfo' + (on ? ' on' : '') + '" data-sk="' + k[0] + '">' + k[1] + '<span>' + (on ? (SF.dir > 0 ? '↑' : '↓') : '') + '</span></button>'; }).join('') + '<p class="sfn">Choose it again to swap which way.</p>';
     } else {
       var items = shelf(), cnt = function (fn) { var c = {}; items.forEach(function (i) { fn(i).forEach(function (x) { c[x] = (c[x] || 0) + 1; }); }); return c; };
       var gc = cnt(function (i) { return i.genres || []; }), dc = cnt(function (i) { var y = sfYear(i); return y ? [Math.floor(y / 10) * 10] : []; }), cc = cnt(function (i) { return [i.cert || 'Not rated']; });
@@ -2190,7 +2205,7 @@ function sfWire(root, items, redraw) {   // the icons' panels: items are what's 
         '<div class="sfg"><div class="sfl">Added</div>' + chips('added', SFADD) + '</div>' +
         '<div class="sfend"><button class="pill go" id="sfdone">Show ' + items.filter(sfFits(SF.f)).length + '</button></div>';
     }
-    pop.hidden = false;
+    pop.hidden = false; if (dim) dim.hidden = false;
     if (TV) { var f = $('.sfo.on, .pill', pop); if (f) f.focus(); }
   };
   var bar = function () {   // the icons kept up to date
