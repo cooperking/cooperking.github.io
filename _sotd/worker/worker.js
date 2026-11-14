@@ -179,6 +179,14 @@ export default {
       const out = { cat: c[t] || null, a: !!(await env.MEDIA.head('a/' + t + '.mp3')), l: !!(await env.MEDIA.head('l/' + t + '.m4a')), v: !!(await env.MEDIA.head('v/' + t + '.mp4')), h: !!(await env.MEDIA.head('h/' + t + '.mp4')), see: owner && all[owner] ? mediaFor(all[owner]) : null, adminKey: !!env.ADMIN_KEY };
       await env.MEDIA.put('diag/lickin.json', JSON.stringify(out, null, 1), { httpMetadata: { contentType: 'application/json' } });
     })().catch(e => console.log('diagLickin: ' + (e && e.message))));
+    ctx.waitUntil((async () => {   // once: Collaborations' notification setting and when its songs last went out, for checking (John, 14 Nov 2026)
+      if (!env.MEDIA || await env.SOTD.get('diagCollabSend1')) return;
+      await env.SOTD.put('diagCollabSend1', String(Date.now()));
+      const pid = 'hXXaGojDDcooDA', U = await uplAll(env), rec = U[pid]; if (!rec) return;
+      const data = await uplSongs(env, pid), ann = Object.values(data.ann || {}).sort().slice(-5), owner = await env.SOTD.get('owner'), all = (await env.SOTD.get('members', 'json')) || {};
+      const latest = (data.songs || []).slice().sort((a, b) => a.a < b.a ? 1 : -1).slice(0, 5).map(x => ({ a: x.a, t: x.title, ann: (data.ann || {})[x.id] || 0, rel: (data.rel || {})[x.id] || 0, w: uplWaiting(rec, data, x) }));
+      await env.MEDIA.put('diag/collab-send.json', JSON.stringify({ send: uplSendOf(rec), share: uplShareOf(rec), mode: rec.mode, annDay: rec.annDay || '', ann: ann.map(t => new Date(t).toISOString()), latest, ownerIsJohn: rec.o === owner, johnPush: owner && all[owner] ? pushMode(all[owner]) : null, roundAt: data.roundAt || 0 }, null, 1), { httpMetadata: { contentType: 'application/json' } });
+    })().catch(e => console.log('diagCollabSend: ' + (e && e.message))));
     ctx.waitUntil((async () => {   // once: Collaborations' songs, their added dates, days and captions, for checking
       if (await env.SOTD.get('diagCollab4')) return;
       await env.SOTD.put('diagCollab4', String(Date.now()));
