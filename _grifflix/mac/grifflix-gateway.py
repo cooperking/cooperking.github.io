@@ -824,7 +824,7 @@ def make_handler(g):
                 P = load(os.path.expanduser('~/Grifflix/convert-priority.json'), {}) or {}
                 o['convNext'] = any(x.get('id') == it['Id'] for x in P.get('pins') or [])
                 now_ = load(os.path.expanduser('~/Grifflix/convert-now.json'), {}) or {}
-                o['convNow'] = bool(now_.get('name') and now_.get('name') == it.get('Name') and now_.get('state') in ('converting', 'paused'))
+                o['convNow'] = bool(now_.get('name') and now_.get('name') == it.get('Name') and now_.get('state') in ('converting', 'paused') and conv_alive(now_))
             self.send_json(200, o)
 
         # collections (John's, from Plex: Jellyfin's BoxSets), for members and visitors alike
@@ -1254,13 +1254,7 @@ def make_handler(g):
                 save(pf, P)
             st = load(os.path.join(home, 'convert-state.json'), {})
             cur = load(os.path.join(home, 'convert-now.json'), None)
-            alive = False
-            if cur:
-                try:
-                    os.kill(int(cur.get('pid') or 0), 0)   # (still running?)
-                    alive = cur.get('state') != 'finished'
-                except (OSError, ValueError):
-                    alive = False
+            alive = bool(conv_alive(cur))   # (still running? and really the converter)
             tail = []
             try:
                 with open(os.path.join(home, 'convert.log'), 'rb') as f:
@@ -1408,9 +1402,8 @@ def make_handler(g):
                 if 'convert.py' in changed:   # the converter running: started again with its new file, as it was started
                     cur = load(os.path.expanduser('~/Grifflix/convert-now.json'), None) or {}
                     try:
-                        pid = int(cur.get('pid') or 0)
-                        if pid and cur.get('state') != 'finished':
-                            os.kill(pid, 0)
+                        pid = conv_alive(cur)   # (only the converter itself: never another program with its old number)
+                        if pid:
                             os.kill(pid, 15)
                             time.sleep(3)
                             import subprocess
@@ -2340,6 +2333,23 @@ def disks():
     return out
 
 
+def conv_alive(cur):
+    """Whether the converter that wrote convert-now.json is still running: its process number, and that number really the
+    converter's. After a restart the Mac gives process numbers out again, so another program could have the old one: it looked
+    alive, was never started again, and showed as stuck at 0% (John, 14 Nov 2026, "The convert process hasn't started again since we
+    shut it down to move the Mac mini")."""
+    try:
+        pid = int((cur or {}).get('pid') or 0)
+        if not pid or (cur or {}).get('state') == 'finished':
+            return 0
+        os.kill(pid, 0)
+        import subprocess
+        cmd = subprocess.run(['ps', '-p', str(pid), '-o', 'command='], capture_output=True, text=True, timeout=10).stdout
+        return pid if 'convert.py' in cmd else 0
+    except Exception:
+        return 0
+
+
 def keep_converting():
     """The converter kept going: started again if it isn't running (after the Mac restarts, or if the restart after Update everything
     didn't take), unless it finished everything in the last 12 hours; any time the Mac isn't in use, pausing while anyone watches
@@ -2350,14 +2360,7 @@ def keep_converting():
         try:
             script = os.path.join(home, 'convert.py')
             cur = load(os.path.join(home, 'convert-now.json'), None) or {}
-            alive = False
-            try:
-                pid = int(cur.get('pid') or 0)
-                if pid:
-                    os.kill(pid, 0)
-                    alive = cur.get('state') != 'finished'
-            except (OSError, ValueError):
-                alive = False
+            alive = bool(conv_alive(cur))
             recently_done = cur.get('state') == 'finished' and time.time() - (cur.get('at') or 0) < 12 * 3600
             if os.path.exists(script) and not alive and not recently_done:
                 import subprocess
