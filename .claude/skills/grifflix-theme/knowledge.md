@@ -462,6 +462,7 @@ The default order (`THEMES`/`themes.json`) is Jan corridor, Feb slices, Mar umbr
 - Colour: originally the red title band of the 1941 Style A poster; then "remove red from calendar make background black" (11 Nov), so #0b0b0b.
 - Font: the main title's outlined condensed capitals: League Gothic (the free revival of Alternate Gothic); "kane-display" can be uploaded as GF-globe ("league gothic fine", 8 Nov).
 - Music: Bernard Herrmann, "Prelude", the original 1941 recording.
+- 14 Nov: "can the spinning papers move into the globe instead of the poster". Now the day's front page leaves the row along the top, spinning twice as it flies (as the headline montages spin in), and lands inside the globe, tilted a little, as the day's picture; then the globe shakes and snows. Coming-soon days land their COMING SOON page the same way (the separate "Coming soon" words in the globe are gone). Mid-swipe and with reduced motion it's put there at once. Code: `THEMEFX.globe.front` (a `.gfly` copy animated with `element.animate`, measured once per landing), `.gpaper` in the globe, its size `--gk` set in `fit()`.
 
 ### Parked / later (`THEMES_LATER`, usable via admin)
 
