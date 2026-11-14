@@ -53,6 +53,14 @@ What it did: $LOG   ·   To stop: grifflix-add --remove"
   --check) CHECK=1 ;;
 esac
 QUIET=0; [[ "${1:-}" == --quiet ]] && QUIET=1
+# (one run at a time: a film landing in Movies starts a run while another may be copying, and two copying the same film left a
+# half-made folder that then looked like the film was already in Grifflix: John, 14 Nov 2026, Sense and Sensibility)
+LOCK="${TMPDIR:-/tmp}/grifflix-add.lock"
+if ! mkdir "$LOCK" 2>/dev/null; then
+  if (( $(date +%s) - $(stat -f %m "$LOCK" 2>/dev/null || echo 0) < 6 * 3600 )); then (( QUIET )) || print "Another run is still going."; exit 0; fi
+  rm -rf "$LOCK"; mkdir "$LOCK" 2>/dev/null || exit 0   # (left by a run that was stopped long ago)
+fi
+trap 'rm -rf "$LOCK"' EXIT
 say() { print -r -- "$(date '+%Y-%m-%d %H:%M') $*"; }
 
 # the Mac mini's drive: connected if it isn't (with the password kept in the keychain the first time it was connected in Finder)
@@ -99,7 +107,11 @@ for f in "$SRC"/*.(mp4|mkv|m4v|mov|avi)(N.) "$SRC"/*/*.(mp4|mkv|m4v|mov|avi)(N.)
   [[ -z "$title" && "${f:h}" != "$SRC" ]] && title="$(name_of "${f:h:t}")"   # (the year may be in its folder's name)
   if [[ -z "$title" ]]; then say "Left: $base (no year in its name: rename it \"Title (Year)\")"; continue; fi
   ext="${f:e:l}"; dir="$DEST/$title"; to="$dir/$title.$ext"
-  if [[ -d "$dir" ]]; then say "Left: $base (\"$title\" is already in Grifflix)"; continue; fi
+  # (already in Grifflix only if its folder has a whole film in it: a copy cut short leaves the folder and a part-copied ".adding"
+  # file, which are cleared and the film copied again)
+  have=( "$dir"/*.(mp4|mkv|m4v|mov|avi)(N.) )
+  if (( ${#have} )); then say "Left: $base (\"$title\" is already in Grifflix)"; continue; fi
+  if [[ -d "$dir" ]]; then (( CHECK )) || { rm -f "$dir"/*.adding(N); say "  (a copy of it was cut short before: done again)"; }; fi
   if (( CHECK )); then say "Would add: $base → $title/$title.$ext"; continue; fi
   say "Adding: $base → $title/ ($(printf %.1f $(( $(stat -f %z "$f") / 1000000000.0 ))) GB)"
   mkdir -p "$dir" && cp "$f" "$to.adding" 2>/dev/null
