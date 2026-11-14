@@ -840,8 +840,8 @@
    "moodFrom": "Claude (researched)",
    "sound": [
     "Energetic",
-    "Dark",
-    "Bittersweet"
+    "Bittersweet",
+    "Dark"
    ],
    "claude": [
     "Playful",
@@ -10413,7 +10413,7 @@
    "sound": [
     "Energetic",
     "Joyful",
-    "Dark"
+    "Uplifting"
    ],
    "claude": [
     "Energetic"
@@ -18764,8 +18764,8 @@
    "moodFrom": "Claude",
    "sound": [
     "Playful",
-    "Energetic",
-    "Joyful"
+    "Joyful",
+    "Energetic"
    ],
    "claude": [
     "Playful",
@@ -20207,8 +20207,8 @@
    "moodFrom": "Claude (researched)",
    "sound": [
     "Playful",
-    "Energetic",
-    "Joyful"
+    "Joyful",
+    "Energetic"
    ],
    "claude": [
     "Playful",
@@ -22119,8 +22119,8 @@
    ],
    "moodFrom": "Claude (researched)",
    "sound": [
-    "Romantic",
     "Melancholy",
+    "Romantic",
     "Bittersweet"
    ],
    "claude": [
@@ -26138,7 +26138,7 @@
    "moodMix": [
     [
      "Dark",
-     69
+     67
     ],
     [
      "Melancholy",
@@ -26156,7 +26156,7 @@
      [
       [
        "Dark",
-       69
+       67
       ],
       [
        "Melancholy",
@@ -26398,7 +26398,7 @@
     ],
     [
      "Dark",
-     13
+     12
     ]
    ],
    "moodEvidence": [
@@ -26416,7 +26416,7 @@
       ],
       [
        "Dark",
-       13
+       12
       ]
      ]
     ]
@@ -26503,7 +26503,7 @@
     ],
     [
      "Romantic",
-     28
+     27
     ],
     [
      "Melancholy",
@@ -26521,7 +26521,7 @@
       ],
       [
        "Romantic",
-       28
+       27
       ],
       [
        "Melancholy",
@@ -26733,7 +26733,7 @@
     ],
     [
      "Dark",
-     16
+     15
     ],
     [
      "Playful",
@@ -26751,7 +26751,7 @@
       ],
       [
        "Dark",
-       16
+       15
       ],
       [
        "Playful",
@@ -27119,7 +27119,7 @@
    "moodMix": [
     [
      "Energetic",
-     38
+     37
     ],
     [
      "Joyful",
@@ -27137,7 +27137,7 @@
      [
       [
        "Energetic",
-       38
+       37
       ],
       [
        "Joyful",
@@ -28709,6 +28709,148 @@
     "folk rock",
     "garage pop",
     "psych folk",
+    "psychedelic pop",
+    "rock"
+   ],
+   "check": true
+  },
+  "7E99aG3oPQslXHHdnKFAmB": {
+   "n": 278,
+   "title": "Game Of Pricks",
+   "artist": "Guided By Voices",
+   "moods": [
+    "Dark"
+   ],
+   "moodMix": [
+    [
+     "Dark",
+     85
+    ],
+    [
+     "Energetic",
+     12
+    ],
+    [
+     "Joyful",
+     1
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Dark",
+       85
+      ],
+      [
+       "Energetic",
+       12
+      ],
+      [
+       "Joyful",
+       1
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Dark",
+    "Energetic",
+    "Joyful"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Punk",
+    "Psychedelic Rock",
+    "Hard Rock"
+   ],
+   "genres": [
+    "Indie",
+    "Rock"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Indie",
+     67
+    ],
+    [
+     "Rock",
+     29
+    ],
+    [
+     "Pop",
+     4
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Indie",
+       70
+      ],
+      [
+       "Rock",
+       27
+      ],
+      [
+       "Pop",
+       3
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Indie",
+       94
+      ],
+      [
+       "Rock",
+       5
+      ],
+      [
+       "Pop",
+       1
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Rock",
+       71
+      ],
+      [
+       "Indie",
+       19
+      ],
+      [
+       "Pop",
+       11
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "alternative and punk",
+    "alternative pop/rock",
+    "alternative rock",
+    "indie pop",
+    "indie rock",
+    "lo-fi",
+    "lo-fi indie",
+    "neo-psychedelia",
     "psychedelic pop",
     "rock"
    ],
