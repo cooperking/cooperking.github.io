@@ -67,6 +67,10 @@ comparison); the theme must be within budget. Rules (each from a real problem):
   ornaments from a pre-drawn sprite; on the TV use dpr 1 and fewer elements; keep full resolution where it shows.
 - **Rest when covered** (`COVERED()`), and stop every loop when its elements are gone.
 - `filter` (blur, grayscale) on many moving elements is costly; keep such elements few, or the filter fixed.
+- Never read the page's layout (`getBoundingClientRect`, `offsetWidth`, `clientWidth`) in code that runs on every step or frame,
+  and never restart a CSS animation with `void el.offsetWidth`: use `el.animate()`. Each read lays the page out again (Kane's globe).
+- Canvas loops: draw at dpr 1 for soft things (snow), cap at 30 frames a second (20 on a TV), skip while `document.hidden`,
+  pre-draw sprites at the sizes used.
 
 ### 6. Check every screen
 `node _grifflix/themetools/preview.js <key>` screenshots computer, iPhone, Fire TV and reduced motion, as opened and two
