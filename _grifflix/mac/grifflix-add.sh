@@ -2,8 +2,9 @@
 # Puts the films in this Mac's Movies folder into Grifflix, each in the folder the media server wants on the Mac mini's drive:
 #   ~/Movies/The.End.Of.The.Tour.2015.1080p.BluRay.x264.YIFY.mp4
 #     → /Volumes/G-Drive/Grifflix/Movies/The End Of The Tour (2015)/The End Of The Tour (2015).mp4
-# (John, 14 Nov 2026). Subtitles beside a film (.srt) go with it. Each copy is checked (its size) before the original goes to the
-# Bin, so it can still be got back. The media server sees new films on its own within a few minutes.
+# (John, 14 Nov 2026). Subtitles beside a film (.srt) go with it. Moved, not copied: nothing stays on this Mac (John: "I want it
+# moved not copied, as don't want anything kept there permanently"). The copy on the Mac mini is checked (its size) before the
+# original is deleted. The media server sees new films on its own within a few minutes.
 #
 #   grifflix-add            put the films in now (and say what it did)
 #   grifflix-add --check    only say what it would do
@@ -95,12 +96,15 @@ for f in "$SRC"/*.(mp4|mkv|m4v|mov|avi)(N.) "$SRC"/*/*.(mp4|mkv|m4v|mov|avi)(N.)
     sb="${s:t:r}"; lang=""; [[ "$sb" == *.[a-z][a-z]([a-z])# ]] && lang=".${sb:e}"
     [[ "${f:h}" == "$SRC" && "$sb" != "${base:r}"* ]] && continue   # (loose in Movies: only this film's own)
     cp "$s" "$dir/$title$lang.srt"
-    [[ "${f:h}" == "$SRC" ]] && mv "$s" "$HOME/.Trash/"   # (loose in Movies: to the Bin with its film)
+    [[ "${f:h}" == "$SRC" ]] && rm -f "$s"   # (loose in Movies: gone with its film)
   done
-  # the original to the Bin (Finder's, so "Put Back" works), and its folder too if it was a download's folder
-  what="$f"; [[ "${f:h}" != "$SRC" ]] && what="${f:h}"
-  osascript -e "tell application \"Finder\" to delete (POSIX file \"$what\" as alias)" >/dev/null 2>&1 || mv "$what" "$HOME/.Trash/"
-  say "  done: the original is in the Bin"
+  # the original deleted, now it's safely on the Mac mini (and its folder too if it was a download's folder)
+  rm -f "$f"
+  if [[ "${f:h}" != "$SRC" ]]; then   # (a download's folder: gone too once no other film is left in it; samples and extras with it)
+    left=( "${f:h}"/*.(mp4|mkv|m4v|mov|avi)(N.) ); left=( ${left:#(#i)*sample*} )
+    (( ${#left} )) || rm -rf "${f:h}"
+  fi
+  say "  done: moved to the Mac mini"
   done+=1
 done
 (( done )) && say "$done film(s) added: the media server sees them within a few minutes."
