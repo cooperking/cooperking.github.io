@@ -576,15 +576,15 @@ html.table .tring { background: radial-gradient(ellipse at center, rgba(255, 255
    bombers' paths creeping towards their targets, and the ring of lamps hung just over the table; under the bar, never on it */
 .tboard { position: absolute; left: 50%; top: 104px; width: 640px; transform: translateX(-50%); pointer-events: none; opacity: .9; }
 .tboard svg { display: block; width: 100%; height: auto; overflow: visible; }
+.tboard .tbstill { will-change: transform; } .tboard .tbmove { position: absolute; left: 0; top: 0; will-change: transform; }
 .tboard .land { fill: url(#tbdots); stroke: rgba(255, 255, 255, .45); stroke-width: 1.4; }
 .tboard .frame { fill: rgba(255, 255, 255, .02); stroke: rgba(255, 255, 255, .3); stroke-width: 2; }
 .tboard .grid { stroke: rgba(255, 255, 255, .08); stroke-width: 1; }
-.tboard .path { fill: none; stroke: #fff; stroke-width: 2.4; stroke-dasharray: 10 8; animation: tbfly 2.4s linear infinite; }
+.tboard .path { fill: none; stroke: #fff; stroke-width: 2.4; stroke-dasharray: 10 8; }   /* (ticked on by bigBoardTick, as the Big Board's plots: a few small redraws a second; a CSS animation, even in steps, had the browser at work every frame) */
 .tboard .tgt { fill: none; stroke: #fff; stroke-width: 2; animation: tbblink 1.6s steps(2) infinite; }
 .tboard .lt { fill: rgba(255, 255, 255, .14); } .tboard .lt.on { fill: rgba(255, 255, 255, .85); } .tboard .lt.bl { animation: tbblink 1.2s steps(2) infinite; }
-@keyframes tbfly { to { stroke-dashoffset: -36; } }
 @keyframes tbblink { 50% { opacity: .15; } }
-@media (prefers-reduced-motion: reduce) { .tboard .path, .tboard .tgt, .tboard .lt.bl { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .tboard .tgt, .tboard .lt.bl { animation: none; } }
 .tlamp { position: absolute; left: 50%; top: 392px; width: 1000px; height: 250px; transform: translate(-50%, -50%); border-radius: 50%; border: 2px solid rgba(255, 255, 255, .5); box-shadow: 0 0 22px 2px rgba(255, 255, 255, .22), inset 0 0 22px 2px rgba(255, 255, 255, .12); pointer-events: none; }
 /* the calendar on the TV: no row for the name alone (John: "a waste of tv space"); the month's row at the top, and
    the words (Search, Browse...) back when you go up from it */
@@ -634,7 +634,7 @@ html[data-theme=corridor]:not(.mob) .hinfo { width: max-content; max-width: min(
 /* the table: the month as a ring of days round a table, under a ring of light; left and right turn it */
 html.table .cal { position: relative; height: 470px !important; min-height: 0; background: none; border: 0; box-shadow: none; padding: 0; overflow: visible; display: block; }
 .tring { position: absolute; left: 50%; top: 418px; width: 1060px; height: 300px; transform: translate(-50%, -50%); border-radius: 50%; border: 1px solid rgba(var(--kink), .22); background: radial-gradient(ellipse at center, rgba(0, 0, 0, .28), rgba(0, 0, 0, .1) 60%, transparent 72%); pointer-events: none; }
-.tday { position: absolute; width: 46px; height: 62px; margin: -31px 0 0 -23px; padding: 0; border: 0; border-radius: 0; background: rgba(0, 0, 0, .3) center/cover; color: var(--fg-2); font: 500 10px/62px var(--kfont); text-align: center; transition: left .5s cubic-bezier(.3, .7, .2, 1), top .5s cubic-bezier(.3, .7, .2, 1), transform .5s cubic-bezier(.3, .7, .2, 1), opacity .4s; box-shadow: 0 6px 18px rgba(0, 0, 0, .45); }
+.tday { position: absolute; width: 46px; height: 62px; margin: -31px 0 0 -23px; padding: 0; border: 0; border-radius: 0; background: rgba(0, 0, 0, .3) center/cover; color: var(--fg-2); font: 500 10px/62px var(--kfont); text-align: center; left: 0; top: 0; transition: transform .5s cubic-bezier(.3, .7, .2, 1), opacity .4s; box-shadow: 0 6px 18px rgba(0, 0, 0, .45); will-change: transform; }   /* (moved by transform alone, which the graphics chip does: moving left and top laid the page out again every frame, and the table felt heavy on the iPhone and slow on the TV: John, 14 Nov 2026) */
 .tday.has { color: transparent; }
 div.tday { background: rgba(var(--kink), .06); box-shadow: inset 0 0 0 1px rgba(var(--kink), .14); }
 .tcentre { position: absolute; left: 0; right: 0; top: 300px; text-align: center; pointer-events: none; }
@@ -1975,7 +1975,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'ed0c2461d378' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: 'ca11fcadf085' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2977,6 +2977,17 @@ function drawTable(C, n, m, mine) {
   });
   $('#cal').innerHTML = h + '</div></div><div class="tmonth">' + tmonthText(m) + '</div>' + themeCaption(m); themeFit(m);
   themeStart(THEMEFX.table, { W: themeW(), H: themeH(), n: n, m: m, mob: MOB() });
+  bigBoardTick();
+}
+function bigBoardTick() {   // the bombers' paths creeping on, four steps a second (none when motion is turned down)
+  clearInterval(bigBoardTick.t);
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var k = 0;
+  bigBoardTick.t = setInterval(function () {
+    var ps = $$('#cal .tboard .path'); if (!ps.length) { clearInterval(bigBoardTick.t); return; }
+    if (document.hidden) return;
+    k = (k + 4) % 18; ps.forEach(function (p) { p.style.strokeDashoffset = -((k + +p.dataset.o) % 18); });
+  }, 250);
 }
 function bigBoard() {   // the Big Board: the world at the centre, its fuel and target lights either side, bombers on their way
   var P = function (pts) { return pts.map(function (q) { return ((q[0] + 170) * 2.2 + 250).toFixed(0) + ',' + ((80 - q[1]) * 2.2).toFixed(0); }).join(' '); };
@@ -2990,19 +3001,23 @@ function bigBoard() {   // the Big Board: the world at the centre, its fuel and 
     [[-5,50],[1,51],[-2,56],[-5,58],[-6,54]], [[130,31],[141,36],[142,44],[139,40],[132,34]]];
   var X = function (lon) { return (lon + 170) * 2.2 + 250; }, Y = function (lat) { return (80 - lat) * 2.2; };
   var tg = [[38, 56], [60, 57], [83, 55], [104, 52], [131, 43]], fr = [[-150, 64], [-100, 66], [-45, 68], [-15, 62], [15, 66]];
-  var h = '<div class="tboard" aria-hidden="true"><svg viewBox="0 0 1300 300"><defs><pattern id="tbdots" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="3.5" cy="3.5" r="1.5" fill="rgba(255,255,255,.55)"/></pattern></defs>';
+  // (the still parts in one picture drawn once, the moving ones on a layer of their own above it: the bombers' paths moving
+  // every frame redrew the whole dotted map each time, so the table felt heavy on the iPhone and slow on the TV: John, 14 Nov 2026)
+  var mv = '';
+  var h = '<div class="tboard" aria-hidden="true"><svg class="tbstill" viewBox="0 0 1300 300"><defs><pattern id="tbdots" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="3.5" cy="3.5" r="1.5" fill="rgba(255,255,255,.55)"/></pattern></defs>';
   h += '<rect class="frame" x="246" y="-4" width="800" height="308"/>';
   for (var gx = 1; gx < 8; gx++) h += '<line class="grid" x1="' + (246 + gx * 100) + '" y1="-4" x2="' + (246 + gx * 100) + '" y2="304"/>';
   for (var gy = 1; gy < 4; gy++) h += '<line class="grid" x1="246" y1="' + (gy * 77 - 4) + '" x2="1046" y2="' + (gy * 77 - 4) + '"/>';
   L.forEach(function (l) { h += '<polygon class="land" points="' + P(l) + '"/>'; });
   tg.forEach(function (t, i) { var f = fr[i], x0 = X(f[0]), y0 = Y(f[1]), x1 = X(t[0]), y1 = Y(t[1]), mx = (x0 + x1) / 2, my = Math.max(8, Math.min(y0, y1) - 24);
-    h += '<path class="path" style="animation-delay:-' + (i * .5) + 's" d="M' + x0.toFixed(0) + ' ' + y0.toFixed(0) + ' Q' + mx.toFixed(0) + ' ' + my.toFixed(0) + ' ' + x1.toFixed(0) + ' ' + y1.toFixed(0) + '"/>';
-    h += '<circle class="tgt" style="animation-delay:-' + (i * .3) + 's" cx="' + x1.toFixed(0) + '" cy="' + y1.toFixed(0) + '" r="9"/>'; });
+    mv += '<path class="path" data-o="' + (i * 7) + '" d="M' + x0.toFixed(0) + ' ' + y0.toFixed(0) + ' Q' + mx.toFixed(0) + ' ' + my.toFixed(0) + ' ' + x1.toFixed(0) + ' ' + y1.toFixed(0) + '"/>';
+    mv += '<circle class="tgt" style="animation-delay:-' + (i * .3) + 's" cx="' + x1.toFixed(0) + '" cy="' + y1.toFixed(0) + '" r="9"/>'; });
   [[0, 226], [1074, 1300]].forEach(function (side, k) {   // (the panels either side: rows of lamps, a few blinking)
     h += '<rect class="frame" x="' + side[0] + '" y="-4" width="' + (side[1] - side[0]) + '" height="308"/>';
     for (var r = 0; r < 9; r++) for (var c = 0; c < 6; c++) { var n = (r * 7 + c * 3 + k * 5) % 11;
-      h += '<rect class="lt' + (n < 4 ? ' on' : '') + (n === 2 ? ' bl' : '') + '" x="' + (side[0] + 16 + c * 34) + '" y="' + (12 + r * 32) + '" width="24" height="14"/>'; } });
-  return h + '</svg></div>';
+      var lt = '<rect class="lt' + (n < 4 ? ' on' : '') + (n === 2 ? ' bl' : '') + '" x="' + (side[0] + 16 + c * 34) + '" y="' + (12 + r * 32) + '" width="24" height="14"/>';
+      if (n === 2) mv += lt; else h += lt; } });
+  return h + '</svg><svg class="tbmove" viewBox="0 0 1300 300">' + mv + '</svg></div>';
 }
 function tableTurn(b) { themeTurn(b); }
 function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 wide, shown at the phone's own width
@@ -3575,18 +3590,20 @@ THEMEFX.table = {
       var u = lo + (want - cum[lo]) / Math.max(1e-6, cum[hi] - cum[lo]);
       return Math.PI / 2 - u / M * 2 * Math.PI;
     };
+    var fresh = [];
     all.forEach(function (el, j) {
       var om = el.hasAttribute('data-om');
       el.style.visibility = om ? 'hidden' : ''; el.style.pointerEvents = om ? 'none' : '';
       if (om) return;
+      if (!el.dataset.tp) { el.dataset.tp = 1; el.style.transition = 'none'; fresh.push(el); }   // (seated at once the first time, not flown in from the corner)
       var kk = j - jc; kk = ((kk + n / 2) % n + n) % n - n / 2;
       var a = arcA(kk / n), x = g.cx + g.rx * Math.cos(a), y = g.cy + g.ry * Math.sin(a), depth = (Math.sin(a) + 1) / 2, nf = near(j - at);
-      el.style.left = x.toFixed(1) + 'px'; el.style.top = y.toFixed(1) + 'px';
-      el.style.transform = 'scale(' + (.62 + .38 * depth + nf * (g.fs - 1)).toFixed(3) + ')';
+      el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) scale(' + (.62 + .38 * depth + nf * (g.fs - 1)).toFixed(3) + ')';
       el.style.zIndex = Math.round(depth * 100) + (nf > .5 ? 100 : 0);
       el.style.opacity = 1;
       el.style.filter = nf > .98 ? 'none' : 'grayscale(' + (1 - nf).toFixed(2) + ') brightness(' + (.62 + .3 * depth + .08 * nf).toFixed(2) + ')';   // (the others in black and white, the day you're on in colour)
     });
+    if (fresh.length) { void fresh[0].offsetWidth; fresh.forEach(function (el) { el.style.transition = ''; }); }
   },
   info: function (b) {   // (its words in the middle of the table)
     var c = $('#tcentre'); if (!c) return;
@@ -4686,6 +4703,11 @@ THEMEFX.hotel = {
 // depth, the far ones small, faint and slow, the near ones large and soft; each swaying in its own time, the wind gusting; in
 // Kane's globe a shake throws them up to swirl and settle. Drawn on a canvas, frame by frame; still for those who'd rather
 var FLAKE = null;
+function flakeAt(d) {   // the flake drawn once at each size (to the nearest 2 pixels), copied from then on
+  var k = Math.max(2, Math.min(40, Math.round(d / 2) * 2)), F2 = flakeAt.c || (flakeAt.c = {});
+  if (!F2[k]) { var c = document.createElement('canvas'); c.width = c.height = k; c.getContext('2d').drawImage(FLAKE, 0, 0, k, k); F2[k] = c; }
+  return F2[k];
+}
 function snowfall(host, o) {
   if (!host || host._snow) return host && host._snow;
   o = o || {}; var cv = document.createElement('canvas'), g = cv.getContext('2d'); if (!g) return null;
@@ -4693,7 +4715,9 @@ function snowfall(host, o) {
   if (!FLAKE) { FLAKE = document.createElement('canvas'); FLAKE.width = FLAKE.height = 64; var q = FLAKE.getContext('2d'), rg = q.createRadialGradient(32, 32, 0, 32, 32, 32);
     rg.addColorStop(0, 'rgba(255,255,255,1)'); rg.addColorStop(.35, 'rgba(255,255,255,.85)'); rg.addColorStop(.7, 'rgba(255,255,255,.25)'); rg.addColorStop(1, 'rgba(255,255,255,0)'); q.fillStyle = rg; q.fillRect(0, 0, 64, 64); }
   if (TV) o.density = (o.density || .00016) * .45;   // (a TV's little computer: fewer flakes, drawn at its own size)
-  var dpr = TV ? 1 : Math.min(2, window.devicePixelRatio || 1), W = 0, H = 0, F = [], t0 = performance.now(), last = t0, raf = 0, slow = o.slow || 1;
+  // (soft flakes drawn at the screen's own size, 30 times a second: the same snow for a fraction of the work. At the iPhone's full
+  // sharpness and 60 a second, two layers of it made Kane's globe the heaviest theme by far: John, 14 Nov 2026)
+  var dpr = 1, W = 0, H = 0, F = [], t0 = performance.now(), last = t0, raf = 0, slow = o.slow || 1, nf = 0, STEP = 1000 / (TV ? 20 : 30) - 4;   // (a TV: 20 a second, still falling softly)
   function size() { var r = host.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height); cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); g.setTransform(dpr, 0, 0, dpr, 0, 0); }
   function flake(anywhere) { var z = o.near ? .82 + Math.random() * .18 : Math.pow(Math.random(), 1.6);   // (most far away; a front layer all near)
     return { z: z, x: Math.random() * W, y: anywhere ? Math.random() * H : -10 - Math.random() * 40, r: .7 + z * z * (o.big || 4.2), v: (14 + z * 62) * slow, a: (.25 + .65 * z) * (o.alpha || 1),
@@ -4703,8 +4727,10 @@ function snowfall(host, o) {
   function frame(now) {
     if (!host.isConnected) { raf = 0; return; }
     if (COVERED()) { last = now; raf = 0; setTimeout(function () { if (!raf) raf = requestAnimationFrame(frame); }, 300); return; }   // (covered by a page over it: resting, not drawing)
+    if (now - last < STEP) { raf = requestAnimationFrame(frame); return; }
     var dt = Math.min(.05, (now - last) / 1000), t = (now - t0) / 1000; last = now;
-    if (cv.width !== Math.round(host.getBoundingClientRect().width * dpr)) size();
+    if (document.hidden) { raf = requestAnimationFrame(frame); return; }
+    if (++nf % 30 === 0 && cv.width !== Math.round(host.getBoundingClientRect().width * dpr)) size();   // (its size checked once a second, not every frame)
     var wind = (o.wind || 6) + Math.sin(t * .23) * 10 + Math.sin(t * .61) * 5;   // (gusting)
     g.clearRect(0, 0, W, H);
     for (var i = 0; i < F.length; i++) { var f = F[i];
@@ -4714,7 +4740,7 @@ function snowfall(host, o) {
       if (f.y > H + 10) { var n = flake(false); n.z = f.z; n.r = f.r; n.v = f.v; n.a = f.a; n.sw = f.sw; F[i] = n; continue; }
       if (f.y < -60) f.y = H + 5;
       if (x < -20) f.x += W + 40; else if (x > W + 20) f.x -= W + 40;
-      var d = f.r * (f.z > .85 ? 3.4 : 2.4); g.globalAlpha = f.a; g.drawImage(FLAKE, x - d / 2, f.y - d / 2, d, d);
+      var d = f.r * (f.z > .85 ? 3.4 : 2.4), sp = flakeAt(d); g.globalAlpha = f.a; g.drawImage(sp, Math.round(x - sp.width / 2), Math.round(f.y - sp.width / 2));   // (a flake drawn ready at its size, on whole pixels: no shrinking a big one every frame)
     }
     g.globalAlpha = 1; raf = requestAnimationFrame(frame);
   }
@@ -4802,7 +4828,7 @@ THEMEFX.globe = { own: true,   // (the whole month laid out at once: its own day
     var fr = $('#gfront'); if (fr) { var fw = P.fw * s / sc; fr.style.left = (x - fw / 2).toFixed(1) + 'px'; fr.style.top = (y - fw / 2).toFixed(1) + 'px'; fr.style.width = fr.style.height = fw.toFixed(1) + 'px'; }
   },
   place: function (all, at, c, b) {
-    this.fit();
+    var now = performance.now(); if (!this._ft || now - this._ft > 1500) { this._ft = now; this.fit(); }   // (the globe put on the picture's now and then, not on every step of a move: measuring the page each step laid it out again and again)
     var x0 = c.mob ? 34 : 90, x1 = c.mob ? 746 : c.W - 90, n = Math.max(1, all.length - 1), me = this;
     var base = c.mob ? 140 : 175;   // (the front pages scattered along the top, each turned a little)
     all.forEach(function (el, j) { var d = +el.dataset.n, nf = near(j - at); vAt(el, x0 + (x1 - x0) * j / n, base + Math.sin(j * 1.7) * (c.mob ? 14 : 22), 1 + .55 * nf, (seeded(d * 3) - .5) * 18 * (1 - nf), 1, el === b ? 50 : 10 + (j % 5)); });
@@ -4811,7 +4837,10 @@ THEMEFX.globe = { own: true,   // (the whole month laid out at once: its own day
     var g = $('#globe'), p = $('#gpic'), so = $('#gsoon'), has = b && b.classList.contains('has');
     if (p && b) p.style.backgroundImage = has ? b.style.getPropertyValue('--p') : 'none';
     if (so) so.hidden = has;   // (a day not filled yet: Coming soon in the globe)
-    if (g) { g.classList.remove('shake'); if (!quiet) { void g.offsetWidth; g.classList.add('shake'); var gs = g.querySelector('.gsnow'); if (gs && gs._snow) gs._snow.stir(); } }
+    if (g && !quiet) {   // (shaken by the browser's animation, not by taking a class off and on, which made it lay the page out on every day reached)
+      if (g.animate && !CALM) g.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-7deg)', offset: .18 }, { transform: 'rotate(6deg)', offset: .42 }, { transform: 'rotate(-2deg)', offset: .68 }, { transform: 'rotate(0)' }], { duration: 1000, easing: 'cubic-bezier(.3, .7, .2, 1)' });
+      var gs = g.querySelector('.gsnow'); if (gs && gs._snow) gs._snow.stir();
+    }
     var np = b && b.querySelector('.np'); if (np && np.animate && !quiet && !CALM) np.animate([{ transform: 'rotate(-540deg) scale(.2)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 650, easing: 'cubic-bezier(.2,.8,.2,1)' });   // (the spinning front page)
   }
 };
