@@ -57,6 +57,9 @@ notably:
 ### 5. Performance (every theme, before John sees it)
 The Fire TV is slow, and John feels it on his iPhone too. Run `node _grifflix/themetools/perf.js <key> spiral` (spiral for
 comparison); the theme must be within budget. Rules (each from a real problem):
+- **Don't put `will-change` on many elements that change size as they move** (The Table's 30 posters, scaled through a swipe):
+  the iPhone redraws each layer at every new size and the swipe judders (John, 14 Nov 2026). Keep `will-change` for a few
+  large layers whose size doesn't change (a still backdrop, a canvas). The Chromium tests here can't show this: Safari only.
 - **Move things only with `transform` and `opacity`.** Never animate `left`, `top`, `width`, `height` or `margin` (The
   Table did, and laid the page out every frame).
 - **Nothing animates constantly in a big SVG or over a large area.** A CSS animation on one part of an SVG redraws the whole
