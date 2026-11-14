@@ -634,7 +634,7 @@ html[data-theme=corridor]:not(.mob) .hinfo { width: max-content; max-width: min(
 /* the table: the month as a ring of days round a table, under a ring of light; left and right turn it */
 html.table .cal { position: relative; height: 470px !important; min-height: 0; background: none; border: 0; box-shadow: none; padding: 0; overflow: visible; display: block; }
 .tring { position: absolute; left: 50%; top: 418px; width: 1060px; height: 300px; transform: translate(-50%, -50%); border-radius: 50%; border: 1px solid rgba(var(--kink), .22); background: radial-gradient(ellipse at center, rgba(0, 0, 0, .28), rgba(0, 0, 0, .1) 60%, transparent 72%); pointer-events: none; }
-.tday { position: absolute; width: 46px; height: 62px; margin: -31px 0 0 -23px; padding: 0; border: 0; border-radius: 0; background: rgba(0, 0, 0, .3) center/cover; color: var(--fg-2); font: 500 10px/62px var(--kfont); text-align: center; left: 0; top: 0; transition: transform .5s cubic-bezier(.3, .7, .2, 1), opacity .4s; box-shadow: 0 6px 18px rgba(0, 0, 0, .45); will-change: transform; }   /* (moved by transform alone, which the graphics chip does: moving left and top laid the page out again every frame, and the table felt heavy on the iPhone and slow on the TV: John, 14 Nov 2026) */
+.tday { position: absolute; width: 46px; height: 62px; margin: -31px 0 0 -23px; padding: 0; border: 0; border-radius: 0; background: rgba(0, 0, 0, .3) center/cover; color: var(--fg-2); font: 500 10px/62px var(--kfont); text-align: center; left: 0; top: 0; transition: transform .5s cubic-bezier(.3, .7, .2, 1), opacity .4s; box-shadow: 0 6px 18px rgba(0, 0, 0, .45); }   /* (moved by transform alone: moving left and top laid the page out again every frame, and the table felt heavy on the iPhone and slow on the TV: John, 14 Nov 2026. No will-change: a layer kept for each poster, changing size every frame of a swipe, had the iPhone redraw them all and lose the swipe's smoothness: John, 14 Nov 2026) */
 .tday.has { color: transparent; }
 div.tday { background: rgba(var(--kink), .06); box-shadow: inset 0 0 0 1px rgba(var(--kink), .14); }
 .tcentre { position: absolute; left: 0; right: 0; top: 300px; text-align: center; pointer-events: none; }
@@ -971,7 +971,11 @@ html[data-theme=autumn] .hinfo { top: 112px; bottom: auto; }
 .gsoon { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; font: 400 44px/1 var(--tfont); text-transform: uppercase; color: #fff; text-shadow: 0 2px 10px rgba(0, 0, 0, .4); }
 .gsoon[hidden] { display: none; }
 .globe { position: absolute; left: calc(73% - 150px); top: calc(55% - 150px); width: 300px; height: 300px; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 50% 60%, rgba(255, 255, 255, .08), rgba(255, 255, 255, .03) 62%, rgba(255, 255, 255, .2) 100%); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .6); transform-origin: 50% 100%; }
-.gpic { position: absolute; left: 22%; top: 12%; width: 56%; height: 80%; margin: 0; background: center/cover; }   /* (in step with the globe, whatever its size: John, 11 Nov 2026: "on a fire tv the pictures sometimes go outside the globe, on an iPhone they're too small") */
+.gpic { position: absolute; left: 22%; top: 12%; width: 56%; height: 80%; margin: 0; background: center/cover; }
+.gpaper { position: absolute; left: 50%; top: 52%; width: 76px; height: 100px; transform: translate(-50%, -50%) rotate(-4deg) scale(var(--gk, 2)); }   /* (the day's front page, landed in the globe) */
+.gpaper[hidden] { display: none; }
+.gpaper .np, .gfly .np { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 5px 5px 4px; color: #141414; overflow: hidden; font-style: normal; background: #efe9da; box-shadow: 0 6px 14px rgba(0, 0, 0, .35); }
+.gfly { position: absolute; left: 0; top: 0; width: 76px; height: 100px; pointer-events: none; will-change: transform; }   /* (in step with the globe, whatever its size: John, 11 Nov 2026: "on a fire tv the pictures sometimes go outside the globe, on an iPhone they're too small") */
 .snow, .gsnow { position: absolute; left: 0; right: 0; top: -240px; bottom: 0; pointer-events: none; background-image: radial-gradient(circle at 20px 30px, #fff 0 2px, transparent 3px), radial-gradient(circle at 90px 130px, #fff 0 1.5px, transparent 2.5px), radial-gradient(circle at 160px 60px, #fff 0 2.5px, transparent 3.5px), radial-gradient(circle at 210px 190px, #fff 0 1.5px, transparent 2.5px), radial-gradient(circle at 120px 215px, #fff 0 2px, transparent 3px); background-size: 240px 240px; animation: snow 10s linear infinite; }
 .snow { opacity: .3; }
 @keyframes snow { from { transform: translateY(0); } to { transform: translateY(240px); } }
@@ -1975,7 +1979,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'ca11fcadf085' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '98a63eadad6e' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -4810,7 +4814,7 @@ THEMEFX.globe = { own: true,   // (the whole month laid out at once: its own day
     var dt = new Date(key + 'T12:00'), hl = it && !it.secret ? showName(it) : 'Coming soon';
     return '<i class="np"><b>The Inquirer</b><s><span>' + DOW[(dt.getDay() + 6) % 7] + '</span><span>' + d + ' ' + MONTHS[c.m].slice(0, 3) + '</span><span>2¢</span></s><em>' + esc(hl) + '</em><u></u><i></i></i><span class="vn">' + DOW[(dt.getDay() + 6) % 7] + ' ' + d + '</span>';
   },
-  decor: function () { return '<div class="snow"></div><div class="globe" id="globe"><div class="gpic" id="gpic"></div><div class="gsoon" id="gsoon" hidden>Coming<br>soon</div><i class="gpile"></i><div class="gsnow"></div><i class="gshine"></i></div><i class="gfront" id="gfront"></i><div class="gbase"></div>'; },
+  decor: function () { return '<div class="snow"></div><div class="globe" id="globe"><div class="gpaper" id="gpaper" hidden></div><i class="gpile"></i><div class="gsnow"></div><i class="gshine"></i></div><i class="gfront" id="gfront"></i><div class="gbase"></div>'; },
   swipe: function (c) { return { x: 1, y: 0, px: c.mob ? 24 : 40 }; },
   // (the room behind: a hand holding the globe, as the film opens on it; the globe itself where the picture's is, wherever the
   // picture's cropped to fill the screen: John, 11 Nov 2026: "have the snowglobe be where the globe is in the picture")
@@ -4825,6 +4829,7 @@ THEMEFX.globe = { own: true,   // (the whole month laid out at once: its own day
     var d = P.d * s / sc, x = (ox + P.cx * s - pr.left) / sc, y = (oy + P.cy * s - pr.top) / sc, k = [vw, vh, Math.round(pr.left), Math.round(pr.top), Math.round(sc * 1000)].join();
     if (gl._fit === k) return; gl._fit = k;
     gl.style.left = (x - d / 2).toFixed(1) + 'px'; gl.style.top = (y - d / 2).toFixed(1) + 'px'; gl.style.width = gl.style.height = d.toFixed(1) + 'px';
+    gl.style.setProperty('--gk', (Math.min(d * .5 / 76, d * .66 / 100)).toFixed(3));   // (the front page in the globe: half its width)
     var fr = $('#gfront'); if (fr) { var fw = P.fw * s / sc; fr.style.left = (x - fw / 2).toFixed(1) + 'px'; fr.style.top = (y - fw / 2).toFixed(1) + 'px'; fr.style.width = fr.style.height = fw.toFixed(1) + 'px'; }
   },
   place: function (all, at, c, b) {
@@ -4834,14 +4839,26 @@ THEMEFX.globe = { own: true,   // (the whole month laid out at once: its own day
     all.forEach(function (el, j) { var d = +el.dataset.n, nf = near(j - at); vAt(el, x0 + (x1 - x0) * j / n, base + Math.sin(j * 1.7) * (c.mob ? 14 : 22), 1 + .55 * nf, (seeded(d * 3) - .5) * 18 * (1 - nf), 1, el === b ? 50 : 10 + (j % 5)); });
   },
   front: function (b, c, quiet) {
-    var g = $('#globe'), p = $('#gpic'), so = $('#gsoon'), has = b && b.classList.contains('has');
-    if (p && b) p.style.backgroundImage = has ? b.style.getPropertyValue('--p') : 'none';
-    if (so) so.hidden = has;   // (a day not filled yet: Coming soon in the globe)
-    if (g && !quiet) {   // (shaken by the browser's animation, not by taking a class off and on, which made it lay the page out on every day reached)
-      if (g.animate && !CALM) g.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-7deg)', offset: .18 }, { transform: 'rotate(6deg)', offset: .42 }, { transform: 'rotate(-2deg)', offset: .68 }, { transform: 'rotate(0)' }], { duration: 1000, easing: 'cubic-bezier(.3, .7, .2, 1)' });
-      var gs = g.querySelector('.gsnow'); if (gs && gs._snow) gs._snow.stir();
-    }
-    var np = b && b.querySelector('.np'); if (np && np.animate && !quiet && !CALM) np.animate([{ transform: 'rotate(-540deg) scale(.2)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 650, easing: 'cubic-bezier(.2,.8,.2,1)' });   // (the spinning front page)
+    // (the day's front page spins in from the row along the top, as the film's headline montages do, and lands inside the globe as
+    // the day's picture: John, 14 Nov 2026, "can the spinning papers move into the globe instead of the poster")
+    var g = $('#globe'), gp = $('#gpaper'), np = b && b.querySelector('.np'); if (!g || !gp || !np) return;
+    var put = function () { gp.innerHTML = np.outerHTML; gp.style.setProperty('--p', b.style.getPropertyValue('--p') || 'none'); gp.hidden = false; };
+    var old = g.parentNode.querySelector('.gfly'); if (old) old.remove();
+    if (quiet || CALM || !gp.animate || !g.offsetWidth) { put(); return; }
+    // (from the page in the row to the paper's place in the globe, measured once, here, in the scene's own units)
+    var par = g.parentNode, pr = par.getBoundingClientRect(), sc = pr.width / (par.offsetWidth || 1) || 1, r0 = np.getBoundingClientRect(), gr = g.getBoundingClientRect();
+    var k = parseFloat(getComputedStyle(g).getPropertyValue('--gk')) || 1, x0 = (r0.left + r0.width / 2 - pr.left) / sc, y0 = (r0.top + r0.height / 2 - pr.top) / sc, k0 = r0.width / sc / 76;
+    var x1 = (gr.left + gr.width / 2 - pr.left) / sc, y1 = (gr.top + gr.height * .52 - pr.top) / sc;
+    var fl = document.createElement('div'); fl.className = 'gfly'; fl.innerHTML = np.outerHTML; fl.style.setProperty('--p', b.style.getPropertyValue('--p') || 'none'); par.appendChild(fl);
+    gp.hidden = true;
+    var at = function (x, y, kk, r) { return 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%) rotate(' + r + 'deg) scale(' + kk.toFixed(3) + ')'; };
+    var a = fl.animate([
+      { transform: at(x0, y0, k0, 0), zIndex: 60 },
+      { transform: at(x0 + (x1 - x0) * .45, y0 + (y1 - y0) * .35, k * 1.25, -400), zIndex: 60, offset: .5 },
+      { transform: at(x1, y1, k, -724), zIndex: 2 }], { duration: 1100, easing: 'cubic-bezier(.35, .1, .25, 1)', fill: 'forwards' });
+    a.onfinish = function () { put(); fl.remove();   // (in the globe now: it shakes and snows)
+      if (g.animate) g.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-7deg)', offset: .18 }, { transform: 'rotate(6deg)', offset: .42 }, { transform: 'rotate(-2deg)', offset: .68 }, { transform: 'rotate(0)' }], { duration: 1000, easing: 'cubic-bezier(.3, .7, .2, 1)' });
+      var gs = g.querySelector('.gsnow'); if (gs && gs._snow) gs._snow.stir(); };
   }
 };
 var DOWL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
