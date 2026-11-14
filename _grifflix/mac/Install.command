@@ -113,9 +113,10 @@ launchctl bootstrap "gui/$(id -u)" "$AGENTS/io.github.cooperking.grifflix-gatewa
 TOKEN=$(osascript -e 'text returned of (display dialog "Paste the Cloudflare tunnel token (Cloudflare dashboard → Zero Trust → Networks → Tunnels → your tunnel → the long code after --token). Leave empty to skip, or to keep the one you gave before." default answer "" with hidden answer with title "Grifflix")' 2>/dev/null)
 [ -n "$TOKEN" ] && security add-generic-password -U -s grifflix-tunnel -a cloudflare -w "$TOKEN" >/dev/null
 if security find-generic-password -s grifflix-tunnel -a cloudflare >/dev/null 2>&1; then
+  # (HTTP/2 to Cloudflare, not QUIC: on the powerline route QUIC kept timing out and films stopped after their first piece: John, 14 Nov 2026)
   cat > "$APP/tunnel.sh" <<SH
 #!/bin/zsh
-exec "$CLOUDFLARED" tunnel --no-autoupdate run --token "\$(security find-generic-password -s grifflix-tunnel -a cloudflare -w)"
+exec "$CLOUDFLARED" tunnel --no-autoupdate --protocol http2 run --token "\$(security find-generic-password -s grifflix-tunnel -a cloudflare -w)"
 SH
   chmod +x "$APP/tunnel.sh"
   cat > "$AGENTS/io.github.cooperking.grifflix-tunnel.plist" <<PLIST
