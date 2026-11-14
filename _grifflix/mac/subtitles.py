@@ -547,17 +547,19 @@ def align(cues, sig, max_off=240.0):
     # one big jump part-way (a version with a longer or shorter opening, or a scene more or less): the lines before and after a
     # point each given their own shift, where that fits clearly better than one shift for all
     whole = _score(P, out, 1.0, 0.0)
-    def fit(ch):
-        bo, bv = 0.0, _score(P, ch, 1.0, 0.0)
-        for k in range(int(-max_off), int(max_off) + 1):
-            v = _score(P, ch, 1.0, float(k))
-            if v > bv:
-                bo, bv = float(k), v
+    def fit(ch, lim=max_off):
+        """The shift that fits these lines best, and how far it stands out from the rest of the shifts tried (in spreads):
+        a part of the film fits some shift a little better by chance, so a move must stand out the way the whole film's did."""
+        vals = [(_score(P, ch, 1.0, float(k)), float(k)) for k in range(int(-lim), int(lim) + 1)]
+        bv, bo = max(vals)
         for d in range(-12, 13):
             v = _score(P, ch, 1.0, bo + d / 10.0)
             if v > bv:
                 bo, bv = bo + d / 10.0, v
-        return bo, bv
+        xs = [v for v, _ in vals]
+        m = sum(xs) / len(xs)
+        sdv = math.sqrt(sum((x - m) ** 2 for x in xs) / len(xs)) or 1.0
+        return bo, bv, (bv - m) / sdv, sdv
     jump = None
     step = max(10, len(out) // 24)
     # (searched for only where some five minutes of the film fit a shift of their own clearly better: quick to check)
@@ -576,11 +578,17 @@ def align(cues, sig, max_off=240.0):
                     odd = True
             i0 = i1
     for i in (range(step, len(out) - step + 1, step) if odd else ()):
-        lo, lv = fit(out[:i])
-        ro, rv = fit(out[i:])
-        # (clearly better for the part that moves: a short part of a long film counts too)
-        part = min(_score(P, out[:i], 1.0, 0.0), _score(P, out[i:], 1.0, 0.0), key=abs)
-        if abs(lo - ro) >= 1.0 and lv + rv > whole + max(15.0, abs(whole) * 0.03, abs(part) * 0.3) and (jump is None or lv + rv > jump[0]):
+        lo, lv, lz, lsd = fit(out[:i])
+        ro, rv, rz, rsd = fit(out[i:])
+        if abs(lo - ro) < 1.0:
+            continue
+        # (each side must stand out on its own, and the side that moves must fit clearly better moved than where the whole
+        # film put it: Rushmore's last minutes, a song with lines sung, were moved 3 minutes by chance: John, 14 Nov 2026)
+        gain_l = (lv - _score(P, out[:i], 1.0, 0.0)) / lsd
+        gain_r = (rv - _score(P, out[i:], 1.0, 0.0)) / rsd
+        if min(lz, rz) < 5.0 or (abs(lo) >= 1.0 and gain_l < 4.0) or (abs(ro) >= 1.0 and gain_r < 4.0):
+            continue
+        if lv + rv > whole + max(15.0, abs(whole) * 0.03) and (jump is None or lv + rv > jump[0]):
             jump = (lv + rv, i, lo, ro)
     if jump:
         _, i, lo, ro = jump
@@ -609,13 +617,17 @@ def align(cues, sig, max_off=240.0):
         chunk = out[a:b]
         bd = 0.0
         if len(chunk) >= 8:
+            # (moved only when that stands out from every other shift within a minute, and clearly beats where it is)
             base = _score(P, chunk, 1.0, 0.0)
+            vals = [_score(P, chunk, 1.0, d / 10.0) for d in range(-600, 601, 5)]
+            m = sum(vals) / len(vals)
+            sdv = math.sqrt(sum((x - m) ** 2 for x in vals) / len(vals)) or 1.0
             bv = base
             for d in range(-60, 61):
                 v = _score(P, chunk, 1.0, d / 10.0)
                 if v > bv:
                     bd, bv = d / 10.0, v
-            if abs(bd) < 0.3 or bv - base < max(2.0, abs(base) * 0.2):
+            if abs(bd) < 0.3 or (bv - base) / sdv < 2.5 or (bv - m) / sdv < 4.0:
                 bd = 0.0
         deltas.append(bd)
     for k, (a, b) in enumerate(parts):
