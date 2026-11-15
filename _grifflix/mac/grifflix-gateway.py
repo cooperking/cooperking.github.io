@@ -1281,6 +1281,22 @@ def make_handler(g):
                         running = True
                 else:
                     running = time.time() - os.path.getmtime(lock) < 600
+            if b and b.get('op') in ('name', 'unname'):   # (John's name for a download, from TMDB, so it comes in right: John, 15 Nov 2026)
+                fp = os.path.join(home, 'fetch-names.json')
+                N = load(fp, {}) or {}
+                key = str(b.get('key') or '')[:500]
+                if not key:
+                    return self.send_json(400, {'error': 'Which download?'})
+                if b['op'] == 'unname':
+                    N.pop(key, None)
+                else:
+                    nm = re.sub(r'[/:\\]', '-', str(b.get('name') or '')).strip()[:150]
+                    yr = int(b['year']) if str(b.get('year') or '').isdigit() else None
+                    if not nm:
+                        return self.send_json(400, {'error': 'What’s it called?'})
+                    N[key] = {'name': nm, 'year': yr, 'kind': 'series' if b.get('kind') == 'series' else 'movie', 'tmdb': str(b.get('tmdb') or '')}
+                save(fp, N)
+                return self.send_json(200, {'ok': True})
             if b and b.get('op') in ('first', 'unfirst'):   # (John's next: a download moved to the front: John, 15 Nov 2026)
                 fp = os.path.join(home, 'fetch-first.json')
                 f = [x for x in (load(fp, []) or []) if isinstance(x, str) and x != str(b.get('file') or '')]
@@ -1309,7 +1325,7 @@ def make_handler(g):
                 now.update(got=got, pct=round(100.0 * got / now['size'], 1) if now.get('size') else 0, mbps=round(got * 8 / took / 1e6, 1))
             return self.send_json(200, {'setup': setup, 'running': running, 'now': now, 'waiting': st.get('waiting') or [],
                                         'recent': st.get('recent') or [], 'checked': st.get('checked'), 'next': int(GDRIVE_NEXT[0]) or None, 'error': GDRIVE_ERR[0],
-                                        'first': load(os.path.join(home, 'fetch-first.json'), []) or []})
+                                        'first': load(os.path.join(home, 'fetch-first.json'), []) or [], 'names': load(os.path.join(home, 'fetch-names.json'), {}) or {}})
 
         def api_convert(self, me, user, q, b):
             """John's: how the conversions are going (convert.py's files in ~/Grifflix), for the admin page."""
@@ -1694,6 +1710,20 @@ def make_handler(g):
         def subs_client(self):
             o = g.st.setdefault('opensubs', {})
             return SUBS.OpenSubs(o, lambda: save(SETTINGS, g.st), tls())
+
+        def api_tmdbfind(self, me, user, q, b):
+            """John's only: a title looked up on TMDB, through the media server (films or series), for naming a download before it comes in."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            kind = 'Series' if q.get('kind') == 'series' else 'Movie'
+            info = {'Name': str(q.get('q') or '').strip()[:120]}
+            if str(q.get('year') or '').isdigit():
+                info['Year'] = int(q['year'])
+            if not info['Name']:
+                return self.send_json(400, {'error': 'Which title?'})
+            res = g.jf.call('POST', '/Items/RemoteSearch/' + kind, {'SearchInfo': info, 'IncludeDisabledProviders': False}) or []
+            return self.send_json(200, {'results': [{'name': r.get('Name'), 'year': r.get('ProductionYear'), 'overview': (r.get('Overview') or '')[:300],
+                                                     'image': r.get('ImageUrl'), 'tmdb': (r.get('ProviderIds') or {}).get('Tmdb')} for r in res[:15]]})
 
         def api_identify(self, me, user, q, b):
             """John's only: a film or series the media server named wrong, or didn't know, put right by choosing it from TMDB, as the media
