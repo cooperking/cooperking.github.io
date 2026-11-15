@@ -768,7 +768,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       b.classList.toggle('primary', !j.on);
       var l = j.last;
       $('#autosay').innerHTML = j.on ? '<b>Updating by itself:</b> about 10 minutes after new films arrive on the Mac, the site gets them, with nothing to press.' +
-        (l ? ' Last time ' + esc(when(l.at * 1000)) + ': ' + (l.new || 0) + ' new, ' + (l.changed || 0) + ' changed, ' + (l.gone || 0) + ' gone.' : '')
+        (l ? (l.error ? ' <b style="color:#f08a4b">Last try ' + esc(when(l.at * 1000)) + ' didn’t work: ' + esc(l.error) + '</b> (tried again every 15 minutes)' : ' Last time ' + esc(when(l.at * 1000)) + ': ' + (l.new || 0) + ' new, ' + (l.changed || 0) + ' changed, ' + (l.gone || 0) + ' gone.') : ' Not yet done.')
         : 'New films reach the site when Update is pressed. <b>Update by itself</b> has the Mac do it, about 10 minutes after they arrive.';
     }).catch(function () {});
   }
