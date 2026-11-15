@@ -1605,6 +1605,22 @@ def make_handler(g):
             o = g.st.setdefault('opensubs', {})
             return SUBS.OpenSubs(o, lambda: save(SETTINGS, g.st), tls())
 
+        def api_autoupdate(self, me, user, q, b):
+            """The site updated by the Mac itself when new films arrive (John, 15 Nov 2026: "it needs to be automatically updated"): the
+            admin page hands the Mac a sign-in of its own (one of John's, for the Mac alone), kept here; GET: whether it's on."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            if b:
+                tok = str(b.get('token') or '').strip()
+                if b.get('off'):
+                    g.st.pop('worker_token', None)
+                elif re.match(r'^[A-Za-z0-9_-]{20,200}$', tok):
+                    g.st['worker_token'] = tok
+                else:
+                    return self.send_json(400, {'error': 'That sign-in isn’t right.'})
+                save(SETTINGS, g.st)
+            return self.send_json(200, {'on': bool(g.st.get('worker_token')), 'last': g.st.get('auto_update_last')})
+
         def api_subsetup(self, me, user, q, b):
             """John's OpenSubtitles details (its API key, his account), kept here on the Mac only."""
             if not me.get('owner'):
@@ -2350,11 +2366,41 @@ def conv_alive(cur):
         return 0
 
 
+def site_update(g, why=''):
+    """The site's copy of the films made again, as John's Update on the admin page does: the Mac's list asked of this gateway (as John's
+    Mac sign-in), sent to the Worker, then the Worker asked to publish it. Returns what changed, or raises."""
+    tok = g.st.get('worker_token')
+    if not tok:
+        raise RuntimeError('automatic updates are off (turn them on on the admin page, Updates)')
+    port = int(g.st.get('port', 8097))
+    r = urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:%d/api/export' % port, headers={'Authorization': 'Bearer ' + tok}), timeout=3600)
+    text = r.read()
+    snap = json.loads(text.decode('utf-8'))
+    def worker(path, body, ctype='application/json'):
+        req = urllib.request.Request(WORKER + path, data=body, method='POST', headers={'Authorization': 'Bearer ' + tok, 'Content-Type': ctype, 'User-Agent': 'Grifflix gateway'})
+        try:
+            return json.loads(urllib.request.urlopen(req, timeout=300, context=tls()).read().decode('utf-8') or '{}')
+        except urllib.error.HTTPError as e:
+            raise RuntimeError('the site said %s: %s' % (e.code, e.read()[:200].decode('utf-8', 'replace')))
+    worker('/g/snapshot', text)
+    eps = {e['id']: e for v in (snap.get('series') or {}).values() for e in v.get('episodes') or []}
+    items, motd = snap.get('items') or {}, snap.get('motd') or {}
+    days = {d: (items.get(i) or eps.get(i)) for d, i in (motd.get('days') or {}).items() if items.get(i) or eps.get(i)}
+    L = snap.get('lists') or {}
+    worker('/g/admin', json.dumps({'op': 'update', 'cal': {'days': days, 'notes': motd.get('notes') or {}}, 'personal': snap.get('personal'),
+                                   'counts': {'movies': len(L.get('movies') or []), 'tv': len(L.get('tv') or []), 'collections': len(L.get('collections') or [])}}).encode('utf-8'))
+    c = snap.get('changes') or {}
+    g.st['auto_update_last'] = {'at': int(time.time()), 'why': why, 'new': c.get('new', 0), 'changed': c.get('changed', 0), 'gone': c.get('removed', 0)}
+    save(SETTINGS, g.st)
+    return c
+
+
 def keep_scanning(g):
     """New films noticed: every 10 minutes the film and TV folders are looked at, and when there's a new one in them the media server
     is asked to look too. Its own watching of the folders misses films put on the drive over the network (John, 15 Nov 2026: "New
     films arent getting added": The Invite, Blue Heron and Sense and Sensibility sat on the drive unseen until it was asked)."""
     seen_at = os.path.expanduser('~/Grifflix/library-seen.json')
+    publish_at = 0
     time.sleep(120)
     while True:
         try:
@@ -2367,6 +2413,16 @@ def keep_scanning(g):
                 if new:
                     g.jf.call('POST', '/Library/Refresh')
                     log('New in the library (%d): %s: the media server asked to look' % (len(new), ', '.join(os.path.basename(x) for x in new[:5]) + (' …' if len(new) > 5 else '')))
+                    publish_at = time.time() + 540   # (the site updated once the media server has read them: about 10 minutes on)
+            if publish_at and time.time() >= publish_at:
+                publish_at = 0
+                if g.st.get('worker_token'):
+                    try:
+                        c = site_update(g, 'new films')
+                        log('The site updated by itself: %d new, %d changed, %d gone' % (c.get('new', 0), c.get('changed', 0), c.get('removed', 0)))
+                    except Exception as e:
+                        log('The site’s automatic update didn’t work:', e)
+                        publish_at = time.time() + 3600   # (tried again in an hour)
             if now_ or before is None:
                 save(seen_at, now_)
         except Exception as e:
