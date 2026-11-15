@@ -1003,6 +1003,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         $('#ffill').style.width = (n.pct || 0) + '%';
         var left = n.mbps && n.size ? Math.round((n.size - n.got) * 8 / (n.mbps * 1e6) / 60) : 0;
         $('#fsay').innerHTML = '<b>' + Math.floor(n.pct || 0) + '%</b> of ' + (n.size / 1e9).toFixed(1) + ' GB from ' + esc(n.from) + (n.mbps ? ', ' + n.mbps + ' Mbps' + (left ? ', about ' + (left >= 90 ? Math.round(left / 6) / 10 + ' hours' : left + ' min') + ' to go' : '') : '') + '.' + (w.length ? ' Then ' + w.length + ' more.' : '');
+      } else if (f.running && f.hold) {   // (waiting while the film it brought in is repackaged: the drive does one at a time well)
+        $('#fhead').innerHTML = 'Waiting <em>while ' + esc(f.hold) + ' is repackaged</em>'; $('#fsay').textContent = 'Downloads carry on once it’s done (a few minutes).';
       } else if (f.running || (fetching.asked && Date.now() - fetching.asked < 60000)) {
         $('#fhead').innerHTML = 'Looking <em>now</em>'; $('#fsay').textContent = 'Seeing what’s in TorBox and Google Drive…';
       } else if ((f.trouble || []).length && !w.length) {   // (TorBox or Google Drive couldn't be read: said, not "nothing waiting")

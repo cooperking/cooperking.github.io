@@ -325,6 +325,36 @@ def wait_entry(p):
             'series': p['series'], 'ep': p['ep'], 'named': p['named'], 'tmdb': p.get('tmdb')}
 
 
+def conv_running():
+    try:
+        pid = int(json.load(open(os.path.join(HOME, 'convert-now.json'))).get('pid') or 0)
+        os.kill(pid, 0)
+        return pid > 0
+    except (OSError, ValueError, TypeError):
+        return False
+
+
+def wait_repack(dest, title):
+    """The film just brought in repackaged before the next download (the drive does one at a time well): waited for, at most 45 minutes,
+    or 6 if the converter isn't running by then."""
+    flag = os.path.join(HOME, 'fetch-waiting')
+    open(flag, 'w').write(title)
+    status(hold=title)
+    t0 = time.time()
+    try:
+        while os.path.exists(dest) and time.time() - t0 < 2700:
+            if time.time() - t0 > 360 and not conv_running():
+                break
+            time.sleep(15)
+        log('  %s: %s; on to the next' % (title, 'repackaged' if not os.path.exists(dest) else 'not repackaged yet (it will be)'))
+    finally:
+        status(hold=None)
+        try:
+            os.remove(flag)
+        except OSError:
+            pass
+
+
 def _run(check):
     R = roots()
     root = R.get('movies')
@@ -522,6 +552,8 @@ def _run(check):
                 json.dump(have + [{'path': dest, 'name': title, 'at': int(time.time())}], open(nf, 'w'))
             except OSError:
                 pass
+        if ext not in ('.mp4', '.m4v') and not check:   # (repackaged before the next download: John, 15 Nov 2026, "when downloaded it should be repackaged first")
+            wait_repack(dest, title)
         if src['delete']:
             rc('rmdirs', '--leave-root', loc('').rstrip('/'), check=False)   # (download folders left empty)
         try:
