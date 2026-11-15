@@ -60,10 +60,28 @@ QUIET=0; [[ "${1:-}" == --quiet ]] && QUIET=1
 # (one run at a time: a film landing in Movies starts a run while another may be copying, and two copying the same film left a
 # half-made folder that then looked like the film was already in Grifflix: John, 14 Nov 2026, Sense and Sensibility)
 LOCK="${TMPDIR:-/tmp}/grifflix-add.lock"
+# (the run holding it is named in it: a lock whose run has gone, or one an hour old with nothing copying, is taken over, not obeyed: a
+# background run stuck on a hidden password window kept everyone out: John, 15 Nov 2026, "Another run is still going. It's not")
 if ! mkdir "$LOCK" 2>/dev/null; then
-  if (( $(date +%s) - $(stat -f %m "$LOCK" 2>/dev/null || echo 0) < 6 * 3600 )); then (( QUIET )) || print "Another run is still going."; exit 0; fi
-  rm -rf "$LOCK"; mkdir "$LOCK" 2>/dev/null || exit 0   # (left by a run that was stopped long ago)
+  holder=$(cat "$LOCK/pid" 2>/dev/null)
+  if [[ -n "$holder" ]] && kill -0 "$holder" 2>/dev/null && (( $(date +%s) - $(stat -f %m "$LOCK" 2>/dev/null || echo 0) < 3600 )); then
+    if (( QUIET )); then exit 0; fi
+    if [[ -t 1 ]]; then   # (in Terminal: the other run's progress, as it copies, until it's done)
+      print "A run in the background is already adding films; its progress:"
+      while kill -0 "$holder" 2>/dev/null; do
+        printf '\r  %s   ' "$(cat "$LOCK/progress" 2>/dev/null || print 'looking at your films…')"
+        sleep 2
+      done
+      printf '\r%90s\r' ''; print "Done. What it did: tail ~/Library/Logs/grifflix-add.log"
+    else
+      print "Another run is still going (process $holder)."
+    fi
+    exit 0
+  fi
+  [[ -n "$holder" ]] && kill "$holder" 2>/dev/null
+  rm -rf "$LOCK"; mkdir "$LOCK" 2>/dev/null || exit 0
 fi
+print $$ > "$LOCK/pid"
 trap 'rm -rf "$LOCK"' EXIT
 say() { print -r -- "$(date '+%Y-%m-%d %H:%M') $*"; }
 
@@ -78,7 +96,9 @@ if [[ ! -d "$DEST" ]]; then
     exit 0
   fi
   (( TTY )) && say "Connecting to the Mac mini's drive… (the first time, it asks for the Mac mini's password: tick \"Remember this password\")"
-  osascript -e "mount volume \"$SHARE\"" >/dev/null 2>&1
+  # (in the background, never a password window nobody can see: given 20 seconds, then left; the first time is done in Terminal)
+  osascript -e "mount volume \"$SHARE\"" >/dev/null 2>&1 &
+  mpid=$!; ( sleep 20; kill $mpid 2>/dev/null ) &!
   for i in {1..20}; do
     for d in /Volumes/G-Drive*/Grifflix/Movies(N/); do DEST="$d"; break; done
     [[ -d "$DEST" ]] && break; sleep 1
@@ -144,20 +164,20 @@ for f in "$SRC"/*.(mp4|mkv|m4v|mov|avi)(N.) "$SRC"/*/*.(mp4|mkv|m4v|mov|avi)(N.)
   if (( CHECK )); then say "Would add: $base → $title/$title.$ext$( (( noyear )) && print ' (no year in its name)')"; continue; fi
   say "Adding: $base → $title/ ($(printf %.1f $(( $(stat -f %z "$f") / 1000000000.0 ))) GB)"
   if mkdir -p "$dir"; then
-    if (( TTY )); then   # (in Terminal: how far, how fast, how long to go, on one line as it copies)
-      total=$(stat -f %z "$f"); t0=$(date +%s)
-      cp "$f" "$to.adding" 2>/dev/null &
-      cpid=$!
-      while kill -0 $cpid 2>/dev/null; do
-        sleep 2
-        got=$(stat -f %z "$to.adding" 2>/dev/null || echo 0); el=$(( $(date +%s) - t0 )); (( el < 1 )) && el=1
-        rate=$(( got / el )); left=$(( rate > 0 ? (total - got) / rate : 0 ))
-        printf '\r  %3d%%  %5.1f of %.1f GB  %4.1f MB/s  %d min %02d s left   ' $(( got * 100 / (total ? total : 1) )) $(( got / 1e9 )) $(( total / 1e9 )) $(( rate / 1e6 )) $(( left / 60 )) $(( left % 60 ))
-      done
-      wait $cpid; printf '\r%60s\r' ''
-    else
-      cp "$f" "$to.adding" 2>/dev/null
-    fi
+    # (how far, how fast, how long to go: on one line in Terminal, and kept in the lock, so a run started in Terminal while a background
+    # one copies shows its progress; the lock touched as it goes, so a long copy is never taken for a stuck run)
+    total=$(stat -f %z "$f"); t0=$(date +%s)
+    cp "$f" "$to.adding" 2>/dev/null &
+    cpid=$!
+    while kill -0 $cpid 2>/dev/null; do
+      sleep 2
+      got=$(stat -f %z "$to.adding" 2>/dev/null || echo 0); el=$(( $(date +%s) - t0 )); (( el < 1 )) && el=1
+      rate=$(( got / el )); left=$(( rate > 0 ? (total - got) / rate : 0 ))
+      line=$(printf '%s: %3d%%  %5.1f of %.1f GB  %4.1f MB/s  %d min %02d s left' "$title" $(( got * 100 / (total ? total : 1) )) $(( got / 1e9 )) $(( total / 1e9 )) $(( rate / 1e6 )) $(( left / 60 )) $(( left % 60 )))
+      print -r -- "$line" > "$LOCK/progress"; touch "$LOCK"
+      (( TTY )) && printf '\r  %s   ' "$line"
+    done
+    wait $cpid; (( TTY )) && printf '\r%90s\r' ''; rm -f "$LOCK/progress"
   fi
   if [[ $(stat -f %z "$f") != $(stat -f %z "$to.adding" 2>/dev/null) ]]; then
     say "  the copy failed: nothing changed"; rm -f "$to.adding"; rmdir "$dir" 2>/dev/null; continue
