@@ -552,6 +552,8 @@ def convert(item, ffmpeg, ffprobe, st):
                     os.remove(tmp)
                 log('  skipped by John')
                 raise RuntimeError('skipped by John')
+            if k % 12 == 6:   # (every minute: films just brought in, shown as next now, and done straight after this one)
+                peek_new()
             if k % 4 == 0:   # (how far it's got: every 20 seconds)
                 show(why_ if paused else '')
             why_ = 'someone is watching' if watching() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() and not item.get('urgent') else '')
@@ -784,6 +786,38 @@ def leftovers():
         except Exception:
             pass
 NEWF = os.path.join(HOME, 'convert-new.json')   # (films gdrive.py has just brought in, by their path)
+PEEKED = set()
+
+
+def peek_new():
+    """While a film is being made: films just brought in, once the media server has them, pinned to go next and shown at the top of
+    what's next on the admin page (John, 15 Nov 2026: "ghosts downloaded but still not showing up for repackaging")."""
+    try:
+        new = json.load(open(NEWF))
+    except (OSError, ValueError):
+        return
+    want = set(x['path'] for x in new or []) - PEEKED
+    if not want:
+        return
+    try:
+        found = [i for i in fresh(gather(), st) if i['path'] in want and i['id'] not in st['done'] and i['id'] not in st['failed']]
+    except Exception:
+        return
+    if not found:
+        return
+    PEEKED.update(i['path'] for i in found)
+    try:
+        p = json.load(open(PRIO))
+    except (OSError, ValueError):
+        p = {}
+    ids = set(i['id'] for i in found)
+    p['pins'] = [{'id': i['id'], 'name': i['name']} for i in found] + [x for x in (p.get('pins') or []) if x.get('id') not in ids]
+    tmp = PRIO + '.tmp'
+    json.dump(p, open(tmp, 'w'))
+    os.replace(tmp, PRIO)
+    nx = RUN.get('next') or []
+    RUN['next'] = nx[:1] + [{'id': i['id'], 'name': i['name'], 'why': 'just brought in: next', 'gb': i['gb'], 'mins': i['mins'], 'mode': i.get('mode')} for i in found] + [x for x in nx[1:] if x['id'] not in ids]
+    log('  just brought in: %s, next after this one' % ', '.join(i['name'] for i in found))
 
 
 def brought_in(rest):
