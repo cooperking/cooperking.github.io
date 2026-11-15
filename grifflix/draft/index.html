@@ -1915,6 +1915,16 @@ html[data-theme=spiral] .hinfo .w, html[data-theme=spiral] .hinfo .w > span, htm
 html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 .th-picture .vday.soon { background: #141210 !important; box-shadow: inset 0 0 0 1px rgba(244, 236, 216, .25) !important; }
 .th-picture .vday.soon .cs { display: grid !important; font: 600 15px/1.2 var(--kfont) !important; letter-spacing: .28em; color: rgba(244, 236, 216, .55) !important; text-transform: uppercase; }
+/* the look made consistent across the phone, the computer and the TV (a review of every screen: 15 Nov 2026) */
+.homeic[hidden] { display: none !important; }   /* (a home icon hidden over pop-ups showed all the same, alone in the top corner of a phone) */
+html:not(.hall):not(.table):not(.tv) .bar-top::before { content: ""; position: fixed; left: 0; right: 0; top: 0; height: calc(env(safe-area-inset-top) + 66px); background: linear-gradient(var(--bg) 82%, rgba(0, 0, 0, 0)); z-index: -1; pointer-events: none; }   /* (the bar on its own ground, as the page scrolls under it: the calendar's films showed through CALENDAR and THEME) */
+html:not(.phone):not(.tv) #sheet #sq, html.tv #sheet #sq { width: 100% !important; }   /* (Search's box to the edge: the room kept for the X it no longer has) */
+#sheet input::placeholder, #sq::placeholder { color: var(--fg-2); opacity: 1; }   /* (the hint readable in every theme's colours) */
+.row h2 .more { color: var(--fg-2) !important; }   /* (See all: not faint) */
+html.tv .tcd span { padding: 10px 9px 7px; } html.tv .tcd span em { -webkit-line-clamp: 1; } html.tv .tcd span small { display: none; }   /* (the TV calendar: a title on one line, under the day's number, not over it) */
+html.phone #sheetIn > .form > .close { position: static !important; float: right; margin: 0 0 8px 12px; }   /* (a phone: a dialog's X under the bar, not on its SEARCH) */
+.pill.danger.armed { background: #b3261e !important; border-color: #b3261e !important; color: #fff !important; }   /* (Delete, once tapped: a warning, not like the other buttons) */
+html.tv .sfpop { max-height: 70vh; }
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -1979,7 +1989,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '3718be14310f' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'a89ec56cb152' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2184,6 +2194,8 @@ function sfWire(root, items, redraw) {   // the icons' panels: items are what's 
     var host = root.closest('dialog') || document.body;
     $$('.sfpop.sfout, .sfdim', host).forEach(function (x) { if (!root.contains(x)) x.remove(); });
     pop.classList.add('sfout'); host.appendChild(pop);
+    // (gone with the pop-up it belongs to: left open and the page left by the bar, it stayed over the next pop-up and blocked it)
+    if (host.tagName === 'DIALOG') host.addEventListener('close', function () { pop.remove(); if (dim) dim.remove(); }, { once: true });
     dim = document.createElement('div'); dim.className = 'sfdim'; dim.hidden = true; host.insertBefore(dim, pop);
     dim.onclick = function () { close(); };
   }
@@ -5078,6 +5090,7 @@ function drawLists(L) {
 /* ------------------------------------------------------------------ pop-ups */
 var dlg = $('#sheet');
 function openSheet(html) {
+  [].forEach.call(dlg.querySelectorAll('.sfout, .sfdim'), function (x) { x.remove(); });   // (a sort or filter panel of the last pop-up gone with it)
   $('#sheetIn').innerHTML = html;
   // (what the remote's on in a pop-up is kept when it's redrawn only if they moved there: the browser's own first choice, the day
   // before, isn't kept over Play: John, 10 Nov 2026: "Tab order is still not remote control intuitive")
@@ -5288,11 +5301,12 @@ function bodyHTML(it, ctx) {
     // (John's: the Mac mini to do this one next, when it needs anything: John, 13 Nov 2026, "a convert now option to films if I need them sooner")
     if (ME && ME.owner && it.conv) h += '<button class="pill" id="aconv" title="' + esc('The Mac mini will ' + it.conv.replace(/^to /, '')) + '"' + (it.convNow || it.convNext ? ' disabled' : '') + '>' +
       (it.convNow ? 'Converting now' : it.convNext ? 'Next for the Mac mini ✓' : /^to make smaller/.test(it.conv) ? 'Make smaller next' : 'Convert next') + '</button>';
-    // (John's only: take the film out of Grifflix, to the Bin on the G-Drive for 30 days: John, 15 Nov 2026)
-    if (ME && ME.owner && !TV && it.type === 'movie') h += '<button class="pill" id="adel">Delete</button>';
     if (ME && ME.downloads && !TV && !isSeries) h += '<button class="pill" id="adown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5M5 21h14"/></svg>Download</button>';
   }
-  if (!it.ext && shareDayOf(it)) h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button></div>';
+  if (!it.ext && shareDayOf(it)) h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button>';
+  // (John's Delete: last in the row, apart from the rest)
+  if (!PUBLIC && !it.ext && ME && ME.owner && !TV && it.type === 'movie') h += '<button class="pill danger" id="adel">Delete</button>';
+  h += '</div>';   // (the row closed whatever's in it: with no Share button it was left open and a series' episodes went inside it, Play and the heart floating beside them)
   if (isSeries && it.episodes) {
     var seasons = {}; it.episodes.forEach(function (e) { (seasons[e.season || 0] = seasons[e.season || 0] || []).push(e); });
     var keys = Object.keys(seasons).sort(function (a, b) { return a - b; }), cur = ctx.season || (it.next ? (it.episodes.filter(function (e) { return e.id === it.next; })[0] || {}).season : keys[0]) || keys[0];
@@ -5329,9 +5343,9 @@ function wireBody(it, ctx) {
     var b = $('#adel');
     if (!b.dataset.sure) {   // (two taps: the first says what it does, and any Movie of the Day it's on)
       var D = (S.calData && S.calData.id === 'motd' ? S.calData.days : null) || {}, on = Object.keys(D).filter(function (d) { return D[d] && D[d].id === it.id; });
-      b.dataset.sure = 1; b.textContent = 'Tap again to delete';
+      b.dataset.sure = 1; b.classList.add('armed'); b.textContent = (matchMedia('(hover: hover)').matches ? 'Click' : 'Tap') + ' again';
       if (on.length) toast('It’s Movie of the Day on ' + on.map(function (d) { return longDate(d); }).join(', ') + ': that day will need another film');
-      setTimeout(function () { if (b.isConnected && b.dataset.sure) { delete b.dataset.sure; b.textContent = 'Delete'; } }, 6000);
+      setTimeout(function () { if (b.isConnected && b.dataset.sure) { delete b.dataset.sure; b.classList.remove('armed'); b.textContent = 'Delete'; } }, 6000);
       return;
     }
     b.disabled = true; b.textContent = 'Deleting…';
