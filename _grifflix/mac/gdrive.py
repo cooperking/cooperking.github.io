@@ -185,7 +185,20 @@ def run(check=False):
 SOURCES = [{'remote': REMOTE, 'path': FOLDER, 'name': 'Google Drive', 'delete': True},
            {'remote': 'torbox', 'path': '', 'name': 'TorBox', 'delete': False}]
 SEEN = os.path.join(HOME, 'fetched.json')
-STATUS = os.path.join(HOME, 'fetch-status.json')   # (for the admin page: what's coming in, how far, and what came: John, 15 Nov 2026)
+STATUS = os.path.join(HOME, 'fetch-status.json')
+FIRST = os.path.join(HOME, 'fetch-first.json')   # (John's: the downloads he wants next, from the admin page: John, 15 Nov 2026, "Can I prioritise what's coming in next from torbox?")
+
+
+def firsts():
+    try:
+        return [str(x) for x in json.load(open(FIRST))]
+    except (OSError, ValueError, TypeError):
+        return []
+
+
+def in_order(plan):
+    f = firsts()
+    return sorted(plan, key=lambda p: f.index(p['path']) if p['path'] in f else len(f) + plan.index(p))   # (for the admin page: what's coming in, how far, and what came: John, 15 Nov 2026)
 
 
 def status_get():
@@ -254,10 +267,16 @@ def _run(check):
                 continue   # (coming in now)
             plan.append(dict(src=src, loc=loc, path=path, size=size, key=key, folder=folder, title=title, year=year, ext=ext,
                              dest_dir=dest_dir, dest=dest, name=f['Name'], subs=subs))
+    plan = in_order(plan)
     free0 = shutil.disk_usage(root).free
     status(checked=int(time.time()), waiting=[{'from': p['src']['name'], 'file': p['path'], 'to': p['title'], 'gb': round(p['size'] / 1e9, 1),
                                                'noyear': not p['year'], 'noroom': free0 < p['size'] + 20e9} for p in plan], **({} if check else {'now': None}))
-    for i, p in enumerate(plan):
+    while plan:
+        plan = in_order(plan)   # (John's next, looked at again before each: one he chooses mid-download goes after this one)
+        p = plan.pop(0)
+        if not check:
+            status(waiting=[{'from': q['src']['name'], 'file': q['path'], 'to': q['title'], 'gb': round(q['size'] / 1e9, 1), 'noyear': not q['year'],
+                             'noroom': shutil.disk_usage(root).free < q['size'] + 20e9} for q in plan])
         src, loc, path, size, key, folder, title, year, ext, dest_dir, dest, subs = (p[k] for k in
             ('src', 'loc', 'path', 'size', 'key', 'folder', 'title', 'year', 'ext', 'dest_dir', 'dest', 'subs'))
         if check:
@@ -272,8 +291,7 @@ def _run(check):
         log('Fetching from %s: %s → %s/ (%.1f GB)' % (src['name'], path, title, size / 1e9))
         os.makedirs(dest_dir, exist_ok=True)
         part = dest + '.adding'
-        status(now={'from': src['name'], 'file': path, 'to': title, 'size': size, 'part': part, 'since': int(time.time())},
-               waiting=[w for w in (status_get().get('waiting') or []) if w.get('file') != path])
+        status(now={'from': src['name'], 'file': path, 'to': title, 'size': size, 'part': part, 'since': int(time.time())})
         came = lambda ok, why='', title=title, src=src, size=size: status(now=None, came={'to': title, 'from': src['name'], 'gb': round(size / 1e9, 1), 'at': int(time.time()), 'ok': ok, 'why': why})
         try:
             if sys.stdout.isatty():   # (in Terminal: how far, how fast, how long to go, as it downloads)

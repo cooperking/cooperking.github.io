@@ -373,6 +373,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           <label class="cvsw"><input type="checkbox" id="cvrf"> <span>Repackage every MKV first, then the conversions <small>(repackaging takes minutes a film, converting hours)</small></span></label>
           <div id="cvpins"></div>
         </div>
+        <div id="cvask"></div>
         <div class="lbchips" id="cvtabs" style="margin:14px 0 4px"></div>
         <ul class="changes cvl" id="cvlist"></ul>
         <p class="stat" id="orsay" style="margin-top:14px"></p>
@@ -1005,11 +1006,20 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       $('#ftabs').innerHTML = [['next', 'Next', w.length + (n ? 1 : 0)], ['came', 'Came', rc.length]]
         .map(function (t) { return '<button type="button" data-ft="' + t[0] + '" aria-pressed="' + (tab === t[0]) + '">' + t[1] + ' ' + t[2] + '</button>'; }).join('');
       Array.prototype.forEach.call(document.querySelectorAll('[data-ft]'), function (b) { b.onclick = function () { fetching.tab = b.dataset.ft; fetching.last && fetching.draw(fetching.last); }; });
-      var it = function (x, now) { return '<li>' + (now ? '<b>Now:</b> ' : '') + esc(x.to) + '<span class="when">from ' + esc(x.from) + ' · ' + (x.gb || (x.size / 1e9).toFixed(1)) + ' GB' +
-        (x.noyear ? ' · <b style="color:#f08a4b">no year: check it after</b>' : '') + (x.noroom ? ' · <b style="color:#f08a4b">no room for it</b>' : '') + '</span><span class="cvba">' + esc(x.file) + '</span></li>'; };
-      $('#flist').innerHTML = tab === 'next' ? ((n ? it(n, true) : '') + w.map(function (x) { return it(x); }).join('') || '<li>Nothing waiting.</li>') :
+      // (John's next: Do next puts a download at the front, after the one coming in now: John, 15 Nov 2026, "Can I prioritise what's coming in next from torbox?")
+      var F = f.first || [];
+      w = w.slice().sort(function (a, b) { var i = F.indexOf(a.file), j = F.indexOf(b.file); return (i < 0 ? 1e4 : i) - (j < 0 ? 1e4 : j); });
+      var it = function (x, now, i) { return '<li>' + (now ? '<b>Now:</b> ' : '') + esc(x.to) + '<span class="when">from ' + esc(x.from) + ' · ' + (x.gb || (x.size / 1e9).toFixed(1)) + ' GB' +
+        (x.noyear ? ' · <b style="color:#f08a4b">no year: check it after</b>' : '') + (x.noroom ? ' · <b style="color:#f08a4b">no room for it</b>' : '') + '</span><span class="cvba">' + esc(x.file) + '</span>' +
+        (!now && i ? '<span class="state" style="margin-top:6px"><button class="btn" type="button" data-ffirst="' + esc(x.file) + '" data-n="' + esc(x.to) + '">Do next</button></span>' : '') + '</li>'; };
+      $('#flist').innerHTML = tab === 'next' ? ((n ? it(n, true) : '') + w.map(function (x, i) { return it(x, false, i); }).join('') || '<li>Nothing waiting.</li>') :
         rc.map(function (x) { return '<li>' + esc(x.to) + '<span class="when">' + esc(when(x.at * 1000)) + ' · from ' + esc(x.from) + ' · ' + x.gb + ' GB' +
           (x.ok ? '' : ' · <b style="color:#f08a4b">didn’t come</b>') + (x.why ? ' · ' + esc(x.why) : '') + '</span></li>'; }).join('') || '<li>None yet.</li>';
+      Array.prototype.forEach.call(document.querySelectorAll('[data-ffirst]'), function (b) { b.onclick = function () {
+        b.disabled = true;
+        fetch(GW + '/api/fetching', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'first', file: b.dataset.ffirst }) })
+          .then(function (r) { if (!r.ok) throw 0; toast(b.dataset.n + ': next' + (n ? ', after ' + n.to : '')); fetching(); }).catch(function () { b.disabled = false; toast('The Mac mini didn’t answer.'); });
+      }; });
       clearTimeout(fetching.t); fetching.t = setTimeout(fetching, n || f.running ? 10000 : 60000);
     }).catch(function (e) {
       $('#fhead').innerHTML = e && e.message === 'old' ? 'The Mac mini <em>needs its update</em>' : 'The Mac mini isn’t <em>answering</em>';
@@ -1048,6 +1058,19 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     if (!GW) return;
     fetch(GW + '/api/convert', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (r.status === 404) throw new Error('old'); if (!r.ok) throw 0; return r.json(); }).then(convert.draw = function (c) {
       convert.last = c; cvOrder(c);
+      // (films whose own language the converter wasn't sure of: done with its best guess, the original kept, and flagged here to change
+      // or confirm; John, 15 Nov 2026: "I always want the original language - never the dub"; "don't wait - but flag to me, and don't
+      // delete original if in doubt")
+      var ask = (c.ask || []).filter(function (x) { return x.chosen !== 'ok'; });
+      $('#cvask').innerHTML = ask.length ? '<p class="stat" style="margin:14px 0 6px"><b style="color:#f08a4b">Check the language</b>: not sure these are heard in their original language. Each was done with the best guess, and its original kept.</p>' + ask.map(function (x) {
+        var ch = x.chosen && x.chosen !== x.chose ? x.chosen : '';
+        return '<div class="cvpin" style="flex-wrap:wrap;gap:8px"><b style="flex-basis:100%">' + esc(x.name) + (x.year ? ' (' + x.year + ')' : '') + ': heard in ' + esc(ch || x.chose) + ' <small style="color:var(--muted);font-weight:400">' + (ch ? 'changing now' : esc(x.why || '')) + '</small></b>' +
+          (ch ? '' : (x.options || []).filter(function (o) { return o !== x.chose; }).map(function (o) { return '<button type="button" data-lgid="' + x.id + '" data-lg="' + esc(o) + '" data-n="' + esc(x.name) + '">Change to ' + esc(o) + '</button>'; }).join('') +
+            '<button type="button" data-lgid="' + x.id + '" data-lg="ok" data-n="' + esc(x.name) + '">' + esc(x.chose) + ' is right</button>') + '</div>';
+      }).join('') : '';
+      Array.prototype.forEach.call(document.querySelectorAll('[data-lgid]'), function (b) { b.onclick = function () {
+        cvPost({ op: 'lang', id: b.dataset.lgid, lang: b.dataset.lg, name: b.dataset.n }).then(function (j) { toast(b.dataset.lg === 'ok' ? 'Thanks: ' + b.dataset.n + ' left as it is (its original is in The originals)' : b.dataset.n + ': changing to ' + b.dataset.lg + ', a few minutes'); convert.draw(j); }).catch(function (e) { toast(e.message); });
+      }; });
       if (c.disks && c.disks.length) {   // (each disk's free space, and a warning before one fills: John, 12 Nov 2026, the Mac's own disk filled unnoticed)
         var gb = function (b) { return b >= 1e12 ? (b / 1e12).toFixed(1) + ' TB' : Math.round(b / 1e9) + ' GB'; };
         $('#cvdisks').hidden = false;
