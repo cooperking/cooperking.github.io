@@ -306,7 +306,7 @@ def _run(check):
         seen = json.load(open(SEEN))
     except (OSError, ValueError):
         seen = {}
-    done, plan = 0, []
+    done, plan, trouble = 0, [], []
     for src in SOURCES:
         if src['remote'] not in have:
             continue
@@ -315,6 +315,7 @@ def _run(check):
             items = json.loads(rc('lsjson', '-R', '--files-only', loc('').rstrip('/')) or '[]')
         except Exception as e:
             log('%s: couldn’t look (%s)' % (src['name'], e))
+            trouble.append('Couldn’t look in %s: %s' % (src['name'], str(e)[-200:]))   # (shown on the admin page, not "nothing waiting")
             continue
         films = [x for x in items if x['Path'].lower().endswith(VIDEO) and 'sample' not in x['Name'].lower()]
         subs = [x for x in items if x['Path'].lower().endswith('.srt')]
@@ -386,7 +387,7 @@ def _run(check):
         pass
     plan = in_order(plan)
     free0 = shutil.disk_usage(root).free
-    status(checked=int(time.time()), waiting=[dict(wait_entry(p), noroom=free0 < p['size'] + 20e9) for p in plan], **({} if check else {'now': None}))
+    status(checked=int(time.time()), trouble=trouble, waiting=[dict(wait_entry(p), noroom=free0 < p['size'] + 20e9) for p in plan], **({} if check else {'now': None}))
     while plan:
         plan = in_order(plan)   # (John's next, looked at again before each: one he chooses mid-download goes after this one)
         p = plan.pop(0)

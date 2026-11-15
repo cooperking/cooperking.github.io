@@ -1332,7 +1332,7 @@ def make_handler(g):
                 now.update(got=got, pct=round(min(99.9, 100.0 * got / now['size']), 1) if now.get('size') else 0, mbps=round(got * 8 / took / 1e6, 1))
             waiting = [x for x in (st.get('waiting') or []) if not (now and x.get('file') == now.get('file'))]
             return self.send_json(200, {'setup': setup, 'running': running, 'now': now, 'waiting': waiting,
-                                        'recent': st.get('recent') or [], 'checked': st.get('checked'), 'next': int(GDRIVE_NEXT[0]) or None, 'error': GDRIVE_ERR[0],
+                                        'recent': st.get('recent') or [], 'checked': st.get('checked'), 'next': int(GDRIVE_NEXT[0]) or None, 'error': GDRIVE_ERR[0], 'trouble': st.get('trouble') or [],
                                         'first': load(os.path.join(home, 'fetch-first.json'), []) or [], 'names': load(os.path.join(home, 'fetch-names.json'), {}) or {}})
 
         def api_convert(self, me, user, q, b):
