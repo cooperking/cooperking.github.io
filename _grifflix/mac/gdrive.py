@@ -68,7 +68,15 @@ def title_of(name):
         if x.start() > 0 and int(x.group(1)) <= time.localtime().tm_year + 1 and n[:x.start()].strip(' -(['):
             best = x
     if best:
-        return '%s (%s)' % (n[:best.start()].strip(' -(['), best.group(1)), True
+        before = n[:best.start()].strip(' -([')
+        # (a television strand's name first, the film's own after the year: "BBC Arena 2026 Kim Novak's Vertigo" is Kim Novak's
+        # Vertigo. "BBC Arena will never be the title of a film": John, 15 Nov 2026)
+        if re.match(r'^(bbc|itv|ch4|channel 4|channel4|c4|more4|sky( arts| documentaries)?|pbs|arte|nat ?geo|national geographic|cnn|hbo|abc|cbs|nbc|rte|s4c|stv)\b', before, re.I):
+            after = re.split(r'(?:^|[ \-\[(])' + JUNK + r'\b', n[best.end():], maxsplit=1, flags=re.I)[0].strip(' -)]')
+            after = re.sub(r'\s+(MVGroup|org|com)\b.*$', '', after, flags=re.I).strip(' -')
+            if re.search(r'[A-Za-z]{2}', after):
+                return '%s (%s)' % (after, best.group(1)), True
+        return '%s (%s)' % (before, best.group(1)), True
     t = re.split(r'[ \-\[(]' + JUNK + r'\b', n, maxsplit=1, flags=re.I)[0].strip(' -')
     return (t or n).strip(), False
 
