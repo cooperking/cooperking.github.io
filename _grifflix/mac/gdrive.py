@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Films from Google Drive into Grifflix, by themselves (John, 15 Nov 2026: "perhaps we could integrate google drive instead";
+"""Films from Google Drive (and TorBox) into Grifflix, by themselves (John, 15 Nov 2026: "perhaps we could integrate google drive instead";
 "delete once it's on the g-drive").
 
 Put a film (or a download's folder) in the "Grifflix" folder of your Google Drive. The Mac mini looks every 15 minutes (the
@@ -138,71 +138,108 @@ def run(check=False):
             pass
 
 
+# where films come from: Google Drive's Grifflix folder (each deleted once it's on the G-Drive), and TorBox if it's set up in rclone
+# (as "torbox": fetched once and remembered, not deleted: its connection is read-only) (John, 15 Nov 2026: TorBox copied to Google Drive
+# through the Mac mini, then fetched again: "ok do it that way", straight onto the G-Drive)
+SOURCES = [{'remote': REMOTE, 'path': FOLDER, 'name': 'Google Drive', 'delete': True},
+           {'remote': 'torbox', 'path': '', 'name': 'TorBox', 'delete': False}]
+SEEN = os.path.join(HOME, 'fetched.json')
+
+
 def _run(check):
     root = films_root()
-    items = json.loads(rc('lsjson', '-R', '--files-only', '%s:%s' % (REMOTE, FOLDER)) or '[]')
-    films = [x for x in items if x['Path'].lower().endswith(VIDEO) and 'sample' not in x['Name'].lower()]
-    subs = [x for x in items if x['Path'].lower().endswith('.srt')]
+    have = set(x.strip().rstrip(':') for x in rc('listremotes').split())
+    try:
+        seen = json.load(open(SEEN))
+    except (OSError, ValueError):
+        seen = {}
     done = 0
-    for f in films:
-        path, size = f['Path'], int(f.get('Size') or 0)
-        folder = os.path.dirname(path)
-        title, year = title_of(f['Name'])
-        if not year and folder:
-            t2, y2 = title_of(os.path.basename(folder))
-            if y2:
-                title, year = t2, y2
-        ext = os.path.splitext(f['Name'])[1].lower()
-        dest_dir = os.path.join(root, title)
-        dest = os.path.join(dest_dir, title + ext)
-        if os.path.isdir(dest_dir) and any(n.lower().endswith(VIDEO) for n in os.listdir(dest_dir)):
-            log('Left in Google Drive: %s ("%s" is already in Grifflix)' % (path, title))
+    for src in SOURCES:
+        if src['remote'] not in have:
             continue
-        if check:
-            log('Would add: %s → %s/%s%s' % (path, title, title + ext, '' if year else ' (no year in its name)'))
-            continue
-        free = shutil.disk_usage(root).free
-        if free < size + 20e9:
-            log('Not enough room on the drive for %s (%.0f GB free): left in Google Drive' % (path, free / 1e9))
-            continue
-        log('Fetching from Google Drive: %s → %s/ (%.1f GB)' % (path, title, size / 1e9))
-        os.makedirs(dest_dir, exist_ok=True)
-        part = dest + '.adding'
+        loc = lambda p, src=src: '%s:%s' % (src['remote'], (src['path'] + '/' + p) if src['path'] else p)
         try:
-            rc('copyto', '%s:%s/%s' % (REMOTE, FOLDER, path), part, '--retries', '3')
+            items = json.loads(rc('lsjson', '-R', '--files-only', loc('').rstrip('/')) or '[]')
         except Exception as e:
-            log('  the download failed (%s): left in Google Drive' % e)
-            for x in (part,):
-                if os.path.exists(x):
-                    os.remove(x)
-            try:
-                os.rmdir(dest_dir)
-            except OSError:
-                pass
+            log('%s: couldn’t look (%s)' % (src['name'], e))
             continue
-        if os.path.getsize(part) != size:
-            log('  the copy isn’t whole (%d of %d bytes): left in Google Drive' % (os.path.getsize(part), size))
-            os.remove(part)
-            continue
-        os.replace(part, dest)
-        # (its subtitles: beside it in Google Drive, with the film's new name)
-        stem = os.path.splitext(f['Name'])[0]
-        for s in subs:
-            if os.path.dirname(s['Path']) != folder or (not folder and not s['Name'].startswith(stem)):
+        films = [x for x in items if x['Path'].lower().endswith(VIDEO) and 'sample' not in x['Name'].lower()]
+        subs = [x for x in items if x['Path'].lower().endswith('.srt')]
+        for f in films:
+            path, size = f['Path'], int(f.get('Size') or 0)
+            key = '%s:%s|%d' % (src['remote'], path, size)
+            if not src['delete'] and key in seen:
+                continue   # (fetched before: TorBox keeps its copy)
+            folder = os.path.dirname(path)
+            title, year = title_of(f['Name'])
+            if not year and folder:
+                t2, y2 = title_of(os.path.basename(folder))
+                if y2:
+                    title, year = t2, y2
+            ext = os.path.splitext(f['Name'])[1].lower()
+            dest_dir = os.path.join(root, title)
+            dest = os.path.join(dest_dir, title + ext)
+            if os.path.isdir(dest_dir) and any(n.lower().endswith(VIDEO) for n in os.listdir(dest_dir)):
+                if key not in seen:
+                    log('Left in %s: %s ("%s" is already in Grifflix)' % (src['name'], path, title))
+                    if not check:
+                        seen[key] = int(time.time())
                 continue
-            sb = os.path.splitext(s['Name'])[0]
-            lang = '.' + sb.rsplit('.', 1)[1] if re.search(r'\.[a-z]{2,3}$', sb) else ''
+            if check:
+                log('Would add from %s: %s → %s/%s%s' % (src['name'], path, title, title + ext, '' if year else ' (no year in its name)'))
+                continue
+            free = shutil.disk_usage(root).free
+            if free < size + 20e9:
+                log('Not enough room on the drive for %s (%.0f GB free): left in %s' % (path, free / 1e9, src['name']))
+                continue
+            log('Fetching from %s: %s → %s/ (%.1f GB)' % (src['name'], path, title, size / 1e9))
+            os.makedirs(dest_dir, exist_ok=True)
+            part = dest + '.adding'
             try:
-                rc('copyto', '%s:%s/%s' % (REMOTE, FOLDER, s['Path']), os.path.join(dest_dir, title + lang + '.srt'))
-                rc('deletefile', '--drive-use-trash=false', '%s:%s/%s' % (REMOTE, FOLDER, s['Path']))
+                rc('copyto', loc(path), part, '--retries', '3')
             except Exception as e:
-                log('  its subtitles %s: %s' % (s['Name'], e))
-        rc('deletefile', '--drive-use-trash=false', '%s:%s/%s' % (REMOTE, FOLDER, path))
-        log('  done: on the G-Drive, and deleted from Google Drive' + ('' if year else '. NOTE: "%s" has no year in its name, so the media server may match the wrong film: if it does, rename its folder "%s (Year)"' % (title, title)))
-        done += 1
+                log('  the download failed (%s): left in %s' % (e, src['name']))
+                if os.path.exists(part):
+                    os.remove(part)
+                try:
+                    os.rmdir(dest_dir)
+                except OSError:
+                    pass
+                continue
+            if os.path.getsize(part) != size:
+                log('  the copy isn’t whole (%d of %d bytes): left in %s' % (os.path.getsize(part), size, src['name']))
+                os.remove(part)
+                continue
+            os.replace(part, dest)
+            # (its subtitles: beside it, with the film's new name)
+            stem = os.path.splitext(f['Name'])[0]
+            for s_ in subs:
+                if os.path.dirname(s_['Path']) != folder or (not folder and not s_['Name'].startswith(stem)):
+                    continue
+                sb = os.path.splitext(s_['Name'])[0]
+                lang = '.' + sb.rsplit('.', 1)[1] if re.search(r'\.[a-z]{2,3}$', sb) else ''
+                try:
+                    rc('copyto', loc(s_['Path']), os.path.join(dest_dir, title + lang + '.srt'))
+                    if src['delete']:
+                        rc('deletefile', '--drive-use-trash=false', loc(s_['Path']))
+                except Exception as e:
+                    log('  its subtitles %s: %s' % (s_['Name'], e))
+            if src['delete']:
+                rc('deletefile', '--drive-use-trash=false', loc(path))
+            seen[key] = int(time.time())
+            log('  done: on the G-Drive' + (', and deleted from ' + src['name'] if src['delete'] else '') +
+                ('' if year else '. NOTE: "%s" has no year in its name, so the media server may match the wrong film: if it does, rename its folder "%s (Year)"' % (title, title)))
+            done += 1
+            if src['delete']:
+                rc('rmdirs', '--leave-root', loc('').rstrip('/'), check=False)   # (download folders left empty)
+        try:
+            tmp = SEEN + '.tmp'
+            json.dump(seen, open(tmp, 'w'))
+            os.replace(tmp, SEEN)
+        except OSError:
+            pass
     if done:
-        rc('rmdirs', '--leave-root', '%s:%s' % (REMOTE, FOLDER), check=False)   # (download folders left empty)
-        log('%d film(s) from Google Drive: Grifflix shows them within about 20 minutes' % done)
+        log('%d film(s) fetched: Grifflix shows them within about 20 minutes' % done)
 
 
 if __name__ == '__main__':

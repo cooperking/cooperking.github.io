@@ -2475,7 +2475,7 @@ def keep_gdrive():
                 import subprocess
                 r = subprocess.run([sys.executable, script, 'run'], capture_output=True, text=True, timeout=6 * 3600)
                 for line in (r.stdout or '').splitlines():
-                    if 'film(s) from Google Drive' in line or 'failed' in line or 'Not enough room' in line:
+                    if 'film(s) fetched' in line or 'film(s) from Google Drive' in line or 'failed' in line or 'Not enough room' in line:
                         log('Google Drive:', line[17:])
                 if r.returncode:
                     log('Google Drive: didn’t work:', (r.stderr or '').strip()[-300:])
