@@ -58,7 +58,8 @@ SOFTWARE = [('grifflix-gateway.py', os.path.join(APP_DIR, 'grifflix-gateway.py')
             ('streaming-report.py', os.path.expanduser('~/Grifflix/streaming-report.py'), ''),
             ('subtitles.py', os.path.join(APP_DIR, 'subtitles.py'), 'movie_hash'),
             ('poster-add.py', os.path.expanduser('~/Grifflix/poster-add.py'), 'Criterion images'),   # (John's own posters on their films: 12 Nov 2026)
-            ('criterion.py', os.path.expanduser('~/Grifflix/criterion.py'), 'Criterion Films')]   # what John's last Update sent (so the next reads only what's new)
+            ('criterion.py', os.path.expanduser('~/Grifflix/criterion.py'), 'Criterion Films'),
+            ('gdrive.py', os.path.expanduser('~/Grifflix/gdrive.py'), 'Google Drive')]   # (films from Google Drive, by themselves: 15 Nov 2026)   # what John's last Update sent (so the next reads only what's new)
 LIBS = {'movies': ('Movies', 'movies'), 'tv': ('TV', 'tvshows'), 'home': ('Home videos', 'homevideos')}
 
 
@@ -1412,7 +1413,7 @@ def make_handler(g):
                         pass
                     if old == got[name]:
                         continue
-                    if old is None and name not in ('grifflix-gateway.py', 'convert.py', 'subtitles.py', 'poster-add.py', 'criterion.py'):
+                    if old is None and name not in ('grifflix-gateway.py', 'convert.py', 'subtitles.py', 'poster-add.py', 'criterion.py', 'gdrive.py'):
                         continue   # (a script John hasn't got on this Mac stays away)
                     os.makedirs(os.path.dirname(dest), exist_ok=True)
                     if old is not None:
@@ -2463,6 +2464,26 @@ def site_update(g, why=''):
     return c
 
 
+def keep_gdrive():
+    """Films from the Grifflix folder of John's Google Drive, every 15 minutes, once gdrive.py is set up (its sign-in kept): onto the
+    G-Drive, then deleted from Google Drive; keep_scanning sees them next and the site follows (John, 15 Nov 2026)."""
+    script, conf = os.path.expanduser('~/Grifflix/gdrive.py'), os.path.expanduser('~/Grifflix/rclone.conf')
+    time.sleep(240)
+    while True:
+        try:
+            if os.path.exists(script) and os.path.exists(conf):
+                import subprocess
+                r = subprocess.run([sys.executable, script, 'run'], capture_output=True, text=True, timeout=6 * 3600)
+                for line in (r.stdout or '').splitlines():
+                    if 'film(s) from Google Drive' in line or 'failed' in line or 'Not enough room' in line:
+                        log('Google Drive:', line[17:])
+                if r.returncode:
+                    log('Google Drive: didn’t work:', (r.stderr or '').strip()[-300:])
+        except Exception as e:
+            log('Google Drive:', e)
+        time.sleep(900)
+
+
 def keep_scanning(g):
     """New films noticed: every 10 minutes the film and TV folders are looked at, and when there's a new one in them the media server
     is asked to look too. Its own watching of the folders misses films put on the drive over the network (John, 15 Nov 2026: "New
@@ -2544,6 +2565,7 @@ def serve():
     g = Gateway()
     threading.Thread(target=keep_converting, daemon=True).start()
     threading.Thread(target=keep_scanning, args=(g,), daemon=True).start()
+    threading.Thread(target=keep_gdrive, daemon=True).start()
     port = int(g.st.get('port', 8097))
     srv = ThreadingHTTPServer(('127.0.0.1', port), make_handler(g))
     srv.daemon_threads = True
