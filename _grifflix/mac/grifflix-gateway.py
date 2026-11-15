@@ -1278,7 +1278,7 @@ def make_handler(g):
                 ps = ''
             live = None
             for line in ps.splitlines():
-                m = re.search(r'rclone .*?copyto (\S+?):(.*?) (/.*?\.adding)(?: |$)', line)
+                m = re.search(r'rclone .*? copy (\S+?):(.*?) (/.*?\.adding)\.d(?: |$)', line)   # (the folder's copy, into "<file>.adding.d")
                 if m:
                     live = {'remote': m.group(1), 'file': m.group(2), 'part': m.group(3)}
                     break
@@ -1318,16 +1318,18 @@ def make_handler(g):
                 st = {}
             now = st.get('now') if running else None
             if live and (not now or now.get('part') != live['part']):   # (from what's running: its size from the list of what's waiting)
-                w = next((x for x in (st.get('waiting') or []) + [st.get('now') or {}] if x.get('file') and live['file'].endswith(x['file'])), {})
+                w = next((x for x in [st.get('now') or {}] + (st.get('waiting') or []) if x.get('file') and os.path.dirname(x['file']) == live['file'].strip('/')), {})
                 now = {'from': 'TorBox' if live['remote'] == 'torbox' else 'Google Drive', 'file': live['file'], 'part': live['part'],
                        'to': w.get('to') or os.path.basename(live['part'])[:-len('.adding')].rsplit('.', 1)[0], 'size': w.get('size') or int((w.get('gb') or 0) * 1e9),
                        'since': int(os.path.getctime(live['part'])) if os.path.exists(live['part']) else int(time.time()), 'ep': w.get('ep'), 'series': w.get('series')}
             if now:
                 part = now.pop('part', '')
-                try:
-                    got = os.path.getsize(part)
-                except OSError:
-                    got = 0
+                got = 0
+                for f_ in [part] + ([os.path.join(part + '.d', n) for n in os.listdir(part + '.d')] if os.path.isdir(part + '.d') else []):
+                    try:   # (while it comes: in "<file>.adding.d", until it's whole)
+                        got = max(got, os.path.getsize(f_))
+                    except OSError:
+                        pass
                 took = max(1, time.time() - (now.get('since') or time.time()))
                 now.update(got=got, pct=round(min(99.9, 100.0 * got / now['size']), 1) if now.get('size') else 0, mbps=round(got * 8 / took / 1e6, 1))
             waiting = [x for x in (st.get('waiting') or []) if not (now and x.get('file') == now.get('file'))]
@@ -2745,9 +2747,11 @@ def keep_gdrive():
             for c, pp, l in rows:
                 if pp == p_ and 'rclone' in l:   # (its download: stopped, and its half-made file removed)
                     os.kill(c, sig.SIGTERM)
-                    m = re.search(r' (/.*?\.adding)(?: |$)', l)
+                    m = re.search(r' (/.*?\.adding)(?:\.d)?(?: |$)', l)
                     if m:
                         time.sleep(2)
+                        import shutil
+                        shutil.rmtree(m.group(1) + '.d', ignore_errors=True)
                         try:
                             os.remove(m.group(1))
                         except OSError:
