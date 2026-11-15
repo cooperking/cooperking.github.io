@@ -791,6 +791,9 @@ while rest:
         while not night():
             now('waiting', why='waiting for %d am' % NIGHT[0])
             time.sleep(60)
+    if not os.path.exists(it['path']):   # (renamed or deleted since it was listed: looked at again under its new name later)
+        log('  %s isn’t where it was (renamed or deleted): skipped for now' % it['name'])
+        continue
     try:
         convert(it, ffmpeg, ffprobe, st)
         if it.get('redo'):   # (made again in John's language: the flag down)

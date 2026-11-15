@@ -484,6 +484,31 @@ class Gateway:
         self.list_cache[key] = (time.time(), r)
         return r
 
+    def remap(self, m):
+        """Films (or episodes) with new ids, as their files were renamed or remade: calendars, hearts, lists and where people stopped
+        follow them."""
+        n = 0
+        with self.store.lock:
+            for c in self.store.d['calendars'].values():
+                for d, i in list(c.get('days', {}).items()):
+                    if i in m:
+                        c['days'][d] = m[i]; n += 1
+            for usr in self.store.d['users'].values():
+                usr['hearts'] = [m.get(i, i) for i in usr.get('hearts', [])]
+                for pl in usr.get('lists', {}).values():
+                    pl['items'] = [m.get(i, i) for i in pl.get('items', [])]
+                for old, new in m.items():
+                    if old in usr.get('progress', {}):
+                        usr['progress'][new] = usr['progress'].pop(old); n += 1
+            old = self.store.d.setdefault('remap', {})   # (kept: the site's copy has the old ids until John's next Update)
+            for k in list(old):
+                if old[k] in m:
+                    old[k] = m[old[k]]
+            old.update(m)
+            self.store.touch()
+        self.forget()
+        return n
+
     def now_id(self, iid):
         """A film's id now: convert.py's new file has a new one, and the site's copy keeps the old until John's Update."""
         return (self.store.d.get('remap') or {}).get(iid, iid)
@@ -707,27 +732,7 @@ def make_handler(g):
                     if not hmac.compare_digest(self.headers.get('X-Grifflix-Secret', ''), g.st['secret']):
                         return self.send_json(403, {'error': 'Not here.'})
                     m = {str(k): str(v) for k, v in (self.body().get('map') or {}).items() if re.match(r'^[0-9a-f]{32}$', str(k)) and re.match(r'^[0-9a-f]{32}$', str(v))}
-                    n = 0
-                    with g.store.lock:
-                        for c in g.store.d['calendars'].values():
-                            for d, i in list(c.get('days', {}).items()):
-                                if i in m:
-                                    c['days'][d] = m[i]; n += 1
-                        for usr in g.store.d['users'].values():
-                            usr['hearts'] = [m.get(i, i) for i in usr.get('hearts', [])]
-                            for pl in usr.get('lists', {}).values():
-                                pl['items'] = [m.get(i, i) for i in pl.get('items', [])]
-                            for old, new in m.items():
-                                if old in usr.get('progress', {}):
-                                    usr['progress'][new] = usr['progress'].pop(old); n += 1
-                        old = g.store.d.setdefault('remap', {})   # (kept: the site's copy has the old ids until John's next Update)
-                        for k in list(old):
-                            if old[k] in m:
-                                old[k] = m[old[k]]
-                        old.update(m)
-                        g.store.touch()
-                    g.forget()
-                    return self.send_json(200, {'ok': True, 'changed': n})
+                    return self.send_json(200, {'ok': True, 'changed': g.remap(m)})
                 if u.path == '/local/calendar' and method == 'POST':   # motd-fill.py on this Mac: many Movie of the Day days at once (empty days only)
                     if not hmac.compare_digest(self.headers.get('X-Grifflix-Secret', ''), g.st['secret']):
                         return self.send_json(403, {'error': 'Not here.'})
@@ -1756,7 +1761,12 @@ def make_handler(g):
             g.forget()
             g.publish_soon = time.time() + 180   # (the site's copy brought up to date by itself, once the media server has read it)
             log('Identified by John: %s → %s (%s)' % (it.get('Name'), pick.get('Name'), pick.get('ProductionYear') or '?'))
-            return self.send_json(200, {'ok': True, 'name': pick.get('Name'), 'year': pick.get('ProductionYear')})
+            try:   # (its folder and files given the right name too: John, 15 Nov 2026, "I want the folder names corrected too")
+                did = rename_to(g, iid, pick.get('Name') or '', pick.get('ProductionYear'), pick)
+            except Exception as e:
+                did = 'its folder couldn’t be renamed (%s)' % e
+                log('  rename:', e)
+            return self.send_json(200, {'ok': True, 'name': pick.get('Name'), 'year': pick.get('ProductionYear'), 'renamed': did})
 
         def api_delete(self, me, user, q, b):
             """John's only: a film taken out of Grifflix, its folder moved to "Grifflix Bin" on the same drive (emptied after 30 days, so a
@@ -2594,6 +2604,107 @@ def site_update(g, why=''):
 GDRIVE_NOW = threading.Event()   # (admin's Look now: a look straight away, not at the next quarter hour)
 GDRIVE_NEXT = [0]
 GDRIVE_ERR = ['']   # (why the last look didn't work, for the admin page)
+
+
+def rename_to(g, iid, name, year, pick=None):
+    """A film's (or series') folder and files renamed to its right name, "Title (Year)", after Fix match (John, 15 Nov 2026: "I want the
+    folder names corrected too"). The media server then has it as a new item: once it does, calendars, hearts, lists, where people
+    stopped, its collections and its date added follow it, and the match is put on it again. Only a folder that is the film's own
+    (no other film in it); never over a folder already there. Returns what it did, in words."""
+    VIDS = ('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')
+    it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,DateCreated'}) or {}
+    kind, path = it.get('Type'), it.get('Path') or ''
+    if kind not in ('Movie', 'Series') or not path or not os.path.exists(path):
+        return 'its files weren’t found, so they keep their names'
+    new = re.sub(r'[/:\\]', '-', '%s (%s)' % (name, year) if year else name).strip(' .')
+    folder = path if kind == 'Series' else os.path.dirname(path)
+    libs = [os.path.realpath(l).rstrip('/') for v in g.jf.call('GET', '/Library/VirtualFolders') or [] for l in v.get('Locations') or []]
+    if os.path.realpath(folder).rstrip('/') in libs:
+        return 'it isn’t in a folder of its own, so its files keep their names'
+    if kind == 'Movie' and any(n.lower().endswith(VIDS) and os.path.join(folder, n) != path and 'sample' not in n.lower() for n in os.listdir(folder)):
+        return 'its folder has other films in it, so it keeps its name'
+    oldname = os.path.basename(folder.rstrip('/'))
+    target = os.path.join(os.path.dirname(folder.rstrip('/')), new)
+    if oldname == new:
+        return ''
+    if os.path.exists(target):
+        return 'a folder called “%s” is there already, so its folder keeps its name' % new
+    # what's there now, by path: the film, or the series and its seasons and episodes (their ids change with their paths)
+    olds = {os.path.realpath(path): iid}
+    if kind == 'Series':
+        r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': iid, 'Recursive': 'true', 'IncludeItemTypes': 'Season,Episode', 'Fields': 'Path'}) or {}
+        for x in r.get('Items') or []:
+            if x.get('Path'):
+                olds[os.path.realpath(x['Path'])] = x['Id']
+    sets = []
+    try:   # (the collections it's in: put back in them once it's a new item)
+        for bs in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'BoxSet'}) or {}).get('Items') or []:
+            kids = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': bs['Id']}) or {}).get('Items') or []
+            if any(k.get('Id') == iid for k in kids):
+                sets.append(bs['Id'])
+    except Exception:
+        pass
+    # the files inside named after the old folder ("Old (2020).mkv", "Old (2020) S01E02.mkv", "Old (2020).en.srt") take the new name
+    moved = {}
+    real_folder = os.path.realpath(folder)
+    for d, _, files in os.walk(real_folder):
+        for f in files:
+            if f.startswith(oldname):
+                os.rename(os.path.join(d, f), os.path.join(d, new + f[len(oldname):]))
+                moved[os.path.join(d, f)] = os.path.join(d, new + f[len(oldname):])
+    real_target = os.path.join(os.path.dirname(real_folder), new)
+    os.rename(real_folder, real_target)
+    want = {}
+    for p_, i_ in olds.items():
+        p2 = moved.get(p_, p_)
+        want[real_target + p2[len(real_folder):] if p2.startswith(real_folder) else p2] = i_
+    log('Renamed by John’s Fix match: %s → %s' % (oldname, new))
+    try:
+        g.jf.call('POST', '/Library/Refresh')
+    except Exception:
+        pass
+
+    def follow():   # (once the media server has the new paths: everything moved over to the new ids, the match put on again)
+        for _ in range(40):
+            time.sleep(30)
+            try:
+                found = {}
+                for typ in (('Series,Season,Episode',) if kind == 'Series' else ('Movie',)):
+                    r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': typ, 'Fields': 'Path'}) or {}
+                    for x in r.get('Items') or []:
+                        rp = os.path.realpath(x.get('Path') or '')
+                        if rp in want:
+                            found[want[rp]] = x['Id']
+                top = found.get(iid)
+                if not top:
+                    continue
+                m = {o: n for o, n in found.items() if o != n}
+                if pick:
+                    try:
+                        g.jf.call('POST', '/Items/RemoteSearch/Apply/%s' % top, pick, {'replaceAllImages': 'true'})
+                    except Exception:
+                        pass
+                for b_ in sets:
+                    try:
+                        g.jf.call('POST', '/Collections/%s/Items' % b_, query={'Ids': top})
+                    except Exception:
+                        pass
+                if it.get('DateCreated'):   # (not shown among the new films)
+                    try:
+                        full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, top)) or {}
+                        full['DateCreated'] = it['DateCreated']
+                        g.jf.call('POST', '/Items/%s' % top, full)
+                    except Exception:
+                        pass
+                n = g.remap(m) if m else 0
+                log('  %s: the media server has it under its new name; calendars, lists, hearts and places followed it (%d changed)' % (new, n))
+                g.publish_soon = time.time() + 120
+                return
+            except Exception as e:
+                log('  following the rename of %s: %s' % (new, e))
+        log('  %s: the media server didn’t show its new name within 20 minutes; calendars and lists not moved' % new)
+    threading.Thread(target=follow, daemon=True).start()
+    return 'renamed to “%s”' % new
 
 
 def keep_gdrive():
