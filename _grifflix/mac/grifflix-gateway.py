@@ -2350,6 +2350,30 @@ def conv_alive(cur):
         return 0
 
 
+def keep_scanning(g):
+    """New films noticed: every 10 minutes the film and TV folders are looked at, and when there's a new one in them the media server
+    is asked to look too. Its own watching of the folders misses films put on the drive over the network (John, 15 Nov 2026: "New
+    films arent getting added": The Invite, Blue Heron and Sense and Sensibility sat on the drive unseen until it was asked)."""
+    seen_at = os.path.expanduser('~/Grifflix/library-seen.json')
+    time.sleep(120)
+    while True:
+        try:
+            roots = [l for v in g.jf.call('GET', '/Library/VirtualFolders') or [] if (v.get('CollectionType') or '') in ('movies', 'tvshows')
+                     for l in v.get('Locations') or []]
+            now_ = sorted(os.path.join(r, n) for r in roots if os.path.isdir(r) for n in os.listdir(r) if not n.startswith('.'))
+            before = load(seen_at, None)
+            if before is not None:
+                new = [x for x in now_ if x not in set(before)]
+                if new:
+                    g.jf.call('POST', '/Library/Refresh')
+                    log('New in the library (%d): %s: the media server asked to look' % (len(new), ', '.join(os.path.basename(x) for x in new[:5]) + (' …' if len(new) > 5 else '')))
+            if now_ or before is None:
+                save(seen_at, now_)
+        except Exception as e:
+            log('Looking for new films:', e)
+        time.sleep(600)
+
+
 def keep_converting():
     """The converter kept going: started again if it isn't running (after the Mac restarts, or if the restart after Update everything
     didn't take), unless it finished everything in the last 12 hours; any time the Mac isn't in use, pausing while anyone watches
@@ -2380,6 +2404,7 @@ def keep_converting():
 def serve():
     g = Gateway()
     threading.Thread(target=keep_converting, daemon=True).start()
+    threading.Thread(target=keep_scanning, args=(g,), daemon=True).start()
     port = int(g.st.get('port', 8097))
     srv = ThreadingHTTPServer(('127.0.0.1', port), make_handler(g))
     srv.daemon_threads = True
