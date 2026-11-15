@@ -1350,7 +1350,7 @@ def make_handler(g):
                 now.update(got=got, pct=round(min(99.9, 100.0 * got / now['size']), 1) if now.get('size') else 0, mbps=round(got * 8 / took / 1e6, 1))
             waiting = [x for x in (st.get('waiting') or []) if not (now and x.get('file') == now.get('file'))]
             return self.send_json(200, {'setup': setup, 'running': running, 'now': now, 'waiting': waiting,
-                                        'recent': st.get('recent') or [], 'checked': st.get('checked'), 'next': int(GDRIVE_NEXT[0]) or None, 'error': GDRIVE_ERR[0], 'trouble': st.get('trouble') or [],
+                                        'recent': [x for x in st.get('recent') or [] if x.get('ok')],   # (only what came: John, 15 Nov 2026) 'checked': st.get('checked'), 'next': int(GDRIVE_NEXT[0]) or None, 'error': GDRIVE_ERR[0], 'trouble': st.get('trouble') or [],
                                         'first': load(os.path.join(home, 'fetch-first.json'), []) or [], 'names': load(os.path.join(home, 'fetch-names.json'), {}) or {}})
 
         def api_convert(self, me, user, q, b):
@@ -1854,6 +1854,9 @@ def make_handler(g):
                 else:
                     return self.send_json(400, {'error': 'That sign-in isn’t right.'})
                 save(SETTINGS, g.st)
+                if g.st.get('worker_token'):   # (turned on: the site brought up to date now, with what came before it was on)
+                    g.publish_soon = time.time() + 15
+                    SCAN_NOW.set()
             return self.send_json(200, {'on': bool(g.st.get('worker_token')), 'last': g.st.get('auto_update_last')})
 
         def api_subsetup(self, me, user, q, b):
@@ -2840,7 +2843,9 @@ def keep_scanning(g):
                         log('The site updated by itself: %d new, %d changed, %d gone' % (c.get('new', 0), c.get('changed', 0), c.get('removed', 0)))
                     except Exception as e:
                         log('The site’s automatic update didn’t work:', e)
-                        publish_at = time.time() + 3600   # (tried again in an hour)
+                        g.st['auto_update_last'] = {'at': int(time.time()), 'error': str(e)[-200:]}   # (shown on the admin page, not only in the log)
+                        save(SETTINGS, g.st)
+                        publish_at = time.time() + 900   # (tried again in a quarter of an hour)
             if now_ or before is None:
                 save(seen_at, now_)
             # (the Bin: what John deleted, kept 30 days in case it was a mistake, then gone for good)

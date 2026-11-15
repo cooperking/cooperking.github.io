@@ -308,8 +308,9 @@ def status(**kw):
         st = json.load(open(STATUS))
     except (OSError, ValueError):
         st = {}
-    if 'came' in kw:   # (one more arrived, or failed: kept, newest first, the last 30)
-        st['recent'] = ([kw.pop('came')] + st.get('recent', []))[:30]
+    if 'came' in kw:   # (one more arrived: kept, newest first, the last 30; failures only in the log: John, 15 Nov 2026, "get rid of the Didn't come messages")
+        c_ = kw.pop('came')
+        st['recent'] = ([c_] if c_.get('ok') else []) + [x for x in st.get('recent', []) if x.get('ok')][:30]
     st.update(kw)
     try:
         tmp = STATUS + '.tmp'
