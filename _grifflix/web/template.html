@@ -3473,7 +3473,7 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
   var y = +S.month.slice(0, 4), m = +S.month.slice(5, 7) - 1, n = new Date(y, m + 1, 0).getDate(), lead = (new Date(y, m, 1).getDay() + 6) % 7, t = themeFor(m);
   var ms = monthsOf(C.days), mi = ms.indexOf(S.month), mob = MOB();
   S.sheetDate = null;   // (not a day's page: a swipe here is the month before or after)
-  var h = '<div class="form tcal" style="position:relative">'<div class="tctools">' +   // (Search, Profile and Reload here too, the bar being covered: John, 8 Nov 2026)
+  var h = '<div class="form tcal" style="position:relative"><div class="tctools">' +   // (Search, Profile and Reload here too, the bar being covered: John, 8 Nov 2026)
     '<button class="ico" data-tt="refresh" aria-label="Reload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>' +
     '<button class="ico" data-tt="who" aria-label="Profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button></div>' + capBar(m, y, mi > 0, mi < ms.length - 1) + '<div class="tchead"><button class="pill tcm" id="tcprev" aria-label="Earlier month"' + (mi <= 0 ? ' disabled' : '') + '>‹</button><h2>' + MONTHS[m] + ' ' + y + '</h2><button class="pill tcm" id="tcnext" aria-label="Later month"' + (mi >= ms.length - 1 ? ' disabled' : '') + '>›</button></div><div class="tcgrid">' + DOW.map(function (d) { return '<div class="tch">' + d + '</div>'; }).join('');
   for (var k = 0; k < lead; k++) h += '<div></div>';
@@ -4977,7 +4977,7 @@ function drawRows(R, into) {
 /* --- browse: films, TV, home videos */
 function browseSheet(tab) {   // Browse (Films, TV, Collections) as a pop-up, over the month's theme
   S.sheetNow = { k: 'browse', t: tab };
-  openSheet('<div class="form bsheet" style="position:relative">'<div id="bsin"></div></div>');
+  openSheet('<div class="form bsheet" style="position:relative"><div id="bsin"></div></div>');
   browseIn($('#bsin'), tab);
   if (TV) setTimeout(function () { var f = $('#bsin [data-b].on'); if (f) f.focus(); }, 80);
 }
@@ -5288,6 +5288,8 @@ function bodyHTML(it, ctx) {
     // (John's: the Mac mini to do this one next, when it needs anything: John, 13 Nov 2026, "a convert now option to films if I need them sooner")
     if (ME && ME.owner && it.conv) h += '<button class="pill" id="aconv" title="' + esc('The Mac mini will ' + it.conv.replace(/^to /, '')) + '"' + (it.convNow || it.convNext ? ' disabled' : '') + '>' +
       (it.convNow ? 'Converting now' : it.convNext ? 'Next for the Mac mini ✓' : /^to make smaller/.test(it.conv) ? 'Make smaller next' : 'Convert next') + '</button>';
+    // (John's only: take the film out of Grifflix, to the Bin on the G-Drive for 30 days: John, 15 Nov 2026)
+    if (ME && ME.owner && !TV && it.type === 'movie') h += '<button class="pill" id="adel">Delete</button>';
     if (ME && ME.downloads && !TV && !isSeries) h += '<button class="pill" id="adown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5M5 21h14"/></svg>Download</button>';
   }
   if (!it.ext && shareDayOf(it)) h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button></div>';
@@ -5323,6 +5325,21 @@ function wireBody(it, ctx) {
     play(it);
   });
   on('afrom0', function () { play(it, null, true); });
+  on('adel', function () {
+    var b = $('#adel');
+    if (!b.dataset.sure) {   // (two taps: the first says what it does, and any Movie of the Day it's on)
+      var D = (S.calData && S.calData.id === 'motd' ? S.calData.days : null) || {}, on = Object.keys(D).filter(function (d) { return D[d] && D[d].id === it.id; });
+      b.dataset.sure = 1; b.textContent = 'Tap again to delete';
+      if (on.length) toast('It’s Movie of the Day on ' + on.map(function (d) { return longDate(d); }).join(', ') + ': that day will need another film');
+      setTimeout(function () { if (b.isConnected && b.dataset.sure) { delete b.dataset.sure; b.textContent = 'Delete'; } }, 6000);
+      return;
+    }
+    b.disabled = true; b.textContent = 'Deleting…';
+    mac('delete', { id: it.id }).then(function (j) {
+      toast((j.name || it.name) + ' deleted: it’s in the Grifflix Bin on the G-Drive for 30 days, and gone from Grifflix within a few minutes');
+      closeSheet();
+    }).catch(function (e) { b.disabled = false; delete b.dataset.sure; b.textContent = 'Delete'; toast(e.message || 'Couldn’t reach the Mac mini'); });
+  });
   on('aconv', function () {
     var b = $('#aconv'); b.disabled = true; b.textContent = 'Putting it next…';
     mac('convert', { op: 'up', id: it.id, name: it.name }).then(function () { b.textContent = 'Next to convert ✓'; it.convNext = true;
@@ -5356,7 +5373,7 @@ function wireBody(it, ctx) {
 function searchSheet(onPick, title) {
   if (!onPick) S.sheetNow = { k: 'search' };
   var withBrowse = !onPick && VIEW() === 'themes' && S.view === 'home';   // (in a theme, John: "Search can bring up the search bar plus collections and browse")
-  openSheet('<div class="form srch' + (withBrowse ? ' bsheet' : '') + (onPick ? ' pick' : '') + '" style="position:relative">'<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (title || 'Search') + '</h2><input type="search" id="sq" placeholder="A film, a series, an episode…" autocomplete="off"><div class="results" id="sres"></div>' + (withBrowse ? '<div id="bsin"></div>' : '') + '</div>');
+  openSheet('<div class="form srch' + (withBrowse ? ' bsheet' : '') + (onPick ? ' pick' : '') + '" style="position:relative"><h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (title || 'Search') + '</h2><input type="search" id="sq" placeholder="A film, a series, an episode…" autocomplete="off"><div class="results" id="sres"></div>' + (withBrowse ? '<div id="bsin"></div>' : '') + '</div>');
   if (withBrowse) browseIn($('#bsin'), 'now');   // (Search opens on Now showing)
   var t, inp = $('#sq');
   if (TV) {   // a TV: Grifflix's own letters under the box, OK on the box to bring them up. Not Amazon's keyboard, which came up
@@ -5409,7 +5426,7 @@ function searchSheet(onPick, title) {
   };
 }
 function secretSheet(date) {   // John, on a day still a surprise: its film changed or taken off without being shown it (John, 9 Nov 2026: "Remove the kings speech")
-  openSheet('<div class="form" style="position:relative">'<h2 style="font:400 30px/1.15 var(--serif);color:var(--fg)">' + esc(longDate(date)) + '</h2>' +
+  openSheet('<div class="form" style="position:relative"><h2 style="font:400 30px/1.15 var(--serif);color:var(--fg)">' + esc(longDate(date)) + '</h2>' +
     '<p>A film is chosen for this day: a surprise till 8am then. You can change it or take it off without seeing it.</p>' +
     '<div class="acts"><button class="pill on" id="schange">Choose another film</button><button class="pill" id="sclear">Take it off</button></div></div>');
   $('#schange').onclick = function () {
