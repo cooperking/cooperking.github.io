@@ -368,6 +368,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat" id="cvsay"></p>
         <details id="cvlogw" hidden style="margin:8px 0 0"><summary style="cursor:pointer;opacity:.75">What the converter last said</summary><pre id="cvlog" style="white-space:pre-wrap;word-break:break-word;font-size:12px;line-height:1.45;opacity:.85;margin:8px 0 0"></pre></details>
         <div class="cvbar" id="cvbar" hidden><span id="cvfill"></span></div>
+        <div class="state"><button class="btn" id="cvskip" type="button" hidden>Skip this film</button></div>
         <p class="stat" id="cvdisks" hidden></p>
         <div class="cvord" id="cvord" hidden>
           <label class="cvsw"><input type="checkbox" id="cvrf"> <span>Repackage every MKV first, then the conversions <small>(repackaging takes minutes a film, converting hours)</small></span></label>
@@ -1117,7 +1118,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           return (low ? '<b style="color:#f08a4b">' : '<b>') + esc(d.name) + ' ' + gb(d.free) + '</b>' + (low ? ' <span style="color:#f08a4b">(nearly full: films may stop playing; free some space)</span>' : '');
         }).join(' · ');
       }
-      var n = c.now, bar = $('#cvbar');
+      var n = c.now, bar = $('#cvbar'), sk = $('#cvskip');
+      // (John's: give up on the film it's on and go to the next: John, 15 Nov 2026, Moonrise stuck at 0%)
+      sk.hidden = !(n && c.alive && n.id && (n.state === 'converting' || n.state === 'paused'));
+      sk.onclick = function () { if (!n) return; sk.disabled = true; cvPost({ op: 'skip', id: n.id }).then(function () { toast(n.name + ': skipped, on to the next in a few seconds'); setTimeout(convert, 8000); }).catch(function (e) { toast(e.message); }).then(function () { sk.disabled = false; }); };
       bar.hidden = !(n && c.alive && (n.state === 'converting' || n.state === 'paused'));
       if (n && c.alive && (n.state === 'converting' || n.state === 'paused')) {
         $('#cvhead').innerHTML = (n.state === 'paused' ? 'Paused: ' : 'Converting ') + '<em>' + esc(n.name) + '</em>';

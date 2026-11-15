@@ -1352,6 +1352,12 @@ def make_handler(g):
                 P.setdefault('langs', {})[iid] = lg
                 os.makedirs(home, exist_ok=True)
                 save(pf, P)
+            if op == 'skip':   # (John's: the film it's on given up, the next started)
+                iid = str(b.get('id') or '')
+                if not re.match(r'^[0-9a-f]{32}$', iid):
+                    return self.send_json(400, {'error': 'Which film?'})
+                with open(os.path.join(home, 'convert-skip'), 'w') as f:
+                    f.write(iid)
             if op in ('pin', 'unpin', 'remux_first', 'up'):
                 iid = g.now_id(str(b.get('id') or ''))   # (a film's id as the site knows it, maybe from before its repackaging)
                 if op in ('pin', 'unpin', 'up') and not re.match(r'^[0-9a-f]{32}$', iid):
@@ -1513,11 +1519,13 @@ def make_handler(g):
                     changed.append(name)
                 save(INSTALLED, {'sha': sha, 'at': int(time.time()), 'files': [n for n, _, _ in SOFTWARE]})
                 restarted = False
-                if 'convert.py' in changed:   # the converter running: started again with its new file, as it was started
+                if 'convert.py' in changed:   # the converter running: it takes up its new file itself, between films (stopping it part way
+                    # through a film started that film again from 0%, its ffmpeg left running: Moonrise, John, 15 Nov 2026); one too old to
+                    # do that is started again as before
                     cur = load(os.path.expanduser('~/Grifflix/convert-now.json'), None) or {}
                     try:
                         pid = conv_alive(cur)   # (only the converter itself: never another program with its old number)
-                        if pid:
+                        if pid and not cur.get('selfupdate'):
                             os.kill(pid, 15)
                             time.sleep(3)
                             import subprocess

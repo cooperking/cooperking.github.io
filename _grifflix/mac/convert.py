@@ -38,6 +38,15 @@ NOW = os.path.join(HOME, 'convert-now.json')   # what it's doing this minute, fo
 RUN = {'n': 0, 'total': 0, 'started': int(time.time()), 'args': sys.argv[1:]}   # (args: so the admin page's Update the Mac starts it again the same way)
 MAX_W, MAX_H, MAX_MBPS = 1920, 1080, 20
 CMD = sys.argv[1] if len(sys.argv) > 1 else ''
+SKIP = os.path.join(HOME, 'convert-skip')   # (John's Skip on the admin page: the film it's on given up now)
+MINE = os.path.getmtime(os.path.abspath(__file__))   # (this version: a newer one taken up between films, not by stopping one part way)
+
+
+def _stopped(*a):   # (stopped (an update, a restart): its ffmpeg stopped too, never left running, or frozen, beside the next converter on
+    raise SystemExit('stopped')   # the same film: Moonrise at 0%, twice: John, 14 and 15 Nov 2026)
+
+
+signal.signal(signal.SIGTERM, _stopped)
 # it works only at night, 2am to 8am (John, 8 Nov 2026: "2am until 8am each night unless it's in use"); "go now" ignores
 # the hours (to try one straight away)
 NIGHT = (int(os.environ.get('GRIFFLIX_FROM') or 2), int(os.environ.get('GRIFFLIX_TO') or 8))
@@ -80,7 +89,7 @@ def now(state, **x):
     """The admin page's Conversions card: converting (how far), paused (why), waiting for the night, or finished."""
     try:
         tmp = NOW + '.tmp'
-        json.dump(dict(RUN, state=state, at=int(time.time()), pid=os.getpid(), **x), open(tmp, 'w'))
+        json.dump(dict(RUN, state=state, at=int(time.time()), pid=os.getpid(), selfupdate=True, **x), open(tmp, 'w'))
         os.replace(tmp, NOW)
     except OSError:
         pass
@@ -498,7 +507,7 @@ def convert(item, ffmpeg, ffprobe, st):
                 err_tail.append(line)
                 del err_tail[:-30]
     threading.Thread(target=read_err, daemon=True).start()
-    show = lambda why_='': now('paused' if why_ else 'converting', name=item['name'], why=why_ or item['why'], gb=item['gb'], mins=item['mins'],
+    show = lambda why_='': now('paused' if why_ else 'converting', id=item['id'], name=item['name'], why=why_ or item['why'], gb=item['gb'], mins=item['mins'],
                                 pct=round(min(99.9, at[0] / dur * 100), 1) if dur else 0, since=int(t0))
     show()
     try:
@@ -528,6 +537,21 @@ def convert(item, ffmpeg, ffprobe, st):
                     said = ' '.join(x.strip() for x in err_tail[-4:] if x.strip())[-300:]
                     log('  no progress in 30 minutes: given up' + (' (ffmpeg: %s)' % said if said else ''))
                     raise RuntimeError('no progress in 30 minutes, given up' + (': ' + said if said else ''))
+            try:   # (John's Skip: this film given up now, the next one started)
+                skip = open(SKIP).read().strip() == item['id']
+            except OSError:
+                skip = False
+            if skip:
+                os.remove(SKIP)
+                if paused:
+                    p.send_signal(signal.SIGCONT)
+                    paused = False
+                p.terminate()
+                p.wait()
+                if os.path.exists(tmp):
+                    os.remove(tmp)
+                log('  skipped by John')
+                raise RuntimeError('skipped by John')
             if k % 4 == 0:   # (how far it's got: every 20 seconds)
                 show(why_ if paused else '')
             why_ = 'someone is watching' if watching() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() and not item.get('urgent') else '')
@@ -759,6 +783,21 @@ def leftovers():
             call('POST', '/Library/Refresh')   # (Jellyfin looks again, so they go from Grifflix too)
         except Exception:
             pass
+def orphans():
+    """ffmpegs left by a converter that was stopped part way (frozen ones too): stopped, so the film isn't made twice at once."""
+    try:
+        ps = subprocess.run(['ps', '-axo', 'pid=,command='], capture_output=True, text=True, timeout=10).stdout
+        for line in ps.splitlines():
+            if 'ffmpeg' in line and '.grifflix-converting.' in line:
+                pid = int(line.split()[0])
+                for sg in (signal.SIGCONT, signal.SIGKILL):
+                    os.kill(pid, sg)
+                log('an ffmpeg left from before stopped (%d)' % pid)
+    except Exception as e:
+        log('couldn’t look for ffmpegs left from before:', e)
+
+
+orphans()
 leftovers()
 log('starting: %d to convert' % len(items))
 RUN['total'] = len(items)
@@ -781,6 +820,13 @@ while rest:
     rest = [x for x in redos() if x['id'] not in have] + rest   # (John's language changes first: minutes each)
     rest = ordered(rest)
     rest = [x for x in rest if x.get('redo')] + [x for x in rest if not x.get('redo')]
+    try:   # (a newer version put here by Update everything: taken up now, between films)
+        if os.path.getmtime(os.path.abspath(__file__)) != MINE:
+            log('a newer version of the converter: starting it')
+            sys.stdout.flush()
+            os.execv(sys.executable, [sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
+    except OSError as e:
+        log('couldn’t start the newer version:', e)
     it = rest.pop(0)
     n += 1
     RUN['n'] = n
@@ -800,7 +846,7 @@ while rest:
             st['ask'].pop(it['id'], None)
             save_state(st)
     except RuntimeError as e:
-        if it.get('mode') == 'remux':   # (a picture an MP4 can't hold as it is: converted instead, in its turn, not given up on)
+        if it.get('mode') == 'remux' and 'skipped by John' not in str(e):   # (a picture an MP4 can't hold as it is: converted instead, in its turn, not given up on)
             log('  couldn’t repackage', it['name'], '(%s): it will be converted instead' % str(e)[:160])
             it['mode'] = 'convert'
             it['why'] = 'format (couldn’t be repackaged as it is)'
