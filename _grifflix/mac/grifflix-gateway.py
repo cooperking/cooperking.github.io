@@ -2758,7 +2758,7 @@ def keep_gdrive():
         if not os.path.exists(lk) or (ver and ver == mine):
             old = []   # (nothing running, or this version's own)
         elif pid and pid in runs:
-            old = [pid]   # (an older version's, by its number)
+            old = []   # (an older version's: it takes up the new version itself between films, so its download in progress isn't lost)
         else:
             old = runs   # (the oldest kind of lock, with no number in it: any fetch running is that one)
         for p_ in old:
