@@ -2131,6 +2131,10 @@ async function gAdmin(request, env, b, who, answer) {
     return answer(200, { token: await gSignIn(env, all, owner, b), members: Object.keys(all).length });
   }
   if (!who || !who.owner) return answer(403, { error: Object.keys(all).length ? 'Only John.' : 'Grifflix hasn’t its members yet: start them from its admin page.' });
+  if (b.op === 'macsignin') {   // a sign-in of John's for the Mac mini alone, so it can update the site by itself when new films arrive
+    // (John, 15 Nov 2026: "it needs to be automatically updated"); made again each time, the Mac's last one replaced
+    return answer(200, { token: await gSignIn(env, all, who.id, { device: 'grifflixmacmini' }) });
+  }
   all = who.all;
   const gsubs = (await env.SOTD.get('gPushSubs', 'json')) || {}, pushes = {};   // (each member's devices with notifications on: John sees everyone's choices, signed in or not)
   for (const x of Object.values(gsubs)) pushes[x.m] = (pushes[x.m] || 0) + 1;
