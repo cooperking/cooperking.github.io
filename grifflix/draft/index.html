@@ -2025,7 +2025,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'be6d5a40d31a' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '5b8a1cd78aac' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5293,8 +5293,8 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
       }).join('') : '<li class="empty">Nothing found: try fewer words, or no year.</li>';
       $$('[data-idpick]').forEach(function (b) { b.onclick = function () {
         var r = R[+b.dataset.idpick]; b.disabled = true; b.textContent = 'Putting it right…';
-        mac('identify', { id: it.id, pick: r.raw }).then(function () {
-          toast((it.name || 'It') + ' is now ' + r.name + (r.year ? ' (' + r.year + ')' : '') + ': Grifflix shows its new details within about 10 minutes');
+        mac('identify', { id: it.id, pick: r.raw }).then(function (j) {
+          toast((it.name || 'It') + ' is now ' + r.name + (r.year ? ' (' + r.year + ')' : '') + (j && j.renamed ? '; its folder ' + j.renamed : '') + ': Grifflix shows it within about 10 minutes');
           closeSheet();
         }).catch(function (e) { b.disabled = false; b.textContent = 'This one'; toast(e.message || 'Couldn’t reach the Mac mini'); });
       }; });
