@@ -14,6 +14,7 @@ media server and the site then pick it up by themselves.
     python3 ~/Grifflix/gdrive.py setup     once: rclone put on this Mac and signed in to your Google account
     python3 ~/Grifflix/gdrive.py run       look now (the gateway does this every 15 minutes)
     python3 ~/Grifflix/gdrive.py check     what it would do, nothing changed
+    python3 ~/Grifflix/gdrive.py tidy      folders fetched with a website's or squashed name put right
 
 It uses rclone 1.63.1 (the last version that runs on macOS 10.13), kept in ~/Grifflix with its own settings.
 """
@@ -51,6 +52,10 @@ def rc(*args, check=True, capture=True):
 def title_of(name):
     """("Title (Year)", has a year) from a file or folder name, as grifflix-add does: the last year in it that isn't the start (titles
     with a number: "Blade Runner 2049 (2017)", "2001 A Space Odyssey 1968"), and everything after it dropped."""
+    # (a folder and its file squashed into one name with a lookalike slash, "Folder／File.mkv", as a copy through Google Drive leaves
+    # them: the file's own part only; and a website's name in front, "www.UIndex.org - Hamlet …", dropped: John, 15 Nov 2026)
+    name = re.split(r'[／/\\]', name)[-1]
+    name = re.sub(r'^\s*(\[\s*)?(www[ .])?[a-z0-9-]+[ .](org|com|net|to|me|cc|tv|io|ws|in|co|uk|nl|se|si|sx|ch|bz)(\s*\])?\s*[-–—]*\s*', '', name, flags=re.I)
     n = re.sub(r'[._]', ' ', os.path.splitext(name)[0] if name.lower().endswith(VIDEO + ('.srt',)) else name)
     best = None
     for x in re.finditer(r'[\[(]?((?:19|20)\d\d)[\])]?(?= |$)', n):
@@ -248,11 +253,37 @@ def _run(check):
         print('Nothing new to fetch.')
 
 
+def tidy():
+    """Folders already fetched with a squashed or website name ("www UIndex org - Hamlet …／Hamlet (2026)") renamed as they should be,
+    with the film's files inside them."""
+    root = films_root()
+    n = 0
+    for d in sorted(os.listdir(root)):
+        if not ('／' in d or re.match(r'^\s*(\[\s*)?(www[ .])?[a-z0-9-]+[ .](org|com|net|to|me|cc|tv|io|ws|in|co|uk|nl|se|si|sx|ch|bz)\b', d, re.I)):
+            continue
+        t, _ = title_of(d)
+        src, dst = os.path.join(root, d), os.path.join(root, t)
+        if not os.path.isdir(src) or not t or t == d:
+            continue
+        if os.path.exists(dst):
+            print('Left: %s ("%s" is there already)' % (d, t))
+            continue
+        for f in os.listdir(src):
+            if f.startswith(d):
+                os.rename(os.path.join(src, f), os.path.join(src, t + f[len(d):]))
+        os.rename(src, dst)
+        print('Renamed: %s → %s' % (d, t))
+        n += 1
+    print('%d folder(s) put right.' % n if n else 'Nothing to put right.')
+
+
 if __name__ == '__main__':
     cmd = sys.argv[1] if len(sys.argv) > 1 else ''
     if cmd == 'setup':
         setup()
     elif cmd in ('run', 'check'):
         run(check=cmd == 'check')
+    elif cmd == 'tidy':
+        tidy()
     else:
         print(__doc__)
