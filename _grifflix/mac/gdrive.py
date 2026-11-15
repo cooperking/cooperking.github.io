@@ -97,12 +97,21 @@ Now the sign-in, on your work Mac (it has a browser this Mac's old Safari can't 
 
   curl -fsSL https://downloads.rclone.org/rclone-current-osx-arm64.zip -o /tmp/rc.zip && unzip -oq /tmp/rc.zip -d /tmp/rc && /tmp/rc/rclone-*/rclone authorize "drive" "eyJzY29wZSI6ImRyaXZlIn0"
 
-A Google page opens: sign in, allow it. Terminal then shows a long code between two lines of arrows, starting {"access_token"
-… Copy all of it (the {…} line) and paste it here, then press Return:
+A Google page opens: sign in, allow it. Terminal then shows a long code between "Paste the following into your remote
+machine --->" and "<---End paste" (it starts eyJ… or {"access_token"…). Copy all of that one line, paste it here, press Return:
 ''')
     tok = input('> ').strip()
+    if tok.startswith('eyJ'):   # (newer rclone gives it encoded, a long line starting eyJ: the same sign-in inside)
+        import base64
+        try:
+            d = json.loads(base64.urlsafe_b64decode(tok + '=' * (-len(tok) % 4)).decode('utf-8'))
+            tok = d.get('token') if isinstance(d, dict) and d.get('token') else json.dumps(d)
+            if not isinstance(tok, str):
+                tok = json.dumps(tok)
+        except Exception:
+            pass
     if not (tok.startswith('{') and 'refresh_token' in tok):
-        sys.exit('That isn\'t the code (it starts with {"access_token" and has "refresh_token" in it). Run setup again.')
+        sys.exit('That isn\'t the code: the one long line between "--->" and "<---End paste". Run setup again.')
     rc('config', 'create', REMOTE, 'drive', 'scope=drive', 'token=' + tok, '--non-interactive')
     rc('mkdir', '%s:%s' % (REMOTE, FOLDER))
     print('\nDone: signed in. Put films in the "%s" folder of your Google Drive; the Mac mini fetches them every 15 minutes.' % FOLDER)
