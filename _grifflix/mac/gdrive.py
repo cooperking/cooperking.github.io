@@ -138,6 +138,38 @@ def tmdb_name(title, year, series):
     return {'name': best[1], 'year': best[2]} if best else None
 
 
+def fetch(loc, path, part, show=False):
+    """One file from TorBox or Google Drive to `part`, as a copy of its folder limited to that one file (by a list, so names with
+    [brackets] are taken as they are). Not "copyto" of the file itself: TorBox's WebDAV doesn't answer for a single file, so rclone took
+    it for an empty folder, copied nothing and said it had worked; every TorBox download "went missing" (John, 15 Nov 2026). Returns
+    what rclone said, for the log, when the file didn't come."""
+    folder, name = os.path.split(path)
+    tmpd, lst = part + '.d', part + '.list'
+    os.makedirs(tmpd, exist_ok=True)
+    with open(lst, 'w', encoding='utf-8') as f:
+        f.write(name + '\n')
+    args = [RCLONE, '--config', CONF, 'copy', loc(folder) if folder else loc('').rstrip('/'), tmpd, '--files-from', lst, '--retries', '3']   # (its folder listed, as works, not the one file looked up)
+    try:
+        if show:
+            r = subprocess.run(args + ['--progress', '--stats-one-line'])
+            said = ''
+        else:
+            r = subprocess.run(args + ['-v'], capture_output=True, text=True)
+            said = (r.stderr or '').strip()[-400:]
+        got = os.path.join(tmpd, name)
+        if os.path.exists(got):
+            os.replace(got, part)
+        elif r.returncode:
+            raise RuntimeError('rclone: %s' % (said or 'it stopped (%d)' % r.returncode))
+        return said
+    finally:
+        try:
+            os.remove(lst)
+        except OSError:
+            pass
+        shutil.rmtree(tmpd, ignore_errors=True)
+
+
 def films_root():
     """The films folder, from the media server (as the Mac's own scripts find it)."""
     s = json.load(open(os.path.join(APP, 'settings.json')))
@@ -376,7 +408,7 @@ def _run(check):
                     if not check:
                         seen[key] = int(time.time())
                 continue
-            if check and os.path.exists(dest + '.adding'):
+            if check and (os.path.exists(dest + '.adding') or os.path.exists(dest + '.adding.d')):
                 continue   # (coming in now)
             plan.append(dict(src=src, loc=loc, path=path, size=size, key=key, folder=folder, title=title, year=year, ext=ext,
                              dest_dir=dest_dir, dest=dest, name=f['Name'], subs=subs, series=series, nkey=nkey, named=bool(mine),
@@ -401,10 +433,10 @@ def _run(check):
         if (os.path.exists(dest) if p['series'] else os.path.isdir(dest_dir) and any(n.lower().endswith(VIDEO) for n in os.listdir(dest_dir))):
             continue   # (the same film twice: from both places)
         try:   # (another fetch writing it this minute: left to that one)
-            if time.time() - os.path.getmtime(dest + '.adding') < 300:
+            if time.time() - max(os.path.getmtime(x) for x in (dest + '.adding', dest + '.adding.d') if os.path.exists(x)) < 300:
                 log('  %s is being fetched already: left to that' % title)
                 continue
-        except OSError:
+        except (OSError, ValueError):
             pass
         free = shutil.disk_usage(root).free
         if free < size + 20e9:
@@ -415,11 +447,9 @@ def _run(check):
         part = dest + '.adding'
         status(now={'from': src['name'], 'file': path, 'to': title, 'size': size, 'part': part, 'since': int(time.time())})
         came = lambda ok, why='', title=title, src=src, size=size: status(now=None, came={'to': title, 'from': src['name'], 'gb': round(size / 1e9, 1), 'at': int(time.time()), 'ok': ok, 'why': why})
-        try:
-            if sys.stdout.isatty():   # (in Terminal: how far, how fast, how long to go, as it downloads)
-                rc('copyto', loc(path), part, '--retries', '3', '--progress', '--stats-one-line', capture=False)
-            else:
-                rc('copyto', loc(path), part, '--retries', '3')
+        said = ''
+        try:   # (in Terminal: how far, how fast, how long to go, as it downloads)
+            said = fetch(loc, path, part, show=sys.stdout.isatty())
         except Exception as e:
             log('  the download failed (%s): left in %s' % (e, src['name']))
             came(False, 'the download failed: left in %s' % src['name'])
@@ -433,8 +463,8 @@ def _run(check):
         try:
             got = os.path.getsize(part)
         except OSError:   # (gone: another fetch took it; Ghosts, 15 Nov 2026, two at once just after an update)
-            log('  %s: its download went missing (another fetch at the same time?): left in %s, looked at again next time' % (title, src['name']))
-            came(False, 'its download went missing: tried again next time')
+            log('  %s: it didn’t come (rclone said: %s): left in %s, tried again next time' % (title, said.replace('\n', ' / ')[-300:] or 'nothing', src['name']))
+            came(False, 'it didn’t come: ' + (said.splitlines()[-1][-160:] if said else 'tried again next time'))
             continue
         if got != size:
             log('  the copy isn’t whole (%d of %d bytes): left in %s' % (got, size, src['name']))
@@ -450,7 +480,10 @@ def _run(check):
             sb = os.path.splitext(s_['Name'])[0]
             lang = '.' + sb.rsplit('.', 1)[1] if re.search(r'\.[a-z]{2,3}$', sb) else ''
             try:
-                rc('copyto', loc(s_['Path']), os.path.splitext(dest)[0] + lang + '.srt')
+                sp = os.path.splitext(dest)[0] + lang + '.srt'
+                fetch(loc, s_['Path'], sp + '.adding')
+                if os.path.exists(sp + '.adding'):
+                    os.replace(sp + '.adding', sp)
                 if src['delete']:
                     rc('deletefile', '--drive-use-trash=false', loc(s_['Path']))
             except Exception as e:
