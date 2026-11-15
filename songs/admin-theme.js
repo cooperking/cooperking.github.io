@@ -31,13 +31,16 @@
     + '.aptr.spin .aptr-turn { animation: aptrspin .8s linear infinite; }'
     + '.aptr.back, .aptr-moving.back { transition: transform .28s cubic-bezier(.2, .8, .25, 1), opacity .2s ease; }'
     + '@keyframes aptrspin { to { transform: rotate(360deg); } }';
+  // (Grifflix's admin page: Grifflix's own film reel, as on its site, not Song of the Day's record: John, 15 Nov 2026)
+  var REEL = /^\/grifflix\//.test(location.pathname);
+  if (REEL) css += '.aptr { background: #fffaf5; } .aptr-turn { background: none; color: var(--bg); } .aptr-turn::before, .aptr-turn::after { display: none; } .aptr-turn svg { display: block; width: 40px; height: 40px; }';
   function start() {
     var body = document.querySelector('.wrap');
     if (!body) return;   // (the password screen and the tabs' frame: nothing of its own to load)
     var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
     document.documentElement.style.overscrollBehaviorY = 'none'; document.body.style.overscrollBehaviorY = 'none';
     var ptr = document.createElement('div'); ptr.className = 'aptr'; ptr.setAttribute('aria-hidden', 'true');
-    ptr.innerHTML = '<span class="aptr-turn"></span>'; document.body.appendChild(ptr);
+    ptr.innerHTML = '<span class="aptr-turn">' + (REEL ? '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="currentColor"/><circle cx="20" cy="20" r="3.2" fill="#fffaf5"/><circle cx="20.0" cy="9.8" r="4.6" fill="#fffaf5"/><circle cx="29.7" cy="16.8" r="4.6" fill="#fffaf5"/><circle cx="26.0" cy="28.3" r="4.6" fill="#fffaf5"/><circle cx="14.0" cy="28.3" r="4.6" fill="#fffaf5"/><circle cx="10.3" cy="16.8" r="4.6" fill="#fffaf5"/></svg>' : '') + '</span>'; document.body.appendChild(ptr);
     var turn = ptr.firstChild, x0 = 0, y0 = null, pull = 0, mode = null;
     function set(p, back) {
       body.classList.add('aptr-moving'); body.classList.toggle('back', !!back); ptr.classList.toggle('back', !!back);
