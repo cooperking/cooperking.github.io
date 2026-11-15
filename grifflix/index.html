@@ -1688,6 +1688,28 @@ html.tv .sheet .acts .pill { min-height: 52px; font-size: 14px; }
 html.tv .sheet .acts .pill.go { min-height: 60px; padding: 0 30px; font-size: 16px; }
 html.tv .sheet .owner, html.tv .sheet .chips { display: none; }
 html.tv .sheet .eps { max-height: 34vh; overflow: auto; }
+/* a series on the TV: all on the screen, its details compact and its episodes filling the rest, in rows of their own that scroll
+   (John, 15 Nov 2026: "series page doesn't look very good on fire tv - oversized") */
+html.tv .film.series { height: 100%; padding-top: 92px; padding-bottom: 28px; align-items: stretch; overflow: hidden; }
+html.tv .film.series { grid-template-columns: minmax(150px, 21vw) minmax(0, 1fr); gap: clamp(28px, 3.4vw, 56px); }
+html.tv .film.series .ipost { align-self: center; }
+html.tv .film.series .date { display: none !important; }
+html.tv .film.series .in { display: flex !important; flex-direction: column; min-height: 0 !important; height: 100%; }
+html.tv .film.series #isbody { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+html.tv .film.series h2 { font-size: clamp(34px, 3.4vw, 56px) !important; margin: 4px 0 8px !important; }
+html.tv .film.series .meta { font-size: 14px !important; }
+html.tv .film.series .ov { font-size: var(--ovfs, 16px) !important; line-height: 1.5 !important; margin-top: 10px !important; }
+html.tv .film.series .people { font-size: 12.5px !important; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.tv .film.series .acts { --acth: 46px; }
+html.tv .film.series .acts { margin-top: 12px !important; }
+html.tv .film.series .acts .pill, html.tv .film.series .acts .pill.go { min-height: 42px; font-size: 12.5px; padding: 0 20px; }
+html.tv .film.series .eps { flex: 1; min-height: 120px; max-height: none; margin-top: 12px; overflow: auto; }
+html.tv .film.series .eps .tabs { margin-bottom: 6px; }
+html.tv .film.series .eps .tabs .pill { min-height: 32px; padding: 0 14px; font-size: 11.5px; }
+html.tv .film.series .ep { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; padding: 5px 6px; align-items: center; }
+html.tv .film.series .ep .t { font-size: 15px; }
+html.tv .film.series .ep .s { font-size: 9.5px; }
+html.tv .film.series .ep .o { font-size: 12.5px; -webkit-line-clamp: 1; margin-top: 2px; }
 html.tv .sheet .close { position: fixed; top: 28px; right: 32px; }
 html.big:not(.tv) .sheet .heroimg { aspect-ratio: 16 / 6; }   /* (a computer: a shorter picture, so Play is in view) */
 
@@ -2003,7 +2025,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '75d7b42bd53a' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: 'be6d5a40d31a' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5292,7 +5314,7 @@ function itemSheet(it, ctx) {
   var dnav = function (d) { return ctx.date && dayNear(ctx.date, d) ? '<button class="ico dnav" id="dstep' + (d < 0 ? 'p' : 'n') + '" data-dstep="' + d + '" aria-label="' + (d < 0 ? 'The day before' : 'The day after') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="' + (d < 0 ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6') + '"/></svg></button>' : ''; };
   var top = it.backdrop ? '<div class="heroimg"><img alt="" src="' + esc(img(it.backdrop, 'Backdrop', 1100)) + '">' + '</div>' : (it.thumb || (it.type === 'video' && it.poster) ? '<div class="heroimg"><img alt="" src="' + esc(img(it.thumb || it.poster, it.thumb ? 'Thumb' : 'Primary', 1100)) + '">' + '</div>' : '<div class="noimg-top" style="position:relative"></div>');
   var pst = it.poster && it.type !== 'episode' ? img(it.poster, 'Primary', 400) : '';   // (the poster, whole, beside the words on a big screen)
-  openSheet('<div class="film' + (pst ? ' hasposter' : '') + '">' + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it))) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');
+  openSheet('<div class="film' + (pst ? ' hasposter' : '') + (it.type === 'series' ? ' series' : '') + '">' + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it))) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');
   $$('#sheetIn [data-dstep]').forEach(function (b) { b.onclick = function () { dayStep(+b.dataset.dstep); }; });
   wireBody(it, ctx); setTimeout(tvFit, 30);
   var mine = function (full) { if (PUBLIC || DEMO || !full.id) return full;   // (the member's own: from the Mac, if it's on)
@@ -5307,10 +5329,11 @@ function tvFit() {   // a TV: a film's pop-up all on the screen, its description
   if (!TV) return;
   var box = $('#sheetIn'); if (!box || !$('#sheetIn .ov')) return;
   var go = function () {
-    var R = box.style, fs = 21;
+    var ser = !!$('#sheetIn .film.series'), R = box.style, fs = ser ? 16 : 21;   // (a series: its episodes need the room too)
     R.removeProperty('--ovfs'); R.removeProperty('--crfs');
     var low = function () { var b = 0; $$('#sheetIn .ov, #sheetIn .people, #sheetIn .acts, #sheetIn .meta').forEach(function (e) { b = Math.max(b, e.getBoundingClientRect().bottom); }); return b; };
-    while (low() > box.getBoundingClientRect().bottom - 24 && fs > 14) { fs -= 1; R.setProperty('--ovfs', fs + 'px'); R.setProperty('--crfs', Math.max(12, Math.round(fs * .75)) + 'px'); }
+    var room = ser ? 170 : 24;   // (a series: room left below for its series' tabs and two episodes)
+    while (low() > box.getBoundingClientRect().bottom - room && fs > (ser ? 12 : 14)) { fs -= 1; R.setProperty('--ovfs', fs + 'px'); R.setProperty('--crfs', Math.max(12, Math.round(fs * .75)) + 'px'); }
   };
   (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function () { requestAnimationFrame(go); });
 }
