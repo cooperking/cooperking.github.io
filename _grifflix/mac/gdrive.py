@@ -78,7 +78,14 @@ def setup():
         url = 'https://downloads.rclone.org/v%s/rclone-v%s-osx-amd64.zip' % (VERSION, VERSION)
         print('Getting rclone %s…' % VERSION)
         zp = os.path.join(HOME, 'rclone.zip')
-        urllib.request.urlretrieve(url, zp)
+        # (with the certificates Grifflix's other scripts use: python.org's Python has none of its own, and refused the download)
+        try:
+            import certifi, ssl
+            ctx = ssl.create_default_context(cafile=certifi.where())
+            with urllib.request.urlopen(url, context=ctx, timeout=300) as r, open(zp, 'wb') as f:
+                shutil.copyfileobj(r, f)
+        except Exception:
+            subprocess.run(['curl', '-fsSL', url, '-o', zp], check=True)   # (or the Mac's own curl)
         with zipfile.ZipFile(zp) as z:
             name = next(n for n in z.namelist() if n.endswith('/rclone'))
             with z.open(name) as src, open(RCLONE, 'wb') as dst:
