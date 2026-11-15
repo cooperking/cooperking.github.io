@@ -364,6 +364,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           <label class="cvsw"><input type="checkbox" id="cvrf"> <span>Repackage every MKV first, then the conversions <small>(repackaging takes minutes a film, converting hours)</small></span></label>
           <div id="cvpins"></div>
         </div>
+        <div class="lbchips" id="cvtabs" style="margin:14px 0 4px"></div>
         <ul class="changes cvl" id="cvlist"></ul>
         <p class="stat" id="orsay" style="margin-top:14px"></p>
         <div class="state"><button class="btn" id="orsee" type="button" hidden>The originals</button></div>
@@ -390,6 +391,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="kicker">Library</div>
         <h2 id="lbhead">Every film’s <em>quality</em></h2>
         <p class="stat" id="lbsay">Each film’s file as it is on the Mac: its picture, format, rate, size and sound, graded <b>Good</b>, <b>OK</b> or <b>Replace</b> (standard definition, or too little picture for its size), with those converted and those waiting to be.</p>
+        <p class="stat" id="lbwhen" style="margin:6px 0 0;opacity:.75"></p>
         <div class="state"><button class="btn" id="lbgo" type="button">Look at the library</button></div>
         <div id="lbui" hidden>
           <div class="lbbar"><span class="lbchips" id="lbchips"></span><select id="lbsort" class="name"><option value="worst">Worst first</option><option value="big">Biggest files</option><option value="az">A to Z</option></select><input type="search" id="lbq" class="name" placeholder="A film’s name" autocomplete="off"></div>
@@ -989,8 +991,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   }
   function convert() {
     if (!GW) return;
-    fetch(GW + '/api/convert', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (r.status === 404) throw new Error('old'); if (!r.ok) throw 0; return r.json(); }).then(function (c) {
-      cvOrder(c);
+    fetch(GW + '/api/convert', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (r.status === 404) throw new Error('old'); if (!r.ok) throw 0; return r.json(); }).then(convert.draw = function (c) {
+      convert.last = c; cvOrder(c);
       if (c.disks && c.disks.length) {   // (each disk's free space, and a warning before one fills: John, 12 Nov 2026, the Mac's own disk filled unnoticed)
         var gb = function (b) { return b >= 1e12 ? (b / 1e12).toFixed(1) + ' TB' : Math.round(b / 1e9) + ' GB'; };
         $('#cvdisks').hidden = false;
@@ -1019,10 +1021,15 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       if (c.log && c.log.length) { $('#cvlogw').hidden = false; $('#cvlog').textContent = c.log.join('\n'); } else $('#cvlogw').hidden = true;
       // (each film: what the original was, what it became, and why: John, 11 Nov 2026: "what was the original and what was it converted to?")
       var fl = function (f) { return f ? (f.w ? f.w + '×' + f.h + ' ' : '') + esc(f.v) + (f.mbps ? ', ' + f.mbps + ' Mbps' : '') + (f.gb ? ', ' + f.gb + ' GB' : '') : ''; };
-      $('#cvlist').innerHTML = (c.next && c.next.length ? '<li class="cvh">Next, in order</li>' + c.next.map(function (x, i) { return '<li>' + (i ? '' : '<b>Now:</b> ') + esc(x.name) + '<span class="when">' + esc(x.why || '') + (x.gb ? ' · ' + x.gb + ' GB' : '') + '</span></li>'; }).join('') + '<li class="cvh">Done</li>' : '') +
+      // (what's next and what's been done each a tab of its own: John, 15 Nov 2026)
+      var nx = c.next || [], fails = c.failed || [], tab = convert.tab || 'next';
+      $('#cvtabs').innerHTML = [['next', 'Next', nx.length], ['done', 'Done', c.done], ['fail', 'Couldn’t', fails.length]].filter(function (t) { return t[0] !== 'fail' || t[2]; })
+        .map(function (t) { return '<button type="button" data-cvt="' + t[0] + '" aria-pressed="' + (tab === t[0]) + '">' + t[1] + ' ' + (t[2] || 0) + '</button>'; }).join('');
+      Array.prototype.forEach.call(document.querySelectorAll('[data-cvt]'), function (b) { b.onclick = function () { convert.tab = b.dataset.cvt; convert.last && convert.draw(convert.last); }; });
+      $('#cvlist').innerHTML = tab === 'next' ? (nx.map(function (x, i) { return '<li>' + (i ? '' : '<b>Now:</b> ') + esc(x.name) + '<span class="when">' + esc(x.why || '') + (x.gb ? ' · ' + x.gb + ' GB' : '') + '</span></li>'; }).join('') || '<li>Nothing waiting.</li>') :
+        tab === 'fail' ? fails.map(function (x) { return '<li>' + esc(x.name) + '<span class="when">' + esc(String(x.why || '').slice(0, 300)) + '</span></li>'; }).join('') :
         c.recent.map(function (x) { return '<li>' + esc(x.name) + '<span class="when">' + esc(when(x.at * 1000)) + (x.mins ? ' · ' + x.mins + ' min' : '') + (x.why ? ' · ' + esc(x.why) : '') + '</span>' +
-          (x.before || x.after ? '<span class="cvba">' + (x.before ? 'Was ' + fl(x.before) : 'Original deleted') + (x.after ? ' → now ' + fl(x.after) : '') + '</span>' : '') + '</li>'; }).join('') +
-        c.failed.slice(0, 5).map(function (x) { return '<li><b>Couldn’t:</b> ' + esc(x.name) + '<span class="when">' + esc(String(x.why || '').slice(0, 90)) + '</span></li>'; }).join('');
+          (x.before || x.after ? '<span class="cvba">' + (x.before ? 'Was ' + fl(x.before) : 'Original deleted') + (x.after ? ' → now ' + fl(x.after) : '') + '</span>' : '') + '</li>'; }).join('') || '<li>None yet.</li>';
       clearTimeout(convert.t); convert.t = setTimeout(convert, c.alive ? 30000 : 120000);
     }).catch(function (e) {
       $('#cvhead').innerHTML = e && e.message === 'old' ? 'The Mac mini <em>needs its update</em>' : 'The Mac mini isn’t <em>answering</em>';
@@ -1086,10 +1093,24 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       }, function () { if (++misses > 3) throw new Error('The Mac mini isn’t answering.'); return new Promise(function (ok) { setTimeout(ok, 5000); }).then(ask); });
     };
     ask().then(function (j) {
-      LB.all = (j.films || []).map(function (x) { x.g = lbGrade(x); return x; }); $('#lbui').hidden = false; b.textContent = 'Look again'; b.disabled = false;
-      $('#lbq').oninput = lbDraw; $('#lbsort').onchange = lbDraw; lbDraw();
-    }).catch(function (e) { b.disabled = false; b.textContent = 'Look at the library'; toast(e.message); });
+      lbShow(j); b.textContent = 'Look again'; b.disabled = false;
+    }).catch(function (e) { b.disabled = false; b.textContent = LB.all ? 'Look again' : 'Look at the library'; $('#lbwhen').textContent = LB.at ? 'As of ' + when(LB.at * 1000) + ' (couldn’t update: ' + e.message + ')' : ''; if (!b.dataset.quiet) toast(e.message); delete b.dataset.quiet; });
   };
+  // (the last look shown at once, kept on the Mac, then brought up to date in the background, only the films that changed read again:
+  // John, 15 Nov 2026, "could every film's quality not have to be called every time, so I can always see it in admin, and only updated")
+  function lbShow(j) {
+    if (!j || !j.films || !j.films.length) return;
+    LB.all = j.films.map(function (x) { x.g = lbGrade(x); return x; }); LB.at = j.at; $('#lbui').hidden = false; $('#lbgo').textContent = 'Look again';
+    $('#lbq').oninput = lbDraw; $('#lbsort').onchange = lbDraw; lbDraw();
+    $('#lbwhen').textContent = j.at ? 'As of ' + when(j.at * 1000) : '';
+  }
+  function lbAuto() {
+    if (!GW) return;
+    fetch(GW + '/api/library?cached=1', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (j && j.films && j.films.length) { lbShow(j); $('#lbwhen').textContent = 'As of ' + when(j.at * 1000) + ' · bringing it up to date…'; }
+      var b = $('#lbgo'); b.dataset.quiet = 1; b.onclick.call(b);   // (brought up to date in the background)
+    }).catch(function () {});
+  }
 
   // ---- playing now: whether the Mac mini is converting what's being watched (John, 12 Nov 2026: "How do I know a film isn't being
   // converted by the Mac mini?")
@@ -1561,7 +1582,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     fetch('/grifflix/config.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (c) {
       var gw = String(c.gateway || '').replace(/\/$/, ''), t0 = Date.now();
       if (!gw) { $('#machead').textContent = 'Not connected'; return; }
-      GW = gw; convert(); software(); dlLook(); hhLoad(); autoState(); originals().then(orLine).catch(function () {});
+      GW = gw; convert(); software(); dlLook(); hhLoad(); autoState(); lbAuto(); originals().then(orLine).catch(function () {});
       return fetch(gw + '/api/me', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (me) {
         var L = me.libraries || {};
         $('#machead').innerHTML = 'Answering <em>(' + (Date.now() - t0) + ' ms)</em>';
