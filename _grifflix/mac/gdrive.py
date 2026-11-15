@@ -15,6 +15,7 @@ media server and the site then pick it up by themselves.
     python3 ~/Grifflix/gdrive.py run       look now (the gateway does this every 15 minutes)
     python3 ~/Grifflix/gdrive.py check     what it would do, nothing changed
     python3 ~/Grifflix/gdrive.py tidy      folders fetched with a website's or squashed name put right
+    python3 ~/Grifflix/gdrive.py again ghosts   ones fetched before, whose names have this in them, fetched again next time
 
 It uses rclone 1.63.1 (the last version that runs on macOS 10.13), kept in ~/Grifflix with its own settings.
 """
@@ -81,6 +82,30 @@ def title_of(name):
     return (t or n).strip(), False
 
 
+def roots():
+    """The media server's films and TV folders."""
+    s = json.load(open(os.path.join(APP, 'settings.json')))
+    req = urllib.request.Request(s.get('jellyfin', 'http://127.0.0.1:8096') + '/Library/VirtualFolders', headers={'Authorization': 'MediaBrowser Token="%s"' % s['jf_token']})
+    out = {}
+    for v in json.loads(urllib.request.urlopen(req, timeout=30).read()):
+        k = v.get('CollectionType') or ''
+        if k in ('movies', 'tvshows') and v.get('Locations') and k not in out:
+            out[k] = v['Locations'][0]
+    return out
+
+
+EP = re.compile(r'(?:^|[ ._\-\[(])[Ss](\d{1,2})[ ._\-]?[Ee](\d{1,3})(?:[ ._\-]?[Ee]\d{1,3})?(?=$|[ ._\-\])])')
+NAMES = os.path.join(HOME, 'fetch-names.json')   # (John's: the right name for a download, found on TMDB from the admin page: John, 15 Nov 2026,
+                                                 # "I should be able to use TMDB in the upcoming so it gets added correctly")
+
+
+def names():
+    try:
+        return json.load(open(NAMES))
+    except (OSError, ValueError):
+        return {}
+
+
 def films_root():
     """The films folder, from the media server (as the Mac's own scripts find it)."""
     s = json.load(open(os.path.join(APP, 'settings.json')))
@@ -143,8 +168,12 @@ def lock_alive():
         pid = int(open(LOCK).read().strip() or 0)
     except (OSError, ValueError):
         pid = 0
-    if not pid:
-        return os.path.exists(LOCK) and time.time() - os.path.getmtime(LOCK) < 600
+    if not pid:   # (a lock from an older version: alive while any other fetch is running, however long it takes)
+        try:
+            ps = subprocess.run(['ps', '-axo', 'pid=,command='], capture_output=True, text=True, timeout=10).stdout
+            return any('gdrive.py' in l and ' run' in l and int(l.split()[0]) != os.getpid() for l in ps.splitlines() if l.strip())
+        except Exception:
+            return os.path.exists(LOCK) and time.time() - os.path.getmtime(LOCK) < 6 * 3600
     try:
         os.kill(pid, 0)
         return True
@@ -198,7 +227,8 @@ def firsts():
 
 def in_order(plan):
     f = firsts()
-    return sorted(plan, key=lambda p: f.index(p['path']) if p['path'] in f else len(f) + plan.index(p))   # (for the admin page: what's coming in, how far, and what came: John, 15 Nov 2026)
+    at = lambda p: f.index(p['path']) if p['path'] in f else f.index(p['nkey']) if p.get('nkey') in f else -1
+    return sorted(plan, key=lambda p: at(p) if at(p) >= 0 else len(f) + plan.index(p))   # (for the admin page: what's coming in, how far, and what came: John, 15 Nov 2026)
 
 
 def status_get():
@@ -224,8 +254,17 @@ def status(**kw):
         pass
 
 
+def wait_entry(p):
+    return {'from': p['src']['name'], 'file': p['path'], 'key': p['nkey'], 'to': p['title'], 'gb': round(p['size'] / 1e9, 1), 'noyear': not p['year'],
+            'series': p['series'], 'ep': p['ep'], 'named': p['named']}
+
+
 def _run(check):
-    root = films_root()
+    R = roots()
+    root = R.get('movies')
+    if not root:
+        raise RuntimeError('the media server has no films folder')
+    N = names()
     have = set(x.strip().rstrip(':') for x in rc('listremotes').split())
     try:
         seen = json.load(open(SEEN))
@@ -249,15 +288,37 @@ def _run(check):
             if not src['delete'] and key in seen:
                 continue   # (fetched before: TorBox keeps its copy)
             folder = os.path.dirname(path)
-            title, year = title_of(f['Name'])
-            if not year and folder:
-                t2, y2 = title_of(os.path.basename(folder))
-                if y2:
-                    title, year = t2, y2
             ext = os.path.splitext(f['Name'])[1].lower()
-            dest_dir = os.path.join(root, title)
-            dest = os.path.join(dest_dir, title + ext)
-            if os.path.isdir(dest_dir) and any(n.lower().endswith(VIDEO) for n in os.listdir(dest_dir)):
+            m = EP.search(os.path.splitext(f['Name'])[0])
+            nkey = folder if (m and folder) else path   # (a series' episodes named together: the folder they came in)
+            mine = N.get(nkey) or N.get(path)
+            if mine:
+                title, year = '%s (%s)' % (mine['name'], mine['year']) if mine.get('year') else mine['name'], bool(mine.get('year'))
+            elif m:   # (an episode: the show's name before "S01E02", from the file or else its folder)
+                title, year = title_of(f['Name'][:m.start()] or os.path.basename(folder))
+                if not year and folder:
+                    fm = EP.search(os.path.basename(folder)) or re.search(r'(?:^|[ ._-])(S\d{1,2}|Season)', os.path.basename(folder), re.I)
+                    t2, y2 = title_of(os.path.basename(folder)[:fm.start()] if fm else os.path.basename(folder))
+                    if y2:
+                        title, year = t2, y2
+            else:
+                title, year = title_of(f['Name'])
+                if not year and folder:
+                    t2, y2 = title_of(os.path.basename(folder))
+                    if y2:
+                        title, year = t2, y2
+            series = (mine.get('kind') == 'series') if mine else bool(m)
+            if series and not R.get('tvshows'):
+                series = False
+            if series:   # (the TV library, as the media server wants it: Show (Year)/Season 01/Show (Year) S01E02.mkv)
+                sn, en = (int(m.group(1)), int(m.group(2))) if m else (1, 0)
+                dest_dir = os.path.join(R['tvshows'], title, 'Season %02d' % sn)
+                epname = '%s S%02dE%02d' % (title, sn, en) if m else title
+                dest = os.path.join(dest_dir, epname + ext)
+            else:
+                dest_dir = os.path.join(root, title)
+                dest = os.path.join(dest_dir, title + ext)
+            if (os.path.exists(dest) if series else os.path.isdir(dest_dir) and any(n.lower().endswith(VIDEO) for n in os.listdir(dest_dir))):
                 if key not in seen:
                     log('Left in %s: %s ("%s" is already in Grifflix)' % (src['name'], path, title))
                     if not check:
@@ -266,24 +327,29 @@ def _run(check):
             if check and os.path.exists(dest + '.adding'):
                 continue   # (coming in now)
             plan.append(dict(src=src, loc=loc, path=path, size=size, key=key, folder=folder, title=title, year=year, ext=ext,
-                             dest_dir=dest_dir, dest=dest, name=f['Name'], subs=subs))
+                             dest_dir=dest_dir, dest=dest, name=f['Name'], subs=subs, series=series, nkey=nkey, named=bool(mine),
+                             ep='S%02dE%02d' % (int(m.group(1)), int(m.group(2))) if m else ''))
     plan = in_order(plan)
     free0 = shutil.disk_usage(root).free
-    status(checked=int(time.time()), waiting=[{'from': p['src']['name'], 'file': p['path'], 'to': p['title'], 'gb': round(p['size'] / 1e9, 1),
-                                               'noyear': not p['year'], 'noroom': free0 < p['size'] + 20e9} for p in plan], **({} if check else {'now': None}))
+    status(checked=int(time.time()), waiting=[dict(wait_entry(p), noroom=free0 < p['size'] + 20e9) for p in plan], **({} if check else {'now': None}))
     while plan:
         plan = in_order(plan)   # (John's next, looked at again before each: one he chooses mid-download goes after this one)
         p = plan.pop(0)
         if not check:
-            status(waiting=[{'from': q['src']['name'], 'file': q['path'], 'to': q['title'], 'gb': round(q['size'] / 1e9, 1), 'noyear': not q['year'],
-                             'noroom': shutil.disk_usage(root).free < q['size'] + 20e9} for q in plan])
+            status(waiting=[dict(wait_entry(q), noroom=shutil.disk_usage(root).free < q['size'] + 20e9) for q in plan])
         src, loc, path, size, key, folder, title, year, ext, dest_dir, dest, subs = (p[k] for k in
             ('src', 'loc', 'path', 'size', 'key', 'folder', 'title', 'year', 'ext', 'dest_dir', 'dest', 'subs'))
         if check:
             log('Would add from %s: %s → %s/%s%s' % (src['name'], path, title, title + ext, '' if year else ' (no year in its name)'))
             continue
-        if os.path.isdir(dest_dir) and any(n.lower().endswith(VIDEO) for n in os.listdir(dest_dir)):
+        if (os.path.exists(dest) if p['series'] else os.path.isdir(dest_dir) and any(n.lower().endswith(VIDEO) for n in os.listdir(dest_dir))):
             continue   # (the same film twice: from both places)
+        try:   # (another fetch writing it this minute: left to that one)
+            if time.time() - os.path.getmtime(dest + '.adding') < 300:
+                log('  %s is being fetched already: left to that' % title)
+                continue
+        except OSError:
+            pass
         free = shutil.disk_usage(root).free
         if free < size + 20e9:
             log('Not enough room on the drive for %s (%.0f GB free): left in %s' % (path, free / 1e9, src['name']))
@@ -308,8 +374,14 @@ def _run(check):
             except OSError:
                 pass
             continue
-        if os.path.getsize(part) != size:
-            log('  the copy isn’t whole (%d of %d bytes): left in %s' % (os.path.getsize(part), size, src['name']))
+        try:
+            got = os.path.getsize(part)
+        except OSError:   # (gone: another fetch took it; Ghosts, 15 Nov 2026, two at once just after an update)
+            log('  %s: its download went missing (another fetch at the same time?): left in %s, looked at again next time' % (title, src['name']))
+            came(False, 'its download went missing: tried again next time')
+            continue
+        if got != size:
+            log('  the copy isn’t whole (%d of %d bytes): left in %s' % (got, size, src['name']))
             came(False, 'the copy wasn’t whole: left in %s' % src['name'])
             os.remove(part)
             continue
@@ -317,12 +389,12 @@ def _run(check):
         # (its subtitles: beside it, with the film's new name)
         stem = os.path.splitext(p['name'])[0]
         for s_ in subs:
-            if os.path.dirname(s_['Path']) != folder or (not folder and not s_['Name'].startswith(stem)):
+            if os.path.dirname(s_['Path']) != folder or ((not folder or p['series']) and not s_['Name'].startswith(stem)):
                 continue
             sb = os.path.splitext(s_['Name'])[0]
             lang = '.' + sb.rsplit('.', 1)[1] if re.search(r'\.[a-z]{2,3}$', sb) else ''
             try:
-                rc('copyto', loc(s_['Path']), os.path.join(dest_dir, title + lang + '.srt'))
+                rc('copyto', loc(s_['Path']), os.path.splitext(dest)[0] + lang + '.srt')
                 if src['delete']:
                     rc('deletefile', '--drive-use-trash=false', loc(s_['Path']))
             except Exception as e:
@@ -388,5 +460,16 @@ if __name__ == '__main__':
         run(check=cmd == 'check')
     elif cmd == 'tidy':
         tidy()
+    elif cmd == 'again' and len(sys.argv) > 2:   # (fetched before, wrongly: fetched again next time, e.g. an episode that went in as a film)
+        w = ' '.join(sys.argv[2:]).lower().replace(' ', '.')
+        try:
+            seen = json.load(open(SEEN))
+        except (OSError, ValueError):
+            seen = {}
+        gone = [k for k in seen if w in k.lower().replace(' ', '.')]
+        for k in gone:
+            seen.pop(k)
+        json.dump(seen, open(SEEN, 'w'))
+        print('%d to fetch again next time%s' % (len(gone), ''.join('\n  ' + k.split('|')[0] for k in gone)))
     else:
         print(__doc__)

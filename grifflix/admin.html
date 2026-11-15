@@ -1003,18 +1003,53 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         $('#fsay').textContent = (f.checked ? 'Last looked ' + when(f.checked * 1000) + '. ' : 'It hasn’t looked in TorBox and Google Drive since its update: press Look now. ') + (f.next ? 'Looks again ' + mins(f.next) + '.' : 'Looks every 15 minutes.') +
           (w.some(function (x) { return x.noroom; }) ? ' Some won’t fit on the G-Drive: free some space.' : '') + (f.error ? ' Its last look didn’t work: ' + f.error : '');
       }
-      $('#ftabs').innerHTML = [['next', 'Next', w.length + (n ? 1 : 0)], ['came', 'Came', rc.length]]
-        .map(function (t) { return '<button type="button" data-ft="' + t[0] + '" aria-pressed="' + (tab === t[0]) + '">' + t[1] + ' ' + t[2] + '</button>'; }).join('');
-      Array.prototype.forEach.call(document.querySelectorAll('[data-ft]'), function (b) { b.onclick = function () { fetching.tab = b.dataset.ft; fetching.last && fetching.draw(fetching.last); }; });
       // (John's next: Do next puts a download at the front, after the one coming in now: John, 15 Nov 2026, "Can I prioritise what's coming in next from torbox?")
-      var F = f.first || [];
-      w = w.slice().sort(function (a, b) { var i = F.indexOf(a.file), j = F.indexOf(b.file); return (i < 0 ? 1e4 : i) - (j < 0 ? 1e4 : j); });
-      var it = function (x, now, i) { return '<li>' + (now ? '<b>Now:</b> ' : '') + esc(x.to) + '<span class="when">from ' + esc(x.from) + ' · ' + (x.gb || (x.size / 1e9).toFixed(1)) + ' GB' +
-        (x.noyear ? ' · <b style="color:#f08a4b">no year: check it after</b>' : '') + (x.noroom ? ' · <b style="color:#f08a4b">no room for it</b>' : '') + '</span><span class="cvba">' + esc(x.file) + '</span>' +
-        (!now && i ? '<span class="state" style="margin-top:6px"><button class="btn" type="button" data-ffirst="' + esc(x.file) + '" data-n="' + esc(x.to) + '">Do next</button></span>' : '') + '</li>'; };
-      $('#flist').innerHTML = tab === 'next' ? ((n ? it(n, true) : '') + w.map(function (x, i) { return it(x, false, i); }).join('') || '<li>Nothing waiting.</li>') :
+      // (a series' episodes, from one download, as one line; Name it: the right name from TMDB before it comes in: "I should be able to use TMDB in the upcoming so it gets added correctly")
+      var F = f.first || [], NM = f.names || {}, G = [], byk = {};
+      w.forEach(function (x) { var k = x.series ? (x.key || x.file) : x.file; if (byk[k]) { byk[k].eps.push(x.ep); byk[k].gb = Math.round((byk[k].gb + x.gb) * 10) / 10; } else { byk[k] = Object.assign({}, x, { k: k, eps: [x.ep] }); G.push(byk[k]); } });
+      var rank = function (x) { var i = F.indexOf(x.k); if (i < 0) i = F.indexOf(x.file); return i < 0 ? 1e4 : i; };
+      G.sort(function (a, b) { return rank(a) - rank(b); });
+      var it = function (x, now, i) {
+        var nm = !now && NM[x.k], to = nm ? nm.name + (nm.year ? ' (' + nm.year + ')' : '') : x.to, ser = nm ? nm.kind === 'series' : x.series;
+        return '<li>' + (now ? '<b>Now:</b> ' : '') + esc(to) + '<span class="when">' + (ser ? 'Series' + (x.eps && x.eps[0] ? ' · ' + (x.eps.length > 1 ? x.eps.length + ' episodes' : x.eps[0]) : x.ep ? ' · ' + x.ep : '') + ' · ' : '') + 'from ' + esc(x.from) + ' · ' + (x.gb || (x.size / 1e9).toFixed(1)) + ' GB' +
+          (nm ? ' · <b>named by you</b>' : x.noyear ? ' · <b style="color:#f08a4b">no year: Name it</b>' : '') + (x.noroom ? ' · <b style="color:#f08a4b">no room for it</b>' : '') + '</span><span class="cvba">' + esc(x.file) + '</span>' +
+          (now ? '' : '<span class="state" style="margin-top:6px">' + (i ? '<button class="btn" type="button" data-ffirst="' + esc(x.k) + '" data-n="' + esc(to) + '">Do next</button>' : '') +
+            '<button class="btn" type="button" data-fname="' + esc(x.k) + '" data-q="' + esc(to.replace(/\s*\(\d{4}\)$/, '')) + '" data-y="' + esc((to.match(/\((\d{4})\)$/) || [])[1] || '') + '" data-s="' + (ser ? 1 : '') + '">Name it</button>' +
+            (nm ? '<button class="btn" type="button" data-funname="' + esc(x.k) + '">Its own name</button>' : '') + '</span><div class="fnm" data-for="' + esc(x.k) + '"></div>') + '</li>'; };
+      $('#ftabs').innerHTML = [['next', 'Next', G.length + (n ? 1 : 0)], ['came', 'Came', rc.length]]
+        .map(function (t) { return '<button type="button" data-ft="' + t[0] + '" aria-pressed="' + (tab === t[0]) + '">' + t[1] + ' ' + t[2] + '</button>'; }).join('');
+      Array.prototype.forEach.call(document.querySelectorAll('[data-ft]'), function (b) { b.onclick = function () { fetching.naming = 0; fetching.tab = b.dataset.ft; fetching.last && fetching.draw(fetching.last); }; });
+      if (fetching.naming && tab === 'next') { clearTimeout(fetching.t); fetching.t = setTimeout(fetching, 30000); return; }   // (not redrawn while a name is being found)
+      $('#flist').innerHTML = tab === 'next' ? ((n ? it(n, true) : '') + G.map(function (x, i) { return it(x, false, i); }).join('') || '<li>Nothing waiting.</li>') :
         rc.map(function (x) { return '<li>' + esc(x.to) + '<span class="when">' + esc(when(x.at * 1000)) + ' · from ' + esc(x.from) + ' · ' + x.gb + ' GB' +
           (x.ok ? '' : ' · <b style="color:#f08a4b">didn’t come</b>') + (x.why ? ' · ' + esc(x.why) : '') + '</span></li>'; }).join('') || '<li>None yet.</li>';
+      var fpost = function (body) { return fetch(GW + '/api/fetching', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'The Mac mini didn’t answer.'); return j; }); }); };
+      Array.prototype.forEach.call(document.querySelectorAll('[data-funname]'), function (b) { b.onclick = function () { fpost({ op: 'unname', key: b.dataset.funname }).then(function () { toast('Its own name again'); fetching(); }).catch(function (e) { toast(e.message); }); }; });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-fname]'), function (b) { b.onclick = function () {
+        var key = b.dataset.fname, box = Array.prototype.filter.call(document.querySelectorAll('.fnm'), function (d) { return d.dataset.for === key; })[0];
+        if (box.innerHTML) { box.innerHTML = ''; fetching.naming = 0; return; }
+        fetching.naming = 1;
+        box.innerHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><input type="text" class="fq" value="' + esc(b.dataset.q) + '" placeholder="Title" style="flex:1 1 180px"><input type="text" class="fy" value="' + esc(b.dataset.y) + '" placeholder="Year" inputmode="numeric" style="flex:0 0 76px">' +
+          '<select class="fk"><option value="movie">Film</option><option value="series"' + (b.dataset.s ? ' selected' : '') + '>Series</option></select><button class="btn primary fgo" type="button">Find on TMDB</button><button class="btn fx" type="button">Cancel</button></div><ul class="changes fres" style="margin-top:8px"></ul>';
+        var go = function () {
+          var q = box.querySelector('.fq').value.trim(), y = box.querySelector('.fy').value.trim(), k = box.querySelector('.fk').value, ul = box.querySelector('.fres');
+          ul.innerHTML = '<li>Looking on TMDB…</li>';
+          fetch(GW + '/api/tmdbfind?q=' + encodeURIComponent(q) + (/^\d{4}$/.test(y) ? '&year=' + y : '') + '&kind=' + k, { headers: { Authorization: 'Bearer ' + TOKEN } })
+            .then(function (r) { if (r.status === 404) throw new Error('Press Update everything first.'); return r.json(); }).then(function (j) {
+              var R = j.results || [];
+              ul.innerHTML = R.length ? R.map(function (r, i) { return '<li style="display:flex;gap:12px;align-items:flex-start">' + (r.image ? '<img alt="" src="' + esc(r.image) + '" style="width:48px;flex:none;aspect-ratio:2/3;object-fit:cover">' : '') +
+                '<div style="flex:1;min-width:0"><b>' + esc(r.name) + '</b>' + (r.year ? ' (' + r.year + ')' : '') + '<span class="when" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">' + esc(r.overview || '') + '</span>' +
+                '<span class="state" style="margin-top:4px"><button class="btn" type="button" data-pick="' + i + '">This one</button></span></div></li>'; }).join('') : '<li>Nothing found: try fewer words, or no year.</li>';
+              Array.prototype.forEach.call(ul.querySelectorAll('[data-pick]'), function (pb) { pb.onclick = function () {
+                var r = R[+pb.dataset.pick];
+                fpost({ op: 'name', key: key, name: r.name, year: r.year, kind: k, tmdb: r.tmdb }).then(function () { toast('It comes in as ' + r.name + (r.year ? ' (' + r.year + ')' : '')); fetching.naming = 0; fetching(); }).catch(function (e) { toast(e.message); });
+              }; });
+            }).catch(function (e) { ul.innerHTML = '<li>' + esc(e.message || 'The Mac mini didn’t answer.') + '</li>'; });
+        };
+        box.querySelector('.fgo').onclick = go; box.querySelector('.fx').onclick = function () { box.innerHTML = ''; fetching.naming = 0; };
+        box.querySelector('.fq').onkeydown = box.querySelector('.fy').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); go(); } };
+        go();
+      }; });
       Array.prototype.forEach.call(document.querySelectorAll('[data-ffirst]'), function (b) { b.onclick = function () {
         b.disabled = true;
         fetch(GW + '/api/fetching', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'first', file: b.dataset.ffirst }) })
