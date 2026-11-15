@@ -2614,6 +2614,7 @@ def site_update(g, why=''):
     return c
 
 
+CONV_NOW = threading.Event()   # (films just brought in: the converter started for them now, if it isn't running)
 GDRIVE_NOW = threading.Event()   # (admin's Look now: a look straight away, not at the next quarter hour)
 GDRIVE_NEXT = [0]
 GDRIVE_ERR = ['']   # (why the last look didn't work, for the admin page)
@@ -2768,6 +2769,8 @@ def keep_gdrive():
             if os.path.exists(script) and os.path.exists(conf):
                 import subprocess
                 r = subprocess.run([sys.executable, script, 'run'], capture_output=True, text=True, timeout=6 * 3600)
+                if load(os.path.expanduser('~/Grifflix/convert-new.json'), []):
+                    CONV_NOW.set()
                 for line in (r.stdout or '').splitlines():
                     if 'film(s) fetched' in line or 'film(s) from Google Drive' in line or 'failed' in line or 'Not enough room' in line:
                         log('Google Drive:', line[17:])
@@ -2845,7 +2848,7 @@ def keep_converting():
             script = os.path.join(home, 'convert.py')
             cur = load(os.path.join(home, 'convert-now.json'), None) or {}
             alive = bool(conv_alive(cur))
-            recently_done = cur.get('state') == 'finished' and time.time() - (cur.get('at') or 0) < 12 * 3600
+            recently_done = cur.get('state') == 'finished' and time.time() - (cur.get('at') or 0) < 12 * 3600 and not load(os.path.join(home, 'convert-new.json'), [])   # (films just brought in: started for them)
             if os.path.exists(script) and not alive and not recently_done:
                 import subprocess
                 running = 'convert.py' in subprocess.run(['ps', '-axo', 'command'], capture_output=True, text=True, timeout=10).stdout
@@ -2858,7 +2861,8 @@ def keep_converting():
                     log('The converter wasn’t running: started again (%s)' % ' '.join(args))
         except Exception as e:
             log('Keeping the converter going:', e)
-        time.sleep(600)
+        CONV_NOW.wait(600)   # (or at once, when a film has just been brought in)
+        CONV_NOW.clear()
 
 
 def serve():

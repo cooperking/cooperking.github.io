@@ -783,6 +783,46 @@ def leftovers():
             call('POST', '/Library/Refresh')   # (Jellyfin looks again, so they go from Grifflix too)
         except Exception:
             pass
+NEWF = os.path.join(HOME, 'convert-new.json')   # (films gdrive.py has just brought in, by their path)
+
+
+def brought_in(rest):
+    """Films just fetched from TorBox or Google Drive: to the top, next, as soon as the media server has them (John, 15 Nov 2026, "the mkv
+    films should immediately be put to the top of the list for repackaging"). Pinned, so the admin page shows them as next too."""
+    try:
+        new = json.load(open(NEWF))
+    except (OSError, ValueError):
+        return rest
+    if not new:
+        return rest
+    want = set(x['path'] for x in new)
+    try:
+        found = [i for i in fresh(gather(), st) if i['path'] in want and i['id'] not in st['done'] and i['id'] not in st['failed']]
+    except Exception as e:
+        log('  couldn’t look for the films just brought in:', e)
+        return rest
+    if found:
+        try:
+            p = json.load(open(PRIO))
+        except (OSError, ValueError):
+            p = {}
+        pins = [x for x in (p.get('pins') or []) if x.get('id') not in set(i['id'] for i in found)]
+        p['pins'] = [{'id': i['id'], 'name': i['name']} for i in found] + pins
+        tmp = PRIO + '.tmp'
+        json.dump(p, open(tmp, 'w'))
+        os.replace(tmp, PRIO)
+        have = set(x['id'] for x in rest)
+        rest = [dict(i, urgent=True) for i in found if i['id'] not in have] + rest
+        log('%d just brought in: next (%s)' % (len(found), ', '.join(i['name'] for i in found)))
+    got = set(i['path'] for i in found)
+    keep = [x for x in new if x['path'] not in got and time.time() - x.get('at', 0) < 86400 and os.path.exists(x['path'])]   # (not yet in the media server: looked for again)
+    try:
+        json.dump(keep, open(NEWF, 'w'))
+    except OSError:
+        pass
+    return rest
+
+
 def orphans():
     """ffmpegs left by a converter that was stopped part way (frozen ones too): stopped, so the film isn't made twice at once."""
     try:
@@ -818,6 +858,7 @@ while rest:
             log('  couldn’t look for new films:', e)   # (the order looked at again before each film: a film John pins goes next, without starting anything again)
     have = set(x['id'] for x in rest)
     rest = [x for x in redos() if x['id'] not in have] + rest   # (John's language changes first: minutes each)
+    rest = brought_in(rest)
     rest = ordered(rest)
     rest = [x for x in rest if x.get('redo')] + [x for x in rest if not x.get('redo')]
     try:   # (a newer version put here by Update everything: taken up now, between films)
