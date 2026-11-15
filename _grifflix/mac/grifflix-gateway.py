@@ -2813,7 +2813,11 @@ def keep_scanning(g):
         try:
             roots = [l for v in g.jf.call('GET', '/Library/VirtualFolders') or [] if (v.get('CollectionType') or '') in ('movies', 'tvshows')
                      for l in v.get('Locations') or []]
-            now_ = sorted(os.path.join(r, n) for r in roots if os.path.isdir(r) for n in os.listdir(r) if not n.startswith('.'))
+            # (every film and episode file, not only the folders at the top: a new episode in a series already there, or a film arriving in
+            # a folder made earlier, by a download that failed, was never noticed: John, 15 Nov 2026, Ghosts "not even in the queue")
+            VID = ('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')
+            now_ = sorted(os.path.join(d, n) for r in roots if os.path.isdir(r) for d, ds, fs in os.walk(r)
+                          for n in fs + ([] if d != r else ds) if not n.startswith('.') and (d == r or n.lower().endswith(VID)))
             before = load(seen_at, None)
             if before is not None:
                 new = [x for x in now_ if x not in set(before)]
@@ -2824,6 +2828,7 @@ def keep_scanning(g):
                 if new:
                     g.jf.call('POST', '/Library/Refresh')
                     log('New in the library (%d): %s: the media server asked to look' % (len(new), ', '.join(os.path.basename(x) for x in new[:5]) + (' …' if len(new) > 5 else '')))
+                    CONV_NOW.set()   # (the converter started for them, if it isn't running)
                     publish_at = time.time() + 540   # (the site updated once the media server has read them: about 10 minutes on)
             if getattr(g, 'publish_soon', 0) and not publish_at:   # (John put a film's details right: the site follows)
                 publish_at, g.publish_soon = g.publish_soon, 0
