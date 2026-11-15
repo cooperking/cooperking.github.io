@@ -988,7 +988,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     fetch(GW + '/api/fetching', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (r.status === 404) throw new Error('old'); if (!r.ok) throw 0; return r.json(); }).then(fetching.draw = function (f) {
       fetching.last = f;
       var n = f.now, w = f.waiting || [], rc = f.recent || [], tab = fetching.tab || 'next';
-      $('#fbar').hidden = !n; $('#flook').hidden = !f.setup || f.running;
+      $('#fbar').hidden = !n;
+      // (Look now always there, greyed while a look or a download is going, saying so: John, 15 Nov 2026, "otherwise it's impossible to
+      // tell if I should press again"; pressed and not yet started counts as looking, for a minute)
+      var fl = $('#flook'), asked = fetching.asked && Date.now() - fetching.asked < 60000 && !(f.checked && f.checked * 1000 > fetching.asked);
+      if (f.running || n) fetching.asked = 0;
+      fl.hidden = !f.setup; fl.disabled = !!(f.running || n || asked);
+      fl.textContent = n ? 'Downloading…' : f.running || asked ? 'Looking now…' : 'Look now';
       var mins = function (t) { var m = Math.max(0, Math.round((t * 1000 - Date.now()) / 60000)); return m < 1 ? 'any moment' : 'in ' + m + ' min'; };
       if (!f.setup) {
         $('#fhead').innerHTML = 'Not <em>set up</em>'; $('#fsay').innerHTML = 'On the Mac mini: <b>python3 ~/Grifflix/gdrive.py setup</b>';
@@ -997,7 +1003,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         $('#ffill').style.width = (n.pct || 0) + '%';
         var left = n.mbps && n.size ? Math.round((n.size - n.got) * 8 / (n.mbps * 1e6) / 60) : 0;
         $('#fsay').innerHTML = '<b>' + Math.floor(n.pct || 0) + '%</b> of ' + (n.size / 1e9).toFixed(1) + ' GB from ' + esc(n.from) + (n.mbps ? ', ' + n.mbps + ' Mbps' + (left ? ', about ' + (left >= 90 ? Math.round(left / 6) / 10 + ' hours' : left + ' min') + ' to go' : '') : '') + '.' + (w.length ? ' Then ' + w.length + ' more.' : '');
-      } else if (f.running) {
+      } else if (f.running || (fetching.asked && Date.now() - fetching.asked < 60000)) {
         $('#fhead').innerHTML = 'Looking <em>now</em>'; $('#fsay').textContent = 'Seeing what’s in TorBox and Google Drive…';
       } else if ((f.trouble || []).length && !w.length) {   // (TorBox or Google Drive couldn't be read: said, not "nothing waiting")
         $('#fhead').innerHTML = 'Couldn’t <em>look</em>';
@@ -1059,7 +1065,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         fetch(GW + '/api/fetching', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'first', file: b.dataset.ffirst }) })
           .then(function (r) { if (!r.ok) throw 0; toast(b.dataset.n + ': next' + (n ? ', after ' + n.to : '')); fetching(); }).catch(function () { b.disabled = false; toast('The Mac mini didn’t answer.'); });
       }; });
-      clearTimeout(fetching.t); fetching.t = setTimeout(fetching, n || f.running ? 10000 : 60000);
+      clearTimeout(fetching.t); fetching.t = setTimeout(fetching, asked ? 4000 : n || f.running ? 10000 : 60000);
     }).catch(function (e) {
       $('#fhead').innerHTML = e && e.message === 'old' ? 'The Mac mini <em>needs its update</em>' : 'The Mac mini isn’t <em>answering</em>';
       $('#fsay').textContent = e && e.message === 'old' ? 'Press Update everything to see what’s coming in here.' : 'It may be asleep or restarting.';
@@ -1067,11 +1073,11 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     });
   }
   $('#flook').onclick = function () {
-    var b = this; b.disabled = true;
+    var b = this; b.disabled = true; b.textContent = 'Looking now…';
     fetch(GW + '/api/fetching', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ look: true }) })
       .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'The Mac mini didn’t answer.'); return j; }); })
-      .then(function (j) { toast(j.running ? 'It’s looking already' : 'Looking now: anything new starts downloading in a moment'); setTimeout(fetching, 4000); })
-      .catch(function (e) { toast(e.message); }).then(function () { b.disabled = false; });
+      .then(function (j) { fetching.asked = Date.now(); fetching.last && fetching.draw(fetching.last); setTimeout(fetching, 4000); })
+      .catch(function (e) { toast(e.message); b.disabled = false; b.textContent = 'Look now'; });
   };
 
   // ---- conversions (convert.py on the Mac): the film it's on and how far, and those done
