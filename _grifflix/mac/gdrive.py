@@ -278,6 +278,7 @@ def run(check=False):
 SOURCES = [{'remote': REMOTE, 'path': FOLDER, 'name': 'Google Drive', 'delete': True},
            {'remote': 'torbox', 'path': '', 'name': 'TorBox', 'delete': False}]
 SEEN = os.path.join(HOME, 'fetched.json')
+MINE = os.path.getmtime(os.path.abspath(__file__))   # (this version: a newer one, put here by Update everything, taken up between films)
 STATUS = os.path.join(HOME, 'fetch-status.json')
 FIRST = os.path.join(HOME, 'fetch-first.json')   # (John's: the downloads he wants next, from the admin page: John, 15 Nov 2026, "Can I prioritise what's coming in next from torbox?")
 
@@ -421,6 +422,15 @@ def _run(check):
     free0 = shutil.disk_usage(root).free
     status(checked=int(time.time()), trouble=trouble, waiting=[dict(wait_entry(p), noroom=free0 < p['size'] + 20e9) for p in plan], **({} if check else {'now': None}))
     while plan:
+        try:   # (a newer version since this fetch began: finish here, between films, and start again as it; never a download thrown
+               # away part way: Donnie Darko, 9.4 GB, began again after Update everything: John, 15 Nov 2026, "Downloads seem to have slowed")
+            if os.path.getmtime(os.path.abspath(__file__)) != MINE and not check:
+                log('A newer version of this: carrying on with it')
+                os.remove(LOCK)
+                sys.stdout.flush()
+                os.execv(sys.executable, [sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
+        except OSError:
+            pass
         plan = in_order(plan)   # (John's next, looked at again before each: one he chooses mid-download goes after this one)
         p = plan.pop(0)
         if not check:
