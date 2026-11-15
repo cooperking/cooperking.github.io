@@ -495,6 +495,16 @@ def _run(check):
             ('' if year else '. NOTE: "%s" has no year in its name, so the media server may match the wrong film: if it does, Fix match on it in Grifflix' % title))
         done += 1
         came(True, '' if year else 'no year in its name: check it’s the right film')
+        if ext not in ('.mp4', '.m4v'):   # (an MKV and the like: the converter told now, to repackage it next: John, 15 Nov 2026,
+            try:                          # "the mkv films should immediately be put to the top of the list for repackaging")
+                nf = os.path.join(HOME, 'convert-new.json')
+                try:
+                    have = json.load(open(nf))
+                except (OSError, ValueError):
+                    have = []
+                json.dump(have + [{'path': dest, 'name': title, 'at': int(time.time())}], open(nf, 'w'))
+            except OSError:
+                pass
         if src['delete']:
             rc('rmdirs', '--leave-root', loc('').rstrip('/'), check=False)   # (download folders left empty)
         try:
