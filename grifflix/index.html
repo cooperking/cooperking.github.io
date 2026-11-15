@@ -1726,7 +1726,7 @@ html { font-synthesis-weight: none; } .thstage, .thv { font-synthesis-weight: au
 html.phone .film .tag { font-size: 17px !important; }
 .film .ov, .sheet .ov { font: 400 15.5px/1.65 var(--serif) !important; letter-spacing: 0 !important; }
 html.phone .film .ov { font-size: 15px !important; }
-.dow div, .row h2 .more, .profh, .prof .chiplabel, .sheet .chips span, .tracks .td, .card .s, .film .meta, .tracks .ta, .sheet .meta { font-family: var(--serif) !important; font-weight: 400 !important; font-style: normal !important; font-variant: small-caps; text-transform: lowercase !important; letter-spacing: .1em !important; font-size: 13px !important; }
+.dow div, .row h2 .more, .profh, .prof .chiplabel, .sheet .chips span, .tracks .td, .card .s, .film .meta, .tracks .ta, .sheet .meta, .shsheet .shk { font-family: var(--kfont) !important; font-weight: 500 !important; font-style: normal !important; font-variant: normal !important; text-transform: uppercase !important; letter-spacing: .2em !important; font-size: 11px !important; }   /* (small labels one style everywhere: the bar's spaced capitals, not serif small capitals beside them: John, 15 Nov 2026) */
 .card .s, .tracks .ta { font-size: 12px !important; } html.phone .dow div { font-size: 11px !important; letter-spacing: .04em !important; }
 .tracks .td { white-space: nowrap; }
 html:not(.phone) .film .meta { font-size: 14.5px !important; }
@@ -1810,18 +1810,19 @@ html.phone .vtog span { padding: 6px 8px 5px; letter-spacing: .13em; text-indent
    phone can't see their profile because the mute button covers it") */
 @media (max-width: 389px) {
   html .bar-top #barnav { flex: 0 1 auto; min-width: 0; }
-  html .bar-top .vtog span { width: 30px; height: 24px; padding: 0 !important; font-size: 0 !important; letter-spacing: 0 !important; text-indent: 0 !important; }
-  html .bar-top .vtog span::after { content: ""; position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='5' width='18' height='16'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='5' width='18' height='16'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat; }
-  html .bar-top .vtog span:last-child::after { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='4' width='18' height='16'/%3E%3Cpath d='M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='4' width='18' height='16'/%3E%3Cpath d='M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4'/%3E%3C/svg%3E"); }
+  html .bar-top .vtog span, html #shnav .vtog span { width: 30px; height: 24px; padding: 0 !important; font-size: 0 !important; letter-spacing: 0 !important; text-indent: 0 !important; }
+  html .bar-top .vtog span::after, html #shnav .vtog span::after { content: ""; position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='5' width='18' height='16'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='5' width='18' height='16'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat; }
+  html .bar-top .vtog span:last-child::after, html #shnav .vtog span:last-child::after { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='4' width='18' height='16'/%3E%3Cpath d='M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='4' width='18' height='16'/%3E%3Cpath d='M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4'/%3E%3C/svg%3E"); }
   html .bar-top .ico[data-go="profile"], html .bar-top #who, html .bar-top .tmute { flex: none; }
   html .bar-top .brand, html.phone .bar-top .brand { font-size: 10px !important; letter-spacing: .1em !important; }
 }
 /* (signed in, the bar has Search too: on a phone a magnifying glass, so it fits beside the switch, the music and the profile (John, 11 Nov
    2026, a photo: "Profile still blocked by mute button"; it was SEARCH in words that pushed it off)) */
 @media (max-width: 600px) {
-  html #barnav button[data-nv="search"] { position: relative; width: 28px; height: 28px; padding: 0 !important; font-size: 0 !important; letter-spacing: 0 !important; flex: none; }
-  html #barnav button[data-nv="search"]::after { content: ""; position: absolute; left: 50%; top: 50%; width: 17px; height: 17px; margin: -8.5px 0 0 -8.5px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E") center / contain no-repeat; }
-  html #barnav button[data-nv="search"].on { text-decoration: none; } html #barnav button[data-nv="search"].on::after { opacity: 1; }
+  /* (over pop-ups too: one magnifying glass on a phone, the page and its pop-ups alike: John, 15 Nov 2026, "icon everywhere (for phone)") */
+  html #barnav button[data-nv="search"], html #shnav button[data-nv="search"] { position: relative; width: 28px; height: 28px; padding: 0 !important; font-size: 0 !important; letter-spacing: 0 !important; flex: none; }
+  html #barnav button[data-nv="search"]::after, html #shnav button[data-nv="search"]::after { content: ""; position: absolute; left: 50%; top: 50%; width: 17px; height: 17px; margin: -8.5px 0 0 -8.5px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E") center / contain no-repeat; }
+  html #barnav button[data-nv="search"].on, html #shnav button[data-nv="search"].on { text-decoration: none; } html #barnav button[data-nv="search"].on::after, html #shnav button[data-nv="search"].on::after { opacity: 1; }
   html.phone #barnav { gap: 8px !important; }
 }
 @media (max-width: 600px) { html .bar-top .drafttag { flex: none; width: 9px; height: 9px; min-height: 0; padding: 0; font-size: 0; border-radius: 50%; margin: 0 0 0 2px !important; } }   /* (the draft's tag a dot on any phone) */
@@ -1915,6 +1916,29 @@ html[data-theme=spiral] .hinfo .w, html[data-theme=spiral] .hinfo .w > span, htm
 html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 .th-picture .vday.soon { background: #141210 !important; box-shadow: inset 0 0 0 1px rgba(244, 236, 216, .25) !important; }
 .th-picture .vday.soon .cs { display: grid !important; font: 600 15px/1.2 var(--kfont) !important; letter-spacing: .28em; color: rgba(244, 236, 216, .55) !important; text-transform: uppercase; }
+/* the look made consistent across the phone, the computer and the TV (a review of every screen: 15 Nov 2026) */
+.homeic[hidden] { display: none !important; }   /* (a home icon hidden over pop-ups showed all the same, alone in the top corner of a phone) */
+html:not(.hall):not(.table):not(.tv) .bar-top::before { content: ""; position: fixed; left: 0; right: 0; top: 0; height: calc(env(safe-area-inset-top) + 66px); background: linear-gradient(var(--bg) 82%, rgba(0, 0, 0, 0)); z-index: -1; pointer-events: none; }   /* (the bar on its own ground, as the page scrolls under it: the calendar's films showed through CALENDAR and THEME) */
+html:not(.phone):not(.tv) #sheet #sq, html.tv #sheet #sq { width: 100% !important; }   /* (Search's box to the edge: the room kept for the X it no longer has) */
+#sheet input::placeholder, #sq::placeholder { color: var(--fg-2); opacity: 1; }   /* (the hint readable in every theme's colours) */
+.row h2 .more { color: var(--fg-2) !important; }   /* (See all: not faint) */
+html.tv .tcd span { padding: 10px 9px 7px; } html.tv .tcd span em { -webkit-line-clamp: 1; } html.tv .tcd span small { display: none; }   /* (the TV calendar: a title on one line, under the day's number, not over it) */
+html.phone #sheetIn > .form > .close { position: static !important; float: right; margin: 0 0 8px 12px; }   /* (a phone: a dialog's X under the bar, not on its SEARCH) */
+.pill.danger.armed { background: #b3261e !important; border-color: #b3261e !important; color: #fff !important; }   /* (Delete, once tapped: a warning, not like the other buttons) */
+html.tv .sfpop { max-height: 70vh; }
+/* (tags are words, not boxes: they looked like buttons but did nothing) */
+.sheet .chips span, .film .chips span { border: 0 !important; padding: 0 !important; background: none !important; }
+.sheet .chips { gap: 4px 16px !important; }
+/* (one height for a row of buttons: Play, the heart, Collections, Share and Delete side by side were 46, 40 and 38) */
+.film .acts { --acth: 46px; align-items: center; }
+html.tv .film .acts { --acth: 60px; }
+.film .acts > .pill, .film .acts > .ico { height: var(--acth) !important; min-height: var(--acth) !important; box-sizing: border-box !important; }
+.film .acts > .ico { width: var(--acth) !important; padding: 0 !important; display: inline-grid !important; place-items: center; }
+/* (a computer: every page's words start in line with GRIFFLIX in the bar, 64 px in; they started at 43, 78, 82 and 86) */
+html:not(.phone):not(.tv) .film { padding-left: 64px !important; padding-right: 64px !important; }
+html:not(.phone):not(.tv) #sheet .form:has(#sq) { padding-left: 64px !important; padding-right: 64px !important; max-width: none !important; margin: 0 !important; }
+html:not(.phone):not(.tv) #sheetIn .tabs { margin-left: 0 !important; }
+html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; padding-right: 64px !important; }
 </style>
 <script>/* a computer's screen (wide, with a mouse) or the TV: the whole calendar in the window, as on the songs' site */
 (function () { if (/GRIFFLIXTV\//.test(navigator.userAgent) || /[?&]tv=1(&|$)/.test(location.search)) { var vp = document.querySelector('meta[name=viewport]'); if (vp) vp.setAttribute('content', 'width=1280'); } })();   /* a TV: laid out 1280 wide and shrunk to the screen, as the songs' page is (a Fire Stick's browser is 960 wide: everything came out a third too big) */
@@ -1979,7 +2003,7 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'f0419f35a974' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '81451a1565d7' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2184,6 +2208,8 @@ function sfWire(root, items, redraw) {   // the icons' panels: items are what's 
     var host = root.closest('dialog') || document.body;
     $$('.sfpop.sfout, .sfdim', host).forEach(function (x) { if (!root.contains(x)) x.remove(); });
     pop.classList.add('sfout'); host.appendChild(pop);
+    // (gone with the pop-up it belongs to: left open and the page left by the bar, it stayed over the next pop-up and blocked it)
+    if (host.tagName === 'DIALOG') host.addEventListener('close', function () { pop.remove(); if (dim) dim.remove(); }, { once: true });
     dim = document.createElement('div'); dim.className = 'sfdim'; dim.hidden = true; host.insertBefore(dim, pop);
     dim.onclick = function () { close(); };
   }
@@ -3473,7 +3499,7 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
   var y = +S.month.slice(0, 4), m = +S.month.slice(5, 7) - 1, n = new Date(y, m + 1, 0).getDate(), lead = (new Date(y, m, 1).getDay() + 6) % 7, t = themeFor(m);
   var ms = monthsOf(C.days), mi = ms.indexOf(S.month), mob = MOB();
   S.sheetDate = null;   // (not a day's page: a swipe here is the month before or after)
-  var h = '<div class="form tcal" style="position:relative">' + X + '<div class="tctools">' +   // (Search, Profile and Reload here too, the bar being covered: John, 8 Nov 2026)
+  var h = '<div class="form tcal" style="position:relative"><div class="tctools">' +   // (Search, Profile and Reload here too, the bar being covered: John, 8 Nov 2026)
     '<button class="ico" data-tt="refresh" aria-label="Reload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>' +
     '<button class="ico" data-tt="who" aria-label="Profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button></div>' + capBar(m, y, mi > 0, mi < ms.length - 1) + '<div class="tchead"><button class="pill tcm" id="tcprev" aria-label="Earlier month"' + (mi <= 0 ? ' disabled' : '') + '>‹</button><h2>' + MONTHS[m] + ' ' + y + '</h2><button class="pill tcm" id="tcnext" aria-label="Later month"' + (mi >= ms.length - 1 ? ' disabled' : '') + '>›</button></div><div class="tcgrid">' + DOW.map(function (d) { return '<div class="tch">' + d + '</div>'; }).join('');
   for (var k = 0; k < lead; k++) h += '<div></div>';
@@ -4977,7 +5003,7 @@ function drawRows(R, into) {
 /* --- browse: films, TV, home videos */
 function browseSheet(tab) {   // Browse (Films, TV, Collections) as a pop-up, over the month's theme
   S.sheetNow = { k: 'browse', t: tab };
-  openSheet('<div class="form bsheet" style="position:relative">' + X + '<div id="bsin"></div></div>');
+  openSheet('<div class="form bsheet" style="position:relative"><div id="bsin"></div></div>');
   browseIn($('#bsin'), tab);
   if (TV) setTimeout(function () { var f = $('#bsin [data-b].on'); if (f) f.focus(); }, 80);
 }
@@ -5078,6 +5104,7 @@ function drawLists(L) {
 /* ------------------------------------------------------------------ pop-ups */
 var dlg = $('#sheet');
 function openSheet(html) {
+  [].forEach.call(dlg.querySelectorAll('.sfout, .sfdim'), function (x) { x.remove(); });   // (a sort or filter panel of the last pop-up gone with it)
   $('#sheetIn').innerHTML = html;
   // (what the remote's on in a pop-up is kept when it's redrawn only if they moved there: the browser's own first choice, the day
   // before, isn't kept over Play: John, 10 Nov 2026: "Tab order is still not remote control intuitive")
@@ -5161,7 +5188,7 @@ function shBrand() {   // GRIFFLIX over a pop-up, just where the bar's is (the b
   var wsrc = $$('.bar-top #who, .bar-top .ico[data-go="profile"]').filter(function (x) { return x.offsetParent; })[0], sw = $('#shwho'), cx = $('#sheetIn .close');
   if (cx) cx.style.removeProperty('transform');
   if (!sw) { dlg.insertAdjacentHTML('afterbegin', '<button id="shwho" type="button" aria-label="Profile"></button>'); sw = $('#shwho'); sw.onclick = function () { var w = $$('.bar-top #who, .bar-top .ico[data-go="profile"]').filter(function (x) { return x.offsetParent; })[0]; if (w) w.click(); }; }
-  if (!wsrc || TV) { sw.hidden = true; return; }
+  if (!wsrc) { sw.hidden = true; return; }   // (on the TV too: John, 15 Nov 2026, the profile "should stay visible" over pop-ups)
   var wr = wsrc.getBoundingClientRect(), wc = getComputedStyle(wsrc);
   sw.hidden = false; sw.innerHTML = wsrc.innerHTML; sw.className = wsrc.className;
   sw.style.cssText = 'position:fixed;z-index:81;margin:0;min-height:0;min-width:0;box-sizing:border-box;left:' + Math.round(wr.left) + 'px;top:' + Math.round(wr.top) + 'px;width:' + Math.round(wr.width) + 'px;height:' + Math.round(wr.height) + 'px;';
@@ -5290,7 +5317,10 @@ function bodyHTML(it, ctx) {
       (it.convNow ? 'Converting now' : it.convNext ? 'Next for the Mac mini ✓' : /^to make smaller/.test(it.conv) ? 'Make smaller next' : 'Convert next') + '</button>';
     if (ME && ME.downloads && !TV && !isSeries) h += '<button class="pill" id="adown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5M5 21h14"/></svg>Download</button>';
   }
-  if (!it.ext && shareDayOf(it)) h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button></div>';
+  if (!it.ext && shareDayOf(it)) h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button>';
+  // (John's Delete: last in the row, apart from the rest)
+  if (!PUBLIC && !it.ext && ME && ME.owner && !TV && it.type === 'movie') h += '<button class="pill danger" id="adel">Delete</button>';
+  h += '</div>';   // (the row closed whatever's in it: with no Share button it was left open and a series' episodes went inside it, Play and the heart floating beside them)
   if (isSeries && it.episodes) {
     var seasons = {}; it.episodes.forEach(function (e) { (seasons[e.season || 0] = seasons[e.season || 0] || []).push(e); });
     var keys = Object.keys(seasons).sort(function (a, b) { return a - b; }), cur = ctx.season || (it.next ? (it.episodes.filter(function (e) { return e.id === it.next; })[0] || {}).season : keys[0]) || keys[0];
@@ -5323,6 +5353,21 @@ function wireBody(it, ctx) {
     play(it);
   });
   on('afrom0', function () { play(it, null, true); });
+  on('adel', function () {
+    var b = $('#adel');
+    if (!b.dataset.sure) {   // (two taps: the first says what it does, and any Movie of the Day it's on)
+      var D = (S.calData && S.calData.id === 'motd' ? S.calData.days : null) || {}, on = Object.keys(D).filter(function (d) { return D[d] && D[d].id === it.id; });
+      b.dataset.sure = 1; b.classList.add('armed'); b.textContent = (matchMedia('(hover: hover)').matches ? 'Click' : 'Tap') + ' again';
+      if (on.length) toast('It’s Movie of the Day on ' + on.map(function (d) { return longDate(d); }).join(', ') + ': that day will need another film');
+      setTimeout(function () { if (b.isConnected && b.dataset.sure) { delete b.dataset.sure; b.classList.remove('armed'); b.textContent = 'Delete'; } }, 6000);
+      return;
+    }
+    b.disabled = true; b.textContent = 'Deleting…';
+    mac('delete', { id: it.id }).then(function (j) {
+      toast((j.name || it.name) + ' deleted: it’s in the Grifflix Bin on the G-Drive for 30 days, and gone from Grifflix within a few minutes');
+      closeSheet();
+    }).catch(function (e) { b.disabled = false; delete b.dataset.sure; b.textContent = 'Delete'; toast(e.message || 'Couldn’t reach the Mac mini'); });
+  });
   on('aconv', function () {
     var b = $('#aconv'); b.disabled = true; b.textContent = 'Putting it next…';
     mac('convert', { op: 'up', id: it.id, name: it.name }).then(function () { b.textContent = 'Next to convert ✓'; it.convNext = true;
@@ -5356,7 +5401,7 @@ function wireBody(it, ctx) {
 function searchSheet(onPick, title) {
   if (!onPick) S.sheetNow = { k: 'search' };
   var withBrowse = !onPick && VIEW() === 'themes' && S.view === 'home';   // (in a theme, John: "Search can bring up the search bar plus collections and browse")
-  openSheet('<div class="form srch' + (withBrowse ? ' bsheet' : '') + (onPick ? ' pick' : '') + '" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (title || 'Search') + '</h2><input type="search" id="sq" placeholder="A film, a series, an episode…" autocomplete="off"><div class="results" id="sres"></div>' + (withBrowse ? '<div id="bsin"></div>' : '') + '</div>');
+  openSheet('<div class="form srch' + (withBrowse ? ' bsheet' : '') + (onPick ? ' pick' : '') + '" style="position:relative"><h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (title || 'Search') + '</h2><input type="search" id="sq" placeholder="A film, a series, an episode…" autocomplete="off"><div class="results" id="sres"></div>' + (withBrowse ? '<div id="bsin"></div>' : '') + '</div>');
   if (withBrowse) browseIn($('#bsin'), 'now');   // (Search opens on Now showing)
   var t, inp = $('#sq');
   if (TV) {   // a TV: Grifflix's own letters under the box, OK on the box to bring them up. Not Amazon's keyboard, which came up
@@ -5409,7 +5454,7 @@ function searchSheet(onPick, title) {
   };
 }
 function secretSheet(date) {   // John, on a day still a surprise: its film changed or taken off without being shown it (John, 9 Nov 2026: "Remove the kings speech")
-  openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 30px/1.15 var(--serif);color:var(--fg)">' + esc(longDate(date)) + '</h2>' +
+  openSheet('<div class="form" style="position:relative"><h2 style="font:400 30px/1.15 var(--serif);color:var(--fg)">' + esc(longDate(date)) + '</h2>' +
     '<p>A film is chosen for this day: a surprise till 8am then. You can change it or take it off without seeing it.</p>' +
     '<div class="acts"><button class="pill on" id="schange">Choose another film</button><button class="pill" id="sclear">Take it off</button></div></div>');
   $('#schange').onclick = function () {
@@ -5556,7 +5601,7 @@ function profile() {
     setTimeout(function () { so.focus(); }, 60); return;
   }
   var admin = ME.owner ? '<a class="pill adminpill" href="/grifflix/admin.html">Admin</a>' : '';
-  openSheet('<div class="form prof" style="position:relative"><div class="profhead"><span class="chiplabel">Profile</span>' + admin + X.replace('ico close', 'ico close profx') + '</div>' +
+  openSheet('<div class="form prof" style="position:relative"><div class="profhead"><span class="chiplabel">Profile</span>' + admin + '</div>' +
     '<h2 class="profname">' + esc(ME.name || 'You') + '</h2>' +
     (ME.libraries ? '<div class="chips" style="margin-top:6px">' + ['movies', 'tv'].map(function (k) { return '<span>' + (ME.libraries[k] || 0) + ' ' + { movies: 'films', tv: 'series' }[k] + '</span>'; }).join('') + '</div>' : '') +
     '<div class="tabs proftabs">' + [['list', 'My list']].concat(NOTES ? [['cals', 'Calendars']] : [], [['req', 'Requests'], ['account', 'Account']]).map(function (t) { return '<button class="pill' + (PROF.tab === t[0] ? ' on' : '') + '" data-ptab="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>' +
