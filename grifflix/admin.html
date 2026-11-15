@@ -1084,7 +1084,11 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       $('#cvlist').innerHTML = tab === 'next' ? (nx.map(function (x, i) { return '<li>' + (i ? '' : '<b>Now:</b> ') + esc(x.name) + '<span class="when">' + esc(x.why || '') + (x.gb ? ' · ' + x.gb + ' GB' : '') + '</span></li>'; }).join('') || '<li>Nothing waiting.</li>') :
         tab === 'fail' ? fails.map(function (x) { return '<li>' + esc(x.name) + '<span class="when">' + esc(String(x.why || '').slice(0, 300)) + '</span></li>'; }).join('') :
         c.recent.map(function (x) { return '<li>' + esc(x.name) + '<span class="when">' + esc(when(x.at * 1000)) + (x.mins ? ' · ' + x.mins + ' min' : '') + (x.why ? ' · ' + esc(x.why) : '') + '</span>' +
-          (x.before || x.after ? '<span class="cvba">' + (x.before ? 'Was ' + fl(x.before) : 'Original deleted') + (x.after ? ' → now ' + fl(x.after) : '') + '</span>' : '') + '</li>'; }).join('') || '<li>None yet.</li>';
+          (x.before || x.after ? '<span class="cvba">' + (x.before ? 'Was ' + fl(x.before) : 'Original deleted') + (x.after ? ' → now ' + fl(x.after) : '') + '</span>' : '') +
+          // (which language everyone hears, and why; every soundtrack and subtitle in it: John, 15 Nov 2026, "how can I be sure that a repackage will do the right one?")
+          (x.chose ? '<span class="cvba"><b>Heard in ' + esc(x.chose) + '</b></span>' : '') +
+          (x.after && (x.after.sound || x.after.subs) ? '<span class="cvba">Sound: ' + esc((x.after.sound || []).join(', ') || 'none') + (x.after.subs && x.after.subs.length ? ' · Subtitles: ' + esc(x.after.subs.join(', ')) : '') +
+            (x.before && x.before.subs && x.before.subs.some(function (t) { return /picture/.test(t); }) ? ' · <span style="color:#f08a4b">left out: ' + esc(x.before.subs.filter(function (t) { return /picture/.test(t); }).join(', ')) + ' (an MP4 can’t hold them)</span>' : '') + '</span>' : '') + '</li>'; }).join('') || '<li>None yet.</li>';
       clearTimeout(convert.t); convert.t = setTimeout(convert, c.alive ? 30000 : 120000);
     }).catch(function (e) {
       $('#cvhead').innerHTML = e && e.message === 'old' ? 'The Mac mini <em>needs its update</em>' : 'The Mac mini isn’t <em>answering</em>';

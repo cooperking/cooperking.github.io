@@ -295,6 +295,64 @@ def probe(ffprobe, path):
     return json.loads(r.stdout or '{}')
 
 
+# the film's own language, for the sound everyone hears (the player can't change soundtrack): its production country's language
+# (John, 15 Nov 2026: "if an mkv has multiple languages, how can I be sure that a repackage will do the right one?")
+SAME = {'fra': 'fre', 'deu': 'ger', 'zho': 'chi', 'nld': 'dut', 'ces': 'cze', 'fas': 'per', 'ron': 'rum', 'ell': 'gre', 'isl': 'ice',
+        'slk': 'slo', 'msa': 'may', 'mya': 'bur', 'sqi': 'alb', 'hye': 'arm', 'kat': 'geo', 'eus': 'baq', 'mkd': 'mac', 'cym': 'wel',
+        'en': 'eng', 'fr': 'fre', 'de': 'ger', 'es': 'spa', 'it': 'ita', 'ja': 'jpn', 'ko': 'kor', 'zh': 'chi', 'pt': 'por', 'ru': 'rus'}
+COUNTRY = {'United States of America': 'eng', 'United States': 'eng', 'United Kingdom': 'eng', 'Ireland': 'eng gle', 'Australia': 'eng',
+           'New Zealand': 'eng', 'Canada': 'eng fre', 'France': 'fre', 'Belgium': 'fre dut', 'Switzerland': 'ger fre ita', 'Spain': 'spa cat',
+           'Mexico': 'spa', 'Argentina': 'spa', 'Chile': 'spa', 'Colombia': 'spa', 'Cuba': 'spa', 'Peru': 'spa', 'Italy': 'ita', 'Germany': 'ger',
+           'West Germany': 'ger', 'East Germany': 'ger', 'Austria': 'ger', 'Japan': 'jpn', 'South Korea': 'kor', 'Korea': 'kor', 'China': 'chi',
+           'Hong Kong': 'chi', 'Taiwan': 'chi', 'Brazil': 'por', 'Portugal': 'por', 'Russia': 'rus', 'Soviet Union': 'rus', 'Poland': 'pol',
+           'Sweden': 'swe', 'Denmark': 'dan', 'Norway': 'nor', 'Finland': 'fin', 'Iceland': 'ice', 'Netherlands': 'dut', 'Czech Republic': 'cze',
+           'Czechoslovakia': 'cze slo', 'Hungary': 'hun', 'Romania': 'rum', 'Greece': 'gre', 'Turkey': 'tur', 'Iran': 'per', 'Israel': 'heb',
+           'India': 'hin tam tel mal ben', 'Thailand': 'tha', 'Indonesia': 'ind', 'Philippines': 'fil tgl eng', 'Vietnam': 'vie',
+           'Egypt': 'ara', 'Lebanon': 'ara fre', 'Saudi Arabia': 'ara', 'Senegal': 'fre wol', 'Ukraine': 'ukr rus', 'Georgia': 'geo'}
+NAMES = {'eng': 'English', 'fre': 'French', 'ger': 'German', 'spa': 'Spanish', 'ita': 'Italian', 'jpn': 'Japanese', 'kor': 'Korean',
+         'chi': 'Chinese', 'por': 'Portuguese', 'rus': 'Russian', 'pol': 'Polish', 'swe': 'Swedish', 'dan': 'Danish', 'nor': 'Norwegian',
+         'fin': 'Finnish', 'dut': 'Dutch', 'cze': 'Czech', 'hun': 'Hungarian', 'gre': 'Greek', 'tur': 'Turkish', 'per': 'Persian',
+         'heb': 'Hebrew', 'hin': 'Hindi', 'ara': 'Arabic', 'cat': 'Catalan', 'tha': 'Thai', 'ukr': 'Ukrainian', 'rum': 'Romanian'}
+
+
+def lang(x):
+    l = ((x.get('tags') or {}).get('language') or '').lower()
+    return SAME.get(l, l) if l not in ('und', 'unk', 'mis', 'zxx', '') else ''
+
+
+def lang_name(x):
+    l = lang(x)
+    return NAMES.get(l, l.upper() if l else 'unnamed')
+
+
+def commentary(a):
+    return bool((a.get('disposition') or {}).get('comment')) or 'comment' in ((a.get('tags') or {}).get('title') or '').lower()
+
+
+def pick_sound(audio, item, s):
+    """The soundtrack everyone hears, and why: the one the file marks as the original; else the one in the language of the country the
+    film is from (the media server's details, from TMDB); else the one the file marks first to play, then the first. Never a commentary.
+    (A download's own "default" can be its makers' dub: a Spanish group's copy of a French film.)"""
+    cand = [a for a in audio if not commentary(a)] or audio
+    if not cand:
+        return None, ''
+    if len(cand) == 1:
+        return cand[0], ''
+    o = [a for a in cand if (a.get('disposition') or {}).get('original')]
+    if o:
+        return o[0], 'marked as the original'
+    try:
+        where = g(call('GET', '/Users/%s/Items/%s' % (s['jf_user_id'], item['id']), Fields='ProductionLocations') or {}, 'ProductionLocations', []) or []
+    except Exception:
+        where = []
+    for c in where:
+        for a in cand:
+            if lang(a) and lang(a) in (COUNTRY.get(c) or '').split():
+                return a, 'the language of %s' % c
+    d = [a for a in cand if (a.get('disposition') or {}).get('default')]
+    return (d or cand)[0], 'the file’s own choice' + (' (it’s from %s)' % ', '.join(where[:2]) if where else '')
+
+
 def brief(info, path):
     """A file in a few words, for the admin page: its picture's format and size, its rate and how big it is (John, 11 Nov 2026:
     "what was the original and what was it converted to?")"""
@@ -307,7 +365,11 @@ def brief(info, path):
         gb = os.path.getsize(path) / 1e9
     except OSError:
         gb = 0
-    return {'v': vc, 'w': v.get('width') or 0, 'h': v.get('height') or 0, 'mbps': round(float(fmt.get('bit_rate') or 0) / 1e6, 1), 'gb': round(gb, 1)}
+    st = info.get('streams') or []
+    au = [lang_name(a) + (' commentary' if commentary(a) else '') for a in st if a.get('codec_type') == 'audio']
+    sb = [lang_name(x) + ('' if x.get('codec_name') in ('subrip', 'srt', 'ass', 'ssa', 'mov_text', 'webvtt', 'text') else ' (picture)') for x in st if x.get('codec_type') == 'subtitle']
+    return {'v': vc, 'w': v.get('width') or 0, 'h': v.get('height') or 0, 'mbps': round(float(fmt.get('bit_rate') or 0) / 1e6, 1), 'gb': round(gb, 1),
+            'sound': list(dict.fromkeys(au)), 'subs': list(dict.fromkeys(sb))}
 
 
 def watching():
@@ -358,12 +420,15 @@ def convert(item, ffmpeg, ffprobe, st):
 
     vf = "scale=w='min(%d,iw)':h='min(%d,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2" % (MAX_W, MAX_H)   # (only ever smaller, never enlarged)
     cmd = [ffmpeg, '-hide_banner', '-nostdin', '-y', '-i', src, '-map', '0:%d' % v['index']]
-    main_a = next((a for a in audio if (a.get('disposition') or {}).get('default')), audio[0] if audio else None)
-    if main_a:   # sound: AAC stereo first (plays everywhere), then the original (surround) as it is, where the file can hold it
+    main_a, chose = pick_sound(audio, item, s)
+    if main_a:   # sound: the film's own language as AAC stereo first (plays everywhere, and the one everyone hears), then every soundtrack:
+        # as it is where an MP4 can hold it, else as AC3 (surround kept): no language lost (DTS and Opus ones were dropped before)
         cmd += ['-map', '0:%d' % main_a['index']]
-        keep = [a for a in ([main_a] + [a for a in audio if a is not main_a]) if mkv or a.get('codec_name') in ('ac3', 'eac3', 'aac')]
+        keep = [main_a] + [a for a in audio if a is not main_a and not commentary(a)] + [a for a in audio if a is not main_a and commentary(a)]
         for a in keep:
             cmd += ['-map', '0:%d' % a['index']]
+        if len(audio) > 1:
+            log('  sound: %s first%s; %d soundtrack%s in all' % (lang_name(main_a), ' (%s)' % chose if chose else '', len(keep), '' if len(keep) == 1 else 's'))
     text_subs = [x for x in subs if x.get('codec_name') in ('subrip', 'srt', 'ass', 'ssa', 'mov_text', 'webvtt', 'text')]
     if mkv:
         cmd += ['-map', '0:s?', '-map', '0:t?']   # every subtitle (pictures too) and attached fonts, as they are
@@ -386,8 +451,10 @@ def convert(item, ffmpeg, ffprobe, st):
                 '-profile:v', 'high', '-level', '4.1', '-pix_fmt', 'yuv420p', '-vf', vf, '-disposition:v:0', 'default']
     if main_a:
         cmd += ['-c:a:0', 'aac', '-b:a:0', '192k', '-ac:a:0', '2', '-metadata:s:a:0', 'title=Stereo', '-disposition:a:0', 'default']
-        for n in range(1, len(keep) + 1):
-            cmd += ['-c:a:%d' % n, 'copy', '-disposition:a:%d' % n, '0']
+        for n, a in enumerate(keep, 1):
+            fits = mkv or a.get('codec_name') in ('ac3', 'eac3', 'aac')
+            cmd += ['-c:a:%d' % n, 'copy'] if fits else ['-c:a:%d' % n, 'ac3', '-b:a:%d' % n, '640k' if a is main_a else '448k', '-ac:a:%d' % n, str(min(6, int(a.get('channels') or 2)))]
+            cmd += ['-disposition:a:%d' % n, '0']
     if mkv:
         cmd += ['-c:s', 'copy', '-c:t', 'copy']
     else:
@@ -482,7 +549,8 @@ def convert(item, ffmpeg, ffprobe, st):
     mins = (time.time() - t0) / 60
     log('  done in %d min: %.1f GB → %.1f GB; original %s' % (mins, item['gb'], os.path.getsize(dst) / 1e9, ('kept in ' + os.path.dirname(keep_at)) if keep_at else 'deleted'))
     st['done'][item['id']] = {'name': item['name'], 'from': src, 'to': dst, 'kept': keep_at, 'at': int(time.time()), 'mins': round(mins),
-                              'why': item['why'], 'before': before, 'after': brief(probe(ffprobe, dst), dst)}
+                              'why': item['why'], 'before': before, 'after': brief(probe(ffprobe, dst), dst),
+                              'chose': (lang_name(main_a) + (': ' + chose if chose else '')) if main_a and len(audio) > 1 else ''}
     if dst != src:   # a new name: Jellyfin will make it a new item; noted, so everything follows it once it's seen
         try:   # (when it was first added: the new item keeps it, so a converted film isn't "new")
             added = g(call('GET', '/Users/%s/Items/%s' % (s['jf_user_id'], item['id'])) or {}, 'DateCreated')
