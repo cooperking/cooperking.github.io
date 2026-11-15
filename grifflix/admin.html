@@ -997,7 +997,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         var gb = function (b) { return b >= 1e12 ? (b / 1e12).toFixed(1) + ' TB' : Math.round(b / 1e9) + ' GB'; };
         $('#cvdisks').hidden = false;
         $('#cvdisks').innerHTML = 'Free space: ' + c.disks.map(function (d) {
-          var low = d.free < Math.max(10e9, d.total * .05);
+          var low = d.free < Math.min(50e9, Math.max(10e9, d.total * .05));   // (5% of a small disk, but never more than 50 GB: room for the biggest film and its new copy; 175 GB free on the G-Drive was called nearly full: John, 15 Nov 2026)
           return (low ? '<b style="color:#f08a4b">' : '<b>') + esc(d.name) + ' ' + gb(d.free) + '</b>' + (low ? ' <span style="color:#f08a4b">(nearly full: films may stop playing; free some space)</span>' : '');
         }).join(' · ');
       }

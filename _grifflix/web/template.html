@@ -3473,7 +3473,7 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
   var y = +S.month.slice(0, 4), m = +S.month.slice(5, 7) - 1, n = new Date(y, m + 1, 0).getDate(), lead = (new Date(y, m, 1).getDay() + 6) % 7, t = themeFor(m);
   var ms = monthsOf(C.days), mi = ms.indexOf(S.month), mob = MOB();
   S.sheetDate = null;   // (not a day's page: a swipe here is the month before or after)
-  var h = '<div class="form tcal" style="position:relative">' + X + '<div class="tctools">' +   // (Search, Profile and Reload here too, the bar being covered: John, 8 Nov 2026)
+  var h = '<div class="form tcal" style="position:relative">'<div class="tctools">' +   // (Search, Profile and Reload here too, the bar being covered: John, 8 Nov 2026)
     '<button class="ico" data-tt="refresh" aria-label="Reload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>' +
     '<button class="ico" data-tt="who" aria-label="Profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button></div>' + capBar(m, y, mi > 0, mi < ms.length - 1) + '<div class="tchead"><button class="pill tcm" id="tcprev" aria-label="Earlier month"' + (mi <= 0 ? ' disabled' : '') + '>‹</button><h2>' + MONTHS[m] + ' ' + y + '</h2><button class="pill tcm" id="tcnext" aria-label="Later month"' + (mi >= ms.length - 1 ? ' disabled' : '') + '>›</button></div><div class="tcgrid">' + DOW.map(function (d) { return '<div class="tch">' + d + '</div>'; }).join('');
   for (var k = 0; k < lead; k++) h += '<div></div>';
@@ -4977,7 +4977,7 @@ function drawRows(R, into) {
 /* --- browse: films, TV, home videos */
 function browseSheet(tab) {   // Browse (Films, TV, Collections) as a pop-up, over the month's theme
   S.sheetNow = { k: 'browse', t: tab };
-  openSheet('<div class="form bsheet" style="position:relative">' + X + '<div id="bsin"></div></div>');
+  openSheet('<div class="form bsheet" style="position:relative">'<div id="bsin"></div></div>');
   browseIn($('#bsin'), tab);
   if (TV) setTimeout(function () { var f = $('#bsin [data-b].on'); if (f) f.focus(); }, 80);
 }
@@ -5356,7 +5356,7 @@ function wireBody(it, ctx) {
 function searchSheet(onPick, title) {
   if (!onPick) S.sheetNow = { k: 'search' };
   var withBrowse = !onPick && VIEW() === 'themes' && S.view === 'home';   // (in a theme, John: "Search can bring up the search bar plus collections and browse")
-  openSheet('<div class="form srch' + (withBrowse ? ' bsheet' : '') + (onPick ? ' pick' : '') + '" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (title || 'Search') + '</h2><input type="search" id="sq" placeholder="A film, a series, an episode…" autocomplete="off"><div class="results" id="sres"></div>' + (withBrowse ? '<div id="bsin"></div>' : '') + '</div>');
+  openSheet('<div class="form srch' + (withBrowse ? ' bsheet' : '') + (onPick ? ' pick' : '') + '" style="position:relative">'<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (title || 'Search') + '</h2><input type="search" id="sq" placeholder="A film, a series, an episode…" autocomplete="off"><div class="results" id="sres"></div>' + (withBrowse ? '<div id="bsin"></div>' : '') + '</div>');
   if (withBrowse) browseIn($('#bsin'), 'now');   // (Search opens on Now showing)
   var t, inp = $('#sq');
   if (TV) {   // a TV: Grifflix's own letters under the box, OK on the box to bring them up. Not Amazon's keyboard, which came up
@@ -5409,7 +5409,7 @@ function searchSheet(onPick, title) {
   };
 }
 function secretSheet(date) {   // John, on a day still a surprise: its film changed or taken off without being shown it (John, 9 Nov 2026: "Remove the kings speech")
-  openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 30px/1.15 var(--serif);color:var(--fg)">' + esc(longDate(date)) + '</h2>' +
+  openSheet('<div class="form" style="position:relative">'<h2 style="font:400 30px/1.15 var(--serif);color:var(--fg)">' + esc(longDate(date)) + '</h2>' +
     '<p>A film is chosen for this day: a surprise till 8am then. You can change it or take it off without seeing it.</p>' +
     '<div class="acts"><button class="pill on" id="schange">Choose another film</button><button class="pill" id="sclear">Take it off</button></div></div>');
   $('#schange').onclick = function () {
@@ -5556,7 +5556,7 @@ function profile() {
     setTimeout(function () { so.focus(); }, 60); return;
   }
   var admin = ME.owner ? '<a class="pill adminpill" href="/grifflix/admin.html">Admin</a>' : '';
-  openSheet('<div class="form prof" style="position:relative"><div class="profhead"><span class="chiplabel">Profile</span>' + admin + X.replace('ico close', 'ico close profx') + '</div>' +
+  openSheet('<div class="form prof" style="position:relative"><div class="profhead"><span class="chiplabel">Profile</span>' + admin + '</div>' +
     '<h2 class="profname">' + esc(ME.name || 'You') + '</h2>' +
     (ME.libraries ? '<div class="chips" style="margin-top:6px">' + ['movies', 'tv'].map(function (k) { return '<span>' + (ME.libraries[k] || 0) + ' ' + { movies: 'films', tv: 'series' }[k] + '</span>'; }).join('') + '</div>' : '') +
     '<div class="tabs proftabs">' + [['list', 'My list']].concat(NOTES ? [['cals', 'Calendars']] : [], [['req', 'Requests'], ['account', 'Account']]).map(function (t) { return '<button class="pill' + (PROF.tab === t[0] ? ' on' : '') + '" data-ptab="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>' +
