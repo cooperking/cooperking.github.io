@@ -1256,6 +1256,38 @@ def make_handler(g):
                 TVC.notify_all()
             return self.send_json(200, {'ok': True})
 
+        def api_fetching(self, me, user, q, b):
+            """John's only: films coming in from TorBox and Google Drive (gdrive.py's own account of it): the one downloading now and how far,
+            those waiting and the names they'll have, and those that came (John, 15 Nov 2026: "Can we see what's running or upcoming from
+            the admin page rather than running a script"). POST {look: true}: a look now."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            home = os.path.expanduser('~/Grifflix')
+            setup = os.path.exists(os.path.join(home, 'gdrive.py')) and os.path.exists(os.path.join(home, 'rclone.conf'))
+            lock = os.path.join(home, 'gdrive.lock')
+            running = os.path.exists(lock) and time.time() - os.path.getmtime(lock) < 6 * 3600
+            if b and b.get('look'):
+                if not setup:
+                    return self.send_json(400, {'error': 'Google Drive and TorBox aren’t set up on the Mac mini yet.'})
+                if not running:
+                    GDRIVE_NOW.set()
+                return self.send_json(200, {'ok': True, 'running': running})
+            try:
+                st = json.load(open(os.path.join(home, 'fetch-status.json')))
+            except (OSError, ValueError):
+                st = {}
+            now = st.get('now') if running else None
+            if now:
+                part = now.pop('part', '')
+                try:
+                    got = os.path.getsize(part)
+                except OSError:
+                    got = 0
+                took = max(1, time.time() - (now.get('since') or time.time()))
+                now.update(got=got, pct=round(100.0 * got / now['size'], 1) if now.get('size') else 0, mbps=round(got * 8 / took / 1e6, 1))
+            return self.send_json(200, {'setup': setup, 'running': running, 'now': now, 'waiting': st.get('waiting') or [],
+                                        'recent': st.get('recent') or [], 'checked': st.get('checked'), 'next': int(GDRIVE_NEXT[0]) or None})
+
         def api_convert(self, me, user, q, b):
             """John's: how the conversions are going (convert.py's files in ~/Grifflix), for the admin page."""
             if not me.get('owner'):
@@ -2497,6 +2529,10 @@ def site_update(g, why=''):
     return c
 
 
+GDRIVE_NOW = threading.Event()   # (admin's Look now: a look straight away, not at the next quarter hour)
+GDRIVE_NEXT = [0]
+
+
 def keep_gdrive():
     """Films from the Grifflix folder of John's Google Drive, every 15 minutes, once gdrive.py is set up (its sign-in kept): onto the
     G-Drive, then deleted from Google Drive; keep_scanning sees them next and the site follows (John, 15 Nov 2026)."""
@@ -2514,7 +2550,9 @@ def keep_gdrive():
                     log('Google Drive: didn’t work:', (r.stderr or '').strip()[-300:])
         except Exception as e:
             log('Google Drive:', e)
-        time.sleep(900)
+        GDRIVE_NEXT[0] = time.time() + 900
+        GDRIVE_NOW.wait(900)
+        GDRIVE_NOW.clear()
 
 
 def keep_scanning(g):
