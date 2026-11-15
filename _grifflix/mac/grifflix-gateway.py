@@ -1281,6 +1281,13 @@ def make_handler(g):
                         running = True
                 else:
                     running = time.time() - os.path.getmtime(lock) < 600
+            if b and b.get('op') in ('first', 'unfirst'):   # (John's next: a download moved to the front: John, 15 Nov 2026)
+                fp = os.path.join(home, 'fetch-first.json')
+                f = [x for x in (load(fp, []) or []) if isinstance(x, str) and x != str(b.get('file') or '')]
+                if b['op'] == 'first' and b.get('file'):
+                    f.insert(0, str(b['file'])[:500])
+                save(fp, f[:50])
+                return self.send_json(200, {'ok': True, 'first': f[:50]})
             if b and b.get('look'):
                 if not setup:
                     return self.send_json(400, {'error': 'Google Drive and TorBox aren’t set up on the Mac mini yet.'})
@@ -1301,7 +1308,8 @@ def make_handler(g):
                 took = max(1, time.time() - (now.get('since') or time.time()))
                 now.update(got=got, pct=round(100.0 * got / now['size'], 1) if now.get('size') else 0, mbps=round(got * 8 / took / 1e6, 1))
             return self.send_json(200, {'setup': setup, 'running': running, 'now': now, 'waiting': st.get('waiting') or [],
-                                        'recent': st.get('recent') or [], 'checked': st.get('checked'), 'next': int(GDRIVE_NEXT[0]) or None, 'error': GDRIVE_ERR[0]})
+                                        'recent': st.get('recent') or [], 'checked': st.get('checked'), 'next': int(GDRIVE_NEXT[0]) or None, 'error': GDRIVE_ERR[0],
+                                        'first': load(os.path.join(home, 'fetch-first.json'), []) or []})
 
         def api_convert(self, me, user, q, b):
             """John's: how the conversions are going (convert.py's files in ~/Grifflix), for the admin page."""
@@ -1312,6 +1320,14 @@ def make_handler(g):
             P = load(pf, {}) or {}
             P.setdefault('pins', []); P.setdefault('remux_first', True)
             op = b.get('op')
+            if op == 'lang':   # (John's answer: which soundtrack is the film's own language; it goes next: John, 15 Nov 2026, "never the dub")
+                iid = str(b.get('id') or '')
+                lg = str(b.get('lang') or '')[:40]   # (a language's name, or "ok": it was right)
+                if not re.match(r'^[0-9a-f]{32}$', iid) or not lg:
+                    return self.send_json(400, {'error': 'Which film, and which language?'})
+                P.setdefault('langs', {})[iid] = lg
+                os.makedirs(home, exist_ok=True)
+                save(pf, P)
             if op in ('pin', 'unpin', 'remux_first', 'up'):
                 iid = g.now_id(str(b.get('id') or ''))   # (a film's id as the site knows it, maybe from before its repackaging)
                 if op in ('pin', 'unpin', 'up') and not re.match(r'^[0-9a-f]{32}$', iid):
@@ -1370,7 +1386,8 @@ def make_handler(g):
                                  'recent': [{'name': x.get('name'), 'at': x.get('at'), 'mins': x.get('mins'), 'why': x.get('why'),
                                              'before': x.get('before') or look(x.get('kept')), 'after': x.get('after') or look(x.get('to'))} for x in rows],
                                  'disks': disks(),
-                                 'next': (cur or {}).get('next') or [], 'left': (cur or {}).get('left'), 'pins': P['pins'], 'remux_first': P['remux_first'], 'log': tail})
+                                 'next': (cur or {}).get('next') or [], 'left': (cur or {}).get('left'), 'pins': P['pins'], 'remux_first': P['remux_first'], 'log': tail,
+                                 'ask': [dict(v, id=k, chosen=(P.get('langs') or {}).get(k)) for k, v in (st.get('ask') or {}).items()]})
 
         def api_originals(self, me, user, q, b):
             """John's: the originals convert.py kept in "Grifflix Originals" (what they take, the drive's free space), and

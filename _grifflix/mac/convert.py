@@ -329,28 +329,49 @@ def commentary(a):
     return bool((a.get('disposition') or {}).get('comment')) or 'comment' in ((a.get('tags') or {}).get('title') or '').lower()
 
 
+def chosen_lang(iid):
+    try:
+        return (json.load(open(PRIO)).get('langs') or {}).get(iid)
+    except (OSError, ValueError):
+        return None
+
+
 def pick_sound(audio, item, s):
-    """The soundtrack everyone hears, and why: the one the file marks as the original; else the one in the language of the country the
-    film is from (the media server's details, from TMDB); else the one the file marks first to play, then the first. Never a commentary.
-    (A download's own "default" can be its makers' dub: a Spanish group's copy of a French film.)"""
+    """The soundtrack everyone hears: always the film's original language, never a dub (John, 15 Nov 2026: "I always want the
+    original language - never the dub"). Returns (track, why, unsure): John's own choice for this film (a language's name); else
+    the one the file marks as the original; else, where its soundtracks are in more than one language, the one in the language of
+    the country the film is from (the media server's details, from TMDB), when exactly one language fits. Otherwise the best
+    guess (one of the country's languages, else the file's default), unsure: the original is kept and John told, to change it
+    if it's wrong ("don't wait - but flag to me, and don't delete original if in doubt"). Never a commentary."""
     cand = [a for a in audio if not commentary(a)] or audio
     if not cand:
-        return None, ''
+        return None, '', False
+    if item.get('redo'):   # (made again with John's language: not the stereo copy made last time, as the first choice)
+        cand = sorted(cand, key=lambda a: ((a.get('tags') or {}).get('title') == 'Stereo', -(a.get('channels') or 2)))
+    mine = chosen_lang(item['id'])
+    if mine and mine != 'ok':
+        a = next((a for a in cand if lang_name(a) == mine), None)
+        if a:
+            return a, 'your choice', False
     if len(cand) == 1:
-        return cand[0], ''
+        return cand[0], '', False
     o = [a for a in cand if (a.get('disposition') or {}).get('original')]
     if o:
-        return o[0], 'marked as the original'
+        return o[0], 'marked as the original', False
+    d = [a for a in cand if (a.get('disposition') or {}).get('default')]
+    if len(set(lang(a) or '?%d' % a['index'] for a in cand)) == 1:   # (all in one language: its surround or its stereo, not a dub)
+        return (d or cand)[0], '', False
     try:
         where = g(call('GET', '/Users/%s/Items/%s' % (s['jf_user_id'], item['id']), Fields='ProductionLocations') or {}, 'ProductionLocations', []) or []
     except Exception:
         where = []
     for c in where:
-        for a in cand:
-            if lang(a) and lang(a) in (COUNTRY.get(c) or '').split():
-                return a, 'the language of %s' % c
-    d = [a for a in cand if (a.get('disposition') or {}).get('default')]
-    return (d or cand)[0], 'the file’s own choice' + (' (it’s from %s)' % ', '.join(where[:2]) if where else '')
+        fit = [a for a in cand if lang(a) and lang(a) in (COUNTRY.get(c) or '').split()]
+        if fit and len(set(lang(a) for a in fit)) == 1:
+            return fit[0], 'the language of %s' % c, False
+        if fit:   # (more than one of its languages, as Canada's English and French: the file's default among them, unsure)
+            return ([a for a in fit if a in d] or fit)[0], 'one of the languages of %s' % c, True
+    return (d or cand)[0], 'a guess: ' + ('none of its soundtracks is in the language of %s' % ', '.join(where[:2]) if where else 'its country isn’t known'), True
 
 
 def brief(info, path):
@@ -420,7 +441,7 @@ def convert(item, ffmpeg, ffprobe, st):
 
     vf = "scale=w='min(%d,iw)':h='min(%d,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2" % (MAX_W, MAX_H)   # (only ever smaller, never enlarged)
     cmd = [ffmpeg, '-hide_banner', '-nostdin', '-y', '-i', src, '-map', '0:%d' % v['index']]
-    main_a, chose = pick_sound(audio, item, s)
+    main_a, chose, unsure = pick_sound(audio, item, s)
     if main_a:   # sound: the film's own language as AAC stereo first (plays everywhere, and the one everyone hears), then every soundtrack:
         # as it is where an MP4 can hold it, else as AC3 (surround kept): no language lost (DTS and Opus ones were dropped before)
         cmd += ['-map', '0:%d' % main_a['index']]
@@ -538,7 +559,7 @@ def convert(item, ffmpeg, ffprobe, st):
     # (John, 12 Nov 2026: "delete all originals automatically - I have backups so it's fine"); kept in Grifflix Originals only if
     # the setting keep_originals is on
     before = brief(info, src)
-    if s.get('keep_originals'):
+    if (s.get('keep_originals') or unsure) and not item.get('redo'):   # (unsure of the language: the original kept, whatever the setting)
         keep_at = os.path.join(os.path.dirname(root.rstrip('/')), 'Grifflix Originals', os.path.basename(root.rstrip('/')), os.path.relpath(src, root))
         os.makedirs(os.path.dirname(keep_at), exist_ok=True)
         shutil.move(src, keep_at)
@@ -551,6 +572,12 @@ def convert(item, ffmpeg, ffprobe, st):
     st['done'][item['id']] = {'name': item['name'], 'from': src, 'to': dst, 'kept': keep_at, 'at': int(time.time()), 'mins': round(mins),
                               'why': item['why'], 'before': before, 'after': brief(probe(ffprobe, dst), dst),
                               'chose': (lang_name(main_a) + (': ' + chose if chose else '')) if main_a and len(audio) > 1 else ''}
+    if unsure:   # (told on the admin page, with each language to change it to)
+        st.setdefault('ask', {})[item['id']] = {'name': item['name'], 'year': item.get('year'), 'to': dst, 'kept': keep_at, 'chose': lang_name(main_a), 'why': chose,
+            'options': list(dict.fromkeys(lang_name(a) for a in audio if not commentary(a))), 'at': int(time.time())}
+        log('  NOT SURE of its language: %s chosen (%s); the original kept. Change it on the admin page if it’s wrong' % (lang_name(main_a), chose))
+    elif not item.get('redo'):
+        st.get('ask', {}).pop(item['id'], None)
     if dst != src:   # a new name: Jellyfin will make it a new item; noted, so everything follows it once it's seen
         try:   # (when it was first added: the new item keeps it, so a converted film isn't "new")
             added = g(call('GET', '/Users/%s/Items/%s' % (s['jf_user_id'], item['id'])) or {}, 'DateCreated')
@@ -638,6 +665,24 @@ if CMD == 'status':
         print('  FAILED  %s: %s' % (x['name'], x['why']))
     sys.exit()
 
+st.setdefault('ask', {})
+
+
+def redos():
+    """Films John said are in another language: made again from the new file (every soundtrack is in it), that language first; quick,
+    a repackaging. "ok": it was right, the flag taken down."""
+    out, L = [], prio()['langs']
+    for k, x in list(st['ask'].items()):
+        c = L.get(k)
+        if c == 'ok':
+            st['ask'].pop(k, None)
+        elif c and c != x.get('chose') and os.path.exists(x.get('to') or ''):
+            out.append({'id': k, 'name': x['name'], 'year': x.get('year'), 'path': x['to'], 'mode': 'remux', 'redo': True, 'urgent': True,
+                        'why': 'your language: ' + c, 'mins': 0, 'gb': round(os.path.getsize(x['to']) / 1e9, 1)})
+    save_state(st)
+    return out
+
+
 items = [i for i in fresh(gather(), st) if i['id'] not in st['done'] and i['id'] not in st['failed']]
 if CMD != 'go':
     with open(os.path.join(HOME, 'convert-plan.csv'), 'w', newline='') as f:
@@ -660,7 +705,7 @@ def prio():
         p = json.load(open(PRIO))
     except (OSError, ValueError):
         p = {}
-    return {'pins': [x for x in (p.get('pins') or []) if isinstance(x, dict) and x.get('id')], 'remux_first': p.get('remux_first', True)}
+    return {'pins': [x for x in (p.get('pins') or []) if isinstance(x, dict) and x.get('id')], 'remux_first': p.get('remux_first', True), 'langs': p.get('langs') or {}}
 
 
 def ordered(rest):
@@ -718,7 +763,7 @@ leftovers()
 log('starting: %d to convert' % len(items))
 RUN['total'] = len(items)
 follow_up(st)
-rest, n = list(items), -1
+rest, n = redos() + list(items), -1
 looked = time.time()
 while rest:
     if time.time() - looked > 1800:   # (every half hour, a look for films brought in since: they go to the top, not to the end of the queue)
@@ -732,7 +777,10 @@ while rest:
                 RUN['total'] = RUN.get('total', 0) + len(add)
         except Exception as e:
             log('  couldn’t look for new films:', e)   # (the order looked at again before each film: a film John pins goes next, without starting anything again)
+    have = set(x['id'] for x in rest)
+    rest = [x for x in redos() if x['id'] not in have] + rest   # (John's language changes first: minutes each)
     rest = ordered(rest)
+    rest = [x for x in rest if x.get('redo')] + [x for x in rest if not x.get('redo')]
     it = rest.pop(0)
     n += 1
     RUN['n'] = n
@@ -745,6 +793,9 @@ while rest:
             time.sleep(60)
     try:
         convert(it, ffmpeg, ffprobe, st)
+        if it.get('redo'):   # (made again in John's language: the flag down)
+            st['ask'].pop(it['id'], None)
+            save_state(st)
     except RuntimeError as e:
         if it.get('mode') == 'remux':   # (a picture an MP4 can't hold as it is: converted instead, in its turn, not given up on)
             log('  couldn’t repackage', it['name'], '(%s): it will be converted instead' % str(e)[:160])
