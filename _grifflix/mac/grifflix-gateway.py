@@ -2714,26 +2714,39 @@ def keep_gdrive():
     """Films from the Grifflix folder of John's Google Drive, every 15 minutes, once gdrive.py is set up (its sign-in kept): onto the
     G-Drive, then deleted from Google Drive; keep_scanning sees them next and the site follows (John, 15 Nov 2026)."""
     script, conf = os.path.expanduser('~/Grifflix/gdrive.py'), os.path.expanduser('~/Grifflix/rclone.conf')
-    # (a fetch started before this gateway, by its older self, goes on with the old version's ways to the end of its list: Ghosts'
-    # episodes filed as films after an update (John, 15 Nov 2026). Stopped, its half-made file removed, and fetched afresh now.)
+    # (a fetch started by an older version of gdrive.py goes on with that version's ways to the end of its list: Ghosts' episodes
+    # filed as films after an update (John, 15 Nov 2026). Stopped, with its download, and done afresh by this version. Only one
+    # whose lock says it's an older version (or says nothing, as the oldest did): never one this version started.)
     try:
         import subprocess, signal as sig
-        ps = subprocess.run(['ps', '-axo', 'pid=,command='], capture_output=True, text=True, timeout=10).stdout
-        for line in ps.splitlines():
-            pid = int(line.split()[0]) if line.strip() else 0
-            if pid and pid != os.getpid() and (('gdrive.py' in line and ' run' in line) or ('rclone' in line and ' copyto ' in line and '.adding' in line)):
-                os.kill(pid, sig.SIGTERM)
-                m = re.search(r' (/.*?\.adding)(?: |$)', line)
-                if 'gdrive.py' in line:
-                    log('Google Drive: stopped a fetch from before the update, to start it again with the new one')
-                if m:
-                    time.sleep(2)
-                    try:
-                        os.remove(m.group(1))
-                    except OSError:
-                        pass
         lk = os.path.expanduser('~/Grifflix/gdrive.lock')
-        if os.path.exists(lk):
+        parts = open(lk).read().split() if os.path.exists(lk) else []
+        pid = int(parts[0]) if parts and parts[0].isdigit() else 0
+        ver = parts[1] if len(parts) > 1 else ''
+        mine = str(int(os.path.getmtime(script))) if os.path.exists(script) else ''
+        ps = subprocess.run(['ps', '-axo', 'pid=,ppid=,command='], capture_output=True, text=True, timeout=10).stdout
+        rows = [(int(l.split()[0]), int(l.split()[1]), l) for l in ps.splitlines() if l.strip()]
+        runs = [p_ for p_, _, l in rows if 'gdrive.py' in l and ' run' in l]
+        if not os.path.exists(lk) or (ver and ver == mine):
+            old = []   # (nothing running, or this version's own)
+        elif pid and pid in runs:
+            old = [pid]   # (an older version's, by its number)
+        else:
+            old = runs   # (the oldest kind of lock, with no number in it: any fetch running is that one)
+        for p_ in old:
+            for c, pp, l in rows:
+                if pp == p_ and 'rclone' in l:   # (its download: stopped, and its half-made file removed)
+                    os.kill(c, sig.SIGTERM)
+                    m = re.search(r' (/.*?\.adding)(?: |$)', l)
+                    if m:
+                        time.sleep(2)
+                        try:
+                            os.remove(m.group(1))
+                        except OSError:
+                            pass
+            os.kill(p_, sig.SIGTERM)
+            log('Google Drive: stopped a fetch by an older version, to do it again with this one')
+        if old and os.path.exists(lk):
             os.remove(lk)
     except Exception as e:
         log('Google Drive: couldn’t look for an older fetch:', e)
@@ -2838,11 +2851,13 @@ def keep_converting():
 
 def serve():
     g = Gateway()
+    port = int(g.st.get('port', 8097))
+    srv = ThreadingHTTPServer(('127.0.0.1', port), make_handler(g))
+    # (the jobs only once this is the gateway, its port taken: a start that fails, as one does while the old gateway still holds the
+    # port during an update, starts nothing. Each such start stopped the downloads: John, 15 Nov 2026, every one "went missing")
     threading.Thread(target=keep_converting, daemon=True).start()
     threading.Thread(target=keep_scanning, args=(g,), daemon=True).start()
     threading.Thread(target=keep_gdrive, daemon=True).start()
-    port = int(g.st.get('port', 8097))
-    srv = ThreadingHTTPServer(('127.0.0.1', port), make_handler(g))
     srv.daemon_threads = True
     log('Grifflix gateway on 127.0.0.1:%d, Jellyfin at %s' % (port, g.st['jellyfin']))
     srv.serve_forever()
