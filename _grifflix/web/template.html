@@ -5251,6 +5251,37 @@ function dayStep(d) {
   });
 })();
 
+function identifySheet(it) {   // John's: the right film (or series) found on TMDB and given to this one, its details and pictures read again
+  var nm = String(it.name || '').replace(/[._]/g, ' ').replace(/\s+/g, ' ').trim(), yr = it.year || '';
+  openSheet('<div class="form" style="position:relative">' + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">Fix <i>' + esc(it.name || 'this') + '</i></h2>' +
+    '<p class="ov" style="margin:8px 0 14px">Find the right ' + (it.type === 'series' ? 'series' : 'film') + ' on TMDB: its title, and its year if you know it.</p>' +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap"><input type="text" id="idq" value="' + esc(nm) + '" placeholder="Title" style="flex:1 1 220px"><input type="text" id="idy" value="' + esc(String(yr)) + '" placeholder="Year" inputmode="numeric" style="flex:0 0 90px"><button class="pill go" id="idgo">Find</button></div>' +
+    '<ul class="results idres" id="idres" style="max-height:none"></ul></div>');
+  var R = [];
+  var find = function () {
+    var q = $('#idq').value.trim(), y = $('#idy').value.trim();
+    $('#idres').innerHTML = '<li class="empty">Looking on TMDB…</li>';
+    mac('identify?id=' + it.id + '&q=' + encodeURIComponent(q) + (/^\d{4}$/.test(y) ? '&year=' + y : '')).then(function (j) {
+      R = j.results || [];
+      $('#idres').innerHTML = R.length ? R.map(function (r, i) {
+        return '<li style="display:flex;gap:14px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)">' + (r.image ? '<img alt="" src="' + esc(r.image) + '" style="width:64px;flex:none;aspect-ratio:2/3;object-fit:cover">' : '<span style="width:64px;flex:none;aspect-ratio:2/3;border:1px solid var(--line)"></span>') +
+          '<div style="flex:1;min-width:0"><b style="font:500 18px/1.25 var(--serif)">' + esc(r.name || '') + '</b>' + (r.year ? ' <span style="color:var(--fg-2)">(' + r.year + ')</span>' : '') +
+          (r.overview ? '<div style="margin-top:4px;font-size:14px;line-height:1.4;color:var(--fg-2);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">' + esc(r.overview) + '</div>' : '') +
+          '<button class="pill" data-idpick="' + i + '" style="margin-top:8px">This one</button></div></li>';
+      }).join('') : '<li class="empty">Nothing found: try fewer words, or no year.</li>';
+      $$('[data-idpick]').forEach(function (b) { b.onclick = function () {
+        var r = R[+b.dataset.idpick]; b.disabled = true; b.textContent = 'Putting it right…';
+        mac('identify', { id: it.id, pick: r.raw }).then(function () {
+          toast((it.name || 'It') + ' is now ' + r.name + (r.year ? ' (' + r.year + ')' : '') + ': Grifflix shows its new details within about 10 minutes');
+          closeSheet();
+        }).catch(function (e) { b.disabled = false; b.textContent = 'This one'; toast(e.message || 'Couldn’t reach the Mac mini'); });
+      }; });
+    }).catch(function (e) { $('#idres').innerHTML = '<li class="empty">' + esc(e.message || 'Couldn’t reach the Mac mini') + '</li>'; });
+  };
+  $('#idgo').onclick = find;
+  $('#idq').onkeydown = $('#idy').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); find(); } };
+  find();
+}
 function itemSheet(it, ctx) {
   S.sheetNow = S.sheetNowNext || { k: 'film', id: it && it.id }; S.sheetNowNext = null;
   if (TMUS.a || TMUS.pj) { musicHush(); TMUS.film = true; }   // (a film chosen: the theme's music stops at once)
@@ -5318,6 +5349,8 @@ function bodyHTML(it, ctx) {
     if (ME && ME.downloads && !TV && !isSeries) h += '<button class="pill" id="adown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5M5 21h14"/></svg>Download</button>';
   }
   if (!it.ext && shareDayOf(it)) h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button>';
+  // (John's Fix match: the film or series chosen from TMDB when the media server named it wrong, or didn't know it: John, 15 Nov 2026)
+  if (!PUBLIC && !it.ext && ME && ME.owner && !TV && (it.type === 'movie' || it.type === 'series')) h += '<button class="pill" id="aident">Fix match</button>';
   // (John's Delete: last in the row, apart from the rest)
   if (!PUBLIC && !it.ext && ME && ME.owner && !TV && it.type === 'movie') h += '<button class="pill danger" id="adel">Delete</button>';
   h += '</div>';   // (the row closed whatever's in it: with no Share button it was left open and a series' episodes went inside it, Play and the heart floating beside them)
@@ -5353,6 +5386,7 @@ function wireBody(it, ctx) {
     play(it);
   });
   on('afrom0', function () { play(it, null, true); });
+  on('aident', function () { identifySheet(it); });
   on('adel', function () {
     var b = $('#adel');
     if (!b.dataset.sure) {   // (two taps: the first says what it does, and any Movie of the Day it's on)

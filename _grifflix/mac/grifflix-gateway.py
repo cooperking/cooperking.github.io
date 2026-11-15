@@ -1631,6 +1631,39 @@ def make_handler(g):
             o = g.st.setdefault('opensubs', {})
             return SUBS.OpenSubs(o, lambda: save(SETTINGS, g.st), tls())
 
+        def api_identify(self, me, user, q, b):
+            """John's only: a film or series the media server named wrong, or didn't know, put right by choosing it from TMDB, as the media
+            server's own Identify does (John, 15 Nov 2026: "I'd like to be able to do it from the app, finding with tmdb").
+            GET id, q (a title), year: what TMDB has. POST {id, pick}: that one applied, its details and pictures read again."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            iid = str((b or q or {}).get('id') or '')
+            if not re.match(r'^[0-9a-f]{32}$', iid):
+                return self.send_json(400, {'error': 'Which film?'})
+            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid)) or {}
+            kind = 'Series' if it.get('Type') == 'Series' else 'Movie'
+            if not b:
+                name = str(q.get('q') or it.get('Name') or '').strip()[:120]
+                year = int(q['year']) if str(q.get('year') or '').isdigit() else None
+                info = {'Name': name}
+                if year:
+                    info['Year'] = year
+                res = g.jf.call('POST', '/Items/RemoteSearch/' + kind, {'SearchInfo': info, 'ItemId': iid, 'IncludeDisabledProviders': False}) or []
+                out = []
+                for r in res[:20]:
+                    pid = r.get('ProviderIds') or {}
+                    out.append({'name': r.get('Name'), 'year': r.get('ProductionYear'), 'overview': (r.get('Overview') or '')[:300],
+                                'image': r.get('ImageUrl'), 'tmdb': pid.get('Tmdb'), 'imdb': pid.get('Imdb'), 'raw': r})
+                return self.send_json(200, {'kind': kind, 'name': it.get('Name'), 'year': it.get('ProductionYear'), 'results': out})
+            pick = (b or {}).get('pick') or {}
+            if not isinstance(pick, dict) or not (pick.get('ProviderIds') or {}):
+                return self.send_json(400, {'error': 'Which one?'})
+            g.jf.call('POST', '/Items/RemoteSearch/Apply/%s' % iid, pick, {'replaceAllImages': 'true'})
+            g.forget()
+            g.publish_soon = time.time() + 180   # (the site's copy brought up to date by itself, once the media server has read it)
+            log('Identified by John: %s → %s (%s)' % (it.get('Name'), pick.get('Name'), pick.get('ProductionYear') or '?'))
+            return self.send_json(200, {'ok': True, 'name': pick.get('Name'), 'year': pick.get('ProductionYear')})
+
         def api_delete(self, me, user, q, b):
             """John's only: a film taken out of Grifflix, its folder moved to "Grifflix Bin" on the same drive (emptied after 30 days, so a
             mistake can be put back), and the media server asked to look (John, 15 Nov 2026: "Is is possible for me (and only me) to
@@ -2507,6 +2540,8 @@ def keep_scanning(g):
                     g.jf.call('POST', '/Library/Refresh')
                     log('New in the library (%d): %s: the media server asked to look' % (len(new), ', '.join(os.path.basename(x) for x in new[:5]) + (' …' if len(new) > 5 else '')))
                     publish_at = time.time() + 540   # (the site updated once the media server has read them: about 10 minutes on)
+            if getattr(g, 'publish_soon', 0) and not publish_at:   # (John put a film's details right: the site follows)
+                publish_at, g.publish_soon = g.publish_soon, 0
             if publish_at and time.time() >= publish_at:
                 publish_at = 0
                 if g.st.get('worker_token'):
