@@ -197,7 +197,7 @@ machine --->" and "<---End paste" (it starts eyJ… or {"access_token"…). Copy
 def lock_alive():
     """Whether the fetch that holds the lock is still running (an old lock with no number in it: by its age)."""
     try:
-        pid = int(open(LOCK).read().strip() or 0)
+        pid = int((open(LOCK).read().split() or ['0'])[0])
     except (OSError, ValueError):
         pid = 0
     if not pid:   # (a lock from an older version: alive while any other fetch is running, however long it takes)
@@ -229,7 +229,7 @@ def run(check=False):
             return
         os.remove(LOCK)
         fd = os.open(LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-    os.write(fd, str(os.getpid()).encode())
+    os.write(fd, ('%d %d' % (os.getpid(), int(os.path.getmtime(os.path.abspath(__file__))))).encode())   # (its number, and which version it is)
     os.close(fd)
     try:
         _run(check)
