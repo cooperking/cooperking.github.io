@@ -1630,6 +1630,49 @@ def make_handler(g):
             o = g.st.setdefault('opensubs', {})
             return SUBS.OpenSubs(o, lambda: save(SETTINGS, g.st), tls())
 
+        def api_delete(self, me, user, q, b):
+            """John's only: a film taken out of Grifflix, its folder moved to "Grifflix Bin" on the same drive (emptied after 30 days, so a
+            mistake can be put back), and the media server asked to look (John, 15 Nov 2026: "Is is possible for me (and only me) to
+            delete directly from Grifflix?"). Its folder goes whole when the film is the only one in it; otherwise the film's own files."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            iid = str((b or {}).get('id') or '')
+            if not re.match(r'^[0-9a-f]{32}$', iid):
+                return self.send_json(400, {'error': 'Which film?'})
+            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid)) or {}
+            path = it.get('Path') or ''
+            if it.get('Type') != 'Movie' or not path or not os.path.exists(path):
+                return self.send_json(404, {'error': 'That film’s file isn’t there.'})
+            roots = [os.path.realpath(l) for v in g.jf.call('GET', '/Library/VirtualFolders') or [] if (v.get('CollectionType') or '') == 'movies' for l in v.get('Locations') or []]
+            real = os.path.realpath(path)
+            root = next((r for r in roots if real.startswith(r.rstrip('/') + '/')), None)
+            if not root:
+                return self.send_json(400, {'error': 'That film isn’t in the films folder.'})
+            import shutil
+            folder = os.path.dirname(real)
+            vids = ('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')
+            others = [n for n in os.listdir(folder) if n.lower().endswith(vids) and os.path.join(folder, n) != real and 'sample' not in n.lower()] if folder != root.rstrip('/') else ['(the films folder)']
+            stem = os.path.splitext(os.path.basename(real))[0]
+            what = [folder] if not others else [os.path.join(folder, n) for n in os.listdir(folder) if n.startswith(stem)]
+            bin_ = os.path.join(os.path.dirname(os.path.dirname(root.rstrip('/'))), 'Grifflix Bin')
+            os.makedirs(bin_, exist_ok=True)
+            if os.stat(bin_).st_dev != os.stat(real).st_dev:
+                return self.send_json(500, {'error': 'The Bin isn’t on the same drive: nothing moved.'})
+            day = time.strftime('%Y-%m-%d')
+            for w in what:
+                to = os.path.join(bin_, day + ' ' + os.path.basename(w))
+                k = 2
+                while os.path.exists(to):
+                    to = os.path.join(bin_, '%s %s (%d)' % (day, os.path.basename(w), k)); k += 1
+                os.rename(w, to)
+            try:
+                g.jf.call('POST', '/Library/Refresh')
+            except Exception:
+                pass
+            g.forget()
+            log('Deleted by John: %s (%s), moved to Grifflix Bin' % (it.get('Name'), it.get('ProductionYear') or '?'))
+            return self.send_json(200, {'ok': True, 'name': it.get('Name'), 'bin': bin_})
+
         def api_autoupdate(self, me, user, q, b):
             """The site updated by the Mac itself when new films arrive (John, 15 Nov 2026: "it needs to be automatically updated"): the
             admin page hands the Mac a sign-in of its own (one of John's, for the Mac alone), kept here; GET: whether it's on."""
@@ -2435,6 +2478,10 @@ def keep_scanning(g):
             before = load(seen_at, None)
             if before is not None:
                 new = [x for x in now_ if x not in set(before)]
+                gone = [x for x in before if x not in set(now_)]
+                if gone and not new:
+                    log('Gone from the library (%d): %s' % (len(gone), ', '.join(os.path.basename(x) for x in gone[:5])))
+                    publish_at = publish_at or time.time() + 300
                 if new:
                     g.jf.call('POST', '/Library/Refresh')
                     log('New in the library (%d): %s: the media server asked to look' % (len(new), ', '.join(os.path.basename(x) for x in new[:5]) + (' …' if len(new) > 5 else '')))
@@ -2450,6 +2497,17 @@ def keep_scanning(g):
                         publish_at = time.time() + 3600   # (tried again in an hour)
             if now_ or before is None:
                 save(seen_at, now_)
+            # (the Bin: what John deleted, kept 30 days in case it was a mistake, then gone for good)
+            for r in roots:
+                bin_ = os.path.join(os.path.dirname(os.path.dirname(r.rstrip('/'))), 'Grifflix Bin')
+                if os.path.isdir(bin_):
+                    import shutil
+                    for n in os.listdir(bin_):
+                        m = re.match(r'^(\d{4}-\d\d-\d\d) ', n)
+                        if m and time.time() - time.mktime(time.strptime(m.group(1), '%Y-%m-%d')) > 30 * 86400:
+                            p_ = os.path.join(bin_, n)
+                            shutil.rmtree(p_) if os.path.isdir(p_) else os.remove(p_)
+                            log('Grifflix Bin: %s gone for good (30 days)' % n)
         except Exception as e:
             log('Looking for new films:', e)
         time.sleep(600)

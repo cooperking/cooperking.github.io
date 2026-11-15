@@ -82,6 +82,23 @@ def art():
         open(out, 'w', encoding='utf-8').write(t)
 
 
+def script_ok(html):
+    """The page's own script read by Node before anything is written: a slip in the template (a stray quote mark) stopped the whole
+    page, unseen until it was opened (15 Nov 2026). Skipped where Node isn't installed."""
+    import re, shutil, subprocess, tempfile
+    node = shutil.which('node')
+    if not node:
+        return True
+    big = max(re.findall(r'<script>([\s\S]*?)</script>', html), key=len, default='')
+    with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False, encoding='utf-8') as f:
+        f.write(big)
+    r = subprocess.run([node, '--check', f.name], capture_output=True, text=True)
+    os.remove(f.name)
+    if r.returncode:
+        print('The page script has an error, so nothing was built:\n' + r.stderr.strip()[:1200])
+    return r.returncode == 0
+
+
 def main():
     args = sys.argv[1:]
     if '--check' in args:
@@ -89,6 +106,8 @@ def main():
         print('draft: %s, live: %s' % tuple('as built' if w not in bad else 'differs' for w in ('draft', 'live')))
         sys.exit(1 if 'draft' in bad else 0)   # (live differing from the template is normal: changes waiting to be published)
     which = 'live' if '--live' in args else 'draft'
+    if not script_ok(build(which)):
+        sys.exit(1)
     admin()
     art()
     themes_json()
