@@ -495,6 +495,12 @@ def _run(check):
             ('' if year else '. NOTE: "%s" has no year in its name, so the media server may match the wrong film: if it does, Fix match on it in Grifflix' % title))
         done += 1
         came(True, '' if year else 'no year in its name: check it’s the right film')
+        try:   # (the Mac told at once: the media server looks now, the converter takes it next: John, 15 Nov 2026)
+            s_ = json.load(open(os.path.join(APP, 'settings.json')))
+            urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:%s/local/fetched' % s_.get('port', 8097), data=json.dumps({'path': dest}).encode(),
+                                   method='POST', headers={'X-Grifflix-Secret': s_.get('secret', ''), 'Content-Type': 'application/json'}), timeout=30).read()
+        except Exception:
+            pass   # (the gateway's own look, every 10 minutes, finds it anyway)
         if ext not in ('.mp4', '.m4v'):   # (an MKV and the like: the converter told now, to repackage it next: John, 15 Nov 2026,
             try:                          # "the mkv films should immediately be put to the top of the list for repackaging")
                 nf = os.path.join(HOME, 'convert-new.json')

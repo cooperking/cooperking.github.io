@@ -728,6 +728,22 @@ def make_handler(g):
                     if not fn or method != 'GET':
                         return self.send_json(404, {'error': 'Not here.'})
                     return fn(q)
+                if u.path == '/local/fetched' and method == 'POST':   # gdrive.py on this Mac: a film has just come in (John, 15 Nov 2026: "can't it
+                    # just be done as soon as something is finished downloading?"): the media server asked to look now, the site to follow, and
+                    # the converter told once the media server has it (in a minute or two), to repackage it next
+                    if not hmac.compare_digest(self.headers.get('X-Grifflix-Secret', ''), g.st['secret']):
+                        return self.send_json(403, {'error': 'Not here.'})
+                    try:
+                        g.jf.call('POST', '/Library/Refresh')
+                    except Exception as e:
+                        log('Asking the media server to look:', e)
+                    g.forget()
+                    g.publish_soon = time.time() + 540
+                    SCAN_NOW.set()
+                    for t_ in (90, 240):
+                        threading.Timer(t_, CONV_NOW.set).start()
+                    log('Just brought in: %s: the media server asked to look' % os.path.basename(str(self.body().get('path') or ''))[:120])
+                    return self.send_json(200, {'ok': True})
                 if u.path == '/local/remap' and method == 'POST':   # convert.py on this Mac: a film's new file has a new id; calendars, lists and progress follow it
                     if not hmac.compare_digest(self.headers.get('X-Grifflix-Secret', ''), g.st['secret']):
                         return self.send_json(403, {'error': 'Not here.'})
@@ -2614,6 +2630,7 @@ def site_update(g, why=''):
     return c
 
 
+SCAN_NOW = threading.Event()   # (a film just brought in: the library looked at now, not at the next 10 minutes)
 CONV_NOW = threading.Event()   # (films just brought in: the converter started for them now, if it isn't running)
 GDRIVE_NOW = threading.Event()   # (admin's Look now: a look straight away, not at the next quarter hour)
 GDRIVE_NEXT = [0]
@@ -2834,7 +2851,8 @@ def keep_scanning(g):
                             log('Grifflix Bin: %s gone for good (30 days)' % n)
         except Exception as e:
             log('Looking for new films:', e)
-        time.sleep(600)
+        SCAN_NOW.wait(600)
+        SCAN_NOW.clear()
 
 
 def keep_converting():
