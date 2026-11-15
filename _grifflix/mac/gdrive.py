@@ -205,7 +205,10 @@ def _run(check):
             os.makedirs(dest_dir, exist_ok=True)
             part = dest + '.adding'
             try:
-                rc('copyto', loc(path), part, '--retries', '3')
+                if sys.stdout.isatty():   # (in Terminal: how far, how fast, how long to go, as it downloads)
+                    rc('copyto', loc(path), part, '--retries', '3', '--progress', '--stats-one-line', capture=False)
+                else:
+                    rc('copyto', loc(path), part, '--retries', '3')
             except Exception as e:
                 log('  the download failed (%s): left in %s' % (e, src['name']))
                 if os.path.exists(part):
