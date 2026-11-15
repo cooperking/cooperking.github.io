@@ -1042,6 +1042,10 @@ def make_handler(g):
             it's been converted, and why it's waiting to be."""
             if not me.get('owner'):
                 return self.send_json(403, {'error': 'Only John.'})
+            if q.get('cached'):   # (the last look, at once, to show while a new one is made: John, 15 Nov 2026, "could every film's quality not
+                # have to be called every time, so I can always see it in admin, and only updated")
+                v = load(os.path.expanduser('~/Grifflix/library-view.json'), None)
+                return self.send_json(200, v or {'films': [], 'at': 0})
             if q.get('bg'):   # (made after answering, handed over when asked again: on a busy Mac it outlasted the 100 seconds the link waits,
                 # and the page said "Failed to fetch": John, 12 Nov 2026)
                 with g.plays_lock:
@@ -1077,35 +1081,56 @@ def make_handler(g):
                 return self.send_json(200, {'films': []})
             st = load(os.path.expanduser('~/Grifflix/convert-state.json'), {})
             made = {os.path.normcase(x.get('to') or ''): x for x in (st.get('done') or {}).values()}
-            rows, start = [], 0
+            # (each film's details kept, and only those whose file changed read again (the media server's Etag): reading every film's
+            # file details took minutes on the old Mac)
+            cache_at = os.path.expanduser('~/Grifflix/library-cache.json')
+            cache = (load(cache_at, {}) or {}).get('rows') or {}
+            quick, start = [], 0
             while True:
-                r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'MediaSources,Path,ProductionYear',
-                                                                       'StartIndex': start, 'Limit': 300, 'SortBy': 'SortName', 'EnableImageTypes': 'Primary'}) or {}
+                r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Etag,Path',
+                                                                       'StartIndex': start, 'Limit': 500, 'SortBy': 'SortName', 'EnableImages': 'false'}) or {}
+                quick += r.get('Items') or []
+                start += 500
+                if start >= (r.get('TotalRecordCount') or 0):
+                    break
+            need = [it['Id'] for it in quick if not it.get('Etag') or (cache.get(it['Id']) or {}).get('e') != it.get('Etag') or (cache.get(it['Id']) or {}).get('p') != it.get('Path')]
+            for n in range(0, len(need), 100):
+                r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Ids': ','.join(need[n:n + 100]), 'Fields': 'MediaSources,Path,ProductionYear,Etag'}) or {}
                 for it in r.get('Items') or []:
                     ms = (it.get('MediaSources') or [{}])[0]
                     ss = ms.get('MediaStreams') or []
                     v = next((x for x in ss if x.get('Type') == 'Video'), {}) or {}
                     au = [x for x in ss if x.get('Type') == 'Audio']
-                    w, h, vc = v.get('Width') or 0, v.get('Height') or 0, (v.get('Codec') or '').lower()
-                    bits = v.get('BitDepth') or 8
-                    mbps = round((ms.get('Bitrate') or v.get('BitRate') or 0) / 1e6, 1)
-                    why = conv_why(ms)
-                    cv = made.get(os.path.normcase(it.get('Path') or ''))
                     # (picture subtitles (Blu-ray PGS, DVD VobSub): an MP4 can't hold them, so repackaging leaves them in the original: John, 12 Nov 2026)
                     pics = [x for x in ss if x.get('Type') == 'Subtitle' and not x.get('IsTextSubtitleStream') and not x.get('IsExternal')]
-                    rows.append({'id': it.get('Id'), 'n': it.get('Name'), 'y': it.get('ProductionYear') or '', 'w': w, 'h': h, 'v': vc, 'b': bits, 'mbps': mbps, 'c': (ms.get('Container') or '').lower().split(',')[0],
-                                 'ps': ', '.join(sorted(set((x.get('DisplayTitle') or x.get('Language') or '?').split(' - ')[0] for x in pics)))[:120],
-                                 'gb': round((ms.get('Size') or 0) / 1e9, 1), 'mins': round((it.get('RunTimeTicks') or 0) / 6e8),
-                                 'a': ', '.join(sorted(set('%s %s' % ((x.get('Codec') or '?').upper(), {1: 'mono', 2: 'stereo', 6: '5.1', 8: '7.1'}.get(x.get('Channels') or 0, '%sch' % (x.get('Channels') or '?'))) for x in au[:4]))),
-                                 'conv': bool(cv), 'was': (cv or {}).get('before'),
-                                 # (a film only repackaged keeps what's still to do, making it smaller included: its picture is as it was
-                                 # (John, 13 Nov 2026: Obsession, nearly 30 GB, couldn't be made smaller); one converted here is done)
-                                 'rp': bool(cv) and str(cv.get('why') or '').startswith('to repackage'),
-                                 'why': why if not cv or str(cv.get('why') or '').startswith('to repackage') else ''})
-                start += 300
-                if start >= (r.get('TotalRecordCount') or 0):
-                    break
-            self.send_json(200, {'films': rows})
+                    cache[it['Id']] = {'e': it.get('Etag'), 'p': it.get('Path'), 'w0': conv_why(ms), 'r': {
+                        'id': it.get('Id'), 'n': it.get('Name'), 'y': it.get('ProductionYear') or '', 'w': v.get('Width') or 0, 'h': v.get('Height') or 0,
+                        'v': (v.get('Codec') or '').lower(), 'b': v.get('BitDepth') or 8, 'mbps': round((ms.get('Bitrate') or v.get('BitRate') or 0) / 1e6, 1),
+                        'c': (ms.get('Container') or '').lower().split(',')[0],
+                        'ps': ', '.join(sorted(set((x.get('DisplayTitle') or x.get('Language') or '?').split(' - ')[0] for x in pics)))[:120],
+                        'gb': round((ms.get('Size') or 0) / 1e9, 1), 'mins': round((it.get('RunTimeTicks') or 0) / 6e8),
+                        'a': ', '.join(sorted(set('%s %s' % ((x.get('Codec') or '?').upper(), {1: 'mono', 2: 'stereo', 6: '5.1', 8: '7.1'}.get(x.get('Channels') or 0, '%sch' % (x.get('Channels') or '?'))) for x in au[:4])))}}
+            ids = set(it['Id'] for it in quick)
+            cache = {k: v for k, v in cache.items() if k in ids}
+            rows = []
+            for it in quick:
+                c_ = cache.get(it['Id'])
+                if not c_:
+                    continue
+                cv = made.get(os.path.normcase(c_.get('p') or ''))
+                o = dict(c_['r'])
+                # (a film only repackaged keeps what's still to do, making it smaller included: its picture is as it was
+                # (John, 13 Nov 2026: Obsession, nearly 30 GB, couldn't be made smaller); one converted here is done)
+                o.update({'conv': bool(cv), 'was': (cv or {}).get('before'), 'rp': bool(cv) and str(cv.get('why') or '').startswith('to repackage'),
+                          'why': c_.get('w0') if not cv or str(cv.get('why') or '').startswith('to repackage') else ''})
+                rows.append(o)
+            out = {'films': rows, 'at': int(time.time()), 'read': len(need)}
+            try:
+                save(cache_at, {'rows': cache})
+                save(os.path.expanduser('~/Grifflix/library-view.json'), out)
+            except OSError as e:
+                log('Couldn’t keep the library:', e)
+            self.send_json(200, out)
 
         def api_households(self, me, user, q, b):
             """John's: who lives together (John, 11 Nov 2026: "Camilla and I share a house but the tv is signed in as me"): everyone in a
