@@ -1000,7 +1000,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       } else {
         $('#fhead').innerHTML = !f.checked ? 'Not <em>looked yet</em>' : w.length ? w.length + ' <em>waiting</em>' : 'Nothing <em>waiting</em>';   // (never "nothing" before it has looked)
         $('#fsay').textContent = (f.checked ? 'Last looked ' + when(f.checked * 1000) + '. ' : 'It hasn’t looked in TorBox and Google Drive since its update: press Look now. ') + (f.next ? 'Looks again ' + mins(f.next) + '.' : 'Looks every 15 minutes.') +
-          (w.some(function (x) { return x.noroom; }) ? ' Some won’t fit on the G-Drive: free some space.' : '');
+          (w.some(function (x) { return x.noroom; }) ? ' Some won’t fit on the G-Drive: free some space.' : '') + (f.error ? ' Its last look didn’t work: ' + f.error : '');
       }
       $('#ftabs').innerHTML = [['next', 'Next', w.length + (n ? 1 : 0)], ['came', 'Came', rc.length]]
         .map(function (t) { return '<button type="button" data-ft="' + t[0] + '" aria-pressed="' + (tab === t[0]) + '">' + t[1] + ' ' + t[2] + '</button>'; }).join('');
