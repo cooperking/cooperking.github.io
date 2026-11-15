@@ -1464,9 +1464,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   function tmState() { return JSON.stringify([TMO, TMM]); }
   TMSAVED = tmState();
   function tmDraw() {
-    var y0 = Math.min(2026, +PROG.from.slice(0, 4)), y1 = +progLast().slice(0, 4);
+    var y0 = Math.min(2026, +PROG.from.slice(0, 4), +(Object.keys(TMM).sort()[0] || '9999').slice(0, 4)), y1 = +progLast().slice(0, 4);
     if (TYEAR < y0 || TYEAR > y1) TYEAR = Math.min(Math.max(TYEAR, y0), y1);
-    var ys = ''; for (var y = Math.max(2026, y0); y <= y1; y++) ys += '<button type="button" role="tab" data-y="' + y + '"' + (y === TYEAR ? ' class="on" aria-selected="true"' : '') + '>' + y + '</button>';
+    var ys = ''; for (var y = y0; y <= y1; y++) ys += '<button type="button" role="tab" data-y="' + y + '"' + (y === TYEAR ? ' class="on" aria-selected="true"' : '') + '>' + y + '</button>';
     $('#tyears').innerHTML = ys;
     $('#tprog').innerHTML = PROG.to ? 'Films programmed to <b>' + MON[+PROG.to.slice(5, 7) - 1] + ' ' + PROG.to.slice(0, 4) + '</b>' + (PROG.to <= ym(idxOf(NOWM) + 1) ? ' · <b>time to add more</b>' : '') + '.' : 'Looking at the films…';
     var g = '', used = {}, onm = {};
@@ -1477,13 +1477,17 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var warn = k === 'blank' ? '' : k !== prev && alike(k, prev) ? '<span class="warn2">Close in colour to ' + MON[(m + 11) % 12].slice(0, 3) + '</span>' : (k === prev && k !== 'blank' ? '<span class="warn2">Same as ' + MON[(m + 11) % 12].slice(0, 3) + '</span>' : '');
       if (TL_ && k !== 'blank' && k !== 'picture' && !TID[k]) warn += '<span class="miss">Not in Grifflix: trailer</span>';
       var t = tileHtml(k, 'data-dk="m:' + i + '" data-k="' + k + '" tabindex="0" role="button" aria-label="' + MON[m] + ' ' + TYEAR + ': ' + esc(TBY[k].n) + '"', top, warn);
-      g += t.replace('class="ttile"', 'class="ttile' + (off && key > NOWM ? ' off' : '') + (key === NOWM ? ' now' : '') + (k === THX ? ' pick' : '') + '"');
+      g += t.replace('class="ttile"', 'class="ttile' + ((off && key > NOWM) || key < PROG.from ? ' off' : '') + (key === NOWM ? ' now' : '') + (k === THX ? ' pick' : '') + '"');
     }
     $('#tgrid').innerHTML = g;
+    // (every month it's on, any year, not only the one shown: Kane was "Not used" though it's December 2025's: John, 15 Nov 2026)
+    var all = {}, a0 = idxOf(PROG.from < '2026-01' ? PROG.from : '2026-01'), a1 = idxOf(progLast());
+    for (var ai = a0; ai <= a1; ai++) { var ak = themeAt(ai); (all[ak] = all[ak] || []).push(monShort(ym(ai))); }
     $('#tspare').innerHTML = GTHEMES.map(function (t) {
-      var n = used[t.k] || 0;
+      var n = used[t.k] || 0, elsewhere = (all[t.k] || []).filter(function (x) { return x.slice(-4) !== String(TYEAR); });
       // (the months it's on that year, listed under it: John, 9 Nov 2026)
-      return tileHtml(t.k, 'data-dk="s:' + t.k + '" data-k="' + t.k + '" tabindex="0" role="button" aria-label="' + esc(t.n) + '"', '<span class="mo">' + TYEAR + '</span>', '<span class="tmons">' + (n ? onm[t.k].join(' · ') : 'Not used') + '</span><span class="on2">' + filmState(t.k) + '</span>');
+      return tileHtml(t.k, 'data-dk="s:' + t.k + '" data-k="' + t.k + '" tabindex="0" role="button" aria-label="' + esc(t.n) + '"', '<span class="mo">' + TYEAR + '</span>',
+        '<span class="tmons">' + (n ? onm[t.k].join(' · ') : elsewhere.length ? 'Not in ' + TYEAR : 'Not used') + (elsewhere.length ? ' · ' + elsewhere.slice(0, 4).join(' · ') + (elsewhere.length > 4 ? ' …' : '') : '') + '</span><span class="on2">' + filmState(t.k) + '</span>');
     }).join('');
     var same = tmState() === TMSAVED;
     $('#tmsave').disabled = same; $('#tmsave').textContent = same ? (TDRAFT !== undefined ? 'Saved · live with Update everything' : 'Saved') : 'Save the themes';
@@ -1491,7 +1495,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   // (what's programmed: Movie of the Day's days on the Mac, still to come too, else the site's)
   function progLook() {
     var keys = function (o) { return Object.keys(o || {}).filter(function (d) { return /^\d{4}-\d\d-\d\d$/.test(d); }).sort(); };
-    var take = function (ks) { if (!ks.length) return; PROG.from = ks[0].slice(0, 7) < '2026-01' ? '2026-01' : ks[0].slice(0, 7); var t = ks[ks.length - 1].slice(0, 7); if (!PROG.to || t > PROG.to) PROG.to = t; tmDraw(); };
+    var take = function (ks) { if (!ks.length) return; PROG.from = ks[0].slice(0, 7) < '2025-01' ? '2025-01' : ks[0].slice(0, 7); var t = ks[ks.length - 1].slice(0, 7); if (!PROG.to || t > PROG.to) PROG.to = t; tmDraw(); };
     fetch('/grifflix/data/days.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) { take(keys(j.days)); }).catch(function () {});
     var tries = 0, w = setInterval(function () {
       if (!GW && ++tries < 30) return; clearInterval(w); if (!GW) return;
