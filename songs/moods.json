@@ -22119,8 +22119,8 @@
    ],
    "moodFrom": "Claude (researched)",
    "sound": [
-    "Melancholy",
     "Romantic",
+    "Melancholy",
     "Bittersweet"
    ],
    "claude": [
@@ -26503,7 +26503,7 @@
     ],
     [
      "Romantic",
-     27
+     28
     ],
     [
      "Melancholy",
@@ -26521,7 +26521,7 @@
       ],
       [
        "Romantic",
-       27
+       28
       ],
       [
        "Melancholy",
@@ -26733,7 +26733,7 @@
     ],
     [
      "Dark",
-     15
+     14
     ],
     [
      "Playful",
@@ -26751,7 +26751,7 @@
       ],
       [
        "Dark",
-       15
+       14
       ],
       [
        "Playful",
@@ -27119,7 +27119,7 @@
    "moodMix": [
     [
      "Energetic",
-     37
+     38
     ],
     [
      "Joyful",
@@ -27137,7 +27137,7 @@
      [
       [
        "Energetic",
-       37
+       38
       ],
       [
        "Joyful",
@@ -27441,7 +27441,7 @@
       ],
       [
        "Joyful",
-       22
+       23
       ]
      ]
     ]
@@ -28853,6 +28853,137 @@
     "neo-psychedelia",
     "psychedelic pop",
     "rock"
+   ],
+   "check": true
+  },
+  "1tkKurUEJj0ROUhCQs6Q9r": {
+   "n": 279,
+   "title": "Someday We'll Linger in the Sun",
+   "artist": "Gaelynn Lea",
+   "moods": [
+    "Melancholy",
+    "Dark"
+   ],
+   "moodMix": [
+    [
+     "Melancholy",
+     25
+    ],
+    [
+     "Dark",
+     23
+    ],
+    [
+     "Bittersweet",
+     18
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Melancholy",
+       25
+      ],
+      [
+       "Dark",
+       23
+      ],
+      [
+       "Bittersweet",
+       18
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Melancholy",
+    "Dark",
+    "Bittersweet"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Indie Rock",
+    "Alternative Rock",
+    "Psychedelic Rock"
+   ],
+   "genres": [
+    "Indie",
+    "Folk"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Indie",
+     34
+    ],
+    [
+     "Folk",
+     31
+    ],
+    [
+     "Electronic",
+     22
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Electronic",
+       44
+      ],
+      [
+       "Indie",
+       44
+      ],
+      [
+       "Rock",
+       11
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Folk",
+       100
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Indie",
+       58
+      ],
+      [
+       "Rock",
+       28
+      ],
+      [
+       "Pop",
+       7
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "ambient",
+    "electro",
+    "electronic",
+    "indie",
+    "rock",
+    "slowcore"
    ],
    "check": true
   }
