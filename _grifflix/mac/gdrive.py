@@ -167,6 +167,30 @@ def run(check=False):
 SOURCES = [{'remote': REMOTE, 'path': FOLDER, 'name': 'Google Drive', 'delete': True},
            {'remote': 'torbox', 'path': '', 'name': 'TorBox', 'delete': False}]
 SEEN = os.path.join(HOME, 'fetched.json')
+STATUS = os.path.join(HOME, 'fetch-status.json')   # (for the admin page: what's coming in, how far, and what came: John, 15 Nov 2026)
+
+
+def status_get():
+    try:
+        return json.load(open(STATUS))
+    except (OSError, ValueError):
+        return {}
+
+
+def status(**kw):
+    try:
+        st = json.load(open(STATUS))
+    except (OSError, ValueError):
+        st = {}
+    if 'came' in kw:   # (one more arrived, or failed: kept, newest first, the last 30)
+        st['recent'] = ([kw.pop('came')] + st.get('recent', []))[:30]
+    st.update(kw)
+    try:
+        tmp = STATUS + '.tmp'
+        json.dump(st, open(tmp, 'w'))
+        os.replace(tmp, STATUS)
+    except OSError:
+        pass
 
 
 def _run(check):
@@ -176,7 +200,7 @@ def _run(check):
         seen = json.load(open(SEEN))
     except (OSError, ValueError):
         seen = {}
-    done = 0
+    done, plan = 0, []
     for src in SOURCES:
         if src['remote'] not in have:
             continue
@@ -208,62 +232,88 @@ def _run(check):
                     if not check:
                         seen[key] = int(time.time())
                 continue
-            if check:
-                log('Would add from %s: %s → %s/%s%s' % (src['name'], path, title, title + ext, '' if year else ' (no year in its name)'))
-                continue
-            free = shutil.disk_usage(root).free
-            if free < size + 20e9:
-                log('Not enough room on the drive for %s (%.0f GB free): left in %s' % (path, free / 1e9, src['name']))
-                continue
-            log('Fetching from %s: %s → %s/ (%.1f GB)' % (src['name'], path, title, size / 1e9))
-            os.makedirs(dest_dir, exist_ok=True)
-            part = dest + '.adding'
-            try:
-                if sys.stdout.isatty():   # (in Terminal: how far, how fast, how long to go, as it downloads)
-                    rc('copyto', loc(path), part, '--retries', '3', '--progress', '--stats-one-line', capture=False)
-                else:
-                    rc('copyto', loc(path), part, '--retries', '3')
-            except Exception as e:
-                log('  the download failed (%s): left in %s' % (e, src['name']))
-                if os.path.exists(part):
-                    os.remove(part)
-                try:
-                    os.rmdir(dest_dir)
-                except OSError:
-                    pass
-                continue
-            if os.path.getsize(part) != size:
-                log('  the copy isn’t whole (%d of %d bytes): left in %s' % (os.path.getsize(part), size, src['name']))
+            if check and os.path.exists(dest + '.adding'):
+                continue   # (coming in now)
+            plan.append(dict(src=src, loc=loc, path=path, size=size, key=key, folder=folder, title=title, year=year, ext=ext,
+                             dest_dir=dest_dir, dest=dest, name=f['Name'], subs=subs))
+    free0 = shutil.disk_usage(root).free
+    status(checked=int(time.time()), waiting=[{'from': p['src']['name'], 'file': p['path'], 'to': p['title'], 'gb': round(p['size'] / 1e9, 1),
+                                               'noyear': not p['year'], 'noroom': free0 < p['size'] + 20e9} for p in plan], **({} if check else {'now': None}))
+    for i, p in enumerate(plan):
+        src, loc, path, size, key, folder, title, year, ext, dest_dir, dest, subs = (p[k] for k in
+            ('src', 'loc', 'path', 'size', 'key', 'folder', 'title', 'year', 'ext', 'dest_dir', 'dest', 'subs'))
+        if check:
+            log('Would add from %s: %s → %s/%s%s' % (src['name'], path, title, title + ext, '' if year else ' (no year in its name)'))
+            continue
+        if os.path.isdir(dest_dir) and any(n.lower().endswith(VIDEO) for n in os.listdir(dest_dir)):
+            continue   # (the same film twice: from both places)
+        free = shutil.disk_usage(root).free
+        if free < size + 20e9:
+            log('Not enough room on the drive for %s (%.0f GB free): left in %s' % (path, free / 1e9, src['name']))
+            continue
+        log('Fetching from %s: %s → %s/ (%.1f GB)' % (src['name'], path, title, size / 1e9))
+        os.makedirs(dest_dir, exist_ok=True)
+        part = dest + '.adding'
+        status(now={'from': src['name'], 'file': path, 'to': title, 'size': size, 'part': part, 'since': int(time.time())},
+               waiting=[w for w in (status_get().get('waiting') or []) if w.get('file') != path])
+        came = lambda ok, why='', title=title, src=src, size=size: status(now=None, came={'to': title, 'from': src['name'], 'gb': round(size / 1e9, 1), 'at': int(time.time()), 'ok': ok, 'why': why})
+        try:
+            if sys.stdout.isatty():   # (in Terminal: how far, how fast, how long to go, as it downloads)
+                rc('copyto', loc(path), part, '--retries', '3', '--progress', '--stats-one-line', capture=False)
+            else:
+                rc('copyto', loc(path), part, '--retries', '3')
+        except Exception as e:
+            log('  the download failed (%s): left in %s' % (e, src['name']))
+            came(False, 'the download failed: left in %s' % src['name'])
+            if os.path.exists(part):
                 os.remove(part)
+            try:
+                os.rmdir(dest_dir)
+            except OSError:
+                pass
+            continue
+        if os.path.getsize(part) != size:
+            log('  the copy isn’t whole (%d of %d bytes): left in %s' % (os.path.getsize(part), size, src['name']))
+            came(False, 'the copy wasn’t whole: left in %s' % src['name'])
+            os.remove(part)
+            continue
+        os.replace(part, dest)
+        # (its subtitles: beside it, with the film's new name)
+        stem = os.path.splitext(p['name'])[0]
+        for s_ in subs:
+            if os.path.dirname(s_['Path']) != folder or (not folder and not s_['Name'].startswith(stem)):
                 continue
-            os.replace(part, dest)
-            # (its subtitles: beside it, with the film's new name)
-            stem = os.path.splitext(f['Name'])[0]
-            for s_ in subs:
-                if os.path.dirname(s_['Path']) != folder or (not folder and not s_['Name'].startswith(stem)):
-                    continue
-                sb = os.path.splitext(s_['Name'])[0]
-                lang = '.' + sb.rsplit('.', 1)[1] if re.search(r'\.[a-z]{2,3}$', sb) else ''
-                try:
-                    rc('copyto', loc(s_['Path']), os.path.join(dest_dir, title + lang + '.srt'))
-                    if src['delete']:
-                        rc('deletefile', '--drive-use-trash=false', loc(s_['Path']))
-                except Exception as e:
-                    log('  its subtitles %s: %s' % (s_['Name'], e))
-            if src['delete']:
-                rc('deletefile', '--drive-use-trash=false', loc(path))
-            seen[key] = int(time.time())
-            log('  done: on the G-Drive' + (', and deleted from ' + src['name'] if src['delete'] else '') +
-                ('' if year else '. NOTE: "%s" has no year in its name, so the media server may match the wrong film: if it does, rename its folder "%s (Year)"' % (title, title)))
-            done += 1
-            if src['delete']:
-                rc('rmdirs', '--leave-root', loc('').rstrip('/'), check=False)   # (download folders left empty)
+            sb = os.path.splitext(s_['Name'])[0]
+            lang = '.' + sb.rsplit('.', 1)[1] if re.search(r'\.[a-z]{2,3}$', sb) else ''
+            try:
+                rc('copyto', loc(s_['Path']), os.path.join(dest_dir, title + lang + '.srt'))
+                if src['delete']:
+                    rc('deletefile', '--drive-use-trash=false', loc(s_['Path']))
+            except Exception as e:
+                log('  its subtitles %s: %s' % (s_['Name'], e))
+        if src['delete']:
+            rc('deletefile', '--drive-use-trash=false', loc(path))
+        seen[key] = int(time.time())
+        log('  done: on the G-Drive' + (', and deleted from ' + src['name'] if src['delete'] else '') +
+            ('' if year else '. NOTE: "%s" has no year in its name, so the media server may match the wrong film: if it does, Fix match on it in Grifflix' % title))
+        done += 1
+        came(True, '' if year else 'no year in its name: check it’s the right film')
+        if src['delete']:
+            rc('rmdirs', '--leave-root', loc('').rstrip('/'), check=False)   # (download folders left empty)
         try:
             tmp = SEEN + '.tmp'
             json.dump(seen, open(tmp, 'w'))
             os.replace(tmp, SEEN)
         except OSError:
             pass
+    if not check:
+        status(now=None)
+    try:
+        tmp = SEEN + '.tmp'
+        json.dump(seen, open(tmp, 'w'))
+        os.replace(tmp, SEEN)
+    except OSError:
+        pass
     if done:
         log('%d film(s) fetched: Grifflix shows them within about 20 minutes' % done)
     elif check and sys.stdout.isatty():
