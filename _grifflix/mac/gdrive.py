@@ -106,6 +106,38 @@ def names():
         return {}
 
 
+TMDBC = os.path.join(HOME, 'fetch-tmdb.json')   # (what TMDB said for each download's name, so it's asked once)
+
+
+def tmdb_name(title, year, series):
+    """A download's name checked on TMDB (through the media server): its exact title when TMDB has one close to it, from the same
+    year (a year either side for a film released late in a year). "(1974) - Starduct" came in as Starduct, the download's own
+    misspelling (John, 15 Nov 2026: "why was Stardust 1974 renamed Starduct? Very odd"). None when nothing fits well enough."""
+    import difflib
+    name = re.sub(r'\s*\(\d{4}\)$', '', title).strip()
+    y = int(year) if year else None
+    s_ = json.load(open(os.path.join(APP, 'settings.json')))
+    body = json.dumps({'SearchInfo': dict({'Name': name}, **({'Year': y} if y else {})), 'IncludeDisabledProviders': False}).encode()
+    req = urllib.request.Request(s_.get('jellyfin', 'http://127.0.0.1:8096') + '/Items/RemoteSearch/' + ('Series' if series else 'Movie'), data=body, method='POST',
+                                 headers={'Authorization': 'MediaBrowser Token="%s"' % s_['jf_token'], 'Content-Type': 'application/json'})
+    res = json.loads(urllib.request.urlopen(req, timeout=30).read() or b'[]') or []
+    plain = lambda t: re.sub(r'[^a-z0-9]+', ' ', (t or '').lower().replace('&', 'and')).strip()
+    best = None
+    for r in res[:8]:
+        ry = r.get('ProductionYear')
+        if y and ry and abs(int(ry) - y) > 1:
+            continue
+        a_, b_ = plain(name).replace(' ', ''), plain(r.get('Name')).replace(' ', '')
+        # (the same name but for punctuation, spaces and capitals: "Dead Mans Wire" is Dead Man's Wire. A letter different is another
+        # film, or a misspelling ("Hamlet" isn't Hamnet), so not taken: flagged on the admin page, to be named there)
+        sc = 1.0 if a_ == b_ else difflib.SequenceMatcher(None, a_, b_).ratio()
+        if not y and r is not res[0]:   # (no year to go by: only TMDB's first answer, and only when it's the same name)
+            continue
+        if sc >= .97 and (not best or sc > best[0]):
+            best = (sc, r.get('Name'), ry or y)
+    return {'name': best[1], 'year': best[2]} if best else None
+
+
 def films_root():
     """The films folder, from the media server (as the Mac's own scripts find it)."""
     s = json.load(open(os.path.join(APP, 'settings.json')))
@@ -256,7 +288,7 @@ def status(**kw):
 
 def wait_entry(p):
     return {'from': p['src']['name'], 'file': p['path'], 'key': p['nkey'], 'to': p['title'], 'gb': round(p['size'] / 1e9, 1), 'noyear': not p['year'],
-            'series': p['series'], 'ep': p['ep'], 'named': p['named']}
+            'series': p['series'], 'ep': p['ep'], 'named': p['named'], 'tmdb': p.get('tmdb')}
 
 
 def _run(check):
@@ -265,6 +297,10 @@ def _run(check):
     if not root:
         raise RuntimeError('the media server has no films folder')
     N = names()
+    try:
+        TC = json.load(open(TMDBC))
+    except (OSError, ValueError):
+        TC = {}
     have = set(x.strip().rstrip(':') for x in rc('listremotes').split())
     try:
         seen = json.load(open(SEEN))
@@ -310,6 +346,21 @@ def _run(check):
             series = (mine.get('kind') == 'series') if mine else bool(m)
             if series and not R.get('tvshows'):
                 series = False
+            tm = None
+            if not mine:   # (checked on TMDB: its exact title, when TMDB has one close, from the same year)
+                ck = '%s|%s|%s' % (title, year, series)
+                if ck not in TC:
+                    try:
+                        TC[ck] = tmdb_name(title, re.search(r'\((\d{4})\)$', title).group(1) if year else None, series)
+                    except Exception as e:
+                        log('  TMDB didn’t answer for %s: %s' % (title, e))
+                tm = TC.get(ck)
+                if tm:
+                    t2 = re.sub(r'[/:\\]', '-', '%s (%s)' % (tm['name'], tm['year']) if tm.get('year') else tm['name']).strip(' .')
+                    if t2 != title:
+                        if check:
+                            log('  TMDB: %s is %s' % (title, t2))
+                        title, year = t2, bool(tm.get('year'))
             if series:   # (the TV library, as the media server wants it: Show (Year)/Season 01/Show (Year) S01E02.mkv)
                 sn, en = (int(m.group(1)), int(m.group(2))) if m else (1, 0)
                 dest_dir = os.path.join(R['tvshows'], title, 'Season %02d' % sn)
@@ -328,7 +379,11 @@ def _run(check):
                 continue   # (coming in now)
             plan.append(dict(src=src, loc=loc, path=path, size=size, key=key, folder=folder, title=title, year=year, ext=ext,
                              dest_dir=dest_dir, dest=dest, name=f['Name'], subs=subs, series=series, nkey=nkey, named=bool(mine),
-                             ep='S%02dE%02d' % (int(m.group(1)), int(m.group(2))) if m else ''))
+                             ep='S%02dE%02d' % (int(m.group(1)), int(m.group(2))) if m else '', tmdb=bool(tm) or bool(mine)))
+    try:
+        json.dump(TC, open(TMDBC, 'w'))
+    except OSError:
+        pass
     plan = in_order(plan)
     free0 = shutil.disk_usage(root).free
     status(checked=int(time.time()), waiting=[dict(wait_entry(p), noroom=free0 < p['size'] + 20e9) for p in plan], **({} if check else {'now': None}))
