@@ -882,7 +882,9 @@ html[data-theme=hotel] .leaf2 b { color: #5a3d4e; }
 html.covered .iwsnow { animation-play-state: paused; }
 .th-mainst .vday { width: 112px; height: 166px; transform-origin: 50% -34px; box-shadow: 0 0 0 3px #111, 0 0 0 4px #777, 0 12px 26px rgba(0, 0, 0, .6); }
 .th-mainst .vday::before { content: ""; position: absolute; left: 50%; top: -34px; width: 1.5px; height: 30px; margin-left: -.75px; background: #1a1a1a; }
-.th-mainst .vday:not(.front) { filter: grayscale(1) brightness(.62); }
+.th-mainst .vday, .th-bijou .vday { transition: none; }   /* (moved by the theme's own tween each frame: a CSS transition as well restarted every frame and halved the Fire TV's frames) */
+.th-mainst .vday::after, .th-bijou .vday::after { content: ""; position: absolute; inset: 0; background: rgba(8, 8, 8, .55); transition: opacity .4s; pointer-events: none; }   /* (the days not reached dimmed by a veil, not a filter: a filter on moving posters halved the Fire TV's frames) */
+.th-mainst .vday.front::after, .th-bijou .vday.front::after { opacity: 0; }
 .th-mainst .vday.front { box-shadow: 0 0 0 2px #eee, 0 0 34px 8px rgba(255, 248, 220, .3), 0 16px 34px rgba(0, 0, 0, .7); }
 .th-mainst .vday .vn { top: -26px; bottom: auto; left: 50%; transform: translateX(-50%); padding: 3px 7px; background: #e9e6df; color: #161616; border: 1px solid #111; font: 600 11px/1 Oswald, sans-serif; letter-spacing: .12em; }
 html[data-theme=mainst] .hinfo { width: max-content; max-width: min(600px, 46vw); padding: 18px 32px 16px; color: #1b1b1b; background: linear-gradient(135deg, transparent 13px, #e6e3dc 0) top left, linear-gradient(225deg, transparent 13px, #e6e3dc 0) top right, linear-gradient(315deg, transparent 13px, #e6e3dc 0) bottom right, linear-gradient(45deg, transparent 13px, #e6e3dc 0) bottom left; background-size: 51% 51%; background-repeat: no-repeat; bottom: 132px; }   /* (the day on the "You are now in Bedford Falls" sign) */
@@ -906,7 +908,6 @@ html[data-theme=mainst] .leaf2, html[data-theme=bijou] .leaf2 { border-color: #1
 @keyframes bjflip { from { transform: rotateX(90deg); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .th-bijou .bjmq i { animation: none; } }
 .th-bijou .vday { width: 100px; height: 150px; background-color: #1a1a1a; box-shadow: 0 0 0 7px #1a1a1a, 0 0 0 9px #6f6f6f; }
-.th-bijou .vday:not(.front) { filter: grayscale(1) brightness(.55); }
 .th-bijou .vday.front { box-shadow: 0 0 0 7px #1a1a1a, 0 0 0 9px #ecebe4, 0 0 50px 16px rgba(255, 250, 225, .26); }
 .th-bijou .vday .vn { top: -30px; left: 50%; transform: translateX(-50%); font: 500 12px/1 Oswald, sans-serif; letter-spacing: .2em; color: #d8d8d0; }
 html[data-theme=bijou] .hinfo { visibility: hidden; }   /* (the day's words are on the marquee) */
@@ -2083,7 +2084,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'b331b7be72e3' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'c0a72152ad36' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -4952,9 +4953,10 @@ THEMEFX.bijou = {
     var me = THEMEFX.bijou;   // (called on its own, not as the theme's method)
     if (t + sub === me.said) return; me.said = t + sub;
     var mob = me.c && me.c.mob, fit = Math.max(20, Math.min(mob ? 46 : 52, (mob ? 820 : 1100) / Math.max(10, t.length)));
-    mq.style.setProperty('--bjs', fit.toFixed(0) + 'px');
     var spell = function (s, d0) { return s.split('').map(function (ch, i) { return '<i style="animation-delay:' + (d0 + i * 22) + 'ms">' + (ch === ' ' ? '&nbsp;' : esc(ch)) + '</i>'; }).join(''); };
-    mq.innerHTML = '<b>' + spell(t, 0) + '</b><span>' + spell(sub, 200) + '</span>';
+    clearTimeout(me.put);   // (put up once you've landed, not for every day passed on a long swipe: each laid the page out again)
+    me.put = setTimeout(function () { mq.style.setProperty('--bjs', fit.toFixed(0) + 'px'); mq.innerHTML = '<b>' + spell(t, 0) + '</b><span>' + spell(sub, 200) + '</span>'; }, me.said0 ? 160 : 0);
+    me.said0 = 1;
   }
 };
 // It's a Wonderful Life (3): the opening titles' Christmas book (a real page from it), the day's film hand-lettered on its page with
