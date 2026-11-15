@@ -55,8 +55,14 @@ def title_of(name):
     # (a folder and its file squashed into one name with a lookalike slash, "Folder／File.mkv", as a copy through Google Drive leaves
     # them: the file's own part only; and a website's name in front, "www.UIndex.org - Hamlet …", dropped: John, 15 Nov 2026)
     name = re.split(r'[／/\\]', name)[-1]
-    name = re.sub(r'^\s*(\[\s*)?(www[ .])?[a-z0-9-]+[ .](org|com|net|to|me|cc|tv|io|ws|in|co|uk|nl|se|si|sx|ch|bz)(\s*\])?\s*[-–—]*\s*', '', name, flags=re.I)
+    # (only a real website's name: in brackets, starting www, or followed by a dash. "The.Christophers" and "The Secret Agent" had
+    # lost "The Ch" and "The Se" as if they were websites: John, 15 Nov 2026)
+    tld = r'(?:org|com|net|to|me|cc|tv|io|ws|in|co|uk|nl|se|si|sx|ch|bz)'
+    name = re.sub(r'^\s*(?:\[\s*(?:www[ .])?[a-z0-9-]+[ .]' + tld + r'\s*\]|www[ .][a-z0-9-]+[ .]' + tld + r'\b|[a-z0-9-]+[ .]' + tld + r'(?=\s+[-–—]))\s*[-–—]*\s*', '', name, flags=re.I)
     n = re.sub(r'[._]', ' ', os.path.splitext(name)[0] if name.lower().endswith(VIDEO + ('.srt',)) else name)
+    m = re.match(r'^\s*[\[(]?((?:19|20)\d\d)[\])]?\s*[-–—]\s*(\S.*)$', n)   # (the year first: "(1974) - Starduct")
+    if m:
+        return '%s (%s)' % (m.group(2).strip(), m.group(1)), True
     best = None
     for x in re.finditer(r'[\[(]?((?:19|20)\d\d)[\])]?(?= |$)', n):
         if x.start() > 0 and int(x.group(1)) <= time.localtime().tm_year + 1 and n[:x.start()].strip(' -(['):
