@@ -11,8 +11,11 @@
 #   grifflix-add --install  do it by itself every 10 minutes, and whenever something new lands in Movies (while at home)
 #   grifflix-add --remove   stop doing it by itself
 #
-# Left alone (and said why): a film with no year in its name (the media server would guess, often wrong: rename it as
-# "Title (Year)"); TV episodes (S01E02); samples; a film already in Grifflix; and anything that may not have finished downloading
+# A film with no year in its name goes in all the same, named from its title, and is flagged: the media server may guess the wrong
+# film without one, so adding the year to its folder's name is worth doing (John, 15 Nov 2026: "not refuse ... only flag").
+# Run in Terminal, it shows each copy's progress. The Mac mini's drive is connected if it isn't: the first time, the Mac asks for the
+# Mac mini's password (tick "Remember this password in my keychain"); after that, quietly, in the background too.
+# Left alone (and said why): TV episodes (S01E02); samples; a film already in Grifflix; and anything that may not have finished downloading
 # (John, 14 Nov 2026: "it should make sure it doesn't pick up half downloaded files"), which waits until all of these hold:
 #   * no download in progress beside it (.part, .crdownload, .download, .!qB, .aria2, .partial, .tmp files or folders)
 #   * not changed for 10 minutes
@@ -23,6 +26,7 @@ SRC="${GRIFFLIX_FROM:-$HOME/Movies}"
 DRIVE="/Volumes/G-Drive"
 DEST="${GRIFFLIX_TO:-$DRIVE/Grifflix/Movies}"
 SHARE="smb://johngriffiths@192.168.68.125/G-Drive"
+TTY=0; [[ -t 1 ]] && TTY=1
 LABEL="io.github.cooperking.grifflix-add"
 AGENT="$HOME/Library/LaunchAgents/$LABEL.plist"
 LOG="$HOME/Library/Logs/grifflix-add.log"
@@ -64,13 +68,26 @@ trap 'rm -rf "$LOCK"' EXIT
 say() { print -r -- "$(date '+%Y-%m-%d %H:%M') $*"; }
 
 # the Mac mini's drive: connected if it isn't (with the password kept in the keychain the first time it was connected in Finder)
+# (already connected under another name, as "G-Drive-1" when it was connected twice: that one used)
+if [[ -z "${GRIFFLIX_TO:-}" && ! -d "$DEST" ]]; then
+  for d in /Volumes/G-Drive*/Grifflix/Movies(N/); do DEST="$d"; break; done
+fi
 if [[ ! -d "$DEST" ]]; then
-  osascript -e "mount volume \"$SHARE\"" >/dev/null 2>&1
-  for i in {1..10}; do [[ -d "$DEST" ]] && break; sleep 1; done
-  if [[ ! -d "$DEST" ]]; then
-    (( QUIET )) || say "The Mac mini's drive isn't connected (not at home?). In Finder: ⌘K, $SHARE, then run this again."
+  if ! ping -c 1 -t 2 192.168.68.125 >/dev/null 2>&1; then
+    (( QUIET )) || say "The Mac mini isn't reachable (not at home?): nothing done."
     exit 0
   fi
+  (( TTY )) && say "Connecting to the Mac mini's drive… (the first time, it asks for the Mac mini's password: tick \"Remember this password\")"
+  osascript -e "mount volume \"$SHARE\"" >/dev/null 2>&1
+  for i in {1..20}; do
+    for d in /Volumes/G-Drive*/Grifflix/Movies(N/); do DEST="$d"; break; done
+    [[ -d "$DEST" ]] && break; sleep 1
+  done
+  if [[ ! -d "$DEST" ]]; then
+    say "Couldn't connect to the Mac mini's drive. Run grifflix-add in Terminal once, so the Mac can ask for its password."
+    exit 0
+  fi
+  say "Connected to the Mac mini's drive."
 fi
 
 # "Title (Year)" from a file or folder name: dots and underscores to spaces, the year found, everything after it dropped
@@ -83,6 +100,14 @@ name_of() {
     t="${t%% ##}"; t="${t## ##}"; t="${t%[ \(\[-]}"; t="${t%% ##}"
     print -r -- "$t ($y)"
   fi
+}
+# a name without a year: dots and underscores to spaces, and the release's own words cut off (1080p, BluRay, x264...)
+plain_name() {
+  local n="${1:r}" t
+  n="${n//[._]/ }"
+  t="${n%%(#i)( |-|\[|\()(480p|576p|720p|1080p|2160p|4k|uhd|hdr|bluray|blu-ray|brrip|bdrip|webrip|web-dl|webdl|web|hdtv|dvdrip|dvd|x264|x265|h264|h265|hevc|xvid|10bit|aac|ac3|dts|ddp*|remux|proper|repack|extended|yify|yts)*}"
+  t="${t%% ##}"; t="${t## ##}"; t="${t%%[ -]##}"
+  print -r -- "${t:-$n}"
 }
 
 typeset -i done=0
@@ -105,16 +130,35 @@ for f in "$SRC"/*.(mp4|mkv|m4v|mov|avi)(N.) "$SRC"/*/*.(mp4|mkv|m4v|mov|avi)(N.)
   fi
   title="$(name_of "$base")"
   [[ -z "$title" && "${f:h}" != "$SRC" ]] && title="$(name_of "${f:h:t}")"   # (the year may be in its folder's name)
-  if [[ -z "$title" ]]; then say "Left: $base (no year in its name: rename it \"Title (Year)\")"; continue; fi
+  noyear=0
+  if [[ -z "$title" ]]; then   # (no year: added all the same, from its title, and flagged)
+    title="$(plain_name "$base")"; [[ "${f:h}" != "$SRC" ]] && [[ "$(plain_name "${f:h:t}")" != "" ]] && title="$(plain_name "${f:h:t}")"
+    noyear=1
+  fi
   ext="${f:e:l}"; dir="$DEST/$title"; to="$dir/$title.$ext"
   # (already in Grifflix only if its folder has a whole film in it: a copy cut short leaves the folder and a part-copied ".adding"
   # file, which are cleared and the film copied again)
   have=( "$dir"/*.(mp4|mkv|m4v|mov|avi)(N.) )
   if (( ${#have} )); then say "Left: $base (\"$title\" is already in Grifflix)"; continue; fi
   if [[ -d "$dir" ]]; then (( CHECK )) || { rm -f "$dir"/*.adding(N); say "  (a copy of it was cut short before: done again)"; }; fi
-  if (( CHECK )); then say "Would add: $base → $title/$title.$ext"; continue; fi
+  if (( CHECK )); then say "Would add: $base → $title/$title.$ext$( (( noyear )) && print ' (no year in its name)')"; continue; fi
   say "Adding: $base → $title/ ($(printf %.1f $(( $(stat -f %z "$f") / 1000000000.0 ))) GB)"
-  mkdir -p "$dir" && cp "$f" "$to.adding" 2>/dev/null
+  if mkdir -p "$dir"; then
+    if (( TTY )); then   # (in Terminal: how far, how fast, how long to go, on one line as it copies)
+      total=$(stat -f %z "$f"); t0=$(date +%s)
+      cp "$f" "$to.adding" 2>/dev/null &
+      cpid=$!
+      while kill -0 $cpid 2>/dev/null; do
+        sleep 2
+        got=$(stat -f %z "$to.adding" 2>/dev/null || echo 0); el=$(( $(date +%s) - t0 )); (( el < 1 )) && el=1
+        rate=$(( got / el )); left=$(( rate > 0 ? (total - got) / rate : 0 ))
+        printf '\r  %3d%%  %5.1f of %.1f GB  %4.1f MB/s  %d min %02d s left   ' $(( got * 100 / (total ? total : 1) )) $(( got / 1e9 )) $(( total / 1e9 )) $(( rate / 1e6 )) $(( left / 60 )) $(( left % 60 ))
+      done
+      wait $cpid; printf '\r%60s\r' ''
+    else
+      cp "$f" "$to.adding" 2>/dev/null
+    fi
+  fi
   if [[ $(stat -f %z "$f") != $(stat -f %z "$to.adding" 2>/dev/null) ]]; then
     say "  the copy failed: nothing changed"; rm -f "$to.adding"; rmdir "$dir" 2>/dev/null; continue
   fi
@@ -133,6 +177,7 @@ for f in "$SRC"/*.(mp4|mkv|m4v|mov|avi)(N.) "$SRC"/*/*.(mp4|mkv|m4v|mov|avi)(N.)
     (( ${#left} )) || rm -rf "${f:h}"
   fi
   say "  done: moved to the Mac mini"
+  (( noyear )) && say "  NOTE: \"$title\" has no year in its name, so the media server may match the wrong film: if it does, rename its folder \"$title (Year)\" on the G-Drive"
   done+=1
 done
 (( done )) && say "$done film(s) added: the media server sees them within a few minutes."
