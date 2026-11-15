@@ -1269,23 +1269,20 @@ def make_handler(g):
                 return self.send_json(403, {'error': 'Only John.'})
             home = os.path.expanduser('~/Grifflix')
             setup = os.path.exists(os.path.join(home, 'gdrive.py')) and os.path.exists(os.path.join(home, 'rclone.conf'))
-            lock = os.path.join(home, 'gdrive.lock')
-            running = False
-            if os.path.exists(lock):   # (by the fetch's own number in it: a fetch stopped part way left one that said "looking" for hours)
-                try:
-                    pid = int(open(lock).read().strip() or 0)
-                except (OSError, ValueError):
-                    pid = 0
-                if pid:
-                    try:
-                        os.kill(pid, 0)
-                        running = True
-                    except ProcessLookupError:
-                        pass
-                    except PermissionError:
-                        running = True
-                else:
-                    running = time.time() - os.path.getmtime(lock) < 600
+            # what's downloading, from the Mac's own list of what's running (not only the downloader's note, which an older version of it
+            # didn't keep: John, 15 Nov 2026, "it just says 17 waiting - not anything that's happening right now")
+            try:
+                import subprocess
+                ps = subprocess.run(['ps', '-axo', 'pid=,command='], capture_output=True, text=True, timeout=10).stdout
+            except Exception:
+                ps = ''
+            live = None
+            for line in ps.splitlines():
+                m = re.search(r'rclone .*?copyto (\S+?):(.*?) (/.*?\.adding)(?: |$)', line)
+                if m:
+                    live = {'remote': m.group(1), 'file': m.group(2), 'part': m.group(3)}
+                    break
+            running = bool(live) or any('gdrive.py' in l and ' run' in l for l in ps.splitlines())
             if b and b.get('op') in ('name', 'unname'):   # (John's name for a download, from TMDB, so it comes in right: John, 15 Nov 2026)
                 fp = os.path.join(home, 'fetch-names.json')
                 N = load(fp, {}) or {}
@@ -1320,6 +1317,11 @@ def make_handler(g):
             except (OSError, ValueError):
                 st = {}
             now = st.get('now') if running else None
+            if live and (not now or now.get('part') != live['part']):   # (from what's running: its size from the list of what's waiting)
+                w = next((x for x in (st.get('waiting') or []) + [st.get('now') or {}] if x.get('file') and live['file'].endswith(x['file'])), {})
+                now = {'from': 'TorBox' if live['remote'] == 'torbox' else 'Google Drive', 'file': live['file'], 'part': live['part'],
+                       'to': w.get('to') or os.path.basename(live['part'])[:-len('.adding')].rsplit('.', 1)[0], 'size': w.get('size') or int((w.get('gb') or 0) * 1e9),
+                       'since': int(os.path.getctime(live['part'])) if os.path.exists(live['part']) else int(time.time()), 'ep': w.get('ep'), 'series': w.get('series')}
             if now:
                 part = now.pop('part', '')
                 try:
@@ -1327,8 +1329,9 @@ def make_handler(g):
                 except OSError:
                     got = 0
                 took = max(1, time.time() - (now.get('since') or time.time()))
-                now.update(got=got, pct=round(100.0 * got / now['size'], 1) if now.get('size') else 0, mbps=round(got * 8 / took / 1e6, 1))
-            return self.send_json(200, {'setup': setup, 'running': running, 'now': now, 'waiting': st.get('waiting') or [],
+                now.update(got=got, pct=round(min(99.9, 100.0 * got / now['size']), 1) if now.get('size') else 0, mbps=round(got * 8 / took / 1e6, 1))
+            waiting = [x for x in (st.get('waiting') or []) if not (now and x.get('file') == now.get('file'))]
+            return self.send_json(200, {'setup': setup, 'running': running, 'now': now, 'waiting': waiting,
                                         'recent': st.get('recent') or [], 'checked': st.get('checked'), 'next': int(GDRIVE_NEXT[0]) or None, 'error': GDRIVE_ERR[0],
                                         'first': load(os.path.join(home, 'fetch-first.json'), []) or [], 'names': load(os.path.join(home, 'fetch-names.json'), {}) or {}})
 
@@ -2711,7 +2714,30 @@ def keep_gdrive():
     """Films from the Grifflix folder of John's Google Drive, every 15 minutes, once gdrive.py is set up (its sign-in kept): onto the
     G-Drive, then deleted from Google Drive; keep_scanning sees them next and the site follows (John, 15 Nov 2026)."""
     script, conf = os.path.expanduser('~/Grifflix/gdrive.py'), os.path.expanduser('~/Grifflix/rclone.conf')
-    time.sleep(240)
+    # (a fetch started before this gateway, by its older self, goes on with the old version's ways to the end of its list: Ghosts'
+    # episodes filed as films after an update (John, 15 Nov 2026). Stopped, its half-made file removed, and fetched afresh now.)
+    try:
+        import subprocess, signal as sig
+        ps = subprocess.run(['ps', '-axo', 'pid=,command='], capture_output=True, text=True, timeout=10).stdout
+        for line in ps.splitlines():
+            pid = int(line.split()[0]) if line.strip() else 0
+            if pid and pid != os.getpid() and (('gdrive.py' in line and ' run' in line) or ('rclone' in line and ' copyto ' in line and '.adding' in line)):
+                os.kill(pid, sig.SIGTERM)
+                m = re.search(r' (/.*?\.adding)(?: |$)', line)
+                if 'gdrive.py' in line:
+                    log('Google Drive: stopped a fetch from before the update, to start it again with the new one')
+                if m:
+                    time.sleep(2)
+                    try:
+                        os.remove(m.group(1))
+                    except OSError:
+                        pass
+        lk = os.path.expanduser('~/Grifflix/gdrive.lock')
+        if os.path.exists(lk):
+            os.remove(lk)
+    except Exception as e:
+        log('Google Drive: couldn’t look for an older fetch:', e)
+    time.sleep(60)
     while True:
         try:
             if os.path.exists(script) and os.path.exists(conf):
