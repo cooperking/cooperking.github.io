@@ -998,8 +998,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       } else if (f.running) {
         $('#fhead').innerHTML = 'Looking <em>now</em>'; $('#fsay').textContent = 'Seeing what’s in TorBox and Google Drive…';
       } else {
-        $('#fhead').innerHTML = w.length ? w.length + ' <em>waiting</em>' : 'Nothing <em>waiting</em>';
-        $('#fsay').textContent = (f.checked ? 'Last looked ' + when(f.checked * 1000) + '. ' : '') + (f.next ? 'Looks again ' + mins(f.next) + '.' : 'Looks every 15 minutes.') +
+        $('#fhead').innerHTML = !f.checked ? 'Not <em>looked yet</em>' : w.length ? w.length + ' <em>waiting</em>' : 'Nothing <em>waiting</em>';   // (never "nothing" before it has looked)
+        $('#fsay').textContent = (f.checked ? 'Last looked ' + when(f.checked * 1000) + '. ' : 'It hasn’t looked in TorBox and Google Drive since its update: press Look now. ') + (f.next ? 'Looks again ' + mins(f.next) + '.' : 'Looks every 15 minutes.') +
           (w.some(function (x) { return x.noroom; }) ? ' Some won’t fit on the G-Drive: free some space.' : '');
       }
       $('#ftabs').innerHTML = [['next', 'Next', w.length + (n ? 1 : 0)], ['came', 'Came', rc.length]]
