@@ -1265,7 +1265,22 @@ def make_handler(g):
             home = os.path.expanduser('~/Grifflix')
             setup = os.path.exists(os.path.join(home, 'gdrive.py')) and os.path.exists(os.path.join(home, 'rclone.conf'))
             lock = os.path.join(home, 'gdrive.lock')
-            running = os.path.exists(lock) and time.time() - os.path.getmtime(lock) < 6 * 3600
+            running = False
+            if os.path.exists(lock):   # (by the fetch's own number in it: a fetch stopped part way left one that said "looking" for hours)
+                try:
+                    pid = int(open(lock).read().strip() or 0)
+                except (OSError, ValueError):
+                    pid = 0
+                if pid:
+                    try:
+                        os.kill(pid, 0)
+                        running = True
+                    except ProcessLookupError:
+                        pass
+                    except PermissionError:
+                        running = True
+                else:
+                    running = time.time() - os.path.getmtime(lock) < 600
             if b and b.get('look'):
                 if not setup:
                     return self.send_json(400, {'error': 'Google Drive and TorBox aren’t set up on the Mac mini yet.'})
@@ -1286,7 +1301,7 @@ def make_handler(g):
                 took = max(1, time.time() - (now.get('since') or time.time()))
                 now.update(got=got, pct=round(100.0 * got / now['size'], 1) if now.get('size') else 0, mbps=round(got * 8 / took / 1e6, 1))
             return self.send_json(200, {'setup': setup, 'running': running, 'now': now, 'waiting': st.get('waiting') or [],
-                                        'recent': st.get('recent') or [], 'checked': st.get('checked'), 'next': int(GDRIVE_NEXT[0]) or None})
+                                        'recent': st.get('recent') or [], 'checked': st.get('checked'), 'next': int(GDRIVE_NEXT[0]) or None, 'error': GDRIVE_ERR[0]})
 
         def api_convert(self, me, user, q, b):
             """John's: how the conversions are going (convert.py's files in ~/Grifflix), for the admin page."""
@@ -2531,6 +2546,7 @@ def site_update(g, why=''):
 
 GDRIVE_NOW = threading.Event()   # (admin's Look now: a look straight away, not at the next quarter hour)
 GDRIVE_NEXT = [0]
+GDRIVE_ERR = ['']   # (why the last look didn't work, for the admin page)
 
 
 def keep_gdrive():
@@ -2546,10 +2562,12 @@ def keep_gdrive():
                 for line in (r.stdout or '').splitlines():
                     if 'film(s) fetched' in line or 'film(s) from Google Drive' in line or 'failed' in line or 'Not enough room' in line:
                         log('Google Drive:', line[17:])
+                GDRIVE_ERR[0] = ((r.stderr or r.stdout or '').strip()[-300:] or 'it stopped') if r.returncode else ''
                 if r.returncode:
                     log('Google Drive: didn’t work:', (r.stderr or '').strip()[-300:])
         except Exception as e:
             log('Google Drive:', e)
+            GDRIVE_ERR[0] = str(e)[-300:]
         GDRIVE_NEXT[0] = time.time() + 900
         GDRIVE_NOW.wait(900)
         GDRIVE_NOW.clear()

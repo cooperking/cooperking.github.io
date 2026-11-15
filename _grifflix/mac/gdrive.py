@@ -137,21 +137,39 @@ machine --->" and "<---End paste" (it starts eyJ… or {"access_token"…). Copy
     print('To try it now:  python3 ~/Grifflix/gdrive.py run')
 
 
+def lock_alive():
+    """Whether the fetch that holds the lock is still running (an old lock with no number in it: by its age)."""
+    try:
+        pid = int(open(LOCK).read().strip() or 0)
+    except (OSError, ValueError):
+        pid = 0
+    if not pid:
+        return os.path.exists(LOCK) and time.time() - os.path.getmtime(LOCK) < 600
+    try:
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+
+
 def run(check=False):
     if not (os.path.exists(RCLONE) and os.path.exists(CONF)):
         sys.exit('Not set up yet: python3 ~/Grifflix/gdrive.py setup')
     if check:   # (a look changes nothing: always done, even while a fetch runs)
         return _run(True)
-    try:   # (one at a time)
+    try:   # (one at a time: the lock holds the fetch's own number, so one stopped part way, as Hamlet's was, never blocks the rest)
         fd = os.open(LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        os.close(fd)
     except FileExistsError:
-        if time.time() - os.path.getmtime(LOCK) < 6 * 3600:
+        if lock_alive():
             if sys.stdout.isatty():
                 print('A fetch is already running (it was started %d minutes ago). What it\'s doing: tail ~/Grifflix/gdrive.log' % ((time.time() - os.path.getmtime(LOCK)) // 60))
             return
         os.remove(LOCK)
-        open(LOCK, 'w').close()
+        fd = os.open(LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    os.write(fd, str(os.getpid()).encode())
+    os.close(fd)
     try:
         _run(check)
     finally:
