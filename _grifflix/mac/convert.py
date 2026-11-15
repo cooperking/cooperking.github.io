@@ -42,6 +42,20 @@ SKIP = os.path.join(HOME, 'convert-skip')   # (John's Skip on the admin page: th
 MINE = os.path.getmtime(os.path.abspath(__file__))   # (this version: a newer one taken up between films, not by stopping one part way)
 
 
+def downloading():
+    """A film coming in from TorBox or Google Drive this minute (gdrive.py's lock, its process alive), and not waiting for one it
+    brought in to be repackaged. Repackaging older films waits for it: the G-Drive can't do both at speed (John, 15 Nov 2026,
+    "Downloads first but then when downloaded it should be repackaged first with priority if necessary before moving back to downloads")."""
+    try:
+        if os.path.exists(os.path.join(HOME, 'fetch-waiting')):
+            return False
+        pid = int((open(os.path.join(HOME, 'gdrive.lock')).read().split() or ['0'])[0])
+        os.kill(pid, 0)
+        return pid > 0
+    except (OSError, ValueError):
+        return False
+
+
 def _stopped(*a):   # (stopped (an update, a restart): its ffmpeg stopped too, never left running, or frozen, beside the next converter on
     raise SystemExit('stopped')   # the same film: Moonrise at 0%, twice: John, 14 and 15 Nov 2026)
 
@@ -552,11 +566,27 @@ def convert(item, ffmpeg, ffprobe, st):
                     os.remove(tmp)
                 log('  skipped by John')
                 raise RuntimeError('skipped by John')
-            if k % 12 == 6:   # (every minute: films just brought in, shown as next now, and done straight after this one)
-                peek_new()
+            if k % 12 == 6:   # (every minute: films just brought in, shown as next now; one to repackage done at once, this film paused)
+                new = [f for f in (peek_new() or []) if f.get('mode') == 'remux']
+                if new and not item.get('fetched') and not item.get('redo'):
+                    held = not paused
+                    if held:
+                        p.send_signal(signal.SIGSTOP)
+                    log('  paused while %s, just brought in, is repackaged' % ', '.join(f['name'] for f in new))
+                    for f in new:
+                        try:
+                            convert(dict(f, fetched=True, urgent=True), ffmpeg, ffprobe, st)
+                            save_state(st)
+                            done_new(f['path'])
+                        except RuntimeError as e:
+                            log('  couldn’t repackage %s now (%s): it goes next' % (f['name'], str(e)[:160]))
+                    if held:
+                        p.send_signal(signal.SIGCONT)
+                    log('  back to ' + item['name'])
+                    show()
             if k % 4 == 0:   # (how far it's got: every 20 seconds)
                 show(why_ if paused else '')
-            why_ = 'someone is watching' if watching() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() and not item.get('urgent') else '')
+            why_ = 'someone is watching' if watching() else 'a film is downloading' if item.get('mode') == 'remux' and not item.get('fetched') and not item.get('redo') and downloading() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() and not item.get('urgent') else '')
             if why_ and not paused:
                 p.send_signal(signal.SIGSTOP); paused = True; log('  paused: ' + why_)
             elif not why_ and paused:
@@ -749,6 +779,9 @@ def ordered(rest):
             sorted([x for x in others if x.get('mode') == 'shrink'], key=lambda x: -x.get('gb', 0))   # (making smaller last of all, the biggest first)
     else:
         others = [x for x in others if x.get('mode') != 'shrink'] + sorted([x for x in others if x.get('mode') == 'shrink'], key=lambda x: -x.get('gb', 0))
+    if downloading():   # (while a film downloads: conversions go on as before, older films' repackaging after them, the drive left to it)
+        old = lambda x: x.get('mode') == 'remux' and not x.get('fetched') and not x.get('redo')
+        others = [x for x in others if not old(x)] + [x for x in others if old(x)]
     return first + others
 
 
@@ -818,6 +851,14 @@ def peek_new():
     nx = RUN.get('next') or []
     RUN['next'] = nx[:1] + [{'id': i['id'], 'name': i['name'], 'why': 'just brought in: next', 'gb': i['gb'], 'mins': i['mins'], 'mode': i.get('mode')} for i in found] + [x for x in nx[1:] if x['id'] not in ids]
     log('  just brought in: %s, next after this one' % ', '.join(i['name'] for i in found))
+    return found
+
+
+def done_new(path):
+    try:
+        json.dump([x for x in json.load(open(NEWF)) if x.get('path') != path], open(NEWF, 'w'))
+    except (OSError, ValueError):
+        pass
 
 
 def brought_in(rest):
@@ -846,7 +887,7 @@ def brought_in(rest):
         json.dump(p, open(tmp, 'w'))
         os.replace(tmp, PRIO)
         have = set(x['id'] for x in rest)
-        rest = [dict(i, urgent=True) for i in found if i['id'] not in have] + rest
+        rest = [dict(i, urgent=True, fetched=True) for i in found if i['id'] not in have] + rest
         log('%d just brought in: next (%s)' % (len(found), ', '.join(i['name'] for i in found)))
     got = set(i['path'] for i in found)
     keep = [x for x in new if x['path'] not in got and time.time() - x.get('at', 0) < 86400 and os.path.exists(x['path'])]   # (not yet in the media server: looked for again)
