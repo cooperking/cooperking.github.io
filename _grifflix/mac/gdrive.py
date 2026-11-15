@@ -121,11 +121,15 @@ machine --->" and "<---End paste" (it starts eyJ… or {"access_token"…). Copy
 def run(check=False):
     if not (os.path.exists(RCLONE) and os.path.exists(CONF)):
         sys.exit('Not set up yet: python3 ~/Grifflix/gdrive.py setup')
+    if check:   # (a look changes nothing: always done, even while a fetch runs)
+        return _run(True)
     try:   # (one at a time)
         fd = os.open(LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
         os.close(fd)
     except FileExistsError:
         if time.time() - os.path.getmtime(LOCK) < 6 * 3600:
+            if sys.stdout.isatty():
+                print('A fetch is already running (it was started %d minutes ago). What it\'s doing: tail ~/Grifflix/gdrive.log' % ((time.time() - os.path.getmtime(LOCK)) // 60))
             return
         os.remove(LOCK)
         open(LOCK, 'w').close()
@@ -240,6 +244,8 @@ def _run(check):
             pass
     if done:
         log('%d film(s) fetched: Grifflix shows them within about 20 minutes' % done)
+    elif check and sys.stdout.isatty():
+        print('Nothing new to fetch.')
 
 
 if __name__ == '__main__':
