@@ -814,7 +814,7 @@ def make_handler(g):
             lid = q.get('parent') or g.st.get('libraries', {}).get(key)
             if not lid:
                 return self.send_json(200, {'items': [], 'total': 0})
-            sort = {'name': 'SortName', 'added': 'DateCreated', 'year': 'ProductionYear,SortName', 'rating': 'CommunityRating'}.get(q.get('sort'), 'SortName')
+            sort = {'name': 'SortName', 'added': 'DateCreated', 'year': 'PremiereDate,ProductionYear,SortName', 'rating': 'CommunityRating'}.get(q.get('sort'), 'SortName')
             order = 'Ascending' if q.get('sort', 'name') == 'name' else 'Descending'
             if q.get('parent'):   # a folder of home videos and photos, as it is on the disk
                 r = g.items(ParentId=lid, SortBy='IsFolder,SortName', SortOrder='Descending,Ascending', StartIndex=q.get('start', 0), Limit=q.get('limit', 200))

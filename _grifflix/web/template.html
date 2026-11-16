@@ -2264,14 +2264,15 @@ function fits(genre, mood) {
 // sorting and filtering, as Plex's: a sort icon whose choices flip direction when chosen again, and filters (John, 8 Nov 2026:
 // "NEWEST TO OLDEST seems overlong on a mobile - just have a sort icon with options, and it should swap which way ... We should
 // also have advanced filters - same as plex have")
-var SK = [['year', 'Year', -1], ['added', 'Date added', -1], ['name', 'Title', 1], ['rating', 'Rating', -1], ['mins', 'Length', 1]];
+var SK = [['year', 'Release date', -1], ['added', 'Date added', -1], ['name', 'Title', 1], ['rating', 'Rating', -1], ['mins', 'Length', 1]];
 var SF = { sort: 'year', dir: -1, f: {} };
 try { var sf0 = JSON.parse(store.get('grifflix-sf') || 'null'); if (sf0 && sf0.sort) SF = { sort: sf0.sort, dir: sf0.dir || -1, f: {} }; } catch (e) {}
 function sfSave() { store.set('grifflix-sf', JSON.stringify({ sort: SF.sort, dir: SF.dir })); }
 function sfLen(i) { return i.mins || (i.secs ? Math.round(i.secs / 60) : 0); }
 function sfYear(i) { return +i.year || +String(i.premiere || '').slice(0, 4) || 0; }
 function sfSort(items, key, dir) {
-  var v = { year: sfYear, added: function (i) { return Date.parse(i.added || '') || 0; }, name: null, rating: function (i) { return +i.rating || 0; }, mins: sfLen }[key];
+  // (by the day it came out, where known, else its year: John, 16 Nov 2026, "Can we have a sort by release date for films")
+  var v = { year: function (i) { var p = Date.parse(i.premiere || ''); return p || (sfYear(i) ? Date.UTC(sfYear(i), 6, 1) : 0); }, added: function (i) { return Date.parse(i.added || '') || 0; }, name: null, rating: function (i) { return +i.rating || 0; }, mins: sfLen }[key];
   return items.slice().sort(function (a, b) {
     if (!v) return dir * nameKey(a).localeCompare(nameKey(b));
     var x = v(a), y = v(b); if (!x && y) return 1; if (x && !y) return -1;   // (those without one last, either way)
