@@ -844,6 +844,27 @@ def ordered(rest):
     return first + others
 
 
+def chosen(st, have):
+    """Films John chose from the largest to make smaller, whatever the converter would have said of them (John, 16 Nov 2026: "I need a
+    tab for the largest files, so that I can convert them - the make smaller isn't useful in the same way"): each made smaller next,
+    at the careful setting, kept only if it really is smaller."""
+    out = []
+    for x in prio()['pins']:
+        iid = x.get('id')
+        if not x.get('force') or iid in have:
+            continue
+        if max((st['done'].get(iid) or {}).get('at', 0), (st['failed'].get(iid) or {}).get('at', 0)) >= x.get('at', 0):
+            continue
+        it = call('GET', '/Users/%s/Items/%s' % (s['jf_user_id'], iid), Fields='MediaSources,Path,ProductionYear,CommunityRating,DateCreated') or {}
+        path = g(it, 'Path') or ''
+        if not path or not os.path.exists(path):
+            continue
+        out.append({'id': iid, 'name': g(it, 'Name') or x.get('name') or '?', 'year': g(it, 'ProductionYear', ''), 'lib': 'movies' if g(it, 'Type') == 'Movie' else 'tv',
+                    'why': SHRINK + ' (chosen by you)', 'mode': 'shrink', 'path': path, 'mins': round((g(it, 'RunTimeTicks') or 0) / 6e8),
+                    'rating': g(it, 'CommunityRating') or 0, 'gb': round(os.path.getsize(path) / 1e9, 1), 'added': g(it, 'DateCreated') or ''})
+    return out
+
+
 def unpin(iid):
     try:
         p = json.load(open(PRIO))
@@ -996,10 +1017,17 @@ while rest:
     rest = [x for x in brought_in(rest) if not claimed(x['id'])]   # (one being converted on John's Mac: left to it)
     try:   # (pins for films already done, or given up, taken off: they read as next, and the converter seemed to ignore them)
         for x in prio()['pins']:
+            if x.get('force') and x.get('at', 0) > max((st['done'].get(x['id']) or {}).get('at', 0), (st['failed'].get(x['id']) or {}).get('at', 0)):
+                continue   # (one John chose from the largest, to make smaller: wanted, even if done once before)
             if x['id'] in st['done'] or x['id'] in st['failed']:
                 unpin(x['id'])
     except Exception:
         pass
+    try:
+        have = set(x['id'] for x in rest)
+        rest = rest + chosen(st, have)
+    except Exception as e:
+        log('  couldn’t add the films chosen to make smaller:', e)
     rest = ordered(rest)
     rest = [x for x in rest if x.get('redo')] + [x for x in rest if not x.get('redo')]
     try:   # (a newer version put here by Update everything: taken up now, between films)
@@ -1035,7 +1063,7 @@ while rest:
             rest.append(it)
         else:
             log('  FAILED', it['name'], e)
-            st['failed'][it['id']] = {'name': it['name'], 'why': str(e)[:300], 'path': it['path']}
+            st['failed'][it['id']] = {'name': it['name'], 'why': str(e)[:300], 'path': it['path'], 'at': int(time.time())}
             save_state(st)
     unpin(it['id'])   # (done, or failed: off John's list)
     for _ in range(9):   # (each film's follow-up straight away, once Jellyfin has the new file: its date added, collections, lists)
