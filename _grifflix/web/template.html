@@ -2052,13 +2052,13 @@ html.tv.tvfront .th-picture .zcin { box-shadow: 0 0 0 6px #000, 0 0 0 12px rgba(
 /* (Vertigo: the day and its film in the credits' clean lettering, clear, a white line round each letter: John, 10 Nov 2026) */
 html[data-theme=spiral] .hinfo .w, html[data-theme=spiral] .hinfo .w > span, html[data-theme=spiral] .hinfo h2 { font-family: "Special Gothic Expanded One", "Archivo Black", Futura, sans-serif !important; font-weight: 400 !important; text-transform: uppercase; letter-spacing: .04em; color: transparent !important; -webkit-text-stroke: 1.6px #fff; paint-order: stroke; text-shadow: none !important; }
 html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
-/* (posters, chosen in your profile: on the film each day's poster whole, turned on its side to fit the frame; on the screen the right
+/* (posters: on the film each day's poster whole, turned on its side to fit the frame; on the screen the right
    way up, on a soft dark copy of itself: John, 16 Nov 2026: "can the Grifflix show films in poster mode too, in the film strip, but
    turned horizontally. Then showing as it is the right way up in the cinema screen") */
-html.reelp .th-picture .vday.has { background-image: none !important; background-color: #0c0b0a; overflow: hidden; }
-html.reelp .th-picture .vday.has::before { content: ""; position: absolute; left: 50%; top: 50%; width: 135px; height: 240px; margin: -120px 0 0 -67.5px; transform: rotate(90deg); background: var(--p) center / contain no-repeat; pointer-events: none; }
-html.reelp[data-theme=picture] .zpost::before { display: block; }
-html.reelp[data-theme=picture] .zpost::after { inset: 3% 0; filter: drop-shadow(0 8px 20px rgba(0, 0, 0, .6)); }
+html .th-picture .vday.has { background-image: none !important; background-color: #0c0b0a; overflow: hidden; }
+html .th-picture .vday.has::before { content: ""; position: absolute; left: 50%; top: 50%; width: 135px; height: 240px; margin: -120px 0 0 -67.5px; transform: rotate(90deg); background: var(--p) center / contain no-repeat; pointer-events: none; }
+html[data-theme=picture] .zpost::before { display: block; }
+html[data-theme=picture] .zpost::after { inset: 3% 0; filter: drop-shadow(0 8px 20px rgba(0, 0, 0, .6)); }
 .th-picture .vday.soon { background: #141210 !important; box-shadow: inset 0 0 0 1px rgba(244, 236, 216, .25) !important; }
 .th-picture .vday.soon .cs { display: grid !important; font: 600 15px/1.2 var(--kfont) !important; letter-spacing: .28em; color: rgba(244, 236, 216, .55) !important; text-transform: uppercase; }
 /* the look made consistent across the phone, the computer and the TV (a review of every screen: 15 Nov 2026) */
@@ -2090,7 +2090,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 (function () {   // no glimpse of the songs' look while the page loads (John, 8 Nov 2026): Grifflix's own look and the month's colour at
   // once, the page hidden until its theme is laid out (and shown regardless after 2.5s)
   var de = document.documentElement, bg = null;
-  try { localStorage.removeItem('grifflix-look'); bg = localStorage.getItem('grifflix-lastbg'); if (localStorage.getItem('grifflix-reel') === 'posters') de.classList.add('reelp'); } catch (e) {}   // (Grifflix's look always: the old switch gone)
+  try { localStorage.removeItem('grifflix-look'); bg = localStorage.getItem('grifflix-lastbg'); } catch (e) {}   // (Grifflix's look always: the old switch gone)
   if (bg && /^#[0-9a-f]{3,8}$/i.test(bg)) { de.style.setProperty('--bg', bg); de.style.background = bg; }
   de.classList.add('loading'); setTimeout(function () { de.classList.remove('loading'); }, 2500);
 })();
@@ -2310,6 +2310,9 @@ function fits(genre, mood) {
 var SK = [['year', 'Release date', -1], ['added', 'Date added', -1], ['name', 'Title', 1], ['rating', 'Rating', -1], ['mins', 'Length', 1], ['spine', 'Spine number', 1]];   // (Criterion's spine numbers, where a shelf has them: John, 16 Nov 2026)
 var SF = { sort: 'year', dir: -1, f: {} };
 try { var sf0 = JSON.parse(store.get('grifflix-sf') || 'null'); if (sf0 && sf0.sort) SF = { sort: sf0.sort, dir: sf0.dir || -1, f: {} }; } catch (e) {}
+var SPINEOK = false;   // (spine numbers a choice only on the Criterion Collection's own page: John, 16 Nov 2026: "it doesn't make sense elsewhere")
+function sfKey() { return SF.sort === 'spine' && !SPINEOK ? 'year' : SF.sort; }
+function sfDirOf() { return SF.sort === 'spine' && !SPINEOK ? -1 : SF.dir; }
 function sfSave() { store.set('grifflix-sf', JSON.stringify({ sort: SF.sort, dir: SF.dir })); }
 function sfLen(i) { return i.mins || (i.secs ? Math.round(i.secs / 60) : 0); }
 function sfYear(i) { return +i.year || +String(i.premiere || '').slice(0, 4) || 0; }
@@ -2341,8 +2344,8 @@ function sfCount(f) { return ['genres', 'decades', 'certs'].reduce(function (n, 
 var SFICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg>';
 var FFICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>';
 function sfBar() {   // the two icons, for a row of tabs
-  var n = sfCount(SF.f), k = SK.filter(function (x) { return x[0] === SF.sort; })[0] || SK[0];
-  return '<span class="sfbar"><button class="pill sfb" id="sfsort" aria-label="Sort: ' + k[1] + (SF.dir > 0 ? ', ascending' : ', descending') + '" title="Sort">' + SFICON + '<b>' + k[1] + ' ' + (SF.dir > 0 ? '↑' : '↓') + '</b></button>' +
+  var n = sfCount(SF.f), k = SK.filter(function (x) { return x[0] === sfKey(); })[0] || SK[0];
+  return '<span class="sfbar"><button class="pill sfb" id="sfsort" aria-label="Sort: ' + k[1] + (sfDirOf() > 0 ? ', ascending' : ', descending') + '" title="Sort">' + SFICON + '<b>' + k[1] + ' ' + (sfDirOf() > 0 ? '↑' : '↓') + '</b></button>' +
     '<button class="pill sfb' + (n ? ' on' : '') + '" id="sffilt" aria-label="Filters' + (n ? ' (' + n + ')' : '') + '" title="Filters">' + FFICON + (n ? '<i>' + n + '</i>' : '') + '</button></span><div class="sfpop" id="sfpop" hidden></div>';
 }
 function sfWire(root, items, redraw) {   // the icons' panels: items are what's on the shelf now (for the filters' choices and counts)
@@ -2368,7 +2371,7 @@ function sfWire(root, items, redraw) {   // the icons' panels: items are what's 
   };
   var draw = function () {
     if (open === 'sort') {
-      pop.innerHTML = '<div class="sfh">Sort by' + (phone ? '<button class="sfclear" id="sfdone">Done</button>' : '') + '</div>' + SK.filter(function (k) { return k[0] !== 'spine' || SF.sort === 'spine' || shelf().some(function (i) { return i.spine; }); }).map(function (k) { var on = SF.sort === k[0]; return '<button class="sfo' + (on ? ' on' : '') + '" data-sk="' + k[0] + '">' + k[1] + '<span>' + (on ? (SF.dir > 0 ? '↑' : '↓') : '') + '</span></button>'; }).join('') + '<p class="sfn">Choose it again to swap which way.</p>';
+      pop.innerHTML = '<div class="sfh">Sort by' + (phone ? '<button class="sfclear" id="sfdone">Done</button>' : '') + '</div>' + SK.filter(function (k) { return k[0] !== 'spine' || SPINEOK; }).map(function (k) { var on = sfKey() === k[0]; return '<button class="sfo' + (on ? ' on' : '') + '" data-sk="' + k[0] + '">' + k[1] + '<span>' + (on ? (sfDirOf() > 0 ? '↑' : '↓') : '') + '</span></button>'; }).join('') + '<p class="sfn">Choose it again to swap which way.</p>';
     } else {
       var items = shelf(), cnt = function (fn) { var c = {}; items.forEach(function (i) { fn(i).forEach(function (x) { c[x] = (c[x] || 0) + 1; }); }); return c; };
       var gc = cnt(function (i) { return i.genres || []; }), dc = cnt(function (i) { var y = sfYear(i); return y ? [Math.floor(y / 10) * 10] : []; }), cc = cnt(function (i) { return [i.cert || 'Not rated']; });
@@ -2385,8 +2388,8 @@ function sfWire(root, items, redraw) {   // the icons' panels: items are what's 
     if (TV) { var f = $('.sfo.on, .pill', pop); if (f) f.focus(); }
   };
   var bar = function () {   // the icons kept up to date
-    var n = sfCount(SF.f), k = SK.filter(function (x) { return x[0] === SF.sort; })[0] || SK[0], so = $('#sfsort', root), fi = $('#sffilt', root);
-    so.innerHTML = SFICON + '<b>' + k[1] + ' ' + (SF.dir > 0 ? '↑' : '↓') + '</b>'; so.setAttribute('aria-label', 'Sort: ' + k[1] + (SF.dir > 0 ? ', ascending' : ', descending'));
+    var n = sfCount(SF.f), k = SK.filter(function (x) { return x[0] === sfKey(); })[0] || SK[0], so = $('#sfsort', root), fi = $('#sffilt', root);
+    so.innerHTML = SFICON + '<b>' + k[1] + ' ' + (sfDirOf() > 0 ? '↑' : '↓') + '</b>'; so.setAttribute('aria-label', 'Sort: ' + k[1] + (sfDirOf() > 0 ? ', ascending' : ', descending'));
     fi.innerHTML = FFICON + (n ? '<i>' + n + '</i>' : ''); fi.classList.toggle('on', !!n); fi.setAttribute('aria-label', 'Filters' + (n ? ' (' + n + ')' : ''));
   };
   var redo = redraw; redraw = function () { redo(); bar(); };
@@ -4851,7 +4854,7 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
   },
   front: function (b) {   // (the room lit by the day's film; its poster on the screen)
     var z = $('#zamb'); if (z && b && b.classList.contains('has')) z.style.backgroundImage = b.style.getPropertyValue('--b');
-    var po = $('#zpost'), pm = document.documentElement.classList.contains('reelp');   // (posters: the day's poster the right way up on the screen, as the film has it on its side: John, 16 Nov 2026)
+    var po = $('#zpost'), pm = true;   // (posters: the day's poster the right way up on the screen, as the film has it on its side: John, 16 Nov 2026)
     if (po && b) po.style.setProperty('--pp', b.classList.contains('has') ? (pm ? b.style.getPropertyValue('--p') || b.style.getPropertyValue('--b') : b.style.getPropertyValue('--b') || b.style.getPropertyValue('--p')) : 'none');   // (the wide picture on the screen, as on the film: John, 10 Nov 2026)
   }
 };
@@ -5237,7 +5240,7 @@ function progBar(it) { return it.pos && it.secs ? '<span class="bar" style="widt
 function cardHTML(it, land, spine) {   // (spine: a collection's page, a Criterion film's spine number with it: John, 16 Nov 2026)
   var src = land ? img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480) : img(it.poster, 'Primary', 320);
   return '<button class="card' + (land ? ' land' : '') + '" data-item="' + it.id + '"><div class="pic">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '<div class="noimg">' + esc(showName(it)) + '</div>') + progBar(it) + '</div>' +
-    '<div class="t">' + esc(showName(it)) + '</div><div class="s">' + ((spine || SF.sort === 'spine') && it.spine ? '<b class="spn">No. ' + esc(String(it.spine)) + '</b> · ' : '') + esc(subOf(it)) + '</div></button>';
+    '<div class="t">' + esc(showName(it)) + '</div><div class="s">' + (spine && it.spine ? '<b class="spn">No. ' + esc(String(it.spine)) + '</b> · ' : '') + esc(subOf(it)) + '</div></button>';
 }
 function collCard(c) {   // a collection's cover, drawn rather than a picture: a title poster in the month's theme - its colour,
   // its type, and a graphic of its own for each collection (John, 8 Nov 2026: "replace the images with a creatively styled
@@ -5273,8 +5276,8 @@ function collectionView(id, into) {
       (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
       '<div class="tabs"><span class="sp"></span>' + sfBar() + '</div>' +
       '<div class="gridcards" id="cgrid"></div>';
-    var draw = function () { var items = sfSort(c.items.filter(sfFits(SF.f)), SF.sort, SF.dir); $('#cgrid').innerHTML = items.length ? items.map(function (i) { return cardHTML(i, false, true); }).join('') : '<div class="empty">Nothing like that in this collection.</div>'; wireCards($('#cgrid'), items); };
-    sfWire($('#cbody'), c.items, draw);
+    var draw = function () { var items = sfSort(c.items.filter(sfFits(SF.f)), sfKey(), sfDirOf()); $('#cgrid').innerHTML = items.length ? items.map(function (i) { return cardHTML(i, false, SPINEOK); }).join('') : '<div class="empty">Nothing like that in this collection.</div>'; wireCards($('#cgrid'), items); };
+    SPINEOK = /criterion/i.test(c.name); sfWire($('#cbody'), c.items, draw);
     draw();
     if (ME && ME.owner) {
       $('#cbody .collhead > div:last-child').insertAdjacentHTML('beforeend', '<div class="tabs" style="margin:16px 0 0"><button class="pill" id="crename">Rename</button><button class="pill" id="cdelete">Delete the collection</button></div>');
@@ -5333,7 +5336,7 @@ function browse(into) {
     if (S.genre && !count[S.genre]) S.genre = '';
     $('#moods').innerHTML = '<button class="pill' + (!S.mood ? ' on' : '') + '" data-mood="">All</button>' + MOODS.map(function (m) { return '<button class="pill' + (S.mood === m[0] ? ' on' : '') + '" data-mood="' + m[0] + '">' + m[1] + '</button>'; }).join('');   // (genres now in the filters)
     $$('[data-mood]').forEach(function (b) { b.onclick = function () { S.mood = b.dataset.mood; $$('[data-mood]').forEach(function (x) { x.classList.toggle('on', x === b); }); fill(); }; });
-    sfWire(main, function () { return get0(L); }, fill);
+    SPINEOK = false; sfWire(main, function () { return get0(L); }, fill);
   }).catch(function () {});
   function get0(L) { return L[S.browse].map(function (id) { return L.items[id]; }).filter(Boolean).filter(fits('', S.mood)); }
   function fill() {
@@ -5350,7 +5353,7 @@ function browse(into) {
       $('#bgrid').innerHTML = r.collections.length ? '<div class="gridcards">' + r.collections.map(collCard).join('') + '</div>' : '<div class="empty">No collections yet.</div>';
     }).catch(oops);
     // films and series: 120 at a time, the next as you scroll down (all of them, not just the first 200)
-    var base = 'items?lib=' + S.browse + '&sort=' + SF.sort + '&dir=' + SF.dir + '&f=' + encodeURIComponent(JSON.stringify(SF.f)) + (S.mood ? '&mood=' + S.mood : '') + '&limit=' + (+Q.get('pagesize') || 120) + '&start=', all = [], total = 0, busy = false, land = S.browse === 'home', watcher;
+    var base = 'items?lib=' + S.browse + '&sort=' + sfKey() + '&dir=' + sfDirOf() + '&f=' + encodeURIComponent(JSON.stringify(SF.f)) + (S.mood ? '&mood=' + S.mood : '') + '&limit=' + (+Q.get('pagesize') || 120) + '&start=', all = [], total = 0, busy = false, land = S.browse === 'home', watcher;
     var first = function (r) {
       if (!here()) return;
       all = r.items.slice(); total = r.total;
@@ -6147,9 +6150,6 @@ function drawAccount() {
     '<div class="profsec"><p class="profh">Theme music</p><p class="profp">' + (TMUS.on ? 'On this device.' : 'Off on this device.') +
       (TMUS.on && TMUS.k && TMUS.list && TMUS.list[TMUS.k] ? ' This month: <b>' + esc(TMUS.list[TMUS.k].title) + '</b>, ' + esc(TMUS.list[TMUS.k].artist) + '.' : '') +
       '</p><div class="acts" style="margin-top:8px"><button class="pill" id="musgo">' + (TMUS.on ? 'Turn off' : 'Turn on') + '</button><button class="pill" id="leadgo">Play the 3 2 1</button></div></div>' +
-    '<div class="profsec"><p class="profh">The Grifflix theme</p><p class="profp">What the film strip and the cinema screen show, on this device.</p><div class="modes">' +
-      [['wide', 'Wide pictures', 'Each film’s wide picture, on the film and the screen'], ['posters', 'Posters', 'Each film’s poster, on its side on the film, the right way up on the screen']].map(function (m) {
-        return '<button class="mode' + ((document.documentElement.classList.contains('reelp') ? 'posters' : 'wide') === m[0] ? ' on' : '') + '" data-reel="' + m[0] + '"><b>' + m[1] + '</b><span>' + m[2] + '</span></button>'; }).join('') + '</div></div>' +
     // (how to put Grifflix on a Fire TV Stick, step by step, for every member: John, 11 Nov 2026: "can you put clear instructions in the
     // members profile area of how to install the fire stick app")
     (TV ? '<div class="profsec"><p class="profh">Another device</p><p class="profp">To sign in on another device, get a code and type it there.</p><div class="acts" style="margin-top:8px"><button class="pill" id="tvcode">Get a code</button></div></div>' :
@@ -6170,11 +6170,6 @@ function drawAccount() {
   }; });
   var ng = $('#notego'); if (ng) ng.onclick = function () { (on ? notesOff() : notesOn()).then(function () { profTab(); }).catch(oops); };
   $('#mailgo').onclick = addEmail;
-  $$('[data-reel]').forEach(function (b) { b.onclick = function () {
-    var p = b.dataset.reel === 'posters'; store.set('grifflix-reel', p ? 'posters' : 'wide'); document.documentElement.classList.toggle('reelp', p);
-    var f = $('#cal .vday.front'); if (f && S.theme && S.theme.fx.front) S.theme.fx.front(f, S.theme.c, true);
-    toast(p ? 'Posters on the Grifflix theme' : 'Wide pictures on the Grifflix theme'); drawAccount();
-  }; });
   $('#leadgo').onclick = function () { closeSheet(); window.ZLED = 0; TMUS.ok = true; musicCtx(); THEMEFX.picture.leader(true); };   // (Grifflix's opening again, with its sound: a tap allows it, an iPhone too)
   $('#musgo').onclick = function () { TMUS.on = !TMUS.on; store.set('grifflix-music', TMUS.on ? 'on' : 'off'); if (!TMUS.on) musicHush(); muteBtn(); toast(TMUS.on ? 'Theme music on' : 'Theme music off'); drawAccount(); };
   $('#tvcode').onclick = function () { var b = this; if (DEMO) return toast('Not in the demo.'); wcall({ op: 'tvcode' }).then(function (j) { b.outerHTML = '<span class="tvcode">' + j.code + '</span><span class="profp"> for ' + j.minutes + ' minutes, once</span>'; }).catch(oops); };
