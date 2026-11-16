@@ -2108,7 +2108,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '10741a0e2ccb' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'b6ed260ef8f4' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5515,12 +5515,44 @@ function dayStep(d) {
   });
 })();
 
+function pictureSheet(it, kind) {   // John's: every poster (or background) the media server can find for it; tap one to use it
+  var poster = kind !== 'backdrop';
+  openSheet('<div class="form" style="position:relative"><h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (poster ? 'A poster' : 'A background') + ' for <i>' + esc(it.name || 'this') + '</i></h2>' +
+    '<p class="ov" style="margin:8px 0 14px">Tap one to use it. The best-liked come first.</p><div class="picgrid" id="picgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(' + (poster ? '130px' : '220px') + ',1fr));gap:12px"><p class="ov">Looking…</p></div></div>');
+  mac('images?id=' + it.id + '&kind=' + kind).then(function (j) {
+    var L = j.images || [];
+    $('#picgrid').innerHTML = L.length ? L.map(function (x, i) {
+      return '<button type="button" class="picopt" data-i="' + i + '" style="padding:0;border:0;background:none;cursor:pointer;text-align:left;color:var(--fg-2);font:400 12px var(--sans)"><img alt="" loading="lazy" src="' + esc(x.thumb) + '" style="display:block;width:100%;aspect-ratio:' + (poster ? '2/3' : '16/9') + ';object-fit:cover;background:#222">' +
+        '<span style="display:block;margin-top:4px">' + [x.lang ? x.lang.toUpperCase() : 'No words', x.w ? x.w + '×' + x.h : ''].filter(Boolean).join(' · ') + '</span></button>';
+    }).join('') : '<p class="ov">None found.</p>';
+    $$('#picgrid .picopt').forEach(function (b) { b.onclick = function () {
+      var x = L[+b.dataset.i]; b.style.opacity = .5;
+      mac('images', { id: it.id, kind: kind, url: x.url }).then(function () { toast((poster ? 'Poster' : 'Background') + ' changed: Grifflix shows it within a few minutes'); closeSheet(); })
+        .catch(function (e) { b.style.opacity = 1; toast(e.message || 'Couldn’t reach the Mac mini'); });
+    }; });
+  }).catch(function (e) { $('#picgrid').innerHTML = '<p class="ov">' + esc(e.status === 404 ? 'Press Update everything first (the Mac mini needs its update).' : e.message || 'Couldn’t reach the Mac mini') + '</p>'; });
+}
 function identifySheet(it) {   // John's: the right film (or series) found on TMDB and given to this one, its details and pictures read again
   var nm = String(it.name || '').replace(/[._]/g, ' ').replace(/\s+/g, ' ').trim(), yr = it.year || '';
-  openSheet('<div class="form" style="position:relative">' + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">Fix <i>' + esc(it.name || 'this') + '</i></h2>' +
-    '<p class="ov" style="margin:8px 0 14px">Find the right ' + (it.type === 'series' ? 'series' : 'film') + ' on TMDB: its title, and its year if you know it.</p>' +
+  // (and its name and pictures: John, 16 Nov 2026: two copies of one film he "can't distinguish between"; "can I choose a different image
+  // easily from the page")
+  openSheet('<div class="form" style="position:relative">' + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">Edit <i>' + esc(it.name || 'this') + '</i></h2>' +
+    '<div class="xblock" style="margin:16px 0 22px"><h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">Its name in Grifflix</h4>' +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap"><input type="text" id="rnq" value="' + esc(it.name || '') + '" placeholder="Name" style="flex:1 1 260px"><button class="pill go" id="rngo">Save</button><button class="pill" id="rnown">Its own name</button></div>' +
+    '<p class="ov" style="margin:6px 0 0;font-size:14px">For two copies of one film: “It’s a Wonderful Life (Colour)”.</p></div>' +
+    '<div class="xblock" style="margin:0 0 22px"><h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">Its pictures</h4>' +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap"><button class="pill" data-pick="poster">Choose the poster</button><button class="pill" data-pick="backdrop">Choose the background</button></div></div>' +
+    '<h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">The wrong film?</h4>' +
+    '<p class="ov" style="margin:0 0 14px">Find the right ' + (it.type === 'series' ? 'series' : 'film') + ' on TMDB: its title, and its year if you know it.</p>' +
     '<div style="display:flex;gap:10px;flex-wrap:wrap"><input type="text" id="idq" value="' + esc(nm) + '" placeholder="Title" style="flex:1 1 220px"><input type="text" id="idy" value="' + esc(String(yr)) + '" placeholder="Year" inputmode="numeric" style="flex:0 0 90px"><button class="pill go" id="idgo">Find</button></div>' +
     '<ul class="results idres" id="idres" style="max-height:none"></ul></div>');
+  var rename = function (nm) {
+    mac('rename', { id: it.id, name: nm }).then(function () { toast(nm ? 'Now “' + nm + '”: Grifflix shows it within a few minutes' : 'Its own name again: within a few minutes'); closeSheet(); })
+      .catch(function (e) { toast(e.status === 404 ? 'Press Update everything first (the Mac mini needs its update)' : e.message || 'Couldn’t reach the Mac mini'); });
+  };
+  $('#rngo').onclick = function () { var v = $('#rnq').value.trim(); if (v) rename(v); };
+  $('#rnown').onclick = function () { rename(''); };
+  $$('#sheetIn [data-pick]').forEach(function (b) { b.onclick = function () { pictureSheet(it, b.dataset.pick); }; });
   var R = [];
   var find = function () {
     var q = $('#idq').value.trim(), y = $('#idy').value.trim();
@@ -5617,7 +5649,7 @@ function bodyHTML(it, ctx) {
   }
   if (!it.ext && shareDayOf(it)) h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button>';
   // (John's Fix match: the film or series chosen from TMDB when the media server named it wrong, or didn't know it: John, 15 Nov 2026)
-  if (!PUBLIC && !it.ext && ME && ME.owner && !TV && (it.type === 'movie' || it.type === 'series')) h += '<button class="pill" id="aident">Fix match</button>';
+  if (!PUBLIC && !it.ext && ME && ME.owner && !TV && (it.type === 'movie' || it.type === 'series')) h += '<button class="pill" id="aident">Edit</button>';
   // (John's Delete: last in the row, apart from the rest)
   if (!PUBLIC && !it.ext && ME && ME.owner && !TV && it.type === 'movie') h += '<button class="pill danger" id="adel">Delete</button>';
   h += '</div>';   // (the row closed whatever's in it: with no Share button it was left open and a series' episodes went inside it, Play and the heart floating beside them)
