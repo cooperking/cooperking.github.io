@@ -1868,10 +1868,17 @@ def make_handler(g):
             if not b:
                 if src.get('before'):
                     return self.send_json(200, {'before': len(mine())})
+                local = []
+                try:   # (the pictures in its own folder, small ones inline: John's own posters there were no choice before)
+                    for n, full in folder_pics(g, iid)[:8]:
+                        if os.path.getsize(full) <= 6e6:
+                            local.append({'name': n, 'data': 'data:image/%s;base64,%s' % ('png' if n.lower().endswith('.png') else 'webp' if n.lower().endswith('.webp') else 'jpeg', base64.b64encode(open(full, 'rb').read()).decode())})
+                except Exception as e:
+                    log('  (its folder’s pictures couldn’t be read: %s)' % e)
                 r = g.jf.call('GET', '/Items/%s/RemoteImages' % iid, query={'type': kind, 'includeAllLanguages': 'true', 'limit': 60}) or {}
                 imgs = sorted(r.get('Images') or [], key=lambda x: (x.get('Language') not in ('en', None, ''), -(x.get('CommunityRating') or 0), -(x.get('VoteCount') or 0)))
                 return self.send_json(200, {'images': [{'url': x.get('Url'), 'thumb': x.get('ThumbnailUrl') or x.get('Url'), 'w': x.get('Width'), 'h': x.get('Height'),
-                                                        'lang': x.get('Language'), 'from': x.get('ProviderName')} for x in imgs[:60] if x.get('Url')], 'before': len(mine())})
+                                                        'lang': x.get('Language'), 'from': x.get('ProviderName')} for x in imgs[:60] if x.get('Url')], 'before': len(mine()), 'local': local})
             if b.get('undo'):
                 L = mine()
                 if not L:
@@ -1885,7 +1892,12 @@ def make_handler(g):
                 log('The earlier %s put back by John for %s' % (kind.lower(), iid))
                 return self.send_json(200, {'ok': True, 'before': len(L) - 1})
             url = str(b.get('url') or '')
-            if not url.startswith('http'):
+            lp = None
+            if b.get('local'):
+                lp = dict(folder_pics(g, iid)).get(str(b['local']))
+                if not lp:
+                    return self.send_json(404, {'error': 'That picture isn’t in its folder now.'})
+            elif not url.startswith('http'):
                 return self.send_json(400, {'error': 'Which picture?'})
             try:   # (the one it has now, kept: the last ten for each)
                 pic = g.jf.raw('GET', '/Items/%s/Images/%s' % (iid, kind))
@@ -1896,7 +1908,11 @@ def make_handler(g):
                         os.remove(os.path.join(keep, old))
             except Exception as e:
                 log('  (its %s couldn’t be kept first: %s)' % (kind.lower(), e))
-            g.jf.call('POST', '/Items/%s/RemoteImages/Download' % iid, query={'type': kind, 'imageUrl': url})
+            if lp:   # (one from its folder: a copy of it given to the media server; the file itself left where it is)
+                pic = open(lp, 'rb').read()
+                g.jf.raw('POST', '/Items/%s/Images/%s' % (iid, kind), base64.b64encode(pic), 'image/png' if pic[:4] == b'\x89PNG' else 'image/webp' if pic[8:12] == b'WEBP' else 'image/jpeg')
+            else:
+                g.jf.call('POST', '/Items/%s/RemoteImages/Download' % iid, query={'type': kind, 'imageUrl': url})
             g.forget()
             g.publish_soon = time.time() + 60
             log('A new %s chosen by John for %s' % (kind.lower(), iid))
@@ -2804,6 +2820,16 @@ CONV_NOW = threading.Event()   # (films just brought in: the converter started f
 GDRIVE_NOW = threading.Event()   # (admin's Look now: a look straight away, not at the next quarter hour)
 GDRIVE_NEXT = [0]
 GDRIVE_ERR = ['']   # (why the last look didn't work, for the admin page)
+
+
+def folder_pics(g, iid):
+    """The pictures in a film's own folder (or a series' folder), by name: [(name, path)]."""
+    it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
+    path = it.get('Path') or ''
+    folder = path if it.get('Type') == 'Series' else os.path.dirname(path)
+    if not folder or not os.path.isdir(folder):
+        return []
+    return sorted((n, os.path.join(folder, n)) for n in os.listdir(folder) if n.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')) and not n.startswith('.'))
 
 
 def rename_to(g, iid, name, year, pick=None):
