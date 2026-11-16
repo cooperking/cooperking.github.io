@@ -22,7 +22,7 @@ if [[ "${1:-}" == "setup" ]]; then
     -e 'on open location u' \
     -e '  tell application "Terminal"' \
     -e '    activate' \
-    -e '    do script "zsh ~/Grifflix/convert-here.sh " & quoted form of u' \
+    -e '    do script "curl -fsSL https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/convert-here.sh -o ~/Grifflix/convert-here.sh.new && mv ~/Grifflix/convert-here.sh.new ~/Grifflix/convert-here.sh; zsh ~/Grifflix/convert-here.sh " & quoted form of u' \
     -e '  end tell' \
     -e 'end open location' || { echo "Couldn't make the app."; exit 1; }
   P="$APP/Contents/Info.plist"
@@ -58,11 +58,20 @@ if [[ ! -d /Volumes/G-Drive ]]; then
 fi
 [[ -f "$src" ]] || { echo "The film isn't where the Mac mini said: $src"; curl -fsS -X POST -H 'Content-Type: application/json' -d '{"ok":false,"error":"not found"}' "$url/done" >/dev/null; exit 1; }
 
-# the plan as the Mac mini made it, -stats for how far it's got; Ctrl-C stops it and the Mac mini goes back to it later
-trap 'echo; echo "Stopped."; curl -fsS -X POST -H "Content-Type: application/json" -d "{\"ok\":false,\"error\":\"stopped\"}" "$url/done" >/dev/null; exit 1' INT TERM
-if "$FF" -v error -stats "${args[@]}"; then
+# the plan as the Mac mini made it, -stats for how far it's got, and every few seconds the Mac mini told how far (the film's Edit panel
+# shows it: John, 16 Nov 2026, "I'd like to see the progress"); Ctrl-C stops it and the Mac mini goes back to it later
+prog=$(mktemp)
+( while sleep 4; do
+    t=$(grep '^out_time_us=' "$prog" 2>/dev/null | tail -1 | cut -d= -f2); sp=$(grep '^speed=' "$prog" 2>/dev/null | tail -1 | cut -d= -f2 | tr -d ' ')
+    [[ "$t" == <-> ]] && curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d "{\"t\":$((t / 1000000)),\"speed\":\"$sp\"}" "$url/progress" >/dev/null 2>&1
+  done ) &
+reporter=$!
+trap 'kill $reporter 2>/dev/null; rm -f "$prog"; echo; echo "Stopped."; curl -fsS -X POST -H "Content-Type: application/json" -d "{\"ok\":false,\"error\":\"stopped\"}" "$url/done" >/dev/null; exit 1' INT TERM
+if "$FF" -v error -stats -progress "$prog" "${args[@]}"; then
+  kill $reporter 2>/dev/null; rm -f "$prog"
   echo "Made. The Mac mini is checking it and putting it in place."
   curl -fsS -X POST -H 'Content-Type: application/json' -d '{"ok":true}' "$url/done" >/dev/null && echo "Done: Grifflix shows the new copy within a few minutes. This window can be closed."
 else
+  kill $reporter 2>/dev/null; rm -f "$prog"
   echo "It didn't convert."; curl -fsS -X POST -H 'Content-Type: application/json' -d '{"ok":false,"error":"ffmpeg failed"}' "$url/done" >/dev/null
 fi

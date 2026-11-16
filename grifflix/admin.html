@@ -320,9 +320,19 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   <div id="app" hidden>
     <div class="top"><button type="button" class="reload" id="reload" aria-label="Reload" title="Reload" onclick="location.reload()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><h1>Grifflix <em>admin</em></h1><p class="sub" id="hello"></p></div>
     <nav class="tabs" id="tabs" role="tablist" aria-label="Admin">
-      <button type="button" role="tab" data-go="updates">Updates</button><button type="button" role="tab" data-go="films">Films</button><button type="button" role="tab" data-go="themes">Themes</button><button type="button" role="tab" data-go="requests">Requests</button><button type="button" role="tab" data-go="members">Members</button><button type="button" role="tab" data-go="mac">Mac</button>
+      <button type="button" role="tab" data-go="updates">Updates</button><button type="button" role="tab" data-go="films">Films</button><button type="button" role="tab" data-go="themes">Themes</button><button type="button" role="tab" data-go="requests">Requests</button><button type="button" role="tab" data-go="members">Members</button><button type="button" role="tab" data-go="mac">Mac</button><button type="button" role="tab" data-go="dupes" id="dupetab" hidden>Copies</button>
     </nav>
     <div class="cards">
+      <section class="card" data-tab="dupes">
+        <div class="kicker">Duplicates</div>
+        <h2 id="duphead">Films you have twice</h2>
+        <p class="stat">For each film, the copy marked is kept and the others are set aside, into “Set aside/Duplicates” on the G-Drive (not deleted: empty it when you’re happy). The best copy is chosen for you (the sharpest picture, then the most detail); choose another if you’d rather. Calendars, lists and hearts follow the copy kept, and its extras stay with it.</p>
+        <div id="duplist"></div>
+        <div class="state"><button class="btn primary" id="dupgo" type="button" hidden>Set the others aside</button></div>
+        <p class="stat" id="dupsay"></p>
+        <pre id="duplog" hidden style="white-space:pre-wrap;max-height:240px;overflow:auto;font-size:12px;opacity:.85"></pre>
+        <div id="dupwrong"></div>
+      </section>
       <section class="card" data-tab="updates">
         <div class="kicker">Updates</div>
         <h2 id="allhead">Looking…</h2>
@@ -1346,6 +1356,37 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     }).catch(function (e) { toast(e.message || 'That didn’t work.'); $('#critsay').textContent = e.message || ''; });
   };
 
+  // ---- duplicates: the films John has twice, his choice of copy to keep, the others set aside (John, 16 Nov 2026: "make it a tab if
+  // there are duplicates and let me be able to select and fix there")
+  var dupT = 0;
+  function dupCall(body, fresh) {
+    return fetch(GW + '/api/duplicates' + (fresh ? '?fresh=1' : ''), body ? { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'Couldn’t reach the Mac mini.'); return j; }); });
+  }
+  function dupPaint(j) {
+    var G = j.groups || [], W = j.wrong || [];
+    $('#dupetab').hidden = !G.length && !j.running; $('#dupetab').textContent = 'Copies' + (G.length ? ' ' + G.length : '');
+    $('#duphead').innerHTML = G.length ? G.length + ' film' + (G.length === 1 ? '' : 's') + ' you have <em>twice</em>' : 'No duplicates';
+    var q = function (c) { return c.h + 'p ' + esc(c.codec) + (c.bits > 8 ? ' 10-bit' : '') + ' · ' + c.gb + ' GB · ' + c.mbps + ' Mbps · ' + c.mins + ' min'; };
+    $('#duplist').innerHTML = G.map(function (g, i) {
+      return '<div class="dupg" style="margin:0 0 16px;padding:12px 14px;border:1px solid rgba(127,127,127,.3);border-radius:8px"><label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" data-dg="' + i + '" checked> ' + esc(g[0].name) + ' (' + esc(String(g[0].year || '')) + ')</label>' +
+        g.map(function (c) { return '<label style="display:flex;gap:8px;align-items:flex-start;margin:8px 0 0 24px;font-size:14px"><input type="radio" name="dk' + i + '" value="' + c.id + '"' + (c.best ? ' checked' : '') + '><span><b>' + (c.best ? 'Best: ' : '') + esc(c.file) + '</b><br><small style="opacity:.8">' + q(c) + '</small></span></label>'; }).join('') + '</div>';
+    }).join('');
+    $('#dupgo').hidden = !G.length || j.running;
+    $('#dupwrong').innerHTML = W.length ? '<p class="stat" style="margin-top:18px"><b>Not copies</b> (the media server has these as one film, but they’re different films: put right by TMDB on its own every few hours, or Fix match on the film’s page):<br>' + W.map(function (v) { return esc(v[0].name) + ': ' + v.map(function (f) { return esc(f.folder) + ', ' + f.mins + ' min'; }).join('; '); }).join('<br>') + '</p>' : '';
+    $('#dupsay').textContent = j.running ? 'Setting them aside…' : '';
+    $('#duplog').hidden = !j.last; $('#duplog').textContent = j.last || '';
+    clearTimeout(dupT); if (j.running) dupT = setTimeout(function () { dupCall(null, false).then(function (k) { if (!k.running) dupCall(null, true).then(dupPaint); else dupPaint(k); }).catch(function () {}); }, 4000);
+  }
+  setTimeout(function () { if (GW) dupCall().then(dupPaint).catch(function () {}); }, 2500);
+  $('#dupgo').onclick = function () {
+    var keep = [].map.call(document.querySelectorAll('#duplist [data-dg]:checked'), function (c) { var r = document.querySelector('#duplist input[name="dk' + c.dataset.dg + '"]:checked'); return r && r.value; }).filter(Boolean);
+    if (!keep.length) return toast('Tick the films to fix');
+    var b = $('#dupgo'); if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Set aside the others for ' + keep.length + ' film' + (keep.length === 1 ? '' : 's') + '? Click again'; return; }
+    delete b.dataset.sure; b.textContent = 'Set the others aside'; b.hidden = true;
+    dupCall({ keep: keep }).then(dupPaint).catch(function (e) { b.hidden = false; toast(e.message); });
+  };
+
   // ---- a key for Claude to look at the Mac mini with, reading only (John, 16 Nov 2026: "can't you use it from here somehow?")
   function lookPaint(r) {
     var when = function (t) { return t ? new Date(t * 1000).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''; };
@@ -1751,7 +1792,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var wait = setInterval(function () { if (GW) { clearInterval(wait); look(); } }, 500); setTimeout(function () { clearInterval(wait); if (!GW) $('#dsay').textContent = 'The Mac mini isn’t connected just now.'; }, 15000);
   })();
   (function () {   // ---- the tabs: one group of cards at a time, the last one chosen kept (and #themes etc. in the address)
-    var TABS = ['updates', 'films', 'themes', 'requests', 'members', 'mac'];
+    var TABS = ['updates', 'films', 'themes', 'requests', 'members', 'mac', 'dupes'];
     function show(t, push) {
       if (TABS.indexOf(t) < 0) t = 'updates';
       [].forEach.call(document.querySelectorAll('.cards > [data-tab]'), function (c) { c.classList.toggle('tabon', c.dataset.tab === t); });
