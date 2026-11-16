@@ -2112,7 +2112,7 @@ def make_handler(g):
         def look(self, what, q):
             LOOKED['at'] = time.time()
             home = os.path.expanduser('~/Grifflix')
-            LOGS = {'criterion': os.path.join(home, 'criterion-covers.log'), 'gateway': os.path.join(APP_DIR, 'gateway.log'), 'tunnel': os.path.join(APP_DIR, 'tunnel.log'), 'setup': os.path.join(APP_DIR, 'setup.log'),
+            LOGS = {'criterion': os.path.join(home, 'criterion-covers.log'), 'criterion-auto': os.path.join(home, 'criterion-auto.log'), 'gateway': os.path.join(APP_DIR, 'gateway.log'), 'tunnel': os.path.join(APP_DIR, 'tunnel.log'), 'setup': os.path.join(APP_DIR, 'setup.log'),
                     'convert': os.path.join(home, 'convert.log'), 'convert-out': os.path.join(home, 'convert.out'), 'gdrive': os.path.join(home, 'gdrive.log')}
             SECRETISH = re.compile(r'(rclone\.conf|token|secret|password|\.pickle$|client_secret|\.pem$|\.key$|settings\.json$)', re.I)
             def inside(p):
@@ -3201,20 +3201,34 @@ def auto_match(g):
 
 
 def covers_now():
-    """Every Criterion film its cover, from those already in "Criterion covers" (poster-add.py drive nofetch go): run when a film has
-    just come in, so a Criterion film has its cover from the start (John, 16 Nov 2026). Quiet unless it put one on."""
-    pa = os.path.expanduser('~/Grifflix/poster-add.py')
+    """A film just come in: if it's a Criterion film, everything a Criterion film has, from the start (John, 16 Nov 2026: "a new film - the
+    secret agent wasn't added to the criterion collection automatically"): its cover, its spine number and its place in The Criterion
+    Collection, by criterion-covers.py with the list John last gave (its covers mostly here already, so quick). Without that list, its
+    cover only (poster-add.py). Not while John's own run of it is going. Quiet unless it changed something."""
+    home = os.path.expanduser('~/Grifflix')
+    cc, lst, pa = os.path.join(home, 'criterion-covers.py'), os.path.join(home, 'criterion-list.json'), os.path.join(home, 'poster-add.py')
     base = os.path.join(os.environ.get('GRIFFLIX_MEDIA') or '/Volumes/G-Drive/Grifflix', 'Criterion covers')
-    if not (os.path.exists(pa) and os.path.isdir(base)):
+    if not os.path.isdir(base) or (CRIT.get('p') and CRIT['p'].poll() is None):
         return
     try:
         import subprocess
-        r = subprocess.run([sys.executable, pa, 'drive', 'nofetch', 'go'], capture_output=True, text=True, timeout=1800)
-        put = [l.strip() for l in (r.stdout or '').splitlines() if ' → ' in l]
-        if put:
-            log('Criterion covers put on: %s' % '; '.join(put)[:600])
+        if os.path.exists(cc) and os.path.exists(lst):
+            r = subprocess.run([sys.executable, '-u', cc, 'go'], capture_output=True, text=True, timeout=3600, cwd=home)
+            out = r.stdout or ''
+            with open(os.path.join(home, 'criterion-auto.log'), 'w') as f:
+                f.write(out)
+            put = [l.strip() for l in out.splitlines() if ' → ' in l and 'already there' not in l]
+            m = re.search(r'The Criterion Collection: (\d+) film\(s\) to put in\n((?:  .*\n)*)', out)
+            col = [x.strip() for x in m.group(2).splitlines()] if m and int(m.group(1)) else []
+            if put or col:
+                log('Criterion, for what just came in: %s%s' % ('covers: ' + '; '.join(put)[:400] if put else '', ('; in The Criterion Collection: ' + ', '.join(col)[:300]) if col else ''))
+        elif os.path.exists(pa):
+            r = subprocess.run([sys.executable, pa, 'drive', 'nofetch', 'go'], capture_output=True, text=True, timeout=1800)
+            put = [l.strip() for l in (r.stdout or '').splitlines() if ' → ' in l]
+            if put:
+                log('Criterion covers put on: %s' % '; '.join(put)[:600])
     except Exception as e:
-        log('Criterion covers: %s' % e)
+        log('Criterion, for what just came in: %s' % e)
 
 
 def rename_to(g, iid, name, year, pick=None):
