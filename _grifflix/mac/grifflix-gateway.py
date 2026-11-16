@@ -2105,12 +2105,25 @@ def make_handler(g):
             home = os.path.expanduser('~/Grifflix')
             script, out = os.path.join(home, 'criterion-covers.py'), os.path.join(home, 'criterion-covers.log')
             if not b and q.get('want') == '1':   # (the Criterion pages John's browser is to read for their synopses: criterion.com lets it, not the Mac)
-                import subprocess
-                r_ = subprocess.run([sys.executable, script, 'want'], capture_output=True, text=True, timeout=600, cwd=home)
-                try:
-                    return self.send_json(200, json.loads([l for l in (r_.stdout or '').splitlines() if l.startswith('{')][-1]))
-                except (IndexError, ValueError):
-                    return self.send_json(500, {'error': 'The Mac mini couldn’t make the list: ' + (r_.stderr or r_.stdout or '').strip()[-200:]})
+                # (made in the background and asked for again until it's ready: on the old Mac it outlasts the 100 seconds the link to it
+                # waits, and the admin page said "Failed to fetch": John, 16 Nov 2026)
+                W = CRIT.setdefault('want', {})
+                if W.get('done') and time.time() - W['done'] < 120 and q.get('again') == '1':
+                    return self.send_json(200, W['result']) if W.get('result') else self.send_json(500, {'error': W.get('error') or 'The Mac mini couldn’t make the list.'})
+                if not (W.get('t') and W['t'].is_alive()):
+                    def make(W=W):
+                        import subprocess
+                        W.pop('result', None); W.pop('error', None)
+                        try:
+                            r_ = subprocess.run([sys.executable, script, 'want'], capture_output=True, text=True, timeout=1800, cwd=home)
+                            W['result'] = json.loads([l for l in (r_.stdout or '').splitlines() if l.startswith('{')][-1])
+                        except Exception as e:
+                            W['error'] = 'The Mac mini couldn’t make the list: %s' % str(e)[:160]
+                        W['done'] = time.time()
+                    W['done'] = 0
+                    W['t'] = threading.Thread(target=make, daemon=True)
+                    W['t'].start()
+                return self.send_json(202, {'making': True})
             if b and isinstance(b.get('synopses'), dict):   # (what John's browser read: each film given Criterion's synopsis)
                 if CRIT.get('p') and CRIT['p'].poll() is None:
                     return self.send_json(409, {'error': 'It’s busy with the covers: try again when that’s done.'})
