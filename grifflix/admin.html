@@ -505,7 +505,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat" id="synsay">Criterion’s site won’t let the Mac mini read its film pages, but your browser can. Once:</p>
         <ol class="stat" style="margin:6px 0 10px 20px;padding:0">
           <li>Drag this to your bookmarks bar: <a class="btn" id="synbm" href="#" style="cursor:grab">Grifflix: Criterion synopses</a></li>
-          <li><button class="btn" id="syncopy" type="button">Copy your list</button> <span id="syncount"></span> <small style="opacity:.75">(it takes the Mac mini a minute or two to make; then click again to copy)</small></li>
+          <li><button class="btn" id="syncopy" type="button">Copy your list</button> <span id="syncount"></span></li>
           <li>Open <a href="https://www.criterion.com" target="_blank" rel="noopener">criterion.com</a>, click the bookmark, paste the list (⌘V) and press OK. Keep that tab open while it reads, about one film a second; it saves <b>criterion-synopses.json</b> to your Downloads.</li>
           <li><label class="btn primary" for="synfile">Choose criterion-synopses.json</label><input type="file" id="synfile" accept=".json,application/json" hidden> and each film gets Criterion’s synopsis.</li>
         </ol>
@@ -1493,9 +1493,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       ask(false).then(function (j) {
         var n = (j.want || []).length;
         listTxt = JSON.stringify(j.want || []);
-        listInfo = n + ' films copied' + (j.have ? ' (' + j.have + ' have Criterion’s synopsis already)' : '') + '. About ' + Math.ceil(n / 60) + ' min to read.';
+        listInfo = n + ' films of The Criterion Collection copied' + (j.have ? ' (' + j.have + ' have Criterion’s synopsis already)' : '') + '. About ' + Math.ceil(n / 60) + ' min to read.';
         b.disabled = false; b.textContent = n ? 'Copy the list (' + n + ' films)' : 'Nothing left to read';
-        if (!n) { b.disabled = true; listTxt = ''; $('#syncount').textContent = 'Every film has Criterion’s synopsis.'; }
+        if (!n) { b.disabled = true; listTxt = ''; $('#syncount').textContent = 'Every film in The Criterion Collection has Criterion’s synopsis.'; return; }
+        navigator.clipboard.writeText(listTxt).then(function () { $('#syncount').textContent = listInfo; toast('Copied'); b.textContent = 'Copied ✓'; }).catch(function () {});   // (straight away, as it's quick: else a second click)
       }).catch(function (e) { b.disabled = false; b.textContent = 'Copy your list'; toast(e.message || 'Couldn’t make the list'); });
     };
     $('#synfile').onchange = function () {
