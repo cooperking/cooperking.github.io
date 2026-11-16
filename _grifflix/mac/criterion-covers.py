@@ -79,8 +79,17 @@ def big(url):   # the cover at its largest, as the old script asked for
 
 
 def fetch(url):
-    r = urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': UA}), timeout=60)
-    return r.read()
+    # (with the certificates Grifflix's other scripts use: python.org's Python on the Mac mini has none of its own, and every download
+    # was refused: John, 16 Nov 2026, "Downloaded 0 cover(s)"; else the Mac's own curl)
+    try:
+        import certifi, ssl
+        ctx = ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        ctx = None
+    try:
+        return urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': UA}), timeout=60, context=ctx).read()
+    except Exception:
+        return subprocess.run(['curl', '-fsSL', '-A', UA, '--max-time', '60', url], capture_output=True, check=True).stdout
 
 
 def sheet_rows(films):
@@ -156,6 +165,11 @@ def main():
         films = [f for f in p.films if f['img']]
     if not films:
         sys.exit('That page has no films in it: was it Criterion’s list page, saved once it had loaded?')
+    listed = films   # (spine numbers need no covers: kept from any list)
+    if not any(f['img'].startswith('http') for f in films):
+        spines(listed)   # (saved as "Web Page, Complete": the covers' addresses made into the browser's own copies)
+        sys.exit('The covers’ addresses aren’t in that page (it was saved as “Web Page, Complete”): save it again as “Web Page, HTML Only” (Safari: “Page Source”).')
+    films = [f for f in films if f['img'].startswith('http')]
     if not os.path.isdir(BASE):
         sys.exit('No %s: is the G-Drive plugged in?' % BASE)
     os.makedirs(COVERS, exist_ok=True)
@@ -192,7 +206,7 @@ def main():
             r = subprocess.run([RCLONE, '--config', CONF, 'copy', COVERS, 'gdrive:Criterion images', '--ignore-existing', '--transfers', '8'],
                                capture_output=True, text=True)
             print('Google Drive “Criterion images”: %s' % ('up to date' if r.returncode == 0 else 'not copied (%s)' % (r.stderr or '').strip()[-200:]))
-    spines(films)
+    spines(listed)
     sheet_rows(films)
     # every Criterion film in Grifflix its cover (the ones already here, and the new)
     print('\nPutting the covers on their films…' if GO else '\nWhat poster-add.py would put on the films:')
