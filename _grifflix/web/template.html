@@ -2538,7 +2538,8 @@ function img(id, kind, w) {
   if (TV && w >= 1100 && kind !== 'Primary') w = 1920;   // (a TV: its full-screen pictures sharp at 1080p)
   var sizes = { Primary: [400], Backdrop: [480, 1100, 1920], Thumb: [480, 1100, 1920] }[kind] || [400], size = sizes.filter(function (x) { return x >= (w || 0); })[0] || sizes[sizes.length - 1];
   var t = PICTAG[id + kind];
-  return WORKER + '/gp/' + id + '/' + kind + '-' + size + '.jpg' + (t ? '?t=' + t : '') + (PUBLIC ? '' : (t ? '&' : '?') + 'm=1');   // (signed out: the site's copies only, never the Mac)
+  // (v=2: every picture asked for afresh once, 16 Nov 2026: some posters had been kept in their old version under their new address)
+  return WORKER + '/gp/' + id + '/' + kind + '-' + size + '.jpg?v=2' + (t ? '&t=' + t : '') + (PUBLIC ? '' : '&m=1');   // (signed out: the site's copies only, never the Mac)
 }
 function gwUrl(p) { return DEMO ? p : GW + p; }
 
