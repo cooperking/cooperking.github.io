@@ -509,6 +509,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           <li>Open <a href="https://www.criterion.com" target="_blank" rel="noopener">criterion.com</a>, click the bookmark, paste the list (⌘V) and press OK. Keep that tab open while it reads, a film every few seconds (if Criterion asks you to prove you’re a person, reload the page, then click the bookmark again: it carries on where it stopped); it saves <b>criterion-synopses.json</b> to your Downloads.</li>
           <li><label class="btn primary" for="synfile">Choose criterion-synopses.json</label><input type="file" id="synfile" accept=".json,application/json" hidden> and each film gets Criterion’s synopsis.</li>
         </ol>
+        <p class="stat" id="synstate" style="font-weight:600"></p>
       </section>
       <section class="card" data-tab="mac">
         <div class="kicker">Claude</div>
@@ -1520,11 +1521,25 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     $('#synfile').onchange = function () {
       var f = this.files[0]; this.value = ''; if (!f) return;
       f.text().then(function (t) { var o = JSON.parse(t); if (!o || typeof o !== 'object' || Array.isArray(o)) throw new Error('That isn’t the synopses file.');
-        $('#synsay').textContent = Object.keys(o).length + ' synopses: giving them to the films…';
-        return critCall({ synopses: o }).then(critPaint); })
-        .catch(function (e) { toast(e.message || 'That didn’t work.'); });
+        if (!GW) throw new Error('The Mac mini isn’t answering.');
+        $('#synstate').textContent = 'Sending ' + Object.keys(o).length + ' synopses to the Mac mini…';
+        return critCall({ synopses: o }).then(function (j) { toast('The Mac mini has them'); synPaint(j); }); })
+        .catch(function (e) { toast(e.message || 'That didn’t work.'); $('#synstate').textContent = 'Not sent: ' + (e.message || 'that didn’t work') + '. Choose the file again.'; });
     };
   })();
+
+  // (where the synopses have got to, in words: John, 16 Nov 2026: "I uploaded the synopsis but no way to tell if worked")
+  var synT = 0;
+  function synPaint(j) {
+    var when = j.at ? new Date(j.at * 1000).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+    $('#synstate').textContent = j.running ? 'Giving the films their synopses: ' + (j.of ? j.done + ' of ' + j.of : 'finding the films') + '…'
+      : j.err ? 'It stopped: ' + j.err + '. It carries on by itself within six hours, or choose the file again.'
+      : j.given ? j.given + ' films have Criterion’s synopsis' + (j.at ? ' (last given ' + when + (j.put != null ? ', ' + j.put + ' that time' : '') + ')' : '') + '. ' + j.pages + ' synopses kept on the Mac mini.'
+      : j.pages ? j.pages + ' synopses kept on the Mac mini; not given to the films yet (it does so within six hours).' : '';
+    clearTimeout(synT); if (j.running) synT = setTimeout(synLook, 3000);
+  }
+  function synLook() { fetch(GW + '/api/criterion?syn=1', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && 'pages' in j) synPaint(j); }).catch(function () {}); }
+  setTimeout(function () { if (GW) synLook(); }, 2300);
 
   // ---- a key for Claude to look at the Mac mini with, reading only (John, 16 Nov 2026: "can't you use it from here somehow?")
   function lookPaint(r) {
