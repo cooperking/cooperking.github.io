@@ -157,11 +157,27 @@ img { display: block; }
 .card .s .spn { font-weight: 600; letter-spacing: .02em; }
 /* (the calendars: each day its film's own poster, whole, a soft dark copy of it around it, as the Criterion covers: John, 16 Nov 2026,
    "Can calendars show their actual posters, not landscape, show the whole thing and blur the background") */
-.day.whole::before, .tcd.whole::before { content: ''; position: absolute; inset: -12%; z-index: 0; background: var(--pimg) center / cover no-repeat; filter: blur(12px) brightness(.45) saturate(.9); }
-html.tv .day.whole::before, html.tv .tcd.whole::before { filter: brightness(.35); inset: 0; }
-.day.whole .art, .tcd.whole img { object-fit: contain !important; object-position: 50% 50% !important; z-index: 1; }
-.day.whole .art { position: absolute; }
+/* (on white now, each poster its own shape with a thin black line round it, not on a blurred copy: John, 16 Nov 2026: "give the calendar
+   days white backgrounds, with the posters having a thin black border around them, not the blurred ones") */
+.day.whole, html:not(.mob) .tcd.whole, .tcd.whole { background: #fff !important; }
+.day.whole .art, html:not(.mob) .tcd.whole img, .tcd.whole img { position: absolute; inset: 0 !important; margin: auto; width: auto !important; height: auto !important; max-width: calc(100% - 10px); max-height: calc(100% - 10px); object-fit: fill !important; box-sizing: border-box; border: 1px solid #000; z-index: 1; }
 .day.whole .cap, .day.whole .num, .day.whole .bar, .tcd.whole b, .tcd.whole span { z-index: 2; }
+/* (a computer or TV, the days wide: the poster at the left, its title beside it in black on the white, the day's number in the corner) */
+html:not(.mob) .tcd.whole { display: flex; align-items: stretch; gap: 10px; padding: 5px; }
+html:not(.mob) .tcd.whole img { position: static; inset: auto !important; margin: 0; flex: none; align-self: stretch; height: auto !important; width: auto !important; min-height: 0; max-width: 55%; max-height: none; object-fit: cover !important; }
+html:not(.mob) .tcd.whole span { position: static; flex: 1; min-width: 0; align-self: flex-end; padding: 0 2px 2px 0 !important; background: none; color: #111; }
+html:not(.mob) .tcd.whole span small { color: rgba(0, 0, 0, .55); }
+html:not(.mob) .tcd.whole b { left: auto; right: 6px; top: 6px; }
+html.tv .tcd.whole { gap: 7px; padding: 4px; }
+html.tv .tcd.whole span { align-self: center; padding: 0 26px 0 0 !important; }
+html.tv .tcd.whole span em { -webkit-line-clamp: 2 !important; font-size: 12px; line-height: 1.12; }
+html.big .day.whole { display: flex; align-items: center; gap: 10px; padding: 5px; }
+html.big .day.whole .art { position: static; inset: auto !important; margin: 0; flex: none; height: 100% !important; width: auto !important; max-width: 55%; max-height: none; object-fit: cover !important; }
+html.big .day.whole:hover .art { transform: none; }
+html.big .day.whole .cap { position: static; flex: 1; min-width: 0; padding: 0 4px 0 0 !important; background: none; align-self: flex-end; margin-bottom: 4px; }
+html.big .day.whole .cap .t { color: #111; }
+html.big .day.whole .cap .s { color: rgba(0, 0, 0, .55); }
+html.big .day.whole .num { left: auto; right: 4px; top: 4px; bottom: auto; }
 /* (a poster that isn't poster-shaped, a Criterion cover's 4:5: whole, never stretched or cut, a soft dark copy of itself around it:
    John, 16 Nov 2026, "if we can change the display, we don't need to" pad them) */
 .pic.odd { isolation: isolate; position: relative; overflow: hidden; }   /* (its soft copy kept inside its own frame: in Search's results it had covered the whole panel: John, 16 Nov 2026) */
@@ -2036,6 +2052,13 @@ html.tv.tvfront .th-picture .zcin { box-shadow: 0 0 0 6px #000, 0 0 0 12px rgba(
 /* (Vertigo: the day and its film in the credits' clean lettering, clear, a white line round each letter: John, 10 Nov 2026) */
 html[data-theme=spiral] .hinfo .w, html[data-theme=spiral] .hinfo .w > span, html[data-theme=spiral] .hinfo h2 { font-family: "Special Gothic Expanded One", "Archivo Black", Futura, sans-serif !important; font-weight: 400 !important; text-transform: uppercase; letter-spacing: .04em; color: transparent !important; -webkit-text-stroke: 1.6px #fff; paint-order: stroke; text-shadow: none !important; }
 html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
+/* (posters: on the film each day's poster whole, turned on its side to fit the frame; on the screen the right
+   way up, on a soft dark copy of itself: John, 16 Nov 2026: "can the Grifflix show films in poster mode too, in the film strip, but
+   turned horizontally. Then showing as it is the right way up in the cinema screen") */
+html .th-picture .vday.has { background-image: none !important; background-color: #0c0b0a; overflow: hidden; }
+html .th-picture .vday.has::before { content: ""; position: absolute; left: 50%; top: 50%; width: 135px; height: 240px; margin: -120px 0 0 -67.5px; transform: rotate(90deg); background: var(--p) center / contain no-repeat; pointer-events: none; }
+html[data-theme=picture] .zpost::before { display: block; }
+html[data-theme=picture] .zpost::after { inset: 3% 0; filter: drop-shadow(0 8px 20px rgba(0, 0, 0, .6)); }
 .th-picture .vday.soon { background: #141210 !important; box-shadow: inset 0 0 0 1px rgba(244, 236, 216, .25) !important; }
 .th-picture .vday.soon .cs { display: grid !important; font: 600 15px/1.2 var(--kfont) !important; letter-spacing: .28em; color: rgba(244, 236, 216, .55) !important; text-transform: uppercase; }
 /* the look made consistent across the phone, the computer and the TV (a review of every screen: 15 Nov 2026) */
@@ -2125,7 +2148,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '74013a635795' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: 'd54178fcf828' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2287,6 +2310,9 @@ function fits(genre, mood) {
 var SK = [['year', 'Release date', -1], ['added', 'Date added', -1], ['name', 'Title', 1], ['rating', 'Rating', -1], ['mins', 'Length', 1], ['spine', 'Spine number', 1]];   // (Criterion's spine numbers, where a shelf has them: John, 16 Nov 2026)
 var SF = { sort: 'year', dir: -1, f: {} };
 try { var sf0 = JSON.parse(store.get('grifflix-sf') || 'null'); if (sf0 && sf0.sort) SF = { sort: sf0.sort, dir: sf0.dir || -1, f: {} }; } catch (e) {}
+var SPINEOK = false;   // (spine numbers a choice only on the Criterion Collection's own page: John, 16 Nov 2026: "it doesn't make sense elsewhere")
+function sfKey() { return SF.sort === 'spine' && !SPINEOK ? 'year' : SF.sort; }
+function sfDirOf() { return SF.sort === 'spine' && !SPINEOK ? -1 : SF.dir; }
 function sfSave() { store.set('grifflix-sf', JSON.stringify({ sort: SF.sort, dir: SF.dir })); }
 function sfLen(i) { return i.mins || (i.secs ? Math.round(i.secs / 60) : 0); }
 function sfYear(i) { return +i.year || +String(i.premiere || '').slice(0, 4) || 0; }
@@ -2318,8 +2344,8 @@ function sfCount(f) { return ['genres', 'decades', 'certs'].reduce(function (n, 
 var SFICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg>';
 var FFICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>';
 function sfBar() {   // the two icons, for a row of tabs
-  var n = sfCount(SF.f), k = SK.filter(function (x) { return x[0] === SF.sort; })[0] || SK[0];
-  return '<span class="sfbar"><button class="pill sfb" id="sfsort" aria-label="Sort: ' + k[1] + (SF.dir > 0 ? ', ascending' : ', descending') + '" title="Sort">' + SFICON + '<b>' + k[1] + ' ' + (SF.dir > 0 ? '↑' : '↓') + '</b></button>' +
+  var n = sfCount(SF.f), k = SK.filter(function (x) { return x[0] === sfKey(); })[0] || SK[0];
+  return '<span class="sfbar"><button class="pill sfb" id="sfsort" aria-label="Sort: ' + k[1] + (sfDirOf() > 0 ? ', ascending' : ', descending') + '" title="Sort">' + SFICON + '<b>' + k[1] + ' ' + (sfDirOf() > 0 ? '↑' : '↓') + '</b></button>' +
     '<button class="pill sfb' + (n ? ' on' : '') + '" id="sffilt" aria-label="Filters' + (n ? ' (' + n + ')' : '') + '" title="Filters">' + FFICON + (n ? '<i>' + n + '</i>' : '') + '</button></span><div class="sfpop" id="sfpop" hidden></div>';
 }
 function sfWire(root, items, redraw) {   // the icons' panels: items are what's on the shelf now (for the filters' choices and counts)
@@ -2345,7 +2371,7 @@ function sfWire(root, items, redraw) {   // the icons' panels: items are what's 
   };
   var draw = function () {
     if (open === 'sort') {
-      pop.innerHTML = '<div class="sfh">Sort by' + (phone ? '<button class="sfclear" id="sfdone">Done</button>' : '') + '</div>' + SK.filter(function (k) { return k[0] !== 'spine' || SF.sort === 'spine' || shelf().some(function (i) { return i.spine; }); }).map(function (k) { var on = SF.sort === k[0]; return '<button class="sfo' + (on ? ' on' : '') + '" data-sk="' + k[0] + '">' + k[1] + '<span>' + (on ? (SF.dir > 0 ? '↑' : '↓') : '') + '</span></button>'; }).join('') + '<p class="sfn">Choose it again to swap which way.</p>';
+      pop.innerHTML = '<div class="sfh">Sort by' + (phone ? '<button class="sfclear" id="sfdone">Done</button>' : '') + '</div>' + SK.filter(function (k) { return k[0] !== 'spine' || SPINEOK; }).map(function (k) { var on = sfKey() === k[0]; return '<button class="sfo' + (on ? ' on' : '') + '" data-sk="' + k[0] + '">' + k[1] + '<span>' + (on ? (sfDirOf() > 0 ? '↑' : '↓') : '') + '</span></button>'; }).join('') + '<p class="sfn">Choose it again to swap which way.</p>';
     } else {
       var items = shelf(), cnt = function (fn) { var c = {}; items.forEach(function (i) { fn(i).forEach(function (x) { c[x] = (c[x] || 0) + 1; }); }); return c; };
       var gc = cnt(function (i) { return i.genres || []; }), dc = cnt(function (i) { var y = sfYear(i); return y ? [Math.floor(y / 10) * 10] : []; }), cc = cnt(function (i) { return [i.cert || 'Not rated']; });
@@ -2362,8 +2388,8 @@ function sfWire(root, items, redraw) {   // the icons' panels: items are what's 
     if (TV) { var f = $('.sfo.on, .pill', pop); if (f) f.focus(); }
   };
   var bar = function () {   // the icons kept up to date
-    var n = sfCount(SF.f), k = SK.filter(function (x) { return x[0] === SF.sort; })[0] || SK[0], so = $('#sfsort', root), fi = $('#sffilt', root);
-    so.innerHTML = SFICON + '<b>' + k[1] + ' ' + (SF.dir > 0 ? '↑' : '↓') + '</b>'; so.setAttribute('aria-label', 'Sort: ' + k[1] + (SF.dir > 0 ? ', ascending' : ', descending'));
+    var n = sfCount(SF.f), k = SK.filter(function (x) { return x[0] === sfKey(); })[0] || SK[0], so = $('#sfsort', root), fi = $('#sffilt', root);
+    so.innerHTML = SFICON + '<b>' + k[1] + ' ' + (sfDirOf() > 0 ? '↑' : '↓') + '</b>'; so.setAttribute('aria-label', 'Sort: ' + k[1] + (sfDirOf() > 0 ? ', ascending' : ', descending'));
     fi.innerHTML = FFICON + (n ? '<i>' + n + '</i>' : ''); fi.classList.toggle('on', !!n); fi.setAttribute('aria-label', 'Filters' + (n ? ' (' + n + ')' : ''));
   };
   var redo = redraw; redraw = function () { redo(); bar(); };
@@ -4828,7 +4854,8 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
   },
   front: function (b) {   // (the room lit by the day's film; its poster on the screen)
     var z = $('#zamb'); if (z && b && b.classList.contains('has')) z.style.backgroundImage = b.style.getPropertyValue('--b');
-    var po = $('#zpost'); if (po && b) po.style.setProperty('--pp', b.classList.contains('has') ? (b.style.getPropertyValue('--b') || b.style.getPropertyValue('--p')) : 'none');   // (the wide picture on the screen, as on the film: John, 10 Nov 2026)
+    var po = $('#zpost'), pm = true;   // (posters: the day's poster the right way up on the screen, as the film has it on its side: John, 16 Nov 2026)
+    if (po && b) po.style.setProperty('--pp', b.classList.contains('has') ? (pm ? b.style.getPropertyValue('--p') || b.style.getPropertyValue('--b') : b.style.getPropertyValue('--b') || b.style.getPropertyValue('--p')) : 'none');   // (the wide picture on the screen, as on the film: John, 10 Nov 2026)
   }
 };
 // a month with no theme yet: black, the days a plain row of posters, the day you're on large
@@ -5213,7 +5240,7 @@ function progBar(it) { return it.pos && it.secs ? '<span class="bar" style="widt
 function cardHTML(it, land, spine) {   // (spine: a collection's page, a Criterion film's spine number with it: John, 16 Nov 2026)
   var src = land ? img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480) : img(it.poster, 'Primary', 320);
   return '<button class="card' + (land ? ' land' : '') + '" data-item="' + it.id + '"><div class="pic">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '<div class="noimg">' + esc(showName(it)) + '</div>') + progBar(it) + '</div>' +
-    '<div class="t">' + esc(showName(it)) + '</div><div class="s">' + ((spine || SF.sort === 'spine') && it.spine ? '<b class="spn">No. ' + esc(String(it.spine)) + '</b> · ' : '') + esc(subOf(it)) + '</div></button>';
+    '<div class="t">' + esc(showName(it)) + '</div><div class="s">' + (spine && it.spine ? '<b class="spn">No. ' + esc(String(it.spine)) + '</b> · ' : '') + esc(subOf(it)) + '</div></button>';
 }
 function collCard(c) {   // a collection's cover, drawn rather than a picture: a title poster in the month's theme - its colour,
   // its type, and a graphic of its own for each collection (John, 8 Nov 2026: "replace the images with a creatively styled
@@ -5249,8 +5276,8 @@ function collectionView(id, into) {
       (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
       '<div class="tabs"><span class="sp"></span>' + sfBar() + '</div>' +
       '<div class="gridcards" id="cgrid"></div>';
-    var draw = function () { var items = sfSort(c.items.filter(sfFits(SF.f)), SF.sort, SF.dir); $('#cgrid').innerHTML = items.length ? items.map(function (i) { return cardHTML(i, false, true); }).join('') : '<div class="empty">Nothing like that in this collection.</div>'; wireCards($('#cgrid'), items); };
-    sfWire($('#cbody'), c.items, draw);
+    var draw = function () { var items = sfSort(c.items.filter(sfFits(SF.f)), sfKey(), sfDirOf()); $('#cgrid').innerHTML = items.length ? items.map(function (i) { return cardHTML(i, false, SPINEOK); }).join('') : '<div class="empty">Nothing like that in this collection.</div>'; wireCards($('#cgrid'), items); };
+    SPINEOK = /criterion/i.test(c.name); sfWire($('#cbody'), c.items, draw);
     draw();
     if (ME && ME.owner) {
       $('#cbody .collhead > div:last-child').insertAdjacentHTML('beforeend', '<div class="tabs" style="margin:16px 0 0"><button class="pill" id="crename">Rename</button><button class="pill" id="cdelete">Delete the collection</button></div>');
@@ -5309,7 +5336,7 @@ function browse(into) {
     if (S.genre && !count[S.genre]) S.genre = '';
     $('#moods').innerHTML = '<button class="pill' + (!S.mood ? ' on' : '') + '" data-mood="">All</button>' + MOODS.map(function (m) { return '<button class="pill' + (S.mood === m[0] ? ' on' : '') + '" data-mood="' + m[0] + '">' + m[1] + '</button>'; }).join('');   // (genres now in the filters)
     $$('[data-mood]').forEach(function (b) { b.onclick = function () { S.mood = b.dataset.mood; $$('[data-mood]').forEach(function (x) { x.classList.toggle('on', x === b); }); fill(); }; });
-    sfWire(main, function () { return get0(L); }, fill);
+    SPINEOK = false; sfWire(main, function () { return get0(L); }, fill);
   }).catch(function () {});
   function get0(L) { return L[S.browse].map(function (id) { return L.items[id]; }).filter(Boolean).filter(fits('', S.mood)); }
   function fill() {
@@ -5326,7 +5353,7 @@ function browse(into) {
       $('#bgrid').innerHTML = r.collections.length ? '<div class="gridcards">' + r.collections.map(collCard).join('') + '</div>' : '<div class="empty">No collections yet.</div>';
     }).catch(oops);
     // films and series: 120 at a time, the next as you scroll down (all of them, not just the first 200)
-    var base = 'items?lib=' + S.browse + '&sort=' + SF.sort + '&dir=' + SF.dir + '&f=' + encodeURIComponent(JSON.stringify(SF.f)) + (S.mood ? '&mood=' + S.mood : '') + '&limit=' + (+Q.get('pagesize') || 120) + '&start=', all = [], total = 0, busy = false, land = S.browse === 'home', watcher;
+    var base = 'items?lib=' + S.browse + '&sort=' + sfKey() + '&dir=' + sfDirOf() + '&f=' + encodeURIComponent(JSON.stringify(SF.f)) + (S.mood ? '&mood=' + S.mood : '') + '&limit=' + (+Q.get('pagesize') || 120) + '&start=', all = [], total = 0, busy = false, land = S.browse === 'home', watcher;
     var first = function (r) {
       if (!here()) return;
       all = r.items.slice(); total = r.total;
