@@ -76,7 +76,7 @@ class Rows(html.parser.HTMLParser):
 
 
 def big(url):   # the cover at its largest, as the old script asked for
-    return re.sub(r'_(thumb|small|thumbnail)\.jpg$', '_large.jpg', url)
+    return re.sub(r'_(thumb|small|thumbnail)\.(jpg|png)$', r'_large.\2', url)   # (a PNG's too: The Celebration's, 16 Nov 2026)
 
 
 def fetch(url):
@@ -126,6 +126,7 @@ def sheet_rows(films):
     print('  added (criterion.py go marks which are in Grifflix)')
 
 
+REPLACED = []   # (covers that had come as small previews, fetched again in full)
 IN_LIB = {}   # (the film folders on Criterion's list → their cover's file name)
 PARTS = {}    # (a film's parts' folders → its cover: poster-add.py can't match those by name, so put on here)
 SPINES = {}   # (folder → spine, kept for beyond(): a TV series' spine too)
@@ -489,6 +490,14 @@ def main():
         sys.exit('No %s: is the G-Drive plugged in?' % BASE)
     os.makedirs(COVERS, exist_ok=True)
     have = set(os.listdir(COVERS))
+    # (a cover that came as Criterion's small preview, not the picture itself, fetched again: under 60 KB, once)
+    small_at = os.path.join(HOME, 'criterion-small-ok.json')
+    try:
+        small_ok = set(json.load(open(small_at)))
+    except Exception:
+        small_ok = set()
+    small = set(n for n in have if n not in small_ok and os.path.getsize(os.path.join(COVERS, n)) < 60000)
+    have -= small
     new = [f for f in films if name_of(f['title'], f['year']) not in have and name_of(f['title'], f['year'])[:-4] + '.png' not in have]
     print('%d films on Criterion’s list; %d covers had already, %d new.' % (len(films), len(films) - len(new), len(new)))
     for f in new[:40]:
@@ -513,6 +522,12 @@ def main():
                 continue
             if pic[:4] == b'\x89PNG':
                 dest = dest[:-4] + '.png'
+            again = os.path.basename(dest) in small
+            if again and len(pic) < 60000:   # (it really is small: kept, and not fetched again)
+                small_ok.add(os.path.basename(dest))
+                continue
+            if again:
+                REPLACED.append(os.path.basename(dest))
             with open(dest + '.part', 'wb') as fh:
                 fh.write(pic)
             os.replace(dest + '.part', dest)
@@ -521,6 +536,12 @@ def main():
                 print('  %d of %d…' % (got, len(new)), flush=True)
             time.sleep(.3)   # (gently)
         print('\nDownloaded %d cover(s).%s' % (got, (' Not got: ' + ', '.join(bad[:20])) if bad else ''))
+        with open(small_at, 'w') as fh:
+            json.dump(sorted(small_ok), fh)
+        if REPLACED and os.path.exists(RCLONE) and os.path.exists(CONF):   # (Google Drive's small copy replaced with the real one)
+            for n in REPLACED:
+                subprocess.run([RCLONE, '--config', CONF, 'copyto', os.path.join(COVERS, n), 'gdrive:Criterion images/' + n], capture_output=True)
+            print('Replaced the small preview with the real cover: %s' % ', '.join(REPLACED))
         if got and os.path.exists(RCLONE) and os.path.exists(CONF):   # (into Google Drive's "Criterion images" too, only those not there)
             r = subprocess.run([RCLONE, '--config', CONF, 'copy', COVERS, 'gdrive:Criterion images', '--ignore-existing', '--transfers', '8'],
                                capture_output=True, text=True)
