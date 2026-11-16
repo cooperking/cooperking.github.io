@@ -162,12 +162,18 @@ img { display: block; }
 .day.whole, html:not(.mob) .tcd.whole, .tcd.whole { background: #fff !important; }
 .day.whole .art, html:not(.mob) .tcd.whole img, .tcd.whole img { position: absolute; inset: 0 !important; margin: auto; width: auto !important; height: auto !important; max-width: calc(100% - 10px); max-height: calc(100% - 10px); object-fit: fill !important; box-sizing: border-box; border: 1px solid #000; z-index: 1; }
 .day.whole .cap, .day.whole .num, .day.whole .bar, .tcd.whole b, .tcd.whole span { z-index: 2; }
+/* (the white words readable on the white, the posters not covered: a dark halo round each letter and only the faintest shade under them:
+   John, 16 Nov 2026: "can you make sure the white writing on the calendars can be read") */
+.day.whole .cap, html:not(.mob) .tcd.whole span, .tcd.whole span { background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, .28)) !important; text-shadow: 0 0 1px #000, 0 0 2px #000, 0 0 5px rgba(0, 0, 0, .85), 0 1px 3px rgba(0, 0, 0, .9); }
+.day.whole .num, .tcd.whole b { z-index: 3 !important; }
 /* (a poster that isn't poster-shaped, a Criterion cover's 4:5: whole, never stretched or cut, a soft dark copy of itself around it:
    John, 16 Nov 2026, "if we can change the display, we don't need to" pad them) */
 .pic.odd { isolation: isolate; position: relative; overflow: hidden; }   /* (its soft copy kept inside its own frame: in Search's results it had covered the whole panel: John, 16 Nov 2026) */
 .pic.odd::before { content: ''; position: absolute; inset: -10%; z-index: -1; background: var(--pimg) center / cover no-repeat; filter: blur(14px) brightness(.45) saturate(.9); }
 html.tv .pic.odd::before { filter: brightness(.35); inset: 0; }
 .pic.odd img { object-fit: contain !important; }
+/* (the themes: such a poster whole, wherever a theme shows it, on the theme's own ground: John, 16 Nov 2026) */
+.th .vday.podd, .tday.podd, .hday.podd, .th .vday.podd u, .th .vday.podd .ph, .th .vday.podd .pp, .th .podd .np u, .codepic.podd, .cposter.podd, .mposter.podd { background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; }
 .card .bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--fg); }
 .card .t { margin-top: 8px; font: 600 15px/1.2 var(--kfont); text-transform: uppercase; letter-spacing: .03em; color: var(--fg); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .card .s { margin-top: 2px; font: 600 10px/1.3 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
@@ -2040,7 +2046,10 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
    way up, on black as the wide pictures were (no blurred copy behind it: its blur, redrawn as the screen changes, made the film strip's
    movement heavier): John, 16 Nov 2026: "can the Grifflix show films in poster mode too, in the film strip, but
    turned horizontally. Then showing as it is the right way up in the cinema screen") */
-html .th-picture .vday.has { background-image: none !important; background-color: #0c0b0a; }
+/* (each frame carries its own piece of film, sprocket holes and all, and the frames sit exactly eight holes apart, so a poster never drifts
+   against the holes as the film runs: John, 16 Nov 2026: "the horizontal posters are drifting within the film strip which looks odd") */
+html .th-picture .vday, html .th-picture .vday.soon { width: 256px; height: 212px; background: linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 9px / 32px 13px repeat-x, linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 190px / 32px 13px repeat-x, linear-gradient(#0c0b0a, #0c0b0a) 8px 38.5px / 240px 135px no-repeat, #141414 !important; box-shadow: none !important; }
+html .th-picture .vday.soon { background: linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 9px / 32px 13px repeat-x, linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 190px / 32px 13px repeat-x, linear-gradient(#141210, #141210) 8px 38.5px / 240px 135px no-repeat, #141414 !important; }
 html .th-picture .vday.has::before { content: ""; position: absolute; left: 50%; top: 50%; width: 135px; height: 240px; margin: -120px 0 0 -67.5px; transform: rotate(90deg); background: var(--p) center / contain no-repeat; pointer-events: none; }
 .th-picture .vday.soon { background: #141210 !important; box-shadow: inset 0 0 0 1px rgba(244, 236, 216, .25) !important; }
 .th-picture .vday.soon .cs { display: grid !important; font: 600 15px/1.2 var(--kfont) !important; letter-spacing: .28em; color: rgba(244, 236, 216, .55) !important; text-transform: uppercase; }
@@ -2131,7 +2140,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '8041bfcdeb9d' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '88431a98863f' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2304,7 +2313,7 @@ function sfSort(items, key, dir) {
   var v = { year: function (i) { var p = Date.parse(i.premiere || ''); return p || (sfYear(i) ? Date.UTC(sfYear(i), 6, 1) : 0); }, added: function (i) { return Date.parse(i.added || '') || 0; }, name: null, rating: function (i) { return +i.rating || 0; }, mins: sfLen, spine: function (i) { return +i.spine || 0; } }[key];
   return items.slice().sort(function (a, b) {
     if (!v) return dir * nameKey(a).localeCompare(nameKey(b));
-    var x = v(a), y = v(b); if (!x && y) return 1; if (x && !y) return -1;   // (those without one last, either way)
+    var x = v(a), y = v(b); if (key !== 'spine') { if (!x && y) return 1; if (x && !y) return -1; }   // (those without one last, either way; a spine number: none counts as 0, so they sort first or last with the order: John, 16 Nov 2026)
     return dir * (x - y) || nameKey(a).localeCompare(nameKey(b));
   });
 }
@@ -3231,8 +3240,7 @@ function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 w
     e.preventDefault();
     var t = Date.now(), d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
     if (e.deltaMode === 1) d *= 40;   // (a mouse's wheel, in lines)
-    // (across, as up and down, the days: the film strip moves with the fingers, the drum spinning with each day (John, 16 Nov 2026:
-    // "touch pad left to right movement doesn't move the film strip"; it had only turned the drum, the film staying put))
+    if (S.theme.fx && S.theme.fx.push && e.deltaMode === 0 && Math.abs(e.deltaX) > Math.abs(e.deltaY)) { S.theme.fx.push(-e.deltaX); return; }   // (the zoetrope: across turns the drum by hand; up and down still the days)
     if (t - wquiet > 220) { wacc = 0; gestStart(); }   // (a new gesture)
     wquiet = t; wacc += d;
     var need = Math.abs(d) >= 90 ? 1 : 70;   // (a mouse's notch: a day each; a trackpad: a day each 70px of its scroll)
@@ -3568,7 +3576,13 @@ function themeStart(fx, c) {
   // loader anyway. Not part of the theme")
   if (!S.leaderTried) { S.leaderTried = 1; setTimeout(function () { THEMEFX.picture.leader(); }, 0); }
   var cal0 = $('#cal'); if (cal0 && !cal0._noscroll) { cal0._noscroll = 1; cal0.addEventListener('scroll', function () { if (cal0.scrollTop || cal0.scrollLeft) { cal0.scrollTop = 0; cal0.scrollLeft = 0; } }); }   // (a day taking the focus never scrolls the theme away)
-  $$('#cal .vday').forEach(function (el) { var u = (el.style.getPropertyValue('--p') || '').match(/url\(["']?([^"')]+)/); if (u) (new Image()).src = u[1]; });   // (every poster ready before it's wanted)
+  $$('#cal .vday, #cal .tday.has, #cal .hday.has').forEach(function (el) { var u = (el.style.getPropertyValue('--p') || el.style.backgroundImage || '').match(/url\(["']?([^"')]+)/); if (!u) return; var im = new Image();   // (every poster ready before it's wanted)
+    // (a poster not 2:3, as a Criterion cover: whole, never cropped, in every theme: John, 16 Nov 2026: "if a poster in any theme is a
+    // criterion, it needs to fit on not be cropped")
+    im.onload = function () { if (!im.naturalHeight || Math.abs(im.naturalWidth / im.naturalHeight - 2 / 3) <= .04 || !el.isConnected) return; el.classList.add('podd');
+      if (el.classList.contains('front') && S.theme && S.theme.fx && S.theme.fx.front) { try { S.theme.fx.front(el, S.theme.c, true); } catch (e) {} }
+      if (el.classList.contains('front') && S.theme && S.theme.fx && S.theme.fx.info) { try { S.theme.fx.info(el); } catch (e) {} } };
+    im.src = u[1]; });
   if (fx.ready) fx.ready(c);
   $$('#cal .snow').forEach(function (h) { var kane = !!h.closest('.th-globe'); snowfall(h, kane ? { alpha: .75, density: .00034, big: 3.4 } : { density: .0006, big: 4.6 });   // (Kane's heavier, in and out of the globe: John, 11 Nov 2026)
     if (!kane && h.parentNode) { var fr = document.createElement('div'); fr.className = 'snow snowfront'; h.parentNode.appendChild(fr); snowfall(fr, { near: true, density: .000035, big: 7, alpha: .85, slow: 1.15 }); } });   // (and a few large, soft, near flakes in front of the street)
@@ -3871,7 +3885,7 @@ THEMEFX.code = { own: true,   // (the whole month laid out at once: its own days
     var x0 = c.mob ? 30 : c.W * .43, x1 = c.mob ? 750 : c.W - 74, n = Math.max(1, all.length - 1);
     all.forEach(function (el, j) { el.style.left = (x0 + (x1 - x0) * j / n - 10).toFixed(1) + 'px'; el.style.zIndex = el === b ? 3 : 1; });
   },
-  front: function (b, c, quiet) { var p = $('#codepic'); if (p && b) { p.style.backgroundImage = b.style.getPropertyValue('--p'); p.classList.remove('dec'); if (!quiet) { void p.offsetWidth; p.classList.add('dec'); } } }
+  front: function (b, c, quiet) { var p = $('#codepic'); if (p && b) { p.style.backgroundImage = b.style.getPropertyValue('--p'); p.classList.toggle('podd', b.classList.contains('podd')); p.classList.remove('dec'); if (!quiet) { void p.offsetWidth; p.classList.add('dec'); } } }
 };
 // June: the slices (In the Mood for Love): every day a thin slice of its poster; the one you're on opens out
 THEMEFX.slices = { own: true,   // (the whole month laid out at once: its own days only)
@@ -3925,7 +3939,7 @@ THEMEFX.moon = { all: true, own: true,
   info: function (b) {   // (the day's words, its poster above them)
     hallInfo(b); var c = $('#hinfo'), it = b && S.calData.days[b.dataset.day]; if (!c || !b) return;
     var has = it && !it.secret, p = document.createElement('div'); p.className = 'mposter';
-    if (has) { p.style.backgroundImage = b.style.getPropertyValue('--p'); p.setAttribute('role', 'button'); p.setAttribute('aria-label', 'Open ' + showName(it)); p.onclick = function () { daySheet(b.dataset.day); }; }
+    if (has) { p.style.backgroundImage = b.style.getPropertyValue('--p'); p.classList.toggle('podd', b.classList.contains('podd')); p.setAttribute('role', 'button'); p.setAttribute('aria-label', 'Open ' + showName(it)); p.onclick = function () { daySheet(b.dataset.day); }; }
     else p.innerHTML = '<span class="msoon">Coming<br>soon</span>';
     c.insertBefore(p, c.firstChild);
   },
@@ -3964,7 +3978,7 @@ THEMEFX.credits = {
       el.style.opacity = (ak < 1 ? 1 - .54 * ak : ak < 4 + (c.mob ? 2 : 0) ? .55 - .09 * ak * (c.mob ? .6 : 1) : Math.max(0, .19 * (5 + (c.mob ? 2 : 0) - ak))).toFixed(3); el.style.zIndex = 1;
     });
   },
-  front: function (b) { var p = $('#cposter'); if (p && b) p.style.backgroundImage = b.style.getPropertyValue('--p'); }
+  front: function (b) { var p = $('#cposter'); if (p && b) { p.style.backgroundImage = b.style.getPropertyValue('--p'); p.classList.toggle('podd', b.classList.contains('podd')); } }
 };
 // October: late autumn (Ozu): the camera low and still, the days standing along the floor; the one you're on a step nearer
 THEMEFX.autumn = {
@@ -4643,7 +4657,7 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     // (the days along the film strip behind the screen, the day you're on behind it, the ones before and after showing either side; it runs
     // with the drum, speeding up and slowing with it, as a change of day spins it: John, 10 Nov 2026: "It should move like the zoetrope
     // does, showing the previous film next to the screen")
-    var fy = g.fT + g.fH / 2, fs = 1, fw = 240, f2 = 262, f1 = Math.max(f2, g.sw / 2 + 30 * g.f + fw / 2), tgt = me._tgt != null ? me._tgt : a, pos = a;
+    var fy = g.fT + g.fH / 2, fs = 1, fw = 256, f2 = 256, f1 = Math.max(f2, g.sw / 2 + 30 * g.f + fw / 2), tgt = me._tgt != null ? me._tgt : a, pos = a;
     var off = function (k) { var ak = Math.abs(k); return (k < 0 ? -1 : 1) * (ak <= 1 ? ak * f1 : f1 + (ak - 1) * f2); };   // (the day's behind the screen, the ones either side just past its edges, the rest along the strip)
     if (me._fpos != null) pos = me._fpos; else if (me._d0 != null) pos = me._d0 + ((me._xs || .5) - .5) / NB;   // (the film where the drum has turned it)
     // (only the month's films on the strip, round and round: after the last, the first again)
@@ -4659,7 +4673,7 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
       if (x + fw / 2 < -40 || x - fw / 2 > c.W + 40 || Math.abs(k) > 12) { if (el._off !== 1) { el._off = 1; el.style.visibility = 'hidden'; } return; }
       if (el._off) { el._off = 0; el.style.visibility = ''; }
       vAt(el, x, fy, fs, 0, 1, Math.abs(k) < .5 ? 4 : 3);
-      el.style.clipPath = l > 0 ? 'inset(0 0 0 ' + Math.min(240, l / fs).toFixed(1) + 'px)' : '';
+      el.style.clipPath = l > 0 ? 'inset(0 0 0 ' + Math.min(fw, l / fs).toFixed(1) + 'px)' : '';
     });
     pos = pr;
     var ZF = me._zf && me._zf.isConnected ? me._zf : (me._zf = $('#zfilm')); if (ZF) ZF.style.backgroundPositionX = (-pos * 256).toFixed(1) + 'px';   // (the holes running with the film, a whole number of holes a frame, so the loop never jumps)
@@ -5146,14 +5160,14 @@ THEMEFX.globe = { own: true,   // (the whole month laid out at once: its own day
     // (the day's front page spins in from the row along the top, as the film's headline montages do, and lands inside the globe as
     // the day's picture: John, 14 Nov 2026, "can the spinning papers move into the globe instead of the poster")
     var g = $('#globe'), gp = $('#gpaper'), np = b && b.querySelector('.np'); if (!g || !gp || !np) return;
-    var put = function () { gp.innerHTML = np.outerHTML; gp.style.setProperty('--p', b.style.getPropertyValue('--p') || 'none'); gp.hidden = false; };
+    var put = function () { gp.innerHTML = np.outerHTML; gp.style.setProperty('--p', b.style.getPropertyValue('--p') || 'none'); gp.classList.toggle('podd', b.classList.contains('podd')); gp.hidden = false; };
     var old = g.parentNode.querySelector('.gfly'); if (old) old.remove();
     if (quiet || CALM || !gp.animate || !g.offsetWidth) { put(); return; }
     // (from the page in the row to the paper's place in the globe, measured once, here, in the scene's own units)
     var par = g.parentNode, pr = par.getBoundingClientRect(), sc = pr.width / (par.offsetWidth || 1) || 1, r0 = np.getBoundingClientRect(), gr = g.getBoundingClientRect();
     var k = parseFloat(getComputedStyle(g).getPropertyValue('--gk')) || 1, x0 = (r0.left + r0.width / 2 - pr.left) / sc, y0 = (r0.top + r0.height / 2 - pr.top) / sc, k0 = r0.width / sc / 76;
     var x1 = (gr.left + gr.width / 2 - pr.left) / sc, y1 = (gr.top + gr.height * .52 - pr.top) / sc;
-    var fl = document.createElement('div'); fl.className = 'gfly'; fl.innerHTML = np.outerHTML; fl.style.setProperty('--p', b.style.getPropertyValue('--p') || 'none'); par.appendChild(fl);
+    var fl = document.createElement('div'); fl.className = 'gfly'; fl.innerHTML = np.outerHTML; fl.style.setProperty('--p', b.style.getPropertyValue('--p') || 'none'); fl.classList.toggle('podd', b.classList.contains('podd')); par.appendChild(fl);
     gp.hidden = true;
     var at = function (x, y, kk, r) { return 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%) rotate(' + r + 'deg) scale(' + kk.toFixed(3) + ')'; };
     var a = fl.animate([
