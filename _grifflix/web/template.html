@@ -155,6 +155,13 @@ img { display: block; }
 .card .pic img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
 .card:hover .pic img { transform: scale(1.04); }
 .card .s .spn { font-weight: 600; letter-spacing: .02em; }
+/* (the calendars: each day its film's own poster, whole, a soft dark copy of it around it, as the Criterion covers: John, 16 Nov 2026,
+   "Can calendars show their actual posters, not landscape, show the whole thing and blur the background") */
+.day.whole::before, .tcd.whole::before { content: ''; position: absolute; inset: -12%; z-index: 0; background: var(--pimg) center / cover no-repeat; filter: blur(12px) brightness(.45) saturate(.9); }
+html.tv .day.whole::before, html.tv .tcd.whole::before { filter: brightness(.35); inset: 0; }
+.day.whole .art, .tcd.whole img { object-fit: contain !important; object-position: 50% 50% !important; z-index: 1; }
+.day.whole .art { position: absolute; }
+.day.whole .cap, .day.whole .num, .day.whole .bar, .tcd.whole b, .tcd.whole span { z-index: 2; }
 /* (a poster that isn't poster-shaped, a Criterion cover's 4:5: whole, never stretched or cut, a soft dark copy of itself around it:
    John, 16 Nov 2026, "if we can change the display, we don't need to" pad them) */
 .pic.odd { isolation: isolate; position: relative; overflow: hidden; }   /* (its soft copy kept inside its own frame: in Search's results it had covered the whole panel: John, 16 Nov 2026) */
@@ -3011,10 +3018,10 @@ function drawMonth() {
   h = '<div class="calhead">' + '' + '</div><div class="dow">' + DOW.map(function (d) { return '<div>' + d + '</div>'; }).join('') + '</div><div class="grid">';
   for (var k = 0; k < lead; k++) h += '<div class="day blank"></div>';
   for (var d = 1; d <= n; d++) {
-    var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], cls = 'day' + (it ? ' has' : '') + (key === TODAY ? ' today' : '');
+    var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], cls = 'day' + (it ? ' has' : '') + (it && it.poster ? ' whole' : '') + (key === TODAY ? ' today' : '');
     if (it && it.secret) { h += '<div class="day' + (key === TODAY ? ' today' : '') + '"><span class="num">' + d + '</span></div>'; continue; }   // (chosen, a surprise till 8am that day: shown as an empty day, John, 8 Nov 2026; not a button, so not chosen over by mistake)
     if (!it && !mine) { h += '<div class="' + cls + '"><span class="num">' + d + '</span></div>'; continue; }
-    h += '<button class="' + cls + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + (it ? ': ' + esc(it.name) : '') + '">';
+    h += '<button class="' + cls + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + (it ? ': ' + esc(it.name) : '') + '"' + (it && it.poster ? ' style="--pimg:url(&quot;' + esc(dayPic(it)) + '&quot;)"' : '') + '>';
     if (it) h += '<img class="art" loading="lazy" alt="" src="' + esc(dayPic(it)) + '"><div class="cap"><div class="t">' + esc(showName(it)) + '</div><div class="s">' + esc(subOf(it)) + '</div></div>' + progBar(it);
     else h += '<span class="plus">+</span>';
     h += '<span class="num">' + d + '</span></button>';
@@ -3640,7 +3647,7 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
   for (var k = 0; k < lead; k++) h += '<div></div>';
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], tc = key === TODAY ? ' today' : '';
-    if (it && !it.secret) h += '<button class="tcd has' + tc + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '"><img alt="" loading="lazy" src="' + esc(it.poster ? img(it.poster, 'Primary', mob ? 200 : 400) : img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480)) + '"><b>' + d + '</b><span><em>' + esc(showName(it)) + '</em>' + (it.year ? '<small>' + esc(String(it.year)) + '</small>' : '') + '</span></button>';
+    if (it && !it.secret) h += '<button class="tcd has' + tc + (it.poster ? ' whole' : '') + '"' + (it.poster ? ' style="--pimg:url(&quot;' + esc(img(it.poster, 'Primary', mob ? 200 : 400)) + '&quot;)"' : '') + ' data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '"><img alt="" loading="lazy" src="' + esc(it.poster ? img(it.poster, 'Primary', mob ? 200 : 400) : img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480)) + '"><b>' + d + '</b><span><em>' + esc(showName(it)) + '</em>' + (it.year ? '<small>' + esc(String(it.year)) + '</small>' : '') + '</span></button>';
     else if (it && it.secret && C.mine && SITEEDIT) h += '<button class="tcd secret' + tc + '" data-sday="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': a surprise"><b>' + d + '</b></button>';   // (John: a hidden day changed without seeing it)
     else h += '<div class="tcd' + tc + (it && it.secret ? ' secret' : '') + '"><b>' + d + '</b></div>';
   }
