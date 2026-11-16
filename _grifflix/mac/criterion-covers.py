@@ -255,6 +255,8 @@ def main():
                 fh.write(pic)
             os.replace(dest + '.part', dest)
             got += 1
+            if got % 100 == 0:
+                print('  %d of %d…' % (got, len(new)), flush=True)
             time.sleep(.3)   # (gently)
         print('\nDownloaded %d cover(s).%s' % (got, (' Not got: ' + ', '.join(bad[:20])) if bad else ''))
         if got and os.path.exists(RCLONE) and os.path.exists(CONF):   # (into Google Drive's "Criterion images" too, only those not there)
