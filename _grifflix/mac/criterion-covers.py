@@ -157,7 +157,7 @@ def collect():
                 break
         # (only a film with its proper Criterion cover here goes in: John, 16 Nov 2026, "it's fine if they don't have a spine number but
         # they must have a proper criterion image to go in the collection")
-        real = lambda c: os.path.exists(os.path.join(COVERS, c)) and os.path.getsize(os.path.join(COVERS, c)) > 5000
+        real = lambda c: any(os.path.exists(os.path.join(COVERS, x)) and os.path.getsize(os.path.join(COVERS, x)) > 5000 for x in (c, c[:-4] + '.png'))
         nocover = sorted(f for f, c in IN_LIB.items() if not real(c) and any(i not in held for i, _ in by.get(f, [])))
         add = [(i, n) for f in sorted(IN_LIB) if real(IN_LIB[f]) for i, n in by.get(f, []) if i not in held]
         print('\nThe Criterion Collection: %d film(s) to put in%s' % (len(add), '' if GO or not add else ' (run with go)'))
@@ -177,6 +177,14 @@ def collect():
         print('\nThe Criterion Collection: not changed (%s).' % e)
 
 
+def has_film(folder):   # (as poster-add.py: a film in it, not only extras)
+    for d, dirs, files in os.walk(folder):
+        dirs[:] = [x for x in dirs if x.lower() not in ('other', 'extras', 'featurettes', 'trailers', 'interviews', 'shorts') and not x.startswith('.')]
+        if any(f.lower().endswith(('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')) and not f.startswith('.') for f in files):
+            return True
+    return False
+
+
 def spines(films):
     """Each Criterion film in Grifflix its spine number, by its folder (a year out allowed, as criterion.py): ~/Grifflix/criterion-spines.json,
     which Grifflix's gateway reads, for the site's Spine number sort (John, 16 Nov 2026)."""
@@ -184,7 +192,7 @@ def spines(films):
     k = lambda t: (lambda x: x[3:] if x.startswith('the') and len(x) > 7 else x)(re.sub(r'[^a-z0-9]', '', plain(t).lower()))
     folders = {}
     for f in os.listdir(movies):
-        if not f.startswith('.') and os.path.isdir(os.path.join(movies, f)):
+        if not f.startswith('.') and os.path.isdir(os.path.join(movies, f)) and has_film(os.path.join(movies, f)):   # (not a folder left empty)
             folders.setdefault(k(f), f)
     out = {}
     for f in films:
@@ -229,7 +237,7 @@ def main():
         sys.exit('No %s: is the G-Drive plugged in?' % BASE)
     os.makedirs(COVERS, exist_ok=True)
     have = set(os.listdir(COVERS))
-    new = [f for f in films if name_of(f['title'], f['year']) not in have]
+    new = [f for f in films if name_of(f['title'], f['year']) not in have and name_of(f['title'], f['year'])[:-4] + '.png' not in have]
     print('%d films on Criterion’s list; %d covers had already, %d new.' % (len(films), len(films) - len(new), len(new)))
     for f in new[:40]:
         print('  %s (%s) → %s' % (f['title'], f['year'], name_of(f['title'], f['year'])))
@@ -243,7 +251,7 @@ def main():
             for u in (big(f['img']), f['img']):
                 try:
                     pic = fetch(u)
-                    if pic[:3] == b'\xff\xd8\xff' and len(pic) > 5000:
+                    if (pic[:3] == b'\xff\xd8\xff' or pic[:8] == b'\x89PNG\r\n\x1a\n') and len(pic) > 5000:   # (a few are PNGs: The Celebration)
                         break
                     pic = None
                 except Exception:
@@ -251,6 +259,8 @@ def main():
             if not pic:
                 bad.append(f['title'])
                 continue
+            if pic[:4] == b'\x89PNG':
+                dest = dest[:-4] + '.png'
             with open(dest + '.part', 'wb') as fh:
                 fh.write(pic)
             os.replace(dest + '.part', dest)
