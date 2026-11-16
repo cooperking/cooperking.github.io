@@ -1518,9 +1518,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       ask(false).then(function (j) {
         var n = (j.want || []).length;
         listTxt = JSON.stringify(j.want || []);
-        listInfo = n + ' films of The Criterion Collection copied' + (j.have ? ' (' + j.have + ' have Criterion’s synopsis already)' : '') + '. About ' + Math.ceil(n * 3 / 60) + ' min to read.';
+        listInfo = n + ' Criterion films copied: ' + (j.mine != null ? j.mine + ' of yours first, then the rest of Criterion’s list, so a film you bring in later has its synopsis waiting' : 'yours') + (j.have ? ' (' + j.have + ' read already)' : '') + '. About ' + Math.ceil(n * 3 / 60) + ' min to read; it carries on where it stopped if Criterion pauses it.';
         b.disabled = false; b.textContent = n ? 'Copy the list (' + n + ' films)' : 'Nothing left to read';
-        if (!n) { b.disabled = true; listTxt = ''; $('#syncount').textContent = 'Every film in The Criterion Collection has Criterion’s synopsis.'; return; }
+        if (!n) { b.disabled = true; listTxt = ''; $('#syncount').textContent = 'Every film on Criterion’s list has been read: only needed again when Criterion adds films.'; return; }
         navigator.clipboard.writeText(listTxt).then(function () { $('#syncount').textContent = listInfo; toast('Copied'); b.textContent = 'Copied ✓'; }).catch(function () {});   // (straight away, as it's quick: else a second click)
       }).catch(function (e) { b.disabled = false; b.textContent = 'Copy your list'; toast(e.message || 'Couldn’t make the list'); });
     };
