@@ -540,7 +540,7 @@ html.big .cal { height: var(--calh, 70vh); min-height: 420px; grid-template-rows
 html.big .grid { min-height: 0; grid-auto-rows: minmax(0, 1fr); gap: 6px 8px; }
 html.big .dow { gap: 6px 8px; }
 html.big .day { aspect-ratio: auto; height: 100%; min-height: 0; }
-html.big .day .art { object-position: 50% 50%; }
+html.big .day .art { object-position: 50% 22%; }
 html.big .day .cap { display: block; padding: 18px 8px 6px; }
 html.big .day .cap .t { font-size: 15px; }
 html.big .day .num, html.big .day.has .num { top: 4px; bottom: auto; }
@@ -1608,7 +1608,7 @@ html.mob .tcentre .leaf2 { font-size: 72px; }
 /* the calendar pop-up on a phone: square days, as the songs' calendar, in the month's theme */
 html.mob .tcgrid { flex: none; grid-auto-rows: auto; }
 html.mob .tcd { aspect-ratio: 1 / 1; }
-html.mob .tcd img { object-position: 50% 15%; }
+html.mob .tcd img, .tcd img { object-position: 50% 15%; }
 
 /* Search on a phone: the word, larger (John: "Search should be bigger and say search") */
 @media (max-width: 760px) {
@@ -3631,7 +3631,7 @@ function calSheet() {   // the month's calendar, a pop-up in its theme's colour 
   for (var k = 0; k < lead; k++) h += '<div></div>';
   for (var d = 1; d <= n; d++) {
     var key = S.month + '-' + String(d).padStart(2, '0'), it = C.days[key], tc = key === TODAY ? ' today' : '';
-    if (it && !it.secret) h += '<button class="tcd has' + tc + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '"><img alt="" loading="lazy" src="' + esc(mob && (it.poster || it.thumb) ? img(it.poster || it.thumb, it.poster ? 'Primary' : 'Thumb', 200) : img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480)) + '"><b>' + d + '</b><span><em>' + esc(showName(it)) + '</em>' + (it.year ? '<small>' + esc(String(it.year)) + '</small>' : '') + '</span></button>';
+    if (it && !it.secret) h += '<button class="tcd has' + tc + '" data-day="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': ' + esc(it.name) + '"><img alt="" loading="lazy" src="' + esc(it.poster ? img(it.poster, 'Primary', mob ? 200 : 400) : img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480)) + '"><b>' + d + '</b><span><em>' + esc(showName(it)) + '</em>' + (it.year ? '<small>' + esc(String(it.year)) + '</small>' : '') + '</span></button>';
     else if (it && it.secret && C.mine && SITEEDIT) h += '<button class="tcd secret' + tc + '" data-sday="' + key + '" aria-label="' + d + ' ' + MONTHS[m] + ': a surprise"><b>' + d + '</b></button>';   // (John: a hidden day changed without seeing it)
     else h += '<div class="tcd' + tc + (it && it.secret ? ' secret' : '') + '"><b>' + d + '</b></div>';
   }
@@ -5173,7 +5173,9 @@ function fitCal() {   // a computer or TV: the calendar down to the window's foo
   c.style.setProperty('--calh', Math.max(TV ? 300 : 420, vh - (c.getBoundingClientRect().top + scrollY) - 16) + 'px');
 }
 addEventListener('resize', function () { fitCal(); });
-function dayPic(it) { if (document.documentElement.classList.contains('big')) return img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480);
+// (a day is always its film's poster, on every screen: John, 16 Nov 2026: "the default image in the calendar should always be the poster,
+// not any other"; a computer's had shown the film's background)
+function dayPic(it) {
   return it.poster ? img(it.poster, 'Primary', phone() ? 200 : 320) : img(it.thumb || it.backdrop, it.thumb ? 'Thumb' : 'Backdrop', 320); }   /* (square days: the poster, cut to its top) */
 function phone() { return matchMedia('(max-width: 760px)').matches; }
 function showName(it) { return it.type === 'episode' ? (it.series || it.name) : it.name; }
@@ -5523,9 +5525,21 @@ function dayStep(d) {
 function pictureSheet(it, kind) {   // John's: every poster (or background) the media server can find for it; tap one to use it
   var poster = kind !== 'backdrop';
   openSheet('<div class="form" style="position:relative"><h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (poster ? 'A poster' : 'A background') + ' for <i>' + esc(it.name || 'this') + '</i></h2>' +
-    '<p class="ov" style="margin:8px 0 14px">Tap one, then tap it again to use it. The best-liked come first. The one it has now is kept, so it can be put back.</p><div id="picundo"></div><div class="picgrid" id="picgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(' + (poster ? '130px' : '220px') + ',1fr));gap:12px"><p class="ov">Looking…</p></div></div>');
+    '<p class="ov" style="margin:8px 0 14px">Tap one, then tap it again to use it. The best-liked come first. The one it has now is kept, so it can be put back.</p><div id="picundo"></div><div id="piclocal"></div>' +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px"><input type="url" id="picurl" placeholder="Or a picture’s web address (right-click a picture: Copy Image Address)" style="flex:1 1 260px"><button class="pill go" id="picurlgo">Use it</button></div><div class="picgrid" id="picgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(' + (poster ? '130px' : '220px') + ',1fr));gap:12px"><p class="ov">Looking…</p></div></div>');
   mac('images?id=' + it.id + '&kind=' + kind).then(function (j) {
     var L = j.images || [];
+    $('#picurlgo').onclick = function () {
+      var u = $('#picurl').value.trim(), bb = $('#picurlgo'); if (!/^https?:\/\//.test(u)) return toast('A web address starting https://');
+      if (!bb.dataset.sure) { bb.dataset.sure = 1; bb.textContent = 'Use it? Tap again'; return; }
+      bb.disabled = true;
+      mac('images', { id: it.id, kind: kind, url: u }).then(function () { toast((poster ? 'Poster' : 'Background') + ' changed: Grifflix shows it within a few minutes'); closeSheet(); })
+        .catch(function (e) { bb.disabled = false; toast(e.message || 'Couldn’t reach the Mac mini'); });
+    };
+    if ((j.local || []).length) {   // (the pictures in the film's own folder: John, 16 Nov 2026, the Criterion poster he'd put there "wasn't even an option")
+      $('#piclocal').innerHTML = '<h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">In its folder</h4><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(' + (poster ? '130px' : '220px') + ',1fr));gap:12px;margin:0 0 18px">' +
+        j.local.map(function (x, i) { return '<button type="button" class="picopt loc" data-l="' + i + '" style="padding:0;border:0;background:none;cursor:pointer;text-align:left;color:var(--fg-2);font:400 12px var(--sans)"><img alt="" src="' + esc(x.data) + '" style="display:block;width:100%;aspect-ratio:' + (poster ? '2/3' : '16/9') + ';object-fit:cover;background:#222"><span style="display:block;margin-top:4px;word-break:break-all">' + esc(x.name) + '</span></button>'; }).join('') + '</div>';
+    }
     if (j.before) {   // (the one it had before, put back: John, 16 Nov 2026)
       $('#picundo').innerHTML = '<button class="pill" id="picback" style="margin:0 0 14px">Put back the one before</button>';
       $('#picback').onclick = function () {
@@ -5539,15 +5553,15 @@ function pictureSheet(it, kind) {   // John's: every poster (or background) the 
       return '<button type="button" class="picopt" data-i="' + i + '" style="padding:0;border:0;background:none;cursor:pointer;text-align:left;color:var(--fg-2);font:400 12px var(--sans)"><img alt="" loading="lazy" src="' + esc(x.thumb) + '" style="display:block;width:100%;aspect-ratio:' + (poster ? '2/3' : '16/9') + ';object-fit:cover;background:#222">' +
         '<span style="display:block;margin-top:4px">' + [x.lang ? x.lang.toUpperCase() : 'No words', x.w ? x.w + '×' + x.h : ''].filter(Boolean).join(' · ') + '</span></button>';
     }).join('') : '<p class="ov">None found.</p>';
-    $$('#picgrid .picopt').forEach(function (b) { b.onclick = function () {
-      var x = L[+b.dataset.i];
+    $$('#picgrid .picopt, #piclocal .picopt').forEach(function (b) { b.onclick = function () {
+      var x = b.dataset.l != null ? { local: j.local[+b.dataset.l].name } : L[+b.dataset.i];
       if (!b.dataset.sure) {   // (a tap asks first: one stray tap had replaced a poster John wanted)
-        $$('#picgrid .picopt').forEach(function (o) { if (o.dataset.sure) { delete o.dataset.sure; o.style.outline = ''; o.lastChild.textContent = o.dataset.was; } });
+        $$('#picgrid .picopt, #piclocal .picopt').forEach(function (o) { if (o.dataset.sure) { delete o.dataset.sure; o.style.outline = ''; o.lastChild.textContent = o.dataset.was; } });
         b.dataset.sure = 1; b.dataset.was = b.lastChild.textContent; b.style.outline = '3px solid #e3b448'; b.lastChild.textContent = 'Use this one? Tap again';
         return;
       }
       b.style.opacity = .5;
-      mac('images', { id: it.id, kind: kind, url: x.url }).then(function () { toast((poster ? 'Poster' : 'Background') + ' changed: Grifflix shows it within a few minutes'); closeSheet(); })
+      mac('images', x.local ? { id: it.id, kind: kind, local: x.local } : { id: it.id, kind: kind, url: x.url }).then(function () { toast((poster ? 'Poster' : 'Background') + ' changed: Grifflix shows it within a few minutes'); closeSheet(); })
         .catch(function (e) { b.style.opacity = 1; toast(e.message || 'Couldn’t reach the Mac mini'); });
     }; });
   }).catch(function (e) { $('#picgrid').innerHTML = '<p class="ov">' + esc(e.status === 404 ? 'Press Update everything first (the Mac mini needs its update).' : e.message || 'Couldn’t reach the Mac mini') + '</p>'; });
