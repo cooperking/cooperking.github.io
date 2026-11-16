@@ -2140,7 +2140,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '88431a98863f' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '3633bcfc3677' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5797,7 +5797,7 @@ function bodyHTML(it, ctx) {
   // (John's Fix match: the film or series chosen from TMDB when the media server named it wrong, or didn't know it: John, 15 Nov 2026)
   if (!PUBLIC && !it.ext && ME && ME.owner && !TV && (it.type === 'movie' || it.type === 'series')) h += '<button class="pill" id="aident">Edit</button>';
   // (John's Delete: last in the row, apart from the rest)
-  if (!PUBLIC && !it.ext && ME && ME.owner && !TV && it.type === 'movie') h += '<button class="pill danger" id="adel">Delete</button>';
+  if (!PUBLIC && !it.ext && ME && ME.owner && !TV && (it.type === 'movie' || it.type === 'series')) h += '<button class="pill danger" id="adel">' + (it.type === 'series' ? 'Delete the series' : 'Delete') + '</button>';
   h += '</div>';   // (the row closed whatever's in it: with no Share button it was left open and a series' episodes went inside it, Play and the heart floating beside them)
   if (isSeries && it.episodes) {
     var seasons = {}; it.episodes.forEach(function (e) { (seasons[e.season || 0] = seasons[e.season || 0] || []).push(e); });
@@ -5836,16 +5836,16 @@ function wireBody(it, ctx) {
     var b = $('#adel');
     if (!b.dataset.sure) {   // (two taps: the first says what it does, and any Movie of the Day it's on)
       var D = (S.calData && S.calData.id === 'motd' ? S.calData.days : null) || {}, on = Object.keys(D).filter(function (d) { return D[d] && D[d].id === it.id; });
-      b.dataset.sure = 1; b.classList.add('armed'); b.textContent = (matchMedia('(hover: hover)').matches ? 'Click' : 'Tap') + ' again';
+      b.dataset.sure = 1; b.classList.add('armed'); b.textContent = (matchMedia('(hover: hover)').matches ? 'Click' : 'Tap') + ' again: deleted for good';
       if (on.length) toast('It’s Movie of the Day on ' + on.map(function (d) { return longDate(d); }).join(', ') + ': that day will need another film');
-      setTimeout(function () { if (b.isConnected && b.dataset.sure) { delete b.dataset.sure; b.classList.remove('armed'); b.textContent = 'Delete'; } }, 6000);
+      setTimeout(function () { if (b.isConnected && b.dataset.sure) { delete b.dataset.sure; b.classList.remove('armed'); b.textContent = it.type === 'series' ? 'Delete the series' : 'Delete'; } }, 6000);
       return;
     }
     b.disabled = true; b.textContent = 'Deleting…';
     mac('delete', { id: it.id }).then(function (j) {
-      toast((j.name || it.name) + ' deleted: it’s in the Grifflix Bin on the G-Drive for 30 days, and gone from Grifflix within a few minutes');
+      toast((j.name || it.name) + ' deleted for good' + (it.type === 'series' ? ', every episode' : '') + (j.gb ? ': ' + j.gb + ' GB freed' : '') + '. Gone from Grifflix within a few minutes');
       closeSheet();
-    }).catch(function (e) { b.disabled = false; delete b.dataset.sure; b.textContent = 'Delete'; toast(e.message || 'Couldn’t reach the Mac mini'); });
+    }).catch(function (e) { b.disabled = false; delete b.dataset.sure; b.textContent = it.type === 'series' ? 'Delete the series' : 'Delete'; toast(e.message || 'Couldn’t reach the Mac mini'); });
   });
   on('aconv', function () {
     var b = $('#aconv'); b.disabled = true; b.textContent = 'Putting it next…';

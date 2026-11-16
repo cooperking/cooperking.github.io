@@ -2056,47 +2056,60 @@ def make_handler(g):
             return self.send_json(200, {'ok': True, 'name': pick.get('Name'), 'year': pick.get('ProductionYear'), 'renamed': did})
 
         def api_delete(self, me, user, q, b):
-            """John's only: a film taken out of Grifflix, its folder moved to "Grifflix Bin" on the same drive (emptied after 30 days, so a
-            mistake can be put back), and the media server asked to look (John, 15 Nov 2026: "Is is possible for me (and only me) to
-            delete directly from Grifflix?"). Its folder goes whole when the film is the only one in it; otherwise the film's own files."""
+            """John's only: a film taken out of Grifflix and deleted from the drive for good, and the media server asked to look (John, 15
+            Nov 2026: "Is is possible for me (and only me) to delete directly from Grifflix?"; no bin since 16 Nov 2026: see below). Its folder goes whole when the film is the only one in it; otherwise the
+            film's own files. A TV series: its whole folder."""
             if not me.get('owner'):
                 return self.send_json(403, {'error': 'Only John.'})
             iid = str((b or {}).get('id') or '')
             if not re.match(r'^[0-9a-f]{32}$', iid):
                 return self.send_json(400, {'error': 'Which film?'})
-            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid)) or {}
+            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
             path = it.get('Path') or ''
-            if it.get('Type') != 'Movie' or not path or not os.path.exists(path):
-                return self.send_json(404, {'error': 'That film’s file isn’t there.'})
-            roots = [os.path.realpath(l) for v in g.jf.call('GET', '/Library/VirtualFolders') or [] if (v.get('CollectionType') or '') == 'movies' for l in v.get('Locations') or []]
+            series = it.get('Type') == 'Series'   # (a TV series too, its whole folder: John, 16 Nov 2026, "I don't have any option to Delete TV Series")
+            if it.get('Type') not in ('Movie', 'Series') or not path or not os.path.exists(path):
+                return self.send_json(404, {'error': 'That ' + ('series’ folder' if series else 'film’s file') + ' isn’t there.'})
+            roots = [os.path.realpath(l) for v in g.jf.call('GET', '/Library/VirtualFolders') or [] if (v.get('CollectionType') or '') == ('tvshows' if series else 'movies') for l in v.get('Locations') or []]
             real = os.path.realpath(path)
             root = next((r for r in roots if real.startswith(r.rstrip('/') + '/')), None)
             if not root:
-                return self.send_json(400, {'error': 'That film isn’t in the films folder.'})
+                return self.send_json(400, {'error': 'That ' + ('series isn’t in the TV folder.' if series else 'film isn’t in the films folder.')})
+            if series:
+                if not os.path.isdir(real) or os.path.dirname(real) != root.rstrip('/'):   # (only a series' own folder, straight inside the TV folder)
+                    return self.send_json(400, {'error': 'That series isn’t in a folder of its own.'})
+                what = [real]
+            else:
+                folder = os.path.dirname(real)
+                vids = ('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')
+                others = [n for n in os.listdir(folder) if n.lower().endswith(vids) and os.path.join(folder, n) != real and 'sample' not in n.lower()] if folder != root.rstrip('/') else ['(the films folder)']
+                stem = os.path.splitext(os.path.basename(real))[0]
+                what = [folder] if not others else [os.path.join(folder, n) for n in os.listdir(folder) if n.startswith(stem)]
+            # (deleted for good, the space freed at once, not kept in a bin: John asks twice first. John, 16 Nov 2026: "I also don't want
+            # what I delete to be held if I'm sure, because main reason I'd delete is to save space")
             import shutil
-            folder = os.path.dirname(real)
-            vids = ('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')
-            others = [n for n in os.listdir(folder) if n.lower().endswith(vids) and os.path.join(folder, n) != real and 'sample' not in n.lower()] if folder != root.rstrip('/') else ['(the films folder)']
-            stem = os.path.splitext(os.path.basename(real))[0]
-            what = [folder] if not others else [os.path.join(folder, n) for n in os.listdir(folder) if n.startswith(stem)]
-            bin_ = os.path.join(os.path.dirname(os.path.dirname(root.rstrip('/'))), 'Grifflix Bin')
-            os.makedirs(bin_, exist_ok=True)
-            if os.stat(bin_).st_dev != os.stat(real).st_dev:
-                return self.send_json(500, {'error': 'The Bin isn’t on the same drive: nothing moved.'})
-            day = time.strftime('%Y-%m-%d')
+            freed = 0
             for w in what:
-                to = os.path.join(bin_, day + ' ' + os.path.basename(w))
-                k = 2
-                while os.path.exists(to):
-                    to = os.path.join(bin_, '%s %s (%d)' % (day, os.path.basename(w), k)); k += 1
-                os.rename(w, to)
+                if os.path.isdir(w):
+                    for d_, _, fs in os.walk(w):
+                        for f_ in fs:
+                            try:
+                                freed += os.path.getsize(os.path.join(d_, f_))
+                            except OSError:
+                                pass
+                    shutil.rmtree(w)
+                else:
+                    try:
+                        freed += os.path.getsize(w)
+                    except OSError:
+                        pass
+                    os.remove(w)
             try:
                 g.jf.call('POST', '/Library/Refresh')
             except Exception:
                 pass
             g.forget()
-            log('Deleted by John: %s (%s), moved to Grifflix Bin' % (it.get('Name'), it.get('ProductionYear') or '?'))
-            return self.send_json(200, {'ok': True, 'name': it.get('Name'), 'bin': bin_})
+            log('Deleted by John, for good: %s (%s), %.1f GB freed' % (it.get('Name'), it.get('ProductionYear') or '?', freed / 1e9))
+            return self.send_json(200, {'ok': True, 'name': it.get('Name'), 'gb': round(freed / 1e9, 1)})
 
         def api_criterion(self, me, user, q, b):
             """John's only: Criterion's covers (criterion-covers.py). POST {films: [...]}: the films the admin page read from Criterion's list
