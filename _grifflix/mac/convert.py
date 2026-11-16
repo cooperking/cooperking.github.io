@@ -505,104 +505,108 @@ def convert(item, ffmpeg, ffprobe, st):
         cmd += ['-c:s', 'mov_text', '-movflags', '+faststart']
     cmd += ['-max_muxing_queue_size', '9999', tmp]
 
-    log('repackaging' if remux else 'converting', item['name'], '(%s, %s min, %s GB)' % (item['why'], item['mins'], item['gb']))
-    t0, paused = time.time(), False
-    # (no longer at macOS's background priority for the drive: whenever anything else used it (Spotlight, a copy over the network)
-    # that starved it to nothing, stuck at 0% for hours; it pauses the moment someone watches instead, checked every 5 seconds:
-    # John, 14 Nov 2026, "It doesn't need to run on lowest priority if is just pauses when a movie is playing anyway")
-    p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, preexec_fn=lambda: os.nice(15))
-    err_tail, at = [], [0.0]
-    def read_err():
-        for line in p.stderr:   # (ffmpeg's progress lines: "... time=00:41:07.12 ...")
-            m = re.search(r'time=(\d+):(\d\d):(\d\d(?:\.\d+)?)', line)
-            if m:
-                at[0] = int(m.group(1)) * 3600 + int(m.group(2)) * 60 + float(m.group(3))
-            else:
-                err_tail.append(line)
-                del err_tail[:-30]
-    threading.Thread(target=read_err, daemon=True).start()
-    show = lambda why_='': now('paused' if why_ else 'converting', id=item['id'], name=item['name'], why=why_ or item['why'], gb=item['gb'], mins=item['mins'],
-                                pct=round(min(99.9, at[0] / dur * 100), 1) if dur else 0, since=int(t0))
-    show()
-    try:
-        k, work, mark, stuck_since = 0, 0.0, (0.0, 0), 0.0   # (work: seconds converting, not paused; mark: the last sign of progress)
-        STALL = int(os.environ.get('GRIFFLIX_STALL') or 1800)
-        while p.poll() is None:
-            time.sleep(5)
-            k += 1
-            # (a film that makes no progress for 30 minutes of work is given up, what ffmpeg last said kept, and the next one done:
-            # Moonrise hung at 0% all day, the whole queue behind it: John, 14 Nov 2026, "It's never got above 0%")
-            if not paused:
-                work += 5
-                try:
-                    sz = os.path.getsize(tmp)
-                except OSError:
-                    sz = 0
-                if at[0] > mark[0] or sz > mark[1] + 1000000:
-                    mark, stuck_since = (at[0], sz), work
-                elif work - stuck_since > STALL:
-                    p.terminate()
+    if item.get('plan_only'):   # (for the Mac John's on, which converts it with its own hardware: what to do, not done here)
+        return {'cmd': cmd[1:], 'src': src, 'tmp': tmp, 'dur': dur, 'remux': remux}
+    t0 = time.time()
+    if not item.get('premade'):   # (premade: made already, by that Mac, into tmp; checked and put in place here)
+        log('repackaging' if remux else 'converting', item['name'], '(%s, %s min, %s GB)' % (item['why'], item['mins'], item['gb']))
+        t0, paused = time.time(), False
+        # (no longer at macOS's background priority for the drive: whenever anything else used it (Spotlight, a copy over the network)
+        # that starved it to nothing, stuck at 0% for hours; it pauses the moment someone watches instead, checked every 5 seconds:
+        # John, 14 Nov 2026, "It doesn't need to run on lowest priority if is just pauses when a movie is playing anyway")
+        p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, preexec_fn=lambda: os.nice(15))
+        err_tail, at = [], [0.0]
+        def read_err():
+            for line in p.stderr:   # (ffmpeg's progress lines: "... time=00:41:07.12 ...")
+                m = re.search(r'time=(\d+):(\d\d):(\d\d(?:\.\d+)?)', line)
+                if m:
+                    at[0] = int(m.group(1)) * 3600 + int(m.group(2)) * 60 + float(m.group(3))
+                else:
+                    err_tail.append(line)
+                    del err_tail[:-30]
+        threading.Thread(target=read_err, daemon=True).start()
+        show = lambda why_='': now('paused' if why_ else 'converting', id=item['id'], name=item['name'], why=why_ or item['why'], gb=item['gb'], mins=item['mins'],
+                                    pct=round(min(99.9, at[0] / dur * 100), 1) if dur else 0, since=int(t0))
+        show()
+        try:
+            k, work, mark, stuck_since = 0, 0.0, (0.0, 0), 0.0   # (work: seconds converting, not paused; mark: the last sign of progress)
+            STALL = int(os.environ.get('GRIFFLIX_STALL') or 1800)
+            while p.poll() is None:
+                time.sleep(5)
+                k += 1
+                # (a film that makes no progress for 30 minutes of work is given up, what ffmpeg last said kept, and the next one done:
+                # Moonrise hung at 0% all day, the whole queue behind it: John, 14 Nov 2026, "It's never got above 0%")
+                if not paused:
+                    work += 5
                     try:
-                        p.wait(30)
-                    except subprocess.TimeoutExpired:
-                        p.kill(); p.wait()
+                        sz = os.path.getsize(tmp)
+                    except OSError:
+                        sz = 0
+                    if at[0] > mark[0] or sz > mark[1] + 1000000:
+                        mark, stuck_since = (at[0], sz), work
+                    elif work - stuck_since > STALL:
+                        p.terminate()
+                        try:
+                            p.wait(30)
+                        except subprocess.TimeoutExpired:
+                            p.kill(); p.wait()
+                        if os.path.exists(tmp):
+                            os.remove(tmp)
+                        said = ' '.join(x.strip() for x in err_tail[-4:] if x.strip())[-300:]
+                        log('  no progress in 30 minutes: given up' + (' (ffmpeg: %s)' % said if said else ''))
+                        raise RuntimeError('no progress in 30 minutes, given up' + (': ' + said if said else ''))
+                try:   # (John's Skip: this film given up now, the next one started)
+                    skip = open(SKIP).read().strip() == item['id']
+                except OSError:
+                    skip = False
+                if skip:
+                    os.remove(SKIP)
+                    if paused:
+                        p.send_signal(signal.SIGCONT)
+                        paused = False
+                    p.terminate()
+                    p.wait()
                     if os.path.exists(tmp):
                         os.remove(tmp)
-                    said = ' '.join(x.strip() for x in err_tail[-4:] if x.strip())[-300:]
-                    log('  no progress in 30 minutes: given up' + (' (ffmpeg: %s)' % said if said else ''))
-                    raise RuntimeError('no progress in 30 minutes, given up' + (': ' + said if said else ''))
-            try:   # (John's Skip: this film given up now, the next one started)
-                skip = open(SKIP).read().strip() == item['id']
-            except OSError:
-                skip = False
-            if skip:
-                os.remove(SKIP)
-                if paused:
-                    p.send_signal(signal.SIGCONT)
-                    paused = False
-                p.terminate()
-                p.wait()
-                if os.path.exists(tmp):
-                    os.remove(tmp)
-                log('  skipped by John')
-                raise RuntimeError('skipped by John')
-            if k % 12 == 6:   # (every minute: films just brought in, shown as next now; one to repackage done at once, this film paused)
-                new = [f for f in (peek_new() or []) if f.get('mode') == 'remux']
-                if new and not item.get('fetched') and not item.get('redo'):
-                    held = not paused
-                    if held:
-                        p.send_signal(signal.SIGSTOP)
-                    log('  paused while %s, just brought in, is repackaged' % ', '.join(f['name'] for f in new))
-                    for f in new:
-                        try:
-                            convert(dict(f, fetched=True, urgent=True), ffmpeg, ffprobe, st)
-                            save_state(st)
-                            done_new(f['path'])
-                            unpin(f['id'])   # (done: off the list of what's next, where it sat looking left undone: John, 16 Nov 2026)
-                        except RuntimeError as e:
-                            log('  couldn’t repackage %s now (%s): it goes next' % (f['name'], str(e)[:160]))
-                    if held:
-                        p.send_signal(signal.SIGCONT)
-                    log('  back to ' + item['name'])
-                    show()
-            if k % 4 == 0:   # (how far it's got: every 20 seconds)
-                show(why_ if paused else '')
-            why_ = 'someone is watching' if watching() else 'a film is downloading' if item.get('mode') == 'remux' and not item.get('fetched') and not item.get('new') and not item.get('redo') and downloading() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() and not item.get('urgent') else '')
-            if why_ and not paused:
-                p.send_signal(signal.SIGSTOP); paused = True; log('  paused: ' + why_)
-            elif not why_ and paused:
-                p.send_signal(signal.SIGCONT); paused = False; log('  carrying on')
-    except BaseException:
-        if paused:
-            p.send_signal(signal.SIGCONT)
-        p.terminate(); p.wait()
-        if os.path.exists(tmp):
-            os.remove(tmp)
-        raise
-    if p.returncode != 0:
-        if os.path.exists(tmp):
-            os.remove(tmp)
-        raise RuntimeError('ffmpeg: ' + ''.join(err_tail[-3:]).strip()[-300:])
+                    log('  skipped by John')
+                    raise RuntimeError('skipped by John')
+                if k % 12 == 6:   # (every minute: films just brought in, shown as next now; one to repackage done at once, this film paused)
+                    new = [f for f in (peek_new() or []) if f.get('mode') == 'remux']
+                    if new and not item.get('fetched') and not item.get('redo'):
+                        held = not paused
+                        if held:
+                            p.send_signal(signal.SIGSTOP)
+                        log('  paused while %s, just brought in, is repackaged' % ', '.join(f['name'] for f in new))
+                        for f in new:
+                            try:
+                                convert(dict(f, fetched=True, urgent=True), ffmpeg, ffprobe, st)
+                                save_state(st)
+                                done_new(f['path'])
+                                unpin(f['id'])   # (done: off the list of what's next, where it sat looking left undone: John, 16 Nov 2026)
+                            except RuntimeError as e:
+                                log('  couldn’t repackage %s now (%s): it goes next' % (f['name'], str(e)[:160]))
+                        if held:
+                            p.send_signal(signal.SIGCONT)
+                        log('  back to ' + item['name'])
+                        show()
+                if k % 4 == 0:   # (how far it's got: every 20 seconds)
+                    show(why_ if paused else '')
+                why_ = 'someone is watching' if watching() else 'a film is downloading' if item.get('mode') == 'remux' and not item.get('fetched') and not item.get('new') and not item.get('redo') and downloading() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() and not item.get('urgent') else '')
+                if why_ and not paused:
+                    p.send_signal(signal.SIGSTOP); paused = True; log('  paused: ' + why_)
+                elif not why_ and paused:
+                    p.send_signal(signal.SIGCONT); paused = False; log('  carrying on')
+        except BaseException:
+            if paused:
+                p.send_signal(signal.SIGCONT)
+            p.terminate(); p.wait()
+            if os.path.exists(tmp):
+                os.remove(tmp)
+            raise
+        if p.returncode != 0:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+            raise RuntimeError('ffmpeg: ' + ''.join(err_tail[-3:]).strip()[-300:])
     if item.get('mode') == 'shrink' and os.path.getsize(tmp) > os.path.getsize(src) * 0.75:   # (made smaller only if it really is: else the original stays)
         a_, b_ = os.path.getsize(src) / 1e9, os.path.getsize(tmp) / 1e9
         os.remove(tmp)
@@ -723,6 +727,57 @@ if CMD == 'status':
     sys.exit()
 
 st.setdefault('ask', {})
+EXTF = os.path.join(HOME, 'convert-external.json')   # (films converted on John's own Mac, put in place here: merged into this state)
+CLAIMS = os.path.join(HOME, 'convert-claims.json')   # (films being converted on John's Mac this minute: left alone here)
+
+
+def merge_ext():
+    try:
+        ext = json.load(open(EXTF))
+        os.remove(EXTF)
+    except (OSError, ValueError):
+        return
+    for k in ('done', 'failed', 'remap', 'ask'):
+        st.setdefault(k, {}).update(ext.get(k) or {})
+    save_state(st)
+
+
+def claimed(iid):
+    try:
+        return time.time() - float(json.load(open(CLAIMS)).get(iid, 0)) < 6 * 3600
+    except (OSError, ValueError):
+        return False
+
+
+if CMD in ('plan', 'finish'):   # (John's "Convert on this Mac", 16 Nov 2026: the plan made here, the film made there, put in place here)
+    ffmpeg_, ffprobe_ = tools()
+    if CMD == 'plan':
+        found = [i for i in fresh(gather(), st) if i['id'] == sys.argv[2]]
+        if not found:
+            print(json.dumps({'error': 'It plays everywhere as it is: nothing to convert.'}))
+            sys.exit()
+        try:
+            print(json.dumps(dict(convert(dict(found[0], plan_only=True, urgent=True), ffmpeg_, ffprobe_, st), item=found[0])))
+        except (RuntimeError, SystemExit) as e:
+            print(json.dumps({'error': str(e)}))
+        sys.exit()
+    it = json.loads(sys.stdin.read())
+    ext = {'done': {}, 'failed': {}, 'remap': {}, 'ask': {}}
+    try:
+        convert(dict(it, premade=True), ffmpeg_, ffprobe_, ext)
+        try:
+            old = json.load(open(EXTF))
+        except (OSError, ValueError):
+            old = {}
+        for k in ext:
+            old.setdefault(k, {}).update(ext[k])
+        json.dump(old, open(EXTF, 'w'))
+        print(json.dumps({'ok': True}))
+    except (RuntimeError, SystemExit) as e:
+        print(json.dumps({'error': str(e)}))
+    sys.exit()
+
+merge_ext()
 
 
 def redos():
@@ -934,7 +989,8 @@ while rest:
             log('  couldn’t look for new films:', e)   # (the order looked at again before each film: a film John pins goes next, without starting anything again)
     have = set(x['id'] for x in rest)
     rest = [x for x in redos() if x['id'] not in have] + rest   # (John's language changes first: minutes each)
-    rest = brought_in(rest)
+    merge_ext()
+    rest = [x for x in brought_in(rest) if not claimed(x['id'])]   # (one being converted on John's Mac: left to it)
     try:   # (pins for films already done, or given up, taken off: they read as next, and the converter seemed to ignore them)
         for x in prio()['pins']:
             if x['id'] in st['done'] or x['id'] in st['failed']:
