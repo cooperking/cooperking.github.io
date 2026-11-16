@@ -94,6 +94,21 @@ def roots():
     return out
 
 
+# (a download's extras, in a folder of their own beside the film: each into the film's "Other" folder, not taken for a film: John,
+# 16 Nov 2026, Birth's "Making Birth", "Trailer" and the rest, "these need to be automatically added as Extras in the Birth folder")
+XDIRS = ('extras', 'extra', 'featurettes', 'featurette', 'behind the scenes', 'deleted scenes', 'interviews', 'trailers', 'shorts', 'other', 'others',
+         'bonus', 'bonus features', 'special features', 'supplements')
+
+
+def extra_of(path):
+    """The film's folder in the download, if this file is one of its extras (in an extras folder below it); else None."""
+    parts = path.split('/')
+    for i in range(1, len(parts) - 1):
+        if parts[i].strip().lower() in XDIRS:
+            return '/'.join(parts[:i])
+    return None
+
+
 EP = re.compile(r'(?:^|[ ._\-\[(])[Ss](\d{1,2})[ ._\-]?[Ee](\d{1,3})(?:[ ._\-]?[Ee]\d{1,3})?(?=$|[ ._\-\])])')
 NAMES = os.path.join(HOME, 'fetch-names.json')   # (John's: the right name for a download, found on TMDB from the admin page: John, 15 Nov 2026,
                                                  # "I should be able to use TMDB in the upcoming so it gets added correctly")
@@ -293,7 +308,7 @@ def firsts():
 def in_order(plan):
     f = firsts()
     at = lambda p: f.index(p['path']) if p['path'] in f else f.index(p['nkey']) if p.get('nkey') in f else -1
-    return sorted(plan, key=lambda p: at(p) if at(p) >= 0 else len(f) + plan.index(p))   # (for the admin page: what's coming in, how far, and what came: John, 15 Nov 2026)
+    return sorted(plan, key=lambda p: at(p) if at(p) >= 0 else len(f) + plan.index(p) + (len(plan) if p.get('extra') else 0))   # (extras after the films)   # (for the admin page: what's coming in, how far, and what came: John, 15 Nov 2026)
 
 
 def status_get():
@@ -322,7 +337,7 @@ def status(**kw):
 
 def wait_entry(p):
     return {'from': p['src']['name'], 'file': p['path'], 'key': p['nkey'], 'to': p['title'], 'gb': round(p['size'] / 1e9, 1), 'noyear': not p['year'],
-            'series': p['series'], 'ep': p['ep'], 'named': p['named'], 'tmdb': p.get('tmdb')}
+            'series': p['series'], 'ep': p['ep'], 'named': p['named'], 'tmdb': p.get('tmdb'), 'extra': p.get('extra')}
 
 
 def conv_running():
@@ -383,16 +398,25 @@ def _run(check):
             continue
         films = [x for x in items if x['Path'].lower().endswith(VIDEO) and 'sample' not in x['Name'].lower()]
         subs = [x for x in items if x['Path'].lower().endswith('.srt')]
-        for f in films:
-            path, size = f['Path'], int(f.get('Size') or 0)
+        xs = [f for f in films if extra_of(f['Path'])]
+        films = [f for f in films if not extra_of(f['Path'])]
+        for f in films + xs:
+            path, size = f['Path'], max(0, int(f.get('Size') or 0))
             key = '%s:%s|%d' % (src['remote'], path, size)
             if not src['delete'] and key in seen:
                 continue   # (fetched before: TorBox keeps its copy)
-            folder = os.path.dirname(path)
-            ext = os.path.splitext(f['Name'])[1].lower()
-            m = EP.search(os.path.splitext(f['Name'])[0])
-            nkey = folder if (m and folder) else path   # (a series' episodes named together: the folder they came in)
-            mine = N.get(nkey) or N.get(path)
+            xf = extra_of(path)
+            if xf is not None:   # (an extra: named after its film, the film in that folder of the download, as that is named)
+                film = next((x for x in films if os.path.dirname(x['Path']) == xf), None)
+                if film:
+                    f = dict(f, xname=f['Name'], Name=film['Name'], Path=film['Path'])
+                else:
+                    f = dict(f, xname=f['Name'], Name=os.path.basename(xf) + '.mkv', Path=xf + '/' + os.path.basename(xf) + '.mkv')
+            folder = os.path.dirname(f['Path'])
+            ext = os.path.splitext(f.get('xname') or f['Name'])[1].lower()
+            m = None if xf is not None else EP.search(os.path.splitext(f['Name'])[0])
+            nkey = folder if (m and folder) else f['Path']   # (an extra: its film's, so the film's own name, if given, is its too)   # (a series' episodes named together: the folder they came in)
+            mine = N.get(nkey) or N.get(f['Path'])
             if mine:
                 title, year = '%s (%s)' % (mine['name'], mine['year']) if mine.get('year') else mine['name'], bool(mine.get('year'))
             elif m:   # (an episode: the show's name before "S01E02", from the file or else its folder)
@@ -408,7 +432,7 @@ def _run(check):
                     t2, y2 = title_of(os.path.basename(folder))
                     if y2:
                         title, year = t2, y2
-            series = (mine.get('kind') == 'series') if mine else bool(m)
+            series = False if xf is not None else (mine.get('kind') == 'series') if mine else bool(m)
             if series and not R.get('tvshows'):
                 series = False
             tm = None
@@ -431,10 +455,13 @@ def _run(check):
                 dest_dir = os.path.join(R['tvshows'], title, 'Season %02d' % sn)
                 epname = '%s S%02dE%02d' % (title, sn, en) if m else title
                 dest = os.path.join(dest_dir, epname + ext)
+            elif xf is not None:   # (beside its film, in Other, as itself)
+                dest_dir = os.path.join(root, title)
+                dest = os.path.join(dest_dir, 'Other', re.sub(r'[/:\\]', '-', f['xname']))
             else:
                 dest_dir = os.path.join(root, title)
                 dest = os.path.join(dest_dir, title + ext)
-            if (os.path.exists(dest) if series else os.path.isdir(dest_dir) and any(n.lower().endswith(VIDEO) for n in os.listdir(dest_dir))):
+            if (os.path.exists(dest) if series or xf is not None else os.path.isdir(dest_dir) and any(n.lower().endswith(VIDEO) for n in os.listdir(dest_dir))):
                 if key not in seen:
                     log('Left in %s: %s ("%s" is already in Grifflix)' % (src['name'], path, title))
                     if not check:
@@ -443,7 +470,7 @@ def _run(check):
             if check and (os.path.exists(dest + '.adding') or os.path.exists(dest + '.adding.d')):
                 continue   # (coming in now)
             plan.append(dict(src=src, loc=loc, path=path, size=size, key=key, folder=folder, title=title, year=year, ext=ext,
-                             dest_dir=dest_dir, dest=dest, name=f['Name'], subs=subs, series=series, nkey=nkey, named=bool(mine),
+                             dest_dir=dest_dir, dest=dest, name=f['Name'], subs=subs, series=series, nkey=nkey, named=bool(mine), extra=f.get('xname'),
                              ep='S%02dE%02d' % (int(m.group(1)), int(m.group(2))) if m else '', tmdb=bool(tm) or bool(mine)))
     try:
         json.dump(TC, open(TMDBC, 'w'))
@@ -469,9 +496,15 @@ def _run(check):
         src, loc, path, size, key, folder, title, year, ext, dest_dir, dest, subs = (p[k] for k in
             ('src', 'loc', 'path', 'size', 'key', 'folder', 'title', 'year', 'ext', 'dest_dir', 'dest', 'subs'))
         if check:
-            log('Would add from %s: %s → %s/%s%s' % (src['name'], path, title, title + ext, '' if year else ' (no year in its name)'))
+            log('Would add from %s: %s → %s/%s%s' % (src['name'], path, title, 'Other/' + os.path.basename(dest) if p.get('extra') else title + ext, '' if year else ' (no year in its name)'))
             continue
-        if (os.path.exists(dest) if p['series'] else os.path.isdir(dest_dir) and any(n.lower().endswith(VIDEO) for n in os.listdir(dest_dir))):
+        if p.get('extra'):
+            if os.path.exists(dest):
+                continue
+            if not (os.path.isdir(dest_dir) and any(n.lower().endswith(VIDEO) for n in os.listdir(dest_dir))):
+                log('  %s: waiting for %s itself to come first' % (p['extra'], title))
+                continue
+        elif (os.path.exists(dest) if p['series'] else os.path.isdir(dest_dir) and any(n.lower().endswith(VIDEO) for n in os.listdir(dest_dir))):
             continue   # (the same film twice: from both places)
         try:   # (another fetch writing it this minute: left to that one)
             if time.time() - max(os.path.getmtime(x) for x in (dest + '.adding', dest + '.adding.d') if os.path.exists(x)) < 300:
@@ -483,11 +516,11 @@ def _run(check):
         if free < size + 20e9:
             log('Not enough room on the drive for %s (%.0f GB free): left in %s' % (path, free / 1e9, src['name']))
             continue
-        log('Fetching from %s: %s → %s/ (%.1f GB)' % (src['name'], path, title, size / 1e9))
-        os.makedirs(dest_dir, exist_ok=True)
+        log('Fetching from %s: %s → %s/%s (%.1f GB)' % (src['name'], path, title, 'Other/' if p.get('extra') else '', size / 1e9))
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
         part = dest + '.adding'
-        status(now={'from': src['name'], 'file': path, 'to': title, 'size': size, 'part': part, 'since': int(time.time())})
-        came = lambda ok, why='', title=title, src=src, size=size: status(now=None, came={'to': title, 'from': src['name'], 'gb': round(size / 1e9, 1), 'at': int(time.time()), 'ok': ok, 'why': why})
+        status(now={'from': src['name'], 'file': path, 'to': title, 'extra': p.get('extra'), 'size': size, 'part': part, 'since': int(time.time())})
+        came = lambda ok, why='', title=title + (' · extra: ' + os.path.splitext(p['extra'])[0] if p.get('extra') else ''), src=src, size=size: status(now=None, came={'to': title, 'from': src['name'], 'gb': round(size / 1e9, 1), 'at': int(time.time()), 'ok': ok, 'why': why})
         said = ''
         try:   # (in Terminal: how far, how fast, how long to go, as it downloads)
             said = fetch(loc, path, part, show=sys.stdout.isatty())
@@ -507,12 +540,23 @@ def _run(check):
             log('  %s: it didn’t come (rclone said: %s): left in %s, tried again next time' % (title, said.replace('\n', ' / ')[-300:] or 'nothing', src['name']))
             came(False, 'it didn’t come: ' + (said.splitlines()[-1][-160:] if said else 'tried again next time'))
             continue
-        if got != size:
+        if size and got != size or not got:
             log('  the copy isn’t whole (%d of %d bytes): left in %s' % (got, size, src['name']))
             came(False, 'the copy wasn’t whole: left in %s' % src['name'])
             os.remove(part)
             continue
         os.replace(part, dest)
+        if p.get('extra'):   # (an extra: nothing more to do, the media server finds it in Other)
+            seen[key] = int(time.time())
+            log('  done: %s in %s/Other' % (p['extra'], title))
+            came(True)
+            try:
+                tmp = SEEN + '.tmp'
+                json.dump(seen, open(tmp, 'w'))
+                os.replace(tmp, SEEN)
+            except OSError:
+                pass
+            continue
         # (its subtitles: beside it, with the film's new name)
         stem = os.path.splitext(p['name'])[0]
         for s_ in subs:
