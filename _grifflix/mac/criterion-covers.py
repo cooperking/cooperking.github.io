@@ -18,7 +18,7 @@ come from Criterion's picture store, which anyone can fetch. Then:
   python3 ~/Grifflix/criterion-covers.py [list.html]        what it would do (nothing changes)
   python3 ~/Grifflix/criterion-covers.py [list.html] go     does it
 """
-import base64, html.parser, json, shutil, os, re, subprocess, sys, time, unicodedata, urllib.parse, urllib.request
+import base64, hashlib, html.parser, json, shutil, os, re, subprocess, sys, time, unicodedata, urllib.parse, urllib.request
 
 ARGS = sys.argv[1:]
 GO = 'go' in ARGS
@@ -197,6 +197,116 @@ def has_film(folder):   # (as poster-add.py: a film in it, not only extras)
         if any(f.lower().endswith(('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')) and not f.startswith('.') for f in files):
             return True
     return False
+
+
+SYN = os.path.join(HOME, 'criterion-synopses.json')   # (each film's Criterion synopsis, by its Criterion page, and which films were given it)
+
+
+def synopsis_of(page):
+    """A Criterion film page's own synopsis: its summary paragraphs, else its description."""
+    import html as H
+    m = re.search(r'<div[^>]*class="[^"]*product-summary[^"]*"[^>]*>(.*?)</div>', page, re.S | re.I)
+    txt = ''
+    if m:
+        paras = [re.sub(r'\s+', ' ', H.unescape(re.sub(r'<[^>]+>', '', p_))).strip() for p_ in re.findall(r'<p[^>]*>(.*?)</p>', m.group(1), re.S | re.I)]
+        txt = '\n\n'.join(x for x in paras if x)
+    if not txt:
+        m = re.search(r'<meta[^>]+(?:property="og:description"|name="description")[^>]+content="([^"]*)"', page, re.I) or \
+            re.search(r'<meta[^>]+content="([^"]*)"[^>]+(?:property="og:description"|name="description")', page, re.I)
+        txt = re.sub(r'\s+', ' ', H.unescape(m.group(1))).strip() if m else ''
+    return txt if len(txt) > 40 else ''
+
+
+def synopses(films):
+    """Each Criterion film in Grifflix given Criterion's own synopsis, from its page on criterion.com, in place of the media server's
+    (John, 16 Nov 2026: "Can the criterion films synopsis be replaced by the criterion page's own synopsis for the films"); kept from
+    being changed back (the media server's Overview locked). Each page read once, gently. criterion.com puts some visitors behind a
+    check (Cloudflare's "Just a moment…"): if it does so to the Mac mini, this stops at once and says so; it never tries to get past it."""
+    try:
+        Sx = json.load(open(os.path.join(os.environ.get('GRIFFLIX_DIR') or os.path.expanduser('~/Library/Application Support/Grifflix'), 'settings.json')))
+        def jf(method, path, body=None, **q):
+            u = Sx.get('jellyfin', 'http://127.0.0.1:8096') + path + ('?' + urllib.parse.urlencode(q) if q else '')
+            raw = urllib.request.urlopen(urllib.request.Request(u, data=json.dumps(body).encode() if body is not None else None, method=method,
+                                         headers={'Authorization': 'MediaBrowser Token="%s"' % Sx['jf_token'], 'Content-Type': 'application/json'}), timeout=120).read()
+            return json.loads(raw) if raw[:1] in (b'{', b'[') else None
+        g = lambda d, k_: d.get(k_, d.get(k_[:1].lower() + k_[1:]))
+        try:
+            S_ = json.load(open(SYN))
+        except Exception:
+            S_ = {}
+        pages, given = S_.setdefault('pages', {}), S_.setdefault('given', {})
+        want = {}   # (folder → its Criterion page)
+        for f in films:
+            if f.get('link', '').startswith('https://www.criterion.com/films/'):
+                for folder, cover in IN_LIB.items():
+                    if cover == name_of(f['title'], f['year']):
+                        want.setdefault(folder, f['link'])
+        if not want:
+            return
+        movies, uid, by = os.path.join(BASE, 'Movies'), Sx['jf_user_id'], {}
+        r_ = jf('GET', '/Users/%s/Items' % uid, ParentId=(Sx.get('libraries') or {}).get('movies'), Recursive='true', IncludeItemTypes='Movie', Fields='Path')
+        for it in g(r_, 'Items') or []:
+            rel = os.path.relpath(g(it, 'Path') or '/', movies).split(os.sep)
+            if len(rel) >= 2 and not (len(rel) > 2 and rel[1].lower() in ('other', 'extras', 'featurettes', 'trailers', 'interviews', 'shorts')):
+                by.setdefault(rel[0], []).append(g(it, 'Id'))
+        todo = [(fo, l) for fo, l in sorted(want.items()) if l not in pages]
+        print('\nCriterion’s synopses: %d film(s) to read from criterion.com%s' % (len(todo), '' if GO else ' (run with go)'))
+        blocked, fails = False, 0
+        if GO:
+            for n, (fo, link) in enumerate(todo):
+                try:
+                    page = fetch(link).decode('utf-8', 'replace')
+                    fails = 0
+                except Exception:
+                    fails += 1
+                    if fails >= 3:   # (three refused in a row: it isn't letting the Mac mini in)
+                        blocked = True
+                        break
+                    time.sleep(3)
+                    continue
+                if 'Just a moment' in page[:3000] or 'challenges.cloudflare.com' in page[:6000]:
+                    blocked = True
+                    break
+                pages[link] = synopsis_of(page)
+                if (n + 1) % 50 == 0:
+                    print('  %d of %d…' % (n + 1, len(todo)), flush=True)
+                    with open(SYN + '.tmp', 'w') as fh:
+                        json.dump(S_, fh)
+                    os.replace(SYN + '.tmp', SYN)
+                time.sleep(1.5)   # (gently: one page every second and a half)
+            if blocked:
+                print('  criterion.com asked the Mac mini to prove it’s a person (its “Just a moment…” check), so it stopped there: the synopses it has are used.')
+        put = 0
+        for fo, link in want.items():
+            txt = pages.get(link)
+            if not txt:
+                continue
+            for iid in by.get(fo, []):
+                sig = hashlib.sha1(txt.encode()).hexdigest()[:12]
+                if given.get(iid) == sig:
+                    continue
+                if GO:
+                    full = jf('GET', '/Users/%s/Items/%s' % (uid, iid)) or {}
+                    if not full:
+                        continue
+                    full['Overview'] = txt
+                    full['LockedFields'] = sorted(set((g(full, 'LockedFields') or []) + ['Overview']))
+                    jf('POST', '/Items/%s' % iid, full)
+                    given[iid] = sig
+                put += 1
+        print('  %d film(s) given Criterion’s synopsis%s.' % (put, '' if GO else ' (run with go)'))
+        if GO:
+            with open(SYN + '.tmp', 'w') as fh:
+                json.dump(S_, fh)
+            os.replace(SYN + '.tmp', SYN)
+            if put:
+                try:
+                    urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:%s/local/remap' % Sx.get('port', 8097), data=b'{"map": {}}', method='POST',
+                                           headers={'X-Grifflix-Secret': Sx['secret'], 'Content-Type': 'application/json'}), timeout=30).read()
+                except Exception:
+                    pass
+    except Exception as e:
+        print('\nCriterion’s synopses: not done (%s).' % e)
 
 
 def cover_path(c):
@@ -418,6 +528,7 @@ def main():
     spines(listed)
     collect()
     beyond(films)
+    synopses(films)
     sheet_rows(films)
     # every Criterion film in Grifflix its cover (the ones already here, and the new)
     print('\nPutting the covers on their films…' if GO else '\nWhat poster-add.py would put on the films:')
