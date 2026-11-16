@@ -2246,7 +2246,7 @@ def make_handler(g):
         def look(self, what, q):
             LOOKED['at'] = time.time()
             home = os.path.expanduser('~/Grifflix')
-            LOGS = {'duplicates': os.path.join(home, 'duplicates.log'), 'criterion': os.path.join(home, 'criterion-covers.log'), 'criterion-auto': os.path.join(home, 'criterion-auto.log'), 'gateway': os.path.join(APP_DIR, 'gateway.log'), 'tunnel': os.path.join(APP_DIR, 'tunnel.log'), 'setup': os.path.join(APP_DIR, 'setup.log'),
+            LOGS = {'duplicates': os.path.join(home, 'duplicates.log'), 'criterion': os.path.join(home, 'criterion-covers.log'), 'criterion-auto': os.path.join(home, 'criterion-auto.log'), 'criterion-sheet': os.path.join(home, 'criterion-sheet.log'), 'gateway': os.path.join(APP_DIR, 'gateway.log'), 'tunnel': os.path.join(APP_DIR, 'tunnel.log'), 'setup': os.path.join(APP_DIR, 'setup.log'),
                     'convert': os.path.join(home, 'convert.log'), 'convert-out': os.path.join(home, 'convert.out'), 'gdrive': os.path.join(home, 'gdrive.log')}
             SECRETISH = re.compile(r'(rclone\.conf|token|secret|password|\.pickle$|client_secret|\.pem$|\.key$|settings\.json$)', re.I)
             def inside(p):
@@ -3358,6 +3358,26 @@ def auto_match(g):
         log('Not sure which film (left as they are, Fix match on its page): %s' % '; '.join(unsure)[:800])
 
 
+def sheet_now():
+    """John's Criterion sheet kept up to date by itself, every six hours: which films are in Grifflix and which have extras in "Other"
+    (John, 16 Nov 2026: "the criterion collection google sheet should be updating the section when it's on Grifflix, and the Extras if
+    it's got Extras in Others"). Only once criterion.py has been signed in to Google; quiet unless it changed something."""
+    home = os.path.expanduser('~/Grifflix')
+    cr = os.path.join(home, 'criterion.py')
+    if not os.path.exists(cr) or not os.path.exists(os.path.join(home, 'criterion.json')) or not os.path.isdir(os.path.join(os.environ.get('GRIFFLIX_MEDIA') or '/Volumes/G-Drive/Grifflix', 'Movies')):
+        return
+    try:
+        import subprocess
+        r = subprocess.run([sys.executable, '-u', cr, 'go'], capture_output=True, text=True, timeout=900, cwd=home, stdin=subprocess.DEVNULL)
+        out = (r.stdout or '') + (r.stderr or '')
+        with open(os.path.join(home, 'criterion-sheet.log'), 'w') as f:
+            f.write(out)
+        if 'Marked ' in out or r.returncode:
+            log('Criterion sheet: %s' % ' '.join(l.strip() for l in out.strip().splitlines()[-12:])[:700])
+    except Exception as e:
+        log('Criterion sheet: %s' % e)
+
+
 def covers_now():
     """A film just come in: if it's a Criterion film, everything a Criterion film has, from the start (John, 16 Nov 2026: "a new film - the
     secret agent wasn't added to the criterion collection automatically"): its cover, its spine number and its place in The Criterion
@@ -3568,6 +3588,7 @@ def keep_scanning(g):
                 auto_match(g)
             except Exception as e:
                 log('Putting films right by their folders:', e)
+            sheet_now()
         try:
             roots = [l for v in g.jf.call('GET', '/Library/VirtualFolders') or [] if (v.get('CollectionType') or '') in ('movies', 'tvshows')
                      for l in v.get('Locations') or []]
