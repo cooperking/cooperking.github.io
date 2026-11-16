@@ -1989,25 +1989,7 @@ def make_handler(g):
             # (John's own pictures in the film's folder (his Criterion posters) kept: replacing all pictures made the media server delete
             # them, The Freshman's poster.jpg and fanart.jpg gone for good: John, 16 Nov 2026. With pictures of its own in its folder, only
             # its details are taken from the match; and every picture in its folder is copied aside first, whatever happens)
-            own = []
-            try:
-                own = [(n, f) for n, f in folder_pics(g, iid) if not re.search(r'\.(srt|nfo)$', n, re.I)]
-                if own:
-                    keep = os.path.join(APP_DIR, 'pictures-before', 'folder-%s-%d' % (iid, time.time()))
-                    os.makedirs(keep, exist_ok=True)
-                    import shutil
-                    for n, f in own:
-                        shutil.copy2(f, os.path.join(keep, n))
-            except Exception as e:
-                log('  (its folder’s pictures couldn’t be copied aside: %s)' % e)
-            g.jf.call('POST', '/Items/RemoteSearch/Apply/%s' % iid, pick, {'replaceAllImages': 'false' if own else 'true'})
-            try:   # (and put back if the media server took any away all the same)
-                for n, f in own:
-                    if not os.path.exists(f):
-                        shutil.copy2(os.path.join(keep, n), f)
-                        log('  put back its own %s' % n)
-            except Exception as e:
-                log('  (its own pictures couldn’t be put back: %s)' % e)
+            apply_match(g, iid, pick)
             g.forget()
             g.publish_soon = time.time() + 180   # (the site's copy brought up to date by itself, once the media server has read it)
             log('Identified by John: %s → %s (%s)' % (it.get('Name'), pick.get('Name'), pick.get('ProductionYear') or '?'))
@@ -3022,6 +3004,91 @@ def folder_pics(g, iid):
     return sorted((n, os.path.join(folder, n)) for n in os.listdir(folder) if n.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')) and not n.startswith('.'))
 
 
+def apply_match(g, iid, pick):
+    """A match from TMDB put on a film, as Fix match does: John's own pictures in its folder kept (copied aside first, only its details
+    taken when it has its own, and put back if lost: The Freshman's Criterion poster, 16 Nov 2026)."""
+    import shutil
+    own, keep = [], None
+    try:
+        own = [(n, f) for n, f in folder_pics(g, iid) if not re.search(r'\.(srt|nfo)$', n, re.I)]
+        if own:
+            keep = os.path.join(APP_DIR, 'pictures-before', 'folder-%s-%d' % (iid, time.time()))
+            os.makedirs(keep, exist_ok=True)
+            for n, f in own:
+                shutil.copy2(f, os.path.join(keep, n))
+    except Exception as e:
+        log('  (its folder’s pictures couldn’t be copied aside: %s)' % e)
+    g.jf.call('POST', '/Items/RemoteSearch/Apply/%s' % iid, pick, {'replaceAllImages': 'false' if own else 'true'})
+    try:
+        for n, f in own:
+            if keep and not os.path.exists(f):
+                shutil.copy2(os.path.join(keep, n), f)
+                log('  put back its own %s' % n)
+    except Exception as e:
+        log('  (its own pictures couldn’t be put back: %s)' % e)
+
+
+def fold(t):   # a title compared: letters and numbers only, accents plain, "&" as "and", numbers to twenty as words, no leading "the"
+    import unicodedata
+    NUM = 'zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty'.split()
+    t = unicodedata.normalize('NFKD', (t or '').replace('&', ' and ')).encode('ascii', 'ignore').decode().lower()
+    t = re.sub(r'\b(\d{1,2})\b', lambda m: NUM[int(m.group(1))] if int(m.group(1)) <= 20 else m.group(1), t)
+    t = re.sub(r'[^a-z0-9]', '', t)
+    return t[3:] if t.startswith('the') and len(t) > 6 else t
+
+
+def auto_match(g):
+    """Films the media server has taken for another film put right by themselves, from their own folder's name (John, 16 Nov 2026: "you
+    can fix these and they should be fixed automatically": No (2012) shown as No Country for Old Men, Time (2020) as Once Upon a Time…
+    in Hollywood, Europa as Europa Europa, Mean Girls (2024) as the 2004 one). Only when the folder's title and the film's name, or their
+    years, plainly differ, and TMDB has exactly one film of the folder's title and year; never a film John renamed himself, a set of
+    films in one folder, or a version kept on purpose ({edition-…}). Each folder tried at most once a week."""
+    import difflib
+    VID = ('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')
+    tried_at = os.path.expanduser('~/Grifflix/match-tried.json')
+    tried = load(tried_at, {})
+    lid = (g.st.get('libraries') or {}).get('movies')
+    if not lid:
+        return
+    items = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie',
+                                                               'Fields': 'Path,ProductionYear,ProviderIds,LockedFields'}).get('Items') or []
+    fixed = []
+    for it in items:
+        p = it.get('Path') or ''
+        folder = os.path.dirname(p)
+        fname = os.path.basename(folder)
+        m = re.match(r'^(.*?)\s*\((\d{4})\)\s*$', fname)
+        if not m or '{edition-' in p.lower() or 'Name' in (it.get('LockedFields') or []) or it.get('LockData'):
+            continue
+        try:
+            if sum(1 for n in os.listdir(folder) if n.lower().endswith(VID) and not n.startswith('.')) != 1:   # (one film in its own folder only)
+                continue
+        except OSError:
+            continue
+        title, year = m.group(1).strip(), int(m.group(2))
+        same_name = difflib.SequenceMatcher(None, fold(title), fold(it.get('Name'))).ratio() >= .9
+        same_year = not it.get('ProductionYear') or abs(int(it['ProductionYear']) - year) <= 1
+        if same_name and same_year:
+            continue
+        if time.time() - tried.get(fname, 0) < 7 * 86400:
+            continue
+        tried[fname] = time.time()
+        try:
+            res = g.jf.call('POST', '/Items/RemoteSearch/Movie', {'SearchInfo': {'Name': title, 'Year': year}, 'ItemId': it['Id'], 'IncludeDisabledProviders': False}) or []
+            hits = [x for x in res if x.get('ProductionYear') == year and fold(x.get('Name')) == fold(title) and (x.get('ProviderIds') or {}).get('Tmdb')]
+            if len(hits) != 1 or (hits[0].get('ProviderIds') or {}).get('Tmdb') == (it.get('ProviderIds') or {}).get('Tmdb'):
+                continue
+            apply_match(g, it['Id'], hits[0])
+            fixed.append('%s: was %s (%s), now %s (%s)' % (fname, it.get('Name'), it.get('ProductionYear') or '?', hits[0].get('Name'), year))
+        except Exception as e:
+            log('Matching again %s: %s' % (fname, e))
+    save(tried_at, tried)
+    if fixed:
+        log('Put right by their folders (%d): %s' % (len(fixed), '; '.join(fixed)[:1500]))
+        g.forget()
+        g.publish_soon = time.time() + 300
+
+
 def covers_now():
     """Every Criterion film its cover, from those already in "Criterion covers" (poster-add.py drive nofetch go): run when a film has
     just come in, so a Criterion film has its cover from the start (John, 16 Nov 2026). Quiet unless it put one on."""
@@ -3209,9 +3276,15 @@ def keep_scanning(g):
     is asked to look too. Its own watching of the folders misses films put on the drive over the network (John, 15 Nov 2026: "New
     films arent getting added": The Invite, Blue Heron and Sense and Sensibility sat on the drive unseen until it was asked)."""
     seen_at = os.path.expanduser('~/Grifflix/library-seen.json')
-    publish_at = 0
+    publish_at, matched_at = 0, time.time() - 6 * 3600 + 600   # (films put right by their folders: 10 minutes after starting, then every 6 hours)
     time.sleep(120)
     while True:
+        if time.time() - matched_at > 6 * 3600:
+            matched_at = time.time()
+            try:
+                auto_match(g)
+            except Exception as e:
+                log('Putting films right by their folders:', e)
         try:
             roots = [l for v in g.jf.call('GET', '/Library/VirtualFolders') or [] if (v.get('CollectionType') or '') in ('movies', 'tvshows')
                      for l in v.get('Locations') or []]
