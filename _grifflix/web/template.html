@@ -154,6 +154,7 @@ img { display: block; }
 .strip.wide .card .pic, .card.land .pic { aspect-ratio: 16 / 9; }
 .card .pic img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
 .card:hover .pic img { transform: scale(1.04); }
+.card .s .spn { font-weight: 600; letter-spacing: .02em; }
 /* (a poster that isn't poster-shaped, a Criterion cover's 4:5: whole, never stretched or cut, a soft dark copy of itself around it:
    John, 16 Nov 2026, "if we can change the display, we don't need to" pad them) */
 .pic.odd { isolation: isolate; }
@@ -5200,10 +5201,10 @@ function subOf(it) {
 }
 function progBar(it) { return it.pos && it.secs ? '<span class="bar" style="width:' + Math.min(100, it.pos / it.secs * 100).toFixed(1) + '%"></span>' : ''; }
 
-function cardHTML(it, land) {
+function cardHTML(it, land, spine) {   // (spine: a collection's page, a Criterion film's spine number with it: John, 16 Nov 2026)
   var src = land ? img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480) : img(it.poster, 'Primary', 320);
   return '<button class="card' + (land ? ' land' : '') + '" data-item="' + it.id + '"><div class="pic">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '<div class="noimg">' + esc(showName(it)) + '</div>') + progBar(it) + '</div>' +
-    '<div class="t">' + esc(showName(it)) + '</div><div class="s">' + esc(subOf(it)) + '</div></button>';
+    '<div class="t">' + esc(showName(it)) + '</div><div class="s">' + ((spine || SF.sort === 'spine') && it.spine ? '<b class="spn">No. ' + esc(String(it.spine)) + '</b> · ' : '') + esc(subOf(it)) + '</div></button>';
 }
 function collCard(c) {   // a collection's cover, drawn rather than a picture: a title poster in the month's theme - its colour,
   // its type, and a graphic of its own for each collection (John, 8 Nov 2026: "replace the images with a creatively styled
@@ -5239,7 +5240,7 @@ function collectionView(id, into) {
       (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
       '<div class="tabs"><span class="sp"></span>' + sfBar() + '</div>' +
       '<div class="gridcards" id="cgrid"></div>';
-    var draw = function () { var items = sfSort(c.items.filter(sfFits(SF.f)), SF.sort, SF.dir); $('#cgrid').innerHTML = items.length ? items.map(function (i) { return cardHTML(i); }).join('') : '<div class="empty">Nothing like that in this collection.</div>'; wireCards($('#cgrid'), items); };
+    var draw = function () { var items = sfSort(c.items.filter(sfFits(SF.f)), SF.sort, SF.dir); $('#cgrid').innerHTML = items.length ? items.map(function (i) { return cardHTML(i, false, true); }).join('') : '<div class="empty">Nothing like that in this collection.</div>'; wireCards($('#cgrid'), items); };
     sfWire($('#cbody'), c.items, draw);
     draw();
     if (ME && ME.owner) {

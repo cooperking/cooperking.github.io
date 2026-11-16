@@ -17,7 +17,7 @@ serves them (/gp/): the Mac must be on for that, as it is when John presses Upda
   data_publish.py pictures   then the pictures not yet copied
   data_publish.py days       each morning (the Worker starts it from 8am): days.json only
 """
-import concurrent.futures, datetime, hashlib, json, os, sys, urllib.request
+import concurrent.futures, datetime, hashlib, json, os, sys, time, urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'grifflix', 'data')
@@ -185,8 +185,15 @@ def pictures(s3, bucket, snap):
         for w in KINDS[k]:
             url = '%s/pimg/%s/%s.jpg?maxWidth=%d&quality=82' % (MAC, i, k, w)
             req = urllib.request.Request(url, headers={'User-Agent': 'Grifflix site copy'})
-            with urllib.request.urlopen(req, timeout=90) as r:
-                body = r.read()
+            for attempt in range(3):   # (a dropped connection tried again: one failure had left The Freshman's old poster showing: 16 Nov 2026)
+                try:
+                    with urllib.request.urlopen(req, timeout=90) as r:
+                        body = r.read()
+                    break
+                except Exception:
+                    if attempt == 2:
+                        raise
+                    time.sleep(3 + 5 * attempt)
             if len(body) < 200:
                 raise ValueError('too small')
             s3.put_object(Bucket=bucket, Key='grifflix/p/%s/%s-%d.jpg' % (i, k, w), Body=body, ContentType='image/jpeg')
