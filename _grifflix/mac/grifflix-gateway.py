@@ -2190,6 +2190,35 @@ def make_handler(g):
                     SCAN_NOW.set()
             return self.send_json(200, {'on': bool(g.st.get('worker_token')), 'last': g.st.get('auto_update_last')})
 
+        def api_tmdbkey(self, me, user, q, b):
+            """John's only: his TMDB key (an API key or read access token), kept on the Mac, so films are matched by TMDB itself, their
+            lengths included. POST {key}: checked with TMDB, then kept; {off: true}: none. GET: whether there is one."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            if b:
+                if b.get('off'):
+                    g.st.pop('tmdb_key', None)
+                else:
+                    k = str(b.get('key') or '').strip()
+                    if not re.match(r'^[A-Za-z0-9._-]{20,400}$', k):
+                        return self.send_json(400, {'error': 'That isn’t a TMDB key.'})
+                    was = g.st.get('tmdb_key')
+                    g.st['tmdb_key'] = k
+                    try:
+                        if not tmdb(g, '/configuration'):
+                            raise ValueError('no answer')
+                    except Exception as e:
+                        if was:
+                            g.st['tmdb_key'] = was
+                        else:
+                            g.st.pop('tmdb_key', None)
+                        return self.send_json(400, {'error': 'TMDB didn’t accept that key (%s).' % str(e)[:80]})
+                    save(os.path.expanduser('~/Grifflix/match-tried.json'), {})   # (every film looked at again, with TMDB's help)
+                save(SETTINGS, g.st)
+                if g.st.get('tmdb_key'):   # (and now, not in six hours)
+                    threading.Thread(target=auto_match, args=(g,), daemon=True).start()
+            return self.send_json(200, {'on': bool(g.st.get('tmdb_key'))})
+
         def api_subsetup(self, me, user, q, b):
             """John's OpenSubtitles details (its API key, his account), kept here on the Mac only."""
             if not me.get('owner'):
@@ -3004,6 +3033,47 @@ def folder_pics(g, iid):
     return sorted((n, os.path.join(folder, n)) for n in os.listdir(folder) if n.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')) and not n.startswith('.'))
 
 
+TMDBC = {}
+
+
+def tmdb(g, path, **q):
+    """TMDB's own answers, with John's key (an API key, or a read access token), kept on the Mac (settings tmdb_key)."""
+    k = g.st.get('tmdb_key') or ''
+    if not k:
+        return None
+    h = {'Accept': 'application/json', 'User-Agent': 'Grifflix'}
+    if k.startswith('eyJ'):
+        h['Authorization'] = 'Bearer ' + k
+    else:
+        q['api_key'] = k
+    u = 'https://api.themoviedb.org/3' + path + '?' + urllib.parse.urlencode(q)
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(u, headers=h), timeout=30, context=tls()) as r_:
+                return json.loads(r_.read())
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                time.sleep(2 + attempt * 3)
+                continue
+            if e.code == 404:
+                return None
+            raise
+    return None
+
+
+def tmdb_runtime(g, tid):   # a film's running time on TMDB (kept: ~/Grifflix/tmdb-runtimes.json)
+    f = os.path.expanduser('~/Grifflix/tmdb-runtimes.json')
+    if not TMDBC:
+        TMDBC.update(load(f, {}))
+    tid = str(tid)
+    if tid not in TMDBC:
+        d = tmdb(g, '/movie/%s' % tid) or {}
+        TMDBC[tid] = {'rt': d.get('runtime') or 0, 'title': d.get('title'), 'year': (d.get('release_date') or '')[:4]}
+        TMDBC['_dirty'] = 1
+        time.sleep(.05)
+    return TMDBC[tid]
+
+
 def apply_match(g, iid, pick):
     """A match from TMDB put on a film, as Fix match does: John's own pictures in its folder kept (copied aside first, only its details
     taken when it has its own, and put back if lost: The Freshman's Criterion poster, 16 Nov 2026)."""
@@ -3038,11 +3108,13 @@ def fold(t):   # a title compared: letters and numbers only, accents plain, "&" 
 
 
 def auto_match(g):
-    """Films the media server has taken for another film put right by themselves, from their own folder's name (John, 16 Nov 2026: "you
-    can fix these and they should be fixed automatically": No (2012) shown as No Country for Old Men, Time (2020) as Once Upon a Time…
-    in Hollywood, Europa as Europa Europa, Mean Girls (2024) as the 2004 one). Only when the folder's title and the film's name, or their
-    years, plainly differ, and TMDB has exactly one film of the folder's title and year; never a film John renamed himself, a set of
-    films in one folder, or a version kept on purpose ({edition-…}). Each folder tried at most once a week."""
+    """Films the media server has taken for another film put right by themselves (John, 16 Nov 2026: "you can fix these and they should
+    be fixed automatically" ... "you should be able to match better by using a tmdb check"). A film looks wrong when its folder's title
+    or year plainly differ from its match, or (with John's TMDB key) when its own length is far from its match's length on TMDB. Then
+    TMDB is searched for the folder's title (its year, or a year either side) and each film of that title checked for its length: the
+    one within 8 minutes of the file, and only that one, is put on it. Without the key: only an exact title and year that TMDB has
+    once. Never a film John renamed himself, a set of films in one folder, or a version kept on purpose ({edition-…}). Each folder at
+    most once a week."""
     import difflib
     VID = ('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')
     tried_at = os.path.expanduser('~/Grifflix/match-tried.json')
@@ -3051,8 +3123,9 @@ def auto_match(g):
     if not lid:
         return
     items = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie',
-                                                               'Fields': 'Path,ProductionYear,ProviderIds,LockedFields'}).get('Items') or []
-    fixed = []
+                                                               'Fields': 'Path,ProductionYear,ProviderIds,LockedFields,MediaSources'}).get('Items') or []
+    keyed = bool(g.st.get('tmdb_key'))
+    fixed, unsure = [], []
     for it in items:
         p = it.get('Path') or ''
         folder = os.path.dirname(p)
@@ -3066,27 +3139,65 @@ def auto_match(g):
         except OSError:
             continue
         title, year = m.group(1).strip(), int(m.group(2))
+        ms = (it.get('MediaSources') or [{}])[0]
+        mins = round((ms.get('RunTimeTicks') or it.get('RunTimeTicks') or 0) / 6e8)
+        cur = (it.get('ProviderIds') or {}).get('Tmdb')
         same_name = difflib.SequenceMatcher(None, fold(title), fold(it.get('Name'))).ratio() >= .9
         same_year = not it.get('ProductionYear') or abs(int(it['ProductionYear']) - year) <= 1
-        if same_name and same_year:
+        wrong_len = False
+        if keyed and cur and mins > 10:
+            try:
+                rt = tmdb_runtime(g, cur)['rt']
+                wrong_len = rt > 10 and abs(rt - mins) > 15   # (its match runs a quarter of an hour longer or shorter than the film itself)
+            except Exception:
+                pass
+        if same_name and same_year and not wrong_len:
             continue
         if time.time() - tried.get(fname, 0) < 7 * 86400:
             continue
         tried[fname] = time.time()
         try:
-            res = g.jf.call('POST', '/Items/RemoteSearch/Movie', {'SearchInfo': {'Name': title, 'Year': year}, 'ItemId': it['Id'], 'IncludeDisabledProviders': False}) or []
-            hits = [x for x in res if x.get('ProductionYear') == year and fold(x.get('Name')) == fold(title) and (x.get('ProviderIds') or {}).get('Tmdb')]
-            if len(hits) != 1 or (hits[0].get('ProviderIds') or {}).get('Tmdb') == (it.get('ProviderIds') or {}).get('Tmdb'):
+            pick = None
+            if keyed:   # (TMDB itself: every film of the folder's title, this year or either side, by its length)
+                cands = {}
+                for y in (year, year - 1, year + 1):
+                    for x in (tmdb(g, '/search/movie', query=title, primary_release_year=y) or {}).get('results') or []:
+                        if fold(title) in (fold(x.get('title')), fold(x.get('original_title'))):
+                            cands[x['id']] = x
+                close = []
+                for tid, x in cands.items():
+                    rt = tmdb_runtime(g, tid)['rt']
+                    if mins and rt and abs(rt - mins) <= 8:
+                        close.append((abs(rt - mins), tid, x))
+                    elif not mins and str(year) == (x.get('release_date') or '')[:4]:
+                        close.append((0, tid, x))
+                close.sort(key=lambda c: c[0])
+                if len(close) == 1 or (len(close) > 1 and close[1][0] - close[0][0] >= 5 and len([c for c in close if c[0] <= 3]) == 1):
+                    tid, x = close[0][1], close[0][2]
+                    pick = {'Name': x.get('title'), 'ProductionYear': int((x.get('release_date') or '0')[:4] or 0) or None,
+                            'ProviderIds': {'Tmdb': str(tid)}, 'SearchProviderName': 'TheMovieDb'}
+                elif cands:
+                    unsure.append('%s (%d on TMDB, none or several of its length)' % (fname, len(cands)))
+            else:   # (the media server's search: an exact title and year it has once)
+                res = g.jf.call('POST', '/Items/RemoteSearch/Movie', {'SearchInfo': {'Name': title, 'Year': year}, 'ItemId': it['Id'], 'IncludeDisabledProviders': False}) or []
+                hits = [x for x in res if x.get('ProductionYear') == year and fold(x.get('Name')) == fold(title) and (x.get('ProviderIds') or {}).get('Tmdb')]
+                if len(hits) == 1:
+                    pick = hits[0]
+            if not pick or str((pick.get('ProviderIds') or {}).get('Tmdb')) == str(cur):
                 continue
-            apply_match(g, it['Id'], hits[0])
-            fixed.append('%s: was %s (%s), now %s (%s)' % (fname, it.get('Name'), it.get('ProductionYear') or '?', hits[0].get('Name'), year))
+            apply_match(g, it['Id'], pick)
+            fixed.append('%s: was %s (%s), now %s (%s)' % (fname, it.get('Name'), it.get('ProductionYear') or '?', pick.get('Name'), pick.get('ProductionYear') or '?'))
         except Exception as e:
             log('Matching again %s: %s' % (fname, e))
     save(tried_at, tried)
+    if TMDBC.pop('_dirty', None):
+        save(os.path.expanduser('~/Grifflix/tmdb-runtimes.json'), TMDBC)
     if fixed:
         log('Put right by their folders (%d): %s' % (len(fixed), '; '.join(fixed)[:1500]))
         g.forget()
         g.publish_soon = time.time() + 300
+    if unsure:
+        log('Not sure which film (left as they are, Fix match on its page): %s' % '; '.join(unsure)[:800])
 
 
 def covers_now():

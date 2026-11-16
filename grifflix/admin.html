@@ -389,6 +389,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="state"><button class="btn" id="pngo" type="button">Look</button></div>
       </section>
       <section class="card" data-tab="films">
+        <div class="kicker">Matching</div>
+        <h2>Films matched by <em>TMDB</em></h2>
+        <p class="stat" id="tmsay">With your TMDB key on the Mac mini, a film the media server has taken for another (No shown as No Country for Old Men) is put right by itself, by TMDB’s own details, its length included, so two films of the same name (the two Good Boys) are told apart. Get a key at <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">themoviedb.org/settings/api</a> (the “API Key”, or the “API Read Access Token”); your old get_metadata.py script has one in it too. Kept on the Mac only.</p>
+        <div class="state"><input type="text" id="tmkey" class="name" placeholder="TMDB API key" autocomplete="off" spellcheck="false" style="flex:1 1 260px"><button class="btn primary" id="tmgo" type="button">Save</button></div>
+      </section>
+      <section class="card" data-tab="films">
         <div class="kicker">Subtitles</div>
         <h2>Subtitles, <em>in time</em></h2>
         <p class="stat" id="ossay">Members find subtitles for a film in the player (the subtitles button, then <b>Find subtitles…</b>). They come from OpenSubtitles, and the Mac mini times each one to the film’s sound. It needs your OpenSubtitles account and an API key, kept on the Mac only: make a free account at opensubtitles.com, then get a key at <a href="https://www.opensubtitles.com/en/consumers" target="_blank" rel="noopener">opensubtitles.com/en/consumers</a> (“New consumer”, any name).</p>
@@ -1301,6 +1307,18 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       .then(function () { b.disabled = false; b.textContent = 'Save'; });
   };
   setTimeout(osLoad, 1500);
+  // ---- John's TMDB key on the Mac: films matched by TMDB itself (John, 16 Nov 2026: "you should be able to match better by using a tmdb check")
+  function tmPaint(r) { if (r && r.on) { $('#tmsay').innerHTML = 'On: films the media server has matched wrongly are put right by TMDB itself, their lengths included, every few hours (in the Mac mini’s log: “Put right by their folders”). Save another key to change it.'; $('#tmkey').placeholder = 'TMDB key (saved: leave empty to keep it)'; } }
+  setTimeout(function () { if (GW) fetch(GW + '/api/tmdbkey', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { return r.json(); }).then(tmPaint).catch(function () {}); }, 1600);
+  $('#tmgo').onclick = function () {
+    var k = $('#tmkey').value.trim(), b = $('#tmgo'); if (!k) return; if (!GW) return toast('The Mac mini isn’t answering.');
+    b.disabled = true; b.textContent = 'Checking…';
+    fetch(GW + '/api/tmdbkey', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ key: k }) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(r.status === 404 ? 'Press Update everything first: the Mac mini needs its update.' : j.error || 'Couldn’t save that.'); return j; }); })
+      .then(function (r) { $('#tmkey').value = ''; tmPaint(r); toast('Saved: TMDB is checking the films now'); })
+      .catch(function (e) { toast(e.message || 'Couldn’t save that.'); })
+      .then(function () { b.disabled = false; b.textContent = 'Save'; });
+  };
 
   // ---- Criterion's covers (John, 16 Nov 2026: the old import_requests.py, done here): the films read from Criterion's list page as John's
   // browser saved it, sent to the Mac mini, which fetches the covers and puts them on their films
