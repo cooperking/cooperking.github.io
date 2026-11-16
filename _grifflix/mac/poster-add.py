@@ -79,6 +79,18 @@ def jf(method, path, data=None, ctype='application/json', **q):
     return json.loads(raw) if raw[:1] in (b'{', b'[') else None
 
 
+EXTRAS = ('other', 'extras', 'featurettes', 'behind the scenes', 'deleted scenes', 'interviews', 'trailers', 'shorts')
+VIDEO = ('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')
+
+
+def has_film(folder):   # (a film in it, not only its extras: an empty folder left behind gets no poster)
+    for d, dirs, files in os.walk(folder):
+        dirs[:] = [x for x in dirs if x.lower() not in EXTRAS and not x.startswith('.')]
+        if any(f.lower().endswith(VIDEO) and not f.startswith('.') for f in files):
+            return True
+    return False
+
+
 def films_by_folder():   # each film folder → the media server's films in it
     out = {}
     lid = (S.get('libraries') or {}).get('movies')
@@ -90,7 +102,10 @@ def films_by_folder():   # each film folder → the media server's films in it
             rel = os.path.relpath(it.get('Path', it.get('path')) or '/', MOVIES)
             if rel.startswith('..') or os.sep not in rel:
                 continue
-            out.setdefault(rel.split(os.sep)[0], []).append(it.get('Id', it.get('id')))   # (its folder, even from a sub-folder of it)
+            parts = rel.split(os.sep)
+            if len(parts) > 2 and parts[1].lower() in EXTRAS:   # (a film's extras, in its "Other" folder: not the film)
+                continue
+            out.setdefault(parts[0], []).append((it.get('Id', it.get('id')), it.get('Name', it.get('name')) or ''))   # (its folder, even from a sub-folder of it)
         start += 500
         if start >= r.get('TotalRecordCount', r.get('totalRecordCount', 0)):
             break
@@ -116,7 +131,7 @@ def main():
         from_drive()
     if not os.path.isdir(SOURCE):
         sys.exit('No "%s": put the posters there (named after their films’ folders) and run this again.' % SOURCE)
-    folders = [f for f in os.listdir(MOVIES) if not f.startswith('.') and os.path.isdir(os.path.join(MOVIES, f))]
+    folders = [f for f in os.listdir(MOVIES) if not f.startswith('.') and os.path.isdir(os.path.join(MOVIES, f)) and has_film(os.path.join(MOVIES, f))]
     exact, near = {}, {}
     for f in folders:
         exact.setdefault(old_key(f), []).append(f)
@@ -156,6 +171,9 @@ def main():
         print('  %s → %s%s' % (p, os.path.relpath(dest, BASE), ' (replacing its poster)' if os.path.exists(dest) or any(os.path.exists(o) for o in others) else ''))
         if not GO:
             done += 1; continue
+        if films is not None and len(set(re.sub(r'[^a-z0-9]', '', n.lower()) for _, n in films.get(folder) or [])) > 1:   # (a set of different films: left as they are)
+            server.append('%s (%d different films in that folder: left as they are)' % (folder, len(films[folder])))
+            continue
         for o in others:   # (one poster per film, so the media server can't pick the old one)
             if os.path.exists(o):
                 os.remove(o)
@@ -166,20 +184,24 @@ def main():
         done += 1
         if films is not None:
             ids = films.get(folder) or []
-            if len(ids) != 1:
-                server.append('%s (%s)' % (folder, 'not in the media server yet' if not ids else '%d films in that folder' % len(ids)))
+            if not ids:
+                server.append('%s (not in the media server yet)' % folder)
                 continue
-            try:
-                jf('POST', '/Items/%s/Images/Primary' % ids[0], base64.b64encode(open(dest, 'rb').read()), ctype=t)
-            except Exception as e:
-                server.append('%s (%s)' % (folder, e))
+            if len(set(re.sub(r'[^a-z0-9]', '', n.lower()) for _, n in ids)) > 1:   # (different films in one folder, a set: not one cover for them all)
+                server.append('%s (%d different films in that folder: %s)' % (folder, len(ids), ', '.join(sorted(set(n for _, n in ids)))[:200]))
+                continue
+            for i, _ in ids:   # (one film, maybe in more than one copy: each copy its cover)
+                try:
+                    jf('POST', '/Items/%s/Images/Primary' % i, base64.b64encode(open(dest, 'rb').read()), ctype=t)
+                except Exception as e:
+                    server.append('%s (%s)' % (folder, e))
     print('\n%s %d poster(s)%s.' % ('Put' if GO else 'Would put', done, ', %d already there' % same_n if same_n else ''))
     if KEEP and unmatched:   # (most Criterion films aren't in the library: just how many)
         print('\n%d cover(s) for films not in the library.' % len(unmatched)); unmatched = []
     for title, rows in (('No film folder matches (left in "Criterion images"):', unmatched),
                         ('More than one folder matches (left there: rename the picture to the right one):', unsure),
                         ('Not a picture, or too small (left there):', bad),
-                        ('In its folder, but the media server will take it at its next scan:', server)):
+                        ('In its folder, but not put on the film in the media server (it may take it at its next scan):', server)):
         if rows:
             print('\n' + title)
             for r in rows:
