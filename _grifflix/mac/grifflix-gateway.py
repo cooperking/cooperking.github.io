@@ -1543,7 +1543,8 @@ def make_handler(g):
                     cur = load(os.path.expanduser('~/Grifflix/convert-now.json'), None) or {}
                     try:
                         pid = conv_alive(cur)   # (only the converter itself: never another program with its old number)
-                        if pid and not cur.get('selfupdate'):
+                        # (or one paused, holding a film back for a download, that would otherwise wait hours to take its update: John, 16 Nov 2026)
+                        if pid and (not cur.get('selfupdate') or (cur.get('state') == 'paused' and 'download' in str(cur.get('why') or ''))):
                             os.kill(pid, 15)
                             time.sleep(3)
                             import subprocess
