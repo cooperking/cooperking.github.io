@@ -13,10 +13,15 @@ none. Calendars, lists, hearts and where people stopped follow the kept copy.
 
   python3 ~/Grifflix/duplicates.py        what it would do (nothing changes)
   python3 ~/Grifflix/duplicates.py go     does it
+  python3 ~/Grifflix/duplicates.py json   the same as JSON, for the admin page's Duplicates tab
+  python3 ~/Grifflix/duplicates.py go keep=<id>,<id>   only those films, each keeping the copy chosen (from the admin page)
 """
 import collections, difflib, json, os, re, shutil, sys, unicodedata, urllib.parse, urllib.request
 
 GO = 'go' in sys.argv[1:]
+JSON = 'json' in sys.argv[1:]
+CHOSEN = any(a.startswith('keep=') for a in sys.argv[1:])   # (the admin page's choice: only what's chosen, never the rest)
+KEEP = set(x for a in sys.argv[1:] if a.startswith('keep=') for x in a[5:].split(',') if re.match(r'^[0-9a-zA-Z]{1,40}$', x))
 BASE = os.environ.get('GRIFFLIX_MEDIA') or '/Volumes/G-Drive/Grifflix'
 MOVIES = os.path.join(BASE, 'Movies')
 ASIDE = os.path.join(BASE, 'Set aside', 'Duplicates')
@@ -96,9 +101,7 @@ def aside(path):   # a file (and its own subtitles and pictures, which share its
             shutil.move(os.path.join(folder, n), os.path.join(dest, n))
 
 
-def main():
-    if not os.path.isdir(MOVIES):
-        sys.exit('No %s: is the G-Drive plugged in?' % MOVIES)
+def find():
     F = films()
     groups = collections.defaultdict(list)
     for f in F:
@@ -114,6 +117,25 @@ def main():
             wrong.append(v)
         else:
             same.append(sorted(v, key=score, reverse=True))
+    return F, same, wrong
+
+
+def main():
+    if not os.path.isdir(MOVIES):
+        sys.exit('No %s: is the G-Drive plugged in?' % MOVIES)
+    F, same, wrong = find()
+    if JSON:
+        cp = lambda f, best: dict({k: f[k] for k in ('id', 'name', 'year', 'folder', 'h', 'codec', 'bits', 'mbps', 'gb', 'mins')}, file=os.path.relpath(f['path'], MOVIES), best=best)
+        print(json.dumps({'films': len(F), 'groups': [[cp(f, i == 0) for i, f in enumerate(v)] for v in same],
+                          'wrong': [[{'name': f['name'], 'year': f['year'], 'folder': f['folder'], 'mins': f['mins']} for f in v] for v in wrong]}))
+        return
+    if CHOSEN:   # (John's choice on the admin page: in each group he chose, the copy he chose kept)
+        chosen = []
+        for v in same:
+            k = next((f for f in v if f['id'] in KEEP), None)
+            if k:
+                chosen.append([k] + [f for f in v if f is not k])
+        same = chosen
     print('%d films; %d with more than one copy.\n' % (len(F), len(same)))
     moves = {}
     for v in same:

@@ -70,6 +70,7 @@ def log(*a):
 
 
 LOOKED = {}
+DUPS = {}   # (duplicates.py, from the admin page)
 CRIT = {}   # (criterion-covers.py, started from the admin page)   # (when Claude last looked)
 CONV_SEEN = {}   # (files convert.py made or kept, looked at once: path → what they are)
 # Play on the TV (John, 11 Nov 2026: "Is it possible for the fire stick to receive a cast film ... Build that"): each member's Fire
@@ -777,9 +778,17 @@ def make_handler(g):
                         return self.send_json(404, {'error': 'That job isn’t here (the Mac mini may have restarted): press Convert on this Mac again.'})
                     pl = job['plan']
                     if method == 'GET':
+                        if job.get('ended'):
+                            return self.send_json(404, {'error': 'That job is finished: press Convert on this Mac again.'})
+                        job['state'], job['seen'] = 'started', time.time()
                         return self.send_json(200, {'name': pl['item'].get('name'), 'src': pl['src'], 'tmp': pl['tmp'], 'dur': pl['dur'], 'args': vt_args(pl['cmd'])})
                     body = self.body()
+                    if len(parts) > 3 and parts[3] == 'progress':   # (how far John's Mac has got, every few seconds: for the film's Edit panel)
+                        job['t'], job['speed'], job['state'], job['seen'] = float(body.get('t') or 0), str(body.get('speed') or '')[:12], 'converting', time.time()
+                        return self.send_json(200, {'ok': True})
                     home = os.path.expanduser('~/Grifflix')
+                    job['state'] = 'checking' if body.get('ok') else 'failed'
+                    job['error'] = str(body.get('error') or '')[:200]
                     def finish(job=job, ok=bool(body.get('ok'))):
                         try:
                             if ok:
@@ -788,6 +797,12 @@ def make_handler(g):
                                                    capture_output=True, text=True, timeout=3600, cwd=home)
                                 res = ([l for l in (r.stdout or '').splitlines() if l.startswith('{')] or ['{}'])[-1]
                                 log('Converted on John’s Mac: %s: %s' % (job['plan']['item'].get('name'), res))
+                                try:
+                                    rj = json.loads(res)
+                                except ValueError:
+                                    rj = {}
+                                job['state'] = 'failed' if rj.get('error') else 'done'
+                                job['error'] = str(rj.get('error') or '')[:200]
                                 CONV_NOW.set()
                             else:
                                 log('Not converted on John’s Mac: %s (%s)' % (job['plan']['item'].get('name'), str(body.get('error') or '')[:200]))
@@ -800,7 +815,7 @@ def make_handler(g):
                             claims.pop(job['id'], None)
                             save(os.path.join(home, 'convert-claims.json'), claims)
                     threading.Thread(target=finish, daemon=True).start()
-                    CONVJOBS.pop(parts[2], None)
+                    job['ended'] = time.time()   # (kept a while, for the Edit panel to say how it went)
                     return self.send_json(200, {'ok': True})
                 if u.path == '/local/fetched' and method == 'POST':   # gdrive.py on this Mac: a film has just come in (John, 15 Nov 2026: "can't it
                     # just be done as soon as something is finished downloading?"): the media server asked to look now, the site to follow, and
@@ -1869,6 +1884,19 @@ def make_handler(g):
             log('To be converted on John’s Mac: %s' % plan['item'].get('name'))
             return self.send_json(200, {'token': tok, 'name': plan['item'].get('name')})
 
+        def api_convertjob(self, me, user, q, b):
+            """John's only: how a film's conversion on his Mac is going, for its Edit panel: waiting for the Mac to start it, converting
+            (how far, how fast), checking (the Mac mini putting it in place), done or failed."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            iid = str(q.get('id') or '')
+            jobs = sorted((j for j in CONVJOBS.values() if j.get('id') == iid), key=lambda j: j['at'])
+            if not jobs:
+                return self.send_json(200, {'state': 'none'})
+            j = jobs[-1]
+            return self.send_json(200, {'state': j.get('state') or 'waiting', 't': j.get('t') or 0, 'dur': j['plan'].get('dur') or 0, 'speed': j.get('speed') or '',
+                                        'error': j.get('error') or '', 'at': j['at'], 'seen': j.get('seen')})
+
         def api_rename(self, me, user, q, b):
             """John's only: the name a film or series shows by, kept (the media server told not to change it again): two copies of one film
             told apart, "It's a Wonderful Life (Colour)" (John, 16 Nov 2026). An empty name gives it back its own."""
@@ -2073,6 +2101,44 @@ def make_handler(g):
             return self.send_json(200, {'running': bool(CRIT.get('p') and CRIT['p'].poll() is None), 'at': CRIT.get('at'), 'log': tail,
                                         'ready': os.path.exists(script)})
 
+        def api_duplicates(self, me, user, q, b):
+            """John's only: films he has more than one copy of, for the admin page's Duplicates tab (John, 16 Nov 2026: "that should be part
+            of the admin page - make it a tab if there are duplicates and let me be able to select and fix there"). GET: what duplicates.py
+            finds (kept for 10 minutes; ?fresh=1 looks again). POST {keep: [ids]}: in each chosen film, the copy chosen kept and the others
+            set aside, in the background; GET then says how it went."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            import subprocess
+            home = os.path.expanduser('~/Grifflix')
+            script = os.path.join(home, 'duplicates.py')
+            if not os.path.exists(script):
+                return self.send_json(503, {'error': 'Press Update everything first (the Mac mini needs duplicates.py).'})
+            if b:
+                keep = [i for i in (b.get('keep') or []) if re.match(r'^[0-9a-f]{32}$', str(i))]
+                if not keep:
+                    return self.send_json(400, {'error': 'Choose the copy to keep.'})
+                if DUPS.get('p') and DUPS['p'].poll() is None:
+                    return self.send_json(409, {'error': 'It’s already setting some aside.'})
+                DUPS['p'] = subprocess.Popen([sys.executable, '-u', script, 'go', 'keep=' + ','.join(keep)], stdout=open(os.path.join(home, 'duplicates.log'), 'w'),
+                                             stderr=subprocess.STDOUT, cwd=home)
+                DUPS['at'], DUPS['found'] = time.time(), None
+                log('Duplicates: John chose %d to keep' % len(keep))
+            running = bool(DUPS.get('p') and DUPS['p'].poll() is None)
+            found = DUPS.get('found')
+            if not running and (not found or q.get('fresh') == '1' or time.time() - found[0] > 600):
+                r_ = subprocess.run([sys.executable, script, 'json'], capture_output=True, text=True, timeout=900, cwd=home)
+                try:
+                    found = (time.time(), json.loads([l for l in (r_.stdout or '').splitlines() if l.startswith('{')][-1]))
+                    DUPS['found'] = found
+                except (IndexError, ValueError):
+                    return self.send_json(500, {'error': 'The Mac mini couldn’t look: ' + (r_.stderr or '').strip()[-200:]})
+            last = ''
+            try:
+                last = open(os.path.join(home, 'duplicates.log'), encoding='utf-8', errors='replace').read()[-2000:]
+            except OSError:
+                pass
+            return self.send_json(200, dict((found or (0, {}))[1], running=running, last=last, at=DUPS.get('at')))
+
         def api_lookkey(self, me, user, q, b):
             """John's only: a key for Claude to look at the Mac mini with (its logs, its folders, what's running), reading only, never
             changing anything (John, 16 Nov 2026: "can't you use it from here somehow?"). POST {make: true}: a new key, shown once (the Mac
@@ -2112,7 +2178,7 @@ def make_handler(g):
         def look(self, what, q):
             LOOKED['at'] = time.time()
             home = os.path.expanduser('~/Grifflix')
-            LOGS = {'criterion': os.path.join(home, 'criterion-covers.log'), 'criterion-auto': os.path.join(home, 'criterion-auto.log'), 'gateway': os.path.join(APP_DIR, 'gateway.log'), 'tunnel': os.path.join(APP_DIR, 'tunnel.log'), 'setup': os.path.join(APP_DIR, 'setup.log'),
+            LOGS = {'duplicates': os.path.join(home, 'duplicates.log'), 'criterion': os.path.join(home, 'criterion-covers.log'), 'criterion-auto': os.path.join(home, 'criterion-auto.log'), 'gateway': os.path.join(APP_DIR, 'gateway.log'), 'tunnel': os.path.join(APP_DIR, 'tunnel.log'), 'setup': os.path.join(APP_DIR, 'setup.log'),
                     'convert': os.path.join(home, 'convert.log'), 'convert-out': os.path.join(home, 'convert.out'), 'gdrive': os.path.join(home, 'gdrive.log')}
             SECRETISH = re.compile(r'(rclone\.conf|token|secret|password|\.pickle$|client_secret|\.pem$|\.key$|settings\.json$)', re.I)
             def inside(p):
