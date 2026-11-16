@@ -728,6 +728,38 @@ def make_handler(g):
                     if not fn or method != 'GET':
                         return self.send_json(404, {'error': 'Not here.'})
                     return fn(q)
+                if u.path.startswith('/convjob/'):   # (John's Mac, converting a film for the Mac mini: its job, and word when it's done)
+                    parts = u.path.split('/')
+                    job = CONVJOBS.get(parts[2] if len(parts) > 2 else '')
+                    if not job or time.time() - job['at'] > 12 * 3600:
+                        return self.send_json(404, {'error': 'That job isn’t here (the Mac mini may have restarted): press Convert on this Mac again.'})
+                    pl = job['plan']
+                    if method == 'GET':
+                        return self.send_json(200, {'name': pl['item'].get('name'), 'src': pl['src'], 'tmp': pl['tmp'], 'dur': pl['dur'], 'args': vt_args(pl['cmd'])})
+                    body = self.body()
+                    home = os.path.expanduser('~/Grifflix')
+                    def finish(job=job, ok=bool(body.get('ok'))):
+                        try:
+                            if ok:
+                                import subprocess
+                                r = subprocess.run([sys.executable, os.path.join(home, 'convert.py'), 'finish', job['id']], input=json.dumps(job['plan']['item']),
+                                                   capture_output=True, text=True, timeout=3600, cwd=home)
+                                res = ([l for l in (r.stdout or '').splitlines() if l.startswith('{')] or ['{}'])[-1]
+                                log('Converted on John’s Mac: %s: %s' % (job['plan']['item'].get('name'), res))
+                                CONV_NOW.set()
+                            else:
+                                log('Not converted on John’s Mac: %s (%s)' % (job['plan']['item'].get('name'), str(body.get('error') or '')[:200]))
+                                try:
+                                    os.remove(job['plan']['tmp'])
+                                except OSError:
+                                    pass
+                        finally:
+                            claims = load(os.path.join(home, 'convert-claims.json'), {}) or {}
+                            claims.pop(job['id'], None)
+                            save(os.path.join(home, 'convert-claims.json'), claims)
+                    threading.Thread(target=finish, daemon=True).start()
+                    CONVJOBS.pop(parts[2], None)
+                    return self.send_json(200, {'ok': True})
                 if u.path == '/local/fetched' and method == 'POST':   # gdrive.py on this Mac: a film has just come in (John, 15 Nov 2026: "can't it
                     # just be done as soon as something is finished downloading?"): the media server asked to look now, the site to follow, and
                     # the converter told once the media server has it (in a minute or two), to repackage it next
@@ -1760,6 +1792,32 @@ def make_handler(g):
             return self.send_json(200, {'results': [{'name': r.get('Name'), 'year': r.get('ProductionYear'), 'overview': (r.get('Overview') or '')[:300],
                                                      'image': r.get('ImageUrl'), 'tmdb': (r.get('ProviderIds') or {}).get('Tmdb')} for r in res[:15]]})
 
+        def api_convertplan(self, me, user, q, b):
+            """John's only: a film converted on the Mac he's using (John, 16 Nov 2026: "Can I have a way to convert using the machine I'm on
+            easily": "A button on a film"). The Mac mini plans it as its own converter would (language, soundtracks, subtitles), hands that
+            Mac the job by a one-time address, leaves the film alone meanwhile, and puts the result in place when it's done."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            iid = str(q.get('id') or '')
+            if not re.match(r'^[0-9a-f]{32}$', iid):
+                return self.send_json(400, {'error': 'Which film?'})
+            import subprocess
+            home = os.path.expanduser('~/Grifflix')
+            r = subprocess.run([sys.executable, os.path.join(home, 'convert.py'), 'plan', iid], capture_output=True, text=True, timeout=600, cwd=home)
+            try:
+                plan = json.loads([l for l in (r.stdout or '').splitlines() if l.startswith('{')][-1])
+            except (IndexError, ValueError):
+                return self.send_json(500, {'error': 'The Mac mini couldn’t plan it: ' + (r.stderr or '').strip()[-200:]})
+            if plan.get('error'):
+                return self.send_json(400, {'error': plan['error']})
+            tok = secrets.token_urlsafe(18)
+            CONVJOBS[tok] = {'plan': plan, 'at': time.time(), 'id': iid}
+            claims = load(os.path.join(home, 'convert-claims.json'), {}) or {}
+            claims[iid] = time.time()
+            save(os.path.join(home, 'convert-claims.json'), claims)
+            log('To be converted on John’s Mac: %s' % plan['item'].get('name'))
+            return self.send_json(200, {'token': tok, 'name': plan['item'].get('name')})
+
         def api_rename(self, me, user, q, b):
             """John's only: the name a film or series shows by, kept (the media server told not to change it again): two copies of one film
             told apart, "It's a Wonderful Life (Colour)" (John, 16 Nov 2026). An empty name gives it back its own."""
@@ -2679,6 +2737,29 @@ def site_update(g, why=''):
     g.st['auto_update_last'] = {'at': int(time.time()), 'why': why, 'new': c.get('new', 0), 'changed': c.get('changed', 0), 'gone': c.get('removed', 0)}
     save(SETTINGS, g.st)
     return c
+
+
+CONVJOBS = {}   # (films being converted on John's Mac: their one-time addresses)
+
+
+def vt_args(cmd):
+    """The Mac mini's ffmpeg plan for a film, for a Mac with Apple's video hardware: the slow careful x264 encoder swapped for the
+    hardware one at the same rate, everything else (the language first, every soundtrack, the subtitles) as planned."""
+    out, i, rate = [], 0, None
+    if '-maxrate' in cmd:
+        rate = cmd[cmd.index('-maxrate') + 1]
+    while i < len(cmd):
+        a = cmd[i]
+        if a in ('-preset', '-crf', '-level'):
+            i += 2
+            continue
+        if a == '-c:v' and i + 1 < len(cmd) and cmd[i + 1] == 'libx264':
+            out += ['-c:v', 'h264_videotoolbox', '-b:v', rate or '6000k', '-allow_sw', '1']
+            i += 2
+            continue
+        out.append(a)
+        i += 1
+    return out
 
 
 SCAN_NOW = threading.Event()   # (a film just brought in: the library looked at now, not at the next 10 minutes)

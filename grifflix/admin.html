@@ -374,6 +374,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           <label class="cvsw"><input type="checkbox" id="cvrf"> <span>Repackage every MKV first, then the conversions <small>(repackaging takes minutes a film, converting hours)</small></span></label>
           <div id="cvpins"></div>
         </div>
+        <details style="margin:12px 0 0"><summary style="cursor:pointer;opacity:.8">Convert on your own Mac (much faster)</summary><p class="stat" style="margin:8px 0 4px">Once, on your Mac, in Terminal:</p><pre style="white-space:pre-wrap;word-break:break-all;font-size:12px;opacity:.9;margin:0">curl -fsSL https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/convert-here.sh -o ~/Grifflix/convert-here.sh --create-dirs &amp;&amp; zsh ~/Grifflix/convert-here.sh setup</pre><p class="stat" style="margin:8px 0 0">Then on any film in Grifflix on that Mac: <b>Convert on this Mac</b>. The Mac mini plans it, your Mac makes it with its own hardware, the Mac mini puts it in place.</p></details>
         <div id="cvask"></div>
         <div class="lbchips" id="cvtabs" style="margin:14px 0 4px"></div>
         <ul class="changes cvl" id="cvlist"></ul>
