@@ -2076,7 +2076,8 @@ def make_handler(g):
                 keep = [{k: str(f.get(k) or '')[:400] for k in ('link', 'spine', 'img', 'title', 'director', 'country', 'year')} for f in films[:5000] if isinstance(f, dict)]
                 save(os.path.join(home, 'criterion-list.json'), keep)
                 import subprocess
-                CRIT['p'] = subprocess.Popen([sys.executable, script, 'go'], stdout=open(out, 'w'), stderr=subprocess.STDOUT, cwd=home)
+                CRIT['p'] = subprocess.Popen([sys.executable, '-u', script, 'go'],   # (-u: its report as it goes, for the admin card)
+                                             stdout=open(out, 'w'), stderr=subprocess.STDOUT, cwd=home)
                 CRIT['at'] = time.time()
                 log('Criterion covers: %d films from John’s list, fetching' % len(keep))
             tail = ''
