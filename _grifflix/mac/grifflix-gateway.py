@@ -1954,7 +1954,28 @@ def make_handler(g):
             pick = (b or {}).get('pick') or {}
             if not isinstance(pick, dict) or not (pick.get('ProviderIds') or {}):
                 return self.send_json(400, {'error': 'Which one?'})
-            g.jf.call('POST', '/Items/RemoteSearch/Apply/%s' % iid, pick, {'replaceAllImages': 'true'})
+            # (John's own pictures in the film's folder (his Criterion posters) kept: replacing all pictures made the media server delete
+            # them, The Freshman's poster.jpg and fanart.jpg gone for good: John, 16 Nov 2026. With pictures of its own in its folder, only
+            # its details are taken from the match; and every picture in its folder is copied aside first, whatever happens)
+            own = []
+            try:
+                own = [(n, f) for n, f in folder_pics(g, iid) if not re.search(r'\.(srt|nfo)$', n, re.I)]
+                if own:
+                    keep = os.path.join(APP_DIR, 'pictures-before', 'folder-%s-%d' % (iid, time.time()))
+                    os.makedirs(keep, exist_ok=True)
+                    import shutil
+                    for n, f in own:
+                        shutil.copy2(f, os.path.join(keep, n))
+            except Exception as e:
+                log('  (its folder’s pictures couldn’t be copied aside: %s)' % e)
+            g.jf.call('POST', '/Items/RemoteSearch/Apply/%s' % iid, pick, {'replaceAllImages': 'false' if own else 'true'})
+            try:   # (and put back if the media server took any away all the same)
+                for n, f in own:
+                    if not os.path.exists(f):
+                        shutil.copy2(os.path.join(keep, n), f)
+                        log('  put back its own %s' % n)
+            except Exception as e:
+                log('  (its own pictures couldn’t be put back: %s)' % e)
             g.forget()
             g.publish_soon = time.time() + 180   # (the site's copy brought up to date by itself, once the media server has read it)
             log('Identified by John: %s → %s (%s)' % (it.get('Name'), pick.get('Name'), pick.get('ProductionYear') or '?'))
