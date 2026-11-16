@@ -2053,12 +2053,11 @@ html.tv.tvfront .th-picture .zcin { box-shadow: 0 0 0 6px #000, 0 0 0 12px rgba(
 html[data-theme=spiral] .hinfo .w, html[data-theme=spiral] .hinfo .w > span, html[data-theme=spiral] .hinfo h2 { font-family: "Special Gothic Expanded One", "Archivo Black", Futura, sans-serif !important; font-weight: 400 !important; text-transform: uppercase; letter-spacing: .04em; color: transparent !important; -webkit-text-stroke: 1.6px #fff; paint-order: stroke; text-shadow: none !important; }
 html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
 /* (posters: on the film each day's poster whole, turned on its side to fit the frame; on the screen the right
-   way up, on a soft dark copy of itself: John, 16 Nov 2026: "can the Grifflix show films in poster mode too, in the film strip, but
+   way up, on black as the wide pictures were (no blurred copy behind it: its blur, redrawn as the screen changes, made the film strip's
+   movement heavier): John, 16 Nov 2026: "can the Grifflix show films in poster mode too, in the film strip, but
    turned horizontally. Then showing as it is the right way up in the cinema screen") */
-html .th-picture .vday.has { background-image: none !important; background-color: #0c0b0a; overflow: hidden; }
+html .th-picture .vday.has { background-image: none !important; background-color: #0c0b0a; }
 html .th-picture .vday.has::before { content: ""; position: absolute; left: 50%; top: 50%; width: 135px; height: 240px; margin: -120px 0 0 -67.5px; transform: rotate(90deg); background: var(--p) center / contain no-repeat; pointer-events: none; }
-html[data-theme=picture] .zpost::before { display: block; }
-html[data-theme=picture] .zpost::after { inset: 3% 0; filter: drop-shadow(0 8px 20px rgba(0, 0, 0, .6)); }
 .th-picture .vday.soon { background: #141210 !important; box-shadow: inset 0 0 0 1px rgba(244, 236, 216, .25) !important; }
 .th-picture .vday.soon .cs { display: grid !important; font: 600 15px/1.2 var(--kfont) !important; letter-spacing: .28em; color: rgba(244, 236, 216, .55) !important; text-transform: uppercase; }
 /* the look made consistent across the phone, the computer and the TV (a review of every screen: 15 Nov 2026) */
@@ -3248,7 +3247,8 @@ function themeFit(m) {   // a phone: the theme drawn for an upright screen 780 w
     e.preventDefault();
     var t = Date.now(), d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
     if (e.deltaMode === 1) d *= 40;   // (a mouse's wheel, in lines)
-    if (S.theme.fx && S.theme.fx.push && e.deltaMode === 0 && Math.abs(e.deltaX) > Math.abs(e.deltaY)) { S.theme.fx.push(-e.deltaX); return; }   // (the zoetrope: across turns the drum by hand; up and down still the days)
+    // (across, as up and down, the days: the film strip moves with the fingers, the drum spinning with each day (John, 16 Nov 2026:
+    // "touch pad left to right movement doesn't move the film strip"; it had only turned the drum, the film staying put))
     if (t - wquiet > 220) { wacc = 0; gestStart(); }   // (a new gesture)
     wquiet = t; wacc += d;
     var need = Math.abs(d) >= 90 ? 1 : 70;   // (a mouse's notch: a day each; a trackpad: a day each 70px of its scroll)
