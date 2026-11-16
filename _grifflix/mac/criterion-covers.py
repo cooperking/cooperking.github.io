@@ -110,12 +110,16 @@ def sheet_rows(films):
         return print('\nThe sheet: not updated (%s).' % e)
     if not os.path.exists(os.path.join(cr.KEYS, 'token.pickle')) or not os.path.exists(cr.CONF):
         return print('\nThe sheet: not updated (run criterion.py once first, to sign in to Google).')
-    sid, sheet = cr.sheet_id(), cr.google()
+    try:
+        sid, sheet = cr.sheet_id(), cr.google()
+    except SystemExit as e:
+        return print('\nThe sheet: not updated (%s).' % e)
     rows = sheet.values().get(spreadsheetId=sid, range='Criterion Films!C2:D').execute().get('values', [])
     have = set(cr.key('%s %s' % (r[0], r[1] if len(r) > 1 else '')) for r in rows if r)
     new = [f for f in films if cr.key('%s %s' % (f['title'], f['year'])) not in have]
     if not new:
-        return print('\nThe sheet: every film on it already.')
+        print('\nThe sheet: every film on it already.')
+        return mark(cr, sid, sheet)
     print('\nThe sheet: %d film(s) to add at its foot%s' % (len(new), '' if GO else ' (run with go)'))
     for f in new[:30]:
         print('  %s %s (%s)' % (f['spine'] or '—', f['title'], f['year']))
@@ -125,7 +129,16 @@ def sheet_rows(films):
              '=HYPERLINK("%s", "Link")' % f['link'] if f['link'] else ''] for f in new]
     sheet.values().append(spreadsheetId=sid, range='Criterion Films!A:I', valueInputOption='USER_ENTERED', insertDataOption='INSERT_ROWS',
                           body={'values': vals}).execute()
-    print('  added (criterion.py go marks which are in Grifflix)')
+    print('  added')
+    mark(cr, sid, sheet)
+
+
+def mark(cr, sid, sheet):   # (which are in Grifflix, and which have extras, marked on the sheet: criterion.py's own marking)
+    print('\nThe sheet\'s "in Grifflix" and "extras":')
+    try:
+        cr.mark(sid, sheet, GO)
+    except Exception as e:
+        print('  not marked (%s)' % e)
 
 
 REPLACED = []   # (covers that had come as small previews, fetched again in full)

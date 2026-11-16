@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Marks John's Criterion spreadsheet with what's in Grifflix: column E "Yes" for each film in Movies (by its folder,
-"Title (Year)"), "No" for one that isn't (so a film taken out is marked again); column F whether its folder's "Other"
-holds extras.
+"""Marks John's Criterion spreadsheet with what's in Grifflix: column E "Yes" for each film in Movies (by its spine number, or
+its folder, "Title (Year)"), "No" for one that isn't (so a film taken out is marked again); column F whether its folder's
+"Other" holds extras. Grifflix runs it by itself when a film comes in and every six hours (John, 16 Nov 2026: "the criterion
+collection google sheet should be updating the section when it's on Grifflix, and the Extras if it's got Extras in Others").
 
   python3 ~/Grifflix/criterion.py         what it would mark (nothing changes)
   python3 ~/Grifflix/criterion.py go      marks the sheet
@@ -20,7 +21,7 @@ BASE = os.environ.get('GRIFFLIX_MEDIA') or '/Volumes/G-Drive/Grifflix'
 MOVIES = os.path.join(BASE, 'Movies')
 KEYS = os.path.join(BASE, 'scripts')   # the Google sign-in (token.pickle) and app file, where the old script kept them
 CONF = os.path.expanduser('~/Grifflix/criterion.json')
-RANGE = 'Criterion Films!C2:F'
+RANGE = 'Criterion Films!A2:F'
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 EXTRA = {'ø': 'o', 'Ø': 'O', 'æ': 'ae', 'Æ': 'AE', 'œ': 'oe', 'Œ': 'OE', 'ß': 'ss', 'ł': 'l', 'Ł': 'L', 'đ': 'd', 'Đ': 'D', 'þ': 'th', 'ð': 'd'}
 
@@ -67,6 +68,8 @@ def google():
             print('Google’s sign-in had run out (%s): signing in again.' % str(e)[:80])
             creds = None
     if not creds or not creds.valid:
+        if not sys.stdin or not sys.stdin.isatty():   # (run by Grifflix itself, with no one to sign in: said, not waited on)
+            sys.exit('Google’s sign-in for the sheet needs doing again: run python3 ~/Grifflix/criterion.py on the Mac mini once.')
         secret = sorted(f for f in os.listdir(KEYS) if f.startswith('client_secret') and f.endswith('.json')) if os.path.isdir(KEYS) else []
         if not secret:
             sys.exit('No client_secret_….json in %s (the Google app file the old script used).' % KEYS)
@@ -83,46 +86,69 @@ def google():
     return build('sheets', 'v4', credentials=creds, cache_discovery=False).spreadsheets()
 
 
-def main():
-    if not os.path.isdir(MOVIES):
-        sys.exit('No %s: is the G-Drive plugged in?' % MOVIES)
+def has_extras(folder):   # (its "Other" folder, or "Others", holding anything but notes)
+    for n in os.listdir(folder):
+        if n.lower() in ('other', 'others') and os.path.isdir(os.path.join(folder, n)):
+            for d, dirs, files in os.walk(os.path.join(folder, n)):
+                if any(not x.startswith('.') and not x.endswith('.txt') for x in files):
+                    return True
+    return False
+
+
+def mark(sid, sheet, go):
+    """Columns E and F of every row brought up to date: E "Yes" when the film is in Grifflix (by its spine number, as
+    criterion-covers.py found it, or by its folder's name), F "Yes" when it has extras in "Other". Only what's changed is written.
+    Returns the number of rows changed."""
     folders = {}
     for f in os.scandir(MOVIES):
         if f.is_dir() and not f.name.startswith('.'):
             folders.setdefault(key(f.name), f.name)
-    sid = sheet_id()
-    sheet = google()
+    by_spine = {}
+    try:
+        for fo, sp in json.load(open(os.path.expanduser('~/Grifflix/criterion-spines.json'))).items():
+            if os.path.isdir(os.path.join(MOVIES, fo)):
+                by_spine.setdefault(str(sp), []).append(fo)
+    except Exception:
+        pass
     rows = sheet.values().get(spreadsheetId=sid, range=RANGE).execute().get('values', [])
     updates, have, extras, changed = [], 0, 0, []
     for i, row in enumerate(rows, 2):
-        if len(row) < 2 or not row[0].strip():
+        row = row + [''] * (6 - len(row))
+        spine, title, year = row[0].strip(), row[2].strip(), row[3].strip()
+        if not title:
             continue
-        title, year = row[0].strip(), row[1].strip()
-        folder = folders.get(key('%s (%s)' % (title, year)))
-        if not folder and re.match(r'^\d{4}$', year):   # (a folder a year out: release dates differ between sources)
-            folder = next((folders.get(key('%s (%d)' % (title, int(year) + d))) for d in (1, -1) if folders.get(key('%s (%d)' % (title, int(year) + d)))), None)
-        e = 'Yes' if folder else 'No'
-        f = 'No'
-        if folder:
-            have += 1
-            other = os.path.join(MOVIES, folder, 'Other')
-            if os.path.isdir(other) and any(not x.name.startswith('.') and not x.name.endswith('.txt') for x in os.scandir(other) if x.is_file()):
-                f = 'Yes'; extras += 1
-        was = (row[2] if len(row) > 2 else '', row[3] if len(row) > 3 else '')
-        if was != (e, f):   # (only what's changed)
+        found = list(by_spine.get(spine, [])) if re.match(r'^\d+$', spine) else []
+        if not found:
+            folder = folders.get(key('%s (%s)' % (title, year)))
+            if not folder and re.match(r'^\d{4}$', year):   # (a folder a year out: release dates differ between sources)
+                folder = next((folders.get(key('%s (%d)' % (title, int(year) + d))) for d in (1, -1) if folders.get(key('%s (%d)' % (title, int(year) + d)))), None)
+            found = [folder] if folder else []
+        e = 'Yes' if found else 'No'
+        f = 'Yes' if any(has_extras(os.path.join(MOVIES, fo)) for fo in found) else 'No'
+        have += bool(found); extras += f == 'Yes'
+        if (row[4].strip(), row[5].strip()) != (e, f):   # (only what's changed)
             updates.append({'range': 'Criterion Films!E%d:F%d' % (i, i), 'values': [[e, f]]})
-            changed.append('%s (%s): %s%s' % (title, year, 'in Grifflix' if folder else 'not in Grifflix', ', with extras' if f == 'Yes' else ''))
+            changed.append('%s (%s): %s%s' % (title, year, 'in Grifflix' if found else 'not in Grifflix', ', with extras' if f == 'Yes' else ''))
     print('%d Criterion films on the sheet; %d in Grifflix, %d of them with extras.' % (len(rows), have, extras))
     for c in changed[:60]:
         print('  ' + c)
     if len(changed) > 60:
         print('  … and %d more' % (len(changed) - 60))
     if not updates:
-        return print('The sheet is up to date.')
-    if not GO:
-        return print('\n%d row(s) would change: run with go to mark them.' % len(updates))
+        print('The sheet is up to date.')
+        return 0
+    if not go:
+        print('\n%d row(s) would change: run with go to mark them.' % len(updates))
+        return 0
     r = sheet.values().batchUpdate(spreadsheetId=sid, body={'valueInputOption': 'RAW', 'data': updates}).execute()
     print('\nMarked %d row(s) (%d cells).' % (len(updates), r.get('totalUpdatedCells', 0)))
+    return len(updates)
+
+
+def main():
+    if not os.path.isdir(MOVIES):
+        sys.exit('No %s: is the G-Drive plugged in?' % MOVIES)
+    mark(sheet_id(), google(), GO)
 
 
 if __name__ == '__main__':
