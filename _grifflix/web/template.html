@@ -249,6 +249,7 @@ html.tv .sheet .people { font-size: var(--crfs, 15px); }
 /* the player */
 .player { position: fixed; inset: 0; z-index: 100; display: none; background: #000; }
 .player.on { display: block; }
+.player.on.pipped { opacity: 0; pointer-events: none; z-index: -1; }   /* (the film in its own little window: the page underneath usable) */
 .player video { width: 100%; height: 100%; background: #000; }
 .player .top { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 12px; padding: max(14px, env(safe-area-inset-top)) 18px 30px; background: linear-gradient(rgba(0, 0, 0, .7), transparent); transition: opacity .3s; }
 .player .top .t { font: 500 20px/1.2 var(--serif); color: #fff; }
@@ -3312,7 +3313,7 @@ function seeded(n) { var x = Math.sin(n * 9301 + 49297) * 233280; return x - Mat
 // resting, so all the TV's effort goes into what's showing (John, 11 Nov 2026: "Calendar movement is still buggy on fire tv, feels heavy")
 function COVERED() { return document.documentElement.classList.contains('covered'); }
 function coverCheck() {
-  var d = $('#sheet'), on = !!(d && d.open && (TV || $('#sheetIn .tcal, #sheetIn #sq, #sheetIn .film'))) || !!($('#player') && $('#player').classList.contains('on'));
+  var d = $('#sheet'), on = !!(d && d.open && (TV || $('#sheetIn .tcal, #sheetIn #sq, #sheetIn .film'))) || !!($('#player') && $('#player').classList.contains('on') && !$('#player').classList.contains('pipped'));
   document.documentElement.classList.toggle('covered', on);
 }
 function ZDPR() { return Math.min(2, window.devicePixelRatio || 1); }
@@ -5591,7 +5592,8 @@ function itemSheet(it, ctx) {
   var dnav = function (d) { return ctx.date && dayNear(ctx.date, d) ? '<button class="ico dnav" id="dstep' + (d < 0 ? 'p' : 'n') + '" data-dstep="' + d + '" aria-label="' + (d < 0 ? 'The day before' : 'The day after') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="' + (d < 0 ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6') + '"/></svg></button>' : ''; };
   var top = it.backdrop ? '<div class="heroimg"><img alt="" src="' + esc(img(it.backdrop, 'Backdrop', 1100)) + '">' + '</div>' : (it.thumb || (it.type === 'video' && it.poster) ? '<div class="heroimg"><img alt="" src="' + esc(img(it.thumb || it.poster, it.thumb ? 'Thumb' : 'Primary', 1100)) + '">' + '</div>' : '<div class="noimg-top" style="position:relative"></div>');
   var pst = it.poster && it.type !== 'episode' ? img(it.poster, 'Primary', 400) : '';   // (the poster, whole, beside the words on a big screen)
-  var kept = sheetKeep() || ($('#sheetIn > .film') && SHEETBACK.length);   // (from a page of films: that page kept, and a way back to it)
+  S.sheetIt = it; S.sheetCtx = ctx;
+  var kept = sheetKeep() || ($('#sheetIn > .film') && SHEETBACK.length) || ctx.kept;   // (from a page of films: that page kept, and a way back to it)
   openSheet('<div class="film' + (pst ? ' hasposter' : '') + (it.type === 'series' ? ' series' : '') + '">' + (kept && !TV ? '<button type="button" class="fback" id="fback" aria-label="Back">‹ Back</button>' : '') + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it))) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');
   $$('#sheetIn [data-dstep]').forEach(function (b) { b.onclick = function () { dayStep(+b.dataset.dstep); }; });
   var fb = $('#fback'); if (fb) fb.onclick = sheetBack;
@@ -6248,10 +6250,28 @@ function signInSheet() {
   $('#signin2').onsubmit = function (e) { e.preventDefault(); join($('#code2').value); }; pkWire();
   setTimeout(function () { var c = $('#code2'); if (c && !TV) c.focus(); }, 60);
 }
+// (where a film was started from, the pop-up it was played from and the pages behind it, so the player's Back returns there:
+// John, 16 Nov 2026: "the back button on the film playing doesn't take you back to where you started playing from")
+function playFrom() {
+  if (!dlg.open) return;
+  var si = $('#sheetIn'), film = !!si.querySelector(':scope > .film'), f = null, sc = [si.scrollTop, dlg.scrollTop];
+  if (!film) { f = document.createDocumentFragment(); while (si.firstChild) f.appendChild(si.firstChild); }
+  P.from = { film: film && S.sheetIt, ctx: S.sheetCtx, frag: f, sc: sc, stack: SHEETBACK.slice(), now: S.sheetNow, into: S.sheetInto };
+  closeSheet();
+}
+function playBack() {
+  var b = P.from; P.from = null; if (!b || dlg.open) return;
+  if (b.film) { var c = {}; for (var k in b.ctx || {}) c[k] = b.ctx[k]; c.kept = b.stack.length > 0; S.sheetNowNext = b.now; itemSheet(b.film, c); }
+  else if (b.frag) { openSheet(''); var si = $('#sheetIn'); si.appendChild(b.frag); S.sheetNow = b.now; S.sheetInto = b.into; var cl = si.querySelector('.close'); if (cl) cl.onclick = closeSheet; if (TV) tvStart(); }
+  else return;
+  SHEETBACK = b.stack;
+  requestAnimationFrame(function () { var si = $('#sheetIn'); if (b.frag) { si.scrollTop = b.sc[0]; dlg.scrollTop = b.sc[1]; } });
+}
 function play(it, queue, fromStart) {
   if (!it) return;
   if (PUBLIC) return signInSheet();
-  closeSheet();
+  if (dlg.open) playFrom(); else if (!P.el.classList.contains('on')) P.from = null;
+  if (P.el.classList.contains('pipped')) { P.el.classList.remove('pipped'); try { if (document.pictureInPictureElement) document.exitPictureInPicture().catch(function () {}); else if (P.v.webkitPresentationMode === 'picture-in-picture') P.v.webkitSetPresentationMode('inline'); } catch (e) {} }
   P.it = it; P.queue = queue || []; P.reset(it); if (P.tvCheck) P.tvCheck();
   $('#ptitle').textContent = showName(it); $('#psub').textContent = it.type === 'episode' ? subOf(it) : (it.year || '');
   $('#pmsg').classList.remove('on'); $('#pnext').classList.remove('on');
@@ -6352,7 +6372,7 @@ function howLook(info, it, now) {   // whether the Mac mini is converting this f
   P.howT = setTimeout(function () { look(0); }, now ? 0 : info.direct ? 1500 : 7000);
 }
 function saveProgress() { if (P.it && P.v.currentTime > 0 && !DEMO && !PUBLIC) api('progress', { id: P.it.id, pos: P.v.currentTime, secs: P.v.duration || (P.info && P.info.secs) || 0 }).then(function () { P.it.pos = P.v.currentTime; }).catch(function () {}); }
-function stopPlayer() {
+function stopPlayer(stay) {
   var tf = $('#player iframe.trailer');
   if (tf) { tf.remove(); P.v.classList.remove('hide'); P.el.classList.remove('on', 'trailering'); document.documentElement.style.overflow = ''; return; }
   saveProgress(); clearInterval(P.saveT); clearTimeout(P.howT);
@@ -6361,9 +6381,12 @@ function stopPlayer() {
   P.v.pause(); P.v.removeAttribute('src'); P.v.load();
   P.el.classList.remove('on'); document.documentElement.style.overflow = ''; coverCheck();
   if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
+  P.el.classList.remove('pipped');
+  try { if (document.pictureInPictureElement) document.exitPictureInPicture().catch(function () {}); else if (P.v.webkitPresentationMode === 'picture-in-picture') P.v.webkitSetPresentationMode('inline'); } catch (e) {}
   if (S.view === 'home') homeRows();
+  if (stay) P.from = null; else playBack();
 }
-$('#pclose').onclick = stopPlayer;
+$('#pclose').onclick = function () { stopPlayer(); };
 // another screen: AirPlay (iPhone, iPad, Mac: Apple TVs, AirPlay TVs) and Google Cast (Chrome: Chromecasts, Google TVs),
 // as the songs' speakers (John, 8 Nov 2026: "we need to have casting options, like we do in sotd"). The other screen
 // fetches the film itself (its link carries the member's key). Not on the Fire TV app
@@ -6409,7 +6432,7 @@ P.v.addEventListener('timeupdate', function () { var left = (P.v.duration || 0) 
 $('#pnext').onclick = function () { saveProgress(); var n = P.queue.shift(); play(n, P.queue); };
 var wake = function () { P.el.classList.remove('idle'); clearTimeout(P.idleT); P.idleT = setTimeout(function () { if (!P.v.paused && $('#pmenu').hidden && !P.over) P.el.classList.add('idle'); else wake(); }, 3000); };
 P.el.addEventListener('mousemove', wake); P.el.addEventListener('touchstart', wake, { passive: true });
-document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && P.el.classList.contains('on') && !document.fullscreenElement) { if (!$('#pmenu').hidden) { P.menu(); return; } stopPlayer(); } });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && P.el.classList.contains('on') && !P.el.classList.contains('pipped') && !document.fullscreenElement) { if (!$('#pmenu').hidden) { P.menu(); return; } stopPlayer(); } });
 window.addEventListener('pagehide', saveProgress);
 // ---- the player's controls (John, 11 Nov 2026: "Can we work on a better video player - it doesn't have good controls")
 (function () {
@@ -6496,10 +6519,34 @@ window.addEventListener('pagehide', saveProgress);
   // (picture in picture: the film in a corner while they do something else)
   var pipOk = (document.pictureInPictureEnabled && v.requestPictureInPicture) || (v.webkitSupportsPresentationMode && v.webkitSupportsPresentationMode('picture-in-picture'));
   $('#ppip').hidden = !pipOk || TV;
-  $('#ppip').onclick = function () {
-    if (document.pictureInPictureElement) document.exitPictureInPicture().catch(function () {});
-    else if (v.requestPictureInPicture) v.requestPictureInPicture().catch(function () {});
-    else if (v.webkitSetPresentationMode) v.webkitSetPresentationMode(v.webkitPresentationMode === 'picture-in-picture' ? 'inline' : 'picture-in-picture');
+  // (John, 16 Nov 2026: "The picture in picture feature doesn't seem to work": the film went into its little window but the player
+  // stayed over everything, black, so nothing else could be done. Now the player steps aside, back to the page it was started from;
+  // back from the little window, the player again; its window closed, paused, the film stopped where it was)
+  var pipIn = function () {
+    if (!el.classList.contains('on')) return;
+    el.classList.add('pipped'); el.classList.remove('idle'); document.documentElement.style.overflow = ''; coverCheck();
+    if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
+    var pf = P.from; playBack(); P.from = pf;   // (the page they came from, under it; kept for the player's Back too)
+  };
+  var pipOut = function () {
+    if (!el.classList.contains('pipped')) return;
+    setTimeout(function () {   // (closing the little window pauses the film first)
+      if (!el.classList.contains('pipped')) return;
+      if (v.paused) { P.from = null; stopPlayer(true); return; }
+      if (dlg.open) playFrom();
+      el.classList.remove('pipped'); document.documentElement.style.overflow = 'hidden'; coverCheck(); wake();
+    }, 150);
+  };
+  v.addEventListener('enterpictureinpicture', pipIn); v.addEventListener('leavepictureinpicture', pipOut);
+  v.addEventListener('webkitpresentationmodechanged', function () { if (v.webkitPresentationMode === 'picture-in-picture') pipIn(); else pipOut(); });
+  var pipNo = function (e) { toast(e && e.name === 'InvalidStateError' ? 'Once the film has started, it can go in a little window' : 'This browser won’t put the film in a little window'); };
+  $('#ppip').onclick = function (e) {
+    if (e) e.stopPropagation();
+    try {
+      if (document.pictureInPictureElement) document.exitPictureInPicture().catch(function () {});
+      else if (v.webkitSupportsPresentationMode && v.webkitSupportsPresentationMode('picture-in-picture') && v.webkitSetPresentationMode) v.webkitSetPresentationMode(v.webkitPresentationMode === 'picture-in-picture' ? 'inline' : 'picture-in-picture');
+      else if (v.requestPictureInPicture) { if (v.readyState < 1) return pipNo({ name: 'InvalidStateError' }); v.requestPictureInPicture().catch(pipNo); }
+    } catch (x) { pipNo(x); }
   };
   // (the menus: subtitles and speed)
   var SP = [.75, 1, 1.25, 1.5, 2], tracks = function () { return Array.prototype.filter.call(v.textTracks || [], function (t) { return t.kind === 'subtitles' || t.kind === 'captions'; }); };
@@ -6821,7 +6868,7 @@ var TVP = (function () {
       a.insertAdjacentHTML('afterend', '<button class="pill" id="atv">' + TVI + 'On the TV</button>'); $('#atv').onclick = function () { send(it); }; });
   }
   var pb = $('#ptv');
-  pb.onclick = function () { var it = P.it, pos = P.v.currentTime || 0; if (!it) return; stopPlayer(); send(it, pos); };
+  pb.onclick = function () { var it = P.it, pos = P.v.currentTime || 0; if (!it) return; stopPlayer(true); send(it, pos); };
   P.tvCheck = function () { pb.hidden = true; if (ok()) tvs().then(function (list) { pb.hidden = !list.length || !P.el.classList.contains('on'); }); };
   return { offer: offer, send: send, tvs: tvs };
 })();
