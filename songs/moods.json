@@ -27048,7 +27048,7 @@
    "genreMix": [
     [
      "Indie",
-     90
+     89
     ],
     [
      "Pop",
@@ -27076,7 +27076,11 @@
      [
       [
        "Indie",
-       98
+       94
+      ],
+      [
+       "Folk",
+       4
       ],
       [
        "Pop",
@@ -27936,7 +27940,7 @@
     ],
     [
      "Melancholy",
-     14
+     13
     ]
    ],
    "moodEvidence": [
@@ -27954,7 +27958,7 @@
       ],
       [
        "Melancholy",
-       14
+       13
       ]
      ]
     ]
@@ -28984,6 +28988,135 @@
     "indie",
     "rock",
     "slowcore"
+   ],
+   "check": true
+  },
+  "1qfDfZAvrkSAFrAR2FTQDv": {
+   "n": 280,
+   "title": "Grandma's Hands",
+   "artist": "Bill Withers",
+   "moods": [
+    "Mellow",
+    "Melancholy"
+   ],
+   "moodMix": [
+    [
+     "Mellow",
+     33
+    ],
+    [
+     "Melancholy",
+     32
+    ],
+    [
+     "Dark",
+     10
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Mellow",
+       33
+      ],
+      [
+       "Melancholy",
+       32
+      ],
+      [
+       "Dark",
+       10
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Mellow",
+    "Melancholy",
+    "Dark"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Modern Electric Blues",
+    "Electric Blues",
+    "Delta Blues"
+   ],
+   "genres": [
+    "Soul & R&B"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Soul & R&B",
+     82
+    ],
+    [
+     "Rock",
+     11
+    ],
+    [
+     "Country",
+     4
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Soul & R&B",
+       94
+      ],
+      [
+       "Pop",
+       6
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Soul & R&B",
+       100
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Rock",
+       56
+      ],
+      [
+       "Soul & R&B",
+       24
+      ],
+      [
+       "Country",
+       20
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "classic soul / r&b",
+    "classic soul r b",
+    "deep soul",
+    "funk",
+    "motown",
+    "pop soul",
+    "rhythm & blues",
+    "smooth soul",
+    "soul"
    ],
    "check": true
   }
