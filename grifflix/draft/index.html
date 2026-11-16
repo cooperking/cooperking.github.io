@@ -162,6 +162,10 @@ img { display: block; }
 .day.whole, html:not(.mob) .tcd.whole, .tcd.whole { background: #fff !important; }
 .day.whole .art, html:not(.mob) .tcd.whole img, .tcd.whole img { position: absolute; inset: 0 !important; margin: auto; width: auto !important; height: auto !important; max-width: calc(100% - 10px); max-height: calc(100% - 10px); object-fit: fill !important; box-sizing: border-box; border: 1px solid #000; z-index: 1; }
 .day.whole .cap, .day.whole .num, .day.whole .bar, .tcd.whole b, .tcd.whole span { z-index: 2; }
+/* (the white words readable on the white, the posters not covered: a dark halo round each letter and only the faintest shade under them:
+   John, 16 Nov 2026: "can you make sure the white writing on the calendars can be read") */
+.day.whole .cap, html:not(.mob) .tcd.whole span, .tcd.whole span { background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, .28)) !important; text-shadow: 0 0 1px #000, 0 0 2px #000, 0 0 5px rgba(0, 0, 0, .85), 0 1px 3px rgba(0, 0, 0, .9); }
+.day.whole .num, .tcd.whole b { z-index: 3 !important; }
 /* (a poster that isn't poster-shaped, a Criterion cover's 4:5: whole, never stretched or cut, a soft dark copy of itself around it:
    John, 16 Nov 2026, "if we can change the display, we don't need to" pad them) */
 .pic.odd { isolation: isolate; position: relative; overflow: hidden; }   /* (its soft copy kept inside its own frame: in Search's results it had covered the whole panel: John, 16 Nov 2026) */
@@ -2136,7 +2140,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'dcb4077c9ffe' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'efc23c419459' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
