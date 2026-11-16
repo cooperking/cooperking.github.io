@@ -501,6 +501,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="state"><label class="btn primary" for="critfile">Choose the saved page</label><input type="file" id="critfile" accept=".html,.htm,text/html" hidden></div>
         <p class="stat" id="critsay"></p>
         <pre id="critlog" hidden style="white-space:pre-wrap;max-height:260px;overflow:auto;font-size:12px;opacity:.85"></pre>
+        <h3 style="margin:22px 0 6px;font-size:17px">Criterion’s own synopses</h3>
+        <p class="stat" id="synsay">Criterion’s site won’t let the Mac mini read its film pages, but your browser can. Once:</p>
+        <ol class="stat" style="margin:6px 0 10px 20px;padding:0">
+          <li>Drag this to your bookmarks bar: <a class="btn" id="synbm" href="#" style="cursor:grab">Grifflix: Criterion synopses</a></li>
+          <li><button class="btn" id="syncopy" type="button">Copy your list</button> <span id="syncount"></span></li>
+          <li>Open <a href="https://www.criterion.com" target="_blank" rel="noopener">criterion.com</a>, click the bookmark, paste the list (⌘V) and press OK. Keep that tab open while it reads, about one film a second; it saves <b>criterion-synopses.json</b> to your Downloads.</li>
+          <li><label class="btn primary" for="synfile">Choose criterion-synopses.json</label><input type="file" id="synfile" accept=".json,application/json" hidden> and each film gets Criterion’s synopsis.</li>
+        </ol>
       </section>
       <section class="card" data-tab="mac">
         <div class="kicker">Claude</div>
@@ -1438,6 +1446,54 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     delete b.dataset.sure; b.textContent = 'Set the others aside'; b.hidden = true;
     dupCall({ keep: keep }).then(dupPaint).catch(function (e) { b.hidden = false; toast(e.message); });
   };
+
+  // ---- Criterion's synopses, read by John's own browser on criterion.com (it won't let the Mac mini), then given to the films (16 Nov 2026)
+  (function () {
+    // (the bookmark: on criterion.com, reads each film page of the pasted list, one a second, and saves what it found. No // comments inside
+    // it: a bookmark's code loses its line breaks, and a comment would swallow the rest)
+    var BM = function () {
+      if (!/(^|\.)criterion\.com$/.test(location.hostname)) { alert('Open criterion.com first, then click this bookmark there.'); return; }
+      var t = prompt('Paste the list from Grifflix’s admin page'); if (!t) return;
+      var L; try { L = JSON.parse(t); } catch (e) { alert('That isn’t the list: press Copy your list on the admin page again.'); return; }
+      var d = document.createElement('div'); d.style.cssText = 'position:fixed;z-index:2147483647;top:12px;right:12px;background:#111;color:#fff;padding:14px 18px;font:15px/1.4 sans-serif;border-radius:8px;max-width:340px;box-shadow:0 8px 30px rgba(0,0,0,.4)'; document.body.appendChild(d);
+      var out = {}, n = 0, miss = 0, stop = false, wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+      (async function () {
+        for (var i = 0; i < L.length && !stop; i++) {
+          n++; d.textContent = 'Grifflix: reading ' + n + ' of ' + L.length + '… keep this tab open.';
+          try {
+            var h = await (await fetch('/films/' + L[i], { credentials: 'include' })).text();
+            if (/Just a moment|challenges\.cloudflare\.com/.test(h.slice(0, 6000))) { stop = true; break; }
+            var doc = new DOMParser().parseFromString(h, 'text/html');
+            var syn = [].map.call(doc.querySelectorAll('.product-summary p'), function (p) { return p.textContent.replace(/\s+/g, ' ').trim(); }).filter(Boolean).join('\n\n');
+            if (!syn) { var m = doc.querySelector('meta[property="og:description"], meta[name="description"]'); syn = m ? m.content.trim() : ''; }
+            if (syn.length > 40) out[L[i]] = syn; else miss++;
+          } catch (e) { miss++; }
+          await wait(1000);
+        }
+        var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(out)], { type: 'application/json' })); a.download = 'criterion-synopses.json'; document.body.appendChild(a); a.click();
+        d.textContent = 'Grifflix: ' + (stop ? 'Criterion asked to check you’re a person, so it stopped: refresh this page, then click the bookmark again (it saves what it has). ' : 'done. ') + Object.keys(out).length + ' synopses saved as criterion-synopses.json in your Downloads' + (miss ? ' (' + miss + ' pages had none)' : '') + '. Choose it on the admin page.';
+      })();
+    };
+    $('#synbm').href = 'javascript:(' + BM.toString() + ')();void 0';
+    $('#synbm').onclick = function (e) { e.preventDefault(); toast('Drag it to your bookmarks bar, then click it on criterion.com'); };
+    $('#syncopy').onclick = function () {
+      var b = $('#syncopy'); if (!GW) return toast('The Mac mini isn’t answering.');
+      b.disabled = true; b.textContent = 'Making the list…';
+      fetch(GW + '/api/criterion?want=1', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(r.status === 404 ? 'Press Update everything first.' : j.error || 'Couldn’t reach the Mac mini.'); return j; }); })
+        .then(function (j) {
+          var txt = JSON.stringify(j.want || []);
+          return navigator.clipboard.writeText(txt).then(function () { $('#syncount').textContent = (j.want || []).length + ' films copied' + (j.have ? ' (' + j.have + ' have Criterion’s synopsis already)' : '') + '. About ' + Math.ceil((j.want || []).length / 60) + ' min to read.'; toast('Copied'); });
+        }).catch(function (e) { toast(e.message || 'Couldn’t copy it'); })
+        .then(function () { b.disabled = false; b.textContent = 'Copy your list'; });
+    };
+    $('#synfile').onchange = function () {
+      var f = this.files[0]; this.value = ''; if (!f) return;
+      f.text().then(function (t) { var o = JSON.parse(t); if (!o || typeof o !== 'object' || Array.isArray(o)) throw new Error('That isn’t the synopses file.');
+        $('#synsay').textContent = Object.keys(o).length + ' synopses: giving them to the films…';
+        return critCall({ synopses: o }).then(critPaint); })
+        .catch(function (e) { toast(e.message || 'That didn’t work.'); });
+    };
+  })();
 
   // ---- a key for Claude to look at the Mac mini with, reading only (John, 16 Nov 2026: "can't you use it from here somehow?")
   function lookPaint(r) {

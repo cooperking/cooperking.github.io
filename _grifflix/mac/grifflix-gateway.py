@@ -2104,6 +2104,32 @@ def make_handler(g):
                 return self.send_json(403, {'error': 'Only John.'})
             home = os.path.expanduser('~/Grifflix')
             script, out = os.path.join(home, 'criterion-covers.py'), os.path.join(home, 'criterion-covers.log')
+            if not b and q.get('want') == '1':   # (the Criterion pages John's browser is to read for their synopses: criterion.com lets it, not the Mac)
+                import subprocess
+                r_ = subprocess.run([sys.executable, script, 'want'], capture_output=True, text=True, timeout=600, cwd=home)
+                try:
+                    return self.send_json(200, json.loads([l for l in (r_.stdout or '').splitlines() if l.startswith('{')][-1]))
+                except (IndexError, ValueError):
+                    return self.send_json(500, {'error': 'The Mac mini couldn’t make the list: ' + (r_.stderr or r_.stdout or '').strip()[-200:]})
+            if b and isinstance(b.get('synopses'), dict):   # (what John's browser read: each film given Criterion's synopsis)
+                if CRIT.get('p') and CRIT['p'].poll() is None:
+                    return self.send_json(409, {'error': 'It’s busy with the covers: try again when that’s done.'})
+                sf = os.path.join(home, 'criterion-synopses.json')
+                S_ = load(sf, {}) or {}
+                pages = S_.setdefault('pages', {})
+                n = 0
+                for k, v in b['synopses'].items():
+                    k, v = str(k), str(v or '').strip()[:6000]
+                    if re.match(r'^[\w-]{3,160}$', k) and len(v) > 40:
+                        pages['https://www.criterion.com/films/' + k] = v
+                        n += 1
+                S_.setdefault('given', {})
+                save(sf, S_)
+                import subprocess
+                CRIT['p'] = subprocess.Popen([sys.executable, '-u', script, 'synopses', 'go'], stdout=open(out, 'w'), stderr=subprocess.STDOUT, cwd=home)
+                CRIT['at'] = time.time()
+                log('Criterion synopses: %d from John’s browser' % n)
+                return self.send_json(200, {'running': True, 'got': n, 'at': CRIT['at'], 'log': ''})
             if b:
                 films = b.get('films')
                 if not isinstance(films, list) or not films:

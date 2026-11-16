@@ -22,6 +22,8 @@ import base64, hashlib, html.parser, json, shutil, os, re, subprocess, sys, time
 
 ARGS = sys.argv[1:]
 GO = 'go' in ARGS
+WANT = 'want' in ARGS       # (the Criterion pages of John's films without a synopsis yet, as JSON, for the admin page's list)
+SYNONLY = 'synopses' in ARGS   # (only the synopses, from the file John's browser saved: nothing fetched)
 HOME = os.path.expanduser('~/Grifflix')
 # (the admin page sends the films it read from the saved page, as criterion-list.json; a saved page itself works too)
 LIST = next((a for a in ARGS if a.lower().endswith(('.html', '.htm', '.json'))), None) or next(
@@ -252,6 +254,11 @@ def synopses(films):
             if len(rel) >= 2 and not (len(rel) > 2 and rel[1].lower() in ('other', 'extras', 'featurettes', 'trailers', 'interviews', 'shorts')):
                 by.setdefault(rel[0], []).append(g(it, 'Id'))
         todo = [(fo, l) for fo, l in sorted(want.items()) if l not in pages]
+        if WANT:
+            print(json.dumps({'want': sorted(set(l.replace('https://www.criterion.com/films/', '') for fo, l in want.items() if not pages.get(l))), 'have': sum(1 for l in set(want.values()) if pages.get(l))}))
+            return
+        if SYNONLY:
+            todo = []
         print('\nCriterion’s synopses: %d film(s) to read from criterion.com%s' % (len(todo), '' if GO else ' (run with go)'))
         blocked, fails = False, 0
         if GO:
@@ -461,6 +468,8 @@ def spines(films):
         if sp and (hit not in out or int(sp) < out[hit]):   # (a film in more than one release: its first spine)
             out[hit] = int(sp)
     SPINES.update(out)
+    if WANT:
+        return
     print('\nSpine numbers: %d Criterion films in Grifflix%s' % (len(out), '' if GO else ' (run with go to keep them)'))
     if GO:
         dest = os.path.join(HOME, 'criterion-spines.json')
@@ -486,6 +495,10 @@ def main():
     if not any(f['img'].startswith('http') for f in films):
         spines(listed)   # (saved as "Web Page, Complete": the covers' addresses made into the browser's own copies)
         sys.exit('The covers’ addresses aren’t in that page (it was saved as “Web Page, Complete”): save it again as “Web Page, HTML Only” (Safari: “Page Source”).')
+    if WANT or SYNONLY:   # (no covers: only which films, and their synopses)
+        spines(listed)
+        synopses(listed)
+        return
     films = [f for f in films if f['img'].startswith('http')]
     if not os.path.isdir(BASE):
         sys.exit('No %s: is the G-Drive plugged in?' % BASE)
