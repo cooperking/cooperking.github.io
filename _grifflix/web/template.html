@@ -1205,6 +1205,9 @@ html.tv #bsin .tabs .pill { min-height: 56px; font-size: 16px !important; paddin
 .film .ov { font: 400 18px/1.65 var(--kfont) !important; letter-spacing: .01em; color: var(--fg) !important; max-width: 62ch !important; margin-top: 14px !important; display: block !important; -webkit-line-clamp: unset !important; overflow: visible !important; }
 .film .tags .pill, .film .chips .pill { border-radius: 0 !important; }
 .film .cred, .film .credits { font: 400 14px/1.6 var(--kfont) !important; color: var(--fg-2) !important; max-width: 70ch; }
+.fback { position: fixed; z-index: 85; left: max(16px, env(safe-area-inset-left)); top: calc(env(safe-area-inset-top) + 104px); padding: 8px 14px 7px; border: 1px solid rgba(var(--kink), .55); background: color-mix(in srgb, var(--bg) 82%, transparent); color: rgb(var(--kink)); font: 500 12px/1 "GFutura", "Jost", sans-serif; letter-spacing: .24em; text-transform: uppercase; cursor: pointer; }   /* (back to the page the film was opened from) */
+html:not(.phone) .fback { left: clamp(16px, 4.45vw, 64px); }
+html.phone .fback { top: calc(env(safe-area-inset-top) + 74px); left: 12px; padding: 7px 12px 6px; font-size: 11px; }
 .film .close { position: fixed !important; top: 22px; right: 22px; z-index: 82; background: var(--bg) !important; }
 html:not(.phone) .film { display: grid; grid-template-columns: minmax(220px, 30vw) minmax(0, 1fr); gap: clamp(32px, 4vw, 72px); align-items: center; padding: 96px clamp(40px, 6vw, 110px) 60px; box-sizing: border-box; }
 html:not(.phone) .film .heroimg { display: none !important; }
@@ -5366,6 +5369,24 @@ function tvStart() {   // the TV: a pop-up starts on its Play (or its first main
   if (b) b.focus({ preventScroll: true });
 }
 function closeSheet() { if (dlg.open) dlg.close(); }
+// (the page a film was opened from (search, a collection, the library, a profile) kept as it was, its scroll too, so Back returns
+// to it: John, 16 Nov 2026: "a small back button on films so you look at a film without losing your previous search point")
+var SHEETBACK = [];
+function sheetKeep() {
+  var si = $('#sheetIn'); if (!dlg.open || !si || !si.firstChild || si.querySelector(':scope > .film')) return false;
+  var f = document.createDocumentFragment(), sc = [si.scrollTop, dlg.scrollTop, (si.querySelector('.results') || {}).scrollTop || 0];
+  while (si.firstChild) f.appendChild(si.firstChild);
+  SHEETBACK.push({ frag: f, sc: sc, into: S.sheetInto });
+  return true;
+}
+function sheetBack() {
+  var b = SHEETBACK.pop(); if (!b) return closeSheet();
+  var si = $('#sheetIn'); si.innerHTML = ''; si.appendChild(b.frag); S.sheetInto = b.into;
+  requestAnimationFrame(function () { si.scrollTop = b.sc[0]; dlg.scrollTop = b.sc[1]; var r = si.querySelector('.results'); if (r) r.scrollTop = b.sc[2]; });
+  if (TV) { var f = si.querySelector('[data-item], [data-r], button, input'); if (f) f.focus({ preventScroll: true }); }
+}
+dlg.addEventListener('close', function () { SHEETBACK = []; });
+dlg.addEventListener('cancel', function (e) { if (SHEETBACK.length && $('#sheetIn > .film')) { e.preventDefault(); sheetBack(); } });   // (Escape, and the remote's Back: back to it first)
 // the words beside GRIFFLIX: Calendar, Theme and Search, the same three in the same place on the bar and over every pop-up,
 // on a phone, a computer and the TV; the one you're on marked (John, 8 Nov 2026: "Search theme/calendar should always be in
 // the same place no matter what the format")
@@ -5535,8 +5556,10 @@ function itemSheet(it, ctx) {
   var dnav = function (d) { return ctx.date && dayNear(ctx.date, d) ? '<button class="ico dnav" id="dstep' + (d < 0 ? 'p' : 'n') + '" data-dstep="' + d + '" aria-label="' + (d < 0 ? 'The day before' : 'The day after') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="' + (d < 0 ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6') + '"/></svg></button>' : ''; };
   var top = it.backdrop ? '<div class="heroimg"><img alt="" src="' + esc(img(it.backdrop, 'Backdrop', 1100)) + '">' + '</div>' : (it.thumb || (it.type === 'video' && it.poster) ? '<div class="heroimg"><img alt="" src="' + esc(img(it.thumb || it.poster, it.thumb ? 'Thumb' : 'Primary', 1100)) + '">' + '</div>' : '<div class="noimg-top" style="position:relative"></div>');
   var pst = it.poster && it.type !== 'episode' ? img(it.poster, 'Primary', 400) : '';   // (the poster, whole, beside the words on a big screen)
-  openSheet('<div class="film' + (pst ? ' hasposter' : '') + (it.type === 'series' ? ' series' : '') + '">' + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it))) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');
+  var kept = sheetKeep() || ($('#sheetIn > .film') && SHEETBACK.length);   // (from a page of films: that page kept, and a way back to it)
+  openSheet('<div class="film' + (pst ? ' hasposter' : '') + (it.type === 'series' ? ' series' : '') + '">' + (kept && !TV ? '<button type="button" class="fback" id="fback" aria-label="Back">‹ Back</button>' : '') + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it))) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');
   $$('#sheetIn [data-dstep]').forEach(function (b) { b.onclick = function () { dayStep(+b.dataset.dstep); }; });
+  var fb = $('#fback'); if (fb) fb.onclick = sheetBack;
   wireBody(it, ctx); setTimeout(tvFit, 30);
   var mine = function (full) { if (PUBLIC || DEMO || !full.id) return full;   // (the member's own: from the Mac, if it's on)
     own('lists').then(function (L) { var h = L.hearts.some(function (x) { return x.id === it.id; }); if (h !== !!it.hearted) { it.hearted = full.hearted = h; var b = $('#aheart'); if (b && dlg.open) b.innerHTML = HEART(h); } }).catch(function () {});
