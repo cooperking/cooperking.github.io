@@ -2117,7 +2117,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '594e042a70cc' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '1ade099cfc95' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5594,10 +5594,7 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
     // (John's, on his Mac, when the film needs converting: his Mac's own hardware, far faster than the Mac mini, asked first, its progress
     // shown here: John, 16 Nov 2026, "can the convert here change from earlier be moved into the edit page - and only show if a conversion is
     // actually needed - I'd like to see the progress and it should confirm before running")
-    (it.conv && it.type === 'movie' && !TV && /Mac/.test(navigator.platform || '') && !('ontouchend' in document) ?
-      '<div class="xblock" style="margin:0 0 22px"><h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">Convert on this Mac</h4>' +
-      '<p class="ov" style="margin:0 0 10px;font-size:14px">It needs converting (' + esc(it.conv.replace(/^to /, '')) + '). This Mac does it much faster than the Mac mini, which checks it and puts it in place.</p>' +
-      '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="pill" id="thismac">Convert on this Mac</button></div><div id="tmprog" style="margin-top:10px"></div></div>' : '') +
+    '<div id="tmbox"></div>' +
     (it.type === 'movie' ? '<div class="xblock" style="margin:0 0 22px"><h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">Its file</h4><div id="finfo" class="ov" style="font-size:14px;margin:0">Looking…</div></div>' : '') +
     '<h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">The wrong film?</h4>' +
     '<p class="ov" style="margin:0 0 14px">Find the right ' + (it.type === 'series' ? 'series' : 'film') + ' on TMDB: its title, and its year if you know it.</p>' +
@@ -5625,7 +5622,18 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
         row('Subtitles', f.subs.map(function (x) { return esc(x.lang || 'unknown') + ' · ' + up(x.codec) + (x.external ? ' (file beside it)' : '') + (x.forced ? ' · forced' : ''); }).join('<br>') || 'none') +
         row('Plays', f.convert ? 'needs converting: ' + esc(f.convert.replace(/^to /, '')) : 'everywhere, as it is');
     }).join('') || 'No file found.';
+    // (Convert on this Mac, when the Mac mini says this file needs converting (or making smaller): from the file itself, not the film page's
+    // details, which hadn't always come: John, 16 Nov 2026, "the option isn't there for a lot of them")
+    var cv = ((j.sources || [])[0] || {}).convert;
+    if (cv && !TV && /Mac/.test(navigator.platform || '') && !('ontouchend' in document) && $('#tmbox')) {
+      $('#tmbox').innerHTML = '<div class="xblock" style="margin:0 0 22px"><h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">Convert on this Mac</h4>' +
+        '<p class="ov" style="margin:0 0 10px;font-size:14px">' + esc(/^to make smaller/.test(cv) ? 'It’s bigger than it needs to be' + (cv.match(/\(([^)]*)\)/) ? ' (' + cv.match(/\(([^)]*)\)/)[1] + ')' : '') + ': it can be made smaller'
+          : /^to repackage/.test(cv) ? 'It needs repackaging ' + cv.replace(/^to repackage\s*/, '') : 'It needs converting (' + cv.replace(/^to /, '') + ')') + '. This Mac does it much faster than the Mac mini, which checks it and puts it in place.</p>' +
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="pill" id="thismac">Convert on this Mac</button></div><div id="tmprog" style="margin-top:10px"></div></div>';
+      wireThisMac();
+    }
   }).catch(function (e) { $('#finfo').textContent = e.status === 404 ? 'Press Update everything first (the Mac mini needs its update).' : (e.message || 'Couldn’t reach the Mac mini'); });
+  var wireThisMac = function () {
   var tm = $('#thismac');
   if (tm) {   // (converting on this Mac: asked first, then how far it's got, from the Mac mini, every few seconds while the panel's open)
     var tmT = 0, clock2 = function (sec) { sec = Math.max(0, Math.round(sec)); var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60); return (h ? h + ' h ' : '') + m + ' min'; };
@@ -5656,6 +5664,7 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
       }).catch(function (e) { tm.disabled = false; tm.textContent = 'Convert on this Mac'; toast(e.status === 404 ? 'Press Update everything first (the Mac mini needs its update)' : e.message || 'Couldn’t reach the Mac mini'); });
     };
   }
+  };
   var R = [];
   var find = function () {
     var q = $('#idq').value.trim(), y = $('#idy').value.trim();
