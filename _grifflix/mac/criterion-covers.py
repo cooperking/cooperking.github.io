@@ -440,6 +440,11 @@ def spines(films):
     for f in os.listdir(movies):
         if not f.startswith('.') and os.path.isdir(os.path.join(movies, f)) and has_film(os.path.join(movies, f)):   # (not a folder left empty)
             folders.setdefault(k(f), f)
+    parts_index = []   # (folders whose names say part, volume or chapter, with their years: the only ones a film in parts can be)
+    for fk, fn in folders.items():
+        if re.search(r'(part|vol|chapter)', fk):
+            y = re.search(r'\((\d{4})\)\s*$', fn)
+            parts_index.append((fk, fn, int(y.group(1)) if y else 0))
     out = {}
     for f in films:
         if not f['title']:
@@ -449,12 +454,13 @@ def spines(films):
             hit = next((folders[k('%s (%d)' % (f['title'], int(f['year']) + d))] for d in (1, -1) if k('%s (%d)' % (f['title'], int(f['year']) + d)) in folders), None)
         hits = [hit] if hit else []
         if not hit and re.match(r'^\d{4}$', f['year']):   # (a film in parts, its folders "Che Part One (2008)", "Che Part Two (2009)": each part the cover)
-            for fk, fn in folders.items():
-                m = re.match(r'^%s(part|vol|volume|chapter)' % re.escape(k(f['title'])), fk) if len(k(f['title'])) >= 3 else None
-                y = re.search(r'\((\d{4})\)\s*$', fn)
-                if m and y and abs(int(y.group(1)) - int(f['year'])) <= 2:
-                    hits.append(fn)
-                    PARTS[fn] = name_of(f['title'], f['year'])
+            tk = k(f['title'])   # (once per film: it had been worked out again for every folder, two million times, minutes on the old Mac)
+            if len(tk) >= 3:
+                for pre in (tk + 'part', tk + 'vol', tk + 'chapter'):
+                    for fk, fn, fy in parts_index:
+                        if fk.startswith(pre) and fy and abs(fy - int(f['year'])) <= 2:
+                            hits.append(fn)
+                            PARTS[fn] = name_of(f['title'], f['year'])
         if not hits:
             continue
         hit = hits[0]
