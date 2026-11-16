@@ -2117,7 +2117,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'dab2418885c7' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '0bac018ca878' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2538,7 +2538,8 @@ function img(id, kind, w) {
   if (TV && w >= 1100 && kind !== 'Primary') w = 1920;   // (a TV: its full-screen pictures sharp at 1080p)
   var sizes = { Primary: [400], Backdrop: [480, 1100, 1920], Thumb: [480, 1100, 1920] }[kind] || [400], size = sizes.filter(function (x) { return x >= (w || 0); })[0] || sizes[sizes.length - 1];
   var t = PICTAG[id + kind];
-  return WORKER + '/gp/' + id + '/' + kind + '-' + size + '.jpg' + (t ? '?t=' + t : '') + (PUBLIC ? '' : (t ? '&' : '?') + 'm=1');   // (signed out: the site's copies only, never the Mac)
+  // (v=2: every picture asked for afresh once, 16 Nov 2026: some posters had been kept in their old version under their new address)
+  return WORKER + '/gp/' + id + '/' + kind + '-' + size + '.jpg?v=2' + (t ? '&t=' + t : '') + (PUBLIC ? '' : '&m=1');   // (signed out: the site's copies only, never the Mac)
 }
 function gwUrl(p) { return DEMO ? p : GW + p; }
 
@@ -5590,6 +5591,13 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
     '<p class="ov" style="margin:6px 0 0;font-size:14px">For two copies of one film: “It’s a Wonderful Life (Colour)”.</p></div>' +
     '<div class="xblock" style="margin:0 0 22px"><h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">Its pictures</h4>' +
     '<div style="display:flex;gap:10px;flex-wrap:wrap"><button class="pill" data-pick="poster">Choose the poster</button><button class="pill" data-pick="backdrop">Choose the background</button></div></div>' +
+    // (John's, on his Mac, when the film needs converting: his Mac's own hardware, far faster than the Mac mini, asked first, its progress
+    // shown here: John, 16 Nov 2026, "can the convert here change from earlier be moved into the edit page - and only show if a conversion is
+    // actually needed - I'd like to see the progress and it should confirm before running")
+    (it.conv && it.type === 'movie' && !TV && /Mac/.test(navigator.platform || '') && !('ontouchend' in document) ?
+      '<div class="xblock" style="margin:0 0 22px"><h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">Convert on this Mac</h4>' +
+      '<p class="ov" style="margin:0 0 10px;font-size:14px">It needs converting (' + esc(it.conv.replace(/^to /, '')) + '). This Mac does it much faster than the Mac mini, which checks it and puts it in place.</p>' +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="pill" id="thismac">Convert on this Mac</button></div><div id="tmprog" style="margin-top:10px"></div></div>' : '') +
     '<h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">The wrong film?</h4>' +
     '<p class="ov" style="margin:0 0 14px">Find the right ' + (it.type === 'series' ? 'series' : 'film') + ' on TMDB: its title, and its year if you know it.</p>' +
     '<div style="display:flex;gap:10px;flex-wrap:wrap"><input type="text" id="idq" value="' + esc(nm) + '" placeholder="Title" style="flex:1 1 220px"><input type="text" id="idy" value="' + esc(String(yr)) + '" placeholder="Year" inputmode="numeric" style="flex:0 0 90px"><button class="pill go" id="idgo">Find</button></div>' +
@@ -5601,6 +5609,36 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
   $('#rngo').onclick = function () { var v = $('#rnq').value.trim(); if (v) rename(v); };
   $('#rnown').onclick = function () { rename(''); };
   $$('#sheetIn [data-pick]').forEach(function (b) { b.onclick = function () { pictureSheet(it, b.dataset.pick); }; });
+  var tm = $('#thismac');
+  if (tm) {   // (converting on this Mac: asked first, then how far it's got, from the Mac mini, every few seconds while the panel's open)
+    var tmT = 0, clock2 = function (sec) { sec = Math.max(0, Math.round(sec)); var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60); return (h ? h + ' h ' : '') + m + ' min'; };
+    var watch = function () {
+      clearTimeout(tmT);
+      if (!tm.isConnected) return;
+      mac('convertjob?id=' + it.id).then(function (j) {
+        var box = $('#tmprog'); if (!box || !tm.isConnected) return;
+        var st = j.state, pc = j.dur ? Math.min(100, j.t / j.dur * 100) : 0, more = st === 'started' || st === 'converting' || st === 'checking' || st === 'waiting';
+        if (st === 'none') { box.innerHTML = ''; return; }
+        tm.disabled = more; tm.textContent = more ? 'Converting on this Mac' : 'Convert on this Mac';
+        box.innerHTML = st === 'waiting' ? '<p class="ov" style="margin:0;font-size:14px">Waiting for this Mac to start it: a Terminal window opens. (Nothing? Set it up once: the admin page, Conversions.)</p>'
+          : st === 'started' ? '<p class="ov" style="margin:0;font-size:14px">Starting…</p>'
+          : st === 'converting' ? '<div style="height:8px;background:rgba(127,127,127,.25);border-radius:4px;overflow:hidden"><div style="height:100%;width:' + pc.toFixed(1) + '%;background:var(--fg)"></div></div><p class="ov" style="margin:6px 0 0;font-size:14px">' + Math.floor(pc) + '% · ' + clock2(j.t) + ' of ' + clock2(j.dur) + (j.speed ? ' · ' + esc(j.speed) + ' speed' : '') + '</p>'
+          : st === 'checking' ? '<p class="ov" style="margin:0;font-size:14px">Made. The Mac mini is checking it and putting it in place…</p>'
+          : st === 'done' ? '<p class="ov" style="margin:0;font-size:14px">Done: Grifflix shows the new copy within a few minutes.</p>'
+          : '<p class="ov" style="margin:0;font-size:14px">It didn’t convert' + (j.error ? ' (' + esc(j.error) + ')' : '') + '. The Mac mini will do it in its own time.</p>';
+        if (more) tmT = setTimeout(watch, 3000);
+      }).catch(function () {});
+    };
+    watch();
+    tm.onclick = function () {
+      if (!tm.dataset.sure) { tm.dataset.sure = 1; tm.textContent = 'Convert it now on this Mac? Click again'; setTimeout(function () { if (tm.isConnected && tm.dataset.sure) { delete tm.dataset.sure; tm.textContent = 'Convert on this Mac'; } }, 6000); return; }
+      delete tm.dataset.sure; tm.disabled = true; tm.textContent = 'Getting it ready…';
+      mac('convertplan?id=' + it.id).then(function (j) {
+        location.href = 'grifflix-convert://job?u=' + encodeURIComponent(GW + '/convjob/' + j.token);
+        tm.textContent = 'Converting on this Mac'; watch();
+      }).catch(function (e) { tm.disabled = false; tm.textContent = 'Convert on this Mac'; toast(e.status === 404 ? 'Press Update everything first (the Mac mini needs its update)' : e.message || 'Couldn’t reach the Mac mini'); });
+    };
+  }
   var R = [];
   var find = function () {
     var q = $('#idq').value.trim(), y = $('#idy').value.trim();
@@ -5699,8 +5737,6 @@ function bodyHTML(it, ctx) {
   if (!it.ext && shareDayOf(it)) h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button>';
   // (John's Fix match: the film or series chosen from TMDB when the media server named it wrong, or didn't know it: John, 15 Nov 2026)
   if (!PUBLIC && !it.ext && ME && ME.owner && !TV && (it.type === 'movie' || it.type === 'series')) h += '<button class="pill" id="aident">Edit</button>';
-  // (John's, on his Mac: the film converted by that Mac's own hardware, much faster than the Mac mini: John, 16 Nov 2026, "A button on a film")
-  if (!PUBLIC && !it.ext && ME && ME.owner && !TV && it.type === 'movie' && /Mac/.test(navigator.platform || '') && !('ontouchend' in document)) h += '<button class="pill" id="aconv">Convert on this Mac</button>';
   // (John's Delete: last in the row, apart from the rest)
   if (!PUBLIC && !it.ext && ME && ME.owner && !TV && it.type === 'movie') h += '<button class="pill danger" id="adel">Delete</button>';
   h += '</div>';   // (the row closed whatever's in it: with no Share button it was left open and a series' episodes went inside it, Play and the heart floating beside them)
@@ -5737,14 +5773,6 @@ function wireBody(it, ctx) {
   });
   on('afrom0', function () { play(it, null, true); });
   on('aident', function () { identifySheet(it); });
-  on('aconv', function () {
-    var b = $('#aconv'); if (b) { b.disabled = true; b.textContent = 'Getting it ready…'; }
-    mac('convertplan?id=' + it.id).then(function (j) {
-      location.href = 'grifflix-convert://job?u=' + encodeURIComponent(GW + '/convjob/' + j.token);
-      toast('Converting on this Mac: a Terminal window shows how far. (Nothing happens? Set it up once: see the admin page, Conversions.)');
-      if (b) b.textContent = 'Converting on this Mac';
-    }).catch(function (e) { if (b) { b.disabled = false; b.textContent = 'Convert on this Mac'; } toast(e.status === 404 ? 'Press Update everything first (the Mac mini needs its update)' : e.message || 'Couldn’t reach the Mac mini'); });
-  });
   on('adel', function () {
     var b = $('#adel');
     if (!b.dataset.sure) {   // (two taps: the first says what it does, and any Movie of the Day it's on)
