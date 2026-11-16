@@ -129,6 +129,16 @@ class Jellyfin:
             raise RuntimeError('Jellyfin %s %s: %s %s' % (method, path, r.status, raw[:200]))
         return pascal(json.loads(raw)) if raw and raw[:1] in b'[{' else None
 
+    def raw(self, method, path, data=None, ctype='application/json'):
+        c = self.conn(60)
+        c.request(method, path, body=data, headers={'Authorization': self.auth_header(), 'Content-Type': ctype})
+        r = c.getresponse()
+        out = r.read()
+        c.close()
+        if r.status >= 400:
+            raise RuntimeError('Jellyfin %s %s: %s %s' % (method, path, r.status, out[:200]))
+        return out
+
 
 def pascal(o):
     """Jellyfin 10 answers in PascalCase, newer ones in camelCase: everything here reads PascalCase."""
@@ -1851,14 +1861,41 @@ def make_handler(g):
             iid, kind = str(src.get('id') or ''), {'poster': 'Primary', 'backdrop': 'Backdrop', 'thumb': 'Thumb'}.get(str(src.get('kind') or 'poster'), 'Primary')
             if not re.match(r'^[0-9a-f]{32}$', iid):
                 return self.send_json(400, {'error': 'Which film?'})
+            # (the picture it had kept first, every time, and one tap puts it back: John, 16 Nov 2026, The Freshman's Criterion poster
+            # gone after a new one was chosen, with no way back)
+            keep = os.path.join(APP_DIR, 'pictures-before')
+            mine = lambda: sorted(n for n in (os.listdir(keep) if os.path.isdir(keep) else []) if n.startswith('%s-%s-' % (iid, kind)))
             if not b:
+                if src.get('before'):
+                    return self.send_json(200, {'before': len(mine())})
                 r = g.jf.call('GET', '/Items/%s/RemoteImages' % iid, query={'type': kind, 'includeAllLanguages': 'true', 'limit': 60}) or {}
                 imgs = sorted(r.get('Images') or [], key=lambda x: (x.get('Language') not in ('en', None, ''), -(x.get('CommunityRating') or 0), -(x.get('VoteCount') or 0)))
                 return self.send_json(200, {'images': [{'url': x.get('Url'), 'thumb': x.get('ThumbnailUrl') or x.get('Url'), 'w': x.get('Width'), 'h': x.get('Height'),
-                                                        'lang': x.get('Language'), 'from': x.get('ProviderName')} for x in imgs[:60] if x.get('Url')]})
+                                                        'lang': x.get('Language'), 'from': x.get('ProviderName')} for x in imgs[:60] if x.get('Url')], 'before': len(mine())})
+            if b.get('undo'):
+                L = mine()
+                if not L:
+                    return self.send_json(404, {'error': 'There isn’t an earlier one kept.'})
+                pic = open(os.path.join(keep, L[-1]), 'rb').read()
+                ct = 'image/png' if pic[:4] == b'\x89PNG' else 'image/jpeg'
+                g.jf.raw('POST', '/Items/%s/Images/%s' % (iid, kind), base64.b64encode(pic), ct)
+                os.remove(os.path.join(keep, L[-1]))
+                g.forget()
+                g.publish_soon = time.time() + 60
+                log('The earlier %s put back by John for %s' % (kind.lower(), iid))
+                return self.send_json(200, {'ok': True, 'before': len(L) - 1})
             url = str(b.get('url') or '')
             if not url.startswith('http'):
                 return self.send_json(400, {'error': 'Which picture?'})
+            try:   # (the one it has now, kept: the last ten for each)
+                pic = g.jf.raw('GET', '/Items/%s/Images/%s' % (iid, kind))
+                if pic:
+                    os.makedirs(keep, exist_ok=True)
+                    open(os.path.join(keep, '%s-%s-%d.%s' % (iid, kind, time.time(), 'png' if pic[:4] == b'\x89PNG' else 'jpg')), 'wb').write(pic)
+                    for old in mine()[:-10]:
+                        os.remove(os.path.join(keep, old))
+            except Exception as e:
+                log('  (its %s couldn’t be kept first: %s)' % (kind.lower(), e))
             g.jf.call('POST', '/Items/%s/RemoteImages/Download' % iid, query={'type': kind, 'imageUrl': url})
             g.forget()
             g.publish_soon = time.time() + 60

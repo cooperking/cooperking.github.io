@@ -5523,15 +5523,30 @@ function dayStep(d) {
 function pictureSheet(it, kind) {   // John's: every poster (or background) the media server can find for it; tap one to use it
   var poster = kind !== 'backdrop';
   openSheet('<div class="form" style="position:relative"><h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (poster ? 'A poster' : 'A background') + ' for <i>' + esc(it.name || 'this') + '</i></h2>' +
-    '<p class="ov" style="margin:8px 0 14px">Tap one to use it. The best-liked come first.</p><div class="picgrid" id="picgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(' + (poster ? '130px' : '220px') + ',1fr));gap:12px"><p class="ov">Looking…</p></div></div>');
+    '<p class="ov" style="margin:8px 0 14px">Tap one, then tap it again to use it. The best-liked come first. The one it has now is kept, so it can be put back.</p><div id="picundo"></div><div class="picgrid" id="picgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(' + (poster ? '130px' : '220px') + ',1fr));gap:12px"><p class="ov">Looking…</p></div></div>');
   mac('images?id=' + it.id + '&kind=' + kind).then(function (j) {
     var L = j.images || [];
+    if (j.before) {   // (the one it had before, put back: John, 16 Nov 2026)
+      $('#picundo').innerHTML = '<button class="pill" id="picback" style="margin:0 0 14px">Put back the one before</button>';
+      $('#picback').onclick = function () {
+        var bb = $('#picback'); if (!bb.dataset.sure) { bb.dataset.sure = 1; bb.textContent = 'Put it back? Tap again'; return; }
+        bb.disabled = true;
+        mac('images', { id: it.id, kind: kind, undo: 1 }).then(function () { toast('The one before is back: Grifflix shows it within a few minutes'); closeSheet(); })
+          .catch(function (e) { bb.disabled = false; toast(e.message || 'Couldn’t reach the Mac mini'); });
+      };
+    }
     $('#picgrid').innerHTML = L.length ? L.map(function (x, i) {
       return '<button type="button" class="picopt" data-i="' + i + '" style="padding:0;border:0;background:none;cursor:pointer;text-align:left;color:var(--fg-2);font:400 12px var(--sans)"><img alt="" loading="lazy" src="' + esc(x.thumb) + '" style="display:block;width:100%;aspect-ratio:' + (poster ? '2/3' : '16/9') + ';object-fit:cover;background:#222">' +
         '<span style="display:block;margin-top:4px">' + [x.lang ? x.lang.toUpperCase() : 'No words', x.w ? x.w + '×' + x.h : ''].filter(Boolean).join(' · ') + '</span></button>';
     }).join('') : '<p class="ov">None found.</p>';
     $$('#picgrid .picopt').forEach(function (b) { b.onclick = function () {
-      var x = L[+b.dataset.i]; b.style.opacity = .5;
+      var x = L[+b.dataset.i];
+      if (!b.dataset.sure) {   // (a tap asks first: one stray tap had replaced a poster John wanted)
+        $$('#picgrid .picopt').forEach(function (o) { if (o.dataset.sure) { delete o.dataset.sure; o.style.outline = ''; o.lastChild.textContent = o.dataset.was; } });
+        b.dataset.sure = 1; b.dataset.was = b.lastChild.textContent; b.style.outline = '3px solid #e3b448'; b.lastChild.textContent = 'Use this one? Tap again';
+        return;
+      }
+      b.style.opacity = .5;
       mac('images', { id: it.id, kind: kind, url: x.url }).then(function () { toast((poster ? 'Poster' : 'Background') + ' changed: Grifflix shows it within a few minutes'); closeSheet(); })
         .catch(function (e) { b.style.opacity = 1; toast(e.message || 'Couldn’t reach the Mac mini'); });
     }; });
