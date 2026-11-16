@@ -18,7 +18,7 @@ come from Criterion's picture store, which anyone can fetch. Then:
   python3 ~/Grifflix/criterion-covers.py [list.html]        what it would do (nothing changes)
   python3 ~/Grifflix/criterion-covers.py [list.html] go     does it
 """
-import html.parser, json, os, re, subprocess, sys, time, unicodedata, urllib.parse, urllib.request
+import base64, html.parser, json, shutil, os, re, subprocess, sys, time, unicodedata, urllib.parse, urllib.request
 
 ARGS = sys.argv[1:]
 GO = 'go' in ARGS
@@ -127,6 +127,9 @@ def sheet_rows(films):
 
 
 IN_LIB = {}   # (the film folders on Criterion's list → their cover's file name)
+PARTS = {}    # (a film's parts' folders → its cover: poster-add.py can't match those by name, so put on here)
+SPINES = {}   # (folder → spine, kept for beyond(): a TV series' spine too)
+APPLIED = os.path.join(HOME, 'criterion-applied.json')   # (which cover each set, series and part was given, so it's not given again every time)
 
 
 def collect():
@@ -185,6 +188,119 @@ def has_film(folder):   # (as poster-add.py: a film in it, not only extras)
     return False
 
 
+def cover_path(c):
+    for x in (c, c[:-4] + '.png'):
+        p = os.path.join(COVERS, x)
+        if os.path.exists(p) and os.path.getsize(p) > 5000:
+            return p
+    return None
+
+
+def beyond(films):
+    """What poster-add.py and collect() can't do by a film's folder name (John, 16 Nov 2026: "Do the fix to the script for anything where
+    it's a bit more complicated, such as sets and part one and part two - tv series are in the TV folder but are in the criterion
+    collection collection"):
+      * a set Grifflix has as a box set ("Martha Graham: Dance on Film"), by its name: the set its cover, and in The Criterion Collection;
+      * a TV series on Criterion's list ("Tanner '88", "Fishing with John"), by its name and year: its cover (and its folder's poster.jpg),
+        its spine number, and in The Criterion Collection;
+      * a film in parts ("Che" as Che Part One and Che Part Two): each part its cover.
+    Only with a proper Criterion cover; each given once (criterion-applied.json)."""
+    try:
+        Sx = json.load(open(os.path.join(os.environ.get('GRIFFLIX_DIR') or os.path.expanduser('~/Library/Application Support/Grifflix'), 'settings.json')))
+        def jf(method, path, data=None, ctype='application/json', **q):
+            u = Sx.get('jellyfin', 'http://127.0.0.1:8096') + path + ('?' + urllib.parse.urlencode(q) if q else '')
+            raw = urllib.request.urlopen(urllib.request.Request(u, data=data, method=method, headers={'Authorization': 'MediaBrowser Token="%s"' % Sx['jf_token'],
+                                         'Content-Type': ctype}), timeout=120).read()
+            return json.loads(raw) if raw[:1] in (b'{', b'[') else None
+        g = lambda d, k_: d.get(k_, d.get(k_[:1].lower() + k_[1:]))
+        k = lambda t: (lambda x: x[3:] if x.startswith('the') and len(x) > 7 else x)(re.sub(r'[^a-z0-9]', '', plain(t or '').lower()))
+        uid = Sx['jf_user_id']
+        try:
+            done = json.load(open(APPLIED))
+        except Exception:
+            done = {}
+        sets = g(jf('GET', '/Users/%s/Items' % uid, Recursive='true', IncludeItemTypes='BoxSet'), 'Items') or []
+        box = next((b for b in sets if (g(b, 'Name') or '').strip().lower() == 'the criterion collection'), None)
+        held = set(g(i, 'Id') for i in g(jf('GET', '/Users/%s/Items' % uid, ParentId=g(box, 'Id')), 'Items') or []) if box else set()
+        series = g(jf('GET', '/Users/%s/Items' % uid, Recursive='true', IncludeItemTypes='Series', Fields='Path,ProductionYear'), 'Items') or []
+        bysets = {k(g(b, 'Name')): b for b in sets if box is None or g(b, 'Id') != g(box, 'Id')}
+        byser = {}
+        for x in series:
+            byser.setdefault(k(re.sub(r'\s*\((19|20)\d\d\)\s*$', '', g(x, 'Name') or '')), []).append(x)
+        todo = []   # (what, item, cover, folder for its poster.jpg, spine)
+        for f in films:
+            c = name_of(f['title'], f['year'])
+            b = bysets.get(k(f['title']))
+            if b:
+                todo.append(('set', b, c, None, None))
+            for x in byser.get(k(f['title']), []):
+                yr = g(x, 'ProductionYear')
+                if not yr or not re.match(r'^\d{4}$', f['year']) or abs(int(yr) - int(f['year'])) <= 1:
+                    todo.append(('series', x, c, g(x, 'Path'), re.sub(r'[^0-9]', '', f['spine'])))
+        movies = os.path.join(BASE, 'Movies')
+        if PARTS:
+            r_ = jf('GET', '/Users/%s/Items' % uid, ParentId=(Sx.get('libraries') or {}).get('movies'), Recursive='true', IncludeItemTypes='Movie', Fields='Path')
+            for it in g(r_, 'Items') or []:
+                rel = os.path.relpath(g(it, 'Path') or '/', movies).split(os.sep)
+                if len(rel) == 2 and rel[0] in PARTS:   # (the part itself, not its extras)
+                    todo.append(('part', it, PARTS[rel[0]], os.path.join(movies, rel[0]), None))
+        spines_add, put, add, nocover = {}, [], [], []
+        for what, it, c, folder, sp in todo:
+            pth, iid, nm = cover_path(c), g(it, 'Id'), g(it, 'Name')
+            if not pth:
+                nocover.append(nm)
+                continue
+            if what == 'series' and sp and folder:
+                spines_add[os.path.basename(folder.rstrip('/'))] = int(sp)
+            if what in ('set', 'series') and box and iid not in held:
+                add.append((iid, nm))
+            sig = '%s %d' % (os.path.basename(pth), os.path.getsize(pth))
+            if done.get(iid) == sig:
+                continue
+            put.append('%s (%s)' % (nm, what))
+            if GO:
+                pic = open(pth, 'rb').read()
+                if folder and what in ('series', 'part'):
+                    dest = os.path.join(folder, 'poster.png' if pth.endswith('.png') else 'poster.jpg')
+                    for o in ('poster.jpg', 'poster.jpeg', 'poster.png', 'folder.jpg', 'folder.png'):
+                        if os.path.join(folder, o) != dest and os.path.exists(os.path.join(folder, o)):
+                            os.remove(os.path.join(folder, o))
+                    shutil.copyfile(pth, dest)
+                jf('POST', '/Items/%s/Images/Primary' % iid, base64.b64encode(pic), 'image/png' if pth.endswith('.png') else 'image/jpeg')
+                done[iid] = sig
+        print('\nSets, TV series and films in parts: %d cover(s) to put on%s' % (len(put), '' if GO or not put else ' (run with go)'))
+        for x in put[:40]:
+            print('  ' + x)
+        if add:
+            print('  in The Criterion Collection too: %s' % ', '.join(n for _, n in add))
+        if nocover:
+            print('  (no Criterion cover yet: %s)' % ', '.join(sorted(set(nocover))[:20]))
+        if GO:
+            if add:
+                jf('POST', '/Collections/%s/Items' % g(box, 'Id'), Ids=','.join(i for i, _ in add))
+            with open(APPLIED + '.tmp', 'w') as fh:
+                json.dump(done, fh)
+            os.replace(APPLIED + '.tmp', APPLIED)
+            if spines_add:   # (a series' spine number, beside the films')
+                dest = os.path.join(HOME, 'criterion-spines.json')
+                try:
+                    allsp = json.load(open(dest))
+                except Exception:
+                    allsp = {}
+                allsp.update(spines_add)
+                with open(dest + '.tmp', 'w') as fh:
+                    json.dump(allsp, fh, indent=1, sort_keys=True)
+                os.replace(dest + '.tmp', dest)
+            if put or add:
+                try:
+                    urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:%s/local/remap' % Sx.get('port', 8097), data=b'{"map": {}}', method='POST',
+                                           headers={'X-Grifflix-Secret': Sx['secret'], 'Content-Type': 'application/json'}), timeout=30).read()
+                except Exception:
+                    pass
+    except Exception as e:
+        print('\nSets, TV series and films in parts: not done (%s).' % e)
+
+
 def spines(films):
     """Each Criterion film in Grifflix its spine number, by its folder (a year out allowed, as criterion.py): ~/Grifflix/criterion-spines.json,
     which Grifflix's gateway reads, for the site's Spine number sort (John, 16 Nov 2026)."""
@@ -201,12 +317,27 @@ def spines(films):
         hit = folders.get(k('%s (%s)' % (f['title'], f['year'])))
         if not hit and re.match(r'^\d{4}$', f['year']):
             hit = next((folders[k('%s (%d)' % (f['title'], int(f['year']) + d))] for d in (1, -1) if k('%s (%d)' % (f['title'], int(f['year']) + d)) in folders), None)
-        if not hit:
+        hits = [hit] if hit else []
+        if not hit and re.match(r'^\d{4}$', f['year']):   # (a film in parts, its folders "Che Part One (2008)", "Che Part Two (2009)": each part the cover)
+            for fk, fn in folders.items():
+                m = re.match(r'^%s(part|vol|volume|chapter)' % re.escape(k(f['title'])), fk) if len(k(f['title'])) >= 3 else None
+                y = re.search(r'\((\d{4})\)\s*$', fn)
+                if m and y and abs(int(y.group(1)) - int(f['year'])) <= 2:
+                    hits.append(fn)
+                    PARTS[fn] = name_of(f['title'], f['year'])
+        if not hits:
             continue
+        hit = hits[0]
+        for h in hits[1:]:
+            IN_LIB.setdefault(h, name_of(f['title'], f['year']))
+            sp = re.sub(r'[^0-9]', '', f['spine'])
+            if sp:
+                out[h] = int(sp)
         IN_LIB.setdefault(hit, name_of(f['title'], f['year']))   # (for the collection, with or without a spine yet)
         sp = re.sub(r'[^0-9]', '', f['spine'])
         if sp and (hit not in out or int(sp) < out[hit]):   # (a film in more than one release: its first spine)
             out[hit] = int(sp)
+    SPINES.update(out)
     print('\nSpine numbers: %d Criterion films in Grifflix%s' % (len(out), '' if GO else ' (run with go to keep them)'))
     if GO:
         dest = os.path.join(HOME, 'criterion-spines.json')
@@ -275,6 +406,7 @@ def main():
             print('Google Drive “Criterion images”: %s' % ('up to date' if r.returncode == 0 else 'not copied (%s)' % (r.stderr or '').strip()[-200:]))
     spines(listed)
     collect()
+    beyond(films)
     sheet_rows(films)
     # every Criterion film in Grifflix its cover (the ones already here, and the new)
     print('\nPutting the covers on their films…' if GO else '\nWhat poster-add.py would put on the films:')
