@@ -112,7 +112,7 @@ def from_drive():   # the originals, from John's Google Drive, with the download
 def main():
     if not os.path.isdir(MOVIES):
         sys.exit('No %s: is the G-Drive plugged in?' % MOVIES)
-    if DRIVE:
+    if DRIVE and 'nofetch' not in sys.argv[1:]:   # (nofetch: only the covers already here, as when a film has just come in)
         from_drive()
     if not os.path.isdir(SOURCE):
         sys.exit('No "%s": put the posters there (named after their films’ folders) and run this again.' % SOURCE)
