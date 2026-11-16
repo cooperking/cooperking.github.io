@@ -11,14 +11,26 @@ stays there and is listed, so nothing is ever put on the wrong film.
   python3 ~/Grifflix/poster-add.py        what it would do (nothing changes)
   python3 ~/Grifflix/poster-add.py go     does it
 
+Every Criterion film its proper cover, straight from the originals in John's Google Drive ("Criterion images", put there by the old
+import_requests.py from criterion.com), as they are: not padded to a poster's shape any more, as Plex needed, since Grifflix shows
+a cover of any shape whole (John, 16 Nov 2026: "if we can change the display, we don't need to do this and all criterion films can
+add the proper criterion image"). The originals are copied to "Criterion covers" on the G-Drive (kept there; only new ones each
+time), and each film that has one gets it, replacing a padded or other poster:
+
+  python3 ~/Grifflix/poster-add.py drive       brings the originals over, and says what it would put on which film
+  python3 ~/Grifflix/poster-add.py drive go    and does it
+
 (Replaces the old scripts/poster_add.py: John, 12 Nov 2026: "it should check and put the correct poster in".)
 """
 import base64, hashlib, json, os, re, shutil, sys, unicodedata, urllib.parse, urllib.request
 
-GO = len(sys.argv) > 1 and sys.argv[1] == 'go'
+GO = 'go' in sys.argv[1:]
+DRIVE = 'drive' in sys.argv[1:]
 BASE = os.environ.get('GRIFFLIX_MEDIA') or '/Volumes/G-Drive/Grifflix'
 MOVIES = os.path.join(BASE, 'Movies')
-SOURCE = os.path.join(BASE, 'Criterion images')
+SOURCE = os.path.join(BASE, 'Criterion covers' if DRIVE else 'Criterion images')
+KEEP = DRIVE   # (the Google Drive originals stay where they are, for next time; "Criterion images" ones are moved onto their films)
+HOME = os.path.expanduser('~/Grifflix')
 APP = os.environ.get('GRIFFLIX_DIR') or os.path.expanduser('~/Library/Application Support/Grifflix')
 PICS = ('.jpg', '.jpeg', '.png')
 EXTRA = {'ø': 'o', 'Ø': 'O', 'æ': 'ae', 'Æ': 'AE', 'œ': 'oe', 'Œ': 'OE', 'ß': 'ss', 'ł': 'l', 'Ł': 'L', 'đ': 'd', 'Đ': 'D', 'þ': 'th', 'ð': 'd'}
@@ -85,9 +97,23 @@ def films_by_folder():   # each film folder → the media server's films in it
     return out
 
 
+def from_drive():   # the originals, from John's Google Drive, with the downloader's own rclone and sign-in
+    import subprocess
+    rclone, conf = os.path.join(HOME, 'rclone'), os.path.join(HOME, 'rclone.conf')
+    if not (os.path.exists(rclone) and os.path.exists(conf)):
+        sys.exit('Google Drive isn’t set up on the Mac mini (the downloader’s rclone): run gdrive.py setup first.')
+    os.makedirs(SOURCE, exist_ok=True)
+    print('Bringing the Criterion covers over from Google Drive (only new ones)…')
+    r = subprocess.run([rclone, '--config', conf, 'copy', 'gdrive:Criterion images', SOURCE, '--transfers', '8', '--stats-one-line', '--stats', '20s'], text=True)
+    if r.returncode:
+        sys.exit('Google Drive didn’t give them (rclone %d).' % r.returncode)
+
+
 def main():
     if not os.path.isdir(MOVIES):
         sys.exit('No %s: is the G-Drive plugged in?' % MOVIES)
+    if DRIVE:
+        from_drive()
     if not os.path.isdir(SOURCE):
         sys.exit('No "%s": put the posters there (named after their films’ folders) and run this again.' % SOURCE)
     folders = [f for f in os.listdir(MOVIES) if not f.startswith('.') and os.path.isdir(os.path.join(MOVIES, f))]
@@ -124,7 +150,7 @@ def main():
         if os.path.exists(dest) and same(src, dest):
             same_n += 1
             print('  already there: %s' % folder)
-            if GO:
+            if GO and not KEEP:
                 os.remove(src)
             continue
         print('  %s → %s%s' % (p, os.path.relpath(dest, BASE), ' (replacing its poster)' if os.path.exists(dest) or any(os.path.exists(o) for o in others) else ''))
@@ -133,7 +159,10 @@ def main():
         for o in others:   # (one poster per film, so the media server can't pick the old one)
             if os.path.exists(o):
                 os.remove(o)
-        shutil.move(src, dest)
+        if KEEP:
+            shutil.copyfile(src, dest)
+        else:
+            shutil.move(src, dest)
         done += 1
         if films is not None:
             ids = films.get(folder) or []
@@ -145,6 +174,8 @@ def main():
             except Exception as e:
                 server.append('%s (%s)' % (folder, e))
     print('\n%s %d poster(s)%s.' % ('Put' if GO else 'Would put', done, ', %d already there' % same_n if same_n else ''))
+    if KEEP and unmatched:   # (most Criterion films aren't in the library: just how many)
+        print('\n%d cover(s) for films not in the library.' % len(unmatched)); unmatched = []
     for title, rows in (('No film folder matches (left in "Criterion images"):', unmatched),
                         ('More than one folder matches (left there: rename the picture to the right one):', unsure),
                         ('Not a picture, or too small (left there):', bad),
