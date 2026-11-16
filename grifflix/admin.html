@@ -466,6 +466,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat" id="swsay"></p>
         <ul class="changes" id="swlist"></ul>
       </section>
+      <section class="card" data-tab="films">
+        <div class="kicker">Criterion</div>
+        <h2>Criterion’s covers</h2>
+        <p class="stat">Every Criterion cover, as Criterion makes it, on each Criterion film in Grifflix (and in your Google Drive’s “Criterion images”, and new films added to the Criterion sheet). Criterion’s site only lets a person’s own browser see its list, so: open <a href="https://www.criterion.com/shop/browse/list?sort=spine_number" target="_blank" rel="noopener">Criterion’s list</a>, let it load, then <b>File → Save Page As…</b> (Web Page, HTML only, or Page Source), and choose that file here. Now and then is enough: a Criterion film you bring in gets its cover by itself.</p>
+        <div class="state"><label class="btn primary" for="critfile">Choose the saved page</label><input type="file" id="critfile" accept=".html,.htm,text/html" hidden></div>
+        <p class="stat" id="critsay"></p>
+        <pre id="critlog" hidden style="white-space:pre-wrap;max-height:260px;overflow:auto;font-size:12px;opacity:.85"></pre>
+      </section>
       <section class="card" data-tab="mac">
         <div class="kicker">Claude</div>
         <h2>Let Claude look at the Mac mini</h2>
@@ -1293,6 +1301,31 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       .then(function () { b.disabled = false; b.textContent = 'Save'; });
   };
   setTimeout(osLoad, 1500);
+
+  // ---- Criterion's covers (John, 16 Nov 2026: the old import_requests.py, done here): the films read from Criterion's list page as John's
+  // browser saved it, sent to the Mac mini, which fetches the covers and puts them on their films
+  function critCall(body) {
+    return fetch(GW + '/api/criterion', body ? { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(r.status === 404 ? 'Press Update everything first: the Mac mini needs its update.' : j.error || 'Couldn’t reach the Mac mini.'); return j; }); });
+  }
+  var critT = 0;
+  function critPaint(j) {
+    $('#critsay').textContent = j.running ? 'Fetching the covers and putting them on their films…' : j.log ? 'Last done ' + (j.at ? new Date(j.at * 1000).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'earlier') + '.' : '';
+    $('#critlog').hidden = !j.log; $('#critlog').textContent = j.log || '';
+    clearTimeout(critT); if (j.running) critT = setTimeout(function () { critCall().then(critPaint).catch(function () {}); }, 5000);
+  }
+  setTimeout(function () { if (GW) critCall().then(critPaint).catch(function () {}); }, 1900);
+  $('#critfile').onchange = function () {
+    var f = this.files[0]; this.value = ''; if (!f) return; if (!GW) return toast('The Mac mini isn’t answering.');
+    f.text().then(function (t) {
+      var d = new DOMParser().parseFromString(t, 'text/html'), txt = function (r, c) { var e = r.querySelector('td.g-' + c); return e ? e.textContent.replace(/\s+/g, ' ').trim().replace(/,$/, '') : ''; };
+      var films = [].map.call(d.querySelectorAll('tr.gridFilm'), function (r) { var im = r.querySelector('td.g-img img'); return { link: r.getAttribute('data-href') || '', spine: txt(r, 'spine'), img: im ? (im.getAttribute('src') || im.getAttribute('data-src') || '') : '', title: txt(r, 'title'), director: txt(r, 'director'), country: txt(r, 'country'), year: txt(r, 'year') }; })
+        .filter(function (x) { return x.title && x.img; });
+      if (!films.length) throw new Error('No films in that page: save Criterion’s list once it has loaded (if it says “Just a moment”, wait, then save).');
+      $('#critsay').textContent = films.length + ' films found: sending them to the Mac mini…';
+      return critCall({ films: films }).then(critPaint);
+    }).catch(function (e) { toast(e.message || 'That didn’t work.'); $('#critsay').textContent = e.message || ''; });
+  };
 
   // ---- a key for Claude to look at the Mac mini with, reading only (John, 16 Nov 2026: "can't you use it from here somehow?")
   function lookPaint(r) {

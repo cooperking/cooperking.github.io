@@ -59,6 +59,7 @@ SOFTWARE = [('grifflix-gateway.py', os.path.join(APP_DIR, 'grifflix-gateway.py')
             ('subtitles.py', os.path.join(APP_DIR, 'subtitles.py'), 'movie_hash'),
             ('poster-add.py', os.path.expanduser('~/Grifflix/poster-add.py'), 'Criterion images'),   # (John's own posters on their films: 12 Nov 2026)
             ('criterion.py', os.path.expanduser('~/Grifflix/criterion.py'), 'Criterion Films'),
+            ('criterion-covers.py', os.path.expanduser('~/Grifflix/criterion-covers.py'), 'criterion-list.html'),   # (every Criterion cover: 16 Nov 2026)
             ('gdrive.py', os.path.expanduser('~/Grifflix/gdrive.py'), 'Google Drive')]   # (films from Google Drive, by themselves: 15 Nov 2026)   # what John's last Update sent (so the next reads only what's new)
 LIBS = {'movies': ('Movies', 'movies'), 'tv': ('TV', 'tvshows'), 'home': ('Home videos', 'homevideos')}
 
@@ -67,7 +68,8 @@ def log(*a):
     print(time.strftime('%Y-%m-%d %H:%M:%S'), *a, flush=True)
 
 
-LOOKED = {}   # (when Claude last looked)
+LOOKED = {}
+CRIT = {}   # (criterion-covers.py, started from the admin page)   # (when Claude last looked)
 CONV_SEEN = {}   # (files convert.py made or kept, looked at once: path → what they are)
 # Play on the TV (John, 11 Nov 2026: "Is it possible for the fire stick to receive a cast film ... Build that"): each member's Fire
 # TVs with Grifflix open, kept in memory (a TV that's gone is forgotten), and what their phones ask them to do
@@ -336,6 +338,22 @@ def shown(items):   # a series with nothing in it (an empty folder, e.g. "untitl
     return [i for i in items if not (i.get('Type') == 'Series' and not i.get('ChildCount') and not i.get('RecursiveItemCount'))]
 
 
+SPINES = {'at': 0, 'map': {}}
+
+
+def spine_of(path):
+    """A Criterion film's spine number, by its folder (criterion-covers.py writes them from Criterion's list): John, 16 Nov 2026, "get the
+    spine number from the criterion collection and be able to sort by spine number in Grifflix"."""
+    f = os.path.expanduser('~/Grifflix/criterion-spines.json')
+    try:
+        m = os.path.getmtime(f)
+        if m != SPINES['at']:
+            SPINES['map'], SPINES['at'] = load(f, {}), m
+    except OSError:
+        return None
+    return SPINES['map'].get(os.path.basename(os.path.dirname(path or ''))) if path else None
+
+
 def item_out(it, prog=None):
     t = it.get('Type')
     o = {'id': it['Id'], 'name': it.get('Name'), 'type': {'Movie': 'movie', 'Series': 'series', 'Season': 'season',
@@ -377,6 +395,8 @@ def item_out(it, prog=None):
         o['trailers'] = yt[:3]
     if prog and it['Id'] in prog:
         o['pos'] = prog[it['Id']].get('pos')
+    if t == 'Movie' and spine_of(it.get('Path')):
+        o['spine'] = spine_of(it.get('Path'))
     return o
 
 
@@ -793,6 +813,7 @@ def make_handler(g):
                     SCAN_NOW.set()
                     for t_ in (90, 240):
                         threading.Timer(t_, CONV_NOW.set).start()
+                    threading.Timer(150, covers_now).start()   # (a Criterion film: its cover, once the media server has it)
                     log('Just brought in: %s: the media server asked to look' % os.path.basename(str(self.body().get('path') or ''))[:120])
                     return self.send_json(200, {'ok': True})
                 if u.path == '/local/remap' and method == 'POST':   # convert.py on this Mac: a film's new file has a new id; calendars, lists and progress follow it
@@ -1009,6 +1030,14 @@ def make_handler(g):
                     raw = [i for i in shown(g.items(ParentId=libs[key], Recursive='true', IncludeItemTypes=types, SortBy='SortName', Fields=quick).get('Items', [])) if not making(i)]
                     for o in resolve(raw, extra):
                         items[o['id']] = o
+                    if key == 'movies':   # (Criterion's spine numbers, kept apart from each film's remembered details, so they're always current)
+                        for i in raw:
+                            if i['Id'] in items:
+                                sp = spine_of(i.get('Path'))
+                                if sp:
+                                    items[i['Id']]['spine'] = sp
+                                else:
+                                    items[i['Id']].pop('spine', None)
                     lists[key] = [i['Id'] for i in raw if i['Id'] in items]
                     if key == 'movies':
                         self.extras(raw, items, lists)
@@ -1576,7 +1605,7 @@ def make_handler(g):
                         pass
                     if old == got[name]:
                         continue
-                    if old is None and name not in ('grifflix-gateway.py', 'convert.py', 'subtitles.py', 'poster-add.py', 'criterion.py', 'gdrive.py'):
+                    if old is None and name not in ('grifflix-gateway.py', 'convert.py', 'subtitles.py', 'poster-add.py', 'criterion.py', 'criterion-covers.py', 'gdrive.py'):
                         continue   # (a script John hasn't got on this Mac stays away)
                     os.makedirs(os.path.dirname(dest), exist_ok=True)
                     if old is not None:
@@ -2029,6 +2058,35 @@ def make_handler(g):
             log('Deleted by John: %s (%s), moved to Grifflix Bin' % (it.get('Name'), it.get('ProductionYear') or '?'))
             return self.send_json(200, {'ok': True, 'name': it.get('Name'), 'bin': bin_})
 
+        def api_criterion(self, me, user, q, b):
+            """John's only: Criterion's covers (criterion-covers.py). POST {films: [...]}: the films the admin page read from Criterion's list
+            page saved in John's browser, kept, and the covers fetched and put on their films, in the background. GET: how it's going."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            home = os.path.expanduser('~/Grifflix')
+            script, out = os.path.join(home, 'criterion-covers.py'), os.path.join(home, 'criterion-covers.log')
+            if b:
+                films = b.get('films')
+                if not isinstance(films, list) or not films:
+                    return self.send_json(400, {'error': 'No films in that page: was it Criterion’s list page?'})
+                if not os.path.exists(script):
+                    return self.send_json(503, {'error': 'Press Update everything first (the Mac mini needs criterion-covers.py).'})
+                if CRIT.get('p') and CRIT['p'].poll() is None:
+                    return self.send_json(409, {'error': 'It’s already fetching covers.'})
+                keep = [{k: str(f.get(k) or '')[:400] for k in ('link', 'spine', 'img', 'title', 'director', 'country', 'year')} for f in films[:5000] if isinstance(f, dict)]
+                save(os.path.join(home, 'criterion-list.json'), keep)
+                import subprocess
+                CRIT['p'] = subprocess.Popen([sys.executable, script, 'go'], stdout=open(out, 'w'), stderr=subprocess.STDOUT, cwd=home)
+                CRIT['at'] = time.time()
+                log('Criterion covers: %d films from John’s list, fetching' % len(keep))
+            tail = ''
+            try:
+                tail = open(out, encoding='utf-8', errors='replace').read()[-3000:]
+            except OSError:
+                pass
+            return self.send_json(200, {'running': bool(CRIT.get('p') and CRIT['p'].poll() is None), 'at': CRIT.get('at'), 'log': tail,
+                                        'ready': os.path.exists(script)})
+
         def api_lookkey(self, me, user, q, b):
             """John's only: a key for Claude to look at the Mac mini with (its logs, its folders, what's running), reading only, never
             changing anything (John, 16 Nov 2026: "can't you use it from here somehow?"). POST {make: true}: a new key, shown once (the Mac
@@ -2068,7 +2126,7 @@ def make_handler(g):
         def look(self, what, q):
             LOOKED['at'] = time.time()
             home = os.path.expanduser('~/Grifflix')
-            LOGS = {'gateway': os.path.join(APP_DIR, 'gateway.log'), 'tunnel': os.path.join(APP_DIR, 'tunnel.log'), 'setup': os.path.join(APP_DIR, 'setup.log'),
+            LOGS = {'criterion': os.path.join(home, 'criterion-covers.log'), 'gateway': os.path.join(APP_DIR, 'gateway.log'), 'tunnel': os.path.join(APP_DIR, 'tunnel.log'), 'setup': os.path.join(APP_DIR, 'setup.log'),
                     'convert': os.path.join(home, 'convert.log'), 'convert-out': os.path.join(home, 'convert.out'), 'gdrive': os.path.join(home, 'gdrive.log')}
             SECRETISH = re.compile(r'(rclone\.conf|token|secret|password|\.pickle$|client_secret|\.pem$|\.key$|settings\.json$)', re.I)
             def inside(p):
@@ -2958,6 +3016,23 @@ def folder_pics(g, iid):
     if not folder or not os.path.isdir(folder):
         return []
     return sorted((n, os.path.join(folder, n)) for n in os.listdir(folder) if n.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')) and not n.startswith('.'))
+
+
+def covers_now():
+    """Every Criterion film its cover, from those already in "Criterion covers" (poster-add.py drive nofetch go): run when a film has
+    just come in, so a Criterion film has its cover from the start (John, 16 Nov 2026). Quiet unless it put one on."""
+    pa = os.path.expanduser('~/Grifflix/poster-add.py')
+    base = os.path.join(os.environ.get('GRIFFLIX_MEDIA') or '/Volumes/G-Drive/Grifflix', 'Criterion covers')
+    if not (os.path.exists(pa) and os.path.isdir(base)):
+        return
+    try:
+        import subprocess
+        r = subprocess.run([sys.executable, pa, 'drive', 'nofetch', 'go'], capture_output=True, text=True, timeout=1800)
+        put = [l.strip() for l in (r.stdout or '').splitlines() if ' → ' in l]
+        if put:
+            log('Criterion covers put on: %s' % '; '.join(put)[:600])
+    except Exception as e:
+        log('Criterion covers: %s' % e)
 
 
 def rename_to(g, iid, name, year, pick=None):
