@@ -157,7 +157,7 @@ img { display: block; }
 .card .s .spn { font-weight: 600; letter-spacing: .02em; }
 /* (a poster that isn't poster-shaped, a Criterion cover's 4:5: whole, never stretched or cut, a soft dark copy of itself around it:
    John, 16 Nov 2026, "if we can change the display, we don't need to" pad them) */
-.pic.odd { isolation: isolate; }
+.pic.odd { isolation: isolate; position: relative; overflow: hidden; }   /* (its soft copy kept inside its own frame: in Search's results it had covered the whole panel: John, 16 Nov 2026) */
 .pic.odd::before { content: ''; position: absolute; inset: -10%; z-index: -1; background: var(--pimg) center / cover no-repeat; filter: blur(14px) brightness(.45) saturate(.9); }
 html.tv .pic.odd::before { filter: brightness(.35); inset: 0; }
 .pic.odd img { object-fit: contain !important; }
