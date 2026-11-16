@@ -177,13 +177,16 @@ def pictures(s3, bucket, snap):
         have = json.loads(s3.get_object(Bucket=bucket, Key='grifflix/p/manifest.json')['Body'].read())
     except Exception:
         have = {}
-    todo = [(i, k, t) for (i, k), t in wanted(snap).items() if have.get(i + '/' + k) != (t or '-')]
+    # (the posters copied again once, all of them: until 16 Nov 2026 the Mac's picture was asked for at an address that didn't change with
+    # the picture, and Cloudflare, which keeps pictures a week, handed over the old poster for some: The Freshman's Criterion cover)
+    mark = lambda k, t: (t or '-') + ('|2' if k == 'Primary' else '')
+    todo = [(i, k, t) for (i, k), t in wanted(snap).items() if have.get(i + '/' + k) != mark(k, t)]
     print('pictures: %d wanted, %d to copy' % (len(wanted(snap)), len(todo)), flush=True)
 
     def one(job):
         i, k, t = job
         for w in KINDS[k]:
-            url = '%s/pimg/%s/%s.jpg?maxWidth=%d&quality=82' % (MAC, i, k, w)
+            url = '%s/pimg/%s/%s.jpg?maxWidth=%d&quality=82&tag=%s' % (MAC, i, k, w, t or '-')   # (its version in the address: never a kept old copy)
             req = urllib.request.Request(url, headers={'User-Agent': 'Grifflix site copy'})
             for attempt in range(3):   # (a dropped connection tried again: one failure had left The Freshman's old poster showing: 16 Nov 2026)
                 try:
@@ -197,7 +200,7 @@ def pictures(s3, bucket, snap):
             if len(body) < 200:
                 raise ValueError('too small')
             s3.put_object(Bucket=bucket, Key='grifflix/p/%s/%s-%d.jpg' % (i, k, w), Body=body, ContentType='image/jpeg')
-        return i + '/' + k, t or '-'
+        return i + '/' + k, mark(k, t)
     done = fails = 0
     with concurrent.futures.ThreadPoolExecutor(4) as ex:   # (4 at once: the old Mac resizes each)
         for n, f in enumerate(concurrent.futures.as_completed([ex.submit(one, j) for j in todo])):
