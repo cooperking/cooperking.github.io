@@ -466,6 +466,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat" id="swsay"></p>
         <ul class="changes" id="swlist"></ul>
       </section>
+      <section class="card" data-tab="mac">
+        <div class="kicker">Claude</div>
+        <h2>Let Claude look at the Mac mini</h2>
+        <p class="stat" id="looksay">A key for Claude to read the Mac mini’s logs and folders and see what’s running, from its own session. It can only look: it can’t change, move or delete anything, and never sees the Mac’s own keys.</p>
+        <div class="state"><button class="btn primary" id="lookmake">Make a key</button><button class="btn" id="lookoff" hidden>Turn it off</button></div>
+        <div id="lookkey" hidden><p class="stat">Copy this now (it’s shown only once) and paste it into the form Claude shows you, as the key for <b>media.grifflix.co.uk</b>. Don’t paste it into the chat.</p><div class="state"><input type="text" id="lookval" readonly style="flex:1 1 260px;font-family:ui-monospace,monospace"><button class="btn" id="lookcopy">Copy</button></div></div>
+      </section>
       <section class="card" data-tab="themes">
         <div class="kicker">Fonts</div>
         <h2 id="fonthead">Futura</h2>
@@ -1286,6 +1293,26 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       .then(function () { b.disabled = false; b.textContent = 'Save'; });
   };
   setTimeout(osLoad, 1500);
+
+  // ---- a key for Claude to look at the Mac mini with, reading only (John, 16 Nov 2026: "can't you use it from here somehow?")
+  function lookPaint(r) {
+    var when = function (t) { return t ? new Date(t * 1000).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''; };
+    $('#lookoff').hidden = !r.on; $('#lookmake').textContent = r.on ? 'Make a new key' : 'Make a key';
+    if (r.on) $('#looksay').innerHTML = 'On: Claude can look (only look) at the Mac mini.' + (r.made ? ' Key made ' + when(r.made) + '.' : '') + (r.used ? ' Last looked ' + when(r.used) + '.' : ' Not used yet.') + ' A new key stops the old one working.';
+  }
+  function lookCall(body) {
+    return fetch(GW + '/api/lookkey', body ? { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(r.status === 404 ? 'Press Update everything first: the Mac mini needs its update.' : j.error || 'Couldn’t reach the Mac mini.'); return j; }); });
+  }
+  setTimeout(function () { if (GW) lookCall().then(lookPaint).catch(function () {}); }, 1700);
+  $('#lookmake').onclick = function () {
+    if (!GW) return toast('The Mac mini isn’t answering.');
+    var b = $('#lookmake'); if (!b.dataset.sure && !$('#lookoff').hidden) { b.dataset.sure = 1; b.textContent = 'The old key stops working: tap again'; return; }
+    delete b.dataset.sure; b.disabled = true;
+    lookCall({ make: true }).then(function (r) { $('#lookval').value = r.key; $('#lookkey').hidden = false; lookPaint(r); }).catch(function (e) { toast(e.message); }).then(function () { b.disabled = false; });
+  };
+  $('#lookcopy').onclick = function () { var v = $('#lookval'); v.select(); try { navigator.clipboard.writeText(v.value).then(function () { toast('Copied'); }); } catch (e) { document.execCommand('copy'); toast('Copied'); } };
+  $('#lookoff').onclick = function () { lookCall({ off: true }).then(function (r) { $('#lookkey').hidden = true; $('#lookval').value = ''; lookPaint(r); $('#looksay').textContent = 'Off: Claude can’t look at the Mac mini.'; toast('Turned off'); }).catch(function (e) { toast(e.message); }); };
 
   // ---- households: who lives together, so they share their Fire TVs (John, 11 Nov 2026: "Camilla and I share a house but the tv is
   // signed in as me and we are both members")

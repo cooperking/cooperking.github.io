@@ -67,6 +67,7 @@ def log(*a):
     print(time.strftime('%Y-%m-%d %H:%M:%S'), *a, flush=True)
 
 
+LOOKED = {}   # (when Claude last looked)
 CONV_SEEN = {}   # (files convert.py made or kept, looked at once: path → what they are)
 # Play on the TV (John, 11 Nov 2026: "Is it possible for the fire stick to receive a cast film ... Build that"): each member's Fire
 # TVs with Grifflix open, kept in memory (a TV that's gone is forgotten), and what their phones ask them to do
@@ -714,6 +715,14 @@ def make_handler(g):
             try:
                 if u.path == '/health':
                     return self.send_json(200, {'ok': True, 'version': VERSION, 'sha': (load(INSTALLED, {}).get('sha') or '')[:7]})
+                if u.path.startswith('/look/'):   # (Claude, looking on John's behalf with the key John made for it: reading only)
+                    tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
+                    want = g.st.get('look_key')
+                    if not want or not tok or not hmac.compare_digest(hashlib.sha256(tok.encode()).hexdigest(), want):
+                        return self.send_json(403, {'error': 'Not allowed.'})
+                    if method != 'GET':
+                        return self.send_json(405, {'error': 'Looking only.'})
+                    return self.look(u.path[6:].strip('/'), q)
                 if u.path.startswith('/dl/'):   # a film's file, to keep on a phone or computer (while John allows it)
                     uid = check_key(g.st['secret'], q.pop('g', ''))
                     if not uid:
@@ -1998,6 +2007,104 @@ def make_handler(g):
             g.forget()
             log('Deleted by John: %s (%s), moved to Grifflix Bin' % (it.get('Name'), it.get('ProductionYear') or '?'))
             return self.send_json(200, {'ok': True, 'name': it.get('Name'), 'bin': bin_})
+
+        def api_lookkey(self, me, user, q, b):
+            """John's only: a key for Claude to look at the Mac mini with (its logs, its folders, what's running), reading only, never
+            changing anything (John, 16 Nov 2026: "can't you use it from here somehow?"). POST {make: true}: a new key, shown once (the Mac
+            keeps only its fingerprint); POST {off: true}: no key. GET: whether there is one, and when it was last used."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            if b:
+                if b.get('off'):
+                    g.st.pop('look_key', None)
+                    save(SETTINGS, g.st)
+                    return self.send_json(200, {'on': False})
+                if b.get('make'):
+                    k = 'gl_' + secrets.token_urlsafe(32)
+                    g.st['look_key'] = hashlib.sha256(k.encode()).hexdigest()
+                    g.st['look_made'] = time.time()
+                    save(SETTINGS, g.st)
+                    log('A new look key made for Claude')
+                    return self.send_json(200, {'on': True, 'key': k})
+            return self.send_json(200, {'on': bool(g.st.get('look_key')), 'made': g.st.get('look_made'), 'used': LOOKED.get('at')})
+
+        def look_roots(self):
+            """Where looking is allowed: ~/Grifflix and the media libraries' folders and the folder they're in (the G-Drive's Grifflix, with
+            "Criterion images" and the rest); never the settings folder (its keys)."""
+            roots = [os.path.realpath(os.path.expanduser('~/Grifflix'))]
+            BROAD = set(os.path.realpath(x) for x in ('/', '/Volumes', '/Users', os.path.expanduser('~'), '/Volumes/G-Drive'))   # (never a whole disk or home)
+            try:
+                for v in g.jf.call('GET', '/Library/VirtualFolders') or []:
+                    for l in v.get('Locations') or []:
+                        for x in (l, os.path.dirname(l.rstrip('/'))):
+                            x = os.path.realpath(x)
+                            if x not in roots and x not in BROAD:
+                                roots.append(x)
+            except Exception:
+                pass
+            return roots
+
+        def look(self, what, q):
+            LOOKED['at'] = time.time()
+            home = os.path.expanduser('~/Grifflix')
+            LOGS = {'gateway': os.path.join(APP_DIR, 'gateway.log'), 'tunnel': os.path.join(APP_DIR, 'tunnel.log'), 'setup': os.path.join(APP_DIR, 'setup.log'),
+                    'convert': os.path.join(home, 'convert.log'), 'convert-out': os.path.join(home, 'convert.out'), 'gdrive': os.path.join(home, 'gdrive.log')}
+            SECRETISH = re.compile(r'(rclone\.conf|token|secret|password|\.pickle$|client_secret|\.pem$|\.key$|settings\.json$)', re.I)
+            def inside(p):
+                rp = os.path.realpath(p)
+                return any(rp == r_ or rp.startswith(r_.rstrip('/') + '/') for r_ in self.look_roots()) and not rp.startswith(os.path.realpath(APP_DIR))
+            if what in ('', 'help'):
+                return self.send_json(200, {'version': VERSION, 'logs': {k: (os.path.getsize(v) if os.path.exists(v) else None) for k, v in LOGS.items()}, 'roots': self.look_roots(),
+                                            'use': ['/look/log?name=gateway&n=200&find=text', '/look/ls?path=/Volumes/...', '/look/read?path=~/Grifflix/x.json', '/look/ps', '/look/jf?path=/Items/<id>']})
+            if what == 'log':
+                f = LOGS.get(q.get('name') or '')
+                if not f or not os.path.exists(f):
+                    return self.send_json(404, {'error': 'No such log.', 'logs': sorted(LOGS)})
+                n = max(1, min(5000, int(q.get('n') or 200)))
+                find = (q.get('find') or '').lower()
+                with open(f, 'rb') as fh:
+                    fh.seek(0, 2); size = fh.tell(); fh.seek(max(0, size - (40 if find else 4) * 1024 * 1024))
+                    lines = fh.read().decode('utf-8', 'replace').splitlines()
+                if find:
+                    lines = [l for l in lines if find in l.lower()]
+                return self.send_json(200, {'name': q.get('name'), 'size': size, 'lines': lines[-n:]})
+            if what == 'ls':
+                p = os.path.expanduser(q.get('path') or '~/Grifflix')
+                if not inside(p) or not os.path.isdir(p):
+                    return self.send_json(403, {'error': 'Not a folder that can be looked in.', 'roots': self.look_roots()})
+                out = []
+                for n in sorted(os.listdir(p))[:3000]:
+                    fp = os.path.join(p, n)
+                    try:
+                        st_ = os.stat(fp)
+                        out.append({'name': n, 'dir': os.path.isdir(fp), 'size': st_.st_size, 'mtime': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(st_.st_mtime))})
+                    except OSError:
+                        out.append({'name': n, 'error': 'unreadable'})
+                return self.send_json(200, {'path': os.path.realpath(p), 'items': out})
+            if what == 'read':
+                p = os.path.expanduser(q.get('path') or '')
+                if not inside(p) or not os.path.isfile(p) or SECRETISH.search(p):
+                    return self.send_json(403, {'error': 'Not a file that can be read.'})
+                if not p.lower().endswith(('.json', '.csv', '.txt', '.log', '.out', '.py', '.sh', '.srt', '.nfo', '.xml', '.plist')):
+                    return self.send_json(403, {'error': 'Only text files.'})
+                with open(p, 'rb') as fh:
+                    data = fh.read(2 * 1024 * 1024)
+                return self.send_json(200, {'path': os.path.realpath(p), 'size': os.path.getsize(p), 'text': data.decode('utf-8', 'replace')})
+            if what == 'ps':
+                import subprocess
+                ps = subprocess.run(['ps', '-axo', 'pid,ppid,stat,%cpu,%mem,etime,command'], capture_output=True, text=True, timeout=20).stdout.splitlines()
+                keep = [ps[0]] + [l for l in ps[1:] if re.search(r'python|ffmpeg|ffprobe|rclone|jellyfin|cloudflared|caffeinate', l, re.I) and 'ps -axo' not in l]
+                keep = [re.sub(r'(--?(?:password|pass|token|key|secret)[= ])\S+', r'\1***', l, flags=re.I) for l in keep]
+                df = subprocess.run(['df', '-h'], capture_output=True, text=True, timeout=20).stdout.splitlines()
+                up = subprocess.run(['uptime'], capture_output=True, text=True, timeout=20).stdout.strip()
+                return self.send_json(200, {'ps': keep, 'df': df, 'uptime': up, 'version': VERSION, 'sha': (load(INSTALLED, {}).get('sha') or '')[:7]})
+            if what == 'jf':   # (the media server's own answers, asked only; e.g. /Items/<id>, /Library/VirtualFolders)
+                path = q.get('path') or ''
+                if not re.match(r'^/(Items|Users/[0-9a-f]{32}/Items|Library/VirtualFolders|System/Info|Sessions|ScheduledTasks|Shows|Search/Hints)', path):
+                    return self.send_json(403, {'error': 'Not a media server address that can be looked at.'})
+                qq = {k[2:]: v for k, v in q.items() if k.startswith('q.')}
+                return self.send_json(200, {'answer': g.jf.call('GET', path, None, qq or None)})
+            return self.send_json(404, {'error': 'Nothing called that.'})
 
         def api_autoupdate(self, me, user, q, b):
             """The site updated by the Mac itself when new films arrive (John, 15 Nov 2026: "it needs to be automatically updated"): the
