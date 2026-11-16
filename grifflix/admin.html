@@ -626,7 +626,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   function latestFilm() {   // the newest day shown on the site, its poster's address (the Worker's copy, as the page uses)
     return fetch('/grifflix/data/days.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (D) {
       var k = Object.keys(D.days || {}).sort().pop(), it = k && D.days[k]; if (!it || !it.poster) return null;
-      return { name: it.name, year: it.year, src: WORKER + '/gp/' + it.poster + '/Primary-400.jpg' + ((it.tags || {}).poster ? '?t=' + it.tags.poster : '') };
+      return { name: it.name, year: it.year, src: WORKER + '/gp/' + it.poster + '/Primary-400.jpg?v=2' + ((it.tags || {}).poster ? '&t=' + it.tags.poster : '') };
     }).catch(function () { return null; });
   }
   function drawCard(name, pic) {
