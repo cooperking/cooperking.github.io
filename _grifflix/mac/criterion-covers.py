@@ -236,12 +236,13 @@ def synopses(films):
         except Exception:
             S_ = {}
         pages, given = S_.setdefault('pages', {}), S_.setdefault('given', {})
-        want = {}   # (folder → its Criterion page)
+        want, byc = {}, {}   # (folder → its Criterion page; each cover's folders, looked up once, not every film against every folder)
+        for folder, cover in IN_LIB.items():
+            byc.setdefault(cover, []).append(folder)
         for f in films:
             if f.get('link', '').startswith('https://www.criterion.com/films/'):
-                for folder, cover in IN_LIB.items():
-                    if cover == name_of(f['title'], f['year']):
-                        want.setdefault(folder, f['link'])
+                for folder in byc.get(name_of(f['title'], f['year']), []):
+                    want.setdefault(folder, f['link'])
         if not want:
             return
         movies, uid, by = os.path.join(BASE, 'Movies'), Sx['jf_user_id'], {}
