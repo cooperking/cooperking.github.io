@@ -506,7 +506,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <ol class="stat" style="margin:6px 0 10px 20px;padding:0">
           <li>Drag this to your bookmarks bar: <a class="btn" id="synbm" href="#" style="cursor:grab">Grifflix: Criterion synopses</a></li>
           <li><button class="btn" id="syncopy" type="button">Copy your list</button> <span id="syncount"></span></li>
-          <li>Open <a href="https://www.criterion.com" target="_blank" rel="noopener">criterion.com</a>, click the bookmark, paste the list (⌘V) and press OK. Keep that tab open while it reads, about one film a second; it saves <b>criterion-synopses.json</b> to your Downloads.</li>
+          <li>Open <a href="https://www.criterion.com" target="_blank" rel="noopener">criterion.com</a>, click the bookmark, paste the list (⌘V) and press OK. Keep that tab open while it reads, a film every few seconds (if Criterion asks you to prove you’re a person, reload the page, then click the bookmark again: it carries on where it stopped); it saves <b>criterion-synopses.json</b> to your Downloads.</li>
           <li><label class="btn primary" for="synfile">Choose criterion-synopses.json</label><input type="file" id="synfile" accept=".json,application/json" hidden> and each film gets Criterion’s synopsis.</li>
         </ol>
       </section>
@@ -1453,25 +1453,43 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     // it: a bookmark's code loses its line breaks, and a comment would swallow the rest)
     var BM = function () {
       if (!/(^|\.)criterion\.com$/.test(location.hostname)) { alert('Open criterion.com first, then click this bookmark there.'); return; }
-      var t = prompt('Paste the list from Grifflix’s admin page'); if (!t) return;
-      var L; try { L = JSON.parse(t); } catch (e) { alert('That isn’t the list: press Copy your list on the admin page again.'); return; }
-      var d = document.createElement('div'); d.style.cssText = 'position:fixed;z-index:2147483647;top:12px;right:12px;background:#111;color:#fff;padding:14px 18px;font:15px/1.4 sans-serif;border-radius:8px;max-width:340px;box-shadow:0 8px 30px rgba(0,0,0,.4)'; document.body.appendChild(d);
-      var out = {}, n = 0, miss = 0, stop = false, wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+      var K = 'grifflix-synopses', st = null;
+      try { st = JSON.parse(localStorage.getItem(K) || 'null'); } catch (e) {}
+      if (st && st.left && st.left.length && confirm('Carry on reading Criterion’s synopses? ' + st.left.length + ' films left, ' + Object.keys(st.out).length + ' read so far. (Cancel to paste a new list.)')) {}
+      else {
+        var t = prompt('Paste the list from Grifflix’s admin page'); if (!t) return;
+        var L; try { L = JSON.parse(t); } catch (e) { alert('That isn’t the list: press Copy your list on the admin page again.'); return; }
+        st = { left: L, out: {}, miss: 0 };
+      }
+      var save = function () { try { localStorage.setItem(K, JSON.stringify(st)); } catch (e) {} };
+      var file = function () { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(st.out)], { type: 'application/json' })); a.download = 'criterion-synopses.json'; document.body.appendChild(a); a.click(); };
+      var d = document.createElement('div'); d.style.cssText = 'position:fixed;z-index:2147483647;top:12px;right:12px;background:#111;color:#fff;padding:14px 18px;font:15px/1.4 sans-serif;border-radius:8px;max-width:360px;box-shadow:0 8px 30px rgba(0,0,0,.4)'; document.body.appendChild(d);
+      var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+      var total = st.left.length + Object.keys(st.out).length + st.miss;
       (async function () {
-        for (var i = 0; i < L.length && !stop; i++) {
-          n++; d.textContent = 'Grifflix: reading ' + n + ' of ' + L.length + '… keep this tab open.';
-          try {
-            var h = await (await fetch('/films/' + L[i], { credentials: 'include' })).text();
-            if (/Just a moment|challenges\.cloudflare\.com/.test(h.slice(0, 6000))) { stop = true; break; }
-            var doc = new DOMParser().parseFromString(h, 'text/html');
-            var syn = [].map.call(doc.querySelectorAll('.product-summary p'), function (p) { return p.textContent.replace(/\s+/g, ' ').trim(); }).filter(Boolean).join('\n\n');
-            if (!syn) { var m = doc.querySelector('meta[property="og:description"], meta[name="description"]'); syn = m ? m.content.trim() : ''; }
-            if (syn.length > 40) out[L[i]] = syn; else miss++;
-          } catch (e) { miss++; }
-          await wait(1000);
+        var blocked = 0;
+        while (st.left.length) {
+          var slug = st.left[0], done = total - st.left.length;
+          d.textContent = 'Grifflix: reading ' + (done + 1) + ' of ' + total + '… keep this tab open.';
+          var page = null;
+          try { var r = await fetch('/films/' + slug, { credentials: 'include' }); var h = await r.text(); if (!/Just a moment|challenges\.cloudflare\.com/.test(h.slice(0, 6000)) && r.ok) page = h; } catch (e) {}
+          if (page === null) {
+            blocked++;
+            if (blocked <= 2) { d.textContent = 'Grifflix: Criterion asked to slow down: waiting ' + (blocked * 45) + ' seconds, then carrying on…'; await wait(blocked * 45000); continue; }
+            save(); file();
+            d.innerHTML = 'Grifflix: Criterion wants to check you’re a person. <b>Reload this page</b> (⌘R), tick its box if it asks, then <b>click the bookmark again</b>: it carries on from film ' + (done + 1) + ' of ' + total + '. (What it has so far is saved too.)';
+            return;
+          }
+          blocked = 0;
+          var doc = new DOMParser().parseFromString(page, 'text/html');
+          var syn = [].map.call(doc.querySelectorAll('.product-summary p'), function (p) { return p.textContent.replace(/\s+/g, ' ').trim(); }).filter(Boolean).join('\n\n');
+          if (!syn) { var m = doc.querySelector('meta[property="og:description"], meta[name="description"]'); syn = m ? m.content.trim() : ''; }
+          if (syn.length > 40) st.out[slug] = syn; else st.miss++;
+          st.left.shift(); save();
+          await wait(2500 + Math.random() * 1500);
         }
-        var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(out)], { type: 'application/json' })); a.download = 'criterion-synopses.json'; document.body.appendChild(a); a.click();
-        d.textContent = 'Grifflix: ' + (stop ? 'Criterion asked to check you’re a person, so it stopped: refresh this page, then click the bookmark again (it saves what it has). ' : 'done. ') + Object.keys(out).length + ' synopses saved as criterion-synopses.json in your Downloads' + (miss ? ' (' + miss + ' pages had none)' : '') + '. Choose it on the admin page.';
+        file(); localStorage.removeItem(K);
+        d.textContent = 'Grifflix: done. ' + Object.keys(st.out).length + ' synopses saved as criterion-synopses.json in your Downloads' + (st.miss ? ' (' + st.miss + ' pages had none)' : '') + '. Choose it on the admin page.';
       })();
     };
     $('#synbm').href = 'javascript:(' + BM.toString() + ')();void 0';
@@ -1493,7 +1511,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       ask(false).then(function (j) {
         var n = (j.want || []).length;
         listTxt = JSON.stringify(j.want || []);
-        listInfo = n + ' films of The Criterion Collection copied' + (j.have ? ' (' + j.have + ' have Criterion’s synopsis already)' : '') + '. About ' + Math.ceil(n / 60) + ' min to read.';
+        listInfo = n + ' films of The Criterion Collection copied' + (j.have ? ' (' + j.have + ' have Criterion’s synopsis already)' : '') + '. About ' + Math.ceil(n * 3 / 60) + ' min to read.';
         b.disabled = false; b.textContent = n ? 'Copy the list (' + n + ' films)' : 'Nothing left to read';
         if (!n) { b.disabled = true; listTxt = ''; $('#syncount').textContent = 'Every film in The Criterion Collection has Criterion’s synopsis.'; return; }
         navigator.clipboard.writeText(listTxt).then(function () { $('#syncount').textContent = listInfo; toast('Copied'); b.textContent = 'Copied ✓'; }).catch(function () {});   // (straight away, as it's quick: else a second click)
