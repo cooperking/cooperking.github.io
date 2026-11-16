@@ -1760,6 +1760,53 @@ def make_handler(g):
             return self.send_json(200, {'results': [{'name': r.get('Name'), 'year': r.get('ProductionYear'), 'overview': (r.get('Overview') or '')[:300],
                                                      'image': r.get('ImageUrl'), 'tmdb': (r.get('ProviderIds') or {}).get('Tmdb')} for r in res[:15]]})
 
+        def api_rename(self, me, user, q, b):
+            """John's only: the name a film or series shows by, kept (the media server told not to change it again): two copies of one film
+            told apart, "It's a Wonderful Life (Colour)" (John, 16 Nov 2026). An empty name gives it back its own."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            iid, name = str(b.get('id') or ''), re.sub(r'\s+', ' ', str(b.get('name') or '')).strip()[:200]
+            if not re.match(r'^[0-9a-f]{32}$', iid):
+                return self.send_json(400, {'error': 'Which film?'})
+            full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid)) or {}
+            if not full:
+                return self.send_json(404, {'error': 'That film isn’t there.'})
+            locked = [x for x in (full.get('LockedFields') or []) if x != 'Name']
+            if name:
+                full['Name'] = name
+                locked.append('Name')
+            full['LockedFields'] = locked
+            g.jf.call('POST', '/Items/%s' % iid, full)
+            if not name:   # (its own name again: read afresh)
+                g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'metadataRefreshMode': 'FullRefresh', 'replaceAllMetadata': 'false'})
+            g.forget()
+            g.publish_soon = time.time() + 60
+            log('Renamed by John: %s → %s' % (full.get('Name') if not name else iid, name or '(its own name)'))
+            return self.send_json(200, {'ok': True, 'name': name})
+
+        def api_images(self, me, user, q, b):
+            """John's only: the pictures TMDB (and the media server's other sources) have for a film, poster or background, and one chosen
+            from them used instead (John, 16 Nov 2026: "can I choose a different image easily from the page")."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            src = b or q
+            iid, kind = str(src.get('id') or ''), {'poster': 'Primary', 'backdrop': 'Backdrop', 'thumb': 'Thumb'}.get(str(src.get('kind') or 'poster'), 'Primary')
+            if not re.match(r'^[0-9a-f]{32}$', iid):
+                return self.send_json(400, {'error': 'Which film?'})
+            if not b:
+                r = g.jf.call('GET', '/Items/%s/RemoteImages' % iid, query={'type': kind, 'includeAllLanguages': 'true', 'limit': 60}) or {}
+                imgs = sorted(r.get('Images') or [], key=lambda x: (x.get('Language') not in ('en', None, ''), -(x.get('CommunityRating') or 0), -(x.get('VoteCount') or 0)))
+                return self.send_json(200, {'images': [{'url': x.get('Url'), 'thumb': x.get('ThumbnailUrl') or x.get('Url'), 'w': x.get('Width'), 'h': x.get('Height'),
+                                                        'lang': x.get('Language'), 'from': x.get('ProviderName')} for x in imgs[:60] if x.get('Url')]})
+            url = str(b.get('url') or '')
+            if not url.startswith('http'):
+                return self.send_json(400, {'error': 'Which picture?'})
+            g.jf.call('POST', '/Items/%s/RemoteImages/Download' % iid, query={'type': kind, 'imageUrl': url})
+            g.forget()
+            g.publish_soon = time.time() + 60
+            log('A new %s chosen by John for %s' % (kind.lower(), iid))
+            return self.send_json(200, {'ok': True})
+
         def api_identify(self, me, user, q, b):
             """John's only: a film or series the media server named wrong, or didn't know, put right by choosing it from TMDB, as the media
             server's own Identify does (John, 15 Nov 2026: "I'd like to be able to do it from the app, finding with tmdb").
