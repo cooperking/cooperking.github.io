@@ -1690,7 +1690,7 @@ def make_handler(g):
             self.send_json(200 if o else 404, o or {'error': 'No such collection.'})
 
         def api_search(self, me, user, q, b):
-            term = (q.get('q') or '').strip()
+            term = re.sub(r'[’‘`´]', "'", (q.get('q') or '')).strip()   # (a phone's curly apostrophe as the titles' straight one: "it’s" found It's a Wonderful Life: John, 16 Nov 2026)
             if len(term) < 2:
                 return self.send_json(200, {'items': []})
             r = g.items(SearchTerm=term, Recursive='true', IncludeItemTypes='Movie,Series,Episode,Video', Limit=40)
@@ -2554,7 +2554,7 @@ def make_handler(g):
             return self.api_item({'uid': ''}, {'progress': {}, 'hearts': []}, q, {})
 
         def pub_search(self, q):
-            term = (q.get('q') or '').strip()
+            term = re.sub(r'[’‘`´]', "'", (q.get('q') or '')).strip()   # (a phone's curly apostrophe as the titles' straight one: "it’s" found It's a Wonderful Life: John, 16 Nov 2026)
             if len(term) < 2:
                 return self.send_json(200, {'items': []})
             r = g.items(SearchTerm=term, Recursive='true', IncludeItemTypes='Movie,Series,Episode', Limit=40)
