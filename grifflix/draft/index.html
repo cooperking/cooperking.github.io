@@ -162,22 +162,6 @@ img { display: block; }
 .day.whole, html:not(.mob) .tcd.whole, .tcd.whole { background: #fff !important; }
 .day.whole .art, html:not(.mob) .tcd.whole img, .tcd.whole img { position: absolute; inset: 0 !important; margin: auto; width: auto !important; height: auto !important; max-width: calc(100% - 10px); max-height: calc(100% - 10px); object-fit: fill !important; box-sizing: border-box; border: 1px solid #000; z-index: 1; }
 .day.whole .cap, .day.whole .num, .day.whole .bar, .tcd.whole b, .tcd.whole span { z-index: 2; }
-/* (a computer or TV, the days wide: the poster at the left, its title beside it in black on the white, the day's number in the corner) */
-html:not(.mob) .tcd.whole { display: flex; align-items: stretch; gap: 10px; padding: 5px; }
-html:not(.mob) .tcd.whole img { position: static; inset: auto !important; margin: 0; flex: none; align-self: stretch; height: auto !important; width: auto !important; min-height: 0; max-width: 55%; max-height: none; object-fit: cover !important; }
-html:not(.mob) .tcd.whole span { position: static; flex: 1; min-width: 0; align-self: flex-end; padding: 0 2px 2px 0 !important; background: none; color: #111; }
-html:not(.mob) .tcd.whole span small { color: rgba(0, 0, 0, .55); }
-html:not(.mob) .tcd.whole b { left: auto; right: 6px; top: 6px; }
-html.tv .tcd.whole { gap: 7px; padding: 4px; }
-html.tv .tcd.whole span { align-self: center; padding: 0 26px 0 0 !important; }
-html.tv .tcd.whole span em { -webkit-line-clamp: 2 !important; font-size: 12px; line-height: 1.12; }
-html.big .day.whole { display: flex; align-items: center; gap: 10px; padding: 5px; }
-html.big .day.whole .art { position: static; inset: auto !important; margin: 0; flex: none; height: 100% !important; width: auto !important; max-width: 55%; max-height: none; object-fit: cover !important; }
-html.big .day.whole:hover .art { transform: none; }
-html.big .day.whole .cap { position: static; flex: 1; min-width: 0; padding: 0 4px 0 0 !important; background: none; align-self: flex-end; margin-bottom: 4px; }
-html.big .day.whole .cap .t { color: #111; }
-html.big .day.whole .cap .s { color: rgba(0, 0, 0, .55); }
-html.big .day.whole .num { left: auto; right: 4px; top: 4px; bottom: auto; }
 /* (a poster that isn't poster-shaped, a Criterion cover's 4:5: whole, never stretched or cut, a soft dark copy of itself around it:
    John, 16 Nov 2026, "if we can change the display, we don't need to" pad them) */
 .pic.odd { isolation: isolate; position: relative; overflow: hidden; }   /* (its soft copy kept inside its own frame: in Search's results it had covered the whole panel: John, 16 Nov 2026) */
@@ -2147,7 +2131,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '768a363c5c9b' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '8041bfcdeb9d' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
