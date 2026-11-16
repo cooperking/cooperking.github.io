@@ -126,7 +126,7 @@ def sheet_rows(films):
     print('  added (criterion.py go marks which are in Grifflix)')
 
 
-IN_LIB = set()   # (the film folders on Criterion's list)
+IN_LIB = {}   # (the film folders on Criterion's list → their cover's file name)
 
 
 def collect():
@@ -155,10 +155,16 @@ def collect():
             start += 500
             if start >= (g(r, 'TotalRecordCount') or 0):
                 break
-        add = [(i, n) for f in sorted(IN_LIB) for i, n in by.get(f, []) if i not in held]
+        # (only a film with its proper Criterion cover here goes in: John, 16 Nov 2026, "it's fine if they don't have a spine number but
+        # they must have a proper criterion image to go in the collection")
+        real = lambda c: os.path.exists(os.path.join(COVERS, c)) and os.path.getsize(os.path.join(COVERS, c)) > 5000
+        nocover = sorted(f for f, c in IN_LIB.items() if not real(c) and any(i not in held for i, _ in by.get(f, [])))
+        add = [(i, n) for f in sorted(IN_LIB) if real(IN_LIB[f]) for i, n in by.get(f, []) if i not in held]
         print('\nThe Criterion Collection: %d film(s) to put in%s' % (len(add), '' if GO or not add else ' (run with go)'))
         for _, n in add[:40]:
             print('  ' + (n or '?'))
+        if nocover:
+            print('  (not put in, no Criterion cover yet: %s)' % ', '.join(nocover[:20]))
         if GO and add:
             for n in range(0, len(add), 50):
                 jf('POST', '/Collections/%s/Items' % g(box, 'Id'), Ids=','.join(i for i, _ in add[n:n + 50]))
@@ -189,7 +195,7 @@ def spines(films):
             hit = next((folders[k('%s (%d)' % (f['title'], int(f['year']) + d))] for d in (1, -1) if k('%s (%d)' % (f['title'], int(f['year']) + d)) in folders), None)
         if not hit:
             continue
-        IN_LIB.add(hit)   # (for the collection, with or without a spine yet)
+        IN_LIB.setdefault(hit, name_of(f['title'], f['year']))   # (for the collection, with or without a spine yet)
         sp = re.sub(r'[^0-9]', '', f['spine'])
         if sp and (hit not in out or int(sp) < out[hit]):   # (a film in more than one release: its first spine)
             out[hit] = int(sp)
