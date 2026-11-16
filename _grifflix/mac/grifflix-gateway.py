@@ -72,6 +72,7 @@ def log(*a):
 LOOKED = {}
 DUPS = {}   # (duplicates.py, from the admin page)
 SYN = {}   # (Criterion's synopses being given to their films, in the background: how far it's got)
+COVERS_LOCK = threading.Lock()
 CRIT = {}   # (criterion-covers.py, started from the admin page)   # (when Claude last looked)
 CONV_SEEN = {}   # (files convert.py made or kept, looked at once: path → what they are)
 # Play on the TV (John, 11 Nov 2026: "Is it possible for the fire stick to receive a cast film ... Build that"): each member's Fire
@@ -3439,6 +3440,8 @@ def covers_now():
     base = os.path.join(os.environ.get('GRIFFLIX_MEDIA') or '/Volumes/G-Drive/Grifflix', 'Criterion covers')
     if not os.path.isdir(base) or (CRIT.get('p') and CRIT['p'].poll() is None):
         return
+    if not COVERS_LOCK.acquire(blocking=False):   # (one at a time)
+        return
     try:
         import subprocess
         if os.path.exists(cc) and os.path.exists(lst):
@@ -3458,6 +3461,8 @@ def covers_now():
                 log('Criterion covers put on: %s' % '; '.join(put)[:600])
     except Exception as e:
         log('Criterion, for what just came in: %s' % e)
+    finally:
+        COVERS_LOCK.release()
 
 
 def rename_to(g, iid, name, year, pick=None):
@@ -3664,6 +3669,10 @@ def keep_scanning(g):
                     g.jf.call('POST', '/Library/Refresh')
                     log('New in the library (%d): %s: the media server asked to look' % (len(new), ', '.join(os.path.basename(x) for x in new[:5]) + (' …' if len(new) > 5 else '')))
                     CONV_NOW.set()   # (the converter started for them, if it isn't running)
+                    # (a Criterion film among them: its cover, spine and place in The Criterion Collection, from the list John last gave, once
+                    # the media server has it; however it came in, not only by download: John, 16 Nov 2026, "I shouldn't have to reupload the
+                    # criterion html every time to check if a new film is criterion")
+                    threading.Timer(240, covers_now).start()
                     publish_at = time.time() + 540   # (the site updated once the media server has read them: about 10 minutes on)
             if getattr(g, 'publish_soon', 0) and not publish_at:   # (John put a film's details right: the site follows)
                 publish_at, g.publish_soon = g.publish_soon, 0
