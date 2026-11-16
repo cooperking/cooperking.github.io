@@ -1282,11 +1282,11 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     // (and what's waiting: to repackage (the MKVs), and to convert, to choose what's done next: John, 12 Nov 2026, "I can't see the mkv to prioritise them")
     var isRp = function (x) { return /^to repackage/.test(x.why || ''); }, isSh = function (x) { return /^to make smaller/.test(x.why || ''); }, isCv = function (x) { return !!x.why && !isRp(x) && !isSh(x); };
     var all = LB.all || [], cnt = { bad: 0, ok: 0, good: 0, rp: 0, cv: 0, sh: 0, ps: 0 }; all.forEach(function (x) { cnt[x.g.q]++; if (isRp(x)) cnt.rp++; if (isCv(x)) cnt.cv++; if (isSh(x)) cnt.sh++; if (x.ps) cnt.ps++; });
-    $('#lbchips').innerHTML = [['rp', 'To repackage'], ['cv', 'To convert'], ['sh', 'To make smaller'], ['ps', 'Picture subtitles'], ['bad', 'Replace'], ['ok', 'OK'], ['good', 'Good'], ['all', 'All']].map(function (c) { return '<button type="button" data-f="' + c[0] + '" aria-pressed="' + (LB.f === c[0]) + '">' + c[1] + ' ' + (c[0] === 'all' ? all.length : cnt[c[0]]) + '</button>'; }).join('');
+    $('#lbchips').innerHTML = [['big', 'Largest'], ['rp', 'To repackage'], ['cv', 'To convert'], ['sh', 'To make smaller'], ['ps', 'Picture subtitles'], ['bad', 'Replace'], ['ok', 'OK'], ['good', 'Good'], ['all', 'All']].map(function (c) { return '<button type="button" data-f="' + c[0] + '" aria-pressed="' + (LB.f === c[0]) + '">' + c[1] + (c[0] === 'big' ? '' : ' ' + (c[0] === 'all' ? all.length : cnt[c[0]])) + '</button>'; }).join('');
     Array.prototype.forEach.call(document.querySelectorAll('#lbchips button'), function (b) { b.onclick = function () { LB.f = b.dataset.f; LB.n = 150; lbDraw(); }; });
     var qq = ($('#lbq').value || '').trim().toLowerCase(), so = $('#lbsort').value, rank = { bad: 0, ok: 1, good: 2 };
-    var L = all.filter(function (x) { return (LB.f === 'all' || (LB.f === 'rp' ? isRp(x) : LB.f === 'cv' ? isCv(x) : LB.f === 'sh' ? isSh(x) : LB.f === 'ps' ? !!x.ps : x.g.q === LB.f)) && (!qq || (x.n || '').toLowerCase().indexOf(qq) >= 0); });
-    L.sort(so === 'big' ? function (p, q) { return q.gb - p.gb; } : so === 'az' ? function (p, q) { return (p.n || '').localeCompare(q.n || ''); } : function (p, q) { return rank[p.g.q] - rank[q.g.q] || p.g.bpp - q.g.bpp; });
+    var L = all.filter(function (x) { return (LB.f === 'all' || LB.f === 'big' || (LB.f === 'rp' ? isRp(x) : LB.f === 'cv' ? isCv(x) : LB.f === 'sh' ? isSh(x) : LB.f === 'ps' ? !!x.ps : x.g.q === LB.f)) && (!qq || (x.n || '').toLowerCase().indexOf(qq) >= 0); });
+    L.sort(so === 'big' || LB.f === 'big' ? function (p, q) { return q.gb - p.gb; } : so === 'az' ? function (p, q) { return (p.n || '').localeCompare(q.n || ''); } : function (p, q) { return rank[p.g.q] - rank[q.g.q] || p.g.bpp - q.g.bpp; });
     var vn = function (v) { return { h264: 'H.264', hevc: 'HEVC', h265: 'HEVC', mpeg4: 'MPEG-4 (XviD/DivX)', mpeg2video: 'MPEG-2', vc1: 'VC-1', av1: 'AV1', vp9: 'VP9' }[v] || (v || '?').toUpperCase(); };
     var fl = function (f) { return f ? (f.w ? f.w + '×' + f.h + ' ' : '') + esc(f.v) + (f.mbps ? ', ' + f.mbps + ' Mbps' : '') + (f.gb ? ', ' + f.gb + ' GB' : '') : ''; };
     $('#lblist').innerHTML = L.slice(0, LB.n).map(function (x) {
@@ -1294,11 +1294,15 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         '<span class="spec">' + x.g.res + (x.w ? ' · ' + x.w + '×' + x.h : '') + ' · ' + vn(x.v) + (x.b > 8 ? ' 10-bit' : '') + (x.mbps ? ' · ' + x.mbps + ' Mbps' : '') + (x.gb ? ' · ' + x.gb + ' GB' : '') + (x.mins ? ' · ' + x.mins + ' min' : '') + (x.a ? ' · ' + esc(x.a) : '') + '</span>' +
         '<span class="why2">' + [x.g.why ? esc(x.g.why) : '', x.conv ? (x.rp ? 'repackaged' : 'converted') + (x.was ? ' (was ' + fl(x.was) + ')' : '') : '', x.why ? (/^to (repackage|make smaller)/.test(x.why) ? esc(x.why) : 'waiting to convert: ' + esc(x.why)) : ''].filter(Boolean).join(' · ') +
         (x.ps ? '<span class="why2">Picture subtitles (' + esc(x.ps) + '): ' + (/^to repackage/.test(x.why || '') ? 'repackaging leaves them in the original, kept in Grifflix Originals' : 'in this file') + '</span>' : '') +
-        (x.why && (!x.conv || x.rp) ? '<button type="button" class="lbnext" data-lbnext="' + x.id + '" data-n="' + esc(x.n) + '">' + (/^to make smaller/.test(x.why) ? 'Make smaller next' : 'Do next') + '</button>' : '') + '</span></li>';
+        // (the largest: any of them made smaller next, whatever the converter would have said: John, 16 Nov 2026, "I need a tab for the largest
+        // files, so that I can convert them")
+        (LB.f === 'big' ? '<button type="button" class="lbnext" data-lbnext="' + x.id + '" data-force="1" data-n="' + esc(x.n) + '">Make smaller next</button>' :
+        x.why && (!x.conv || x.rp) ? '<button type="button" class="lbnext" data-lbnext="' + x.id + '" data-n="' + esc(x.n) + '">' + (/^to make smaller/.test(x.why) ? 'Make smaller next' : 'Do next') + '</button>' : '') + '</span></li>';
     }).join('') || '<li>None.</li>';
     $('#lbmore').style.display = L.length <= LB.n ? 'none' : ''; $('#lbmore').onclick = function () { LB.n += 150; lbDraw(); };
     Array.prototype.forEach.call(document.querySelectorAll('[data-lbnext]'), function (b) { b.onclick = function () {
-      b.disabled = true; cvPost({ op: 'pin', id: b.dataset.lbnext, name: b.dataset.n }).then(function (j) { cvOrder(j); b.textContent = 'Next ✓'; toast(b.dataset.n + ': done next'); }).catch(function (e) { b.disabled = false; toast(e.message); });
+      if (b.dataset.force && !confirm('Make ' + b.dataset.n + ' smaller next? It’s converted at the careful setting (hours), and kept only if it comes out much smaller.')) return;
+      b.disabled = true; cvPost({ op: 'pin', id: b.dataset.lbnext, name: b.dataset.n, force: b.dataset.force ? 1 : undefined }).then(function (j) { cvOrder(j); b.textContent = 'Next ✓'; toast(b.dataset.n + ': done next'); }).catch(function (e) { b.disabled = false; toast(e.message); });
     }; });
     // (the library at a glance: how many MKVs, and how many films waiting to be repackaged or converted)
     var mkv = all.filter(function (x) { return x.c === 'mkv' || x.c === 'matroska'; }).length, rp = cnt.rp, cv = cnt.cv;

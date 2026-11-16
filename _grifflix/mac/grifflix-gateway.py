@@ -1480,8 +1480,8 @@ def make_handler(g):
                 if op in ('pin', 'unpin', 'up') and not re.match(r'^[0-9a-f]{32}$', iid):
                     return self.send_json(400, {'error': 'Which film?'})
                 P['pins'] = [x for x in P['pins'] if x.get('id') != iid] if op in ('unpin', 'pin', 'up') else P['pins']
-                if op == 'pin':
-                    P['pins'].append({'id': iid, 'name': str(b.get('name') or '')[:120]})
+                if op == 'pin':   # (force: one John chose from the largest, made smaller whatever the converter thinks of it)
+                    P['pins'].append(dict({'id': iid, 'name': str(b.get('name') or '')[:120]}, **({'force': True, 'at': int(time.time())} if b.get('force') else {})))
                 elif op == 'up':
                     P['pins'].insert(0, {'id': iid, 'name': str(b.get('name') or '')[:120]})
                 elif op == 'remux_first':
