@@ -586,7 +586,7 @@ def convert(item, ffmpeg, ffprobe, st):
                     show()
             if k % 4 == 0:   # (how far it's got: every 20 seconds)
                 show(why_ if paused else '')
-            why_ = 'someone is watching' if watching() else 'a film is downloading' if item.get('mode') == 'remux' and not item.get('fetched') and not item.get('redo') and downloading() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() and not item.get('urgent') else '')
+            why_ = 'someone is watching' if watching() else 'a film is downloading' if item.get('mode') == 'remux' and not item.get('fetched') and not item.get('new') and not item.get('redo') and downloading() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() and not item.get('urgent') else '')
             if why_ and not paused:
                 p.send_signal(signal.SIGSTOP); paused = True; log('  paused: ' + why_)
             elif not why_ and paused:
@@ -780,7 +780,7 @@ def ordered(rest):
     else:
         others = [x for x in others if x.get('mode') != 'shrink'] + sorted([x for x in others if x.get('mode') == 'shrink'], key=lambda x: -x.get('gb', 0))
     if downloading():   # (while a film downloads: conversions go on as before, older films' repackaging after them, the drive left to it)
-        old = lambda x: x.get('mode') == 'remux' and not x.get('fetched') and not x.get('redo')
+        old = lambda x: x.get('mode') == 'remux' and not x.get('fetched') and not x.get('new') and not x.get('redo')   # (a film brought in lately, however it came, is never held back: John, 16 Nov 2026)
         others = [x for x in others if not old(x)] + [x for x in others if old(x)]
     return first + others
 
