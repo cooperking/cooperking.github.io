@@ -59,7 +59,8 @@ SOFTWARE = [('grifflix-gateway.py', os.path.join(APP_DIR, 'grifflix-gateway.py')
             ('subtitles.py', os.path.join(APP_DIR, 'subtitles.py'), 'movie_hash'),
             ('poster-add.py', os.path.expanduser('~/Grifflix/poster-add.py'), 'Criterion images'),   # (John's own posters on their films: 12 Nov 2026)
             ('criterion.py', os.path.expanduser('~/Grifflix/criterion.py'), 'Criterion Films'),
-            ('criterion-covers.py', os.path.expanduser('~/Grifflix/criterion-covers.py'), 'criterion-list.html'),   # (every Criterion cover: 16 Nov 2026)
+            ('criterion-covers.py', os.path.expanduser('~/Grifflix/criterion-covers.py'), 'criterion-list.html'),
+            ('duplicates.py', os.path.expanduser('~/Grifflix/duplicates.py'), 'Set aside'),   # (films John has two copies of: 16 Nov 2026)   # (every Criterion cover: 16 Nov 2026)
             ('gdrive.py', os.path.expanduser('~/Grifflix/gdrive.py'), 'Google Drive')]   # (films from Google Drive, by themselves: 15 Nov 2026)   # what John's last Update sent (so the next reads only what's new)
 LIBS = {'movies': ('Movies', 'movies'), 'tv': ('TV', 'tvshows'), 'home': ('Home videos', 'homevideos')}
 
@@ -341,7 +342,7 @@ def shown(items):   # a series with nothing in it (an empty folder, e.g. "untitl
 SPINES = {'at': 0, 'map': {}}
 
 
-def spine_of(path):
+def spine_of(path, folder=False):
     """A Criterion film's spine number, by its folder (criterion-covers.py writes them from Criterion's list): John, 16 Nov 2026, "get the
     spine number from the criterion collection and be able to sort by spine number in Grifflix"."""
     f = os.path.expanduser('~/Grifflix/criterion-spines.json')
@@ -351,7 +352,9 @@ def spine_of(path):
             SPINES['map'], SPINES['at'] = load(f, {}), m
     except OSError:
         return None
-    return SPINES['map'].get(os.path.basename(os.path.dirname(path or ''))) if path else None
+    if not path:
+        return None
+    return SPINES['map'].get(os.path.basename(path.rstrip('/')) if folder else os.path.basename(os.path.dirname(path)))   # (a series: its own folder)
 
 
 def item_out(it, prog=None):
@@ -395,8 +398,8 @@ def item_out(it, prog=None):
         o['trailers'] = yt[:3]
     if prog and it['Id'] in prog:
         o['pos'] = prog[it['Id']].get('pos')
-    if t == 'Movie' and spine_of(it.get('Path')):
-        o['spine'] = spine_of(it.get('Path'))
+    if t in ('Movie', 'Series') and spine_of(it.get('Path'), t == 'Series'):
+        o['spine'] = spine_of(it.get('Path'), t == 'Series')
     return o
 
 
@@ -1030,10 +1033,10 @@ def make_handler(g):
                     raw = [i for i in shown(g.items(ParentId=libs[key], Recursive='true', IncludeItemTypes=types, SortBy='SortName', Fields=quick).get('Items', [])) if not making(i)]
                     for o in resolve(raw, extra):
                         items[o['id']] = o
-                    if key == 'movies':   # (Criterion's spine numbers, kept apart from each film's remembered details, so they're always current)
+                    if True:   # (Criterion's spine numbers, kept apart from each film's remembered details, so they're always current; a series' too)
                         for i in raw:
                             if i['Id'] in items:
-                                sp = spine_of(i.get('Path'))
+                                sp = spine_of(i.get('Path'), key == 'tv')
                                 if sp:
                                     items[i['Id']]['spine'] = sp
                                 else:
@@ -1605,7 +1608,7 @@ def make_handler(g):
                         pass
                     if old == got[name]:
                         continue
-                    if old is None and name not in ('grifflix-gateway.py', 'convert.py', 'subtitles.py', 'poster-add.py', 'criterion.py', 'criterion-covers.py', 'gdrive.py'):
+                    if old is None and name not in ('grifflix-gateway.py', 'convert.py', 'subtitles.py', 'poster-add.py', 'criterion.py', 'criterion-covers.py', 'duplicates.py', 'gdrive.py'):
                         continue   # (a script John hasn't got on this Mac stays away)
                     os.makedirs(os.path.dirname(dest), exist_ok=True)
                     if old is not None:
