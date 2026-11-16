@@ -12,12 +12,13 @@ come from Criterion's picture store, which anyone can fetch. Then:
   * the new ones are copied to John's Google Drive "Criterion images" too (with the downloader's own Google Drive connection);
   * new films are added to the foot of the "Criterion Films" sheet, if the Google sheet tools are set up (criterion.py's sign-in),
     without clearing it (the old script cleared it, and with it the "On Grifflix" and "Extras" columns);
+  * every film of John's on Criterion's list is put in "The Criterion Collection" (a film Criterion has just added included);
   * and every Criterion film in Grifflix is given its cover (poster-add.py drive go).
 
   python3 ~/Grifflix/criterion-covers.py [list.html]        what it would do (nothing changes)
   python3 ~/Grifflix/criterion-covers.py [list.html] go     does it
 """
-import html.parser, json, os, re, subprocess, sys, time, unicodedata, urllib.request
+import html.parser, json, os, re, subprocess, sys, time, unicodedata, urllib.parse, urllib.request
 
 ARGS = sys.argv[1:]
 GO = 'go' in ARGS
@@ -125,6 +126,51 @@ def sheet_rows(films):
     print('  added (criterion.py go marks which are in Grifflix)')
 
 
+IN_LIB = set()   # (the film folders on Criterion's list)
+
+
+def collect():
+    """Every film of John's that's on Criterion's list put in "The Criterion Collection" (John, 16 Nov 2026: "occasionally I already have
+    films that have been added to the criterion collection. They need the poster added and it should be added to the collection. The
+    Shop Around the Corner is a recent example"). Only added, never taken out."""
+    try:
+        S = json.load(open(os.path.join(os.environ.get('GRIFFLIX_DIR') or os.path.expanduser('~/Library/Application Support/Grifflix'), 'settings.json')))
+        def jf(method, path, **q):
+            u = S.get('jellyfin', 'http://127.0.0.1:8096') + path + ('?' + urllib.parse.urlencode(q) if q else '')
+            raw = urllib.request.urlopen(urllib.request.Request(u, method=method, headers={'Authorization': 'MediaBrowser Token="%s"' % S['jf_token']}), timeout=120).read()
+            return json.loads(raw) if raw[:1] in (b'{', b'[') else None
+        g = lambda d, k: d.get(k, d.get(k[:1].lower() + k[1:]))
+        sets = g(jf('GET', '/Users/%s/Items' % S['jf_user_id'], Recursive='true', IncludeItemTypes='BoxSet'), 'Items') or []
+        box = next((b for b in sets if (g(b, 'Name') or '').strip().lower() == 'the criterion collection'), None)
+        if not box:
+            return print('\nThe Criterion Collection: no collection by that name in Grifflix.')
+        held = set(g(i, 'Id') for i in g(jf('GET', '/Users/%s/Items' % S['jf_user_id'], ParentId=g(box, 'Id')), 'Items') or [])
+        movies, lid, start, by = os.path.join(BASE, 'Movies'), (S.get('libraries') or {}).get('movies'), 0, {}
+        while lid:
+            r = jf('GET', '/Users/%s/Items' % S['jf_user_id'], ParentId=lid, Recursive='true', IncludeItemTypes='Movie', Fields='Path', StartIndex=start, Limit=500)
+            for it in g(r, 'Items') or []:
+                rel = os.path.relpath(g(it, 'Path') or '/', movies)
+                if not rel.startswith('..') and os.sep in rel:
+                    by.setdefault(rel.split(os.sep)[0], []).append((g(it, 'Id'), g(it, 'Name')))
+            start += 500
+            if start >= (g(r, 'TotalRecordCount') or 0):
+                break
+        add = [(i, n) for f in sorted(IN_LIB) for i, n in by.get(f, []) if i not in held]
+        print('\nThe Criterion Collection: %d film(s) to put in%s' % (len(add), '' if GO or not add else ' (run with go)'))
+        for _, n in add[:40]:
+            print('  ' + (n or '?'))
+        if GO and add:
+            for n in range(0, len(add), 50):
+                jf('POST', '/Collections/%s/Items' % g(box, 'Id'), Ids=','.join(i for i, _ in add[n:n + 50]))
+            try:   # (Grifflix looks again)
+                urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:%s/local/remap' % S.get('port', 8097), data=b'{"map": {}}', method='POST',
+                                       headers={'X-Grifflix-Secret': S['secret'], 'Content-Type': 'application/json'}), timeout=30).read()
+            except Exception:
+                pass
+    except Exception as e:
+        print('\nThe Criterion Collection: not changed (%s).' % e)
+
+
 def spines(films):
     """Each Criterion film in Grifflix its spine number, by its folder (a year out allowed, as criterion.py): ~/Grifflix/criterion-spines.json,
     which Grifflix's gateway reads, for the site's Spine number sort (John, 16 Nov 2026)."""
@@ -136,13 +182,16 @@ def spines(films):
             folders.setdefault(k(f), f)
     out = {}
     for f in films:
-        sp = re.sub(r'[^0-9]', '', f['spine'])
-        if not sp or not f['title']:
+        if not f['title']:
             continue
         hit = folders.get(k('%s (%s)' % (f['title'], f['year'])))
         if not hit and re.match(r'^\d{4}$', f['year']):
             hit = next((folders[k('%s (%d)' % (f['title'], int(f['year']) + d))] for d in (1, -1) if k('%s (%d)' % (f['title'], int(f['year']) + d)) in folders), None)
-        if hit and (hit not in out or int(sp) < out[hit]):   # (a film in more than one release: its first spine)
+        if not hit:
+            continue
+        IN_LIB.add(hit)   # (for the collection, with or without a spine yet)
+        sp = re.sub(r'[^0-9]', '', f['spine'])
+        if sp and (hit not in out or int(sp) < out[hit]):   # (a film in more than one release: its first spine)
             out[hit] = int(sp)
     print('\nSpine numbers: %d Criterion films in Grifflix%s' % (len(out), '' if GO else ' (run with go to keep them)'))
     if GO:
@@ -207,6 +256,7 @@ def main():
                                capture_output=True, text=True)
             print('Google Drive “Criterion images”: %s' % ('up to date' if r.returncode == 0 else 'not copied (%s)' % (r.stderr or '').strip()[-200:]))
     spines(listed)
+    collect()
     sheet_rows(films)
     # every Criterion film in Grifflix its cover (the ones already here, and the new)
     print('\nPutting the covers on their films…' if GO else '\nWhat poster-add.py would put on the films:')
