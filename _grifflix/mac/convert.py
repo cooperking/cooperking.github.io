@@ -6,7 +6,7 @@ to send smoothly over Wi-Fi and to phones. So, ahead of time, this converts the 
   * a format browsers can't play (XviD/DivX, MPEG-2, VC-1, AV1, VP9, 10-bit H.264...)
   * too big: bigger than 1080p (John, 7 Nov 2026: "1080p is big enough for me"), or over 20 Mbps
 into H.264 at up to 1080p (quality 20, at most 8 Mbps and never more than the original), with sound that plays everywhere (AAC stereo, and the
-original surround kept alongside). Files that already play as they are, and 8-bit HEVC within those limits, are left alone (10-bit HEVC is converted).
+original surround kept alongside). Files that already play as they are, and 8-bit HEVC within those limits, are left alone (10-bit HEVC too, since 16 Nov 2026).
 
 Safe:
   * it pauses whenever someone is watching (streaming comes first), and runs at low priority
@@ -155,7 +155,10 @@ def why(ms):
         return REPACK + ' (%s file)' % cont0[0].upper()
     if w > MAX_W + 8 or h > MAX_H + 8:
         return 'bigger than 1080p (%dx%d)' % (w, h)
-    if (vc == 'h264' or vc in ('hevc', 'h265')) and bits <= 8 and '10' not in prof:
+    # (10-bit HEVC left as it is too, like 8-bit: every player John has plays it, and a device that can't is sent a conversion made as
+    # it plays (John, 16 Nov 2026: "new films already turned to mp4, but now being converted again just because HEVC. I haven't found a
+    # player that can't play HEVC"). Still repackaged if it isn't an MP4 or its sound isn't one every device plays)
+    if (vc in ('hevc', 'h265')) or (vc == 'h264' and bits <= 8 and '10' not in prof):
         # (the picture plays as it is (8-bit H.264; 8-bit HEVC on the devices that play HEVC; 10-bit HEVC, which many browsers and TV
         # sticks can't, is converted: John, 11 Nov 2026, Rushmore). It must also be in an MP4 with sound every device plays, or a device
         # can only have it through the media server's repackaging as it plays, which devices often fail on (John, 12 Nov 2026: "Playing
