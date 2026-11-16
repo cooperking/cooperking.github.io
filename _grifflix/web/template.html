@@ -2313,7 +2313,7 @@ function sfSort(items, key, dir) {
   var v = { year: function (i) { var p = Date.parse(i.premiere || ''); return p || (sfYear(i) ? Date.UTC(sfYear(i), 6, 1) : 0); }, added: function (i) { return Date.parse(i.added || '') || 0; }, name: null, rating: function (i) { return +i.rating || 0; }, mins: sfLen, spine: function (i) { return +i.spine || 0; } }[key];
   return items.slice().sort(function (a, b) {
     if (!v) return dir * nameKey(a).localeCompare(nameKey(b));
-    var x = v(a), y = v(b); if (!x && y) return 1; if (x && !y) return -1;   // (those without one last, either way)
+    var x = v(a), y = v(b); if (key !== 'spine') { if (!x && y) return 1; if (x && !y) return -1; }   // (those without one last, either way; a spine number: none counts as 0, so they sort first or last with the order: John, 16 Nov 2026)
     return dir * (x - y) || nameKey(a).localeCompare(nameKey(b));
   });
 }
