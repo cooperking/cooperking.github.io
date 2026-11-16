@@ -249,6 +249,7 @@ html.tv .sheet .people { font-size: var(--crfs, 15px); }
 /* the player */
 .player { position: fixed; inset: 0; z-index: 100; display: none; background: #000; }
 .player.on { display: block; }
+.mode.sure { outline: 2px solid var(--accent, #e3b448); outline-offset: -2px; } .mode.sure small { display: block; opacity: .8; font-size: 13px; margin-top: 2px; }
 .player.on.pipped { opacity: 0; pointer-events: none; z-index: -1; }   /* (the film in its own little window: the page underneath usable) */
 .player video { width: 100%; height: 100%; background: #000; }
 .player .top { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 12px; padding: max(14px, env(safe-area-inset-top)) 18px 30px; background: linear-gradient(rgba(0, 0, 0, .7), transparent); transition: opacity .3s; }
@@ -2109,7 +2110,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'c7c5ef4e6b24' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '4aec08c0178b' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5853,12 +5854,22 @@ function collPicker(it) {
   var draw = function (r) {
     var held = r['in'] || [];
     $('#cpk').innerHTML = '<div class="newrow" style="display:flex;gap:8px;margin:0 0 14px"><input type="text" id="cpnew" placeholder="A new collection, with it in"><button class="pill go" id="cpgo">Make</button></div>' +
-      '<div class="modes" style="max-height:52vh;overflow:auto">' + r.collections.map(function (c) { var on = held.indexOf(c.id) >= 0; return '<button class="mode' + (on ? ' on' : '') + '" data-cp="' + c.id + '"><b>' + (on ? '✓ ' : '') + esc(c.name) + '</b></button>'; }).join('') + '</div>';
+      '<p class="ov" style="margin:0 0 10px">Ticked: it’s in that collection. Tap one to take it out or put it in (it asks first).</p><div class="modes" style="max-height:52vh;overflow:auto">' + r.collections.map(function (c) { var on = held.indexOf(c.id) >= 0; return '<button class="mode' + (on ? ' on' : '') + '" data-cp="' + c.id + '"><b>' + (on ? '✓ ' : '') + esc(c.name) + '</b></button>'; }).join('') + '</div>';
+    // (a tap asks first, and only a second tap does it: John, 16 Nov 2026: "clicking on a collection would take it out of the
+    // collection. There was no warning")
     $$('[data-cp]').forEach(function (b) { b.onclick = function () {
-      var on = b.classList.contains('on'); b.disabled = true;
+      var on = b.classList.contains('on'), nm = r.collections.filter(function (c) { return c.id === b.dataset.cp; })[0].name;
+      if (!b.dataset.sure) {
+        $$('[data-cp]').forEach(function (x) { if (x !== b && x.dataset.sure) { delete x.dataset.sure; x.classList.remove('sure'); x.innerHTML = x.dataset.was; } });
+        b.dataset.sure = 1; b.dataset.was = b.innerHTML; b.classList.add('sure');
+        b.innerHTML = '<b>' + (on ? 'Take it out of ' : 'Put it in ') + esc(nm) + '?</b> <small>Tap again to ' + (on ? 'take it out' : 'put it in') + '</small>';
+        clearTimeout(b._sT); b._sT = setTimeout(function () { if (b.dataset.sure) { delete b.dataset.sure; b.classList.remove('sure'); b.innerHTML = b.dataset.was; } }, 5000);
+        return;
+      }
+      clearTimeout(b._sT); b.disabled = true;
       api('collections', { op: on ? 'remove' : 'add', id: b.dataset.cp, item: item }).then(function () {
         if (on) held.splice(held.indexOf(b.dataset.cp), 1); else held.push(b.dataset.cp);
-        toast((on ? 'Taken out of ' : 'In ') + b.textContent.replace(/^✓ /, '')); draw(r);
+        toast((on ? 'Taken out of ' : 'Put in ') + nm); draw(r);
       }).catch(function (e) { b.disabled = false; oops(e); });
     }; });
     var make = function () { var v = $('#cpnew').value.trim(); if (!v) return; api('collections', { op: 'create', name: v, item: item }).then(function () { toast('Made: ' + v); return api('collections', { op: 'in', item: item }).then(draw); }).catch(oops); };
