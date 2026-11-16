@@ -147,14 +147,25 @@ def collect():
         box = next((b for b in sets if (g(b, 'Name') or '').strip().lower() == 'the criterion collection'), None)
         if not box:
             return print('\nThe Criterion Collection: no collection by that name in Grifflix.')
-        held = set(g(i, 'Id') for i in g(jf('GET', '/Users/%s/Items' % S['jf_user_id'], ParentId=g(box, 'Id')), 'Items') or [])
+        inbox = g(jf('GET', '/Users/%s/Items' % S['jf_user_id'], ParentId=g(box, 'Id'), Fields='Path'), 'Items') or []
+        held = set(g(i, 'Id') for i in inbox)
+        # (a film's extras, in its "Other" folder, aren't films: the media server lists them as films, and the first run put 13 of them in
+        # the collection, Ace in the Hole's interviews and Crash's trailers: taken out again)
+        EXTRA_DIRS = ('other', 'extras', 'featurettes', 'behind the scenes', 'deleted scenes', 'interviews', 'trailers', 'shorts')
+        isextra = lambda p: any(seg.lower() in EXTRA_DIRS for seg in (p or '').split('/')[:-1])
+        out_ = [i for i in inbox if isextra(g(i, 'Path'))]
+        if out_:
+            print('\nThe Criterion Collection: %d extra(s) to take out%s: %s' % (len(out_), '' if GO else ' (run with go)', ', '.join(g(i, 'Name') or '?' for i in out_[:20])))
+            if GO:
+                jf('DELETE', '/Collections/%s/Items' % g(box, 'Id'), Ids=','.join(g(i, 'Id') for i in out_))
         movies, lid, start, by = os.path.join(BASE, 'Movies'), (S.get('libraries') or {}).get('movies'), 0, {}
         while lid:
             r = jf('GET', '/Users/%s/Items' % S['jf_user_id'], ParentId=lid, Recursive='true', IncludeItemTypes='Movie', Fields='Path', StartIndex=start, Limit=500)
             for it in g(r, 'Items') or []:
                 rel = os.path.relpath(g(it, 'Path') or '/', movies)
-                if not rel.startswith('..') and os.sep in rel:
-                    by.setdefault(rel.split(os.sep)[0], []).append((g(it, 'Id'), g(it, 'Name')))
+                parts = rel.split(os.sep)
+                if not rel.startswith('..') and len(parts) >= 2 and not (len(parts) > 2 and parts[1].lower() in EXTRA_DIRS):   # (the film, not its extras)
+                    by.setdefault(parts[0], []).append((g(it, 'Id'), g(it, 'Name')))
             start += 500
             if start >= (g(r, 'TotalRecordCount') or 0):
                 break
