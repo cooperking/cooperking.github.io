@@ -2105,25 +2105,11 @@ def make_handler(g):
             home = os.path.expanduser('~/Grifflix')
             script, out = os.path.join(home, 'criterion-covers.py'), os.path.join(home, 'criterion-covers.log')
             if not b and q.get('want') == '1':   # (the Criterion pages John's browser is to read for their synopses: criterion.com lets it, not the Mac)
-                # (made in the background and asked for again until it's ready: on the old Mac it outlasts the 100 seconds the link to it
-                # waits, and the admin page said "Failed to fetch": John, 16 Nov 2026)
-                W = CRIT.setdefault('want', {})
-                if W.get('done') and time.time() - W['done'] < 120 and q.get('again') == '1':
-                    return self.send_json(200, W['result']) if W.get('result') else self.send_json(500, {'error': W.get('error') or 'The Mac mini couldn’t make the list.'})
-                if not (W.get('t') and W['t'].is_alive()):
-                    def make(W=W):
-                        import subprocess
-                        W.pop('result', None); W.pop('error', None)
-                        try:
-                            r_ = subprocess.run([sys.executable, script, 'want'], capture_output=True, text=True, timeout=1800, cwd=home)
-                            W['result'] = json.loads([l for l in (r_.stdout or '').splitlines() if l.startswith('{')][-1])
-                        except Exception as e:
-                            W['error'] = 'The Mac mini couldn’t make the list: %s' % str(e)[:160]
-                        W['done'] = time.time()
-                    W['done'] = 0
-                    W['t'] = threading.Thread(target=make, daemon=True)
-                    W['t'].start()
-                return self.send_json(202, {'making': True})
+                # (straight from The Criterion Collection, each film found on Criterion's list for its page: John, 16 Nov 2026, "why make it so
+                # complicated? Just grab the criterion collection from the collection")
+                pairs, pages = crit_pairs(g), (load(os.path.join(home, 'criterion-synopses.json'), {}) or {}).get('pages', {})
+                want = sorted(set(sl for _, sl in pairs if not pages.get('https://www.criterion.com/films/' + sl)))
+                return self.send_json(200, {'want': want, 'have': len(set(sl for _, sl in pairs)) - len(want), 'films': len(pairs)})
             if b and isinstance(b.get('synopses'), dict):   # (what John's browser read: each film given Criterion's synopsis)
                 if CRIT.get('p') and CRIT['p'].poll() is None:
                     return self.send_json(409, {'error': 'It’s busy with the covers: try again when that’s done.'})
@@ -2136,13 +2122,30 @@ def make_handler(g):
                     if re.match(r'^[\w-]{3,160}$', k) and len(v) > 40:
                         pages['https://www.criterion.com/films/' + k] = v
                         n += 1
-                S_.setdefault('given', {})
+                given = S_.setdefault('given', {})
+                put = 0
+                for iid, sl in crit_pairs(g):   # (each film of The Criterion Collection given its page's synopsis, kept from being changed back)
+                    txt = pages.get('https://www.criterion.com/films/' + sl)
+                    sig = hashlib.sha1((txt or '').encode()).hexdigest()[:12]
+                    if not txt or given.get(iid) == sig:
+                        continue
+                    try:
+                        full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid)) or {}
+                        full['Overview'] = txt
+                        full['LockedFields'] = sorted(set((full.get('LockedFields') or []) + ['Overview']))
+                        g.jf.call('POST', '/Items/%s' % iid, full)
+                        given[iid] = sig
+                        put += 1
+                    except Exception as e:
+                        log('Criterion synopsis for %s: %s' % (iid, e))
                 save(sf, S_)
-                import subprocess
-                CRIT['p'] = subprocess.Popen([sys.executable, '-u', script, 'synopses', 'go'], stdout=open(out, 'w'), stderr=subprocess.STDOUT, cwd=home)
-                CRIT['at'] = time.time()
-                log('Criterion synopses: %d from John’s browser' % n)
-                return self.send_json(200, {'running': True, 'got': n, 'at': CRIT['at'], 'log': ''})
+                if put:
+                    g.forget()
+                    g.publish_soon = time.time() + 120
+                log('Criterion synopses: %d from John’s browser, %d films given theirs' % (n, put))
+                with open(out, 'w') as f_:
+                    f_.write('Criterion’s synopses: %d read by your browser; %d films given theirs.\n' % (n, put))
+                return self.send_json(200, {'running': False, 'got': n, 'put': put, 'at': time.time(), 'log': 'Criterion’s synopses: %d read by your browser; %d films given theirs.' % (n, put)})
             if b:
                 films = b.get('films')
                 if not isinstance(films, list) or not films:
@@ -3203,6 +3206,30 @@ def tmdb_runtime(g, tid):   # a film's running time on TMDB (kept: ~/Grifflix/tm
         TMDBC['_dirty'] = 1
         time.sleep(.05)
     return TMDBC[tid]
+
+
+def crit_pairs(g):
+    """The films of The Criterion Collection, each with its page on criterion.com (from Criterion's list John last gave: its title and
+    year, a year either side allowed): [(item id, page)]."""
+    lst = load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or []
+    by = {}
+    for f in lst:
+        sl = str(f.get('link') or '').replace('https://www.criterion.com/films/', '')
+        if sl and '/' not in sl and re.match(r'^\d{4}$', str(f.get('year') or '')):
+            by.setdefault((fold(f.get('title')), int(f['year'])), sl)
+    sets = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'BoxSet'}).get('Items') or []
+    box = next((x for x in sets if (x.get('Name') or '').strip().lower() == 'the criterion collection'), None)
+    if not box:
+        return []
+    out = []
+    for it in g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': box['Id'], 'Fields': 'ProductionYear'}).get('Items') or []:
+        if it.get('Type') not in ('Movie', 'Series'):
+            continue
+        y = it.get('ProductionYear') or 0
+        sl = next((by[(fold(it.get('Name')), y + d)] for d in (0, 1, -1) if (fold(it.get('Name')), y + d) in by), None)
+        if sl:
+            out.append((it['Id'], sl))
+    return out
 
 
 def apply_match(g, iid, pick):
