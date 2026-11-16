@@ -2117,7 +2117,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '377dbc4496e9' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '13601d9e27f0' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5598,6 +5598,7 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
       '<div class="xblock" style="margin:0 0 22px"><h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">Convert on this Mac</h4>' +
       '<p class="ov" style="margin:0 0 10px;font-size:14px">It needs converting (' + esc(it.conv.replace(/^to /, '')) + '). This Mac does it much faster than the Mac mini, which checks it and puts it in place.</p>' +
       '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="pill" id="thismac">Convert on this Mac</button></div><div id="tmprog" style="margin-top:10px"></div></div>' : '') +
+    (it.type === 'movie' ? '<div class="xblock" style="margin:0 0 22px"><h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">Its file</h4><div id="finfo" class="ov" style="font-size:14px;margin:0">Looking…</div></div>' : '') +
     '<h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">The wrong film?</h4>' +
     '<p class="ov" style="margin:0 0 14px">Find the right ' + (it.type === 'series' ? 'series' : 'film') + ' on TMDB: its title, and its year if you know it.</p>' +
     '<div style="display:flex;gap:10px;flex-wrap:wrap"><input type="text" id="idq" value="' + esc(nm) + '" placeholder="Title" style="flex:1 1 220px"><input type="text" id="idy" value="' + esc(String(yr)) + '" placeholder="Year" inputmode="numeric" style="flex:0 0 90px"><button class="pill go" id="idgo">Find</button></div>' +
@@ -5609,6 +5610,22 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
   $('#rngo').onclick = function () { var v = $('#rnq').value.trim(); if (v) rename(v); };
   $('#rnown').onclick = function () { rename(''); };
   $$('#sheetIn [data-pick]').forEach(function (b) { b.onclick = function () { pictureSheet(it, b.dataset.pick); }; });
+  // (the film's file as it is: John, 16 Nov 2026, "I need to see file format details in the edit section too")
+  if ($('#finfo')) mac('fileinfo?id=' + it.id).then(function (j) {
+    var CH = { 1: 'mono', 2: 'stereo', 6: '5.1', 8: '7.1' }, up = function (x) { return String(x || '?').toUpperCase(); };
+    var row = function (k, v) { return v ? '<div style="display:grid;grid-template-columns:110px 1fr;gap:8px;padding:3px 0"><span style="opacity:.7">' + k + '</span><span>' + v + '</span></div>' : ''; };
+    $('#finfo').innerHTML = (j.sources || []).map(function (f, i) {
+      var v = f.video || {};
+      return (j.sources.length > 1 ? '<div style="font-weight:600;margin:' + (i ? '14px' : '0') + ' 0 4px">Copy ' + (i + 1) + '</div>' : '') +
+        row('File', esc(f.folder) + '/<b>' + esc(f.file) + '</b>') +
+        row('Size', f.gb + ' GB · ' + f.mins + ' min · ' + f.mbps + ' Mbps') +
+        row('Container', up(f.container)) +
+        row('Picture', f.video ? up(v.codec) + (v.profile ? ' (' + esc(v.profile) + ')' : '') + ' · ' + v.w + '×' + v.h + ' · ' + (v.bits || 8) + '-bit' + (v.hdr ? ' · ' + esc(v.hdr) : '') + (v.fps ? ' · ' + v.fps + ' fps' : '') : '') +
+        row('Sound', f.audio.map(function (a) { return (a.default ? '<b>' : '') + esc(a.lang || 'unknown') + ' · ' + up(a.codec) + ' ' + (CH[a.ch] || (a.ch ? a.ch + ' ch' : '')) + (a.default ? '</b>' : '') + (a.title && !/^(und|unknown)/i.test(a.title) ? ' <small style="opacity:.7">' + esc(a.title) + '</small>' : ''); }).join('<br>') || 'none') +
+        row('Subtitles', f.subs.map(function (x) { return esc(x.lang || 'unknown') + ' · ' + up(x.codec) + (x.external ? ' (file beside it)' : '') + (x.forced ? ' · forced' : ''); }).join('<br>') || 'none') +
+        row('Plays', f.convert ? 'needs converting: ' + esc(f.convert.replace(/^to /, '')) : 'everywhere, as it is');
+    }).join('') || 'No file found.';
+  }).catch(function (e) { $('#finfo').textContent = e.status === 404 ? 'Press Update everything first (the Mac mini needs its update).' : (e.message || 'Couldn’t reach the Mac mini'); });
   var tm = $('#thismac');
   if (tm) {   // (converting on this Mac: asked first, then how far it's got, from the Mac mini, every few seconds while the panel's open)
     var tmT = 0, clock2 = function (sec) { sec = Math.max(0, Math.round(sec)); var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60); return (h ? h + ' h ' : '') + m + ' min'; };

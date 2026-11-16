@@ -1884,6 +1884,32 @@ def make_handler(g):
             log('To be converted on John’s Mac: %s' % plan['item'].get('name'))
             return self.send_json(200, {'token': tok, 'name': plan['item'].get('name')})
 
+        def api_fileinfo(self, me, user, q, b):
+            """John's only: a film's file as it is, for its Edit panel (John, 16 Nov 2026: "I need to see file format details in the edit
+            section too"): its name and size, container, picture, bitrate, length, soundtracks and subtitles, and what the converter would do."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            iid = str(q.get('id') or '')
+            if not re.match(r'^[0-9a-f]{32}$', iid):
+                return self.send_json(400, {'error': 'Which film?'})
+            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'MediaSources,Path'}) or {}
+            out = []
+            for ms in it.get('MediaSources') or []:
+                st = ms.get('MediaStreams') or []
+                v = next((x for x in st if x.get('Type') == 'Video'), {}) or {}
+                out.append({
+                    'file': os.path.basename(ms.get('Path') or it.get('Path') or ''), 'folder': os.path.basename(os.path.dirname(ms.get('Path') or it.get('Path') or '')),
+                    'container': ms.get('Container'), 'gb': round((ms.get('Size') or 0) / 1e9, 2), 'mbps': round((ms.get('Bitrate') or 0) / 1e6, 1),
+                    'mins': round((ms.get('RunTimeTicks') or 0) / 6e8),
+                    'video': {'codec': v.get('Codec'), 'profile': v.get('Profile'), 'w': v.get('Width'), 'h': v.get('Height'), 'bits': v.get('BitDepth'),
+                              'hdr': v.get('VideoRange') if v.get('VideoRange') not in (None, 'SDR') else None, 'fps': round(v.get('RealFrameRate') or v.get('AverageFrameRate') or 0, 3)} if v else None,
+                    'audio': [{'lang': a.get('Language'), 'codec': a.get('Codec'), 'ch': a.get('Channels'), 'layout': a.get('ChannelLayout'), 'title': a.get('Title') or a.get('DisplayTitle'),
+                               'default': bool(a.get('IsDefault'))} for a in st if a.get('Type') == 'Audio'],
+                    'subs': [{'lang': x.get('Language'), 'codec': x.get('Codec'), 'external': bool(x.get('IsExternal')), 'forced': bool(x.get('IsForced')),
+                              'title': x.get('Title') or x.get('DisplayTitle')} for x in st if x.get('Type') == 'Subtitle'],
+                    'convert': conv_why(ms) or ''})
+            return self.send_json(200, {'sources': out})
+
         def api_convertjob(self, me, user, q, b):
             """John's only: how a film's conversion on his Mac is going, for its Edit panel: waiting for the Mac to start it, converting
             (how far, how fast), checking (the Mac mini putting it in place), done or failed."""

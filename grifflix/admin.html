@@ -220,6 +220,17 @@ body.tdragging { user-select: none; -webkit-user-select: none; }
 .tabs button.on { background: var(--ink); color: var(--fg); border-color: var(--ink); }
 @media (max-width: 420px) { .tabs { gap: 3px; } .tabs button { padding: 0 4px; font-size: 10.5px; letter-spacing: .06em; } }
 .cards > [data-tab]:not(.tabon) { display: none; }
+/* (Update everything, step by step: what it's doing, then what it did: John, 16 Nov 2026, "it's not obvious and clear what is happening and what has happened") */
+.steps { list-style: none; margin: 14px 0 18px; padding: 12px 14px; border: 1px solid rgba(127,127,127,.35); border-radius: 8px; }
+.steps li { display: grid; grid-template-columns: 26px 1fr; gap: 2px 8px; padding: 6px 0; }
+.steps li + li { border-top: 1px solid rgba(127,127,127,.18); }
+.steps .ic { font-weight: 700; text-align: center; }
+.steps .lb { font-weight: 600; }
+.steps .tx { grid-column: 2; font-size: 14px; opacity: .85; }
+.steps li.working .ic { animation: stp 1s linear infinite; }
+@keyframes stp { 50% { opacity: .25; } }
+.steps li.failed .lb, .steps li.failed .ic { color: #e5534b; }
+.steps .hd { display: block; font-size: 13px; opacity: .75; margin: 0 0 4px; grid-column: 1 / -1; }
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Federo&display=swap">
 <style>
@@ -337,6 +348,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="kicker">Updates</div>
         <h2 id="allhead">Looking…</h2>
         <ul class="changes" id="alllist"></ul>
+        <ol class="steps" id="allsteps" hidden></ol>
         <p class="stat">One button: the Mac’s Grifflix files brought up to date (if there’s an update), the films brought over from the Mac, and, if the draft has changes, <b>the draft put live for everyone</b> (listed above). Look at the Preview first.</p>
         <div class="state"><button class="btn primary" id="allgo" type="button">Update everything</button><a class="btn" href="https://grifflix.co.uk/preview" target="grifflix-preview" rel="noopener">Preview</a></div>
       </section>
@@ -734,17 +746,55 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       (pageItems.length ? '<li><b>Goes live for everyone:</b><ul style="margin:6px 0 0 18px;padding:0">' + pageItems.map(function (t) { return '<li style="background:none;padding:2px 0">' + esc(t) + '</li>'; }).join('') + '</ul></li>' : '');
     $('#allgo').textContent = WAIT.page || WAIT.themes ? 'Update everything and put the draft live' : 'Update everything';
   }
-  var armed = 0;
+  // (each step shown as it goes, and what it did; kept on this device, so the last update's outcome is there after a reload)
+  var STEPS = [['mac', 'The Mac mini’s own software'], ['data', 'Films, TV and Movie of the Day sent to the site'], ['themes', 'New themes put live'], ['page', 'The draft put live for everyone']];
+  var ST = { at: 0, s: {} }, MACRESTART = false, pageWatch = 0;
+  try { var st0 = JSON.parse(store.get('grifflix-lastupdate') || 'null'); if (st0 && st0.at) ST = st0; } catch (e) {}
+  var hm = function (t) { return new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); };
+  function stepDraw() {
+    var el = $('#allsteps'), any = STEPS.some(function (k) { return ST.s[k[0]]; });
+    el.hidden = !any; if (!any) return;
+    var going = STEPS.some(function (k) { var x = ST.s[k[0]]; return x && (x.st === 'working' || x.st === 'waiting'); });
+    var IC = { working: '…', waiting: '◷', done: '✓', skip: '–', failed: '✕' };
+    el.innerHTML = '<span class="hd">' + (going ? 'Updating now (started ' + hm(ST.at) + ')' : 'Last update: ' + when(new Date(ST.at).toISOString())) + '</span>' +
+      STEPS.filter(function (k) { return ST.s[k[0]]; }).map(function (k) { var x = ST.s[k[0]];
+        return '<li class="' + x.st + '"><span class="ic">' + IC[x.st] + '</span><span class="lb">' + k[1] + '</span><span class="tx">' + esc(x.tx || '') + '</span></li>'; }).join('');
+  }
+  function stepSet(k, st, tx) { ST.s[k] = { st: st, tx: tx }; stepDraw(); try { store.set('grifflix-lastupdate', JSON.stringify(ST)); } catch (e) {} }
+  stepDraw();
+  var armed = 0, cur = '';
   $('#allgo').onclick = function () {
-    var b = this, say = function (t) { b.textContent = t; }, done = [];
-    if (!armed) { armed = setTimeout(function () { armed = 0; summary(); }, 4000); say(WAIT.page || WAIT.themes ? 'Tap again: the draft goes live for everyone' : 'Tap again to update everything'); return; }
+    var b = this, done = [];
+    var say = function (t) { b.textContent = t; if (cur) stepSet(cur, 'working', t.replace(/…$/, '…')); };
+    if (!armed) { armed = setTimeout(function () { armed = 0; summary(); }, 4000); b.textContent = WAIT.page || WAIT.themes ? 'Tap again: the draft goes live for everyone' : 'Tap again to update everything'; return; }
     clearTimeout(armed); armed = 0; b.disabled = true;
-    stepMac(say).then(function (m) { if (m) done.push(m); return unrepeat(say).then(function (u) { if (u) done.push(u + ' repeated day' + (u === 1 ? '' : 's') + ' given a new film'); }, function () {}); })
-      .then(function () { return stepData(say, false); })
-      .then(function (d) { if (d) done.push(d); return stepThemes(say); })
-      .then(function (t) { if (t) done.push(t); return stepPublish(say); })
-      .then(function (p) { if (p) done.push(p); b.disabled = false; summary(); toast(done.join(' · ') || 'Everything was up to date'); })
-      .catch(function (e) { b.disabled = false; say('Update everything'); toast(e.message); });
+    ST = { at: Date.now(), s: {} }; MACRESTART = false; clearInterval(pageWatch);
+    STEPS.forEach(function (k) { stepSet(k[0], 'waiting', 'to come'); });
+    var run = function (k, fn, none) {
+      cur = k; stepSet(k, 'working', 'starting…');
+      return fn().then(function (r) { cur = ''; stepSet(k, r ? 'done' : 'skip', r || none); return r; }, function (e) { cur = ''; stepSet(k, 'failed', e.message || 'didn’t work'); throw e; });
+    };
+    run('mac', function () {   // (the gateway itself updated: a second pass, so anything new only it knew to fetch comes too)
+      return stepMac(say).then(function (m) { return MACRESTART ? stepMac(say).then(function (m2) { return m + (m2 ? '; then ' + m2 : ''); }) : m; });
+    }, 'already up to date')
+      .then(function (m) { if (m) done.push('Mac ' + m); return unrepeat(say).then(function (u) { if (u) done.push(u + ' repeated day' + (u === 1 ? '' : 's') + ' given a new film'); }, function () {}); })
+      .then(function () { return run('data', function () { return stepData(say, false); }, 'nothing new'); })
+      .then(function (d) { if (d) done.push(d); return run('themes', function () { return stepThemes(say); }, 'none waiting'); })
+      .then(function (t) { if (t) done.push(t); return run('page', function () { return stepPublish(say); }, 'nothing waiting: the live page is the draft'); })
+      .then(function (p) {
+        b.disabled = false; summary(); toast(done.join(' · ') || 'Everything was up to date');
+        if (p) {   // (the page: watched until it's really live, as GitHub publishes it)
+          stepSet('page', 'waiting', 'sent: GitHub is publishing it (usually a minute or two)…');
+          var t0 = Date.now(); clearInterval(pageWatch);
+          pageWatch = setInterval(function () {
+            Promise.all([page('/grifflix/draft/index.html'), page('/grifflix/index.html')]).then(function (r) {
+              if (r[0] === r[1]) { clearInterval(pageWatch); stepSet('page', 'done', 'live for everyone at ' + hm(Date.now()) + ' (a phone or the app may need closing and opening again to show it)'); draftLive(); }
+              else if (Date.now() - t0 > 6 * 60000) { clearInterval(pageWatch); stepSet('page', 'failed', 'still not live after 6 minutes: look at Builds on GitHub (Mac tab)'); }
+            }).catch(function () {});
+          }, 10000);
+        }
+      })
+      .catch(function (e) { b.disabled = false; summary(); toast(e.message); STEPS.forEach(function (k) { if (ST.s[k[0]] && ST.s[k[0]].st === 'waiting') stepSet(k[0], 'skip', 'not done: a step before it failed'); }); });
   };
   function stepThemes(say) {   // (the months' themes saved on the admin page, put live)
     if (!WAIT.themes) return Promise.resolve('');
@@ -756,7 +806,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     say('Putting the draft live…');
     var msg = [].map.call(document.querySelectorAll('#changes li'), function (li) { return li.firstChild.textContent; }).join('; ');
     return fetch('/grifflix/data/library.json', { method: 'HEAD', cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('The site hasn’t its films yet: the page wasn’t put live.'); })
-      .then(function () { return g('admin', { op: 'publish', say: msg }); }).then(function () { watching = setInterval(draftLive, 15000); return 'page live in a minute or two'; });
+      .then(function () { return g('admin', { op: 'publish', say: msg }); }).then(function () { return 'sent to GitHub'; });
   }
 
   // ---- notifications and emails: the last Movie of the Day sent, and whether the mailer signs as Grifflix
@@ -933,13 +983,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
             say('The Mac is restarting…');
             return fetch(GW + '/api/software', { headers: hdr }).then(function (r) { return r.json(); }).catch(function () { return {}; }).then(function (sw) {
               var l = sw.last || {}; software(); mac();
-              ok(said || (l.changed && l.changed.length ? 'the Mac updated' + (l.converter ? ' (its converter carries on)' : '') : 'the Mac updated'));
+              MACRESTART = (l.changed || []).indexOf('grifflix-gateway.py') >= 0;
+              ok(said || (l.changed && l.changed.length ? 'updated: ' + l.changed.join(', ') + (l.converter ? ' (its converter carries on)' : '') : 'updated'));
             });
           }).catch(function () {
             if (++tries % 3 === 0) fetch(GW + '/api/software', { headers: hdr }).then(function (r) { return r.json(); }).then(function (sw) {
               var l = sw.last; if (!l || l.at * 1000 <= t0 || tries >= 999) return;
               if (l.error) { tries = 999; no(new Error(l.error)); }
-              else if (!l.restarting) { tries = 999; software(); ok(l.changed && l.changed.length ? 'the Mac updated' : 'the Mac was already up to date'); }   // (nothing to restart for)
+              else if (!l.restarting) { tries = 999; software(); ok(l.changed && l.changed.length ? 'updated: ' + l.changed.join(', ') : ''); }   // (nothing to restart for)
             }).catch(function () {});
             if (tries < 80) setTimeout(wait, 3000); else if (tries < 999) no(new Error('The Mac hasn’t finished updating yet: look again in a few minutes.'));
           });
@@ -954,7 +1005,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         return r.json().catch(function () { return {}; }).then(function (j) {
           if (r.status === 202 && j.started) return watch(from);
           if (!r.ok) throw new Error(j.error || 'The Mac said ' + r.status);
-          var said = j.changed && j.changed.length ? 'the Mac updated' + (j.converter ? ' (its converter carries on)' : '') : '';
+          var said = j.changed && j.changed.length ? 'updated: ' + j.changed.join(', ') + (j.converter ? ' (its converter carries on)' : '') : '';
+          MACRESTART = (j.changed || []).indexOf('grifflix-gateway.py') >= 0;
           if (!j.restarting) { software(); return said; }
           return watch(from, said);
         });
