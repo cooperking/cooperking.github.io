@@ -2040,7 +2040,10 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
    way up, on black as the wide pictures were (no blurred copy behind it: its blur, redrawn as the screen changes, made the film strip's
    movement heavier): John, 16 Nov 2026: "can the Grifflix show films in poster mode too, in the film strip, but
    turned horizontally. Then showing as it is the right way up in the cinema screen") */
-html .th-picture .vday.has { background-image: none !important; background-color: #0c0b0a; }
+/* (each frame carries its own piece of film, sprocket holes and all, and the frames sit exactly eight holes apart, so a poster never drifts
+   against the holes as the film runs: John, 16 Nov 2026: "the horizontal posters are drifting within the film strip which looks odd") */
+html .th-picture .vday, html .th-picture .vday.soon { width: 256px; height: 212px; background: linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 9px / 32px 13px repeat-x, linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 190px / 32px 13px repeat-x, linear-gradient(#0c0b0a, #0c0b0a) 8px 38.5px / 240px 135px no-repeat, #141414 !important; box-shadow: none !important; }
+html .th-picture .vday.soon { background: linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 9px / 32px 13px repeat-x, linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 190px / 32px 13px repeat-x, linear-gradient(#141210, #141210) 8px 38.5px / 240px 135px no-repeat, #141414 !important; }
 html .th-picture .vday.has::before { content: ""; position: absolute; left: 50%; top: 50%; width: 135px; height: 240px; margin: -120px 0 0 -67.5px; transform: rotate(90deg); background: var(--p) center / contain no-repeat; pointer-events: none; }
 .th-picture .vday.soon { background: #141210 !important; box-shadow: inset 0 0 0 1px rgba(244, 236, 216, .25) !important; }
 .th-picture .vday.soon .cs { display: grid !important; font: 600 15px/1.2 var(--kfont) !important; letter-spacing: .28em; color: rgba(244, 236, 216, .55) !important; text-transform: uppercase; }
@@ -4642,7 +4645,7 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     // (the days along the film strip behind the screen, the day you're on behind it, the ones before and after showing either side; it runs
     // with the drum, speeding up and slowing with it, as a change of day spins it: John, 10 Nov 2026: "It should move like the zoetrope
     // does, showing the previous film next to the screen")
-    var fy = g.fT + g.fH / 2, fs = 1, fw = 240, f2 = 262, f1 = Math.max(f2, g.sw / 2 + 30 * g.f + fw / 2), tgt = me._tgt != null ? me._tgt : a, pos = a;
+    var fy = g.fT + g.fH / 2, fs = 1, fw = 256, f2 = 256, f1 = Math.max(f2, g.sw / 2 + 30 * g.f + fw / 2), tgt = me._tgt != null ? me._tgt : a, pos = a;
     var off = function (k) { var ak = Math.abs(k); return (k < 0 ? -1 : 1) * (ak <= 1 ? ak * f1 : f1 + (ak - 1) * f2); };   // (the day's behind the screen, the ones either side just past its edges, the rest along the strip)
     if (me._fpos != null) pos = me._fpos; else if (me._d0 != null) pos = me._d0 + ((me._xs || .5) - .5) / NB;   // (the film where the drum has turned it)
     // (only the month's films on the strip, round and round: after the last, the first again)
@@ -4658,7 +4661,7 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
       if (x + fw / 2 < -40 || x - fw / 2 > c.W + 40 || Math.abs(k) > 12) { if (el._off !== 1) { el._off = 1; el.style.visibility = 'hidden'; } return; }
       if (el._off) { el._off = 0; el.style.visibility = ''; }
       vAt(el, x, fy, fs, 0, 1, Math.abs(k) < .5 ? 4 : 3);
-      el.style.clipPath = l > 0 ? 'inset(0 0 0 ' + Math.min(240, l / fs).toFixed(1) + 'px)' : '';
+      el.style.clipPath = l > 0 ? 'inset(0 0 0 ' + Math.min(fw, l / fs).toFixed(1) + 'px)' : '';
     });
     pos = pr;
     var ZF = me._zf && me._zf.isConnected ? me._zf : (me._zf = $('#zfilm')); if (ZF) ZF.style.backgroundPositionX = (-pos * 256).toFixed(1) + 'px';   // (the holes running with the film, a whole number of holes a frame, so the loop never jumps)
