@@ -3644,7 +3644,6 @@ def keep_scanning(g):
                 auto_match(g)
             except Exception as e:
                 log('Putting films right by their folders:', e)
-            threading.Thread(target=covers_now, daemon=True).start()   # (and every six hours, whatever came in)
             sheet_now()
             if not (SYN.get('t') and SYN['t'].is_alive()):   # (any synopses not given yet, as after a restart part way)
                 try:
