@@ -469,7 +469,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       <section class="card" data-tab="films">
         <div class="kicker">Criterion</div>
         <h2>Criterion’s covers</h2>
-        <p class="stat">Every Criterion cover, as Criterion makes it, on each Criterion film in Grifflix (and in your Google Drive’s “Criterion images”, and new films added to the Criterion sheet). Criterion’s site only lets a person’s own browser see its list, so: open <a href="https://www.criterion.com/shop/browse/list?sort=spine_number" target="_blank" rel="noopener">Criterion’s list</a>, let it load, then <b>File → Save Page As…</b> (Web Page, HTML only, or Page Source), and choose that file here. Now and then is enough: a Criterion film you bring in gets its cover by itself.</p>
+        <p class="stat">Every Criterion cover, as Criterion makes it, on each Criterion film in Grifflix (and in your Google Drive’s “Criterion images”, and new films added to the Criterion sheet). Criterion’s site only lets a person’s own browser see its list, so: open <a href="https://www.criterion.com/shop/browse/list?sort=spine_number" target="_blank" rel="noopener">Criterion’s list</a>, let it load, then <b>File → Save Page As…</b> (<b>Web Page, HTML Only</b>, or in Safari <b>Page Source</b>; not “Complete”), and choose that file here. Now and then is enough: a Criterion film you bring in gets its cover by itself.</p>
         <div class="state"><label class="btn primary" for="critfile">Choose the saved page</label><input type="file" id="critfile" accept=".html,.htm,text/html" hidden></div>
         <p class="stat" id="critsay"></p>
         <pre id="critlog" hidden style="white-space:pre-wrap;max-height:260px;overflow:auto;font-size:12px;opacity:.85"></pre>
@@ -1322,6 +1322,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var films = [].map.call(d.querySelectorAll('tr.gridFilm'), function (r) { var im = r.querySelector('td.g-img img'); return { link: r.getAttribute('data-href') || '', spine: txt(r, 'spine'), img: im ? (im.getAttribute('src') || im.getAttribute('data-src') || '') : '', title: txt(r, 'title'), director: txt(r, 'director'), country: txt(r, 'country'), year: txt(r, 'year') }; })
         .filter(function (x) { return x.title && x.img; });
       if (!films.length) throw new Error('No films in that page: save Criterion’s list once it has loaded (if it says “Just a moment”, wait, then save).');
+      if (!films.some(function (x) { return /^https?:/.test(x.img); })) throw new Error('That was saved as “Web Page, Complete”, which hides the covers’ addresses: save it again as “Web Page, HTML Only” (Safari: “Page Source”) and choose that.');
       $('#critsay').textContent = films.length + ' films found: sending them to the Mac mini…';
       return critCall({ films: films }).then(critPaint);
     }).catch(function (e) { toast(e.message || 'That didn’t work.'); $('#critsay').textContent = e.message || ''; });
