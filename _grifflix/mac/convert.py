@@ -578,6 +578,7 @@ def convert(item, ffmpeg, ffprobe, st):
                             convert(dict(f, fetched=True, urgent=True), ffmpeg, ffprobe, st)
                             save_state(st)
                             done_new(f['path'])
+                            unpin(f['id'])   # (done: off the list of what's next, where it sat looking left undone: John, 16 Nov 2026)
                         except RuntimeError as e:
                             log('  couldn’t repackage %s now (%s): it goes next' % (f['name'], str(e)[:160]))
                     if held:
@@ -934,6 +935,12 @@ while rest:
     have = set(x['id'] for x in rest)
     rest = [x for x in redos() if x['id'] not in have] + rest   # (John's language changes first: minutes each)
     rest = brought_in(rest)
+    try:   # (pins for films already done, or given up, taken off: they read as next, and the converter seemed to ignore them)
+        for x in prio()['pins']:
+            if x['id'] in st['done'] or x['id'] in st['failed']:
+                unpin(x['id'])
+    except Exception:
+        pass
     rest = ordered(rest)
     rest = [x for x in rest if x.get('redo')] + [x for x in rest if not x.get('redo')]
     try:   # (a newer version put here by Update everything: taken up now, between films)

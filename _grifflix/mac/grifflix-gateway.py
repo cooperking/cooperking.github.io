@@ -1434,7 +1434,7 @@ def make_handler(g):
                                  'recent': [{'name': x.get('name'), 'at': x.get('at'), 'mins': x.get('mins'), 'why': x.get('why'),
                                              'before': x.get('before') or look(x.get('kept')), 'after': x.get('after') or look(x.get('to'))} for x in rows],
                                  'disks': disks(),
-                                 'next': (cur or {}).get('next') or [], 'left': (cur or {}).get('left'), 'pins': P['pins'], 'remux_first': P['remux_first'], 'log': tail,
+                                 'next': (cur or {}).get('next') or [], 'left': (cur or {}).get('left'), 'pins': [x for x in P['pins'] if x.get('id') not in (st.get('done') or {}) and x.get('id') not in (st.get('failed') or {})], 'remux_first': P['remux_first'], 'log': tail,
                                  'ask': [dict(v, id=k, chosen=(P.get('langs') or {}).get(k)) for k, v in (st.get('ask') or {}).items()]})
 
         def api_originals(self, me, user, q, b):
