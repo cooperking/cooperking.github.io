@@ -73,6 +73,7 @@ LOOKED = {}
 DUPS = {}   # (duplicates.py, from the admin page)
 SYN = {}   # (Criterion's synopses being given to their films, in the background: how far it's got)
 COVERS_LOCK = threading.Lock()
+G_REF = []
 CRIT = {}   # (criterion-covers.py, started from the admin page)   # (when Claude last looked)
 CONV_SEEN = {}   # (files convert.py made or kept, looked at once: path → what they are)
 # Play on the TV (John, 11 Nov 2026: "Is it possible for the fire stick to receive a cast film ... Build that"): each member's Fire
@@ -2122,9 +2123,16 @@ def make_handler(g):
             if not b and q.get('want') == '1':   # (the Criterion pages John's browser is to read for their synopses: criterion.com lets it, not the Mac)
                 # (straight from The Criterion Collection, each film found on Criterion's list for its page: John, 16 Nov 2026, "why make it so
                 # complicated? Just grab the criterion collection from the collection")
+                # (then every other film on Criterion's list too, so a Criterion film that comes in later has its synopsis waiting, given
+                # by itself: John, 16 Nov 2026, "we may as well get the bookmark to get all remaining criterion films into json")
                 pairs, pages = crit_pairs(g), (load(os.path.join(home, 'criterion-synopses.json'), {}) or {}).get('pages', {})
-                want = sorted(set(sl for _, sl in pairs if not pages.get('https://www.criterion.com/films/' + sl)))
-                return self.send_json(200, {'want': want, 'have': len(set(sl for _, sl in pairs)) - len(want), 'films': len(pairs)})
+                mine = sorted(set(sl for _, sl in pairs if not pages.get('https://www.criterion.com/films/' + sl)))
+                rest = []
+                for f in load(os.path.join(home, 'criterion-list.json'), []) or []:
+                    sl = str(f.get('link') or '').replace('https://www.criterion.com/films/', '')
+                    if sl and '/' not in sl and re.match(r'^[\w-]{3,160}$', sl) and not pages.get('https://www.criterion.com/films/' + sl) and sl not in mine and sl not in rest:
+                        rest.append(sl)
+                return self.send_json(200, {'want': mine + rest, 'mine': len(mine), 'have': len(pages), 'films': len(pairs)})
             if b and isinstance(b.get('synopses'), dict):   # (what John's browser read: kept at once, then each film given its synopsis in the background)
                 sf = os.path.join(home, 'criterion-synopses.json')
                 S_ = load(sf, {}) or {}
@@ -3452,6 +3460,12 @@ def covers_now():
             put = [l.strip() for l in out.splitlines() if ' → ' in l and 'already there' not in l]
             m = re.search(r'The Criterion Collection: (\d+) film\(s\) to put in\n((?:  .*\n)*)', out)
             col = [x.strip() for x in m.group(2).splitlines()] if m and int(m.group(1)) else []
+            if col or put:
+                try:   # (its synopsis, if Criterion's page for it was read already)
+                    if G_REF:
+                        give_synopses(G_REF[0])
+                except Exception as e:
+                    log('Criterion synopses:', e)
             if put or col:
                 log('Criterion, for what just came in: %s%s' % ('covers: ' + '; '.join(put)[:400] if put else '', ('; in The Criterion Collection: ' + ', '.join(col)[:300]) if col else ''))
         elif os.path.exists(pa):
@@ -3736,6 +3750,7 @@ def keep_converting():
 
 def serve():
     g = Gateway()
+    G_REF.append(g)   # (for what runs on its own: covers_now's synopses)
     port = int(g.st.get('port', 8097))
     srv = ThreadingHTTPServer(('127.0.0.1', port), make_handler(g))
     # (the jobs only once this is the gateway, its port taken: a start that fails, as one does while the old gateway still holds the
