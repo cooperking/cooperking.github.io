@@ -71,6 +71,7 @@ def log(*a):
 
 LOOKED = {}
 DUPS = {}   # (duplicates.py, from the admin page)
+SYN = {}   # (Criterion's synopses being given to their films, in the background: how far it's got)
 CRIT = {}   # (criterion-covers.py, started from the admin page)   # (when Claude last looked)
 CONV_SEEN = {}   # (files convert.py made or kept, looked at once: path → what they are)
 # Play on the TV (John, 11 Nov 2026: "Is it possible for the fire stick to receive a cast film ... Build that"): each member's Fire
@@ -2110,9 +2111,7 @@ def make_handler(g):
                 pairs, pages = crit_pairs(g), (load(os.path.join(home, 'criterion-synopses.json'), {}) or {}).get('pages', {})
                 want = sorted(set(sl for _, sl in pairs if not pages.get('https://www.criterion.com/films/' + sl)))
                 return self.send_json(200, {'want': want, 'have': len(set(sl for _, sl in pairs)) - len(want), 'films': len(pairs)})
-            if b and isinstance(b.get('synopses'), dict):   # (what John's browser read: each film given Criterion's synopsis)
-                if CRIT.get('p') and CRIT['p'].poll() is None:
-                    return self.send_json(409, {'error': 'It’s busy with the covers: try again when that’s done.'})
+            if b and isinstance(b.get('synopses'), dict):   # (what John's browser read: kept at once, then each film given its synopsis in the background)
                 sf = os.path.join(home, 'criterion-synopses.json')
                 S_ = load(sf, {}) or {}
                 pages = S_.setdefault('pages', {})
@@ -2122,30 +2121,15 @@ def make_handler(g):
                     if re.match(r'^[\w-]{3,160}$', k) and len(v) > 40:
                         pages['https://www.criterion.com/films/' + k] = v
                         n += 1
-                given = S_.setdefault('given', {})
-                put = 0
-                for iid, sl in crit_pairs(g):   # (each film of The Criterion Collection given its page's synopsis, kept from being changed back)
-                    txt = pages.get('https://www.criterion.com/films/' + sl)
-                    sig = hashlib.sha1((txt or '').encode()).hexdigest()[:12]
-                    if not txt or given.get(iid) == sig:
-                        continue
-                    try:
-                        full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid)) or {}
-                        full['Overview'] = txt
-                        full['LockedFields'] = sorted(set((full.get('LockedFields') or []) + ['Overview']))
-                        g.jf.call('POST', '/Items/%s' % iid, full)
-                        given[iid] = sig
-                        put += 1
-                    except Exception as e:
-                        log('Criterion synopsis for %s: %s' % (iid, e))
                 save(sf, S_)
-                if put:
-                    g.forget()
-                    g.publish_soon = time.time() + 120
-                log('Criterion synopses: %d from John’s browser, %d films given theirs' % (n, put))
-                with open(out, 'w') as f_:
-                    f_.write('Criterion’s synopses: %d read by your browser; %d films given theirs.\n' % (n, put))
-                return self.send_json(200, {'running': False, 'got': n, 'put': put, 'at': time.time(), 'log': 'Criterion’s synopses: %d read by your browser; %d films given theirs.' % (n, put)})
+                log('Criterion synopses: %d from John’s browser, kept; giving them to their films' % n)
+                SYN['got'] = n
+                if not (SYN.get('t') and SYN['t'].is_alive()):
+                    SYN['t'] = threading.Thread(target=give_synopses, args=(g,), daemon=True)
+                    SYN['t'].start()
+                return self.send_json(200, syn_state())
+            if not b and q.get('syn') == '1':   # (how the synopses are going, for the admin card)
+                return self.send_json(200, syn_state())
             if b:
                 films = b.get('films')
                 if not isinstance(films, list) or not films:
@@ -3208,6 +3192,60 @@ def tmdb_runtime(g, tid):   # a film's running time on TMDB (kept: ~/Grifflix/tm
     return TMDBC[tid]
 
 
+def syn_state():
+    try:
+        S_ = load(os.path.expanduser('~/Grifflix/criterion-synopses.json'), {}) or {}
+    except Exception:
+        S_ = {}
+    return {'running': bool(SYN.get('t') and SYN['t'].is_alive()), 'got': SYN.get('got'), 'done': SYN.get('done', 0), 'of': SYN.get('of', 0),
+            'put': SYN.get('put', 0), 'at': SYN.get('at'), 'err': SYN.get('err'), 'pages': len(S_.get('pages') or {}), 'given': len(S_.get('given') or {})}
+
+
+def give_synopses(g):
+    """Each film of The Criterion Collection given the synopsis its Criterion page has (kept from being changed back), saved as it
+    goes, so a restart part way loses nothing: what's left is done next time (the admin page, or every six hours). John, 16 Nov 2026:
+    "I uploaded the synopsis but no way to tell if worked" (it had been done inside the upload itself, too long for it)."""
+    sf = os.path.expanduser('~/Grifflix/criterion-synopses.json')
+    S_ = load(sf, {}) or {}
+    pages, given = S_.get('pages') or {}, S_.setdefault('given', {})
+    todo = []
+    try:
+        pairs = crit_pairs(g)
+    except Exception as e:
+        SYN['err'] = 'couldn’t read The Criterion Collection (%s)' % str(e)[:150]
+        return log('Criterion synopses:', e)
+    for iid, sl in pairs:
+        txt = pages.get('https://www.criterion.com/films/' + sl)
+        if txt and given.get(iid) != hashlib.sha1(txt.encode()).hexdigest()[:12]:
+            todo.append((iid, txt))
+    if not todo:   # (nothing new: what the admin card says left as it was)
+        return
+    SYN.update({'done': 0, 'put': 0, 'err': None, 'of': len(todo), 'at': time.time()})
+    try:
+        for k, (iid, txt) in enumerate(todo, 1):
+            try:
+                full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid)) or {}
+                full['Overview'] = txt
+                full['LockedFields'] = sorted(set((full.get('LockedFields') or []) + ['Overview']))
+                g.jf.call('POST', '/Items/%s' % iid, full)
+                given[iid] = hashlib.sha1(txt.encode()).hexdigest()[:12]
+                SYN['put'] += 1
+            except Exception as e:
+                log('Criterion synopsis for %s: %s' % (iid, e))
+            SYN['done'] = k
+            if k % 25 == 0:
+                save(sf, S_)
+        save(sf, S_)
+        if SYN['put']:
+            g.forget()
+            g.publish_soon = time.time() + 120
+            log('Criterion synopses: %d films given theirs' % SYN['put'])
+    except Exception as e:
+        SYN['err'] = str(e)[:200]
+        log('Criterion synopses:', e)
+    SYN['at'] = time.time()
+
+
 def crit_pairs(g):
     """The films of The Criterion Collection, each with its page on criterion.com (from Criterion's list John last gave: its title and
     year, a year either side allowed): [(item id, page)]."""
@@ -3589,6 +3627,11 @@ def keep_scanning(g):
             except Exception as e:
                 log('Putting films right by their folders:', e)
             sheet_now()
+            if not (SYN.get('t') and SYN['t'].is_alive()):   # (any synopses not given yet, as after a restart part way)
+                try:
+                    give_synopses(g)
+                except Exception as e:
+                    log('Criterion synopses:', e)
         try:
             roots = [l for v in g.jf.call('GET', '/Library/VirtualFolders') or [] if (v.get('CollectionType') or '') in ('movies', 'tvshows')
                      for l in v.get('Locations') or []]
