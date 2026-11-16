@@ -269,7 +269,7 @@ def conv_why(ms):
         return 'to repackage (%s file), the picture untouched' % cont[0].upper()
     if w > 1928 or h > 1088:
         return 'bigger than 1080p'
-    if not ((vc in ('hevc', 'h265') and bits <= 8 and '10' not in (v.get('Profile') or '')) or (vc == 'h264' and bits <= 8 and '10' not in (v.get('Profile') or ''))):
+    if not (vc in ('hevc', 'h265') or (vc == 'h264' and bits <= 8 and '10' not in (v.get('Profile') or ''))):   # (10-bit HEVC left as it is, as convert.py since 16 Nov 2026)
         return 'format browsers can’t play' if v else ''
     if au and (au[0].get('Codec') or '').lower() not in ('aac', 'mp3'):
         return 'to repackage (%s sound), the picture untouched' % (au[0].get('Codec') or '?').upper()
