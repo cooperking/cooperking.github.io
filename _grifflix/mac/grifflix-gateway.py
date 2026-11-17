@@ -73,6 +73,7 @@ LOOKED = {}
 DUPS = {}   # (duplicates.py, from the admin page)
 SYN = {}   # (Criterion's synopses being given to their films, in the background: how far it's got)
 COVERS_LOCK = threading.Lock()
+SCANJOB = {}
 G_REF = []
 CRIT = {}   # (criterion-covers.py, started from the admin page)   # (when Claude last looked)
 CONV_SEEN = {}   # (files convert.py made or kept, looked at once: path → what they are)
@@ -1647,6 +1648,37 @@ def make_handler(g):
         def api_refresh(self, me, user, q, b):   # the page's Refresh button: look again for new films and changes
             g.forget()
             self.send_json(200, {'ok': True})
+
+        def api_scan(self, me, user, q, b):
+            """John's: the media server asked to look through the drive now, and how far it's got (John, 17 Nov 2026: "an update button that
+            just gets Grifflix to check its library and update"). POST: started; GET: {running, pct, done, at}. The admin page then sends
+            the films to the site."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            if b and not (SCANJOB.get('t') and SCANJOB['t'].is_alive()):
+                def run():
+                    SCANJOB.update({'pct': 0, 'done': False, 'err': None, 'at': time.time()})
+                    try:
+                        g.jf.call('POST', '/Library/Refresh')
+                        time.sleep(8)
+                        t0 = time.time()
+                        while time.time() - t0 < 1800:
+                            tasks = g.jf.call('GET', '/ScheduledTasks', query={'isHidden': 'false'}) or []
+                            t_ = next((x for x in tasks if x.get('Key') == 'RefreshLibrary'), None)
+                            if not t_ or t_.get('State') != 'Running':
+                                break
+                            SCANJOB['pct'] = round(t_.get('CurrentProgressPercentage') or 0)
+                            time.sleep(4)
+                        g.forget()
+                        SCANJOB['done'] = True
+                        log('Checked the library, as John asked')
+                    except Exception as e:
+                        SCANJOB['err'] = str(e)[:200]
+                    SCANJOB['at'] = time.time()
+                SCANJOB['t'] = threading.Thread(target=run, daemon=True)
+                SCANJOB['t'].start()
+            return self.send_json(200, {'running': bool(SCANJOB.get('t') and SCANJOB['t'].is_alive()), 'pct': SCANJOB.get('pct', 0),
+                                        'done': SCANJOB.get('done', False), 'err': SCANJOB.get('err'), 'at': SCANJOB.get('at')})
 
         def api_collections(self, me, user, q, b):
             if not b:

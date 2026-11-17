@@ -350,7 +350,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <ul class="changes" id="alllist"></ul>
         <ol class="steps" id="allsteps" hidden></ol>
         <p class="stat">One button: the Mac’s Grifflix files brought up to date (if there’s an update), the films brought over from the Mac, and, if the draft has changes, <b>the draft put live for everyone</b> (listed above). Look at the Preview first.</p>
-        <div class="state"><button class="btn primary" id="allgo" type="button">Update everything</button><a class="btn" href="https://grifflix.co.uk/preview" target="grifflix-preview" rel="noopener">Preview</a></div>
+        <div class="state"><button class="btn primary" id="allgo" type="button">Update everything</button><button class="btn" id="scango" type="button">Check the library</button><a class="btn" href="https://grifflix.co.uk/preview" target="grifflix-preview" rel="noopener">Preview</a></div>
+        <p class="stat" id="scansay">Check the library: the Mac mini looks through the drive for new and changed films now, and the site gets them. Nothing else changes.</p>
       </section>
       <section class="card" data-tab="members">
         <div class="kicker">Members</div>
@@ -877,6 +878,24 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     delete b.dataset.sure; b.disabled = true;
     stepData(function (t) { b.textContent = t; }, true).then(function (m) { b.disabled = false; b.textContent = 'Everything again'; toast(m); })
       .catch(function (e) { b.disabled = false; b.textContent = 'Everything again'; toast(e.message); });
+  };
+  // ---- just the library: the media server looks through the drive, then the films go to the site (John, 17 Nov 2026: "an update button
+  // that just gets Grifflix to check its library and update")
+  $('#scango').onclick = function () {
+    var b = this, say = function (t) { $('#scansay').textContent = t; };
+    if (!GW) return toast('The Mac mini isn’t answering.');
+    b.disabled = true; b.textContent = 'Checking…'; say('Asking the media server to look through the drive…');
+    var call = function (post) { return fetch(GW + '/api/scan', post ? { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: '{"go":1}' } : { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' })
+      .then(function (r) { if (r.status === 404) throw new Error('The Mac mini needs its update first (it takes it by itself within 15 minutes, or press Update everything).'); return r.json(); }); };
+    var wait = function () { return call(false).then(function (j) {
+      if (j.err) throw new Error(j.err);
+      if (j.running) { say('The media server is looking through the drive… ' + (j.pct ? j.pct + '%' : '')); return new Promise(function (ok) { setTimeout(ok, 3000); }).then(wait); }
+      return j; }); };
+    call(true).then(function () { return new Promise(function (ok) { setTimeout(ok, 2000); }); }).then(wait)
+      .then(function () { return stepData(say, false); })
+      .then(function (r) { say('Done ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ': ' + (typeof r === 'string' ? r : 'the site has the library as it is now') + '.'); toast('Library checked'); })
+      .catch(function (e) { say('Couldn’t finish: ' + (e.message || 'that didn’t work') + '.'); toast(e.message || 'That didn’t work'); })
+      .then(function () { b.disabled = false; b.textContent = 'Check the library'; });
   };
   function stepData(say, full) {   // the films from the Mac, kept by the site (only what's new, unless full)
     if (!GW) return Promise.reject(new Error('The Mac mini isn’t connected.'));
