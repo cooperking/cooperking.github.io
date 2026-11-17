@@ -2154,7 +2154,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'e42e15fd754f' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: 'ba0837ecb09a' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5770,8 +5770,10 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
         var box = $('#tmprog'); if (!box || !tm.isConnected) return;
         var st = j.state, pc = j.dur ? Math.min(100, j.t / j.dur * 100) : 0, more = st === 'started' || st === 'converting' || st === 'checking' || st === 'waiting';
         if (st === 'none') { box.innerHTML = ''; return; }
-        tm.disabled = more; tm.textContent = more ? 'Converting on this Mac' : 'Convert on this Mac';
-        box.innerHTML = st === 'waiting' ? '<p class="ov" style="margin:0;font-size:14px">Waiting for this Mac to start it: a Terminal window opens. (Nothing? Set it up once: the admin page, Conversions.)</p>'
+        // (waiting: not yet started on the Mac, so not "converting", and the button there to try again: John, 17 Nov 2026, "it says converting on
+        // this mac but it's not")
+        if (!tm.dataset.sure) { tm.disabled = more && st !== 'waiting'; tm.textContent = st === 'waiting' ? 'Start it on this Mac again' : more ? 'Converting on this Mac' : 'Convert on this Mac'; tm.dataset.again = st === 'waiting' ? 1 : ''; }
+        box.innerHTML = st === 'waiting' ? '<p class="ov" style="margin:0;font-size:14px">Not started yet: your Mac hasn’t taken it up (asked for ' + esc(new Date(j.at * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })) + '). A Terminal window should open on this Mac saying “Grifflix: starting…”. Nothing? Press Start it on this Mac again; if it still doesn’t, look in that Terminal window for why.</p>'
           : st === 'started' ? '<p class="ov" style="margin:0;font-size:14px">Starting…</p>'
           : st === 'converting' ? '<div style="height:8px;background:rgba(127,127,127,.25);border-radius:4px;overflow:hidden"><div style="height:100%;width:' + pc.toFixed(1) + '%;background:var(--fg)"></div></div><p class="ov" style="margin:6px 0 0;font-size:14px">' + Math.floor(pc) + '% · ' + clock2(j.t) + ' of ' + clock2(j.dur) + (j.speed ? ' · ' + esc(j.speed) + ' speed' : '') + '</p>'
           : st === 'checking' ? '<p class="ov" style="margin:0;font-size:14px">Made. The Mac mini is checking it and putting it in place…</p>'
@@ -5786,7 +5788,7 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
     };
     watch();
     tm.onclick = function () {
-      if (!tm.dataset.sure) { tm.dataset.sure = 1; tm.textContent = 'Convert it now on this Mac? Click again'; setTimeout(function () { if (tm.isConnected && tm.dataset.sure) { delete tm.dataset.sure; tm.textContent = 'Convert on this Mac'; } }, 6000); return; }
+      if (!tm.dataset.sure && !tm.dataset.again) { tm.dataset.sure = 1; tm.textContent = 'Convert it now on this Mac? Click again'; setTimeout(function () { if (tm.isConnected && tm.dataset.sure) { delete tm.dataset.sure; tm.textContent = 'Convert on this Mac'; } }, 6000); return; }
       delete tm.dataset.sure; tm.disabled = true; tm.textContent = 'Getting it ready…';
       mac('convertplan?id=' + it.id).then(function (j) {
         location.href = 'grifflix-convert://job?u=' + encodeURIComponent(GW + '/convjob/' + j.token);
