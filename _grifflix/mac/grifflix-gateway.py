@@ -1059,13 +1059,25 @@ def make_handler(g):
                     for o in resolve(raw, extra):
                         items[o['id']] = o
                     if True:   # (Criterion's spine numbers, kept apart from each film's remembered details, so they're always current; a series' too)
+                        # (and Criterion's own director and country for it, for the Criterion pages' filters: John, 17 Nov 2026, "I would like
+                        # all the same filters available to me on the criterion page in my collection too")
+                        CL = {}
+                        for f_ in load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or []:
+                            if str(f_.get('spine') or '').isdigit():
+                                CL.setdefault(int(f_['spine']), (str(f_.get('director') or '')[:160], str(f_.get('country') or '')[:60]))
                         for i in raw:
                             if i['Id'] in items:
                                 sp = spine_of(i.get('Path'), key == 'tv')
+                                o_ = items[i['Id']]
+                                for k_ in ('spine', 'cdir', 'ccty'):
+                                    o_.pop(k_, None)
                                 if sp:
-                                    items[i['Id']]['spine'] = sp
-                                else:
-                                    items[i['Id']].pop('spine', None)
+                                    o_['spine'] = sp
+                                    d_, c_ = CL.get(int(sp), ('', '')) if str(sp).isdigit() else ('', '')
+                                    if d_:
+                                        o_['cdir'] = d_
+                                    if c_:
+                                        o_['ccty'] = c_
                     lists[key] = [i['Id'] for i in raw if i['Id'] in items]
                     if key == 'movies':
                         self.extras(raw, items, lists)
