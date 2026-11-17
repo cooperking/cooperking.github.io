@@ -1223,17 +1223,19 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var it = function (x, now, i) {
         var nm = !now && NM[x.k], to = nm ? nm.name + (nm.year ? ' (' + nm.year + ')' : '') : x.to, ser = nm ? nm.kind === 'series' : x.series;
         if (x.extra) return '<li>' + (now ? '<b>Now:</b> ' : '') + esc(x.extra.replace(/\.[a-z0-9]{2,4}$/i, '')) + '<span class="when">Extra for ' + esc(to) + ', into its Other folder · from ' + esc(x.from) + (x.gb ? ' · ' + x.gb + ' GB' : '') + '</span><span class="cvba">' + esc(x.file) + '</span>' +
-          (now || !i ? '' : '<span class="state" style="margin-top:6px"><button class="btn" type="button" data-ffirst="' + esc(x.k) + '" data-n="' + esc(x.extra) + '">Do next</button></span>') + '</li>';   // (a film's extra: John, 16 Nov 2026)
+          '<span class="state" style="margin-top:6px">' + (now || !i ? '' : '<button class="btn" type="button" data-ffirst="' + esc(x.k) + '" data-n="' + esc(x.extra) + '">Do next</button>') + '<button class="btn" type="button" data-fcancel="' + esc(x.k || x.file) + '" data-ffile="' + esc(x.file || '') + '" data-n="' + esc(x.extra || to) + '" data-now="' + (now ? 1 : '') + '">' + (now ? 'Cancel this download' : 'Cancel') + '</button>' + '</span></li>';   // (a film's extra: John, 16 Nov 2026)
         return '<li>' + (now ? '<b>Now:</b> ' : '') + esc(to) + '<span class="when">' + (ser ? 'Series' + (x.eps && x.eps[0] ? ' · ' + (x.eps.length > 1 ? x.eps.length + ' episodes' : x.eps[0]) : x.ep ? ' · ' + x.ep : '') + ' · ' : '') + 'from ' + esc(x.from) + ' · ' + (x.gb || (x.size ? (x.size / 1e9).toFixed(1) : '?')) + ' GB' +
           (nm ? ' · <b>named by you</b>' : x.tmdb ? ' · as on TMDB' : x.tmdb === false ? ' · <b style="color:#f08a4b">not found on TMDB: Name it</b>' : x.noyear ? ' · <b style="color:#f08a4b">no year: Name it</b>' : '') + (x.noroom ? ' · <b style="color:#f08a4b">no room for it</b>' : '') + '</span><span class="cvba">' + esc(x.file) + '</span>' +
-          (now ? '' : '<span class="state" style="margin-top:6px">' + (i ? '<button class="btn" type="button" data-ffirst="' + esc(x.k) + '" data-n="' + esc(to) + '">Do next</button>' : '') +
+          (now ? '<span class="state" style="margin-top:6px">' + '<button class="btn" type="button" data-fcancel="' + esc(x.k || x.file) + '" data-ffile="' + esc(x.file || '') + '" data-n="' + esc(x.extra || to) + '" data-now="' + (now ? 1 : '') + '">' + (now ? 'Cancel this download' : 'Cancel') + '</button>' + '</span>' : '<span class="state" style="margin-top:6px">' + '<button class="btn" type="button" data-fcancel="' + esc(x.k || x.file) + '" data-ffile="' + esc(x.file || '') + '" data-n="' + esc(x.extra || to) + '" data-now="' + (now ? 1 : '') + '">' + (now ? 'Cancel this download' : 'Cancel') + '</button>' + (i ? '<button class="btn" type="button" data-ffirst="' + esc(x.k) + '" data-n="' + esc(to) + '">Do next</button>' : '') +
             '<button class="btn" type="button" data-fname="' + esc(x.k) + '" data-q="' + esc(to.replace(/\s*\(\d{4}\)$/, '')) + '" data-y="' + esc((to.match(/\((\d{4})\)$/) || [])[1] || '') + '" data-s="' + (ser ? 1 : '') + '">Name it</button>' +
             (nm ? '<button class="btn" type="button" data-funname="' + esc(x.k) + '">Its own name</button>' : '') + '</span><div class="fnm" data-for="' + esc(x.k) + '"></div>') + '</li>'; };
-      $('#ftabs').innerHTML = [['next', 'Next', G.length + (n ? 1 : 0)], ['came', 'Came', rc.length]]
+      var CXL = f.cancelled || [];
+      $('#ftabs').innerHTML = [['next', 'Next', G.length + (n ? 1 : 0)], ['came', 'Came', rc.length]].concat(CXL.length ? [['cx', 'Cancelled', CXL.length]] : [])
         .map(function (t) { return '<button type="button" data-ft="' + t[0] + '" aria-pressed="' + (tab === t[0]) + '">' + t[1] + ' ' + t[2] + '</button>'; }).join('');
       Array.prototype.forEach.call(document.querySelectorAll('[data-ft]'), function (b) { b.onclick = function () { fetching.naming = 0; fetching.tab = b.dataset.ft; fetching.last && fetching.draw(fetching.last); }; });
       if (fetching.naming && tab === 'next') { clearTimeout(fetching.t); fetching.t = setTimeout(fetching, 30000); return; }   // (not redrawn while a name is being found)
       $('#flist').innerHTML = tab === 'next' ? ((n ? it(n, true) : '') + G.map(function (x, i) { return it(x, false, i); }).join('') || '<li>Nothing waiting.</li>') :
+        tab === 'cx' ? CXL.map(function (x) { return '<li>' + esc(x.to || x.key) + '<span class="when">cancelled ' + esc(when(x.at * 1000)) + ': left where it is, never fetched</span><span class="cvba">' + esc(x.key) + '</span><span class="state" style="margin-top:6px"><button class="btn" type="button" data-funcancel="' + esc(x.key) + '" data-n="' + esc(x.to || x.key) + '">Fetch it after all</button></span></li>'; }).join('') || '<li>None.</li>' :
         rc.map(function (x) { return '<li>' + FL(x.to) + '<span class="when">' + esc(when(x.at * 1000)) + ' · from ' + esc(x.from) + ' · ' + x.gb + ' GB' +
           (x.ok ? '' : ' · <b style="color:#f08a4b">didn’t come</b>') + (x.why ? ' · ' + esc(x.why) : '') + '</span></li>'; }).join('') || '<li>None yet.</li>';
       var fpost = function (body) { return fetch(GW + '/api/fetching', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'The Mac mini didn’t answer.'); return j; }); }); };
@@ -1262,6 +1264,16 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         box.querySelector('.fgo').onclick = go; box.querySelector('.fx').onclick = function () { box.innerHTML = ''; fetching.naming = 0; };
         box.querySelector('.fq').onkeydown = box.querySelector('.fy').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); go(); } };
         go();
+      }; });
+      // (cancelled: never fetched; the one coming in now stopped and its part thrown away: John, 17 Nov 2026, "I need to be able to cancel downloads")
+      Array.prototype.forEach.call(document.querySelectorAll('[data-fcancel]'), function (b) { b.onclick = function () {
+        if (!confirm('Cancel ' + b.dataset.n + '?' + (b.dataset.now ? ' It stops now, and what has come so far is thrown away.' : '') + ' It stays in TorBox or Google Drive, and isn’t fetched unless you bring it back (Cancelled).')) return;
+        b.disabled = true;
+        fpost({ op: 'cancel', key: b.dataset.fcancel, file: b.dataset.ffile, name: b.dataset.n }).then(function () { toast(b.dataset.n + ': cancelled'); fetching(); }).catch(function (e) { b.disabled = false; toast(e.message); });
+      }; });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-funcancel]'), function (b) { b.onclick = function () {
+        b.disabled = true;
+        fpost({ op: 'uncancel', key: b.dataset.funcancel }).then(function () { toast(b.dataset.n + ': back in the list, fetched in its turn'); fetching(); }).catch(function (e) { b.disabled = false; toast(e.message); });
       }; });
       Array.prototype.forEach.call(document.querySelectorAll('[data-ffirst]'), function (b) { b.onclick = function () {
         b.disabled = true;
