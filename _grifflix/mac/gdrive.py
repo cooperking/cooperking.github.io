@@ -371,7 +371,77 @@ STATUS = os.path.join(HOME, 'fetch-status.json')
 FIRST = os.path.join(HOME, 'fetch-first.json')   # (John's: the downloads he wants next, from the admin page: John, 15 Nov 2026, "Can I prioritise what's coming in next from torbox?")
 
 
+TORBOX = os.path.join(HOME, 'torbox.json')   # (John's TorBox key, from the admin page, and whether to delete what's come: never shown again)
+GOT = os.path.join(HOME, 'fetched-ok.json')   # (what came whole from TorBox, by its key: a TorBox download is deleted once all of it has come)
 CANCEL = os.path.join(HOME, 'fetch-cancelled.json')   # (John's: downloads he doesn't want, from the admin page, never fetched: John, 17 Nov 2026, "I need to be able to cancel downloads")
+
+
+def got_ok(key=None):
+    """What came whole from TorBox; with a key, that one added."""
+    try:
+        g_ = json.load(open(GOT))
+    except (OSError, ValueError):
+        g_ = {}
+    if key:
+        g_[key] = int(time.time())
+        try:
+            json.dump(g_, open(GOT + '.tmp', 'w'))
+            os.replace(GOT + '.tmp', GOT)
+        except OSError:
+            pass
+    return g_
+
+
+def torbox_tidy(listing):
+    """Each TorBox download whose films and extras have all come whole into Grifflix, deleted from TorBox through its own API (its WebDAV
+    is read-only), when John has switched it on (John, 17 Nov 2026: "can films be deleted from torbox automatically when downloaded?").
+    One whose film was already in Grifflix, or was cancelled, or didn't come, is left."""
+    try:
+        conf = json.load(open(TORBOX))
+    except (OSError, ValueError):
+        return
+    if not (conf.get('auto') and conf.get('key')):
+        return
+    tops = {}
+    for f in listing:
+        tops.setdefault(f['Path'].split('/')[0], []).append('torbox:%s|%d' % (f['Path'], max(0, int(f.get('Size') or 0))))
+    have = got_ok()
+    ready = [t for t, ks in tops.items() if ks and all(k in have for k in ks)]
+    if not ready:
+        return
+    api = 'https://api.torbox.app/v1/api'
+    hd = {'Authorization': 'Bearer ' + conf['key'], 'User-Agent': 'Grifflix', 'Content-Type': 'application/json'}
+    def call(path, body=None):
+        req = urllib.request.Request(api + path, data=json.dumps(body).encode() if body is not None else None, headers=hd, method='POST' if body is not None else 'GET')
+        return json.loads(urllib.request.urlopen(req, timeout=60, context=_ctx()).read() or b'{}')
+    gone = []
+    for kind, idk, ctl in (('torrents', 'torrent_id', 'controltorrent'), ('usenet', 'usenet_id', 'controlusenetdownload'), ('webdl', 'webdl_id', 'controlwebdownload')):
+        try:
+            mine = call('/%s/mylist?bypass_cache=true' % kind).get('data') or []
+        except Exception as e:
+            log('TorBox: couldn’t list its %s (%s)' % (kind, str(e)[:120]))
+            continue
+        for it in mine if isinstance(mine, list) else []:
+            names = {str(it.get('name') or '')} | {str(x.get('name') or '').split('/')[0] for x in it.get('files') or []}
+            t = next((t for t in ready if t in names), None)
+            if not t or t in gone:
+                continue
+            try:
+                r = call('/%s/%s' % (kind, ctl), {idk: it.get('id'), 'operation': 'delete'})
+                if r.get('success') is False:
+                    raise RuntimeError(r.get('detail') or r.get('error') or 'refused')
+                gone.append(t)
+                log('TorBox: deleted %s (all of it is in Grifflix)' % t)
+            except Exception as e:
+                log('TorBox: couldn’t delete %s (%s)' % (t, str(e)[:160]))
+
+
+def _ctx():
+    try:
+        import certifi, ssl
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        return None
 
 
 def cancelled():
@@ -488,6 +558,7 @@ def _run(check):
                     except OSError:
                         pass
     done, plan, trouble = 0, [], []
+    TBL = []
     CX = cancelled()
     for src in SOURCES:
         if src['remote'] not in have:
@@ -500,6 +571,8 @@ def _run(check):
             trouble.append('Couldn’t look in %s: %s' % (src['name'], str(e)[-200:]))   # (shown on the admin page, not "nothing waiting")
             continue
         films = [x for x in items if x['Path'].lower().endswith(VIDEO) and 'sample' not in x['Name'].lower()]
+        if src['remote'] == 'torbox':
+            TBL[:] = films
         subs = [x for x in items if x['Path'].lower().endswith('.srt')]
         xs = [f for f in films if extra_of(f['Path'])]
         films = [f for f in films if not extra_of(f['Path'])]
@@ -655,6 +728,8 @@ def _run(check):
             os.remove(part)
             continue
         os.replace(part, dest)
+        if src['remote'] == 'torbox':
+            got_ok(key)
         if p.get('extra'):   # (an extra: nothing more to do, the media server finds it in Other)
             seen[key] = int(time.time())
             log('  done: %s in %s/Other' % (p['extra'], title))
@@ -723,6 +798,11 @@ def _run(check):
         os.replace(tmp, SEEN)
     except OSError:
         pass
+    if not check and TBL:
+        try:
+            torbox_tidy(TBL)
+        except Exception as e:
+            log('TorBox: tidying up didn’t work (%s)' % str(e)[:160])
     if done:
         log('%d film(s) fetched: Grifflix shows them within about 20 minutes' % done)
     elif check and sys.stdout.isatty():
