@@ -989,10 +989,16 @@ def make_handler(g):
                 J = g.export_job
                 with g.plays_lock:
                     if J.get('state') == 'done':   # (kept until it's taken, never thrown away: the Mac counts what it made as sent)
+                        # (and kept ten minutes more once given, so a big list lost on its way, the link broken, can be asked for again:
+                        # John, 17 Nov 2026, Update everything stuck at "listing the films… (9 s)" with 619 films changed)
                         code, body = J['code'], J['body']
-                        g.export_job = {}
-                        return self.send_json(code, body)
-                    if J.get('state') != 'making':
+                        if not J.get('given'):
+                            J['given'] = time.time()
+                        elif time.time() - J['given'] > 600:
+                            g.export_job = J = {}
+                        if J:
+                            return self.send_json(code, body)
+                    if J.get('state') not in ('making', 'done'):
                         g.export_job = J = {'state': 'making', 'at': time.time()}
                         H = type(self)
                         class Cap:   # (the export run on its own: what it would have sent kept; its other helpers, as they are)

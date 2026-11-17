@@ -913,8 +913,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     // than the 100 seconds the link to it waits, and this said the Mac wasn't answering: John, 12 Nov 2026)
     var t0 = Date.now(), misses = 0;
     var ask = function () {
-      return fetch(GW + '/api/export?bg=1' + (full ? '&full=1' : ''), { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) {
+      // (a time limit on each ask, the list itself included: a big one lost on the way left it waiting for ever: John, 17 Nov 2026, "the 9 s
+      // update seems to be stuck"; the Mac keeps the list ten minutes, so asking again gets it)
+      var ac = window.AbortController ? new AbortController() : null, tmo = setTimeout(function () { if (ac) ac.abort(); }, 180000);
+      return fetch(GW + '/api/export?bg=1' + (full ? '&full=1' : ''), { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store', signal: ac ? ac.signal : undefined }).then(function (r) {
         misses = 0;
+        if (r.status === 200) say('Bringing the films over from the Mac…');
         if (r.status === 404) throw new Error('The Mac mini needs its update first.');
         if (r.status === 202) {
           if (Date.now() - t0 > 20 * 60000) throw new Error('The Mac is still listing the films: try again in a few minutes.');
@@ -922,8 +926,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           return new Promise(function (ok) { setTimeout(ok, 4000); }).then(ask);
         }
         if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.error || 'The Mac mini said ' + r.status); });
-        return r.text();
-      }, function () {
+        return r.text().then(function (t) { clearTimeout(tmo); return t; });
+      }).then(function (t) { clearTimeout(tmo); return t; }, function (e) {
+        clearTimeout(tmo); if (e && e.message && !/abort|network|fetch|load/i.test(e.message)) throw e;
+        say('The list didn’t come through: asking again…');
         if (++misses > 3) throw new Error('The Mac mini isn’t answering: is it on?');
         return new Promise(function (ok) { setTimeout(ok, 5000); }).then(ask);   // (a slow answer or a moment's restart: asked again)
       });
