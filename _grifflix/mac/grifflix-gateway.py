@@ -1073,14 +1073,19 @@ def make_handler(g):
                     if True:   # (Criterion's spine numbers, kept apart from each film's remembered details, so they're always current; a series' too)
                         # (and Criterion's own director and country for it, for the Criterion pages' filters: John, 17 Nov 2026, "I would like
                         # all the same filters available to me on the criterion page in my collection too")
-                        CL, TG = {}, {}
-                        for k_, v_ in ((load(os.path.expanduser('~/Grifflix/criterion-tags.json'), {}) or {}).get('tags') or {}).items():
+                        CL, TG, TS = {}, {}, {}
+                        ctj_ = load(os.path.expanduser('~/Grifflix/criterion-tags.json'), {}) or {}
+                        for k_, v_ in (ctj_.get('tags') or {}).items():
                             for sl_ in v_:
                                 TG.setdefault(sl_, []).append(k_)
+                        for k_, v_ in (ctj_.get('sets') or {}).items():   # (the box set each film is in, Collector's Sets: John, 17 Nov 2026)
+                            for sl_ in v_:
+                                TS.setdefault(sl_, []).append(k_)
                         CT = {}   # (and by title and year, for the films with no spine number: Criterion Premieres, Eclipse and the rest, which had no
                         # Criterion labels at all: John, 17 Nov 2026, "the filter on criterion is saying there are no criterion premieres or eclipse")
                         for f_ in load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or []:
-                            v_ = (str(f_.get('director') or '')[:160], str(f_.get('country') or '')[:60], TG.get(str(f_.get('link') or '').replace('https://www.criterion.com/films/', ''), []))
+                            sl_ = str(f_.get('link') or '').replace('https://www.criterion.com/films/', '')
+                            v_ = (str(f_.get('director') or '')[:160], str(f_.get('country') or '')[:60], TG.get(sl_, []), TS.get(sl_, []))
                             if str(f_.get('spine') or '').isdigit():
                                 CL.setdefault(int(f_['spine']), v_)
                             if re.match(r'^\d{4}$', str(f_.get('year') or '')):
@@ -1089,14 +1094,14 @@ def make_handler(g):
                             if i['Id'] in items:
                                 sp = spine_of(i.get('Path'), key == 'tv')
                                 o_ = items[i['Id']]
-                                for k_ in ('spine', 'cdir', 'ccty', 'ctags'):
+                                for k_ in ('spine', 'cdir', 'ccty', 'ctags', 'cset'):
                                     o_.pop(k_, None)
                                 if sp:
                                     o_['spine'] = sp
-                                d_, c_, t_ = CL.get(int(sp), ('', '', [])) if sp and str(sp).isdigit() else ('', '', [])
+                                d_, c_, t_, s_ = CL.get(int(sp), ('', '', [], [])) if sp and str(sp).isdigit() else ('', '', [], [])
                                 if not (d_ or t_) and key == 'movies':
                                     y_ = i.get('ProductionYear') or 0
-                                    d_, c_, t_ = next((CT[(fold(i.get('Name')), y_ + dy)] for dy in (0, 1, -1) if (fold(i.get('Name')), y_ + dy) in CT), ('', '', []))
+                                    d_, c_, t_, s_ = next((CT[(fold(i.get('Name')), y_ + dy)] for dy in (0, 1, -1) if (fold(i.get('Name')), y_ + dy) in CT), ('', '', [], []))
                                 if True:
                                     if d_:
                                         o_['cdir'] = d_
@@ -1104,6 +1109,8 @@ def make_handler(g):
                                         o_['ccty'] = c_
                                     if t_:
                                         o_['ctags'] = t_
+                                    if s_:
+                                        o_['cset'] = s_
                     lists[key] = [i['Id'] for i in raw if i['Id'] in items]
                     if key == 'movies':
                         self.extras(raw, items, lists)
@@ -2351,10 +2358,11 @@ def make_handler(g):
                 return self.send_json(200, syn_state())
             if b and isinstance(b.get('tags'), dict) and isinstance(b['tags'].get('tags'), dict):   # (Criterion's genres and categories, read by John's browser)
                 T = {str(k)[:60]: [str(x)[:160] for x in (v or []) if re.match(r'^[\w-]{3,160}$', str(x))][:3000] for k, v in b['tags']['tags'].items() if isinstance(v, list)}
-                save(os.path.join(home, 'criterion-tags.json'), {'tags': T, 'missing': [str(x)[:120] for x in (b['tags'].get('missing') or [])][:40],
+                SE = {str(k)[:160]: [str(x)[:160] for x in (v or []) if re.match(r'^[\w-]{3,160}$', str(x))][:200] for k, v in (b['tags'].get('sets') or {}).items() if isinstance(v, list)}   # (each box set's films: John, 17 Nov 2026)
+                save(os.path.join(home, 'criterion-tags.json'), {'tags': T, 'sets': SE, 'missing': [str(x)[:120] for x in (b['tags'].get('missing') or [])][:40],
                                                                  'debug': {str(k)[:60]: str(v)[:300] for k, v in (b['tags'].get('debug') or {}).items()}, 'at': int(time.time())})
                 n = sum(len(v) for v in T.values())
-                log('Criterion genres: %d kinds, %d films in them, from John’s browser' % (len(T), n))
+                log('Criterion genres: %d kinds, %d films in them, %d box sets, from John’s browser' % (len(T), n, len(SE)))
                 threading.Thread(target=give_genres, args=(g,), daemon=True).start()
                 return self.send_json(200, {'tagsLog': '%d of Criterion’s genres and categories kept (%d films in them)%s. The site has them in a minute or two.' % (
                     len(T), n, '; not found: ' + ', '.join(b['tags'].get('missing') or []) if b['tags'].get('missing') else '')})
