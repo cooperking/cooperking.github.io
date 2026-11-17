@@ -19,7 +19,7 @@ media server and the site then pick it up by themselves.
 
 It uses rclone 1.63.1 (the last version that runs on macOS 10.13), kept in ~/Grifflix with its own settings.
 """
-import json, os, re, shutil, subprocess, sys, time, urllib.request, zipfile
+import json, os, re, shutil, subprocess, sys, time, urllib.parse, urllib.request, zipfile
 
 HOME = os.path.expanduser('~/Grifflix')
 APP = os.environ.get('GRIFFLIX_DIR') or os.path.expanduser('~/Library/Application Support/Grifflix')
@@ -373,7 +373,8 @@ FIRST = os.path.join(HOME, 'fetch-first.json')   # (John's: the downloads he wan
 
 TORBOX = os.path.join(HOME, 'torbox.json')   # (John's TorBox key, from the admin page, and whether to delete what's come: never shown again)
 GOT = os.path.join(HOME, 'fetched-ok.json')   # (what came whole from TorBox, by its key: a TorBox download is deleted once all of it has come)
-CANCEL = os.path.join(HOME, 'fetch-cancelled.json')   # (John's: downloads he doesn't want, from the admin page, never fetched: John, 17 Nov 2026, "I need to be able to cancel downloads")
+CANCEL = os.path.join(HOME, 'fetch-cancelled.json')
+UPGRADE = os.path.join(HOME, 'fetch-upgrades.json')   # (John's choice for a download of a film already here: replace it with this, or ignore it)   # (John's: downloads he doesn't want, from the admin page, never fetched: John, 17 Nov 2026, "I need to be able to cancel downloads")
 
 
 def got_ok(key=None):
@@ -444,6 +445,71 @@ def _ctx():
         return None
 
 
+def upgrades():
+    try:
+        return json.load(open(UPGRADE)) or {}
+    except (OSError, ValueError):
+        return {}
+
+
+def jf(method, path, **q):
+    """The media server, as the Mac's other scripts ask it."""
+    st_ = json.load(open(os.path.join(APP, 'settings.json')))
+    url = st_.get('jellyfin', 'http://127.0.0.1:8096') + path + ('?' + urllib.parse.urlencode(q) if q else '')
+    req = urllib.request.Request(url, method=method, data=b'' if method == 'POST' else None,
+                                 headers={'Authorization': 'MediaBrowser Token="%s"' % st_['jf_token'], 'Content-Type': 'application/json'})
+    raw = urllib.request.urlopen(req, timeout=120).read()
+    return (json.loads(raw) if raw[:1] in (b'{', b'[') else None), st_
+
+
+def replace_film(old, new_part, ext, root, title):
+    """A better copy put in place of the film already here (John, 17 Nov 2026: "what happens if I download a better version of a film that's
+    already there?" ... "yes, that's important"): the old file to Grifflix Originals, as the converter does; the new one beside it, by the old
+    one's name. If its name is the same, the media server keeps the same film; if not (another kind of file), the converter's follow-up moves
+    its collections, calendar days, lists and progress over to it once the media server has it. Returns where it was put, and where the old
+    one was kept."""
+    new = os.path.splitext(old)[0] + ext
+    old_id = sets_ = added = None
+    if new != old:
+        try:
+            r, st_ = jf('GET', '/Items', Recursive='true', IncludeItemTypes='Movie', Fields='Path,DateCreated', SearchTerm=re.sub(r'\s*\(\d{4}\)$', '', title)[:60])
+            it = next((x for x in (r or {}).get('Items', []) if (x.get('Path') or '') == old), None)
+            if it:
+                old_id, added = it['Id'], it.get('DateCreated')
+                bs, _ = jf('GET', '/Items', Recursive='true', IncludeItemTypes='BoxSet')
+                sets_ = []
+                for b_ in (bs or {}).get('Items', []):
+                    kids, _ = jf('GET', '/Items', ParentId=b_['Id'])
+                    if any(k.get('Id') == old_id for k in (kids or {}).get('Items', [])):
+                        sets_.append(b_['Id'])
+        except Exception as e:
+            log('  (couldn’t ask the media server about the film it replaces: %s)' % str(e)[:120])
+    keep_at = os.path.join(os.path.dirname(root.rstrip('/')), 'Grifflix Originals', os.path.basename(root.rstrip('/')), os.path.relpath(old, root))
+    os.makedirs(os.path.dirname(keep_at), exist_ok=True)
+    if os.path.exists(keep_at):
+        keep_at = os.path.splitext(keep_at)[0] + time.strftime(' (replaced %Y-%m-%d %H%M)') + os.path.splitext(keep_at)[1]
+    shutil.move(old, keep_at)
+    os.replace(new_part, new)
+    if old_id:   # (for the converter's follow-up: everything that was the old film's, moved to the new one once the media server has it)
+        try:
+            ra = os.path.join(HOME, 'remap-add.json')
+            cur = json.load(open(ra)) if os.path.exists(ra) else {}
+            cur[old_id] = {'to': new, 'sets': sets_ or [], 'added': added}
+            json.dump(cur, open(ra + '.tmp', 'w'))
+            os.replace(ra + '.tmp', ra)
+        except (OSError, ValueError) as e:
+            log('  (couldn’t note it for the follow-up: %s)' % e)
+    try:
+        st_ = json.load(open(os.path.join(APP, 'settings.json')))
+        req = urllib.request.Request(st_.get('jellyfin', 'http://127.0.0.1:8096') + '/Library/Media/Updated', method='POST',
+                                     data=json.dumps({'Updates': [{'Path': old, 'UpdateType': 'Deleted'}, {'Path': new, 'UpdateType': 'Created' if new != old else 'Modified'}]}).encode(),
+                                     headers={'Authorization': 'MediaBrowser Token="%s"' % st_['jf_token'], 'Content-Type': 'application/json'})
+        urllib.request.urlopen(req, timeout=60).read()
+    except Exception:
+        pass
+    return new, keep_at
+
+
 def cancelled():
     try:
         return set(str(x) for x in json.load(open(CANCEL)))
@@ -490,7 +556,7 @@ def status(**kw):
 
 def wait_entry(p):
     return {'from': p['src']['name'], 'file': p['path'], 'key': p['nkey'], 'to': p['title'], 'gb': round(p['size'] / 1e9, 1), 'noyear': not p['year'],
-            'series': p['series'], 'ep': p['ep'], 'named': p['named'], 'tmdb': p.get('tmdb'), 'extra': p.get('extra')}
+            'series': p['series'], 'ep': p['ep'], 'named': p['named'], 'tmdb': p.get('tmdb'), 'extra': p.get('extra'), 'replace': bool(p.get('replace'))}
 
 
 def conv_running():
@@ -557,8 +623,19 @@ def _run(check):
                         os.rmdir(dp)
                     except OSError:
                         pass
+    mk = os.path.join(HOME, 'upgrades-offered.done')   # (once: downloads left before, because their film was already here, offered too)
+    if not check and not os.path.exists(mk):
+        try:
+            left = set(re.findall(r'Left in TorBox: (.*?) \("', open(LOG, encoding='utf-8', errors='replace').read()))
+            n0 = len(seen)
+            seen = {k: v for k, v in seen.items() if not (k.startswith('torbox:') and k[7:].rsplit('|', 1)[0] in left)}
+            json.dump(seen, open(SEEN + '.tmp', 'w'))
+            os.replace(SEEN + '.tmp', SEEN)
+            open(mk, 'w').write('%d looked at again' % (n0 - len(seen)))
+        except OSError:
+            pass
     done, plan, trouble = 0, [], []
-    TBL = []
+    TBL, UPG, UPG_CHOICE = [], [], upgrades()
     CX = cancelled()
     for src in SOURCES:
         if src['remote'] not in have:
@@ -639,24 +716,40 @@ def _run(check):
             else:
                 dest_dir = os.path.join(root, title)
                 dest = os.path.join(dest_dir, title + ext)
+            replace = None
             if (os.path.exists(dest) if series or xf is not None else os.path.isdir(dest_dir) and any(n.lower().endswith(VIDEO) for n in os.listdir(dest_dir))):
-                if key not in seen:
-                    log('Left in %s: %s ("%s" is already in Grifflix)' % (src['name'], path, title))
-                    if not check:
-                        seen[key] = int(time.time())
-                continue
+                # (a film already here: shown on the admin page beside the one here, to replace it with this or ignore it; a series' episode or an
+                # extra already here is left, as before)
+                if series or xf is not None or src['delete']:
+                    if key not in seen:
+                        log('Left in %s: %s ("%s" is already in Grifflix)' % (src['name'], path, title))
+                        if not check:
+                            seen[key] = int(time.time())
+                    continue
+                d_ = UPG_CHOICE.get(key)
+                if d_ == 'ignore':
+                    seen[key] = int(time.time())
+                    continue
+                vids = sorted((os.path.join(dest_dir, n) for n in os.listdir(dest_dir) if n.lower().endswith(VIDEO) and not n.startswith('._')), key=lambda x: -os.path.getsize(x))
+                if not vids:
+                    continue
+                if d_ != 'replace':
+                    UPG.append({'key': key, 'from': src['name'], 'file': path, 'to': title, 'gb': round(size / 1e9, 1),
+                                'have': os.path.basename(vids[0]), 'have_gb': round(os.path.getsize(vids[0]) / 1e9, 1)})
+                    continue
+                replace = vids[0]
             if check and (os.path.exists(dest + '.adding') or os.path.exists(dest + '.adding.d')):
                 continue   # (coming in now)
             plan.append(dict(src=src, loc=loc, path=path, size=size, key=key, folder=folder, title=title, year=year, ext=ext,
                              dest_dir=dest_dir, dest=dest, name=f['Name'], subs=subs, series=series, nkey=nkey, named=bool(mine), extra=f.get('xname'),
-                             ep='S%02dE%02d' % (int(m.group(1)), int(m.group(2))) if m else '', tmdb=bool(tm) or bool(mine)))
+                             ep='S%02dE%02d' % (int(m.group(1)), int(m.group(2))) if m else '', tmdb=bool(tm) or bool(mine), replace=replace))
     try:
         json.dump(TC, open(TMDBC, 'w'))
     except OSError:
         pass
     plan = in_order(plan)
     free0 = shutil.disk_usage(root).free
-    status(checked=int(time.time()), trouble=trouble, waiting=[dict(wait_entry(p), noroom=free0 < p['size'] + 20e9) for p in plan], **({} if check else {'now': None}))
+    status(checked=int(time.time()), trouble=trouble, upgrades=UPG, waiting=[dict(wait_entry(p), noroom=free0 < p['size'] + 20e9) for p in plan], **({} if check else {'now': None}))
     while plan:
         try:   # (a newer version since this fetch began: finish here, between films, and start again as it; never a download thrown
                # away part way: Donnie Darko, 9.4 GB, began again after Update everything: John, 15 Nov 2026, "Downloads seem to have slowed")
@@ -686,7 +779,7 @@ def _run(check):
             if not (os.path.isdir(dest_dir) and any(n.lower().endswith(VIDEO) for n in os.listdir(dest_dir))):
                 log('  %s: waiting for %s itself to come first' % (p['extra'], title))
                 continue
-        elif (os.path.exists(dest) if p['series'] else os.path.isdir(dest_dir) and any(n.lower().endswith(VIDEO) for n in os.listdir(dest_dir))):
+        elif not p.get('replace') and (os.path.exists(dest) if p['series'] else os.path.isdir(dest_dir) and any(n.lower().endswith(VIDEO) for n in os.listdir(dest_dir))):
             continue   # (the same film twice: from both places)
         try:   # (another fetch writing it this minute: left to that one)
             if time.time() - max(os.path.getmtime(x) for x in (dest + '.adding', dest + '.adding.d') if os.path.exists(x)) < 300:
@@ -727,7 +820,22 @@ def _run(check):
             came(False, 'the copy wasn’t whole: left in %s' % src['name'])
             os.remove(part)
             continue
-        os.replace(part, dest)
+        if p.get('replace') and os.path.exists(p['replace']):   # (a better copy: in place of the one here)
+            try:
+                dest, kept = replace_film(p['replace'], part, ext, root, title)
+                log('  replaced %s with this copy (the old one is in %s)' % (title, os.path.dirname(kept)))
+                u_ = upgrades(); u_.pop(key, None)
+                json.dump(u_, open(UPGRADE, 'w'))
+            except Exception as e:
+                log('  couldn’t put it in place of the one here (%s): left as it was' % e)
+                came(False, 'couldn’t replace the one here')
+                try:
+                    os.remove(part)
+                except OSError:
+                    pass
+                continue
+        else:
+            os.replace(part, dest)
         if src['remote'] == 'torbox':
             got_ok(key)
         if p.get('extra'):   # (an extra: nothing more to do, the media server finds it in Other)

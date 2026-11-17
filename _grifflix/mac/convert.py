@@ -671,6 +671,14 @@ def sets_holding(iid):
 def follow_up(st):
     """Films with a new file name: once Jellyfin has them as new items, put them back in their collections, and move
     calendars, lists and progress over to them."""
+    ra = os.path.join(HOME, 'remap-add.json')   # (films a better download replaced (gdrive.py), with a new file name: followed the same way)
+    if os.path.exists(ra):
+        try:
+            st.setdefault('remap', {}).update(json.load(open(ra)) or {})
+            save_state(st)
+            os.remove(ra)
+        except (OSError, ValueError):
+            pass
     if not st['remap']:
         return
     by_path = {}
