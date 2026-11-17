@@ -1532,9 +1532,18 @@ def make_handler(g):
                         # several pieces makes its file nearly full size at once, and House Party said 75% for hours with nothing coming: John,
                         # 17 Nov 2026, "there's no point in it saying 75% if it's not true")
                         x_ = os.stat(f_)
-                        got = max(got, min(x_.st_size, x_.st_blocks * 512) if getattr(x_, 'st_blocks', 0) else x_.st_size)
+                        got = max(got, x_.st_size)
                     except OSError:
                         pass
+                try:   # (rclone's own count of what has come, from its log: several streams make the file nearly whole at once)
+                    with open(part + '.rlog', 'rb') as rf_:
+                        rf_.seek(0, 2); rf_.seek(max(0, rf_.tell() - 16384))
+                        for line_ in reversed(rf_.read().decode('utf-8', 'replace').splitlines()):
+                            if '"stats"' in line_:
+                                got = int(json.loads(line_)['stats'].get('bytes') or 0)
+                                break
+                except (OSError, ValueError, KeyError, TypeError):
+                    pass
                 # (its speed now, over the last minute or so, not since it began; and how long nothing has come, if it's stalled)
                 now_t = time.time(); h = FETCH_SEEN.get(part)
                 if not h or h['got'] > got:
@@ -3843,6 +3852,15 @@ def keep_fetch_unstuck():
                             n += x.st_size
                         except OSError:
                             pass
+            try:
+                with open(part + '.rlog', 'rb') as rf_:
+                    rf_.seek(0, 2); rf_.seek(max(0, rf_.tell() - 16384))
+                    for line_ in reversed(rf_.read().decode('utf-8', 'replace').splitlines()):
+                        if '"stats"' in line_:
+                            n = int(json.loads(line_)['stats'].get('bytes') or 0)
+                            break
+            except (OSError, ValueError, KeyError, TypeError):
+                pass
             if seen.get('part') != part or seen.get('n') != n:
                 seen.update(part=part, n=n, at=time.time())
                 continue
@@ -3906,7 +3924,17 @@ def keep_gdrive():
         try:
             if os.path.exists(script) and os.path.exists(conf):
                 import subprocess
-                r = subprocess.run([sys.executable, script, 'run'], capture_output=True, text=True, timeout=6 * 3600)
+                # (in a session of its own, its output to a file: a restart of the gateway (its updates) no longer stops a download part way, as
+                # it did every time, The Blade six times: John, 17 Nov 2026. If the gateway restarts, the fetch carries on and the new one waits for it)
+                outp = os.path.expanduser('~/Grifflix/gdrive.out')
+                with open(outp, 'w') as of_:
+                    pr_ = subprocess.Popen([sys.executable, script, 'run'], stdout=of_, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True, text=True)
+                    try:
+                        pr_.wait(timeout=6 * 3600)
+                    except subprocess.TimeoutExpired:
+                        pass
+                out_ = open(outp, encoding='utf-8', errors='replace').read()
+                r = type('R', (), {'stdout': out_, 'stderr': out_ if pr_.returncode else '', 'returncode': pr_.returncode or 0})()
                 if load(os.path.expanduser('~/Grifflix/convert-new.json'), []):
                     CONV_NOW.set()
                 for line in (r.stdout or '').splitlines():

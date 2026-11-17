@@ -153,6 +153,21 @@ def tmdb_name(title, year, series):
     return {'name': best[1], 'year': best[2]} if best else None
 
 
+def rlog_bytes(part):
+    """How much rclone has brought so far, from the last count in its log (part + '.rlog'), or None."""
+    try:
+        with open(part + '.rlog', 'rb') as f:
+            f.seek(0, 2)
+            f.seek(max(0, f.tell() - 16384))
+            tail = f.read().decode('utf-8', 'replace').splitlines()
+        for line in reversed(tail):
+            if '"stats"' in line:
+                return int(json.loads(line)['stats'].get('bytes') or 0)
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    return None
+
+
 def fetch(loc, path, part, show=False):
     """One file from TorBox or Google Drive to `part`, as a copy of its folder limited to that one file (by a list, so names with
     [brackets] are taken as they are). Not "copyto" of the file itself: TorBox's WebDAV doesn't answer for a single file, so rclone took
@@ -168,9 +183,15 @@ def fetch(loc, path, part, show=False):
     # Party "stuck on 75% for a while": rclone hung at 17:35 with 13 more behind it)
     args = [RCLONE, '--config', CONF, 'copy', loc(folder) if folder else loc('').rstrip('/'), tmpd, '--files-from', lst, '--retries', '3',
             '--timeout', '2m', '--contimeout', '30s', '--low-level-retries', '10',
-            '--multi-thread-streams', '0']   # (one stream, start to end: the file's size is then what has come, for the admin page and the watchdog)   # (its folder listed, as works, not the one file looked up)
+            # (several streams at once: TorBox gives each only about 7 Mbps, so one stream alone was slow (John, 17 Nov 2026, "Why is downloading
+            # so slow?"). How far it has got is then rclone's own count, in its log beside the file, not the file's size, which several streams
+            # make nearly whole at once (House Party "75%" with nothing coming))
+            '--multi-thread-streams', '16', '--multi-thread-cutoff', '32M', '--buffer-size', '64M', '--use-json-log', '--log-level', 'NOTICE', '--stats', '10s', '--stats-log-level', 'NOTICE', '--log-file', part + '.rlog']   # (its folder listed, as works, not the one file looked up)
 
-    def written():   # (what's on the disk so far: one stream, so the file's size is what has come)
+    def written():   # (what has come so far: rclone's own count, from its log; else what's on the disk)
+        b_ = rlog_bytes(part)
+        if b_ is not None:
+            return b_
         n = 0
         for root_, _, files in os.walk(tmpd):
             for f_ in files:
@@ -207,7 +228,13 @@ def fetch(loc, path, part, show=False):
                     break
             else:
                 time.sleep(.5)
-                return pr.returncode, ('\n'.join(e for e in errs if e) or '').strip()[-400:]
+                said_ = ('\n'.join(e for e in errs if e) or '').strip()
+                if pr.returncode and not said_:
+                    try:
+                        said_ = '\n'.join(json.loads(l_).get('msg', '') for l_ in open(part + '.rlog', encoding='utf-8', errors='replace').read().splitlines()[-6:] if '"error"' in l_ or '"level":"error"' in l_)
+                    except (OSError, ValueError):
+                        pass
+                return pr.returncode, said_[-400:]
         return 1, 'nothing came for 10 minutes, three times over'
     try:
         if show:
@@ -223,10 +250,11 @@ def fetch(loc, path, part, show=False):
             raise RuntimeError('rclone: %s' % (said or 'it stopped (%d)' % r.returncode))
         return said
     finally:
-        try:
-            os.remove(lst)
-        except OSError:
-            pass
+        for x_ in (lst, part + '.rlog'):
+            try:
+                os.remove(x_)
+            except OSError:
+                pass
         shutil.rmtree(tmpd, ignore_errors=True)
 
 
@@ -440,6 +468,25 @@ def _run(check):
         seen = json.load(open(SEEN))
     except (OSError, ValueError):
         seen = {}
+    if not check:   # (what fetches stopped part way left behind, thrown away: this one holds the lock, so none is coming in now. The Blade's
+        # five tries left 30 GB on the G-Drive: John, 17 Nov 2026)
+        for top in [root] + ([R['tvshows']] if R.get('tvshows') else []):
+            for dp, dns, fns in os.walk(top):
+                for d_ in [d_ for d_ in dns if d_.endswith('.adding.d')]:
+                    shutil.rmtree(os.path.join(dp, d_), ignore_errors=True)
+                    dns.remove(d_)
+                    log('  thrown away: a part-download left behind (%s)' % d_[:-len('.adding.d')])
+                for f_ in fns:
+                    if f_.endswith(('.adding', '.adding.list', '.adding.rlog')):
+                        try:
+                            os.remove(os.path.join(dp, f_))
+                        except OSError:
+                            pass
+                if dp != top and not os.listdir(dp) and os.path.dirname(dp) == top:
+                    try:
+                        os.rmdir(dp)
+                    except OSError:
+                        pass
     done, plan, trouble = 0, [], []
     CX = cancelled()
     for src in SOURCES:
