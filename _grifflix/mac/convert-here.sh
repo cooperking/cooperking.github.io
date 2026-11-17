@@ -60,13 +60,17 @@ field() { osascript -l JavaScript -e "var j = JSON.parse($.NSString.stringWithCo
 name=$(field name); src=$(field src); tmp=$(field tmp)
 args=("${(@f)$(osascript -l JavaScript -e "JSON.parse($.NSString.stringWithContentsOfFileEncodingError('$job', 4, null).js).args.join('\n')")}")
 echo "Converting $name on this Mac."
+# (each step told to the Mac mini, so the film's Edit panel says where it's got to, and a stall shows: John, 17 Nov 2026, "it got stuck and I
+# shut the terminal - nothing is happening", "it still says converting")
+stage() { echo "Grifflix: $1"; curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d "{\"stage\":\"$1\"}" "$url/progress" >/dev/null 2>&1; }
 
 # the G-Drive: connected if it isn't (a password box may come up the first time)
 if [[ ! -d /Volumes/G-Drive ]]; then
-  echo "Connecting to the G-Drive…"; open "smb://$MINI/G-Drive"
-  for i in {1..40}; do [[ -d /Volumes/G-Drive ]] && break; sleep 1; done
+  stage "connecting to the G-Drive (a box may ask for the Mac mini's sign-in: it can be behind other windows)"; open "smb://$MINI/G-Drive"
+  for i in {1..120}; do [[ -d /Volumes/G-Drive ]] && break; sleep 1; done
   [[ -d /Volumes/G-Drive ]] || { echo "Couldn't reach the G-Drive."; curl -fsS -X POST -H 'Content-Type: application/json' -d '{"ok":false,"error":"no G-Drive"}' "$url/done" >/dev/null; exit 1; }
 fi
+stage "the G-Drive is connected: starting to convert"
 [[ -f "$src" ]] || { echo "The film isn't where the Mac mini said: $src"; curl -fsS -X POST -H 'Content-Type: application/json' -d '{"ok":false,"error":"not found"}' "$url/done" >/dev/null; exit 1; }
 
 # the plan as the Mac mini made it, -stats for how far it's got, and every few seconds the Mac mini told how far (the film's Edit panel
@@ -77,8 +81,8 @@ prog=$(mktemp)
     [[ "$t" == <-> ]] && curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d "{\"t\":$((t / 1000000)),\"speed\":\"$sp\"}" "$url/progress" >/dev/null 2>&1
   done ) &
 reporter=$!
-trap 'kill $reporter 2>/dev/null; rm -f "$prog"; echo; echo "Stopped."; curl -fsS -X POST -H "Content-Type: application/json" -d "{\"ok\":false,\"error\":\"stopped\"}" "$url/done" >/dev/null; exit 1' INT TERM
-if "$FF" -v error -stats -progress "$prog" "${args[@]}"; then
+trap 'kill $reporter 2>/dev/null; rm -f "$prog"; echo; echo "Stopped."; curl -fsS -X POST -H "Content-Type: application/json" -d "{\"ok\":false,\"error\":\"stopped\"}" "$url/done" >/dev/null; exit 1' INT TERM HUP
+if "$FF" -nostdin -y -v error -stats -progress "$prog" "${args[@]}"; then
   kill $reporter 2>/dev/null; rm -f "$prog"
   echo "Made. The Mac mini is checking it and putting it in place."
   curl -fsS -X POST -H 'Content-Type: application/json' -d '{"ok":true}' "$url/done" >/dev/null && echo "Done: Grifflix shows the new copy within a few minutes. This window can be closed."

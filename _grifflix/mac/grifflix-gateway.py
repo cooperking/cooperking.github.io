@@ -788,6 +788,10 @@ def make_handler(g):
                         convjobs_save()
                         return self.send_json(200, {'name': pl['item'].get('name'), 'src': pl['src'], 'tmp': pl['tmp'], 'dur': pl['dur'], 'args': vt_args(pl['cmd'])})
                     body = self.body()
+                    if len(parts) > 3 and parts[3] == 'progress' and body.get('stage') and 't' not in body:   # (a step on John's Mac, said: John, 17 Nov 2026)
+                        job['stage'], job['seen'] = str(body.get('stage'))[:160], time.time()
+                        convjobs_save()
+                        return self.send_json(200, {'ok': True})
                     if len(parts) > 3 and parts[3] == 'progress':   # (how far John's Mac has got, every few seconds: for the film's Edit panel)
                         job['t'], job['speed'], job['state'], job['seen'] = float(body.get('t') or 0), str(body.get('speed') or '')[:12], 'converting', time.time()
                         if time.time() - job.get('saved', 0) > 30:
@@ -1897,6 +1901,9 @@ def make_handler(g):
                 return self.send_json(400, {'error': 'Which film?'})
             import subprocess
             home = os.path.expanduser('~/Grifflix')
+            cur = load(os.path.join(home, 'convert-now.json'), None) or {}
+            if cur.get('id') == iid and conv_alive(cur):   # (the Mac mini at it already: not both)
+                return self.send_json(409, {'error': 'The Mac mini is converting it itself right now (%s%%): it carries on.' % cur.get('pct', 0)})
             r = subprocess.run([sys.executable, os.path.join(home, 'convert.py'), 'plan', iid], capture_output=True, text=True, timeout=600, cwd=home)
             try:
                 plan = json.loads([l for l in (r.stdout or '').splitlines() if l.startswith('{')][-1])
@@ -1957,9 +1964,14 @@ def make_handler(g):
                     save(os.path.join(home, 'convert-claims.json'), claims)
                 log('Not started on John’s Mac: %s (set up %s)' % (j['plan']['item'].get('name'), time.strftime('%d %b %H:%M', time.localtime(j['at']))))
                 convjobs_save()
-            if j.get('state') == 'converting' and time.time() - (j.get('seen') or j['at']) > 600:   # (no word from it for ten minutes: stopped, the Mac asleep?)
-                return self.send_json(200, {'state': 'quiet', 't': j.get('t') or 0, 'dur': j['plan'].get('dur') or 0, 'at': j['at'], 'seen': j.get('seen')})
-            return self.send_json(200, {'state': j.get('state') or 'waiting', 't': j.get('t') or 0, 'dur': j['plan'].get('dur') or 0, 'speed': j.get('speed') or '',
+            if (j.get('state') == 'converting' and time.time() - (j.get('seen') or j['at']) > 600) or (j.get('state') == 'started' and time.time() - (j.get('seen') or j['at']) > 180):
+                # (no word from it: stopped, the Mac asleep, or its window waiting on a question; the film the Mac mini's again)
+                home = os.path.expanduser('~/Grifflix')
+                claims = load(os.path.join(home, 'convert-claims.json'), {}) or {}
+                if claims.pop(iid, None) is not None:
+                    save(os.path.join(home, 'convert-claims.json'), claims)
+                return self.send_json(200, {'state': 'quiet', 't': j.get('t') or 0, 'dur': j['plan'].get('dur') or 0, 'at': j['at'], 'seen': j.get('seen'), 'stage': j.get('stage') or ''})
+            return self.send_json(200, {'stage': j.get('stage') or '', 'state': j.get('state') or 'waiting', 't': j.get('t') or 0, 'dur': j['plan'].get('dur') or 0, 'speed': j.get('speed') or '',
                                         'error': j.get('error') or '', 'at': j['at'], 'seen': j.get('seen')})
 
         def api_rename(self, me, user, q, b):
