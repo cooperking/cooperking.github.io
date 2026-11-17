@@ -57,7 +57,7 @@ FF=$( [[ -x "$HOME/bin/ffmpeg" ]] && echo "$HOME/bin/ffmpeg" || command -v ffmpe
 job=$(mktemp); trap 'rm -f "$job"' EXIT
 curl -fsS "$url" -o "$job" || { echo "Grifflix: the Mac mini didn't give the job (press Convert on this Mac again)."; exit 1; }
 field() { osascript -l JavaScript -e "var j = JSON.parse($.NSString.stringWithContentsOfFileEncodingError('$job', 4, null).js); j['$1']"; }
-name=$(field name); src=$(field src); tmp=$(field tmp)
+name=$(field name); src=$(field src); tmp=$(field tmp); dur=$(field dur); dur=${dur%.*}
 args=("${(@f)$(osascript -l JavaScript -e "JSON.parse($.NSString.stringWithContentsOfFileEncodingError('$job', 4, null).js).args.join('\n')")}")
 echo "Converting $name on this Mac."
 # (each step told to the Mac mini, so the film's Edit panel says where it's got to, and a stall shows: John, 17 Nov 2026, "it got stuck and I
@@ -76,8 +76,14 @@ stage "the G-Drive is connected: starting to convert"
 # the plan as the Mac mini made it, -stats for how far it's got, and every few seconds the Mac mini told how far (the film's Edit panel
 # shows it: John, 16 Nov 2026, "I'd like to see the progress"); Ctrl-C stops it and the Mac mini goes back to it later
 prog=$(mktemp)
-( while sleep 4; do
+# (at the end, ffmpeg writes the file over again so it plays from the start at once: minutes over the network, with nothing moving on screen;
+# said so, here and on the admin page: John, 17 Nov 2026, "this seems to have stalled but I can't tell")
+( fin=0; while sleep 4; do
     t=$(grep '^out_time_us=' "$prog" 2>/dev/null | tail -1 | cut -d= -f2); sp=$(grep '^speed=' "$prog" 2>/dev/null | tail -1 | cut -d= -f2 | tr -d ' ')
+    if (( ! fin )) && { grep -q '^progress=end' "$prog" 2>/dev/null || { [[ "$t" == <-> && "$dur" == <-> ]] && (( dur > 0 && t / 1000000 >= dur - 8 )); }; }; then
+      fin=1; echo; echo "Grifflix: the film is converted. Now putting the file together, which copies it over the network once more: a few minutes, with nothing moving here. Leave this window open."
+      curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d '{"stage":"finishing: putting the file together (a few minutes)"}' "$url/progress" >/dev/null 2>&1
+    fi
     [[ "$t" == <-> ]] && curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d "{\"t\":$((t / 1000000)),\"speed\":\"$sp\"}" "$url/progress" >/dev/null 2>&1
   done ) &
 reporter=$!
