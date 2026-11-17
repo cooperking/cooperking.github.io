@@ -1503,6 +1503,21 @@ def make_handler(g):
                     N[key] = {'name': nm, 'year': yr, 'kind': 'series' if b.get('kind') == 'series' else 'movie', 'tmdb': str(b.get('tmdb') or '')}
                 save(fp, N)
                 return self.send_json(200, {'ok': True})
+            if b and b.get('op') == 'upgrade':   # (a download of a film already here: replace the one here with it, or ignore it: John, 17 Nov 2026)
+                fp = os.path.join(home, 'fetch-upgrades.json')
+                U = load(fp, {}) or {}
+                key, ch = str(b.get('key') or '')[:600], str(b.get('choice') or '')
+                if not key or ch not in ('replace', 'ignore', 'undo'):
+                    return self.send_json(400, {'error': 'Which download, and replace or ignore?'})
+                if ch == 'undo':
+                    U.pop(key, None)
+                else:
+                    U[key] = ch
+                save(fp, U)
+                log('Downloads: %s %s' % ({'replace': 'to replace the film here with', 'ignore': 'ignored', 'undo': 'asked again about'}[ch], b.get('name') or key))
+                if ch == 'replace' and not running:
+                    GDRIVE_NOW.set()
+                return self.send_json(200, {'ok': True})
             if b and b.get('op') in ('cancel', 'uncancel'):   # (John's: a download he doesn't want, never fetched; the one coming in now stopped
                 # and its part thrown away: John, 17 Nov 2026, "I need to be able to cancel downloads")
                 fp = os.path.join(home, 'fetch-cancelled.json')
@@ -1593,6 +1608,7 @@ def make_handler(g):
             waiting = [x for x in (st.get('waiting') or []) if not (now and x.get('file') == now.get('file'))]
             return self.send_json(200, {'setup': setup, 'running': running, 'now': now, 'waiting': waiting,
                                         'recent': [x for x in st.get('recent') or [] if x.get('ok')],   # (only what came: John, 15 Nov 2026) 'checked': st.get('checked'), 'next': int(GDRIVE_NEXT[0]) or None, 'error': GDRIVE_ERR[0], 'trouble': st.get('trouble') or [], 'hold': st.get('hold'),
+                                        'upgrades': st.get('upgrades') or [], 'chosen': load(os.path.join(home, 'fetch-upgrades.json'), {}) or {},
                                         'cancelled': [dict(v, key=k) for k, v in (load(os.path.join(home, 'fetch-cancelled-names.json'), {}) or {}).items()],
                                         'first': load(os.path.join(home, 'fetch-first.json'), []) or [], 'names': load(os.path.join(home, 'fetch-names.json'), {}) or {}})
 
