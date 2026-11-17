@@ -1726,11 +1726,17 @@ def make_handler(g):
                 return self.send_json(404, {'error': 'No such collection.'})
             if item and not ok(item):
                 return self.send_json(400, {'error': 'Which film?'})
+            many = [str(x) for x in (b.get('items') or []) if ok(str(x))][:200]   # (several at once, from the collection's own page: John, 16 Nov 2026)
             if op == 'in':
                 held = [s['Id'] for s in sets if any(i['Id'] == item for i in g.items(ParentId=s['Id'], Fields='', EnableImageTypes='').get('Items', []))]   # (10.8 ignores Ids with ParentId: each one's list, checked)
                 return self.send_json(200, {'collections': [{'id': s['Id'], 'name': s['Name']} for s in sets], 'in': held})
-            if op in ('add', 'remove') and cid and item:
-                g.jf.call('POST' if op == 'add' else 'DELETE', '/Collections/%s/Items' % cid, query={'Ids': item})
+            if op in ('add', 'remove') and cid and (item or many):
+                g.jf.call('POST' if op == 'add' else 'DELETE', '/Collections/%s/Items' % cid, query={'Ids': ','.join(many or [item])})
+            elif op == 'describe' and cid:   # (its description, John's own)
+                full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, cid))
+                full['Overview'] = str(b.get('text') or '').strip()[:4000]
+                full['LockedFields'] = sorted(set((full.get('LockedFields') or []) + ['Overview']))
+                g.jf.call('POST', '/Items/%s' % cid, full)
             elif op == 'create':
                 name = re.sub(r'\s+', ' ', str(b.get('name') or '')).strip()[:80]
                 if not name:
@@ -1752,6 +1758,7 @@ def make_handler(g):
             else:
                 return self.send_json(400, {'error': 'What should happen?'})
             g.forget()
+            g.publish_soon = time.time() + 90   # (the site follows by itself)
             self.send_json(200, {'ok': True, 'id': cid})
 
         def api_collection(self, me, user, q, b):
