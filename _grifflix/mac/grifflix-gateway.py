@@ -1955,10 +1955,20 @@ def make_handler(g):
             if not me.get('owner'):
                 return self.send_json(403, {'error': 'Only John.'})
             out, now_ = [], time.time()
+            # (a job that went quiet is left off once John's Mac has since done or started another, three hours after its last word, or once
+            # the film has been converted since it began (John, 17 Nov 2026: Career Girls "no word from your Mac since 14:48 ... but it was
+            # completed"); one finished shows as done for half an hour, then goes ("I've since updated another film via my mac and there's
+            # no message"))
+            done_ = (load(os.path.expanduser('~/Grifflix/convert-state.json'), {}) or {}).get('done') or {}
+            last_mac = max([x.get('seen') or x['at'] for x in CONVJOBS.values() if x.get('state') not in ('waiting', 'notstarted')] or [0])
             for j in sorted(CONVJOBS.values(), key=lambda j: -j['at']):
                 st_ = j.get('state') or 'waiting'
-                if st_ in ('notstarted',) or (st_ in ('done', 'failed') and now_ - (j.get('ended') or j['at']) > 3600) or now_ - j['at'] > 86400:
+                if st_ in ('notstarted',) or (st_ in ('done', 'failed') and now_ - (j.get('ended') or j['at']) > 1800) or now_ - j['at'] > 86400:
                     continue
+                if st_ in ('started', 'converting'):
+                    heard = j.get('seen') or j['at']
+                    if now_ - heard > 600 and (last_mac > heard + 60 or now_ - heard > 3 * 3600 or ((done_.get(j['id']) or {}).get('at') or 0) > j['at']):
+                        continue
                 if st_ == 'waiting' and now_ - j['at'] > 900:
                     continue
                 quiet = (st_ == 'converting' and now_ - (j.get('seen') or j['at']) > 600) or (st_ == 'started' and now_ - (j.get('seen') or j['at']) > 180)
