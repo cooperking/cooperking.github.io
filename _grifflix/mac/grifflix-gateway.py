@@ -3850,6 +3850,11 @@ def keep_scanning(g):
                     # the media server has it; however it came in, not only by download: John, 16 Nov 2026, "I shouldn't have to reupload the
                     # criterion html every time to check if a new film is criterion")
                     threading.Timer(240, covers_now).start()
+                    # (an extra put in a film's Other or Extras folder: the Criterion sheet's Extras column marked: John, 17 Nov 2026, "the job
+                    # should run when extras are added")
+                    XD = ('other', 'others', 'extras', 'extra', 'featurettes', 'behind the scenes', 'deleted scenes', 'interviews', 'trailers', 'shorts', 'scenes', 'bonus')
+                    if any(seg.strip().lower() in XD for x in new for seg in x.split('/')[:-1]):
+                        threading.Timer(300, sheet_now).start()
                     publish_at = time.time() + 540   # (the site updated once the media server has read them: about 10 minutes on)
             if getattr(g, 'publish_soon', 0) and not publish_at:   # (John put a film's details right: the site follows)
                 publish_at, g.publish_soon = g.publish_soon, 0
