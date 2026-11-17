@@ -5517,6 +5517,7 @@ function sheetKeep() {
   SHEETBACK.push({ frag: f, sc: sc, into: S.sheetInto });
   return true;
 }
+var TMCMD = '';   // (the last Convert on this Mac job, as a Terminal command)
 function forgetItem(id) {   // a film or series deleted: out of the library as this page has it, and off whatever's showing
   try {
     if (LIB && LIB.items) {
@@ -5773,7 +5774,8 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
         // (waiting: not yet started on the Mac, so not "converting", and the button there to try again: John, 17 Nov 2026, "it says converting on
         // this mac but it's not")
         if (!tm.dataset.sure) { tm.disabled = more && st !== 'waiting'; tm.textContent = st === 'waiting' ? 'Start it on this Mac again' : more ? 'Converting on this Mac' : 'Convert on this Mac'; tm.dataset.again = st === 'waiting' ? 1 : ''; }
-        box.innerHTML = st === 'waiting' ? '<p class="ov" style="margin:0;font-size:14px">Not started yet: your Mac hasn’t taken it up (asked for ' + esc(new Date(j.at * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })) + '). A Terminal window should open on this Mac saying “Grifflix: starting…”. Nothing? Press Start it on this Mac again; if it still doesn’t, look in that Terminal window for why.</p>'
+        box.innerHTML = st === 'waiting' ? '<p class="ov" style="margin:0;font-size:14px">Not started yet: your Mac hasn’t taken it up (asked for ' + esc(new Date(j.at * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })) + '). A Terminal window should open on this Mac saying “Grifflix: starting…”.' +
+            (TMCMD ? ' <b>No Terminal window?</b> Open Terminal yourself, paste this in and press Return:</p><div style="display:flex;gap:8px;align-items:center;margin-top:6px"><code style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;opacity:.8">' + esc(TMCMD) + '</code><button type="button" class="pill" id="tmcopy">Copy</button></div>' : ' Nothing? Press Start it on this Mac again.</p>')
           : st === 'started' ? '<p class="ov" style="margin:0;font-size:14px">Starting…</p>'
           : st === 'converting' ? '<div style="height:8px;background:rgba(127,127,127,.25);border-radius:4px;overflow:hidden"><div style="height:100%;width:' + pc.toFixed(1) + '%;background:var(--fg)"></div></div><p class="ov" style="margin:6px 0 0;font-size:14px">' + Math.floor(pc) + '% · ' + clock2(j.t) + ' of ' + clock2(j.dur) + (j.speed ? ' · ' + esc(j.speed) + ' speed' : '') + '</p>'
           : st === 'checking' ? '<p class="ov" style="margin:0;font-size:14px">Made. The Mac mini is checking it and putting it in place…</p>'
@@ -5783,7 +5785,8 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
           : st === 'notstarted' ? '<p class="ov" style="margin:0;font-size:14px">Your Mac never started it (asked for ' + esc(new Date(j.at * 1000).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + '): no Terminal window opened, or it stopped before it began. The Mac mini will do it in its own time, or press Convert on this Mac again (on a Mac where the Grifflix Convert app is set up: the admin page, Conversions).</p>'
           : st === 'quiet' ? '<p class="ov" style="margin:0;font-size:14px">Your Mac stopped saying how far it’s got (at ' + Math.round(j.dur ? j.t / j.dur * 100 : 0) + '%, ' + esc(new Date((j.seen || j.at) * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })) + '): is it asleep, or its Terminal window closed? Look at that window on your Mac.</p>'
           : '<p class="ov" style="margin:0;font-size:14px">It didn’t convert' + (j.error ? ' (' + esc(j.error) + ')' : '') + '. The Mac mini will do it in its own time.</p>';
-        if (more) tmT = setTimeout(watch, 3000);
+        var cp = $('#tmcopy'); if (cp) cp.onclick = function () { navigator.clipboard.writeText(TMCMD).then(function () { toast('Copied: paste it into Terminal and press Return'); cp.textContent = 'Copied ✓'; }).catch(function () { toast('Couldn’t copy: select it and copy it yourself'); }); };
+        if (more && !(st === 'waiting' && $('#tmcopy'))) tmT = setTimeout(watch, 3000); else if (more) tmT = setTimeout(watch, 8000);
       }).catch(function () {});
     };
     watch();
@@ -5791,7 +5794,11 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
       if (!tm.dataset.sure && !tm.dataset.again) { tm.dataset.sure = 1; tm.textContent = 'Convert it now on this Mac? Click again'; setTimeout(function () { if (tm.isConnected && tm.dataset.sure) { delete tm.dataset.sure; tm.textContent = 'Convert on this Mac'; } }, 6000); return; }
       delete tm.dataset.sure; tm.disabled = true; tm.textContent = 'Getting it ready…';
       mac('convertplan?id=' + it.id).then(function (j) {
-        location.href = 'grifflix-convert://job?u=' + encodeURIComponent(GW + '/convjob/' + j.token);
+        var ju = GW + '/convjob/' + j.token;
+        location.href = 'grifflix-convert://job?u=' + encodeURIComponent(ju);
+        // (and the same, to paste into Terminal yourself: a Mac whose settings stop one app working another (a work Mac) never starts it from the
+        // button: John, 17 Nov 2026, "nothing happens with conversions still - a pop up but nothing starts")
+        TMCMD = "mkdir -p ~/Grifflix && curl -fsSL https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/convert-here.sh -o ~/Grifflix/convert-here.sh && zsh ~/Grifflix/convert-here.sh '" + ju + "'";
         tm.textContent = 'Converting on this Mac'; watch();
       }).catch(function (e) { tm.disabled = false; tm.textContent = 'Convert on this Mac'; toast(e.status === 404 ? 'Press Update everything first (the Mac mini needs its update)' : e.message || 'Couldn’t reach the Mac mini'); });
     };
