@@ -343,6 +343,16 @@ STATUS = os.path.join(HOME, 'fetch-status.json')
 FIRST = os.path.join(HOME, 'fetch-first.json')   # (John's: the downloads he wants next, from the admin page: John, 15 Nov 2026, "Can I prioritise what's coming in next from torbox?")
 
 
+CANCEL = os.path.join(HOME, 'fetch-cancelled.json')   # (John's: downloads he doesn't want, from the admin page, never fetched: John, 17 Nov 2026, "I need to be able to cancel downloads")
+
+
+def cancelled():
+    try:
+        return set(str(x) for x in json.load(open(CANCEL)))
+    except (OSError, ValueError, TypeError):
+        return set()
+
+
 def firsts():
     try:
         return [str(x) for x in json.load(open(FIRST))]
@@ -431,6 +441,7 @@ def _run(check):
     except (OSError, ValueError):
         seen = {}
     done, plan, trouble = 0, [], []
+    CX = cancelled()
     for src in SOURCES:
         if src['remote'] not in have:
             continue
@@ -461,6 +472,8 @@ def _run(check):
             ext = os.path.splitext(f.get('xname') or f['Name'])[1].lower()
             m = None if xf is not None else EP.search(os.path.splitext(f['Name'])[0])
             nkey = folder if (m and folder) else f['Path']   # (an extra: its film's, so the film's own name, if given, is its too)   # (a series' episodes named together: the folder they came in)
+            if CX & {path, f['Path'], nkey}:
+                continue   # (cancelled by John: left where it is)
             mine = N.get(nkey) or N.get(f['Path'])
             if mine:
                 title, year = '%s (%s)' % (mine['name'], mine['year']) if mine.get('year') else mine['name'], bool(mine.get('year'))
@@ -534,6 +547,10 @@ def _run(check):
                 os.execv(sys.executable, [sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
         except OSError:
             pass
+        cx = cancelled()   # (one cancelled while another came in: not fetched)
+        plan = [q for q in plan if not cx & {q['path'], q['nkey']}]
+        if not plan:
+            break
         plan = in_order(plan)   # (John's next, looked at again before each: one he chooses mid-download goes after this one)
         p = plan.pop(0)
         if not check:

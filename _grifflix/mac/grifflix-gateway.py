@@ -1473,6 +1473,34 @@ def make_handler(g):
                     N[key] = {'name': nm, 'year': yr, 'kind': 'series' if b.get('kind') == 'series' else 'movie', 'tmdb': str(b.get('tmdb') or '')}
                 save(fp, N)
                 return self.send_json(200, {'ok': True})
+            if b and b.get('op') in ('cancel', 'uncancel'):   # (John's: a download he doesn't want, never fetched; the one coming in now stopped
+                # and its part thrown away: John, 17 Nov 2026, "I need to be able to cancel downloads")
+                fp = os.path.join(home, 'fetch-cancelled.json')
+                key, file_ = str(b.get('key') or '')[:500], str(b.get('file') or '')[:500]
+                if not (key or file_):
+                    return self.send_json(400, {'error': 'Which download?'})
+                C = [x for x in (load(fp, []) or []) if isinstance(x, str) and x not in (key, file_)]
+                names_ = load(os.path.join(home, 'fetch-cancelled-names.json'), {}) or {}
+                if b['op'] == 'cancel':
+                    C = [key or file_] + C   # (a series by its folder, a film by its file)
+                    names_[key or file_] = {'to': str(b.get('name') or '')[:200], 'at': int(time.time())}
+                    stopped = False
+                    if live and file_ and (live['file'].strip('/') == os.path.dirname(file_).strip('/') or live['file'].strip('/') == file_.strip('/')):
+                        try:
+                            import signal as sig
+                            for line in ps.splitlines():
+                                if 'rclone' in line and live['part'] in line:
+                                    os.kill(int(line.split()[0]), sig.SIGTERM)
+                                    stopped = True
+                        except (OSError, ValueError):
+                            pass
+                    log('Downloads: cancelled by John: %s%s' % (b.get('name') or file_ or key, ' (stopped part way)' if stopped else ''))
+                else:
+                    names_.pop(key or file_, None)
+                    GDRIVE_NOW.set() if not running else None
+                save(fp, C[:500])
+                save(os.path.join(home, 'fetch-cancelled-names.json'), {k: v for k, v in names_.items() if k in C})
+                return self.send_json(200, {'ok': True})
             if b and b.get('op') in ('first', 'unfirst'):   # (John's next: a download moved to the front: John, 15 Nov 2026)
                 fp = os.path.join(home, 'fetch-first.json')
                 f = [x for x in (load(fp, []) or []) if isinstance(x, str) and x != str(b.get('file') or '')]
@@ -1526,6 +1554,7 @@ def make_handler(g):
             waiting = [x for x in (st.get('waiting') or []) if not (now and x.get('file') == now.get('file'))]
             return self.send_json(200, {'setup': setup, 'running': running, 'now': now, 'waiting': waiting,
                                         'recent': [x for x in st.get('recent') or [] if x.get('ok')],   # (only what came: John, 15 Nov 2026) 'checked': st.get('checked'), 'next': int(GDRIVE_NEXT[0]) or None, 'error': GDRIVE_ERR[0], 'trouble': st.get('trouble') or [], 'hold': st.get('hold'),
+                                        'cancelled': [dict(v, key=k) for k, v in (load(os.path.join(home, 'fetch-cancelled-names.json'), {}) or {}).items()],
                                         'first': load(os.path.join(home, 'fetch-first.json'), []) or [], 'names': load(os.path.join(home, 'fetch-names.json'), {}) or {}})
 
         def api_convert(self, me, user, q, b):
