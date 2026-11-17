@@ -228,7 +228,21 @@ dialog::backdrop { background: rgba(10, 4, 12, .62); backdrop-filter: blur(6px);
 .sheet .meta .c { padding: 1px 6px; border: 1px solid var(--line); border-radius: 4px; }
 .sheet .tag { margin: 12px 0 0; font: italic 400 19px/1.35 var(--serif); color: var(--fg); }
 .sheet .ov { margin: 14px 0 0; max-width: 64ch; font-size: 15.5px; line-height: 1.6; color: var(--fg-2); }
-.sheet .ov, .collhead .ov { white-space: pre-line; }   /* (a synopsis's paragraphs kept apart: Criterion's own run to two or three: 16 Nov 2026) */
+.sheet .ov, .collhead .ov { white-space: pre-line; }
+/* (a collection's own search, and John's editing of it: John, 16 Nov 2026) */
+.cfind { flex: 1 1 220px; max-width: 360px; min-width: 0; padding: 9px 12px; font: 500 15px/1.2 var(--sans); color: var(--fg); background: rgba(var(--kink), .06); border: 1px solid rgba(var(--kink), .3); border-radius: 0; }
+.cfind::placeholder, .caddbox input::placeholder { color: var(--fg-2); opacity: 1; }
+.cedit { position: relative; display: flex; flex-direction: column; min-width: 0; }
+.cedit .crm { margin-top: 6px; padding: 7px 8px; font: 600 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--fg); background: none; border: 1px solid rgba(var(--kink), .45); cursor: pointer; }
+.cedit .crm:hover { background: #b3261e; border-color: #b3261e; color: #fff; }
+.caddbox { margin: 6px 0 22px; padding: 14px; border: 1px solid rgba(var(--kink), .25); }
+.caddbox input { width: 100%; box-sizing: border-box; padding: 10px 12px; font: 500 16px/1.2 var(--sans); color: var(--fg); background: rgba(var(--kink), .06); border: 1px solid rgba(var(--kink), .3); }
+.caddres { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin-top: 10px; }
+.caddit { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.caddit img, .caddit .noimg { width: 40px; height: 60px; object-fit: cover; flex: none; background: rgba(var(--kink), .08); }
+.caddn { flex: 1; min-width: 0; font: 500 15px/1.2 var(--sans); color: var(--fg); overflow: hidden; text-overflow: ellipsis; }
+.caddn small { display: block; margin-top: 3px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--fg-2); }
+.caddin { font: 600 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--fg-2); }   /* (a synopsis's paragraphs kept apart: Criterion's own run to two or three: 16 Nov 2026) */
 .sheet .note { margin: 18px 0 0; padding: 14px 18px; border-left: 2px solid var(--fg); background: rgba(255, 255, 255, .06); border-radius: 0 12px 12px 0; font: italic 400 18px/1.45 var(--serif); color: var(--fg); }
 .sheet .note b { display: block; margin-bottom: 4px; font: 600 10.5px/1.2 var(--sans); font-style: normal; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .sheet .people { margin-top: 14px; font-size: 13.5px; color: var(--muted); }
@@ -5272,14 +5286,66 @@ function collectionView(id, into) {
     $('#cbody').innerHTML = '<div class="collhead"><div class="card coll collpic">' + cov + '</div>' +
       '<div><div class="kick">Collection</div><h1 class="colltitle">' + esc(c.name) + '</h1><div class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' title' : ' titles') + '</i></div>' +
       (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
-      '<div class="tabs"><span class="sp"></span>' + sfBar() + '</div>' +
-      '<div class="gridcards" id="cgrid"></div>';
-    var draw = function () { var items = sfSort(c.items.filter(sfFits(SF.f)), sfKey(), sfDirOf()); $('#cgrid').innerHTML = items.length ? items.map(function (i) { return cardHTML(i, false, SPINEOK); }).join('') : '<div class="empty">Nothing like that in this collection.</div>'; wireCards($('#cgrid'), items); };
+      // (a search within it, for everyone; for John, its films taken out and added here, and its description: John, 16 Nov 2026, "I need
+      // the ability to edit collections properly, as well as search within them")
+      '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find in this collection" aria-label="Find in this collection" autocomplete="off"><span class="sp"></span>' + sfBar() + '</div>' +
+      '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>';
+    var editing = false, fq = '';
+    var fits = function (i) { if (!fq) return true; var t = (showName(i) + ' ' + (i.year || '') + ' ' + (i.spine ? 'no ' + i.spine : '')).toLowerCase(); return fq.split(/\s+/).every(function (w) { return t.indexOf(w) >= 0; }); };
+    var draw = function () {
+      var items = sfSort(c.items.filter(sfFits(SF.f)).filter(fits), sfKey(), sfDirOf());
+      $('#cgrid').innerHTML = items.length ? items.map(function (i) { var h = cardHTML(i, false, SPINEOK); return editing ? '<div class="cedit">' + h + '<button type="button" class="crm" data-crm="' + i.id + '" aria-label="Take ' + esc(showName(i)) + ' out of the collection">Take out</button></div>' : h; }).join('')
+        : '<div class="empty">' + (fq ? 'Nothing called that in this collection.' : 'Nothing like that in this collection.') + '</div>';
+      wireCards($('#cgrid'), items);
+      $$('[data-crm]', $('#cgrid')).forEach(function (b) { b.onclick = function () {
+        var it = c.items.filter(function (x) { return x.id === b.dataset.crm; })[0]; if (!it) return;
+        b.disabled = true; b.textContent = 'Taking out…';
+        api('collections', { op: 'remove', id: c.id, items: [it.id] }).then(function () { c.items = c.items.filter(function (x) { return x !== it; }); count(); draw(); toast(showName(it) + ' taken out (the film stays in Grifflix)'); })
+          .catch(function (e) { b.disabled = false; b.textContent = 'Take out'; oops(e); });
+      }; });
+    };
+    var count = function () { var h = $('#cbody .hsub i'); if (h) h.textContent = c.items.length + (c.items.length === 1 ? ' title' : ' titles'); };
+    var ft = 0; $('#cfind').oninput = function () { var v = this.value.trim().toLowerCase(); clearTimeout(ft); ft = setTimeout(function () { fq = v; draw(); }, 120); };
     SPINEOK = /criterion/i.test(c.name); sfWire($('#cbody'), c.items, draw);
     draw();
-    if (ME && ME.owner) {
-      $('#cbody .collhead > div:last-child').insertAdjacentHTML('beforeend', '<div class="tabs" style="margin:16px 0 0"><button class="pill" id="crename">Rename</button><button class="pill" id="cdelete">Delete the collection</button></div>');
-      $('#crename').onclick = function () { ask('Rename the collection', 'Its name', c.name, function (v) { api('collections', { op: 'rename', id: c.id, name: v }).then(function () { toast('Renamed'); collectionView(id); }).catch(oops); }); };
+    if (ME && ME.owner && !TV) {
+      $('#cbody .collhead > div:last-child').insertAdjacentHTML('beforeend', '<div class="tabs" style="margin:16px 0 0"><button class="pill" id="cedit">Edit the films</button><button class="pill" id="cdesc">' + (c.overview ? 'Change the description' : 'Add a description') + '</button><button class="pill" id="crename">Rename</button><button class="pill" id="cdelete">Delete the collection</button></div>');
+      $('#cedit').onclick = function () {
+        editing = !editing; this.textContent = editing ? 'Done' : 'Edit the films'; this.classList.toggle('on', editing);
+        var ad = $('#cadd'); ad.hidden = !editing;
+        if (editing && !ad.innerHTML) {
+          ad.innerHTML = '<div class="caddbox"><input type="search" id="caddq" placeholder="Add a film: its name" autocomplete="off" aria-label="Add a film to the collection"><div id="caddres" class="caddres"></div></div>';
+          var at = 0, look = function (q) {
+            if (q.length < 2) { $('#caddres').innerHTML = ''; return; }
+            api('search?q=' + encodeURIComponent(q)).then(function (r) {
+              if ($('#caddq').value.trim() !== q) return;
+              var have = {}; c.items.forEach(function (x) { have[x.id] = 1; });
+              var L = (r.items || []).filter(function (i) { return i.type === 'movie' || i.type === 'series'; }).slice(0, 12);
+              $('#caddres').innerHTML = L.length ? L.map(function (i) { var src = img(i.poster, 'Primary', 120);
+                return '<div class="caddit">' + (src ? '<img alt="" src="' + esc(src) + '">' : '<span class="noimg"></span>') + '<span class="caddn">' + esc(showName(i)) + '<small>' + esc(subOf(i)) + '</small></span>' +
+                  (have[i.id] ? '<span class="caddin">In it</span>' : '<button type="button" class="pill" data-cadd="' + i.id + '">Add</button>') + '</div>'; }).join('') : '<div class="empty snote">Nothing called that in Grifflix.</div>';
+              var by = {}; L.forEach(function (i) { by[i.id] = i; });
+              $$('[data-cadd]', $('#caddres')).forEach(function (b) { b.onclick = function () {
+                var it = by[b.dataset.cadd]; b.disabled = true; b.textContent = 'Adding…';
+                api('collections', { op: 'add', id: c.id, items: [it.id] }).then(function () { c.items.push(it); count(); draw(); b.outerHTML = '<span class="caddin">Added ✓</span>'; toast(showName(it) + ' added'); })
+                  .catch(function (e) { b.disabled = false; b.textContent = 'Add'; oops(e); });
+              }; });
+            }).catch(function () {});
+          };
+          $('#caddq').oninput = function () { var q = this.value.trim(); clearTimeout(at); at = setTimeout(function () { look(q); }, 250); };
+        }
+        if (editing) setTimeout(function () { var q = $('#caddq'); if (q) q.focus(); }, 50);
+        draw();
+      };
+      $('#cdesc').onclick = function () {
+        openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + esc(c.name) + '</h2><p class="snote" style="margin:0 0 8px">Its description, shown on its page.</p><textarea id="cdtext" rows="8" style="width:100%;box-sizing:border-box;font:inherit;padding:10px;background:transparent;color:var(--fg);border:1px solid var(--line, rgba(255,255,255,.3))">' + esc(c.overview || '') + '</textarea><div class="acts"><button class="pill go" id="cdok">Save</button></div></div>');
+        setTimeout(function () { var t = $('#cdtext'); if (t) t.focus(); }, 50);
+        $('#cdok').onclick = function () { var v = $('#cdtext').value.trim(), b = this; b.disabled = true;
+          api('collections', { op: 'describe', id: c.id, text: v }).then(function () { closeSheet(); c.overview = v; toast('Description saved'); collectionPaint(); }).catch(function (e) { b.disabled = false; oops(e); }); };
+      };
+      var collectionPaint = function () { var d = $('#cbody .collhead > div:last-child'), ov = d && d.querySelector('.ov'); if (!d) return; if (v0()) { if (!ov) { ov = document.createElement('p'); ov.className = 'ov'; d.querySelector('.hsub').after(ov); } ov.textContent = c.overview; } else if (ov) ov.remove(); $('#cdesc').textContent = c.overview ? 'Change the description' : 'Add a description'; };
+      var v0 = function () { return !!c.overview; };
+      $('#crename').onclick = function () { ask('Rename the collection', 'Its name', c.name, function (v) { api('collections', { op: 'rename', id: c.id, name: v }).then(function () { toast('Renamed'); c.name = v; var h = $('#cbody .colltitle'); if (h) h.textContent = v; }).catch(oops); }); };
       $('#cdelete').onclick = function () { var b = this; if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Tap again: its films stay'; return; }
         api('collections', { op: 'delete', id: c.id }).then(function () { toast('Deleted (its films stay)'); location.hash = '#browse/collections'; }).catch(oops); };
     }
