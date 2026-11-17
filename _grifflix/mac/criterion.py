@@ -86,6 +86,118 @@ def google():
     return build('sheets', 'v4', credentials=creds, cache_discovery=False).spreadsheets()
 
 
+APP = os.environ.get('GRIFFLIX_DIR') or os.path.expanduser('~/Library/Application Support/Grifflix')
+TMDB_AT = os.path.expanduser('~/Grifflix/criterion-tmdb.json')   # (each film's TMDB number, found once: title|year -> [id, kind], or [0, when tried])
+
+
+def tmdb_get(path, **q):
+    """TMDB's answer, with the key John gave Grifflix (kept with the Mac's settings)."""
+    import ssl, urllib.request
+    try:
+        k = json.load(open(os.path.join(APP, 'settings.json'))).get('tmdb_key') or ''
+    except Exception:
+        k = ''
+    if not k:
+        return None
+    h = {'Accept': 'application/json', 'User-Agent': 'Grifflix'}
+    if k.startswith('eyJ'):
+        h['Authorization'] = 'Bearer ' + k
+    else:
+        q['api_key'] = k
+    u = 'https://api.themoviedb.org/3' + path + '?' + urllib.parse.urlencode(q)
+    try:
+        import certifi
+        ctx = ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        ctx = None
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(u, headers=h), timeout=30, context=ctx) as r:
+                return json.loads(r.read())
+        except Exception as e:
+            if getattr(e, 'code', 0) == 429:
+                import time as t_
+                t_.sleep(2 + attempt * 3)
+                continue
+            if getattr(e, 'code', 0) == 404:
+                return None
+            raise
+    return None
+
+
+def tmdb_find(title, year):
+    """A Criterion film's TMDB page: the film of that title from that year (a year either side), else the series; None if none fits."""
+    y = int(year) if re.match(r'^\d{4}$', str(year or '')) else None
+    want = key(title)
+    for kind, path, yk, tk, dk in (('movie', '/search/movie', 'primary_release_year', 'title', 'release_date'), ('tv', '/search/tv', 'first_air_date_year', 'name', 'first_air_date')):
+        best = None
+        for yy in ([y, y - 1, y + 1] if y else [None]):
+            q = {'query': title, 'include_adult': 'false'}
+            if yy:
+                q[yk] = yy
+            res = (tmdb_get(path, **q) or {}).get('results') or []
+            for r in res[:10]:
+                names = (key(r.get(tk) or ''), key(r.get('original_' + tk) or ''))
+                ry = int((r.get(dk) or '0')[:4] or 0)
+                if want in names and (not y or not ry or abs(ry - y) <= 1):
+                    best = r
+                    break
+            if not best and yy == y and res and len(res) == 1 and y:   # (one answer for that title and year: it, though its title is written differently)
+                ry = int((res[0].get(dk) or '0')[:4] or 0)
+                if ry == y:
+                    best = res[0]
+            if best:
+                return best['id'], kind
+    return None
+
+
+def tmdb_links(sid, sheet, rows, go):
+    """Column J: each film's TMDB page, a link (John, 17 Nov 2026: "Can my Criterion Releases spreadsheet be updated with the tmdb
+    link?"). Only rows without one; each film looked up once (and one TMDB didn't have, again after a month)."""
+    import time as t_
+    try:
+        C = json.load(open(TMDB_AT))
+    except Exception:
+        C = {}
+    head = sheet.values().get(spreadsheetId=sid, range='Criterion Films!J1').execute().get('values', [])
+    ups, found, missing, asked = [], 0, 0, 0
+    if not head or not head[0] or not str(head[0][0]).strip():
+        ups.append({'range': 'Criterion Films!J1', 'values': [['TMDB']]})
+    for i, row in enumerate(rows, 2):
+        row = row + [''] * (10 - len(row))
+        title, year = row[2].strip(), row[3].strip()
+        if not title or row[9].strip():
+            continue
+        k_ = '%s|%s' % (key(title), year)
+        c = C.get(k_)
+        if c is None or (not c[0] and t_.time() - (c[1] or 0) > 30 * 86400):
+            if asked >= 600:   # (at most 600 looked up at once: the rest next time)
+                continue
+            asked += 1
+            try:
+                f = tmdb_find(title, year)
+            except Exception as e:
+                print('  TMDB: %s (%s): %s' % (title, year, str(e)[:80]))
+                continue
+            C[k_] = [f[0], f[1]] if f else [0, int(t_.time())]
+            c = C[k_]
+        if c[0]:
+            ups.append({'range': 'Criterion Films!J%d' % i, 'values': [['=HYPERLINK("https://www.themoviedb.org/%s/%d", "TMDB")' % (c[1], c[0])]]})
+            found += 1
+        else:
+            missing += 1
+    try:
+        json.dump(C, open(TMDB_AT, 'w'))
+    except OSError:
+        pass
+    print('TMDB links: %d to add%s.' % (found, ', %d not found on TMDB' % missing if missing else ''))
+    if ups and go:
+        for n in range(0, len(ups), 500):
+            sheet.values().batchUpdate(spreadsheetId=sid, body={'valueInputOption': 'USER_ENTERED', 'data': ups[n:n + 500]}).execute()
+        print('Added %d TMDB link(s).' % found)
+    return found
+
+
 def has_extras(folder):   # (its "Other" folder, or "Others", holding anything but notes)
     for n in os.listdir(folder):
         if n.lower() in ('other', 'others') and os.path.isdir(os.path.join(folder, n)):
@@ -111,6 +223,11 @@ def mark(sid, sheet, go):
     except Exception:
         pass
     rows = sheet.values().get(spreadsheetId=sid, range=RANGE).execute().get('values', [])
+    try:   # (column J: TMDB's page for each film)
+        rj = sheet.values().get(spreadsheetId=sid, range='Criterion Films!A2:J').execute().get('values', [])
+        tmdb_links(sid, sheet, rj, go)
+    except Exception as e:
+        print('TMDB links: not added (%s)' % str(e)[:120])
     updates, have, extras, changed = [], 0, 0, []
     for i, row in enumerate(rows, 2):
         row = row + [''] * (6 - len(row))
