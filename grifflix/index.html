@@ -2154,7 +2154,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '8c0812da36b5' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: 'f5ed9850af6c' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5500,6 +5500,16 @@ function sheetKeep() {
   SHEETBACK.push({ frag: f, sc: sc, into: S.sheetInto });
   return true;
 }
+function forgetItem(id) {   // a film or series deleted: out of the library as this page has it, and off whatever's showing
+  try {
+    if (LIB && LIB.items) {
+      delete LIB.items[id];
+      Object.keys(LIB).forEach(function (k) { if (Array.isArray(LIB[k])) LIB[k] = LIB[k].filter(function (x) { return x !== id && (!x || x.id !== id); }); });
+      if (LIB.sets) Object.keys(LIB.sets).forEach(function (c) { if (Array.isArray(LIB.sets[c])) LIB.sets[c] = LIB.sets[c].filter(function (x) { return x !== id; }); });
+    }
+  } catch (e) {}
+  $$('[data-item="' + id + '"], [data-r="' + id + '"], [data-rqplay="' + id + '"]').forEach(function (el) { var w = el.closest('.cedit') || el; w.remove(); });
+}
 function sheetBack() {
   var b = SHEETBACK.pop(); if (!b) return closeSheet();
   var si = $('#sheetIn'); si.innerHTML = ''; si.appendChild(b.frag); S.sheetInto = b.into;
@@ -5749,6 +5759,10 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
           : st === 'converting' ? '<div style="height:8px;background:rgba(127,127,127,.25);border-radius:4px;overflow:hidden"><div style="height:100%;width:' + pc.toFixed(1) + '%;background:var(--fg)"></div></div><p class="ov" style="margin:6px 0 0;font-size:14px">' + Math.floor(pc) + '% · ' + clock2(j.t) + ' of ' + clock2(j.dur) + (j.speed ? ' · ' + esc(j.speed) + ' speed' : '') + '</p>'
           : st === 'checking' ? '<p class="ov" style="margin:0;font-size:14px">Made. The Mac mini is checking it and putting it in place…</p>'
           : st === 'done' ? '<p class="ov" style="margin:0;font-size:14px">Done: Grifflix shows the new copy within a few minutes.</p>'
+          // (John's Mac never took it up, or went quiet part way: said plainly, when it was asked for: John, 17 Nov 2026, "how can I tell what
+          // happened with the convert from my mac command")
+          : st === 'notstarted' ? '<p class="ov" style="margin:0;font-size:14px">Your Mac never started it (asked for ' + esc(new Date(j.at * 1000).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + '): no Terminal window opened, or it stopped before it began. The Mac mini will do it in its own time, or press Convert on this Mac again (on a Mac where the Grifflix Convert app is set up: the admin page, Conversions).</p>'
+          : st === 'quiet' ? '<p class="ov" style="margin:0;font-size:14px">Your Mac stopped saying how far it’s got (at ' + Math.round(j.dur ? j.t / j.dur * 100 : 0) + '%, ' + esc(new Date((j.seen || j.at) * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })) + '): is it asleep, or its Terminal window closed? Look at that window on your Mac.</p>'
           : '<p class="ov" style="margin:0;font-size:14px">It didn’t convert' + (j.error ? ' (' + esc(j.error) + ')' : '') + '. The Mac mini will do it in its own time.</p>';
         if (more) tmT = setTimeout(watch, 3000);
       }).catch(function () {});
@@ -5909,8 +5923,12 @@ function wireBody(it, ctx) {
     }
     b.disabled = true; b.textContent = 'Deleting…';
     mac('delete', { id: it.id }).then(function (j) {
-      toast((j.name || it.name) + ' deleted for good' + (it.type === 'series' ? ', every episode' : '') + (j.gb ? ': ' + j.gb + ' GB freed' : '') + '. Gone from Grifflix within a few minutes');
-      closeSheet();
+      toast((j.name || it.name) + ' deleted for good' + (it.type === 'series' ? ', every episode' : '') + (j.gb ? ': ' + j.gb + ' GB freed' : ''));
+      // (gone from what's on this page at once, and back to where it was opened from, the search or the page of films, the place kept:
+      // John, 17 Nov 2026, "once something is deleted can the library be updated so it's not there anymore, and can we make sure we
+      // return to the place in the search where the movie or tv series was opened")
+      forgetItem(it.id);
+      if (SHEETBACK.length) { sheetBack(); forgetItem(it.id); } else closeSheet();
     }).catch(function (e) { b.disabled = false; delete b.dataset.sure; b.textContent = it.type === 'series' ? 'Delete the series' : 'Delete'; toast(e.message || 'Couldn’t reach the Mac mini'); });
   });
   on('aconv', function () {
