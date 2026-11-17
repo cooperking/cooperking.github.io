@@ -16,7 +16,7 @@ the old scripts folder on the G-Drive. Needs: python3 -m pip install --user goog
 """
 import json, os, pickle, re, sys, unicodedata, urllib.parse
 
-GO = len(sys.argv) > 1 and sys.argv[1] == 'go'
+GO = 'go' in sys.argv[1:]
 BASE = os.environ.get('GRIFFLIX_MEDIA') or '/Volumes/G-Drive/Grifflix'
 MOVIES = os.path.join(BASE, 'Movies')
 KEYS = os.path.join(BASE, 'scripts')   # the Google sign-in (token.pickle) and app file, where the old script kept them
@@ -151,7 +151,7 @@ def tmdb_find(title, year):
     return None
 
 
-def tmdb_links(sid, sheet, rows, go):
+def tmdb_links(sid, sheet, rows, go, most=600):
     """Column J: each film's TMDB page, a link (John, 17 Nov 2026: "Can my Criterion Releases spreadsheet be updated with the tmdb
     link?"). Only rows without one; each film looked up once (and one TMDB didn't have, again after a month)."""
     import time as t_
@@ -171,7 +171,7 @@ def tmdb_links(sid, sheet, rows, go):
         k_ = '%s|%s' % (key(title), year)
         c = C.get(k_)
         if c is None or (not c[0] and t_.time() - (c[1] or 0) > 30 * 86400):
-            if asked >= 600:   # (at most 600 looked up at once: the rest next time)
+            if asked >= most:   # (at most so many looked up at once: the rest next time)
                 continue
             asked += 1
             try:
@@ -265,6 +265,11 @@ def mark(sid, sheet, go):
 def main():
     if not os.path.isdir(MOVIES):
         sys.exit('No %s: is the G-Drive plugged in?' % MOVIES)
+    if 'tmdb' in sys.argv[1:]:   # (every row's TMDB link at once: python3 criterion.py tmdb go)
+        sid, sheet = sheet_id(), google()
+        rj = sheet.values().get(spreadsheetId=sid, range='Criterion Films!A2:J').execute().get('values', [])
+        tmdb_links(sid, sheet, rj, 'go' in sys.argv[1:], most=100000)
+        return
     mark(sheet_id(), google(), GO)
 
 
