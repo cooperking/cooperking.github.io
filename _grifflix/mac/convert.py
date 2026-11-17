@@ -747,7 +747,7 @@ def merge_ext():
 
 def claimed(iid):
     try:
-        return time.time() - float(json.load(open(CLAIMS)).get(iid, 0)) < 6 * 3600
+        return time.time() - float(json.load(open(CLAIMS)).get(iid, 0)) < 1800   # (renewed by the gateway with every word from John's Mac: lapses half an hour after the last)
     except (OSError, ValueError):
         return False
 
@@ -1014,7 +1014,8 @@ while rest:
     have = set(x['id'] for x in rest)
     rest = [x for x in redos() if x['id'] not in have] + rest   # (John's language changes first: minutes each)
     merge_ext()
-    rest = [x for x in brought_in(rest) if not claimed(x['id'])]   # (one being converted on John's Mac: left to it)
+    rest = [x for x in rest if not ((st['done'].get(x['id']) or {}).get('at', 0) > RUN['started'])]   # (one John's Mac has just made: not made again here)
+    rest = brought_in(rest)   # (one being converted on John's Mac stays in the list, passed over while his Mac is at it: below)
     try:   # (pins for films already done, or given up, taken off: they read as next, and the converter seemed to ignore them)
         for x in prio()['pins']:
             if x.get('force') and x.get('at', 0) > max((st['done'].get(x['id']) or {}).get('at', 0), (st['failed'].get(x['id']) or {}).get('at', 0)):
@@ -1037,7 +1038,15 @@ while rest:
             os.execv(sys.executable, [sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
     except OSError as e:
         log('couldn’t start the newer version:', e)
-    it = rest.pop(0)
+    # (a film being converted on John's Mac passed over, kept for later in case his Mac gives up; only those left: a wait, then a look again:
+    # John, 17 Nov 2026, "we need a check that the mac mini doesn't try and convert anything that's being converted on the mac")
+    free = [x for x in rest if not claimed(x['id'])]
+    if not free:
+        now('waiting', why='the rest are being converted on John’s Mac')
+        time.sleep(120)
+        continue
+    it = free[0]
+    rest.remove(it)
     n += 1
     RUN['n'] = n
     RUN['next'] = [{'id': x['id'], 'name': x['name'], 'why': x['why'], 'gb': x['gb'], 'mins': x['mins'], 'mode': x.get('mode')} for x in [it] + rest[:11]]   # (what's coming, for the admin page)

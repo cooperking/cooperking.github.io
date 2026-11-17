@@ -791,12 +791,14 @@ def make_handler(g):
                     if len(parts) > 3 and parts[3] == 'progress' and body.get('stage') and 't' not in body:   # (a step on John's Mac, said: John, 17 Nov 2026)
                         job['stage'], job['seen'] = str(body.get('stage'))[:160], time.time()
                         convjobs_save()
+                        claim_renew(job['id'])
                         return self.send_json(200, {'ok': True})
                     if len(parts) > 3 and parts[3] == 'progress':   # (how far John's Mac has got, every few seconds: for the film's Edit panel)
                         job['t'], job['speed'], job['state'], job['seen'] = float(body.get('t') or 0), str(body.get('speed') or '')[:12], 'converting', time.time()
                         if time.time() - job.get('saved', 0) > 30:
                             job['saved'] = time.time()
                             convjobs_save()
+                            claim_renew(job['id'])   # (the Mac mini keeps off it while John's Mac is at it: John, 17 Nov 2026)
                         return self.send_json(200, {'ok': True})
                     home = os.path.expanduser('~/Grifflix')
                     job['state'] = 'checking' if body.get('ok') else 'failed'
@@ -3202,6 +3204,19 @@ def site_update(g, why=''):
 
 CONVJOBS = {}   # (films being converted on John's Mac: their one-time addresses)
 CONVJOBS_AT = os.path.expanduser('~/Grifflix/convert-jobs.json')   # (kept through a restart: the film's Edit panel can still say how it went)
+
+
+def claim_renew(iid):
+    """A film being converted on John's Mac, its claim renewed with each word from it: the Mac mini's converter leaves a claimed film alone,
+    and the claim lapses only half an hour after the last word (John, 17 Nov 2026: "we need a check that the mac mini doesn't try and convert
+    anything that's being converted on the mac")."""
+    try:
+        f = os.path.expanduser('~/Grifflix/convert-claims.json')
+        c = load(f, {}) or {}
+        c[iid] = time.time()
+        save(f, c)
+    except Exception:
+        pass
 
 
 def convjobs_save():
