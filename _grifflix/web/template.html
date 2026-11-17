@@ -5749,6 +5749,10 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
           : st === 'converting' ? '<div style="height:8px;background:rgba(127,127,127,.25);border-radius:4px;overflow:hidden"><div style="height:100%;width:' + pc.toFixed(1) + '%;background:var(--fg)"></div></div><p class="ov" style="margin:6px 0 0;font-size:14px">' + Math.floor(pc) + '% · ' + clock2(j.t) + ' of ' + clock2(j.dur) + (j.speed ? ' · ' + esc(j.speed) + ' speed' : '') + '</p>'
           : st === 'checking' ? '<p class="ov" style="margin:0;font-size:14px">Made. The Mac mini is checking it and putting it in place…</p>'
           : st === 'done' ? '<p class="ov" style="margin:0;font-size:14px">Done: Grifflix shows the new copy within a few minutes.</p>'
+          // (John's Mac never took it up, or went quiet part way: said plainly, when it was asked for: John, 17 Nov 2026, "how can I tell what
+          // happened with the convert from my mac command")
+          : st === 'notstarted' ? '<p class="ov" style="margin:0;font-size:14px">Your Mac never started it (asked for ' + esc(new Date(j.at * 1000).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + '): no Terminal window opened, or it stopped before it began. The Mac mini will do it in its own time, or press Convert on this Mac again (on a Mac where the Grifflix Convert app is set up: the admin page, Conversions).</p>'
+          : st === 'quiet' ? '<p class="ov" style="margin:0;font-size:14px">Your Mac stopped saying how far it’s got (at ' + Math.round(j.dur ? j.t / j.dur * 100 : 0) + '%, ' + esc(new Date((j.seen || j.at) * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })) + '): is it asleep, or its Terminal window closed? Look at that window on your Mac.</p>'
           : '<p class="ov" style="margin:0;font-size:14px">It didn’t convert' + (j.error ? ' (' + esc(j.error) + ')' : '') + '. The Mac mini will do it in its own time.</p>';
         if (more) tmT = setTimeout(watch, 3000);
       }).catch(function () {});

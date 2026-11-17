@@ -785,10 +785,14 @@ def make_handler(g):
                         if job.get('ended'):
                             return self.send_json(404, {'error': 'That job is finished: press Convert on this Mac again.'})
                         job['state'], job['seen'] = 'started', time.time()
+                        convjobs_save()
                         return self.send_json(200, {'name': pl['item'].get('name'), 'src': pl['src'], 'tmp': pl['tmp'], 'dur': pl['dur'], 'args': vt_args(pl['cmd'])})
                     body = self.body()
                     if len(parts) > 3 and parts[3] == 'progress':   # (how far John's Mac has got, every few seconds: for the film's Edit panel)
                         job['t'], job['speed'], job['state'], job['seen'] = float(body.get('t') or 0), str(body.get('speed') or '')[:12], 'converting', time.time()
+                        if time.time() - job.get('saved', 0) > 30:
+                            job['saved'] = time.time()
+                            convjobs_save()
                         return self.send_json(200, {'ok': True})
                     home = os.path.expanduser('~/Grifflix')
                     job['state'] = 'checking' if body.get('ok') else 'failed'
@@ -818,8 +822,10 @@ def make_handler(g):
                             claims = load(os.path.join(home, 'convert-claims.json'), {}) or {}
                             claims.pop(job['id'], None)
                             save(os.path.join(home, 'convert-claims.json'), claims)
+                            convjobs_save()
                     threading.Thread(target=finish, daemon=True).start()
                     job['ended'] = time.time()   # (kept a while, for the Edit panel to say how it went)
+                    convjobs_save()
                     return self.send_json(200, {'ok': True})
                 if u.path == '/local/fetched' and method == 'POST':   # gdrive.py on this Mac: a film has just come in (John, 15 Nov 2026: "can't it
                     # just be done as soon as something is finished downloading?"): the media server asked to look now, the site to follow, and
@@ -1855,7 +1861,8 @@ def make_handler(g):
             if plan.get('error'):
                 return self.send_json(400, {'error': plan['error']})
             tok = secrets.token_urlsafe(18)
-            CONVJOBS[tok] = {'plan': plan, 'at': time.time(), 'id': iid}
+            CONVJOBS[tok] = {'plan': plan, 'at': time.time(), 'id': iid, 'state': 'waiting'}
+            convjobs_save()
             claims = load(os.path.join(home, 'convert-claims.json'), {}) or {}
             claims[iid] = time.time()
             save(os.path.join(home, 'convert-claims.json'), claims)
@@ -1898,6 +1905,16 @@ def make_handler(g):
             if not jobs:
                 return self.send_json(200, {'state': 'none'})
             j = jobs[-1]
+            if (j.get('state') or 'waiting') == 'waiting' and time.time() - j['at'] > 900:   # (John's Mac never took it up: said so, and the film left to the Mac mini again)
+                j['state'] = 'notstarted'
+                home = os.path.expanduser('~/Grifflix')
+                claims = load(os.path.join(home, 'convert-claims.json'), {}) or {}
+                if claims.pop(iid, None) is not None:
+                    save(os.path.join(home, 'convert-claims.json'), claims)
+                log('Not started on John’s Mac: %s (set up %s)' % (j['plan']['item'].get('name'), time.strftime('%d %b %H:%M', time.localtime(j['at']))))
+                convjobs_save()
+            if j.get('state') == 'converting' and time.time() - (j.get('seen') or j['at']) > 600:   # (no word from it for ten minutes: stopped, the Mac asleep?)
+                return self.send_json(200, {'state': 'quiet', 't': j.get('t') or 0, 'dur': j['plan'].get('dur') or 0, 'at': j['at'], 'seen': j.get('seen')})
             return self.send_json(200, {'state': j.get('state') or 'waiting', 't': j.get('t') or 0, 'dur': j['plan'].get('dur') or 0, 'speed': j.get('speed') or '',
                                         'error': j.get('error') or '', 'at': j['at'], 'seen': j.get('seen')})
 
@@ -2058,7 +2075,7 @@ def make_handler(g):
             else:
                 folder = os.path.dirname(real)
                 vids = ('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')
-                others = [n for n in os.listdir(folder) if n.lower().endswith(vids) and os.path.join(folder, n) != real and 'sample' not in n.lower()] if folder != root.rstrip('/') else ['(the films folder)']
+                others = [n for n in os.listdir(folder) if n.lower().endswith(vids) and not n.startswith('.') and os.path.join(folder, n) != real and 'sample' not in n.lower()] if folder != root.rstrip('/') else ['(the films folder)']
                 stem = os.path.splitext(os.path.basename(real))[0]
                 what = [folder] if not others else [os.path.join(folder, n) for n in os.listdir(folder) if n.startswith(stem)]
             # (deleted for good, the space freed at once, not kept in a bin: John asks twice first. John, 16 Nov 2026: "I also don't want
@@ -2073,13 +2090,22 @@ def make_handler(g):
                                 freed += os.path.getsize(os.path.join(d_, f_))
                             except OSError:
                                 pass
-                    shutil.rmtree(w)
+                    # (a file already gone is no fault: the drive's hidden "._" companions go by themselves with their own file, and
+                    # each delete stopped part way, pressed again and again: John, 16-17 Nov 2026, the log's FileNotFoundError)
+                    def gone_ok(fn, path_, exc):
+                        e_ = exc[1] if isinstance(exc, tuple) else exc
+                        if not isinstance(e_, FileNotFoundError):
+                            raise e_
+                    shutil.rmtree(w, onerror=gone_ok)
                 else:
                     try:
                         freed += os.path.getsize(w)
                     except OSError:
                         pass
-                    os.remove(w)
+                    try:
+                        os.remove(w)
+                    except FileNotFoundError:
+                        pass
             try:
                 g.jf.call('POST', '/Library/Refresh')
             except Exception:
@@ -3109,6 +3135,20 @@ def site_update(g, why=''):
 
 
 CONVJOBS = {}   # (films being converted on John's Mac: their one-time addresses)
+CONVJOBS_AT = os.path.expanduser('~/Grifflix/convert-jobs.json')   # (kept through a restart: the film's Edit panel can still say how it went)
+
+
+def convjobs_save():
+    try:
+        save(CONVJOBS_AT, {k: v for k, v in CONVJOBS.items() if time.time() - v.get('at', 0) < 86400})
+    except Exception:
+        pass
+
+
+try:
+    CONVJOBS.update({k: v for k, v in (load(CONVJOBS_AT, {}) or {}).items() if time.time() - v.get('at', 0) < 86400})
+except Exception:
+    pass
 
 
 def vt_args(cmd):
