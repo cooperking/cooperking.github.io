@@ -3455,6 +3455,27 @@ def auto_match(g):
         log('Not sure which film (left as they are, Fix match on its page): %s' % '; '.join(unsure)[:800])
 
 
+def tmdb_once():
+    """Once: every row of John's Criterion sheet given its TMDB link at once (John, 17 Nov 2026: "can we run as a job now"); after that only
+    a new Criterion film's row, as it's added (covers_now, criterion-covers.py)."""
+    home = os.path.expanduser('~/Grifflix')
+    done = os.path.join(home, 'criterion-tmdb-all.done')
+    if os.path.exists(done) or not os.path.exists(os.path.join(home, 'criterion.json')):
+        return
+    time.sleep(90)
+    try:
+        import subprocess
+        r = subprocess.run([sys.executable, '-u', os.path.join(home, 'criterion.py'), 'tmdb', 'go'], capture_output=True, text=True, timeout=4 * 3600, cwd=home, stdin=subprocess.DEVNULL)
+        out = (r.stdout or '') + (r.stderr or '')
+        with open(os.path.join(home, 'criterion-sheet.log'), 'w') as f:
+            f.write(out)
+        log('Criterion sheet, every TMDB link: %s' % ' '.join(l.strip() for l in out.strip().splitlines()[-4:])[:400])
+        if r.returncode == 0 and ('Added' in out or 'TMDB links: 0 to add' in out):
+            open(done, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+    except Exception as e:
+        log('Criterion sheet, every TMDB link:', e)
+
+
 def sheet_now():
     """John's Criterion sheet kept up to date by itself, every six hours: which films are in Grifflix and which have extras in "Other"
     (John, 16 Nov 2026: "the criterion collection google sheet should be updating the section when it's on Grifflix, and the Extras if
@@ -3801,7 +3822,6 @@ def keep_scanning(g):
                 auto_match(g)
             except Exception as e:
                 log('Putting films right by their folders:', e)
-            sheet_now()
             if not (SYN.get('t') and SYN['t'].is_alive()):   # (any synopses not given yet, as after a restart part way)
                 try:
                     give_synopses(g)
@@ -3900,7 +3920,8 @@ def serve():
     # port during an update, starts nothing. Each such start stopped the downloads: John, 15 Nov 2026, every one "went missing")
     threading.Thread(target=keep_converting, daemon=True).start()
     threading.Thread(target=keep_scanning, args=(g,), daemon=True).start()
-    threading.Thread(target=keep_updating, args=(g,), daemon=True).start()   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
+    threading.Thread(target=keep_updating, args=(g,), daemon=True).start()
+    threading.Thread(target=tmdb_once, daemon=True).start()   # (the Criterion sheet's TMDB links, once)   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
     threading.Thread(target=keep_gdrive, daemon=True).start()
     srv.daemon_threads = True
     log('Grifflix gateway on 127.0.0.1:%d, Jellyfin at %s' % (port, g.st['jellyfin']))
