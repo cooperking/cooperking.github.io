@@ -1668,7 +1668,8 @@ def make_handler(g):
                         r = {'status': 500, 'error': str(e)[:200], 'at': int(time.time())}
                     finish(r)
                 threading.Thread(target=run, daemon=True).start()
-                return self.send_json(202, {'started': True, 'sha': have.get('sha', '')})
+                log('Update the Mac: asked from the admin page')
+                return self.send_json(202, {'started': True, 'sha': have.get('sha', ''), 'now': int(time.time())})
             r = work()
             self.send_json(r.get('status', 200), r)
             finish(r)
@@ -4059,6 +4060,13 @@ def serve():
     threading.Thread(target=covers_once, daemon=True).start()   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
     threading.Thread(target=keep_gdrive, daemon=True).start()
     srv.daemon_threads = True
+    try:   # (an update that restarted the gateway: said to be over, now it's back, so the admin page knows: John, 17 Nov 2026,
+        # "The Mac hasn't finished updating yet" when it had)
+        ur = os.path.join(APP_DIR, 'update-result.json'); r0 = load(ur, None)
+        if r0 and r0.get('restarting'):
+            save(ur, dict(r0, restarting=False, back=int(time.time())))
+    except Exception:
+        pass
     log('Grifflix gateway on 127.0.0.1:%d, Jellyfin at %s' % (port, g.st['jellyfin']))
     srv.serve_forever()
 
