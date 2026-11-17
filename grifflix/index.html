@@ -196,6 +196,9 @@ html.tv .pic.odd::before { filter: brightness(.35); inset: 0; }
 .gridcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 22px 16px; padding: 0 4px; }
 /* (a Criterion page's list, as Criterion's own: Spine #, the cover, Title, Director, Country, Year) */
 .clist { display: flex; flex-direction: column; padding: 0 4px; }
+.cviews { display: inline-flex; gap: 6px; flex-wrap: wrap; } .csets { display: block; }
+.cset { margin: 0 0 34px; } .cset h3 { display: flex; align-items: baseline; gap: 12px; margin: 0 4px 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,.18); font-size: 20px; letter-spacing: .02em; }
+.cset h3 small { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; opacity: .65; }
 .clrow { display: grid; grid-template-columns: 84px 44px minmax(0, 2.4fr) minmax(0, 1.6fr) minmax(0, 1fr) 56px; gap: 14px; align-items: center; padding: 8px 6px; border: 0; border-bottom: 1px solid rgba(255,255,255,.1); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; width: 100%; }
 .clrow:hover, .clrow:focus-visible { background: rgba(255,255,255,.06); }
 .clrow img { width: 44px; height: 62px; object-fit: cover; display: block; border-radius: 2px; }
@@ -1945,6 +1948,94 @@ html.gxproj .zcurt::before { opacity: 1; }
 .vtog span { position: relative; padding: 7px 14px 6px; text-align: center; letter-spacing: .3em; text-indent: .3em; transition: color .35s ease; }
 .vtog.vt-cal span:first-child, .vtog.vt-thm span:last-child { color: var(--bg); }
 html.phone .vtog span { padding: 6px 8px 5px; letter-spacing: .13em; text-indent: .13em; }
+
+/* ---- The Criterion Collection at Grifflix (John, 17 Nov 2026: "a small criterion C logo next to the calendar/ theme toggle ... that goes
+   straight to the criterion collection ... special Grifflix criterion styling, with the same colour as the criterion website, but uniquely Grifflix
+   too ... an intro screen"; then, from Criterion's own list page: "can the criterion C not have the circle in the middle - could GRIFFLIX look like
+   the white outlined logo ... Could the colours of the collection be more like the website - and the little icon match the colour of the page it's
+   on ... It should be The Criterion Collection at GRIFFLIX"). Criterion's site: a pale grey page, white panels, near-black type, grey details */
+:root { --gc-page: #f4f4f4; --gc-panel: #fff; --gc-ink: #1e1e1e; --gc-grey: #8c8c8c; --gc-line: #e2e2e2; }
+/* the switch: only the side you're on, in words (John: "only needs to show which toggle is on, rather than both words") */
+#barnav button.vtog, #shnav button.vtog { grid-template-columns: 1fr; }
+.vtog::before { width: calc(100% - 6px) !important; transform: none !important; }
+.vtog.vt-cal span:first-child, .vtog.vt-thm span:last-child { display: none; }   /* (the side it takes you to, not the one you're on: John, 17 Nov 2026, "Theme and calendar are the wrong way around in the toggle") */
+.vtog.vt-cal span:last-child, .vtog.vt-thm span:first-child { color: var(--bg); }
+html.public .critbtn { display: none !important; }   /* (not for visitors, signed out: John, 17 Nov 2026) */
+/* the C on the bar: in the ink of the page it's on, as every button there */
+.critbtn { flex: none; position: relative; display: inline-grid; place-items: center; width: 32px; height: 32px; padding: 0 !important; margin-left: 2px; border: 1px solid rgba(var(--kink), .45) !important; background: transparent !important; color: var(--fg) !important; border-radius: 0 !important; cursor: pointer; }
+.critbtn svg { width: 18px; height: 18px; fill: currentColor; transition: transform .5s cubic-bezier(.6, 0, .2, 1); }
+.critbtn:hover, .critbtn:focus-visible, html.gcrit .critbtn { background: rgb(var(--kink)) !important; color: var(--bg) !important; }
+.critbtn:hover svg, .critbtn:focus-visible svg { transform: rotate(-24deg); }
+@media (max-width: 389px) { .critbtn { width: 28px; height: 28px; } .critbtn svg { width: 15px; height: 15px; } }
+/* GRIFFLIX as its logo: Futura's bold spaced capitals, see-through, a line round each letter */
+.gcx { font: 700 1em/1 var(--kfont); letter-spacing: .5em; margin-right: -.5em; text-transform: uppercase; color: var(--gcx-bg, #fff); -webkit-text-stroke: .12em var(--gc-ink); paint-order: stroke fill; }
+/* (filled with what's behind it, the line drawn under: only each letter's outside edge shows, not where its strokes cross inside, as the R and
+   G did: John, 17 Nov 2026, "The grifflix logo looks like this not the extra parts you've added") */
+.gcin .core { --gcx-bg: var(--gc-panel); } .card.coll .ccov.gcc { --gcx-bg: var(--gc-page); }
+/* the intro: The Criterion Collection at GRIFFLIX */
+.gcin { position: fixed; inset: 0; z-index: 2147483000; background: var(--gc-page); color: var(--gc-ink); display: grid; place-items: center; overflow: hidden; cursor: pointer; opacity: 1; transition: opacity .6s ease; }
+.gcin.out { opacity: 0; pointer-events: none; }
+.gcin .shelf { position: absolute; inset: 0; display: flex; align-items: stretch; gap: 3px; padding: 0 3px; transform: translateX(6%); animation: gcShelf 3.6s cubic-bezier(.2, .7, .2, 1) forwards; }
+.gcin .shelf i { position: relative; flex: 1 0 auto; min-width: 12px; border-left: 1px solid var(--gc-line); }
+.gcin .shelf i:nth-child(5n) { background: rgba(0, 0, 0, .018); }
+.gcin .shelf b { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); font: normal 500 9px/1 var(--kfont); letter-spacing: .1em; writing-mode: vertical-rl; color: #c4c4c4; }
+@keyframes gcShelf { to { transform: translateX(-6%); } }
+.gcin .core { position: relative; text-align: center; padding: 40px 48px 34px; background: var(--gc-panel); box-shadow: 0 1px 0 var(--gc-line), 0 30px 60px rgba(0, 0, 0, .06); }
+.gcin .lockup { display: inline-flex; align-items: center; gap: 16px; }
+.gcin .mark { width: clamp(54px, 10vw, 84px); height: auto; overflow: visible; }
+.gcin .mark .c { fill: transparent; stroke: var(--gc-ink); stroke-width: 1.4; stroke-dasharray: 260; stroke-dashoffset: 260; animation: gcDraw 1.2s cubic-bezier(.6, 0, .2, 1) .15s forwards, gcFill .45s ease 1.15s forwards; }
+@keyframes gcDraw { to { stroke-dashoffset: 0; } } @keyframes gcFill { to { fill: var(--gc-ink); stroke-width: 0; } }
+.gcin .cc { font: 500 clamp(11px, 1.7vw, 15px)/1.15 var(--kfont); letter-spacing: .12em; text-transform: uppercase; text-align: left; opacity: 0; animation: gcUp .6s ease .9s forwards; }
+.gcin .at { display: block; margin: 22px 0 14px; font: italic 400 clamp(18px, 3.4vw, 26px)/1 var(--serif); color: var(--gc-grey); opacity: 0; animation: gcUp .6s ease 1.35s forwards; }
+.gcin .g { display: block; font-size: clamp(30px, 7vw, 62px); opacity: 0; transform: translateY(10px); animation: gcUp .7s ease 1.6s forwards; }
+.gcin .n { display: block; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--gc-line); font: 500 11px/1.4 var(--kfont); letter-spacing: .14em; text-transform: uppercase; color: var(--gc-grey); opacity: 0; animation: gcUp .6s ease 2s forwards; font-variant-numeric: tabular-nums; }
+.gcin .n b { color: var(--gc-ink); }
+.gcin .go { margin-top: 20px; padding: 12px 24px 11px; border: 1px solid var(--gc-ink); background: none; color: var(--gc-ink); font: 600 11px/1 var(--kfont); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; opacity: 0; animation: gcUp .6s ease 2.2s forwards; }
+.gcin .go:hover, .gcin .go:focus-visible { background: var(--gc-ink); color: var(--gc-panel); }
+@keyframes gcUp { to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .gcin *, .gcin .shelf { animation-duration: .01s !important; animation-delay: 0s !important; } }
+@media (max-width: 600px) { .gcin .core { padding: 30px 22px 26px; margin: 0 16px; } }
+/* its page: Criterion's pale grey with a white panel, near-black type, grey details, and Grifflix's logo */
+/* (the whole of Grifflix in Criterion's colours while on its page, the bar too, not a box inside the month's: John, 17 Nov 2026, "The new colours
+   should be the whole of grifflix, not just a box inside") */
+html.gcrit { --bg: #f4f4f4 !important; --kink: 30, 30, 30 !important; --line: rgba(0, 0, 0, .14) !important; --tile: rgba(0, 0, 0, .06) !important; --shadow: rgba(0, 0, 0, .12) !important; color-scheme: light; }
+html.gcrit, html.gcrit body { background: var(--gc-page) !important; }
+html.gcrit .bar-top, html.gcrit .bar-top .brand { --fg: var(--gc-ink); }
+html.gcrit #cbody { color: var(--gc-ink); }
+/* (its cover larger, its count in it, no title under it, and no Collections button above: John, 17 Nov 2026, "The collection picture looks
+   messy with the title underneath. Should be a bit larger with the number visible in the picture ... We can remove the collections button") */
+html.gcrit #main > .tabs:first-child { display: none; }
+html.gcrit #cbody .collhead { grid-template-columns: 240px minmax(0, 1fr); margin-top: 8px; }
+html.gcrit #cbody .collpic { background: none; box-shadow: none; }
+html.gcrit #cbody .collpic .t, html.gcrit #cbody .collpic .s { display: none; }
+html.gcrit #cbody .collpic .ccov { box-shadow: 0 18px 40px rgba(0, 0, 0, .12); }
+@media (max-width: 760px) { html.gcrit #cbody .collhead { grid-template-columns: 150px minmax(0, 1fr); } }
+html.gcrit .bar-top { background: var(--gc-page) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: 0 1px 0 var(--gc-line) !important; }
+html.gcrit body::before, html.gcrit body::after { background-color: var(--gc-page) !important; background-image: none !important; }
+@media (max-width: 600px) { html.gcrit #cbody .collhead + .tabs { flex-wrap: wrap !important; overflow: visible !important; row-gap: 8px; } html.gcrit #cbody .tabs .sfbar { position: static; margin-left: 0; padding-left: 0; box-shadow: none; background: none; } #cbody .cviews { flex: 1 0 100%; order: 9; } #cbody .cviews .pill { flex: 1; justify-content: center; } #cbody .tabs .cfind { flex: 1 1 140px; min-width: 0; } }
+html.gcrit #cbody .kick { color: var(--gc-grey); }
+html.gcrit #cbody .kick::after { content: " · at Grifflix"; }
+html.gcrit #cbody .colltitle { font-family: var(--kfont); font-weight: 700; text-transform: uppercase; letter-spacing: .02em; color: var(--gc-ink); }
+html.gcrit #cbody .hsub, html.gcrit #cbody .ov { color: #555; }
+html.gcrit #cbody .collhead + .tabs, html.gcrit #cbody #cgrid { background: var(--gc-panel); }
+html.gcrit #cbody .collhead + .tabs { margin: 0; padding: 22px clamp(14px, 2.4vw, 32px) 0; }
+html.gcrit #cbody #cgrid { padding: 8px clamp(14px, 2.4vw, 32px) 28px; }
+html.gcrit #cbody .pill, html.gcrit #cbody .cfind { border: 1px solid var(--gc-line); color: var(--gc-ink); background: var(--gc-panel); font-family: var(--kfont); }
+html.gcrit #cbody .pill.on, html.gcrit #cbody .sfb.on { background: #eee; color: var(--gc-ink); }
+html.gcrit #cbody .clhead { border-bottom: 2px solid var(--gc-ink); } html.gcrit #cbody .clh { opacity: 1; font: 400 15px/1 var(--serif); letter-spacing: 0; text-transform: none; color: var(--gc-ink); } html.gcrit #cbody .clh.on { font-weight: 700; }
+html.gcrit #cbody .clrow { border-bottom: 1px solid var(--gc-line); color: var(--gc-ink); } html.gcrit #cbody .clrow:hover { background: #fafafa; }
+html.gcrit #cbody .clrow .cls { font: 400 14px/1 var(--kfont); } html.gcrit #cbody .clrow .clt { font: 600 15px/1.3 var(--kfont); }
+html.gcrit #cbody .clrow .cld { font: italic 400 14px/1.3 var(--kfont); color: var(--gc-grey); opacity: 1; } html.gcrit #cbody .clrow .clc, html.gcrit #cbody .clrow .cly { font: 400 14px/1.3 var(--kfont); color: var(--gc-grey); opacity: 1; }
+html.gcrit #cbody .card .t, html.gcrit #cbody .card .s, html.gcrit #cbody .cset h3 { color: var(--gc-ink); } html.gcrit #cbody .cset h3 { font-family: var(--kfont); text-transform: uppercase; border-bottom-color: var(--gc-ink); }
+html.gcrit #cbody .empty { color: var(--gc-grey); }
+html.gcrit #cbody .cfind::placeholder { color: var(--gc-grey); opacity: 1; }
+/* the collection's cover, in the same design (John: "could we also change the Collection picture to the Criterion at Grifflix design") */
+.card.coll .ccov.gcc { background: var(--gc-page); color: var(--gc-ink); border-color: var(--gc-line); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 8% 7%; }
+.gcc .gcm { width: 34%; height: auto; fill: var(--gc-ink); }
+.gcc em { display: block; margin-top: 9%; font: normal 500 6cqw/1.25 var(--kfont); letter-spacing: .12em; text-transform: uppercase; }
+.gcc i { display: block; margin: 6% 0 5%; font: italic 400 7.5cqw/1 var(--serif); color: var(--gc-grey); }
+.gcc .gcx { display: block; font-size: 10cqw; -webkit-text-stroke-width: .14em; }
+.gcc small { display: block; margin-top: 10%; font: 600 5.4cqw/1 var(--kfont); letter-spacing: .18em; text-transform: uppercase; color: #555; }
 /* the switch square, as every other button of the bar (John, 11 Nov 2026: "the theme calendar toggle is rounded") */
 #barnav button.vtog, #shnav button.vtog, .vtog::before { border-radius: 0 !important; }
 /* the bar on every phone, down to the smallest (320 wide): a little tighter, the draft's tag a yellow dot, and on the smallest no
@@ -2164,7 +2255,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'a56b0fec89d7' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '0eb92de7956e' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2367,6 +2458,7 @@ function sfFits(f) {
     if (f.decades && f.decades.length && f.decades.indexOf(Math.floor(y / 10) * 10) < 0) return false;
     if (f.dirs && f.dirs.length && !sfDirs(i).some(function (x) { return f.dirs.indexOf(x) >= 0; })) return false;
     if (f.ctys && f.ctys.length && f.ctys.indexOf(i.ccty || '') < 0) return false;
+    if (f.csets && f.csets.length && !(i.cset || []).some(function (x) { return f.csets.indexOf(x) >= 0; })) return false;
     return true;
   };
   return function (i) {
@@ -2384,7 +2476,7 @@ function sfFits(f) {
   };
 }
 function sfDirs(i) { return (i.cdir || '').split(/\s*(?:,|\band\b|&)\s*/).map(function (x) { return x.trim(); }).filter(Boolean); }
-function sfCount(f) { if (SPINEOK) return ['cats', 'cgen', 'decades', 'dirs', 'ctys'].filter(function (k) { return (f[k] || []).length; }).length;
+function sfCount(f) { if (SPINEOK) return ['cats', 'cgen', 'csets', 'decades', 'dirs', 'ctys'].filter(function (k) { return (f[k] || []).length; }).length;
   return ['genres', 'decades', 'certs'].reduce(function (n, k) { return n + ((f[k] || []).length ? 1 : 0); }, 0) + ['len', 'min', 'added'].filter(function (k) { return f[k]; }).length; }
 var SFICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg>';
 var FFICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>';
@@ -2408,6 +2500,13 @@ function sfWire(root, items, redraw) {   // the icons' panels: items are what's 
     dim.onclick = function () { close(); };
   }
   var close = function () { pop.hidden = true; open = ''; if (dim) dim.hidden = true; };
+  // (a click anywhere else closes it: John, 17 Nov 2026, "when you click out of the open filter in the criterion collection, it should disappear")
+  var outside = function (e) {
+    if (!root.isConnected) return document.removeEventListener('pointerdown', outside, true);
+    if (!open || pop.hidden || pop.contains(e.target) || (e.target.closest && e.target.closest('#sfsort, #sffilt'))) return;
+    close();
+  };
+  document.addEventListener('pointerdown', outside, true);
   var chips = function (key, list, multi) {
     return list.map(function (o) {
       var v = o[0], on = multi ? (SF.f[key] || []).indexOf(v) >= 0 : SF.f[key] === v;
@@ -2427,6 +2526,8 @@ function sfWire(root, items, redraw) {   // the icons' panels: items are what's 
         pop.innerHTML = '<div class="sfh">Filters' + (sfCount(SF.f) ? '<button class="sfclear" id="sfclear">Clear all</button>' : '') + '</div>' +
           '<div class="sfg"><div class="sfl">Popular searches</div>' + chips('cats', CPOP.map(function (c) { return [c, c, tc[c] || 0]; }), true) + '</div>' +
           '<div class="sfg"><div class="sfl">Genres</div>' + chips('cgen', CGEN.map(function (c) { return [c, c, tc[c] || 0]; }), true) + '</div>' +
+          (function () { var bc = cnt(function (i) { return i.cset || []; }), bl = Object.keys(bc).sort(function (a, b) { return a.localeCompare(b); });   // (Collector's Sets: the box set each is in)
+            return bl.length ? '<div class="sfg"><div class="sfl">Box set</div>' + chips('csets', bl.map(function (c) { return [c, c, bc[c]]; }), true) + '</div>' : ''; })() +
           '<div class="sfg"><div class="sfl">Decade</div>' + chips('decades', DEC.map(function (d) { return [d, d + 's', dc[d] || 0]; }), true) + '</div>' +
           '<div class="sfg"><div class="sfl">Country</div>' + chips('ctys', Object.keys(yc).sort(function (a, b) { return a.localeCompare(b); }).map(function (c) { return [c, c, yc[c]]; }), true) + '</div>' +
           '<div class="sfg"><div class="sfl">Director <input type="search" id="sfdirq" placeholder="Find a director" style="font:inherit;padding:4px 8px;margin-left:6px;max-width:180px"></div><div id="sfdirs" class="sfdirs">' + chips('dirs', dl.map(function (d) { return [d, d, dc2[d]]; }), true) + '</div></div>' +
@@ -2935,6 +3036,7 @@ function route() {
   var h = (location.hash || '#home').slice(1).split('/');
   S.view = h[0] || 'home';
   $('#main').className = '';
+  if (S.view !== 'collection') document.documentElement.classList.remove('gcrit');
   document.documentElement.toggleAttribute('data-page', ['browse', 'collection', 'lists'].indexOf(S.view) >= 0);   // (a page of its own: kept clear of the theme's floating bar)
   $$('.bar-top [data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === S.view && b.classList.contains('pill')); });
   window.scrollTo(0, 0);
@@ -5310,6 +5412,10 @@ function cardHTML(it, land, spine) {   // (spine: a collection's page, a Criteri
   return '<button class="card' + (land ? ' land' : '') + '" data-item="' + it.id + '"><div class="pic">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '<div class="noimg">' + esc(showName(it)) + '</div>') + progBar(it) + '</div>' +
     '<div class="t">' + esc(showName(it)) + '</div><div class="s">' + (spine && it.spine ? '<b class="spn">No. ' + esc(String(it.spine)) + '</b> · ' : '') + esc(subOf(it)) + '</div></button>';
 }
+function gcCover(c, n) {   // (Grifflix at Criterion's cover: John, 17 Nov 2026)
+  var sub = (c.name || '').replace(/^the\s+/i, '').replace(/criterion( collection)?/i, '').trim();
+  return '<div class="pic ccov gcc">' + gcMark('gcm') + '<em>The Criterion<br>Collection</em><i>at</i><b class="gcx">Grifflix</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '<small>' + esc(n) + '</small>') + '</div>';
+}
 function collCard(c) {   // a collection's cover, drawn rather than a picture: a title poster in the month's theme - its colour,
   // its type, and a graphic of its own for each collection (John, 8 Nov 2026: "replace the images with a creatively styled
   // option, like the theme")
@@ -5317,6 +5423,7 @@ function collCard(c) {   // a collection's cover, drawn rather than a picture: a
   if (mm) { k = mm[1]; nm = mm[2]; }
   var h = 0; for (var i = 0; i < (c.id || nm).length; i++) h = (h * 31 + (c.id || nm).charCodeAt(i)) >>> 0;
   var long = nm.length > 26 ? ' xl' : (nm.length > 13 ? ' l' : ''), n = c.children ? c.children + (c.children === 1 ? ' title' : ' titles') : 'Collection';
+  if (/criterion/i.test(c.name)) return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '">' + gcCover(c, n) + '<div class="t">' + esc(c.name) + '</div><div class="s">' + n + '</div></a>';
   return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '"><div class="pic ccov" data-cn="' + esc(c.name) + '" data-nm="' + esc(nm) + '" data-ch="' + h + '">' + collArt(h, nm, c.name) +
     '<div class="cc">' + (k ? '<small>' + esc(k) + '</small>' : '') + '<b class="' + long + '">' + esc(nm) + '</b><i></i><span>' + n + '</span></div></div><div class="t">' + esc(c.name) + '</div><div class="s">' + n + '</div></a>';   // (its name under it too, as a film's: John, 8 Nov 2026)
 }
@@ -5339,6 +5446,7 @@ function collectionView(id, into) {
   apiMemo('collection?id=' + encodeURIComponent(id), function (c) {
     if (!$('#cbody')) return;
     sfMode(/criterion/i.test(c.name));   // (before its bar is drawn: the bar shows Criterion's sort)
+    document.documentElement.classList.toggle('gcrit', /criterion/i.test(c.name));   // (The Criterion Collection at Grifflix: its own look)
     var cov = collCard({ id: c.id, name: c.name, children: c.items.length }).replace(/^<a [^>]*>|<\/a>$/g, '');   // (its drawn cover, as on the shelf)
     $('#cbody').innerHTML = '<div class="collhead"><div class="card coll collpic">' + cov + '</div>' +
       '<div><div class="kick">Collection</div><h1 class="colltitle">' + esc(c.name) + '</h1><div class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' title' : ' titles') + '</i></div>' +
@@ -5347,10 +5455,20 @@ function collectionView(id, into) {
       // the ability to edit collections properly, as well as search within them")
       '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find in this collection" aria-label="Find in this collection" autocomplete="off"><span class="sp"></span>' + sfBar() + '</div>' +
       '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>';
-    var editing = false, fq = '', clist = store.get('grifflix-clist') !== 'covers';
+    var editing = false, fq = '', cmode = { covers: 'covers', sets: 'sets' }[store.get('grifflix-clist')] || 'list', clist = cmode === 'list';
     var fits = function (i) { if (!fq) return true; var t = (showName(i) + ' ' + (i.year || '') + ' ' + (i.spine ? 'no ' + i.spine : '')).toLowerCase(); return fq.split(/\s+/).every(function (w) { return t.indexOf(w) >= 0; }); };
     var draw = function () {
       var items = sfSort(c.items.filter(sfFits(SF.f)).filter(fits), sfKey(), sfDirOf());
+      if (SPINEOK && cmode === 'sets' && !editing) {   // (each box set and its films, Collector's Sets: John, 17 Nov 2026, "with a box set collection in there too")
+        var BS = {}; items.forEach(function (i) { (i.cset || []).forEach(function (b) { (BS[b] = BS[b] || []).push(i); }); });
+        var bn = Object.keys(BS).sort(function (a, b) { return a.localeCompare(b); });
+        $('#cgrid').className = 'csets';
+        $('#cgrid').innerHTML = bn.length ? bn.map(function (b) {
+          var L = BS[b].slice().sort(function (x, y) { return (+x.spine || 0) - (+y.spine || 0) || nameKey(x).localeCompare(nameKey(y)); });
+          return '<section class="cset"><h3><span>' + esc(b) + '</span><small>' + L.length + (L.length === 1 ? ' film' : ' films') + '</small></h3><div class="gridcards">' + L.map(function (i) { return cardHTML(i, false, true); }).join('') + '</div></section>';
+        }).join('') : '<div class="empty">' + (c.items.some(function (i) { return (i.cset || []).length; }) ? 'No box set has a film like that.' : 'The box sets come with Criterion’s genres: run the “Grifflix: Criterion genres” bookmark on Criterion’s list, then choose its file on the admin page.') + '</div>';
+        wireCards($('#cgrid'), items); return;
+      }
       var asList = SPINEOK && clist && !editing;
       $('#cgrid').className = asList ? 'clist' : 'gridcards';
       if (asList) {
@@ -5376,8 +5494,8 @@ function collectionView(id, into) {
     var ft = 0; $('#cfind').oninput = function () { var v = this.value.trim().toLowerCase(); clearTimeout(ft); ft = setTimeout(function () { fq = v; draw(); }, 120); };
     sfMode(/criterion/i.test(c.name)); sfWire($('#cbody'), c.items, draw);
     if (SPINEOK) {   // (a list, as Criterion's site; or the covers)
-      $('#cbody .sfbar').insertAdjacentHTML('beforebegin', '<button class="pill" id="cview" aria-label="Show as covers or a list">' + (clist ? 'Covers' : 'List') + '</button>');
-      $('#cview').onclick = function () { clist = !clist; store.set('grifflix-clist', clist ? 'list' : 'covers'); this.textContent = clist ? 'Covers' : 'List'; draw(); };
+      $('#cbody .sfbar').insertAdjacentHTML('beforebegin', '<span class="cviews" role="group" aria-label="Show as">' + [['list', 'List'], ['covers', 'Covers'], ['sets', 'Box sets']].map(function (m) { return '<button class="pill' + (cmode === m[0] ? ' on' : '') + '" data-cv="' + m[0] + '" aria-pressed="' + (cmode === m[0]) + '">' + m[1] + '</button>'; }).join('') + '</span>');
+      $$('#cbody [data-cv]').forEach(function (b) { b.onclick = function () { cmode = b.dataset.cv; clist = cmode === 'list'; store.set('grifflix-clist', cmode); $$('#cbody [data-cv]').forEach(function (x) { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); }); draw(); }; });
     }
     draw();
     if (ME && ME.owner && !TV) {
@@ -5599,9 +5717,52 @@ function navWords(on) {
   // see one or the other"); its other side what a press takes you to; Search beside it)
   var base = on === 'calendar' || on === 'theme' ? on : VIEW() === 'themes' && !S.mcal ? 'theme' : 'calendar';
   return '<button type="button" class="vtog ' + (base === 'theme' ? 'vt-thm' : 'vt-cal') + '" role="switch" aria-checked="' + (base === 'theme') + '" aria-label="Calendar or theme" data-nv="' + (base === 'theme' ? 'calendar' : 'theme') + '"><span>Calendar</span><span>Theme</span></button>' +
+    (PUBLIC && !DEMO ? '' : '<button type="button" class="critbtn" data-nv="criterion" aria-label="The Criterion Collection at Grifflix" title="The Criterion Collection at Grifflix">' + gcMark() + '</button>') +
     (PUBLIC && !DEMO ? '' : '<button type="button" data-nv="search"' + (on === 'search' ? ' class="on" aria-current="page"' : '') + '>Search</button>');   // (signed out: no searching the library)
 }
+
+// ---- Grifflix at Criterion: the C beside the switch, its intro, its page and its cover (John, 17 Nov 2026)
+var GCPATH = 'M31.5,48C22.3,48,15,40.6,15,31.5C15,22.3,22.3,15,31.5,15c7.4,0,13.6,4.8,15.7,11.6l14.3-4.2C57.7,9.4,45.7,0,31.5,0C14.1,0,0,14.1,0,31.5C0,48.8,14.1,63,31.5,63c2.1,0,4.2-0.2,6.3-0.6l-3.4-14.6C33.4,47.8,32.4,48,31.5,48z';
+function gcMark(cls) { return '<svg class="' + (cls || '') + '" viewBox="-2 -2 67 67" aria-hidden="true"><path class="c" d="' + GCPATH + '"/></svg>'; }
+function gcFind() {   // The Criterion Collection itself (else the first collection called Criterion anything)
+  return api('collections').then(function (r) { var L = r.collections || []; return L.filter(function (c) { return /^the criterion collection$/i.test(c.name); })[0] || L.filter(function (c) { return /criterion/i.test(c.name); })[0]; });
+}
+function critIntro() {
+  if ($('.gcin')) return;
+  var el = document.createElement('div'); el.className = 'gcin'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'The Criterion Collection at Grifflix');
+  var sp = []; for (var i = 1; i <= 90; i++) sp.push('<i><b>' + ((i * 13 + 7) % 1400) + '</b></i>');
+  el.innerHTML = '<div class="shelf" aria-hidden="true">' + sp.join('') + '</div><div class="core"><span class="lockup">' + gcMark('mark') +
+    '<span class="cc">The Criterion<br>Collection</span></span><span class="at">at</span><span class="g gcx">Grifflix</span><span class="n" aria-live="polite">&nbsp;</span><button type="button" class="go">Enter</button></div>';
+  document.body.appendChild(el);
+  var coll = null, done = false, t0 = Date.now(), auto = 0;
+  var key = function (e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
+  var go = function () {
+    if (done) return; done = true; clearTimeout(auto);
+    if (coll) location.hash = '#collection/' + coll.id;
+    el.classList.add('out'); setTimeout(function () { el.remove(); }, 700);
+    document.removeEventListener('keydown', key, true);
+  };
+  document.addEventListener('keydown', key, true);
+  el.onclick = go;
+  auto = setTimeout(go, 4200);
+  if (TV) setTimeout(function () { var b = el.querySelector('.go'); if (b) b.focus(); }, 2300);
+  gcFind().then(function (c) {
+    coll = c; var box = $('.gcin .n'); if (!c) { if (box) box.textContent = 'No Criterion collection in Grifflix yet'; return; }
+    return api('collection?id=' + encodeURIComponent(c.id)).then(function (d) {   // (how many, and the spines they run to, counted up)
+      var it = d.items || [], n = it.length, top = it.reduce(function (m, x) { return Math.max(m, +x.spine || 0); }, 0);
+      if (!box) return;
+      var st = 0, tick = function () {
+        if (!st) st = Date.now();
+        var k = Math.min(1, (Date.now() - st) / 1400), e = 1 - Math.pow(1 - k, 3);
+        box.innerHTML = '<b>' + Math.round(n * e).toLocaleString('en-GB') + '</b> films' + (top ? ' · spines to <b>No. ' + Math.round(top * e).toLocaleString('en-GB') + '</b>' : '');
+        if (k < 1 && !done) requestAnimationFrame(tick);
+      };
+      setTimeout(tick, Math.max(0, 2000 - (Date.now() - t0)));
+    });
+  }).catch(function () {});
+}
 function navGo(w) {
+  if (w === 'criterion') { if (dlg.open) closeSheet(); return critIntro(); }
   var oncal = dlg.open && !!$('#sheetIn .tcal'), onsearch = dlg.open && !!$('#sheetIn #sq'), d = dlg.open ? S.sheetDate : null;
   if (w === 'search') { if (!onsearch) searchSheet(); return; }
   if (w === 'calendar') {
