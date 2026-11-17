@@ -1768,6 +1768,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 
   // ---- Criterion's genres and categories, read by John's browser from Criterion's list (each one the list filtered by it), for the Criterion
   // pages' filters (John, 17 Nov 2026: "can also be filtered by genres and popular searches")
+  // (no // comments inside the bookmarklet: a bookmark is one line, so one hid all the code after it and it did nothing (John, 17 Nov 2026,
+  // "nothing's happening with the dragged genre bookmark"). Box sets: each box set's films read from its page, for Collector's Sets, which
+  // Criterion lists as sets, not films: John, 17 Nov 2026)
   (function () {
     var TBM = function () {
       if (!/(^|\.)criterion\.com$/.test(location.hostname) || !/\/shop\/browse/.test(location.pathname)) { alert('Open Criterion’s list (criterion.com/shop/browse/list), let it load, then click this bookmark there.'); return; }
@@ -1798,8 +1801,6 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
             var r = await fetch(urls[w], { credentials: 'include' }), h = await r.text();
             if (/Just a moment|challenges\.cloudflare\.com/.test(h.slice(0, 6000))) { d.textContent = 'Grifflix: Criterion asked to slow down: waiting a minute…'; await wait(60000); i--; continue; }
             var doc = new DOMParser().parseFromString(h, 'text/html');
-            // (a film's own page, or a box set's: each box set's films read from its page, for Collector's Sets, which Criterion lists as sets, not
-            // films: John, 17 Nov 2026, "I can look into pulling it from the box sets if you want. Yes")
             var hrefs = [].map.call(doc.querySelectorAll('tr.gridFilm, tr[data-href], [data-href*="/films/"], [data-href*="/boxsets/"], td a[href*="/boxsets/"], .gridFilm a[href*="/boxsets/"]'), function (el) { return el.getAttribute('data-href') || el.getAttribute('href') || ''; }).filter(Boolean);
             var slugs = [], seenH = {};
             for (var k = 0; k < hrefs.length; k++) {
