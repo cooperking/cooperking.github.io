@@ -394,6 +394,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <details id="cvlogw" hidden style="margin:8px 0 0"><summary style="cursor:pointer;opacity:.75">What the converter last said</summary><pre id="cvlog" style="white-space:pre-wrap;word-break:break-word;font-size:12px;line-height:1.45;opacity:.85;margin:8px 0 0"></pre></details>
         <div class="cvbar" id="cvbar" hidden><span id="cvfill"></span></div>
         <div class="state"><button class="btn" id="cvskip" type="button" hidden>Skip this film</button></div>
+        <div id="cvmac"></div>
         <p class="stat" id="cvdisks" hidden></p>
         <div class="cvord" id="cvord" hidden>
           <label class="cvsw"><input type="checkbox" id="cvrf"> <span>Repackage every MKV first, then the conversions <small>(repackaging takes minutes a film, converting hours)</small></span></label>
@@ -1248,6 +1249,27 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   // ---- conversions (convert.py on the Mac): the film it's on and how far, and those done
   // (John's say in the order: repackaging all first, and films pinned to go next; John, 12 Nov 2026: "repackage all mkv files first and
   // then go to conversions - let me prioritise too")
+  // ---- films being converted on John's own Mac: how far each has got, seen from any device (John, 17 Nov 2026)
+  var cmT = 0;
+  function cvMac() {
+    clearTimeout(cmT); if (!TOKEN) return; if (!GW) { cmT = setTimeout(cvMac, 3000); return; }
+    fetch(GW + '/api/convertjobs', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : { jobs: [] }; }).then(function (j) {
+      var J = j.jobs || [], live = J.some(function (x) { return ['waiting', 'started', 'converting', 'checking'].indexOf(x.state) >= 0; });
+      var mm = function (s) { s = Math.max(0, Math.round(s)); return s >= 3600 ? Math.floor(s / 3600) + ' h ' + Math.round(s % 3600 / 60) + ' min' : Math.round(s / 60) + ' min'; };
+      $('#cvmac').innerHTML = J.length ? '<p class="stat" style="margin:14px 0 6px"><b>On your Mac</b></p>' + J.map(function (x) {
+        var pc = x.dur ? Math.min(100, x.t / x.dur * 100) : 0, sp = parseFloat(x.speed) || 0;
+        var say = x.state === 'converting' ? pc.toFixed(0) + '%' + (sp ? ' · ' + x.speed + (x.dur && sp ? ' · about ' + mm((x.dur - x.t) / sp) + ' to go' : '') : '')
+          : x.state === 'waiting' ? 'waiting for your Mac to take it up' : x.state === 'started' ? (x.stage || 'starting') + '…'
+          : x.state === 'checking' ? 'made: the Mac mini is checking it and putting it in place' : x.state === 'done' ? 'done' + (x.ended ? ' at ' + new Date(x.ended * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '')
+          : x.state === 'quiet' ? 'no word from your Mac since ' + new Date((x.seen || x.at) * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ' (asleep, or its window closed?)'
+          : 'didn’t convert' + (x.error ? ': ' + x.error : '');
+        return '<div style="margin:0 0 10px">' + FL(x.name, null, x.id) + ' <span class="when" style="display:inline">· ' + esc(say) + '</span>' +
+          (x.state === 'converting' ? '<div class="cvbar" style="margin-top:6px"><span style="width:' + pc.toFixed(1) + '%"></span></div>' : '') + '</div>';
+      }).join('') : '';
+      cmT = setTimeout(cvMac, live ? 5000 : 60000);
+    }).catch(function () { cmT = setTimeout(cvMac, 60000); });
+  }
+  setTimeout(cvMac, 2500);
   function cvPost(body) {
     return fetch(GW + '/api/convert', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       .then(function (r) { if (r.status === 404) throw new Error('Update the Mac (Update everything) first.'); if (!r.ok) throw new Error('The Mac mini isn’t answering.'); return r.json(); });
