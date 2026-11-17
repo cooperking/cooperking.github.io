@@ -3529,13 +3529,13 @@ def tmdb_once():
     """Once: every row of John's Criterion sheet given its TMDB link at once (John, 17 Nov 2026: "can we run as a job now"); after that only
     a new Criterion film's row, as it's added (covers_now, criterion-covers.py)."""
     home = os.path.expanduser('~/Grifflix')
-    done = os.path.join(home, 'criterion-tmdb-all.done')
+    done = os.path.join(home, 'criterion-tmdb-retry.done')   # (again once, with the wider matching, for the 191 not found the first time)
     if os.path.exists(done) or not os.path.exists(os.path.join(home, 'criterion.json')):
         return
     time.sleep(90)
     try:
         import subprocess
-        r = subprocess.run([sys.executable, '-u', os.path.join(home, 'criterion.py'), 'tmdb', 'go'], capture_output=True, text=True, timeout=4 * 3600, cwd=home, stdin=subprocess.DEVNULL)
+        r = subprocess.run([sys.executable, '-u', os.path.join(home, 'criterion.py'), 'tmdb', 'go', 'retry'], capture_output=True, text=True, timeout=4 * 3600, cwd=home, stdin=subprocess.DEVNULL)
         out = (r.stdout or '') + (r.stderr or '')
         with open(os.path.join(home, 'criterion-sheet.log'), 'w') as f:
             f.write(out)
