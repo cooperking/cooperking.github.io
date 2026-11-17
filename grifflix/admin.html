@@ -1798,7 +1798,25 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
             var r = await fetch(urls[w], { credentials: 'include' }), h = await r.text();
             if (/Just a moment|challenges\.cloudflare\.com/.test(h.slice(0, 6000))) { d.textContent = 'Grifflix: Criterion asked to slow down: waiting a minute…'; await wait(60000); i--; continue; }
             var doc = new DOMParser().parseFromString(h, 'text/html');
-            out.tags[w] = [].map.call(doc.querySelectorAll('tr.gridFilm, [data-href*="/films/"]'), function (row) { return (row.getAttribute('data-href') || '').replace(/^.*\/films\//, '').replace(/[?\u0023].*$/, ''); }).filter(Boolean);
+            // (a film's own page, or a box set's: each box set's films read from its page, for Collector's Sets, which Criterion lists as sets, not
+            // films: John, 17 Nov 2026, "I can look into pulling it from the box sets if you want. Yes")
+            var hrefs = [].map.call(doc.querySelectorAll('tr.gridFilm, tr[data-href], [data-href*="/films/"], [data-href*="/boxsets/"], td a[href*="/boxsets/"], .gridFilm a[href*="/boxsets/"]'), function (el) { return el.getAttribute('data-href') || el.getAttribute('href') || ''; }).filter(Boolean);
+            var slugs = [], seenH = {};
+            for (var k = 0; k < hrefs.length; k++) {
+              var hr = hrefs[k].replace(/[?\u0023].*$/, ''); if (seenH[hr]) continue; seenH[hr] = 1;
+              if (/\/films\//.test(hr)) { slugs.push(hr.replace(/^.*\/films\//, '')); continue; }
+              if (!/\/boxsets\//.test(hr)) continue;
+              d.textContent = 'Grifflix: reading ' + w + ' (' + (i + 1) + ' of ' + keys.length + '): the box set ' + (k + 1) + ' of ' + hrefs.length + '… keep this tab open.';
+              await wait(1500 + Math.random() * 1000);
+              try {
+                var bh = await (await fetch(new URL(hr, location.href).href, { credentials: 'include' })).text();
+                if (/Just a moment|challenges\.cloudflare\.com/.test(bh.slice(0, 6000))) { d.textContent = 'Grifflix: Criterion asked to slow down: waiting a minute…'; await wait(60000); delete seenH[hr]; k--; continue; }
+                var bd = new DOMParser().parseFromString(bh, 'text/html');
+                [].forEach.call(bd.querySelectorAll('header, footer, nav, aside, [class*="related"], [class*="recommend"]'), function (x) { x.remove(); });
+                [].forEach.call(bd.querySelectorAll('a[href*="/films/"]'), function (a2) { var sl = a2.getAttribute('href').replace(/^.*\/films\//, '').replace(/[?\u0023/].*$/, ''); if (/^\d+-/.test(sl)) slugs.push(sl); });
+              } catch (e2) {}
+            }
+            out.tags[w] = slugs.filter(function (x, n) { return x && slugs.indexOf(x) === n; });
           } catch (e) { out.missing.push(w + ' (' + e.message + ')'); }
           await wait(2500 + Math.random() * 1500);
         }
