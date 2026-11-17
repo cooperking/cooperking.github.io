@@ -1055,7 +1055,7 @@ def make_handler(g):
                 return out
             for key, types in (('movies', 'Movie'), ('tv', 'Series')):
                 if libs.get(key):
-                    raw = [i for i in shown(g.items(ParentId=libs[key], Recursive='true', IncludeItemTypes=types, SortBy='SortName', Fields=quick).get('Items', [])) if not making(i)]
+                    raw = [i for i in shown(g.items(ParentId=libs[key], Recursive='true', IncludeItemTypes=types, SortBy='SortName', Fields=quick + ',SpecialFeatureCount').get('Items', [])) if not making(i)]
                     for o in resolve(raw, extra):
                         items[o['id']] = o
                     if True:   # (Criterion's spine numbers, kept apart from each film's remembered details, so they're always current; a series' too)
@@ -1069,6 +1069,27 @@ def make_handler(g):
                     lists[key] = [i['Id'] for i in raw if i['Id'] in items]
                     if key == 'movies':
                         self.extras(raw, items, lists)
+                    # (the extras the media server keeps as extras, in a film's Other or Extras folder: on its page too (John, 17 Nov 2026:
+                    # "Extras aren't being shown on the film page"); before, only extras it had taken for films were)
+                    for i in raw:
+                        if not (i.get('SpecialFeatureCount') or 0) or i['Id'] not in items:
+                            continue
+                        try:
+                            sf = g.jf.call('GET', '/Users/%s/Items/%s/SpecialFeatures' % (g.uid, i['Id'])) or []
+                        except Exception as e:
+                            log('Extras of %s: %s' % (i.get('Name'), e))
+                            continue
+                        for e in sf if isinstance(sf, list) else []:
+                            try:
+                                o = item_out(e)
+                            except Exception:
+                                continue
+                            o['tags'] = pic_tags(e)
+                            o['extra'], o['of'] = 1, i['Id']
+                            items[e['Id']] = o
+                            xs_ = items[i['Id']].setdefault('extras', [])
+                            if e['Id'] not in xs_:
+                                xs_.append(e['Id'])
             sets = g.items(Recursive='true', IncludeItemTypes='BoxSet', SortBy='SortName', Fields=quick).get('Items', [])
             for o in resolve(sets, extra):
                 items[o['id']] = o
