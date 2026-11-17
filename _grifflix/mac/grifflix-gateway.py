@@ -1435,6 +1435,36 @@ def make_handler(g):
                 TVC.notify_all()
             return self.send_json(200, {'ok': True})
 
+        def api_torbox(self, me, user, q, b):
+            """John's: his TorBox key (kept on the Mac only, never sent back) and whether a download is deleted from TorBox once all of it is in
+            Grifflix (John, 17 Nov 2026: "can films be deleted from torbox automatically when downloaded?")."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            fp = os.path.expanduser('~/Grifflix/torbox.json')
+            c = load(fp, {}) or {}
+            if b:
+                if 'key' in b:
+                    k = str(b.get('key') or '').strip()
+                    if k and not re.match(r'^[A-Za-z0-9_-]{16,128}$', k):
+                        return self.send_json(400, {'error': 'That doesn’t look like a TorBox API key (Settings › API on torbox.app).'})
+                    if k:
+                        try:   # (checked with TorBox first)
+                            req = urllib.request.Request('https://api.torbox.app/v1/api/user/me', headers={'Authorization': 'Bearer ' + k, 'User-Agent': 'Grifflix'})
+                            json.loads(urllib.request.urlopen(req, timeout=30, context=tls()).read())
+                        except urllib.error.HTTPError as e:
+                            return self.send_json(400, {'error': 'TorBox didn’t accept that key (%d).' % e.code})
+                        except Exception as e:
+                            return self.send_json(502, {'error': 'TorBox didn’t answer: %s' % str(e)[:120]})
+                    c['key'] = k
+                if 'auto' in b:
+                    c['auto'] = bool(b.get('auto'))
+                save(fp, c)
+                try:
+                    os.chmod(fp, 0o600)
+                except OSError:
+                    pass
+            return self.send_json(200, {'key': bool(c.get('key')), 'auto': bool(c.get('auto'))})
+
         def api_fetching(self, me, user, q, b):
             """John's only: films coming in from TorBox and Google Drive (gdrive.py's own account of it): the one downloading now and how far,
             those waiting and the names they'll have, and those that came (John, 15 Nov 2026: "Can we see what's running or upcoming from
