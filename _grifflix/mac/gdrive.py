@@ -231,7 +231,12 @@ def fetch(loc, path, part, show=False):
                 said_ = ('\n'.join(e for e in errs if e) or '').strip()
                 if pr.returncode and not said_:
                     try:
-                        said_ = '\n'.join(json.loads(l_).get('msg', '') for l_ in open(part + '.rlog', encoding='utf-8', errors='replace').read().splitlines()[-6:] if '"error"' in l_ or '"level":"error"' in l_)
+                        def msg_(l_):
+                            try:
+                                return json.loads(l_).get('msg', '')
+                            except ValueError:
+                                return l_
+                        said_ = '\n'.join(msg_(l_) for l_ in open(part + '.rlog', encoding='utf-8', errors='replace').read().splitlines()[-8:] if re.search(r'error|critical|fatal', l_, re.I))
                     except (OSError, ValueError):
                         pass
                 return pr.returncode, said_[-400:]
@@ -241,7 +246,7 @@ def fetch(loc, path, part, show=False):
             rcode, said = watched(['--progress', '--stats-one-line'], False)
             said = said or ''
         else:
-            rcode, said = watched(['-v'], True)
+            rcode, said = watched([], True)   # (no -v: rclone refuses it beside --log-level, and every download failed at once: 17 Nov 2026)
         r = type('R', (), {'returncode': rcode})()
         got = os.path.join(tmpd, name)
         if os.path.exists(got):
