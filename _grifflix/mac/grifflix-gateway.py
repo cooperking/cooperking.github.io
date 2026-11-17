@@ -2132,6 +2132,7 @@ def make_handler(g):
             except Exception:
                 pass
             g.forget()
+            g.publish_soon = time.time() + 180   # (the site follows by itself, once the media server has looked)
             log('Deleted by John, for good: %s (%s), %.1f GB freed' % (it.get('Name'), it.get('ProductionYear') or '?', freed / 1e9))
             return self.send_json(200, {'ok': True, 'name': it.get('Name'), 'gb': round(freed / 1e9, 1)})
 
