@@ -833,11 +833,16 @@ def ordered(rest):
     # (every repackaging before any conversion, new films' too: within each, as gathered, so films just brought in first, then Movie of
     # the Day's, then the rest: John, 12 Nov 2026, "repackaged only first, no conversions until all repackaging is complete")
     others = [x for x in rest if x['id'] not in pin]
+    # (a file of 8 GB or more made smaller straight after the repackaging, the biggest first, not last of all: John, 17 Nov 2026, Career Girls
+    # repackaged to 12.2 GB, "That's still much too big"; the other ones to make smaller still last)
+    big = lambda x: x.get('mode') == 'shrink' and x.get('gb', 0) >= 8
+    bigs = sorted([x for x in others if big(x)], key=lambda x: -x.get('gb', 0))
+    others = [x for x in others if not big(x)]
     if P['remux_first']:
-        others = [x for x in others if x.get('mode') == 'remux'] + [x for x in others if x.get('mode') not in ('remux', 'shrink')]  + \
+        others = [x for x in others if x.get('mode') == 'remux'] + bigs + [x for x in others if x.get('mode') not in ('remux', 'shrink')]  + \
             sorted([x for x in others if x.get('mode') == 'shrink'], key=lambda x: -x.get('gb', 0))   # (making smaller last of all, the biggest first)
     else:
-        others = [x for x in others if x.get('mode') != 'shrink'] + sorted([x for x in others if x.get('mode') == 'shrink'], key=lambda x: -x.get('gb', 0))
+        others = bigs + [x for x in others if x.get('mode') != 'shrink'] + sorted([x for x in others if x.get('mode') == 'shrink'], key=lambda x: -x.get('gb', 0))
     if downloading():   # (while a film downloads: conversions go on as before, older films' repackaging after them, the drive left to it)
         old = lambda x: x.get('mode') == 'remux' and not x.get('fetched') and not x.get('new') and not x.get('redo')   # (a film brought in lately, however it came, is never held back: John, 16 Nov 2026)
         others = [x for x in others if not old(x)] + [x for x in others if old(x)]
@@ -1004,7 +1009,7 @@ while rest:
         looked = time.time()
         try:
             have = set(x['id'] for x in rest)
-            add = [i for i in fresh(gather(), st) if i.get('new') and i['id'] not in have and i['id'] not in st['done'] and i['id'] not in st['failed']]
+            add = [i for i in fresh(gather(), st) if (i.get('new') or (i.get('mode') == 'shrink' and i.get('gb', 0) >= 8)) and i['id'] not in have and i['id'] not in st['done'] and i['id'] not in st['failed']]   # (and a big file to make smaller, as one just repackaged: Career Girls, John, 17 Nov 2026)
             if add:
                 log('%d just brought in: to the top of the queue' % len(add))
                 rest = add + rest
