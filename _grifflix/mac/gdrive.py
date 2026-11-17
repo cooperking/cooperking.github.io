@@ -163,14 +163,58 @@ def fetch(loc, path, part, show=False):
     os.makedirs(tmpd, exist_ok=True)
     with open(lst, 'w', encoding='utf-8') as f:
         f.write(name + '\n')
-    args = [RCLONE, '--config', CONF, 'copy', loc(folder) if folder else loc('').rstrip('/'), tmpd, '--files-from', lst, '--retries', '3']   # (its folder listed, as works, not the one file looked up)
+    # (a connection that goes quiet is given up on after 2 minutes, rclone's own way; and a download that takes in nothing for 10 minutes is
+    # stopped and started again by the watchdog below, three times, then left for next time so the rest come: John, 17 Nov 2026, House
+    # Party "stuck on 75% for a while": rclone hung at 17:35 with 13 more behind it)
+    args = [RCLONE, '--config', CONF, 'copy', loc(folder) if folder else loc('').rstrip('/'), tmpd, '--files-from', lst, '--retries', '3',
+            '--timeout', '2m', '--contimeout', '30s', '--low-level-retries', '10']   # (its folder listed, as works, not the one file looked up)
+
+    def written():   # (what's on the disk so far: the blocks really written, as a download in several pieces makes its file full size at once)
+        n = 0
+        for root_, _, files in os.walk(tmpd):
+            for f_ in files:
+                try:
+                    st = os.stat(os.path.join(root_, f_))
+                    n += getattr(st, 'st_blocks', 0) * 512 or st.st_size
+                except OSError:
+                    pass
+        return n
+
+    def watched(extra, quiet):
+        for attempt in range(3):
+            pr = subprocess.Popen(args + extra, stdout=None if not quiet else subprocess.DEVNULL, stderr=subprocess.PIPE if quiet else None, text=True)
+            errs = []
+            if quiet:
+                import threading
+                threading.Thread(target=lambda: errs.append(pr.stderr.read()), daemon=True).start()
+            last, still = -1, time.time()
+            while pr.poll() is None:
+                time.sleep(30)
+                w = written()
+                if w != last:
+                    last, still = w, time.time()
+                elif time.time() - still > 600:
+                    log('  nothing came for 10 minutes (%.1f GB so far): starting it again%s' % (w / 1e9, '' if attempt < 2 else ' (the last try)'))
+                    pr.terminate()
+                    try:
+                        pr.wait(30)
+                    except subprocess.TimeoutExpired:
+                        pr.kill()
+                        pr.wait()
+                    shutil.rmtree(tmpd, ignore_errors=True)
+                    os.makedirs(tmpd, exist_ok=True)
+                    break
+            else:
+                time.sleep(.5)
+                return pr.returncode, ('\n'.join(e for e in errs if e) or '').strip()[-400:]
+        return 1, 'nothing came for 10 minutes, three times over'
     try:
         if show:
-            r = subprocess.run(args + ['--progress', '--stats-one-line'])
-            said = ''
+            rcode, said = watched(['--progress', '--stats-one-line'], False)
+            said = said or ''
         else:
-            r = subprocess.run(args + ['-v'], capture_output=True, text=True)
-            said = (r.stderr or '').strip()[-400:]
+            rcode, said = watched(['-v'], True)
+        r = type('R', (), {'returncode': rcode})()
         got = os.path.join(tmpd, name)
         if os.path.exists(got):
             os.replace(got, part)
