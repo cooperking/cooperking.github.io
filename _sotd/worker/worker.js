@@ -1511,6 +1511,45 @@ async function gDaily(env) {   // today's Movie of the Day to the members, once,
   await kvSoft(env, 'gLast', JSON.stringify(res));
   return res;
 }
+// a member's request come into Grifflix: they're told, by notification on their devices and by email, and it's off John's list of films
+// to get (John, 17 Nov 2026: "When a Request is put on Grifflix can the person who requested it get a notification")
+async function gRequestsArrived(env, snap) {
+  const items = Object.values((snap && snap.items) || {}).filter(x => x && (x.type === 'movie' || x.type === 'series'));
+  if (!items.length) return null;
+  const nk = t => String(t || '').toLowerCase().replace(/&/g, 'and').replace(/^(the|a|an) /, '').replace(/[^a-z0-9]+/g, '');
+  const by = {}; for (const it of items) (by[nk(it.name)] = by[nk(it.name)] || []).push(it);
+  let L = JSON.parse(await env.SOTD.get('gfreq') || '[]');
+  const came = [], keep = [];
+  for (const f of L) {
+    const y = +f.year || 0, it = (by[nk(f.name)] || []).find(x => !y || !+x.year || Math.abs(+x.year - y) <= 1);
+    if (it) came.push({ f, it }); else keep.push(f);
+  }
+  if (!came.length) return { arrived: 0 };
+  await env.SOTD.put('gfreq', JSON.stringify(keep));
+  const all = await gAll(env), subs = (await env.SOTD.get('gPushSubs', 'json')) || {}, k = await vapidKeys(env), mailOk = await gMailOk(env);
+  let pushed = 0, mailed = 0;
+  for (const { f, it } of came) {
+    const ids = [...new Set(f.by || [])].filter(id => all[id]);
+    if (!ids.length) continue;
+    const name = it.name, year = it.year || '', url = G_SITE + '#film/' + it.id, poster = gPicUrl(it.poster, 'Primary', 400, (it.tags || {}).poster);
+    const msg = { title: name + (year ? ' (' + year + ')' : ''), body: 'You asked for it: it’s on Grifflix now', icon: poster, image: poster, url, tag: 'grifflix-req-' + it.id };
+    for (const id of ids) {
+      const m = all[id];
+      if (gMode(m, 'gpush') !== 'off') for (const sub of Object.values(subs)) {
+        if (sub.m !== id) continue;
+        try { const { st } = await pushTo(env, k, sub, msg); if (st >= 200 && st < 300) pushed++; } catch (e) { console.log('greq push: ' + (e && e.message)); }
+      }
+      if (m.email && mailOk && gMode(m, 'gmail') !== 'off' && await dayCount(env, 'mailme-all', MAIL_ALL_DAY)) {
+        const fm = { name, year, url, poster, kicker: 'You asked for it', overview: '' };
+        try { await gSendMail(env, m.email, name + (year ? ' (' + year + ')' : '') + ': it’s on Grifflix now', name + ', which you asked for, is on Grifflix now.\n\nWatch: ' + url + '\n\nYou can change these emails in your Profile on Grifflix.', gShell(gFilmHtml(fm))); mailed++; }
+        catch (e) { console.log('greq mail: ' + (e && e.message)); }
+      }
+    }
+  }
+  const res = { at: Date.now(), arrived: came.length, films: came.map(c => c.it.name), pushed, mailed };
+  await kvSoft(env, 'gReqLast', JSON.stringify(res));
+  return res;
+}
 async function gPushAll(env, msg, f) {
   const subs = (await env.SOTD.get('gPushSubs', 'json')) || {}, all = await gAll(env), k = await vapidKeys(env);
   let sent = 0, kept = 0; const gone = [], weekDone = {};
@@ -1790,7 +1829,9 @@ async function grifflix(request, url, env) {
     const buf = await request.arrayBuffer();
     if (buf.byteLength < 20 || buf.byteLength > 80e6) return answer(400, { error: 'That isn’t the Mac’s copy.' });
     await env.MEDIA.put('grifflix/snapshot.json', buf, { httpMetadata: { contentType: 'application/json' } });
-    return answer(200, { ok: true, bytes: buf.byteLength });
+    let told = null;   // (a member's request now in Grifflix: they're told)
+    try { told = await gRequestsArrived(env, JSON.parse(new TextDecoder().decode(buf))); } catch (e) { console.log('greq: ' + (e && e.message)); }
+    return answer(200, { ok: true, bytes: buf.byteLength, told });
   }
   if (route === 'font') {   // John's Futura web fonts (the admin page's Fonts card): kept in R2, not in the public repository
     if (request.method !== 'POST') return answer(405, { error: 'Use POST.' });
