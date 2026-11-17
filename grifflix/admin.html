@@ -317,6 +317,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .pop img { border-radius: 0 !important; box-shadow: none !important; border: 1px solid var(--line); }
 .x { width: 40px; height: 40px; border: 1px solid var(--pline); border-radius: 0; background: none; color: var(--fg); }
 .toast { border-radius: 999px; background: rgb(var(--kink)); color: var(--bg); font: 500 14px/1.3 var(--serif); }
+.flink { color: inherit; text-decoration: underline; text-decoration-color: rgba(127,127,127,.5); text-underline-offset: 3px; }
+.flink:hover { text-decoration-color: currentColor; }
 </style>
 </head>
 <body>
@@ -554,6 +556,25 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   var TOKEN = store.get('grifflix-member');
   function toast(t) { var el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('show'); }, 3000); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  // (a film in the library: its name a link to its page in Grifflix, wherever the admin page lists it: John, 17 Nov 2026, "can films listed anywhere in
+  // the admin page that are in the library link directly to the film"). By its id when the list has it, else its name and year in the site's library.
+  var LIBIDX = null, FK = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, 'and').replace(/[^a-z0-9]+/g, ''); };
+  fetch('/grifflix/data/library.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (L) {
+    if (!L || !L.items) return; var I = {}, n = {};
+    Object.keys(L.items).forEach(function (id) { var it = L.items[id]; if (!it || (it.type !== 'movie' && it.type !== 'series') || it.extra) return; var k = FK(it.name); I[k + '|' + (it.year || '')] = id; n[k] = n[k] ? 'many' : id; });
+    Object.keys(n).forEach(function (k) { if (n[k] !== 'many') I[k] = n[k]; }); LIBIDX = I;
+    document.querySelectorAll('[data-flk]').forEach(function (el) { var id = flId(el.dataset.flk, el.dataset.fly); if (id) el.outerHTML = flA(id, el.textContent); });
+  }).catch(function () {});
+  function flId(name, year) {
+    if (!LIBIDX) return null; var m = String(name || '').match(/^(.*?)\s*\((\d{4})\)\s*$/), nm = m ? m[1] : name, y = year || (m ? m[2] : '');
+    var k = FK(nm); return (y && (LIBIDX[k + '|' + y] || LIBIDX[k + '|' + (+y - 1)] || LIBIDX[k + '|' + (+y + 1)])) || LIBIDX[k] || null;
+  }
+  function flA(id, text) { return '<a class="flink" href="/grifflix/#film/' + id + '" target="grifflix" rel="noopener" title="Open it in Grifflix">' + esc(text) + '</a>'; }
+  function FL(name, year, id) {
+    if (id && /^[0-9a-f]{32}$/.test(id)) return flA(id, name);
+    var f = flId(name, year); if (f) return flA(f, name);
+    return LIBIDX ? esc(name) : '<span data-flk="' + esc(name) + '" data-fly="' + esc(String(year || '')) + '">' + esc(name) + '</span>';   // (linked once the library's in)
+  }
   function when(iso) { var d = new Date(iso); return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); }
   function g(op, body, tok) {   // Grifflix's own members on the Worker
     return fetch(WORKER + '/g/' + op, body ? { method: 'POST', headers: { Authorization: 'Bearer ' + (tok || TOKEN), 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: { Authorization: 'Bearer ' + (tok || TOKEN) } })
@@ -1174,7 +1195,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       Array.prototype.forEach.call(document.querySelectorAll('[data-ft]'), function (b) { b.onclick = function () { fetching.naming = 0; fetching.tab = b.dataset.ft; fetching.last && fetching.draw(fetching.last); }; });
       if (fetching.naming && tab === 'next') { clearTimeout(fetching.t); fetching.t = setTimeout(fetching, 30000); return; }   // (not redrawn while a name is being found)
       $('#flist').innerHTML = tab === 'next' ? ((n ? it(n, true) : '') + G.map(function (x, i) { return it(x, false, i); }).join('') || '<li>Nothing waiting.</li>') :
-        rc.map(function (x) { return '<li>' + esc(x.to) + '<span class="when">' + esc(when(x.at * 1000)) + ' · from ' + esc(x.from) + ' · ' + x.gb + ' GB' +
+        rc.map(function (x) { return '<li>' + FL(x.to) + '<span class="when">' + esc(when(x.at * 1000)) + ' · from ' + esc(x.from) + ' · ' + x.gb + ' GB' +
           (x.ok ? '' : ' · <b style="color:#f08a4b">didn’t come</b>') + (x.why ? ' · ' + esc(x.why) : '') + '</span></li>'; }).join('') || '<li>None yet.</li>';
       var fpost = function (body) { return fetch(GW + '/api/fetching', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'The Mac mini didn’t answer.'); return j; }); }); };
       Array.prototype.forEach.call(document.querySelectorAll('[data-funname]'), function (b) { b.onclick = function () { fpost({ op: 'unname', key: b.dataset.funname }).then(function () { toast('Its own name again'); fetching(); }).catch(function (e) { toast(e.message); }); }; });
@@ -1252,7 +1273,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var ask = (c.ask || []).filter(function (x) { return x.chosen !== 'ok'; });
       $('#cvask').innerHTML = ask.length ? '<p class="stat" style="margin:14px 0 6px"><b style="color:#f08a4b">Check the language</b>: not sure these are heard in their original language. Each was done with the best guess, and its original kept.</p>' + ask.map(function (x) {
         var ch = x.chosen && x.chosen !== x.chose ? x.chosen : '';
-        return '<div class="cvpin" style="flex-wrap:wrap;gap:8px"><b style="flex-basis:100%">' + esc(x.name) + (x.year ? ' (' + x.year + ')' : '') + ': heard in ' + esc(ch || x.chose) + ' <small style="color:var(--muted);font-weight:400">' + (ch ? 'changing now' : esc(x.why || '')) + '</small></b>' +
+        return '<div class="cvpin" style="flex-wrap:wrap;gap:8px"><b style="flex-basis:100%">' + FL(x.name, x.year, x.id) + (x.year ? ' (' + x.year + ')' : '') + ': heard in ' + esc(ch || x.chose) + ' <small style="color:var(--muted);font-weight:400">' + (ch ? 'changing now' : esc(x.why || '')) + '</small></b>' +
           (ch ? '' : (x.options || []).filter(function (o) { return o !== x.chose; }).map(function (o) { return '<button type="button" data-lgid="' + x.id + '" data-lg="' + esc(o) + '" data-n="' + esc(x.name) + '">Change to ' + esc(o) + '</button>'; }).join('') +
             '<button type="button" data-lgid="' + x.id + '" data-lg="ok" data-n="' + esc(x.name) + '">' + esc(x.chose) + ' is right</button>') + '</div>';
       }).join('') : '';
@@ -1295,9 +1316,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       $('#cvtabs').innerHTML = [['next', 'Next', nx.length], ['done', 'Done', c.done], ['fail', 'Couldn’t', fails.length]].filter(function (t) { return t[0] !== 'fail' || t[2]; })
         .map(function (t) { return '<button type="button" data-cvt="' + t[0] + '" aria-pressed="' + (tab === t[0]) + '">' + t[1] + ' ' + (t[2] || 0) + '</button>'; }).join('');
       Array.prototype.forEach.call(document.querySelectorAll('[data-cvt]'), function (b) { b.onclick = function () { convert.tab = b.dataset.cvt; convert.last && convert.draw(convert.last); }; });
-      $('#cvlist').innerHTML = tab === 'next' ? (nx.map(function (x, i) { return '<li>' + (i ? '' : '<b>Now:</b> ') + esc(x.name) + '<span class="when">' + esc(x.why || '') + (x.gb ? ' · ' + x.gb + ' GB' : '') + '</span></li>'; }).join('') || '<li>Nothing waiting.</li>') :
-        tab === 'fail' ? fails.map(function (x) { return '<li>' + esc(x.name) + '<span class="when">' + esc(String(x.why || '').slice(0, 300)) + '</span></li>'; }).join('') :
-        c.recent.map(function (x) { return '<li>' + esc(x.name) + '<span class="when">' + esc(when(x.at * 1000)) + (x.mins ? ' · ' + x.mins + ' min' : '') + (x.why ? ' · ' + esc(x.why) : '') + '</span>' +
+      $('#cvlist').innerHTML = tab === 'next' ? (nx.map(function (x, i) { return '<li>' + (i ? '' : '<b>Now:</b> ') + FL(x.name, x.year, x.id) + '<span class="when">' + esc(x.why || '') + (x.gb ? ' · ' + x.gb + ' GB' : '') + '</span></li>'; }).join('') || '<li>Nothing waiting.</li>') :
+        tab === 'fail' ? fails.map(function (x) { return '<li>' + FL(x.name, x.year, x.id) + '<span class="when">' + esc(String(x.why || '').slice(0, 300)) + '</span></li>'; }).join('') :
+        c.recent.map(function (x) { return '<li>' + FL(x.name, x.year, x.id) + '<span class="when">' + esc(when(x.at * 1000)) + (x.mins ? ' · ' + x.mins + ' min' : '') + (x.why ? ' · ' + esc(x.why) : '') + '</span>' +
           (x.before || x.after ? '<span class="cvba">' + (x.before ? 'Was ' + fl(x.before) : 'Original deleted') + (x.after ? ' → now ' + fl(x.after) : '') + '</span>' : '') +
           // (which language everyone hears, and why; every soundtrack and subtitle in it: John, 15 Nov 2026, "how can I be sure that a repackage will do the right one?")
           (x.chose ? '<span class="cvba"><b>Heard in ' + esc(x.chose) + '</b></span>' : '') +
@@ -1336,7 +1357,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var vn = function (v) { return { h264: 'H.264', hevc: 'HEVC', h265: 'HEVC', mpeg4: 'MPEG-4 (XviD/DivX)', mpeg2video: 'MPEG-2', vc1: 'VC-1', av1: 'AV1', vp9: 'VP9' }[v] || (v || '?').toUpperCase(); };
     var fl = function (f) { return f ? (f.w ? f.w + '×' + f.h + ' ' : '') + esc(f.v) + (f.mbps ? ', ' + f.mbps + ' Mbps' : '') + (f.gb ? ', ' + f.gb + ' GB' : '') : ''; };
     $('#lblist').innerHTML = L.slice(0, LB.n).map(function (x) {
-      return '<li>' + esc(x.n) + (x.y ? ' <span class="when" style="display:inline">(' + x.y + ')</span>' : '') + '<span class="q ' + x.g.q + '">' + { bad: 'Replace', ok: 'OK', good: 'Good' }[x.g.q] + '</span>' +
+      return '<li>' + FL(x.n, x.y, x.id) + (x.y ? ' <span class="when" style="display:inline">(' + x.y + ')</span>' : '') + '<span class="q ' + x.g.q + '">' + { bad: 'Replace', ok: 'OK', good: 'Good' }[x.g.q] + '</span>' +
         '<span class="spec">' + x.g.res + (x.w ? ' · ' + x.w + '×' + x.h : '') + ' · ' + vn(x.v) + (x.b > 8 ? ' 10-bit' : '') + (x.mbps ? ' · ' + x.mbps + ' Mbps' : '') + (x.gb ? ' · ' + x.gb + ' GB' : '') + (x.mins ? ' · ' + x.mins + ' min' : '') + (x.a ? ' · ' + esc(x.a) : '') + '</span>' +
         '<span class="why2">' + [x.g.why ? esc(x.g.why) : '', x.conv ? (x.rp ? 'repackaged' : 'converted') + (x.was ? ' (was ' + fl(x.was) + ')' : '') : '', x.why ? (/^to (repackage|make smaller)/.test(x.why) ? esc(x.why) : 'waiting to convert: ' + esc(x.why)) : ''].filter(Boolean).join(' · ') +
         (x.ps ? '<span class="why2">Picture subtitles (' + esc(x.ps) + '): ' + (/^to repackage/.test(x.why || '') ? 'repackaging leaves them in the original, kept in Grifflix Originals' : 'in this file') + '</span>' : '') +
@@ -1400,7 +1421,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       $('#pnhead').innerHTML = L.length ? L.length + ' playing: <em>' + (conv ? conv + ' converted by the Mac' : 'none converted') + '</em>' : 'Nothing <em>playing</em>';
       $('#pnlist').innerHTML = L.map(function (x) {
         var tag = x.how === 'conv' ? '<span class="q bad">Converting</span>' : x.how === 'asis' ? '<span class="q good">As it is</span>' : '<span class="q ok">Starting</span>';
-        return '<li>' + esc(x.film) + tag + '<span class="spec">' + esc(x.who) + (x.device ? ' · ' + esc(x.device) : '') + (x.src ? ' · the file: ' + esc(x.src) : '') + '</span>' +
+        return '<li>' + FL(x.film, null, x.iid) + tag + '<span class="spec">' + esc(x.who) + (x.device ? ' · ' + esc(x.device) : '') + (x.src ? ' · the file: ' + esc(x.src) : '') + '</span>' +
           '<span class="why2">' + esc(x.say) + (x.how === 'conv' && x.speed ? ' · the Mac at ' + x.speed + '× ' + (x.speed >= 1 ? '(keeping up)' : '(slower than the film: it will stop to catch up)') : '') + '</span>' +
           // (the facts, for working out why: what the device asked the media server for, and the media server's own command; John, 12 Nov 2026:
           // "can we do a thorough check rather than guessing")
@@ -1482,7 +1503,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     $('#duphead').innerHTML = G.length ? G.length + ' film' + (G.length === 1 ? '' : 's') + ' you have <em>twice</em>' : 'No duplicates';
     var q = function (c) { return c.h + 'p ' + esc(c.codec) + (c.bits > 8 ? ' 10-bit' : '') + ' · ' + c.gb + ' GB · ' + c.mbps + ' Mbps · ' + c.mins + ' min'; };
     $('#duplist').innerHTML = G.map(function (g, i) {
-      return '<div class="dupg" style="margin:0 0 16px;padding:12px 14px;border:1px solid rgba(127,127,127,.3);border-radius:8px"><label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" data-dg="' + i + '" checked> ' + esc(g[0].name) + ' (' + esc(String(g[0].year || '')) + ')</label>' +
+      return '<div class="dupg" style="margin:0 0 16px;padding:12px 14px;border:1px solid rgba(127,127,127,.3);border-radius:8px"><label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" data-dg="' + i + '" checked> ' + FL(g[0].name, g[0].year) + ' (' + esc(String(g[0].year || '')) + ')</label>' +
         g.map(function (c) { return '<label style="display:flex;gap:8px;align-items:flex-start;margin:8px 0 0 24px;font-size:14px"><input type="radio" name="dk' + i + '" value="' + c.id + '"' + (c.best ? ' checked' : '') + '><span><b>' + (c.best ? 'Best: ' : '') + esc(c.file) + '</b><br><small style="opacity:.8">' + q(c) + '</small></span></label>'; }).join('') + '</div>';
     }).join('');
     $('#dupgo').hidden = !G.length || j.running;
@@ -1764,7 +1785,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   function rqDraw() {
     $('#rqlist').innerHTML = RQ.length ? RQ.slice().reverse().map(function (f) {
       var got = rqHave(f);
-      return '<li' + (got ? ' class="got"' : '') + '><span><b>' + esc(f.name) + '</b>' + (f.year ? ' (' + f.year + ')' : '') + (got ? ' · <span class="fs ok">In Grifflix now</span>' : '') + (f.why ? '<small>' + esc(f.why) + '</small>' : '') + '</span><button type="button" data-rqrm="' + esc(f.name) + '|' + (f.year || '') + '" aria-label="Take it off the list">×</button></li>';
+      return '<li' + (got ? ' class="got"' : '') + '><span><b>' + FL(f.name, f.year) + '</b>' + (f.year ? ' (' + f.year + ')' : '') + (got ? ' · <span class="fs ok">In Grifflix now</span>' : '') + (f.why ? '<small>' + esc(f.why) + '</small>' : '') + '</span><button type="button" data-rqrm="' + esc(f.name) + '|' + (f.year || '') + '" aria-label="Take it off the list">×</button></li>';
     }).join('') : '<li class="fs">No requests: every film wanted is in Grifflix.</li>';
   }
   function rqLoad() { g('frequests').then(function (j) { RQ = j.films || []; rqDraw(); }).catch(function () { $('#rqlist').innerHTML = '<li class="fs">Couldn’t read them just now.</li>'; }); }
