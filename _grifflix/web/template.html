@@ -2222,7 +2222,7 @@ var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, f
 var iso = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 var TODAY = iso(new Date());
 
-function toast(t) { var el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('on'); }, 2600); }
+function toast(t, ms) { var el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('on'); }, ms || 2600); }
 
 /* ------------------------------------------------------------------ Grifflix's own files, and the Mac mini
    What the page shows comes from the site's own files (grifflix/data/), as the songs' calendar does: John's Update on
@@ -6791,14 +6791,24 @@ window.addEventListener('pagehide', saveProgress);
   };
   v.addEventListener('enterpictureinpicture', pipIn); v.addEventListener('leavepictureinpicture', pipOut);
   v.addEventListener('webkitpresentationmodechanged', function () { if (v.webkitPresentationMode === 'picture-in-picture') pipIn(); else pipOut(); });
-  var pipNo = function (e) { toast(e && e.name === 'InvalidStateError' ? 'Once the film has started, it can go in a little window' : 'This browser won’t put the film in a little window'); };
+  // (John, 17 Nov 2026, Safari on his iPhone: "Why do I get the message?": the one way tried was refused. Now each way the browser has is
+  // tried in turn, the standard one first, then Apple's older one, and the toast says why if both are refused, so it can be put right)
+  var pipNo = function (e) { toast(e && e.name === 'InvalidStateError' ? 'Once the film has started, it can go in a little window'
+    : 'The browser wouldn’t put the film in a little window' + (e && (e.name || e.message) ? ' (' + (e.name || '') + (e.message ? ': ' + String(e.message).slice(0, 90) : '') + ')' : ''), 9000); };
+  var pipWk = function () {   // (Apple's older way: true if it went)
+    if (!(v.webkitSupportsPresentationMode && v.webkitSupportsPresentationMode('picture-in-picture') && v.webkitSetPresentationMode)) return false;
+    v.webkitSetPresentationMode(v.webkitPresentationMode === 'picture-in-picture' ? 'inline' : 'picture-in-picture'); return true;
+  };
   $('#ppip').onclick = function (e) {
     if (e) e.stopPropagation();
     try {
-      if (document.pictureInPictureElement) document.exitPictureInPicture().catch(function () {});
-      else if (v.webkitSupportsPresentationMode && v.webkitSupportsPresentationMode('picture-in-picture') && v.webkitSetPresentationMode) v.webkitSetPresentationMode(v.webkitPresentationMode === 'picture-in-picture' ? 'inline' : 'picture-in-picture');
-      else if (v.requestPictureInPicture) { if (v.readyState < 1) return pipNo({ name: 'InvalidStateError' }); v.requestPictureInPicture().catch(pipNo); }
-    } catch (x) { pipNo(x); }
+      if (document.pictureInPictureElement) return void document.exitPictureInPicture().catch(function () {});
+      if (v.webkitPresentationMode === 'picture-in-picture') return void v.webkitSetPresentationMode('inline');
+      if (v.readyState < 1) return pipNo({ name: 'InvalidStateError' });
+      if (document.pictureInPictureEnabled && v.requestPictureInPicture) {
+        v.requestPictureInPicture().catch(function (x) { try { if (!pipWk()) pipNo(x); } catch (y) { pipNo(x); } });
+      } else if (!pipWk()) pipNo({ name: 'NotSupported', message: 'no picture-in-picture here' });
+    } catch (x) { try { if (!pipWk()) pipNo(x); } catch (y) { pipNo(x); } }
   };
   // (the menus: subtitles and speed)
   var SP = [.75, 1, 1.25, 1.5, 2], tracks = function () { return Array.prototype.filter.call(v.textTracks || [], function (t) { return t.kind === 'subtitles' || t.kind === 'captions'; }); };
