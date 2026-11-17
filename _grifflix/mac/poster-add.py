@@ -132,10 +132,13 @@ def main():
     if not os.path.isdir(SOURCE):
         sys.exit('No "%s": put the posters there (named after their films’ folders) and run this again.' % SOURCE)
     folders = [f for f in os.listdir(MOVIES) if not f.startswith('.') and os.path.isdir(os.path.join(MOVIES, f)) and has_film(os.path.join(MOVIES, f))]
-    exact, near = {}, {}
+    exact, near, byname = {}, {}, {}
     for f in folders:
         exact.setdefault(old_key(f), []).append(f)
         near.setdefault(loose(f), []).append(f)
+        m_ = re.match(r'^(.*?)\s*\((\d{4})\)\s*$', f)
+        if m_:
+            byname.setdefault(loose(m_.group(1)), []).append((f, int(m_.group(2))))
     pics = sorted(p for p in os.listdir(SOURCE) if not p.startswith('.') and p.lower().endswith(PICS))
     if not pics:
         return print('No pictures in "%s".' % SOURCE)
@@ -152,6 +155,10 @@ def main():
         src = os.path.join(SOURCE, p)
         name = os.path.splitext(p)[0]
         hit = exact.get(name.lower()) or exact.get(old_key(name)) or near.get(loose(name.replace('_', ' ')))
+        if not hit:   # (a year out: Criterion's year and the folder's, from TMDB, often differ by one; Return to Reason, 2023 and 2024: John, 17 Nov 2026)
+            m_ = re.match(r'^(.*)_(\d{4})$', name)
+            if m_:
+                hit = [f for f, y in byname.get(loose(m_.group(1)), []) if abs(y - int(m_.group(2))) <= 1] or None
         if not hit:
             unmatched.append(p); continue
         if len(set(hit)) > 1:
