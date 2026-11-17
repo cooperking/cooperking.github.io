@@ -1595,71 +1595,7 @@ def make_handler(g):
             if b.get('op') != 'update':
                 return self.send_json(200, {'sha': have.get('sha', ''), 'at': have.get('at', 0), 'files': have.get('files', []), 'last': load(os.path.join(APP_DIR, 'update-result.json'), None)})
 
-            def work():
-                def fetch(url):
-                    req = urllib.request.Request(url, headers={'User-Agent': 'Grifflix gateway', 'Accept': 'application/vnd.github+json'})
-                    with urllib.request.urlopen(req, timeout=60, context=tls()) as r:
-                        return r.read()
-                try:
-                    try:
-                        sha = json.loads(fetch('https://api.github.com/repos/%s/commits/main' % REPO))['sha']
-                    except Exception:   # (GitHub's API refuses a home connection that has asked too often: the latest commit from its feed instead)
-                        feed = fetch('https://github.com/%s/commits/main.atom' % REPO).decode('utf-8', 'replace')
-                        sha = re.search(r'Commit/([0-9a-f]{40})', feed).group(1)
-                    got = {}
-                    for name, dest, mark in SOFTWARE:
-                        src = fetch('https://raw.githubusercontent.com/%s/%s/_grifflix/mac/%s' % (REPO, sha, name)).decode('utf-8')
-                        compile(src, name, 'exec')   # (a file that isn't whole Python stops it all)
-                        if mark and mark not in src:
-                            raise ValueError('%s isn’t what it should be' % name)
-                        got[name] = src
-                except Exception as e:
-                    log('Update the Mac: couldn’t fetch:', repr(e))
-                    return {'status': 502, 'error': 'Couldn’t get the new files from GitHub (%s). Nothing was changed.' % str(e)[:120], 'at': int(time.time())}
-                changed = []
-                for name, dest, mark in SOFTWARE:
-                    old = None
-                    try:
-                        with open(dest, encoding='utf-8') as f:
-                            old = f.read()
-                    except OSError:
-                        pass
-                    if old == got[name]:
-                        continue
-                    if old is None and name not in ('grifflix-gateway.py', 'convert.py', 'subtitles.py', 'poster-add.py', 'criterion.py', 'criterion-covers.py', 'duplicates.py', 'gdrive.py'):
-                        continue   # (a script John hasn't got on this Mac stays away)
-                    os.makedirs(os.path.dirname(dest), exist_ok=True)
-                    if old is not None:
-                        with open(dest + '.prev', 'w', encoding='utf-8') as f:
-                            f.write(old)
-                    with open(dest + '.new', 'w', encoding='utf-8') as f:
-                        f.write(got[name])
-                    os.replace(dest + '.new', dest)
-                    changed.append(name)
-                save(INSTALLED, {'sha': sha, 'at': int(time.time()), 'files': [n for n, _, _ in SOFTWARE]})
-                restarted = False
-                if 'convert.py' in changed:   # the converter running: it takes up its new file itself, between films (stopping it part way
-                    # through a film started that film again from 0%, its ffmpeg left running: Moonrise, John, 15 Nov 2026); one too old to
-                    # do that is started again as before
-                    cur = load(os.path.expanduser('~/Grifflix/convert-now.json'), None) or {}
-                    try:
-                        pid = conv_alive(cur)   # (only the converter itself: never another program with its old number)
-                        # (or one paused, holding a film back for a download, that would otherwise wait hours to take its update: John, 16 Nov 2026)
-                        if pid and (not cur.get('selfupdate') or (cur.get('state') == 'paused' and 'download' in str(cur.get('why') or ''))):
-                            os.kill(pid, 15)
-                            time.sleep(3)
-                            import subprocess
-                            args = cur.get('args') or ['go', 'now']
-                            out = open(os.path.expanduser('~/Grifflix/convert.out'), 'a')
-                            awake = ['/usr/bin/caffeinate', '-i'] if os.path.exists('/usr/bin/caffeinate') else []   # (the Mac kept awake while it converts)
-                            subprocess.Popen(awake + [sys.executable, os.path.expanduser('~/Grifflix/convert.py')] + [str(a) for a in args],
-                                             stdout=out, stderr=out, stdin=subprocess.DEVNULL, start_new_session=True, cwd=os.path.expanduser('~/Grifflix'))
-                            restarted = True
-                    except (OSError, ValueError) as e:
-                        log('Update the Mac: the converter couldn’t be started again:', e)
-                log('Update the Mac: %s (%s)%s' % (sha[:7], ', '.join(changed) or 'nothing changed', '; converter started again' if restarted else ''))
-                return {'status': 200, 'sha': sha, 'changed': changed, 'converter': restarted, 'at': int(time.time()),
-                        'restarting': 'grifflix-gateway.py' in changed or 'subtitles.py' in changed}   # (the gateway loads subtitles.py as it starts)
+            work = mac_update
 
             def finish(r):
                 save(os.path.join(APP_DIR, 'update-result.json'), r)
@@ -3651,6 +3587,112 @@ def keep_gdrive():
         GDRIVE_NOW.clear()
 
 
+def mac_update(quiet=False):
+    """The Mac's Grifflix files brought up to date from GitHub: the admin page's Update everything, and by itself (keep_updating)."""
+    def fetch(url):
+        req = urllib.request.Request(url, headers={'User-Agent': 'Grifflix gateway', 'Accept': 'application/vnd.github+json'})
+        with urllib.request.urlopen(req, timeout=60, context=tls()) as r:
+            return r.read()
+    try:
+        try:
+            sha = json.loads(fetch('https://api.github.com/repos/%s/commits/main' % REPO))['sha']
+        except Exception:   # (GitHub's API refuses a home connection that has asked too often: the latest commit from its feed instead)
+            feed = fetch('https://github.com/%s/commits/main.atom' % REPO).decode('utf-8', 'replace')
+            sha = re.search(r'Commit/([0-9a-f]{40})', feed).group(1)
+        got = {}
+        for name, dest, mark in SOFTWARE:
+            src = fetch('https://raw.githubusercontent.com/%s/%s/_grifflix/mac/%s' % (REPO, sha, name)).decode('utf-8')
+            compile(src, name, 'exec')   # (a file that isn't whole Python stops it all)
+            if mark and mark not in src:
+                raise ValueError('%s isn’t what it should be' % name)
+            got[name] = src
+    except Exception as e:
+        log('Update the Mac: couldn’t fetch:', repr(e))
+        return {'status': 502, 'error': 'Couldn’t get the new files from GitHub (%s). Nothing was changed.' % str(e)[:120], 'at': int(time.time())}
+    changed = []
+    for name, dest, mark in SOFTWARE:
+        old = None
+        try:
+            with open(dest, encoding='utf-8') as f:
+                old = f.read()
+        except OSError:
+            pass
+        if old == got[name]:
+            continue
+        if old is None and name not in ('grifflix-gateway.py', 'convert.py', 'subtitles.py', 'poster-add.py', 'criterion.py', 'criterion-covers.py', 'duplicates.py', 'gdrive.py'):
+            continue   # (a script John hasn't got on this Mac stays away)
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        if old is not None:
+            with open(dest + '.prev', 'w', encoding='utf-8') as f:
+                f.write(old)
+        with open(dest + '.new', 'w', encoding='utf-8') as f:
+            f.write(got[name])
+        os.replace(dest + '.new', dest)
+        changed.append(name)
+    save(INSTALLED, {'sha': sha, 'at': int(time.time()), 'files': [n for n, _, _ in SOFTWARE]})
+    restarted = False
+    if 'convert.py' in changed:   # the converter running: it takes up its new file itself, between films (stopping it part way
+        # through a film started that film again from 0%, its ffmpeg left running: Moonrise, John, 15 Nov 2026); one too old to
+        # do that is started again as before
+        cur = load(os.path.expanduser('~/Grifflix/convert-now.json'), None) or {}
+        try:
+            pid = conv_alive(cur)   # (only the converter itself: never another program with its old number)
+            # (or one paused, holding a film back for a download, that would otherwise wait hours to take its update: John, 16 Nov 2026)
+            if pid and (not cur.get('selfupdate') or (cur.get('state') == 'paused' and 'download' in str(cur.get('why') or ''))):
+                os.kill(pid, 15)
+                time.sleep(3)
+                import subprocess
+                args = cur.get('args') or ['go', 'now']
+                out = open(os.path.expanduser('~/Grifflix/convert.out'), 'a')
+                awake = ['/usr/bin/caffeinate', '-i'] if os.path.exists('/usr/bin/caffeinate') else []   # (the Mac kept awake while it converts)
+                subprocess.Popen(awake + [sys.executable, os.path.expanduser('~/Grifflix/convert.py')] + [str(a) for a in args],
+                                 stdout=out, stderr=out, stdin=subprocess.DEVNULL, start_new_session=True, cwd=os.path.expanduser('~/Grifflix'))
+                restarted = True
+        except (OSError, ValueError) as e:
+            log('Update the Mac: the converter couldn’t be started again:', e)
+    if changed or not quiet:
+        log('Update the Mac%s: %s (%s)%s' % (' (by itself)' if quiet else '', sha[:7], ', '.join(changed) or 'nothing changed', '; converter started again' if restarted else ''))
+    return {'status': 200, 'sha': sha, 'changed': changed, 'converter': restarted, 'at': int(time.time()),
+            'restarting': 'grifflix-gateway.py' in changed or 'subtitles.py' in changed}   # (the gateway loads subtitles.py as it starts)
+
+def someone_watching(g):
+    """Someone playing a film through Grifflix in the last five minutes."""
+    try:
+        if time.time() - os.path.getmtime(os.path.expanduser('~/Grifflix/watching')) < 300:
+            return True
+    except OSError:
+        pass
+    with g.plays_lock:
+        return any(time.time() - (x.get('seen') or 0) < 300 for x in g.plays.values())
+
+
+def keep_updating(g):
+    """The Mac's own files kept up to date by themselves, every 15 minutes, from what's on GitHub: John signs off only what changes the
+    site's look or what it does (John, 17 Nov 2026: "Can you put mac updates live without an update from me - I only need to sign off on
+    anything that changes the look or functionality of Grifflix"). The gateway itself restarts for its new version only while no one is
+    watching (a film playing goes through it); the converter takes its new file between films, as ever."""
+    time.sleep(180)
+    while True:
+        try:
+            have = load(INSTALLED, {})
+            fresh = set(have.get('files') or []) != set(n for n, _, _ in SOFTWARE)   # (a new script since the last update: a second pass)
+            req = urllib.request.Request('https://github.com/%s/commits/main.atom' % REPO, headers={'User-Agent': 'Grifflix gateway'})
+            with urllib.request.urlopen(req, timeout=60, context=tls()) as r_:
+                sha = re.search(r'Commit/([0-9a-f]{40})', r_.read().decode('utf-8', 'replace')).group(1)
+            if fresh or sha != have.get('sha'):
+                r = mac_update(quiet=True)
+                save(os.path.join(APP_DIR, 'update-result.json'), dict(r, auto=True))
+                if r.get('restarting'):
+                    while someone_watching(g):
+                        time.sleep(60)
+                    log('Update the Mac (by itself): the gateway restarting for its new version')
+                    time.sleep(1.5)
+                    os._exit(0)   # (launchd starts the new gateway)
+        except Exception as e:
+            log('Update the Mac (by itself):', str(e)[:200])
+        time.sleep(900)
+
+
 def keep_scanning(g):
     """New films noticed: every 10 minutes the film and TV folders are looked at, and when there's a new one in them the media server
     is asked to look too. Its own watching of the folders misses films put on the drive over the network (John, 15 Nov 2026: "New
@@ -3764,6 +3806,7 @@ def serve():
     # port during an update, starts nothing. Each such start stopped the downloads: John, 15 Nov 2026, every one "went missing")
     threading.Thread(target=keep_converting, daemon=True).start()
     threading.Thread(target=keep_scanning, args=(g,), daemon=True).start()
+    threading.Thread(target=keep_updating, args=(g,), daemon=True).start()   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
     threading.Thread(target=keep_gdrive, daemon=True).start()
     srv.daemon_threads = True
     log('Grifflix gateway on 127.0.0.1:%d, Jellyfin at %s' % (port, g.st['jellyfin']))
