@@ -126,32 +126,47 @@ def tmdb_get(path, **q):
 
 
 def tmdb_find(title, year):
-    """A Criterion film's TMDB page: the film of that title from that year (a year either side), else the series; None if none fits."""
+    """A Criterion film's TMDB page: the film of that title from that year (a year either side), else the series; then wider: the title
+    without its "(… version)" or "set" words, any year within five, a near spelling; a box set as TMDB's collection. None if none fits
+    (John, 17 Nov 2026: 191 left without a link, box sets, Small Axe's films, a re-release's year)."""
+    import difflib
     y = int(year) if re.match(r'^\d{4}$', str(year or '')) else None
     want = key(title)
-    for kind, path, yk, tk, dk in (('movie', '/search/movie', 'primary_release_year', 'title', 'release_date'), ('tv', '/search/tv', 'first_air_date_year', 'name', 'first_air_date')):
-        best = None
-        for yy in ([y, y - 1, y + 1] if y else [None]):
-            q = {'query': title, 'include_adult': 'false'}
-            if yy:
-                q[yk] = yy
-            res = (tmdb_get(path, **q) or {}).get('results') or []
-            for r in res[:10]:
-                names = (key(r.get(tk) or ''), key(r.get('original_' + tk) or ''))
-                ry = int((r.get(dk) or '0')[:4] or 0)
-                if want in names and (not y or not ry or abs(ry - y) <= 1):
-                    best = r
-                    break
-            if not best and yy == y and res and len(res) == 1 and y:   # (one answer for that title and year: it, though its title is written differently)
-                ry = int((res[0].get(dk) or '0')[:4] or 0)
-                if ry == y:
-                    best = res[0]
-            if best:
-                return best['id'], kind
+    KINDS = (('movie', '/search/movie', 'primary_release_year', 'title', 'release_date'), ('tv', '/search/tv', 'first_air_date_year', 'name', 'first_air_date'))
+    def look(t, wide):
+        w_ = key(t)
+        for kind, path, yk, tk, dk in KINDS:
+            for yy in ([y, y - 1, y + 1] if y and not wide else [None]):
+                q = {'query': t, 'include_adult': 'false'}
+                if yy:
+                    q[yk] = yy
+                res = (tmdb_get(path, **q) or {}).get('results') or []
+                for r in res[:10]:
+                    ry = int((r.get(dk) or '0')[:4] or 0)
+                    names = (key(r.get(tk) or ''), key(r.get('original_' + tk) or ''))
+                    near = max(difflib.SequenceMatcher(None, w_, n).ratio() for n in names) if w_ else 0
+                    ok_year = not y or not ry or abs(ry - y) <= (5 if wide else 1)
+                    if ok_year and (w_ in names or (wide and near >= .9 and y and ry and abs(ry - y) <= 1)):
+                        return r['id'], kind
+                if not wide and yy == y and y and len(res) == 1 and int((res[0].get(dk) or '0')[:4] or 0) == y:   # (one answer for that title and year)
+                    return res[0]['id'], kind
+        return None
+    hit = look(title, False)
+    if hit:
+        return hit
+    short = re.sub(r'\s*[\(\[][^)\]]*(version|cut|edition|restored|remastered)[^)\]]*[\)\]]', '', title, flags=re.I).strip()
+    hit = look(title, True) or (look(short, True) if short != title else None)
+    if hit:
+        return hit
+    if not y or re.search(r'\b(trilogy|films|collection|complete|essential|masterpieces|set|cinema project|stories|by)\b', title, re.I):   # (a box set: TMDB's collection of it, close enough)
+        res = (tmdb_get('/search/collection', query=re.sub(r'\b(the complete|the essential|films? by|two films|three films|trilogy)\b', '', title, flags=re.I).strip() or title) or {}).get('results') or []
+        best = max(res[:8], key=lambda r: difflib.SequenceMatcher(None, want, key(r.get('name') or '')).ratio(), default=None)
+        if best and difflib.SequenceMatcher(None, want, key(best.get('name') or '')).ratio() >= .6:
+            return best['id'], 'collection'
     return None
 
 
-def tmdb_links(sid, sheet, rows, go, most=600):
+def tmdb_links(sid, sheet, rows, go, most=600, retry=False):
     """Column J: each film's TMDB page, a link (John, 17 Nov 2026: "Can my Criterion Releases spreadsheet be updated with the tmdb
     link?"). Only rows without one; each film looked up once (and one TMDB didn't have, again after a month)."""
     import time as t_
@@ -170,7 +185,7 @@ def tmdb_links(sid, sheet, rows, go, most=600):
             continue
         k_ = '%s|%s' % (key(title), year)
         c = C.get(k_)
-        if c is None or (not c[0] and t_.time() - (c[1] or 0) > 30 * 86400):
+        if c is None or (not c[0] and (retry or t_.time() - (c[1] or 0) > 30 * 86400)):
             if asked >= most:   # (at most so many looked up at once: the rest next time)
                 continue
             asked += 1
@@ -268,7 +283,7 @@ def main():
     if 'tmdb' in sys.argv[1:]:   # (every row's TMDB link at once: python3 criterion.py tmdb go)
         sid, sheet = sheet_id(), google()
         rj = sheet.values().get(spreadsheetId=sid, range='Criterion Films!A2:J').execute().get('values', [])
-        tmdb_links(sid, sheet, rj, 'go' in sys.argv[1:], most=100000)
+        tmdb_links(sid, sheet, rj, 'go' in sys.argv[1:], most=100000, retry='retry' in sys.argv[1:])
         return
     mark(sheet_id(), google(), GO)
 
