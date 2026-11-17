@@ -511,6 +511,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           <li><label class="btn primary" for="synfile">Choose criterion-synopses.json</label><input type="file" id="synfile" accept=".json,application/json" hidden> and each film gets Criterion’s synopsis.</li>
         </ol>
         <p class="stat" id="synstate" style="font-weight:600"></p>
+        <h3 style="margin:22px 0 6px;font-size:17px">Criterion’s genres and categories</h3>
+        <p class="stat">For the Criterion pages’ filters (Action/Adventure to Western; Director Approved, Criterion Premieres, Eclipse, Collector’s Sets, English Language). Once, and again when Criterion adds films:</p>
+        <ol class="stat" style="margin:6px 0 10px 20px;padding:0">
+          <li>Drag this to your bookmarks bar: <a class="btn" id="tagbm" href="#" style="cursor:grab">Grifflix: Criterion genres</a></li>
+          <li>Open <a href="https://www.criterion.com/shop/browse/list?sort=spine_number" target="_blank" rel="noopener">Criterion’s list</a>, let it load, and click the bookmark there. It reads the list once for each genre and category (about two minutes) and saves <b>criterion-tags.json</b> in your Downloads.</li>
+          <li><label class="btn primary" for="tagfile">Choose criterion-tags.json</label><input type="file" id="tagfile" accept=".json,application/json" hidden></li>
+        </ol>
+        <p class="stat" id="tagstate" style="font-weight:600"></p>
       </section>
       <section class="card" data-tab="mac">
         <div class="kicker">Claude</div>
@@ -1565,6 +1573,58 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   }
   function synLook() { fetch(GW + '/api/criterion?syn=1', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && 'pages' in j) synPaint(j); }).catch(function () {}); }
   setTimeout(function () { if (GW) synLook(); }, 2300);
+
+  // ---- Criterion's genres and categories, read by John's browser from Criterion's list (each one the list filtered by it), for the Criterion
+  // pages' filters (John, 17 Nov 2026: "can also be filtered by genres and popular searches")
+  (function () {
+    var TBM = function () {
+      if (!/(^|\.)criterion\.com$/.test(location.hostname) || !/\/shop\/browse/.test(location.pathname)) { alert('Open Criterion’s list (criterion.com/shop/browse/list), let it load, then click this bookmark there.'); return; }
+      var W = ['Director Approved', 'Criterion', 'Criterion Premieres', 'Eclipse', 'Collector’s Sets', 'English Language', 'Action/Adventure', 'Animation', 'Avant-garde', 'Comedy', 'Crime', 'Documentary', 'Drama', 'Fantasy', 'Film Noir', 'Horror', 'Music', 'Musical', 'Romance', 'Samurai', 'Science Fiction', 'Shorts', 'Silent', 'Thriller', 'War', 'Western'];
+      var norm = function (t) { return String(t || '').replace(/[’']/g, '').replace(/\(\s*[\d,]+\s*\)/g, '').replace(/\s+/g, ' ').trim().toLowerCase(); };
+      var d = document.createElement('div'); d.style.cssText = 'position:fixed;z-index:2147483647;top:12px;right:12px;background:#111;color:#fff;padding:14px 18px;font:15px/1.4 sans-serif;border-radius:8px;max-width:380px;box-shadow:0 8px 30px rgba(0,0,0,.4)'; document.body.appendChild(d);
+      var urls = {}, dbg = {};
+      W.forEach(function (w) {
+        var n = norm(w), hit = null;
+        [].some.call(document.querySelectorAll('a[href], label, input, option, button, li'), function (el) {
+          var t = norm(el.getAttribute('aria-label') || el.textContent || el.value);
+          if (t !== n) return false;
+          if (el.tagName === 'A' && el.getAttribute('href') && el.getAttribute('href').charAt(0) !== String.fromCharCode(35)) { hit = new URL(el.getAttribute('href'), location.href).href; return true; }
+          var inp = el.tagName === 'INPUT' ? el : el.tagName === 'LABEL' ? (el.control || el.querySelector('input')) : el.querySelector ? el.querySelector('input') : null;
+          if (inp && inp.name) { var u = new URL('/shop/browse/list', location.href); u.searchParams.set(inp.name, inp.value); hit = u.href; return true; }
+          if (el.tagName === 'OPTION' && el.parentNode && el.parentNode.name) { var u2 = new URL('/shop/browse/list', location.href); u2.searchParams.set(el.parentNode.name, el.value); hit = u2.href; return true; }
+          var a = el.querySelector && el.querySelector('a[href]'); if (a) { hit = new URL(a.getAttribute('href'), location.href).href; return true; }
+          dbg[w] = (el.outerHTML || '').slice(0, 300); return false;
+        });
+        if (hit) urls[w] = hit;
+      });
+      var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+      (async function () {
+        var out = { tags: {}, urls: urls, missing: [], debug: dbg }, keys = Object.keys(urls), i = 0;
+        for (i = 0; i < keys.length; i++) {
+          var w = keys[i]; d.textContent = 'Grifflix: reading ' + w + ' (' + (i + 1) + ' of ' + keys.length + ')… keep this tab open.';
+          try {
+            var r = await fetch(urls[w], { credentials: 'include' }), h = await r.text();
+            if (/Just a moment|challenges\.cloudflare\.com/.test(h.slice(0, 6000))) { d.textContent = 'Grifflix: Criterion asked to slow down: waiting a minute…'; await wait(60000); i--; continue; }
+            var doc = new DOMParser().parseFromString(h, 'text/html');
+            out.tags[w] = [].map.call(doc.querySelectorAll('tr.gridFilm, [data-href*="/films/"]'), function (row) { return (row.getAttribute('data-href') || '').replace(/^.*\/films\//, '').replace(/[?\u0023].*$/, ''); }).filter(Boolean);
+          } catch (e) { out.missing.push(w + ' (' + e.message + ')'); }
+          await wait(2500 + Math.random() * 1500);
+        }
+        W.forEach(function (w) { if (!urls[w]) out.missing.push(w); });
+        var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(out)], { type: 'application/json' })); a.download = 'criterion-tags.json'; document.body.appendChild(a); a.click();
+        d.textContent = 'Grifflix: done: ' + Object.keys(out.tags).length + ' of ' + W.length + ' read' + (out.missing.length ? ' (not found here: ' + out.missing.join(', ') + ')' : '') + '. Saved as criterion-tags.json in your Downloads: choose it on the admin page.';
+      })();
+    };
+    $('#tagbm').href = 'javascript:(' + TBM.toString() + ')();void 0';
+    $('#tagbm').onclick = function (e) { e.preventDefault(); toast('Drag it to your bookmarks bar, then click it on Criterion’s list'); };
+    $('#tagfile').onchange = function () {
+      var f = this.files[0]; this.value = ''; if (!f) return; if (!GW) return toast('The Mac mini isn’t answering.');
+      f.text().then(function (t) { var o = JSON.parse(t); if (!o || typeof o.tags !== 'object') throw new Error('That isn’t the genres file.');
+        $('#tagstate').textContent = 'Sending to the Mac mini…';
+        return critCall({ tags: o }).then(function (j) { $('#tagstate').textContent = j.tagsLog || 'Kept on the Mac mini.'; toast('Criterion’s genres kept: Check the library puts them on the site'); }); })
+        .catch(function (e) { $('#tagstate').textContent = 'Not sent: ' + (e.message || 'that didn’t work') + '.'; toast(e.message || 'That didn’t work'); });
+    };
+  })();
 
   // ---- a key for Claude to look at the Mac mini with, reading only (John, 16 Nov 2026: "can't you use it from here somehow?")
   function lookPaint(r) {

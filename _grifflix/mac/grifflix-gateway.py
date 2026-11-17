@@ -1061,23 +1061,28 @@ def make_handler(g):
                     if True:   # (Criterion's spine numbers, kept apart from each film's remembered details, so they're always current; a series' too)
                         # (and Criterion's own director and country for it, for the Criterion pages' filters: John, 17 Nov 2026, "I would like
                         # all the same filters available to me on the criterion page in my collection too")
-                        CL = {}
+                        CL, TG = {}, {}
+                        for k_, v_ in ((load(os.path.expanduser('~/Grifflix/criterion-tags.json'), {}) or {}).get('tags') or {}).items():
+                            for sl_ in v_:
+                                TG.setdefault(sl_, []).append(k_)
                         for f_ in load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or []:
                             if str(f_.get('spine') or '').isdigit():
-                                CL.setdefault(int(f_['spine']), (str(f_.get('director') or '')[:160], str(f_.get('country') or '')[:60]))
+                                CL.setdefault(int(f_['spine']), (str(f_.get('director') or '')[:160], str(f_.get('country') or '')[:60], TG.get(str(f_.get('link') or '').replace('https://www.criterion.com/films/', ''), [])))
                         for i in raw:
                             if i['Id'] in items:
                                 sp = spine_of(i.get('Path'), key == 'tv')
                                 o_ = items[i['Id']]
-                                for k_ in ('spine', 'cdir', 'ccty'):
+                                for k_ in ('spine', 'cdir', 'ccty', 'ctags'):
                                     o_.pop(k_, None)
                                 if sp:
                                     o_['spine'] = sp
-                                    d_, c_ = CL.get(int(sp), ('', '')) if str(sp).isdigit() else ('', '')
+                                    d_, c_, t_ = CL.get(int(sp), ('', '', [])) if str(sp).isdigit() else ('', '', [])
                                     if d_:
                                         o_['cdir'] = d_
                                     if c_:
                                         o_['ccty'] = c_
+                                    if t_:
+                                        o_['ctags'] = t_
                     lists[key] = [i['Id'] for i in raw if i['Id'] in items]
                     if key == 'movies':
                         self.extras(raw, items, lists)
@@ -2185,6 +2190,15 @@ def make_handler(g):
                     SYN['t'] = threading.Thread(target=give_synopses, args=(g,), daemon=True)
                     SYN['t'].start()
                 return self.send_json(200, syn_state())
+            if b and isinstance(b.get('tags'), dict) and isinstance(b['tags'].get('tags'), dict):   # (Criterion's genres and categories, read by John's browser)
+                T = {str(k)[:60]: [str(x)[:160] for x in (v or []) if re.match(r'^[\w-]{3,160}$', str(x))][:3000] for k, v in b['tags']['tags'].items() if isinstance(v, list)}
+                save(os.path.join(home, 'criterion-tags.json'), {'tags': T, 'missing': [str(x)[:120] for x in (b['tags'].get('missing') or [])][:40],
+                                                                 'debug': {str(k)[:60]: str(v)[:300] for k, v in (b['tags'].get('debug') or {}).items()}, 'at': int(time.time())})
+                n = sum(len(v) for v in T.values())
+                log('Criterion genres: %d kinds, %d films in them, from John’s browser' % (len(T), n))
+                threading.Thread(target=give_genres, args=(g,), daemon=True).start()
+                return self.send_json(200, {'tagsLog': '%d of Criterion’s genres and categories kept (%d films in them)%s. The site has them in a minute or two.' % (
+                    len(T), n, '; not found: ' + ', '.join(b['tags'].get('missing') or []) if b['tags'].get('missing') else '')})
             if not b and q.get('syn') == '1':   # (how the synopses are going, for the admin card)
                 return self.send_json(200, syn_state())
             if b:
@@ -3263,6 +3277,50 @@ def tmdb_runtime(g, tid):   # a film's running time on TMDB (kept: ~/Grifflix/tm
     return TMDBC[tid]
 
 
+CRIT_GENRES = ('Action/Adventure', 'Animation', 'Avant-garde', 'Comedy', 'Crime', 'Documentary', 'Drama', 'Fantasy', 'Film Noir', 'Horror', 'Music',
+               'Musical', 'Romance', 'Samurai', 'Science Fiction', 'Shorts', 'Silent', 'Thriller', 'War', 'Western')
+
+
+def give_genres(g):
+    """Each film of The Criterion Collection given Criterion's own genres in place of the ones it had, kept from being changed back; one
+    Criterion gives none keeps its own (John, 17 Nov 2026: "Can previous genres for the film be removed and these added instead")."""
+    home = os.path.expanduser('~/Grifflix')
+    T = (load(os.path.join(home, 'criterion-tags.json'), {}) or {}).get('tags') or {}
+    by = {}
+    for k, v in T.items():
+        if k in CRIT_GENRES:
+            for sl in v:
+                by.setdefault(sl, []).append(k)
+    if not by:
+        return
+    gf = os.path.join(home, 'criterion-genres-given.json')
+    given = load(gf, {}) or {}
+    put = 0
+    try:
+        for iid, sl in crit_pairs(g):
+            gs = sorted(by.get(sl) or [])
+            if not gs or given.get(iid) == gs:
+                continue
+            try:
+                full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid)) or {}
+                if sorted(full.get('Genres') or []) != gs:
+                    full['Genres'] = gs
+                    full['GenreItems'] = [{'Name': x} for x in gs]
+                    full['LockedFields'] = sorted(set((full.get('LockedFields') or []) + ['Genres']))
+                    g.jf.call('POST', '/Items/%s' % iid, full)
+                    put += 1
+                given[iid] = gs
+            except Exception as e:
+                log('Criterion genres for %s: %s' % (iid, e))
+        save(gf, given)
+    except Exception as e:
+        log('Criterion genres:', e)
+    if put:
+        log('Criterion genres: %d films given Criterion’s own' % put)
+    g.forget()
+    g.publish_soon = time.time() + 120
+
+
 def syn_state():
     try:
         S_ = load(os.path.expanduser('~/Grifflix/criterion-synopses.json'), {}) or {}
@@ -3531,9 +3589,10 @@ def covers_now():
             m = re.search(r'The Criterion Collection: (\d+) film\(s\) to put in\n((?:  .*\n)*)', out)
             col = [x.strip() for x in m.group(2).splitlines()] if m and int(m.group(1)) else []
             if col or put:
-                try:   # (its synopsis, if Criterion's page for it was read already)
+                try:   # (its synopsis and Criterion's genres, if read already)
                     if G_REF:
                         give_synopses(G_REF[0])
+                        give_genres(G_REF[0])
                 except Exception as e:
                     log('Criterion synopses:', e)
             if put or col:

@@ -2345,11 +2345,12 @@ function sfFits(f) {
     if (f.added && !((Date.now() - (Date.parse(i.added || '') || 0)) / 864e5 <= +f.added)) return false;
     if (SPINEOK && f.dirs && f.dirs.length && !sfDirs(i).some(function (x) { return f.dirs.indexOf(x) >= 0; })) return false;   // (Criterion's own: any chosen)
     if (SPINEOK && f.ctys && f.ctys.length && f.ctys.indexOf(i.ccty || '') < 0) return false;
+    if (SPINEOK && f.cats && f.cats.length && !f.cats.every(function (x) { return (i.ctags || []).indexOf(x) >= 0; })) return false;   // (Criterion's own categories)
     return true;
   };
 }
 function sfDirs(i) { return (i.cdir || '').split(/\s*(?:,|\band\b|&)\s*/).map(function (x) { return x.trim(); }).filter(Boolean); }
-function sfCount(f) { return ['genres', 'decades', 'certs'].concat(SPINEOK ? ['dirs', 'ctys'] : []).reduce(function (n, k) { return n + ((f[k] || []).length ? 1 : 0); }, 0) + ['len', 'min', 'added'].filter(function (k) { return f[k]; }).length; }
+function sfCount(f) { return ['genres', 'decades', 'certs'].concat(SPINEOK ? ['dirs', 'ctys', 'cats'] : []).reduce(function (n, k) { return n + ((f[k] || []).length ? 1 : 0); }, 0) + ['len', 'min', 'added'].filter(function (k) { return f[k]; }).length; }
 var SFICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg>';
 var FFICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>';
 function sfBar() {   // the two icons, for a row of tabs
@@ -2394,7 +2395,9 @@ function sfWire(root, items, redraw) {   // the icons' panels: items are what's 
         (SPINEOK ? (function () {   // (Criterion's own: by its director and country, as on Criterion's site: John, 17 Nov 2026)
           var dc2 = cnt(sfDirs), yc = cnt(function (i) { return i.ccty ? [i.ccty] : []; }), on = SF.f.dirs || [];
           var dl = Object.keys(dc2).sort(function (a, b) { return dc2[b] - dc2[a] || a.localeCompare(b); }), top = dl.filter(function (d, n) { return n < 40 || on.indexOf(d) >= 0; });
-          return '<div class="sfg"><div class="sfl">Country</div>' + chips('ctys', Object.keys(yc).sort(function (a, b) { return yc[b] - yc[a] || a.localeCompare(b); }).map(function (c) { return [c, c, yc[c]]; }), true) + '</div>' +
+          var CATS = ['Director Approved', 'Criterion', 'Criterion Premieres', 'Eclipse', 'Collector’s Sets', 'English Language'], kc = cnt(function (i) { return (i.ctags || []).filter(function (t) { return CATS.indexOf(t) >= 0; }); });
+          return (Object.keys(kc).length ? '<div class="sfg"><div class="sfl">Criterion</div>' + chips('cats', CATS.filter(function (c) { return kc[c]; }).map(function (c) { return [c, c, kc[c]]; }), true) + '</div>' : '') +
+            '<div class="sfg"><div class="sfl">Country</div>' + chips('ctys', Object.keys(yc).sort(function (a, b) { return yc[b] - yc[a] || a.localeCompare(b); }).map(function (c) { return [c, c, yc[c]]; }), true) + '</div>' +
             '<div class="sfg"><div class="sfl">Director' + (dl.length > top.length ? ' <small>(the ' + top.length + ' with most; find any:)</small> <input type="search" id="sfdirq" placeholder="A director" style="font:inherit;padding:4px 8px;margin-left:6px;max-width:180px">' : '') + '</div><div id="sfdirs">' + chips('dirs', top.map(function (d) { return [d, d, dc2[d]]; }), true) + '</div></div>';
         })() : '') +
         '<div class="sfend"><button class="pill go" id="sfdone">Show ' + items.filter(sfFits(SF.f)).length + '</button></div>';
