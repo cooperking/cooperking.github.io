@@ -1587,12 +1587,12 @@ def make_handler(g):
                     vc += ' 10-bit'
                 CONV_SEEN[path] = {'v': vc, 'w': v.get('width') or 0, 'h': v.get('height') or 0, 'mbps': round(float((info.get('format') or {}).get('bit_rate') or 0) / 1e6, 1), 'gb': round(os.path.getsize(path) / 1e9, 1)}
                 return CONV_SEEN[path]
-            rows = sorted(done.values(), key=lambda x: -(x.get('at') or 0))[:60]
+            rows = sorted((dict(x, id=k) for k, x in done.items()), key=lambda x: -(x.get('at') or 0))[:60]
             self.send_json(200, {'now': cur, 'alive': alive, 'done': len(done), 'failed': [{'name': x.get('name'), 'why': x.get('why')} for x in (st.get('failed') or {}).values()][:20],
-                                 'recent': [{'name': x.get('name'), 'at': x.get('at'), 'mins': x.get('mins'), 'why': x.get('why'),
+                                 'recent': [{'id': x.get('id'), 'name': x.get('name'), 'at': x.get('at'), 'mins': x.get('mins'), 'why': x.get('why'),
                                              'before': x.get('before') or look(x.get('kept')), 'after': x.get('after') or look(x.get('to'))} for x in rows],
                                  'disks': disks(),
-                                 'next': (cur or {}).get('next') or [], 'left': (cur or {}).get('left'), 'pins': [x for x in P['pins'] if x.get('id') not in (st.get('done') or {}) and x.get('id') not in (st.get('failed') or {})], 'remux_first': P['remux_first'], 'log': tail,
+                                 'next': [x for x in (cur or {}).get('next') or [] if x.get('id') not in done],   # (one already made, here or on John's Mac, off the list at once: John, 17 Nov 2026) 'left': (cur or {}).get('left'), 'pins': [x for x in P['pins'] if x.get('id') not in (st.get('done') or {}) and x.get('id') not in (st.get('failed') or {})], 'remux_first': P['remux_first'], 'log': tail,
                                  'ask': [dict(v, id=k, chosen=(P.get('langs') or {}).get(k)) for k, v in (st.get('ask') or {}).items()]})
 
         def api_originals(self, me, user, q, b):
