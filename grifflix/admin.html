@@ -776,9 +776,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var IC = { working: '…', waiting: '◷', done: '✓', skip: '–', failed: '✕' };
     el.innerHTML = '<span class="hd">' + (going ? 'Updating now (started ' + hm(ST.at) + ')' : 'Last update: ' + when(new Date(ST.at).toISOString())) + '</span>' +
       STEPS.filter(function (k) { return ST.s[k[0]]; }).map(function (k) { var x = ST.s[k[0]];
-        return '<li class="' + x.st + '"><span class="ic">' + IC[x.st] + '</span><span class="lb">' + k[1] + '</span><span class="tx">' + esc(x.tx || '') + '</span></li>'; }).join('');
+        // (how long the step it's on has been going, counting every second, so it's plain it hasn't stuck: John, 17 Nov 2026, "the admin page
+        // doesn't update very well to say what's happening")
+        var el2 = (x.st === 'working' || (x.st === 'waiting' && x.since)) && x.since ? Math.round((Date.now() - x.since) / 1000) : 0;
+        var tt = (x.tx || '').replace(/\s*\(\d+ s\)$/, '') + (el2 >= 3 ? ' (' + (el2 >= 60 ? Math.floor(el2 / 60) + ' min ' + (el2 % 60) + ' s' : el2 + ' s') + ')' : '');
+        return '<li class="' + x.st + '"><span class="ic">' + IC[x.st] + '</span><span class="lb">' + k[1] + '</span><span class="tx">' + esc(tt) + '</span></li>'; }).join('');
   }
-  function stepSet(k, st, tx) { ST.s[k] = { st: st, tx: tx }; stepDraw(); try { store.set('grifflix-lastupdate', JSON.stringify(ST)); } catch (e) {} }
+  function stepSet(k, st, tx) { var o = ST.s[k] || {}; ST.s[k] = { st: st, tx: tx, since: st === 'working' || (st === 'waiting' && /sent|updating|publishing/.test(tx || '')) ? (o.st === st && o.since ? o.since : Date.now()) : 0, base: o.base }; stepDraw(); try { store.set('grifflix-lastupdate', JSON.stringify(ST)); } catch (e) {} }
+  setInterval(function () { if (STEPS.some(function (k) { var x = ST.s[k[0]]; return x && x.since; })) stepDraw(); }, 1000);
   stepDraw();
   var armed = 0, cur = '';
   $('#allgo').onclick = function () {
@@ -946,9 +951,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       return g('admin', { op: 'update', cal: { days: days, notes: snap.motd.notes || {} }, personal: snap.personal || null, counts: { movies: (L.movies || []).length, tv: (L.tv || []).length, collections: (L.collections || []).length } });
     }).then(function () {
       var c = snap.changes || {}, n = (c.new || 0) + (c.changed || 0) + (c.removed || 0);
-      dataStatus(); setTimeout(siteJob, 8000);
-      return (n ? (c.new || 0) + ' new, ' + (c.changed || 0) + ' changed, ' + (c.removed || 0) + ' gone: on the site in a few minutes' : 'no new films') +
-        ((c.arranged || []).length ? '; put in place: ' + c.arranged.join('; ') : '');
+      dataStatus(); [8000, 30000, 60000, 120000, 240000].forEach(function (t) { setTimeout(siteJob, t); });
+      var r_ = (n ? (c.new || 0) + ' new, ' + (c.changed || 0) + ' changed, ' + (c.removed || 0) + ' gone' : 'no new films') + ((c.arranged || []).length ? '; put in place: ' + c.arranged.join('; ') : '');
+      setTimeout(function () { if (ST.s.data && n) { ST.s.data.base = r_; stepSet('data', 'waiting', r_ + ': sent; waiting for the site to start its update…'); } }, 50);
+      return r_ + (n ? ': on the site in a few minutes' : '');
     });
   }
   // the site's own update (grifflix-data.yml on GitHub): running, or when it last finished
@@ -959,6 +965,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         var run = (j.workflow_runs || [])[0];
         if (!run) { $('#upjob').textContent = ''; return; }
         var going = run.status !== 'completed', what = run.event === 'schedule' || /days/.test(run.display_title || '') ? 'the morning’s film' : 'the update';
+        var dx = ST.s.data;   // (the update's own step follows the site's: John, 17 Nov 2026)
+        if (dx && (dx.st === 'done' || dx.st === 'waiting') && dx.base != null && Date.parse(run.created_at) >= ST.at - 60000) {
+          if (going) stepSet('data', 'waiting', dx.base + ': the site is updating now (its films first, then new pictures)…');
+          else if (run.conclusion === 'success') { stepSet('data', 'done', dx.base + ': on the site at ' + hm(Date.parse(run.updated_at))); ST.s.data.base = null; }
+          else { stepSet('data', 'failed', dx.base + ': the site’s update didn’t finish (see Builds on GitHub)'); ST.s.data.base = null; }
+          if (ST.s.data) ST.s.data.base = ST.s.data.base === undefined ? dx.base : ST.s.data.base;
+        }
         $('#upjob').innerHTML = going ? '<b>The site is updating now</b> (' + what + ', started ' + esc(when(run.created_at)) + '): its films first, then any new pictures.'
           : run.conclusion === 'success' ? 'The site last updated ' + esc(when(run.updated_at)) + '.' : '<b>The site’s last update didn’t finish</b> (' + esc(when(run.updated_at)) + '): <a href="' + esc(run.html_url) + '" target="_blank" rel="noopener">see why</a>, or Update again.';
         clearTimeout(jobWatch); if (going) jobWatch = setTimeout(siteJob, 20000);
