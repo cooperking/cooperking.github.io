@@ -1966,7 +1966,10 @@ html.phone .vtog span { padding: 6px 8px 5px; letter-spacing: .13em; text-indent
 .critbtn:hover svg, .critbtn:focus-visible svg { transform: rotate(-24deg); }
 @media (max-width: 389px) { .critbtn { width: 28px; height: 28px; } .critbtn svg { width: 15px; height: 15px; } }
 /* GRIFFLIX as its logo: Futura's bold spaced capitals, see-through, a line round each letter */
-.gcx { font: 700 1em/1 var(--kfont); letter-spacing: .5em; margin-right: -.5em; text-transform: uppercase; color: transparent; -webkit-text-stroke: .06em var(--gc-ink); paint-order: stroke fill; }
+.gcx { font: 700 1em/1 var(--kfont); letter-spacing: .5em; margin-right: -.5em; text-transform: uppercase; color: var(--gcx-bg, #fff); -webkit-text-stroke: .12em var(--gc-ink); paint-order: stroke fill; }
+/* (filled with what's behind it, the line drawn under: only each letter's outside edge shows, not where its strokes cross inside, as the R and
+   G did: John, 17 Nov 2026, "The grifflix logo looks like this not the extra parts you've added") */
+.gcin .core { --gcx-bg: var(--gc-panel); } .card.coll .ccov.gcc { --gcx-bg: var(--gc-page); }
 /* the intro: The Criterion Collection at GRIFFLIX */
 .gcin { position: fixed; inset: 0; z-index: 2147483000; background: var(--gc-page); color: var(--gc-ink); display: grid; place-items: center; overflow: hidden; cursor: pointer; opacity: 1; transition: opacity .6s ease; }
 .gcin.out { opacity: 0; pointer-events: none; }
@@ -2013,7 +2016,7 @@ html.gcrit #cbody .cfind::placeholder { color: var(--gc-grey); opacity: 1; }
 .gcc .gcm { width: 34%; height: auto; fill: var(--gc-ink); }
 .gcc em { display: block; margin-top: 9%; font: normal 500 6cqw/1.25 var(--kfont); letter-spacing: .12em; text-transform: uppercase; }
 .gcc i { display: block; margin: 6% 0 5%; font: italic 400 7.5cqw/1 var(--serif); color: var(--gc-grey); }
-.gcc .gcx { display: block; font-size: 10cqw; -webkit-text-stroke-width: .07em; }
+.gcc .gcx { display: block; font-size: 10cqw; -webkit-text-stroke-width: .14em; }
 .gcc small { display: block; margin-top: 10%; font: 500 4.4cqw/1 var(--kfont); letter-spacing: .2em; text-transform: uppercase; color: var(--gc-grey); }
 /* the switch square, as every other button of the bar (John, 11 Nov 2026: "the theme calendar toggle is rounded") */
 #barnav button.vtog, #shnav button.vtog, .vtog::before { border-radius: 0 !important; }
