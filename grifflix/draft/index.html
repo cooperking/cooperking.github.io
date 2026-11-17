@@ -1996,7 +1996,15 @@ html.public .critbtn { display: none !important; }   /* (not for visitors, signe
 @media (prefers-reduced-motion: reduce) { .gcin *, .gcin .shelf { animation-duration: .01s !important; animation-delay: 0s !important; } }
 @media (max-width: 600px) { .gcin .core { padding: 30px 22px 26px; margin: 0 16px; } }
 /* its page: Criterion's pale grey with a white panel, near-black type, grey details, and Grifflix's logo */
-html.gcrit #cbody { background: var(--gc-page); color: var(--gc-ink); padding: clamp(18px, 3vw, 40px); }
+/* (the whole of Grifflix in Criterion's colours while on its page, the bar too, not a box inside the month's: John, 17 Nov 2026, "The new colours
+   should be the whole of grifflix, not just a box inside") */
+html.gcrit { --bg: #f4f4f4 !important; --kink: 30, 30, 30 !important; --line: rgba(0, 0, 0, .14) !important; --tile: rgba(0, 0, 0, .06) !important; --shadow: rgba(0, 0, 0, .12) !important; color-scheme: light; }
+html.gcrit, html.gcrit body { background: var(--gc-page) !important; }
+html.gcrit .bar-top, html.gcrit .bar-top .brand { --fg: var(--gc-ink); }
+html.gcrit #cbody { color: var(--gc-ink); }
+html.gcrit .bar-top { background: var(--gc-page) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: 0 1px 0 var(--gc-line) !important; }
+html.gcrit body::before, html.gcrit body::after { background-color: var(--gc-page) !important; background-image: none !important; }
+@media (max-width: 600px) { html.gcrit #cbody .collhead + .tabs { flex-wrap: wrap !important; overflow: visible !important; row-gap: 8px; } html.gcrit #cbody .tabs .sfbar { position: static; margin-left: 0; padding-left: 0; box-shadow: none; background: none; } #cbody .cviews { flex: 1 0 100%; order: 9; } #cbody .cviews .pill { flex: 1; justify-content: center; } #cbody .tabs .cfind { flex: 1 1 140px; min-width: 0; } }
 html.gcrit #cbody .kick { color: var(--gc-grey); }
 html.gcrit #cbody .kick::after { content: " · at Grifflix"; }
 html.gcrit #cbody .colltitle { font-family: var(--kfont); font-weight: 700; text-transform: uppercase; letter-spacing: .02em; color: var(--gc-ink); }
@@ -2239,7 +2247,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '2fbc5b661941' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '68db51849fe4' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
