@@ -807,13 +807,36 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   }
   function stepSet(k, st, tx) { var o = ST.s[k] || {}; ST.s[k] = { st: st, tx: tx, since: st === 'working' || (st === 'waiting' && /sent|updating|publishing/.test(tx || '')) ? (o.st === st && o.since ? o.since : Date.now()) : 0, base: o.base }; stepDraw(); try { store.set('grifflix-lastupdate', JSON.stringify(ST)); } catch (e) {} }
   setInterval(function () { if (STEPS.some(function (k) { var x = ST.s[k[0]]; return x && x.since; })) stepDraw(); }, 1000);
+  // (John, 17 Nov 2026: "this is clearly wrong. Once an update happens it needs to clear properly from the admin screen": an update this
+  // page was running when it was closed or reloaded was shown as going for ever ("The Mac is updating… (129 min)"). Only the page that
+  // started an update can follow it, so on opening: the site's own data step is still followed (siteJob), the draft is looked at once,
+  // and every other step left going is settled; a finished update leaves the screen half an hour after it ended)
+  var RUNNING = false;
+  function stepSettle() {
+    if (RUNNING) return;
+    var left = STEPS.filter(function (k) { var x = ST.s[k[0]]; return x && (x.st === 'working' || x.st === 'waiting') && !(k[0] === 'data' && x.base != null) && !(k[0] === 'page' && /^sent/.test(x.tx || '')); });
+    left.forEach(function (k) { var x = ST.s[k[0]]; stepSet(k[0], 'skip', x.st === 'working' ? 'stopped: the admin page was closed before it finished (run Update everything again to finish it)' : 'not done: the update was stopped before it got here'); });
+    var pg = ST.s.page;
+    if (pg && pg.st === 'waiting' && /^sent/.test(pg.tx || '')) Promise.all([page('/grifflix/draft/index.html'), page('/grifflix/index.html')]).then(function (r) {
+      stepSet('page', r[0] === r[1] ? 'done' : 'skip', r[0] === r[1] ? 'live for everyone' : 'not confirmed live: the admin page was closed while GitHub published it');
+    }).catch(function () { stepSet('page', 'skip', 'not confirmed live: the admin page was closed while GitHub published it'); });
+    var dx = ST.s.data;   // (the site's step, if the site's job can't be seen within 30 minutes of its start, is settled too)
+    if (dx && dx.st === 'waiting' && Date.now() - ST.at > 30 * 60000) stepSet('data', 'skip', 'not followed to the end: look at the site’s last update below');
+  }
+  var stepsDraw0 = stepDraw;
+  stepDraw = function () {
+    var going = STEPS.some(function (k) { var x = ST.s[k[0]]; return x && (x.st === 'working' || x.st === 'waiting'); });
+    if (!going && !RUNNING && ST.at && Date.now() - ST.at > 30 * 60000) { $('#allsteps').hidden = true; return; }
+    stepsDraw0();
+  };
+  setTimeout(stepSettle, 1500);
   stepDraw();
   var armed = 0, cur = '';
   $('#allgo').onclick = function () {
     var b = this, done = [];
     var say = function (t) { b.textContent = t; if (cur) stepSet(cur, 'working', t.replace(/…$/, '…')); };
     if (!armed) { armed = setTimeout(function () { armed = 0; summary(); }, 4000); b.textContent = WAIT.page || WAIT.themes ? 'Tap again: the draft goes live for everyone' : 'Tap again to update everything'; return; }
-    clearTimeout(armed); armed = 0; b.disabled = true;
+    clearTimeout(armed); armed = 0; b.disabled = true; RUNNING = true;
     ST = { at: Date.now(), s: {} }; MACRESTART = false; clearInterval(pageWatch);
     STEPS.forEach(function (k) { stepSet(k[0], 'waiting', 'to come'); });
     var run = function (k, fn, none) {
@@ -828,7 +851,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       .then(function (d) { if (d) done.push(d); return run('themes', function () { return stepThemes(say); }, 'none waiting'); })
       .then(function (t) { if (t) done.push(t); return run('page', function () { return stepPublish(say); }, 'nothing waiting: the live page is the draft'); })
       .then(function (p) {
-        b.disabled = false; summary(); toast(done.join(' · ') || 'Everything was up to date');
+        b.disabled = false; RUNNING = false; summary(); toast(done.join(' · ') || 'Everything was up to date');
         if (p) {   // (the page: watched until it's really live, as GitHub publishes it)
           stepSet('page', 'waiting', 'sent: GitHub is publishing it (usually a minute or two)…');
           var t0 = Date.now(); clearInterval(pageWatch);
@@ -840,7 +863,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           }, 10000);
         }
       })
-      .catch(function (e) { b.disabled = false; summary(); toast(e.message); STEPS.forEach(function (k) { if (ST.s[k[0]] && ST.s[k[0]].st === 'waiting') stepSet(k[0], 'skip', 'not done: a step before it failed'); }); });
+      .catch(function (e) { b.disabled = false; RUNNING = false; summary(); toast(e.message); STEPS.forEach(function (k) { if (ST.s[k[0]] && ST.s[k[0]].st === 'waiting') stepSet(k[0], 'skip', 'not done: a step before it failed'); }); });
   };
   function stepThemes(say) {   // (the months' themes saved on the admin page, put live)
     if (!WAIT.themes) return Promise.resolve('');
@@ -1254,7 +1277,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   function cvMac() {
     clearTimeout(cmT); if (!TOKEN) return; if (!GW) { cmT = setTimeout(cvMac, 3000); return; }
     fetch(GW + '/api/convertjobs', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : { jobs: [] }; }).then(function (j) {
-      var J = j.jobs || [], live = J.some(function (x) { return ['waiting', 'started', 'converting', 'checking'].indexOf(x.state) >= 0; });
+      cvMac.done = (j.jobs || []).filter(function (x) { return x.state === 'done' || x.state === 'checking'; }).map(function (x) { return x.id; });
+      var J = (j.jobs || []).filter(function (x) { return x.state !== 'done'; }), live = J.some(function (x) { return ['waiting', 'started', 'converting', 'checking'].indexOf(x.state) >= 0; });
       var mm = function (s) { s = Math.max(0, Math.round(s)); return s >= 3600 ? Math.floor(s / 3600) + ' h ' + Math.round(s % 3600 / 60) + ' min' : Math.round(s / 60) + ' min'; };
       $('#cvmac').innerHTML = J.length ? '<p class="stat" style="margin:14px 0 6px"><b>On your Mac</b></p>' + J.map(function (x) {
         var pc = x.dur ? Math.min(100, x.t / x.dur * 100) : 0, sp = parseFloat(x.speed) || 0;
@@ -1335,7 +1359,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       // (each film: what the original was, what it became, and why: John, 11 Nov 2026: "what was the original and what was it converted to?")
       var fl = function (f) { return f ? (f.w ? f.w + '×' + f.h + ' ' : '') + esc(f.v) + (f.mbps ? ', ' + f.mbps + ' Mbps' : '') + (f.gb ? ', ' + f.gb + ' GB' : '') : ''; };
       // (what's next and what's been done each a tab of its own: John, 15 Nov 2026)
-      var nx = c.next || [], fails = c.failed || [], tab = convert.tab || 'next';
+      var gone = {}; (c.recent || []).forEach(function (x) { if (x.id && x.at * 1000 > Date.now() - 6 * 3600000) gone[x.id] = 1; }); (cvMac.done || []).forEach(function (i) { gone[i] = 1; });
+      var nx = (c.next || []).filter(function (x, i) { return !gone[x.id] || (i === 0 && c.now && c.now.id === x.id && c.now.state === 'converting'); }), fails = c.failed || [], tab = convert.tab || 'next';
       $('#cvtabs').innerHTML = [['next', 'Next', nx.length], ['done', 'Done', c.done], ['fail', 'Couldn’t', fails.length]].filter(function (t) { return t[0] !== 'fail' || t[2]; })
         .map(function (t) { return '<button type="button" data-cvt="' + t[0] + '" aria-pressed="' + (tab === t[0]) + '">' + t[1] + ' ' + (t[2] || 0) + '</button>'; }).join('');
       Array.prototype.forEach.call(document.querySelectorAll('[data-cvt]'), function (b) { b.onclick = function () { convert.tab = b.dataset.cvt; convert.last && convert.draw(convert.last); }; });
