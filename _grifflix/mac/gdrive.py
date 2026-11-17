@@ -167,15 +167,16 @@ def fetch(loc, path, part, show=False):
     # stopped and started again by the watchdog below, three times, then left for next time so the rest come: John, 17 Nov 2026, House
     # Party "stuck on 75% for a while": rclone hung at 17:35 with 13 more behind it)
     args = [RCLONE, '--config', CONF, 'copy', loc(folder) if folder else loc('').rstrip('/'), tmpd, '--files-from', lst, '--retries', '3',
-            '--timeout', '2m', '--contimeout', '30s', '--low-level-retries', '10']   # (its folder listed, as works, not the one file looked up)
+            '--timeout', '2m', '--contimeout', '30s', '--low-level-retries', '10',
+            '--multi-thread-streams', '0']   # (one stream, start to end: the file's size is then what has come, for the admin page and the watchdog)   # (its folder listed, as works, not the one file looked up)
 
-    def written():   # (what's on the disk so far: the blocks really written, as a download in several pieces makes its file full size at once)
+    def written():   # (what's on the disk so far: one stream, so the file's size is what has come)
         n = 0
         for root_, _, files in os.walk(tmpd):
             for f_ in files:
                 try:
                     st = os.stat(os.path.join(root_, f_))
-                    n += getattr(st, 'st_blocks', 0) * 512 or st.st_size
+                    n += st.st_size
                 except OSError:
                     pass
         return n

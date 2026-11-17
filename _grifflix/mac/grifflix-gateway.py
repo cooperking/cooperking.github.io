@@ -1500,12 +1500,29 @@ def make_handler(g):
                 part = now.pop('part', '')
                 got = 0
                 for f_ in [part] + ([os.path.join(part + '.d', n) for n in os.listdir(part + '.d')] if os.path.isdir(part + '.d') else []):
-                    try:   # (while it comes: in "<file>.adding.d", until it's whole)
-                        got = max(got, os.path.getsize(f_))
+                    try:   # (while it comes: in "<file>.adding.d", until it's whole. What has really been written, not the file's size: a download in
+                        # several pieces makes its file nearly full size at once, and House Party said 75% for hours with nothing coming: John,
+                        # 17 Nov 2026, "there's no point in it saying 75% if it's not true")
+                        x_ = os.stat(f_)
+                        got = max(got, min(x_.st_size, x_.st_blocks * 512) if getattr(x_, 'st_blocks', 0) else x_.st_size)
                     except OSError:
                         pass
-                took = max(1, time.time() - (now.get('since') or time.time()))
-                now.update(got=got, pct=round(min(99.9, 100.0 * got / now['size']), 1) if now.get('size') else 0, mbps=round(got * 8 / took / 1e6, 1))
+                # (its speed now, over the last minute or so, not since it began; and how long nothing has come, if it's stalled)
+                now_t = time.time(); h = FETCH_SEEN.get(part)
+                if not h or h['got'] > got:
+                    h = FETCH_SEEN[part] = {'got': got, 'at': now_t, 'moved': now_t, 'rate': 0, 'pg': got, 'pt': now_t}
+                if got > h['got']:
+                    h['moved'] = now_t
+                if now_t - h['pt'] >= 20:
+                    h['rate'] = (got - h['pg']) * 8 / (now_t - h['pt']) / 1e6
+                    h['pg'], h['pt'] = got, now_t
+                h['got'] = got
+                for k_ in [k_ for k_ in FETCH_SEEN if k_ != part]:
+                    FETCH_SEEN.pop(k_, None)
+                took = max(1, now_t - (now.get('since') or now_t))
+                rate = h['rate'] if now_t - h['at'] > 30 else got * 8 / took / 1e6
+                now.update(got=got, pct=round(min(99.9, 100.0 * got / now['size']), 1) if now.get('size') else 0, mbps=round(rate, 1),
+                           still=int(now_t - h['moved']) if now_t - h['at'] > 90 else 0)
             waiting = [x for x in (st.get('waiting') or []) if not (now and x.get('file') == now.get('file'))]
             return self.send_json(200, {'setup': setup, 'running': running, 'now': now, 'waiting': waiting,
                                         'recent': [x for x in st.get('recent') or [] if x.get('ok')],   # (only what came: John, 15 Nov 2026) 'checked': st.get('checked'), 'next': int(GDRIVE_NEXT[0]) or None, 'error': GDRIVE_ERR[0], 'trouble': st.get('trouble') or [], 'hold': st.get('hold'),
@@ -3771,6 +3788,9 @@ def rename_to(g, iid, name, year, pick=None):
     return 'renamed to “%s”' % new
 
 
+FETCH_SEEN = {}   # (the download in progress: how much had come when, for its speed now and whether it has stalled)
+
+
 def keep_fetch_unstuck():
     """A download from TorBox or Google Drive that has taken in nothing for 15 minutes: its rclone stopped, so the fetch counts it as failed,
     goes on to the rest, and tries it again next time (John, 17 Nov 2026: House Party "stuck on 75% for a while", rclone hung since 17:35
@@ -3791,7 +3811,7 @@ def keep_fetch_unstuck():
                     for f_ in files:
                         try:
                             x = os.stat(os.path.join(root_, f_))
-                            n += x.st_blocks * 512
+                            n += x.st_size
                         except OSError:
                             pass
             if seen.get('part') != part or seen.get('n') != n:
