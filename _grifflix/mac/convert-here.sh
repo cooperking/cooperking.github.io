@@ -39,12 +39,18 @@ if [[ "${1:-}" == "setup" ]]; then
   exit 0
 fi
 
+echo "Grifflix: starting…"
 u="${1:-}"; u="${u#grifflix-convert://job?u=}"
 url=$(osascript -l JavaScript -e "decodeURIComponent('${u//\'/}')")
+[[ "$url" == https://* ]] || { echo "Grifflix: this window wasn't given a job (press Convert on this Mac on the film again)."; exit 1; }
+# (whatever stops it here, the Mac mini is told why, and the film's Edit panel says so: John, 17 Nov 2026, "a pop up to open a terminal
+# window started ... but nothing then happened on the mac")
+fail() { echo "Grifflix: $1"; curl -fsS -m 20 -X POST -H 'Content-Type: application/json' -d "{\"ok\":false,\"error\":\"$2\"}" "$url/done" >/dev/null 2>&1; exit 1; }
 FF=$( [[ -x "$HOME/bin/ffmpeg" ]] && echo "$HOME/bin/ffmpeg" || command -v ffmpeg )
-[[ -z "$FF" ]] && { echo "No ffmpeg on this Mac: from osxexperts.net (Apple Silicon) unzip ffmpeg into ~/bin."; exit 1; }
+[[ -z "$FF" ]] && fail "No ffmpeg on this Mac yet. From osxexperts.net (Apple Silicon: the ffmpeg download) unzip it into ~/bin, then in Terminal: xattr -d com.apple.quarantine ~/bin/ffmpeg. Then press Convert on this Mac again." "no ffmpeg on this Mac (see the admin page, Conversions)"
+"$FF" -version >/dev/null 2>&1 || fail "ffmpeg is here ($FF) but won't run: in Terminal, xattr -d com.apple.quarantine $FF, then press Convert on this Mac again." "ffmpeg on this Mac won't run (macOS blocked it)"
 job=$(mktemp); trap 'rm -f "$job"' EXIT
-curl -fsS "$url" -o "$job" || { echo "The Mac mini didn't give the job (press Convert on this Mac again)."; exit 1; }
+curl -fsS "$url" -o "$job" || { echo "Grifflix: the Mac mini didn't give the job (press Convert on this Mac again)."; exit 1; }
 field() { osascript -l JavaScript -e "var j = JSON.parse($.NSString.stringWithContentsOfFileEncodingError('$job', 4, null).js); j['$1']"; }
 name=$(field name); src=$(field src); tmp=$(field tmp)
 args=("${(@f)$(osascript -l JavaScript -e "JSON.parse($.NSString.stringWithContentsOfFileEncodingError('$job', 4, null).js).args.join('\n')")}")
