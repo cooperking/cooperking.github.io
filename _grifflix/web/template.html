@@ -2901,7 +2901,7 @@ function route() {
   window.scrollTo(0, 0);
   if (S.view === 'browse') { if (h[1]) S.browse = h[1]; return browse(); }
   if (S.view === 'collection' && h[1]) return collectionView(h[1]);
-  if (S.view === 'film' && /^[0-9a-f]{32}$/.test(h[1] || '')) { S.view = 'home'; var fid = h[1]; home(); api('item?id=' + fid).then(function (it) { if (it && it.id) itemSheet(it); }).catch(function () {}); return; }   // (a shared film's link)
+  if (S.view === 'film' && /^[0-9a-f]{32}$/.test(h[1] || '')) { S.view = 'home'; var fid = h[1]; home(); api('item?id=' + fid).then(function (it) { if (it && it.id) itemSheet(it); else toast('That film isn’t in Grifflix now'); }).catch(function () { toast('That film couldn’t be found in Grifflix (it may have been converted or taken out)'); }); return; }   // (a shared film's link)
   if (S.view === 'month' && /^\d{4}-\d\d$/.test(h[1] || '')) { S.cal = 'motd'; S.month = h[1]; S.view = 'home'; return home(); }   // (a month's theme shared)
   if (S.view === 'day' && /^\d{4}-\d\d-\d\d$/.test(h[1] || '')) { S.cal = 'motd'; S.month = h[1].slice(0, 7); if (STILL) S.resumeDay = h[1]; else S.pendingDay = h[1]; S.view = 'home'; return home(); }
   if (S.view !== 'home') setTimeout(resumeHere, 300);

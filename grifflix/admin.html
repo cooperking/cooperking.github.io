@@ -562,17 +562,18 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   fetch('/grifflix/data/library.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (L) {
     if (!L || !L.items) return; var I = {}, n = {};
     Object.keys(L.items).forEach(function (id) { var it = L.items[id]; if (!it || (it.type !== 'movie' && it.type !== 'series') || it.extra) return; var k = FK(it.name); I[k + '|' + (it.year || '')] = id; n[k] = n[k] ? 'many' : id; });
-    Object.keys(n).forEach(function (k) { if (n[k] !== 'many') I[k] = n[k]; }); LIBIDX = I;
-    document.querySelectorAll('[data-flk]').forEach(function (el) { var id = flId(el.dataset.flk, el.dataset.fly); if (id) el.outerHTML = flA(id, el.textContent); });
+    Object.keys(n).forEach(function (k) { if (n[k] !== 'many') I[k] = n[k]; }); Object.keys(L.items).forEach(function (id) { I['#' + id] = 1; }); LIBIDX = I;
+    document.querySelectorAll('[data-flk]').forEach(function (el) { var id = flId(el.dataset.flk, el.dataset.fly) || (el.dataset.fid && I['#' + el.dataset.fid] ? el.dataset.fid : null); if (id) el.outerHTML = flA(id, el.textContent); });
   }).catch(function () {});
   function flId(name, year) {
     if (!LIBIDX) return null; var m = String(name || '').match(/^(.*?)\s*\((\d{4})\)\s*$/), nm = m ? m[1] : name, y = year || (m ? m[2] : '');
     var k = FK(nm); return (y && (LIBIDX[k + '|' + y] || LIBIDX[k + '|' + (+y - 1)] || LIBIDX[k + '|' + (+y + 1)])) || LIBIDX[k] || null;
   }
   function flA(id, text) { return '<a class="flink" href="/grifflix/#film/' + id + '" target="grifflix" rel="noopener" title="Open it in Grifflix">' + esc(text) + '</a>'; }
-  function FL(name, year, id) {
-    if (id && /^[0-9a-f]{32}$/.test(id)) return flA(id, name);
+  function FL(name, year, id) {   // (the site's own id for it first: a list's may be from before it was converted, and lead nowhere)
     var f = flId(name, year); if (f) return flA(f, name);
+    if (id && /^[0-9a-f]{32}$/.test(id) && LIBIDX && LIBIDX['#' + id]) return flA(id, name);
+    if (id && /^[0-9a-f]{32}$/.test(id) && !LIBIDX) return '<span data-flk="' + esc(name) + '" data-fly="' + esc(String(year || '')) + '" data-fid="' + id + '">' + esc(name) + '</span>';
     return LIBIDX ? esc(name) : '<span data-flk="' + esc(name) + '" data-fly="' + esc(String(year || '')) + '">' + esc(name) + '</span>';   // (linked once the library's in)
   }
   function when(iso) { var d = new Date(iso); return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); }
