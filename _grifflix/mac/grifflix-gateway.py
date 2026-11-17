@@ -3771,6 +3771,45 @@ def rename_to(g, iid, name, year, pick=None):
     return 'renamed to “%s”' % new
 
 
+def keep_fetch_unstuck():
+    """A download from TorBox or Google Drive that has taken in nothing for 15 minutes: its rclone stopped, so the fetch counts it as failed,
+    goes on to the rest, and tries it again next time (John, 17 Nov 2026: House Party "stuck on 75% for a while", rclone hung since 17:35
+    with 13 more behind it; gdrive.py now watches its own downloads too, but one started by an older version doesn't)."""
+    import subprocess, signal as sig
+    seen = {}
+    while True:
+        time.sleep(300)
+        try:
+            st = load(os.path.expanduser('~/Grifflix/fetch-status.json'), {}) or {}
+            part = ((st.get('now') or {}).get('part')) or ''
+            if not part:
+                seen.clear()
+                continue
+            n = 0
+            for d_ in (part, part + '.d'):
+                for root_, _, files in (os.walk(d_) if os.path.isdir(d_) else [(os.path.dirname(d_), [], [os.path.basename(d_)])] if os.path.exists(d_) else []):
+                    for f_ in files:
+                        try:
+                            x = os.stat(os.path.join(root_, f_))
+                            n += x.st_blocks * 512
+                        except OSError:
+                            pass
+            if seen.get('part') != part or seen.get('n') != n:
+                seen.update(part=part, n=n, at=time.time())
+                continue
+            if time.time() - seen['at'] < 900:
+                continue
+            ps = subprocess.run(['ps', '-axo', 'pid=,command='], capture_output=True, text=True, timeout=10).stdout
+            hung = [int(l.split()[0]) for l in ps.splitlines() if l.strip() and 'rclone' in l and ' copy ' in l and os.path.basename(part) in l]
+            for p_ in hung:
+                os.kill(p_, sig.SIGTERM)
+            if hung:
+                log('Downloads: nothing had come for %d minutes (%s, %.1f GB so far): stopped, to be tried again; the rest go on' % ((time.time() - seen['at']) // 60, os.path.basename(part).replace('.adding', ''), n / 1e9))
+            seen.clear()
+        except Exception as e:
+            log('Downloads: couldn’t look for a stuck download:', str(e)[:200])
+
+
 def keep_gdrive():
     """Films from the Grifflix folder of John's Google Drive, every 15 minutes, once gdrive.py is set up (its sign-in kept): onto the
     G-Drive, then deleted from Google Drive; keep_scanning sees them next and the site follows (John, 15 Nov 2026)."""
@@ -4069,6 +4108,7 @@ def serve():
         open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
     threading.Thread(target=covers_once, daemon=True).start()   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
     threading.Thread(target=keep_gdrive, daemon=True).start()
+    threading.Thread(target=keep_fetch_unstuck, daemon=True).start()
     srv.daemon_threads = True
     try:   # (an update that restarted the gateway: said to be over, now it's back, so the admin page knows: John, 17 Nov 2026,
         # "The Mac hasn't finished updating yet" when it had)
