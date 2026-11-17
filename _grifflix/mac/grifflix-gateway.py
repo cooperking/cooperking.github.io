@@ -3997,7 +3997,15 @@ def serve():
     threading.Thread(target=keep_converting, daemon=True).start()
     threading.Thread(target=keep_scanning, args=(g,), daemon=True).start()
     threading.Thread(target=keep_updating, args=(g,), daemon=True).start()
-    threading.Thread(target=tmdb_once, daemon=True).start()   # (the Criterion sheet's TMDB links, once)   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
+    threading.Thread(target=tmdb_once, daemon=True).start()   # (the Criterion sheet's TMDB links, once)
+    def covers_once():   # (once, after the covers learnt to allow a year out: Return to Reason's cover put on: John, 17 Nov 2026)
+        mk = os.path.expanduser('~/Grifflix/covers-yearout.done')
+        if os.path.exists(mk):
+            return
+        time.sleep(300)
+        covers_now()
+        open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+    threading.Thread(target=covers_once, daemon=True).start()   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
     threading.Thread(target=keep_gdrive, daemon=True).start()
     srv.daemon_threads = True
     log('Grifflix gateway on 127.0.0.1:%d, Jellyfin at %s' % (port, g.st['jellyfin']))
