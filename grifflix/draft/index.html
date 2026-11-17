@@ -2154,7 +2154,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'a93fc1e98f06' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'f5ed9850af6c' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5500,6 +5500,16 @@ function sheetKeep() {
   SHEETBACK.push({ frag: f, sc: sc, into: S.sheetInto });
   return true;
 }
+function forgetItem(id) {   // a film or series deleted: out of the library as this page has it, and off whatever's showing
+  try {
+    if (LIB && LIB.items) {
+      delete LIB.items[id];
+      Object.keys(LIB).forEach(function (k) { if (Array.isArray(LIB[k])) LIB[k] = LIB[k].filter(function (x) { return x !== id && (!x || x.id !== id); }); });
+      if (LIB.sets) Object.keys(LIB.sets).forEach(function (c) { if (Array.isArray(LIB.sets[c])) LIB.sets[c] = LIB.sets[c].filter(function (x) { return x !== id; }); });
+    }
+  } catch (e) {}
+  $$('[data-item="' + id + '"], [data-r="' + id + '"], [data-rqplay="' + id + '"]').forEach(function (el) { var w = el.closest('.cedit') || el; w.remove(); });
+}
 function sheetBack() {
   var b = SHEETBACK.pop(); if (!b) return closeSheet();
   var si = $('#sheetIn'); si.innerHTML = ''; si.appendChild(b.frag); S.sheetInto = b.into;
@@ -5913,8 +5923,12 @@ function wireBody(it, ctx) {
     }
     b.disabled = true; b.textContent = 'Deleting…';
     mac('delete', { id: it.id }).then(function (j) {
-      toast((j.name || it.name) + ' deleted for good' + (it.type === 'series' ? ', every episode' : '') + (j.gb ? ': ' + j.gb + ' GB freed' : '') + '. Gone from Grifflix within a few minutes');
-      closeSheet();
+      toast((j.name || it.name) + ' deleted for good' + (it.type === 'series' ? ', every episode' : '') + (j.gb ? ': ' + j.gb + ' GB freed' : ''));
+      // (gone from what's on this page at once, and back to where it was opened from, the search or the page of films, the place kept:
+      // John, 17 Nov 2026, "once something is deleted can the library be updated so it's not there anymore, and can we make sure we
+      // return to the place in the search where the movie or tv series was opened")
+      forgetItem(it.id);
+      if (SHEETBACK.length) { sheetBack(); forgetItem(it.id); } else closeSheet();
     }).catch(function (e) { b.disabled = false; delete b.dataset.sure; b.textContent = it.type === 'series' ? 'Delete the series' : 'Delete'; toast(e.message || 'Couldn’t reach the Mac mini'); });
   });
   on('aconv', function () {
