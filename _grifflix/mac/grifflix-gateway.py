@@ -1948,6 +1948,24 @@ def make_handler(g):
                     'convert': conv_why(ms) or ''})
             return self.send_json(200, {'sources': out})
 
+        def api_convertjobs(self, me, user, q, b):
+            """John's only: every film being converted on his Mac now, and those finished in the last hour, for the admin page from anywhere
+            (John, 17 Nov 2026: "If something is converting in the Mac I'd like to be able to see progress from anywhere I'm signed in")."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            out, now_ = [], time.time()
+            for j in sorted(CONVJOBS.values(), key=lambda j: -j['at']):
+                st_ = j.get('state') or 'waiting'
+                if st_ in ('notstarted',) or (st_ in ('done', 'failed') and now_ - (j.get('ended') or j['at']) > 3600) or now_ - j['at'] > 86400:
+                    continue
+                if st_ == 'waiting' and now_ - j['at'] > 900:
+                    continue
+                quiet = (st_ == 'converting' and now_ - (j.get('seen') or j['at']) > 600) or (st_ == 'started' and now_ - (j.get('seen') or j['at']) > 180)
+                out.append({'id': j['id'], 'name': j['plan']['item'].get('name'), 'state': 'quiet' if quiet else st_, 't': j.get('t') or 0, 'dur': j['plan'].get('dur') or 0,
+                            'speed': j.get('speed') or '', 'stage': j.get('stage') or '', 'error': j.get('error') or '', 'at': j['at'], 'seen': j.get('seen'), 'ended': j.get('ended')})
+            seen_ids = set()
+            return self.send_json(200, {'jobs': [x for x in out if not (x['id'] in seen_ids or seen_ids.add(x['id']))]})   # (the newest for each film)
+
         def api_convertjob(self, me, user, q, b):
             """John's only: how a film's conversion on his Mac is going, for its Edit panel: waiting for the Mac to start it, converting
             (how far, how fast), checking (the Mac mini putting it in place), done or failed."""
