@@ -18,13 +18,18 @@ if [[ "${1:-}" == "setup" ]]; then
   mkdir -p "$HOME/Applications" "$HERE"
   cp -f "$0" "$HERE/convert-here.sh" 2>/dev/null
   rm -rf "$APP"
-  osacompile -o "$APP" \
-    -e 'on open location u' \
-    -e '  tell application "Terminal"' \
-    -e '    activate' \
-    -e '    do script "curl -fsSL https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/convert-here.sh -o ~/Grifflix/convert-here.sh.new && mv ~/Grifflix/convert-here.sh.new ~/Grifflix/convert-here.sh; zsh ~/Grifflix/convert-here.sh " & quoted form of u' \
-    -e '  end tell' \
-    -e 'end open location' || { echo "Couldn't make the app."; exit 1; }
+  # (the job written to a small file and that file opened in Terminal: opening a file needs no permission, where working Terminal itself
+  # (do script) needs macOS's "control Terminal" permission, and without it the button opened nothing: John, 17 Nov 2026)
+  AS=$(mktemp -t grifflix).applescript
+  cat > "$AS" <<'APPLESCRIPT'
+on open location u
+	set f to (POSIX path of (path to temporary items)) & "grifflix-convert.command"
+	set cmd to "mkdir -p ~/Grifflix && curl -fsSL https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/convert-here.sh -o ~/Grifflix/convert-here.sh.new && mv ~/Grifflix/convert-here.sh.new ~/Grifflix/convert-here.sh; zsh ~/Grifflix/convert-here.sh " & quoted form of u
+	do shell script "printf '%s\\n' '#!/bin/zsh' " & quoted form of cmd & " > " & quoted form of f & " && chmod +x " & quoted form of f & " && open -a Terminal " & quoted form of f
+end open location
+APPLESCRIPT
+  osacompile -o "$APP" "$AS" || { echo "Couldn't make the app."; exit 1; }
+  rm -f "$AS"
   P="$APP/Contents/Info.plist"
   /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string uk.co.grifflix.convert" "$P" 2>/dev/null || /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier uk.co.grifflix.convert" "$P"
   /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" "$P" \
