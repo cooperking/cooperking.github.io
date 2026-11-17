@@ -3465,11 +3465,11 @@ def sheet_now():
         return
     try:
         import subprocess
-        r = subprocess.run([sys.executable, '-u', cr, 'go'], capture_output=True, text=True, timeout=900, cwd=home, stdin=subprocess.DEVNULL)
+        r = subprocess.run([sys.executable, '-u', cr, 'go'], capture_output=True, text=True, timeout=3600, cwd=home, stdin=subprocess.DEVNULL)
         out = (r.stdout or '') + (r.stderr or '')
         with open(os.path.join(home, 'criterion-sheet.log'), 'w') as f:
             f.write(out)
-        if 'Marked ' in out or r.returncode:
+        if 'Marked ' in out or 'Added ' in out or r.returncode:
             log('Criterion sheet: %s' % ' '.join(l.strip() for l in out.strip().splitlines()[-12:])[:700])
     except Exception as e:
         log('Criterion sheet: %s' % e)
