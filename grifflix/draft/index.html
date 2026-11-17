@@ -1958,7 +1958,9 @@ html.phone .vtog span { padding: 6px 8px 5px; letter-spacing: .13em; text-indent
 /* the switch: only the side you're on, in words (John: "only needs to show which toggle is on, rather than both words") */
 #barnav button.vtog, #shnav button.vtog { grid-template-columns: 1fr; }
 .vtog::before { width: calc(100% - 6px) !important; transform: none !important; }
-.vtog.vt-cal span:last-child, .vtog.vt-thm span:first-child { display: none; }
+.vtog.vt-cal span:first-child, .vtog.vt-thm span:last-child { display: none; }   /* (the side it takes you to, not the one you're on: John, 17 Nov 2026, "Theme and calendar are the wrong way around in the toggle") */
+.vtog.vt-cal span:last-child, .vtog.vt-thm span:first-child { color: var(--bg); }
+html.public .critbtn { display: none !important; }   /* (not for visitors, signed out: John, 17 Nov 2026) */
 /* the C on the bar: in the ink of the page it's on, as every button there */
 .critbtn { flex: none; position: relative; display: inline-grid; place-items: center; width: 32px; height: 32px; padding: 0 !important; margin-left: 2px; border: 1px solid rgba(var(--kink), .45) !important; background: transparent !important; color: var(--fg) !important; border-radius: 0 !important; cursor: pointer; }
 .critbtn svg { width: 18px; height: 18px; fill: currentColor; transition: transform .5s cubic-bezier(.6, 0, .2, 1); }
@@ -2237,7 +2239,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'b76e0d813a60' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '2fbc5b661941' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
