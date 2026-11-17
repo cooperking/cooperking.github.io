@@ -168,7 +168,23 @@ def rlog_bytes(part):
     return None
 
 
-def fetch(loc, path, part, show=False):
+STAGE = os.path.join(HOME, 'incoming')   # (downloads made on the Mac's own disk, then moved to the G-Drive whole)
+
+
+def stage_for(part, size):
+    """Where a download is made: on the Mac's own disk when it has room (several streams at once write all over the file, which its
+    disk does at once but the G-Drive can't: it has to fill the file with zeros up to each place first, and the drive jammed, the
+    converter and the media server stuck waiting on it: John, 17 Nov 2026, B.F.'s Daughter at 0%), else on the G-Drive in one stream."""
+    try:
+        os.makedirs(STAGE, exist_ok=True)
+        if shutil.disk_usage(STAGE).free > size + 30e9:
+            return os.path.join(STAGE, os.path.basename(part))
+    except OSError:
+        pass
+    return None
+
+
+def fetch(loc, path, part, show=False, streams=16):
     """One file from TorBox or Google Drive to `part`, as a copy of its folder limited to that one file (by a list, so names with
     [brackets] are taken as they are). Not "copyto" of the file itself: TorBox's WebDAV doesn't answer for a single file, so rclone took
     it for an empty folder, copied nothing and said it had worked; every TorBox download "went missing" (John, 15 Nov 2026). Returns
@@ -186,7 +202,7 @@ def fetch(loc, path, part, show=False):
             # (several streams at once: TorBox gives each only about 7 Mbps, so one stream alone was slow (John, 17 Nov 2026, "Why is downloading
             # so slow?"). How far it has got is then rclone's own count, in its log beside the file, not the file's size, which several streams
             # make nearly whole at once (House Party "75%" with nothing coming))
-            '--multi-thread-streams', '16', '--multi-thread-cutoff', '32M', '--buffer-size', '64M', '--use-json-log', '--log-level', 'NOTICE', '--stats', '10s', '--stats-log-level', 'NOTICE', '--log-file', part + '.rlog']   # (its folder listed, as works, not the one file looked up)
+            '--multi-thread-streams', str(streams), '--multi-thread-cutoff', '32M', '--buffer-size', '64M', '--use-json-log', '--log-level', 'NOTICE', '--stats', '10s', '--stats-log-level', 'NOTICE', '--log-file', part + '.rlog']   # (its folder listed, as works, not the one file looked up)
 
     def written():   # (what has come so far: rclone's own count, from its log; else what's on the disk)
         b_ = rlog_bytes(part)
@@ -609,6 +625,10 @@ def _run(check):
         seen = json.load(open(SEEN))
     except (OSError, ValueError):
         seen = {}
+    if not check and os.path.isdir(STAGE):   # (the Mac's own disk too)
+        for n_ in os.listdir(STAGE):
+            x_ = os.path.join(STAGE, n_)
+            shutil.rmtree(x_, ignore_errors=True) if os.path.isdir(x_) else os.remove(x_)
     if not check:   # (what fetches stopped part way left behind, thrown away: this one holds the lock, so none is coming in now. The Blade's
         # five tries left 30 GB on the G-Drive: John, 17 Nov 2026)
         for top in [root] + ([R['tvshows']] if R.get('tvshows') else []):
@@ -799,14 +819,23 @@ def _run(check):
         log('Fetching from %s: %s → %s/%s (%.1f GB)' % (src['name'], path, title, 'Other/' if p.get('extra') else '', size / 1e9))
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         part = dest + '.adding'
-        status(now={'from': src['name'], 'file': path, 'to': title, 'extra': p.get('extra'), 'size': size, 'part': part, 'since': int(time.time())})
+        work = stage_for(part, size)   # (made on the Mac's own disk if it has room, in many streams; else here, in one)
+        status(now={'from': src['name'], 'file': path, 'to': title, 'extra': p.get('extra'), 'size': size, 'part': work or part, 'since': int(time.time())})
         came = lambda ok, why='', title=title + (' · extra: ' + os.path.splitext(p['extra'])[0] if p.get('extra') else ''), src=src, size=size: status(now=None, came={'to': title, 'from': src['name'], 'gb': round(size / 1e9, 1), 'at': int(time.time()), 'ok': ok, 'why': why})
         said = ''
         try:   # (in Terminal: how far, how fast, how long to go, as it downloads)
-            said = fetch(loc, path, part, show=sys.stdout.isatty())
+            said = fetch(loc, path, work or part, show=sys.stdout.isatty(), streams=16 if work else 0)
+            if work and os.path.exists(work):   # (onto the G-Drive whole, in one go)
+                status(now={'from': src['name'], 'file': path, 'to': title, 'extra': p.get('extra'), 'size': size, 'part': part, 'since': int(time.time()), 'moving': True})
+                shutil.move(work, part)
         except Exception as e:
             log('  the download failed (%s): left in %s' % (e, src['name']))
             came(False, 'the download failed: left in %s' % src['name'])
+            for x_ in ([work] if work else []):
+                try:
+                    os.remove(x_)
+                except OSError:
+                    pass
             if os.path.exists(part):
                 os.remove(part)
             try:
