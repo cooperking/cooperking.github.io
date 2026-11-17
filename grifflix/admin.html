@@ -1075,28 +1075,39 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var health = function () { return fetch(GW + '/health', { cache: 'no-store' }).then(function (r) { return r.json(); }); };
     // (the Mac does the update after answering, and this watches for its new version: fetching from GitHub could outlast the
     // 100 seconds the link to the Mac waits, and this said the Mac wasn't answering though it was: John, 12 Nov 2026)
-    var watch = function (from, said) {
+    // (watched by what the Mac itself says of the update it was asked for, by its own clock: the page's clock and the Mac's differing,
+    // or the moment the new version came in being missed, said "The Mac hasn't finished updating yet" when it had: John, 17 Nov 2026.
+    // Over when its result is newer than the asking and not waiting on a restart (the gateway says so itself once it's back), or when
+    // its version has changed)
+    var watch = function (from, said, since) {
       say('The Mac is updating…');
       return new Promise(function (ok, no) {
-        var tries = 0, wait = function () {
-          health().then(function (h) {
-            if (!h.sha || h.sha === from) throw 0;
-            say('The Mac is restarting…');
-            return fetch(GW + '/api/software', { headers: hdr }).then(function (r) { return r.json(); }).catch(function () { return {}; }).then(function (sw) {
-              var l = sw.last || {}; software(); mac();
-              MACRESTART = (l.changed || []).indexOf('grifflix-gateway.py') >= 0;
-              ok(said || (l.changed && l.changed.length ? 'updated: ' + l.changed.join(', ') + (l.converter ? ' (its converter carries on)' : '') : 'updated'));
-            });
+        var tries = 0, over = false, end = function (l) {
+          if (over) return; over = true; software(); mac();
+          MACRESTART = !!l && (l.changed || []).indexOf('grifflix-gateway.py') >= 0;   // (a second pass, for anything only the new gateway knows to fetch)
+          ok(said || (l && l.changed && l.changed.length ? 'updated: ' + l.changed.join(', ') + (l.converter ? ' (its converter carries on)' : '') : ''));
+        };
+        var wait = function () {
+          if (over) return;
+          tries++;
+          fetch(GW + '/api/software', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (sw) {
+            var l = sw.last, fresh = l && (since ? l.at >= since - 1 : l.at * 1000 > t0);
+            if (fresh && l.error) { over = true; return no(new Error(l.error)); }
+            if (fresh && !l.restarting) return end(l);
+            if (sw.sha && from && sw.sha.slice(0, 7) !== from.slice(0, 7) && !(fresh && l.restarting)) return end(fresh ? l : null);
+            if (fresh && l.restarting) say('The Mac is restarting…');
+            throw 0;
           }).catch(function () {
-            if (++tries % 3 === 0) fetch(GW + '/api/software', { headers: hdr }).then(function (r) { return r.json(); }).then(function (sw) {
-              var l = sw.last; if (!l || l.at * 1000 <= t0 || tries >= 999) return;
-              if (l.error) { tries = 999; no(new Error(l.error)); }
-              else if (!l.restarting) { tries = 999; software(); ok(l.changed && l.changed.length ? 'updated: ' + l.changed.join(', ') : ''); }   // (nothing to restart for)
-            }).catch(function () {});
-            if (tries < 80) setTimeout(wait, 3000); else if (tries < 999) no(new Error('The Mac hasn’t finished updating yet: look again in a few minutes.'));
+            if (over) return;
+            if (tries < 100) setTimeout(wait, 3000);
+            else health().then(function (h) {   // (5 minutes: the Mac answering on its newest version is enough)
+              over = true;
+              if (h && h.sha && h.sha !== from) { software(); mac(); ok('updated'); }
+              else no(new Error('The Mac hasn’t said its update is done after 5 minutes: look at The Mac below, or run Update everything again.'));
+            }).catch(function () { over = true; no(new Error('The Mac isn’t answering after its update: it may still be restarting.')); });
           });
         };
-        setTimeout(wait, 3000);
+        setTimeout(wait, 2000);
       });
     };
     var t0 = Date.now() - 5000;
@@ -1104,7 +1115,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var from = (h0 && h0.sha) || '';
       return fetch(GW + '/api/software', { method: 'POST', headers: hdr, body: '{"op":"update","bg":true}' }).then(function (r) {
         return r.json().catch(function () { return {}; }).then(function (j) {
-          if (r.status === 202 && j.started) return watch(from);
+          if (r.status === 202 && j.started) return watch(from, '', j.now || 0);
           if (!r.ok) throw new Error(j.error || 'The Mac said ' + r.status);
           var said = j.changed && j.changed.length ? 'updated: ' + j.changed.join(', ') + (j.converter ? ' (its converter carries on)' : '') : '';
           MACRESTART = (j.changed || []).indexOf('grifflix-gateway.py') >= 0;
