@@ -186,7 +186,7 @@ def fetch(loc, path, part, show=False):
             # (several streams at once: TorBox gives each only about 7 Mbps, so one stream alone was slow (John, 17 Nov 2026, "Why is downloading
             # so slow?"). How far it has got is then rclone's own count, in its log beside the file, not the file's size, which several streams
             # make nearly whole at once (House Party "75%" with nothing coming))
-            '--multi-thread-streams', '8', '--use-json-log', '--log-level', 'NOTICE', '--stats', '10s', '--stats-log-level', 'NOTICE', '--log-file', part + '.rlog']   # (its folder listed, as works, not the one file looked up)
+            '--multi-thread-streams', '16', '--multi-thread-cutoff', '32M', '--buffer-size', '64M', '--use-json-log', '--log-level', 'NOTICE', '--stats', '10s', '--stats-log-level', 'NOTICE', '--log-file', part + '.rlog']   # (its folder listed, as works, not the one file looked up)
 
     def written():   # (what has come so far: rclone's own count, from its log; else what's on the disk)
         b_ = rlog_bytes(part)
