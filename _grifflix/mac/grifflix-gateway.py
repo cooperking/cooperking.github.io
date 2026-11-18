@@ -3541,7 +3541,16 @@ def backup_media_server(dest):
             a.backup(b_)
         finally:
             b_.close(); a.close()
-        os.replace(out + '.tmp', out)
+        # (squashed: a database shrinks to a fraction, and a new copy goes each night: John, 18 Nov 2026, "That's surprisingly large")
+        import gzip
+        with open(out + '.tmp', 'rb') as i, gzip.open(out + '.gz.tmp', 'wb', 6) as o:
+            shutil.copyfileobj(i, o, 1 << 20)
+        os.remove(out + '.tmp')
+        os.replace(out + '.gz.tmp', out + '.gz')
+        try:
+            os.remove(out)   # (an older backup's unsquashed copy)
+        except OSError:
+            pass
     for sub in ('data/collections', 'data/playlists', 'config', 'root'):   # (small: each collection, playlist, the settings, the libraries)
         s = os.path.join(base, *sub.split('/'))
         d = os.path.join(dest, *sub.split('/'))
