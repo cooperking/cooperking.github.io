@@ -1319,6 +1319,13 @@ def make_handler(g):
                                             if ft_:   # (and its special features, with it)
                                                 o_['csetfeat'] = ft_
                                             SDONE.update(dsc_)
+                    # (a film's second disc, " - part2" beside its " - part1": part of that film, not a film of its own, though the media
+                    # server lists it alone till its next whole look: By Brakhage, Volume Two, 18 Nov 2026)
+                    for i in raw:
+                        m__ = re.match(r'^(.*?)[ _.-]*(?:part|pt|cd|dis[ck])[ _.-]*([2-9])(\.\w+)$', os.path.basename(i.get('Path') or ''), re.I)
+                        if m__ and i['Id'] in items and any(re.match(re.escape(m__.group(1)) + r'[ _.-]*(?:part|pt|cd|dis[ck])[ _.-]*1\.', os.path.basename(x.get('Path') or ''), re.I)
+                                                            and os.path.dirname(x.get('Path') or '') == os.path.dirname(i.get('Path') or '') for x in raw):
+                            items.pop(i['Id'], None)
                     lists[key] = [i['Id'] for i in raw if i['Id'] in items]
                     if key == 'movies':
                         self.extras(raw, items, lists)
@@ -5690,7 +5697,14 @@ def keep_scanning(g):
     is asked to look too. Its own watching of the folders misses films put on the drive over the network (John, 15 Nov 2026: "New
     films arent getting added": The Invite, Blue Heron and Sense and Sensibility sat on the drive unseen until it was asked)."""
     seen_at = os.path.expanduser('~/Grifflix/library-seen.json')
-    publish_at, matched_at = 0, time.time() - 6 * 3600 + 600   # (films put right by their folders: 10 minutes after starting, then every 6 hours)
+    # (a site update already due kept across a restart (the Mac's own updates restart it): two of John's Allows on 18 Nov 2026 were
+    # never shown, each update due forgotten when the Mac updated itself minutes later ("By Brakhage still not showing up properly"))
+    pub_f = os.path.expanduser('~/Grifflix/site-update-due.json')
+    publish_at, matched_at = float(load(pub_f, 0) or 0), time.time() - 6 * 3600 + 600   # (films put right by their folders: 10 minutes after starting, then every 6 hours)
+    if publish_at:
+        publish_at = max(publish_at, time.time() + 120)
+    elif not os.path.exists(pub_f):   # (the first start with this: one update, for what was due and lost)
+        publish_at = time.time() + 300
     time.sleep(120)
     while True:
         if time.time() - matched_at > 6 * 3600:
@@ -5748,6 +5762,8 @@ def keep_scanning(g):
                         publish_at = time.time() + 900   # (tried again in a quarter of an hour)
             if now_ or before is None:
                 save(seen_at, now_)
+            if float(load(pub_f, 0) or 0) != publish_at:
+                save(pub_f, publish_at)
             # (the Bin: what John deleted, kept 30 days in case it was a mistake, then gone for good)
             for r in roots:
                 bin_ = os.path.join(os.path.dirname(os.path.dirname(r.rstrip('/'))), 'Grifflix Bin')
