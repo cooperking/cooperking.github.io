@@ -799,7 +799,7 @@ def make_handler(g):
                     while Q:
                         x = Q.pop(0)
                         save(MACQ, Q)
-                        code, j = mac_job(x['id'])
+                        code, j = mac_job(x['id'], x.get('force'))
                         if code == 200:
                             CONVJOBS[j['token']]['mac'] = True
                             return self.send_json(200, {'job': '/convjob/' + j['token'], 'name': j.get('name')})
@@ -2136,10 +2136,13 @@ def make_handler(g):
                 if not re.match(r'^[0-9a-f]{32}$', iid):
                     return self.send_json(400, {'error': 'Which film?'})
                 Q = [x for x in Q if x.get('id') != iid]
+                old = next((x for x in (load(MACQ, []) or []) if x.get('id') == iid), {})
+                ent = dict({'id': iid, 'name': str(b.get('name') or old.get('name') or '')[:200], 'at': int(time.time())},
+                           **({'force': True} if b.get('force') or old.get('force') else {}))   # (one of the largest, to make smaller: John, 18 Nov 2026)
                 if op == 'add':
-                    Q.append({'id': iid, 'name': str(b.get('name') or '')[:200], 'at': int(time.time())})
+                    Q.append(ent)
                 elif op == 'first':
-                    Q.insert(0, {'id': iid, 'name': str(b.get('name') or '')[:200], 'at': int(time.time())})
+                    Q.insert(0, ent)
                 save(MACQ, Q)
                 log('Queue for John’s Mac: %s %s' % ({'add': 'added', 'first': 'put first', 'remove': 'taken off'}.get(op, op), b.get('name') or iid))
             a = g.st.get('macagent') or {}
@@ -3877,7 +3880,7 @@ def fanny_series(g):
         log('Fanny and Alexander as a miniseries:', str(e)[:200])
 
 
-def mac_job(iid):
+def mac_job(iid, force=False):
     """A film planned for John's Mac, as the Mac mini's converter would plan it, and handed over by a one-time address: (code, answer)."""
     if not re.match(r'^[0-9a-f]{32}$', iid):
         return 400, {'error': 'Which film?'}
@@ -3886,7 +3889,7 @@ def mac_job(iid):
     cur = load(os.path.join(home, 'convert-now.json'), None) or {}
     if cur.get('id') == iid and conv_alive(cur):   # (the Mac mini at it already: not both)
         return 409, {'error': 'The Mac mini is converting it itself right now (%s%%): it carries on.' % cur.get('pct', 0)}
-    r = subprocess.run([sys.executable, os.path.join(home, 'convert.py'), 'plan', iid], capture_output=True, text=True, timeout=600, cwd=home)
+    r = subprocess.run([sys.executable, os.path.join(home, 'convert.py'), 'plan', iid] + (['force'] if force else []), capture_output=True, text=True, timeout=600, cwd=home)
     try:
         plan = json.loads([l for l in (r.stdout or '').splitlines() if l.startswith('{')][-1])
     except (IndexError, ValueError):

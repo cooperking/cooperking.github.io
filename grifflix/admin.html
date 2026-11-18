@@ -1596,7 +1596,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   // (larger than 1080p) or bigger than they should be, I need to convert them. I want all listed in an exportable list")
   // Each film: its size (4K, 1080p, 720p, SD), and judged against that size only: Replace (too little picture for its size), Convert (bigger
   // than 1080p, or a bigger file than its size needs: the converter's own measure), else Good.
-  var LB = { all: null, f: 'replace', r: 'all', n: 150 };
+  var LB = { all: null, f: 'replace', r: 'all', n: 150, MQ: {} };
   var LBRES = ['4K', '1080p', '720p', 'SD', '?'], LBQ = { replace: 'Replace', convert: 'Convert', good: 'Good' };
   function lbGrade(x) {
     var res = x.w >= 3200 || x.h >= 1700 ? '4K' : x.w >= 1800 || x.h >= 1000 ? '1080p' : x.w >= 1200 || x.h >= 700 ? '720p' : x.w ? 'SD' : '?';
@@ -1655,9 +1655,20 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         // (the largest: any of them made smaller next, whatever the converter would have said: John, 16 Nov 2026, "I need a tab for the largest
         // files, so that I can convert them")
         (LB.f === 'big' ? '<button type="button" class="lbnext" data-lbnext="' + x.id + '" data-force="1" data-n="' + esc(x.n) + '">Make smaller next</button>' :
-        x.why && (!x.conv || x.rp) ? '<button type="button" class="lbnext" data-lbnext="' + x.id + '" data-n="' + esc(x.n) + '">' + (/^to make smaller/.test(x.why) ? 'Make smaller next' : 'Do next') + '</button>' : '') + '</span></li>';
+        x.why && (!x.conv || x.rp) ? '<button type="button" class="lbnext" data-lbnext="' + x.id + '" data-n="' + esc(x.n) + '">' + (/^to make smaller/.test(x.why) ? 'Make smaller next' : 'Do next') + '</button>' : '') +
+        // (or on John's own Mac, far faster, queued from here: John, 18 Nov 2026, "how can I queue things on my mac to convert?")
+        (LB.f === 'big' || (x.why && (!x.conv || x.rp)) ? '<button type="button" class="lbnext" data-lbmac="' + x.id + '"' + (LB.f === 'big' ? ' data-force="1"' : '') + ' data-n="' + esc(x.n) + '">' + (LB.MQ[x.id] ? 'Queued for your Mac ✓' : 'Queue for my Mac') + '</button>' : '') + '</span></li>';
     }).join('') || '<li>None.</li>';
     $('#lbmore').style.display = L.length <= LB.n ? 'none' : ''; $('#lbmore').onclick = function () { LB.n += 150; lbDraw(); };
+    Array.prototype.forEach.call(document.querySelectorAll('[data-lbmac]'), function (b) { if (LB.MQ[b.dataset.lbmac]) b.disabled = true; b.onclick = function () {
+      b.disabled = true;
+      fetch(GW + '/api/macqueue', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'add', id: b.dataset.lbmac, name: b.dataset.n, force: b.dataset.force ? 1 : undefined }) })
+        .then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+          LB.MQ[b.dataset.lbmac] = 1; b.textContent = 'Queued for your Mac ✓';
+          var n = (j.queue || []).length; toast(b.dataset.n + ': number ' + n + ' for your Mac' + (j.seen ? '' : ' (set your Mac up to take them: Conversions)'));
+          if (typeof cvQueue === 'function') cvQueue();
+        }).catch(function () { b.disabled = false; toast('The Mac mini didn’t answer.'); });
+    }; });
     Array.prototype.forEach.call(document.querySelectorAll('[data-lbnext]'), function (b) { b.onclick = function () {
       if (b.dataset.force && !confirm('Make ' + b.dataset.n + ' smaller next? It’s converted at the careful setting (hours), and kept only if it comes out much smaller.')) return;
       b.disabled = true; cvPost({ op: 'pin', id: b.dataset.lbnext, name: b.dataset.n, force: b.dataset.force ? 1 : undefined }).then(function (j) { cvOrder(j); b.textContent = 'Next ✓'; toast(b.dataset.n + ': done next'); }).catch(function (e) { b.disabled = false; toast(e.message); });
