@@ -1073,7 +1073,7 @@ def make_handler(g):
                     if True:   # (Criterion's spine numbers, kept apart from each film's remembered details, so they're always current; a series' too)
                         # (and Criterion's own director and country for it, for the Criterion pages' filters: John, 17 Nov 2026, "I would like
                         # all the same filters available to me on the criterion page in my collection too")
-                        CL, TG, TS, SDONE = {}, {}, {}, set()
+                        CL, TG, TS, SDONE, FINFO, OWNED, SFILM = {}, {}, {}, set(), {}, set(), {}
                         ctj_ = load(os.path.expanduser('~/Grifflix/criterion-tags.json'), {}) or {}
                         for k_, v_ in (ctj_.get('tags') or {}).items():
                             for sl_ in v_:
@@ -1103,7 +1103,8 @@ def make_handler(g):
                         # Criterion labels at all: John, 17 Nov 2026, "the filter on criterion is saying there are no criterion premieres or eclipse")
                         for f_ in load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or []:
                             sl_ = str(f_.get('link') or '').replace('https://www.criterion.com/films/', '')
-                            v_ = (str(f_.get('director') or '')[:160], str(f_.get('country') or '')[:60], TG.get(sl_, []), TS.get(sl_, []))
+                            v_ = (str(f_.get('director') or '')[:160], str(f_.get('country') or '')[:60], TG.get(sl_, []), TS.get(sl_, []), sl_)
+                            FINFO[sl_] = (str(f_.get('title') or ''), str(f_.get('year') or ''), str(f_.get('spine') or ''))
                             if str(f_.get('spine') or '').isdigit():
                                 CL.setdefault(int(f_['spine']), v_)
                             if re.match(r'^\d{4}$', str(f_.get('year') or '')):
@@ -1112,14 +1113,18 @@ def make_handler(g):
                             if i['Id'] in items:
                                 sp = spine_of(i.get('Path'), key == 'tv')
                                 o_ = items[i['Id']]
-                                for k_ in ('spine', 'cdir', 'ccty', 'ctags', 'cset'):
+                                for k_ in ('spine', 'cdir', 'ccty', 'ctags', 'cset', 'csetsp', 'csetimg', 'csetdesc', 'csetmiss'):
                                     o_.pop(k_, None)
                                 if sp:
                                     o_['spine'] = sp
-                                d_, c_, t_, s_ = CL.get(int(sp), ('', '', [], [])) if sp and str(sp).isdigit() else ('', '', [], [])
+                                d_, c_, t_, s_, sl0_ = CL.get(int(sp), ('', '', [], [], '')) if sp and str(sp).isdigit() else ('', '', [], [], '')
                                 if not (d_ or t_) and key == 'movies':
                                     y_ = i.get('ProductionYear') or 0
-                                    d_, c_, t_, s_ = next((CT[(fold(i.get('Name')), y_ + dy)] for dy in (0, 1, -1) if (fold(i.get('Name')), y_ + dy) in CT), ('', '', [], []))
+                                    d_, c_, t_, s_, sl0_ = next((CT[(fold(i.get('Name')), y_ + dy)] for dy in (0, 1, -1) if (fold(i.get('Name')), y_ + dy) in CT), ('', '', [], [], ''))
+                                if sl0_:
+                                    OWNED.add(sl0_)
+                                for x_ in s_:
+                                    SFILM.setdefault(x_, i['Id'])
                                 if True:
                                     if d_:
                                         o_['cdir'] = d_
@@ -1135,6 +1140,12 @@ def make_handler(g):
                                         if dsc_:   # (its description, carried by one of its films only, not repeated on each)
                                             o_['csetdesc'] = dsc_
                                             SDONE.update(dsc_)
+                        # (each box set's films not in Grifflix, carried by one of its films that is: John, 18 Nov 2026, "I'll need a list of films
+                        # missing from the box sets too")
+                        for nm_, mem_ in (ctj_.get('sets') or {}).items():
+                            miss_ = [FINFO.get(x_, (x_.split('-', 1)[-1].replace('-', ' ').title(), '', '')) for x_ in mem_ if x_ not in OWNED]
+                            if nm_ in SFILM and SFILM[nm_] in items:
+                                items[SFILM[nm_]].setdefault('csetmiss', {})[nm_] = [list(m_) for m_ in miss_]
                     lists[key] = [i['Id'] for i in raw if i['Id'] in items]
                     if key == 'movies':
                         self.extras(raw, items, lists)
