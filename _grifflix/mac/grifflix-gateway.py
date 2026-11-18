@@ -752,6 +752,13 @@ def make_handler(g):
             try:
                 if u.path == '/health':
                     return self.send_json(200, {'ok': True, 'version': VERSION, 'sha': (load(INSTALLED, {}).get('sha') or '')[:7]})
+                if u.path == '/claude/update':   # (Claude: something's just gone onto GitHub, so look now; it can only make the Mac look sooner)
+                    tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
+                    want = g.st.get('look_key')
+                    if not want or not tok or not hmac.compare_digest(hashlib.sha256(tok.encode()).hexdigest(), want):
+                        return self.send_json(403, {'error': 'Not allowed.'})
+                    UPDATE_NOW.set()
+                    return self.send_json(200, {'ok': True, 'have': (load(INSTALLED, {}).get('sha') or '')[:7]})
                 if u.path == '/claude/ask':   # (Claude asking for one of ACTIONS, done only when John allows it on the admin page)
                     tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
                     want = g.st.get('look_key')
@@ -4855,8 +4862,12 @@ def someone_watching(g):
         return any(time.time() - (x.get('seen') or 0) < 300 for x in g.plays.values())
 
 
+UPDATE_NOW = threading.Event()   # (Claude's word that something's just gone onto GitHub: looked for at once)
+
+
 def keep_updating(g):
-    """The Mac's own files kept up to date by themselves, every 15 minutes, from what's on GitHub: John signs off only what changes the
+    """The Mac's own files kept up to date by themselves, every 2 minutes (was 15: John, 18 Nov 2026, "Why can't we pick it up sooner
+    automatically?"), and at once when Claude says it's just put something on GitHub, from what's on GitHub: John signs off only what changes the
     site's look or what it does (John, 17 Nov 2026: "Can you put mac updates live without an update from me - I only need to sign off on
     anything that changes the look or functionality of Grifflix"). The gateway itself restarts for its new version only while no one is
     watching (a film playing goes through it); the converter takes its new file between films, as ever."""
@@ -4879,7 +4890,11 @@ def keep_updating(g):
                     os._exit(0)   # (launchd starts the new gateway)
         except Exception as e:
             log('Update the Mac (by itself):', str(e)[:200])
-        time.sleep(900)
+        # (GitHub's feed of the latest change: a small page, not its API, which limits how often a home connection may ask)
+        UPDATE_NOW.wait(120)
+        if UPDATE_NOW.is_set():
+            UPDATE_NOW.clear()
+            time.sleep(20)   # (GitHub's feed a moment behind a merge)
 
 
 def keep_scanning(g):
