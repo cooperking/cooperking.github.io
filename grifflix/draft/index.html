@@ -2333,7 +2333,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '206e7ef04437' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '8819cfb502b6' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5848,7 +5848,9 @@ function closeSheet() { if (dlg.open) dlg.close(); }
 // to it: John, 16 Nov 2026: "a small back button on films so you look at a film without losing your previous search point")
 var SHEETBACK = [];
 function sheetKeep() {
-  var si = $('#sheetIn'); if (!dlg.open || !si || !si.firstChild || si.querySelector(':scope > .film')) return false;
+  // (a film's own panels (Edit, its pictures, its collections) aren't kept: Back goes to the list you were on, not round the film and its Edit
+  // again: John, 18 Nov 2026, "if you edit a film and then click x to stop, then click back it takes you back to the edit, and you're in a loop")
+  var si = $('#sheetIn'); if (!dlg.open || !si || !si.firstChild || si.querySelector(':scope > .film') || S.backItem) return false;
   var f = document.createDocumentFragment(), sc = [si.scrollTop, dlg.scrollTop, (si.querySelector('.results') || {}).scrollTop || 0];
   while (si.firstChild) f.appendChild(si.firstChild);
   SHEETBACK.push({ frag: f, sc: sc, into: S.sheetInto });
@@ -6235,7 +6237,7 @@ function itemSheet(it, ctx) {
   var top = it.backdrop ? '<div class="heroimg"><img alt="" src="' + esc(img(it.backdrop, 'Backdrop', 1100)) + '">' + '</div>' : (it.thumb || (it.type === 'video' && it.poster) ? '<div class="heroimg"><img alt="" src="' + esc(img(it.thumb || it.poster, it.thumb ? 'Thumb' : 'Primary', 1100)) + '">' + '</div>' : '<div class="noimg-top" style="position:relative"></div>');
   var pst = it.poster && it.type !== 'episode' ? img(it.poster, 'Primary', 400) : '';   // (the poster, whole, beside the words on a big screen)
   S.sheetIt = it; S.sheetCtx = ctx;
-  var kept = sheetKeep() || ($('#sheetIn > .film') && SHEETBACK.length) || ctx.kept;   // (from a page of films: that page kept, and a way back to it)
+  var kept = sheetKeep() || (($('#sheetIn > .film') || S.backItem) && SHEETBACK.length) || ctx.kept;   // (from a page of films: that page kept, and a way back to it)
   openSheet('<div class="film' + (pst ? ' hasposter' : '') + (it.type === 'series' ? ' series' : '') + '">' + (!TV ? '<button type="button" class="fback" id="fback" aria-label="Back">‹ Back</button>' : '') + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it)) + (it.spine ? ' · Criterion no. ' + esc(String(it.spine)) : '')) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');
   $$('#sheetIn [data-dstep]').forEach(function (b) { b.onclick = function () { dayStep(+b.dataset.dstep); }; });
   // (a Back on every film: to the page of films it came from, else closed, back where you were: John, 18 Nov 2026, "Films should have a back
