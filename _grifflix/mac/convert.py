@@ -469,7 +469,7 @@ def preflight(cmd, tmp):
             t.append(a)
         i += 1
     try:
-        r = subprocess.run(t, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, timeout=600, preexec_fn=lambda: os.nice(15))
+        r = subprocess.run(t, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, timeout=120, preexec_fn=lambda: os.nice(15))
     except subprocess.TimeoutExpired:
         return ''
     except OSError:
@@ -570,7 +570,7 @@ def convert(item, ffmpeg, ffprobe, st):
     # (a test first, on the first few seconds, onto the Mac's own disk: what ffmpeg would refuse (a soundtrack or subtitle an MP4 can't
     # hold, a broken stream) found in a minute, not after hours, and the film not started, its reason shown: John, 18 Nov 2026, "if a
     # conversion on the mac mini is bound to fail before it begins, it shouldn't start and should be flagged. It's a waste")
-    if not item.get('premade'):
+    if not item.get('premade') and not item.get('plan_only'):   # (not for John's Mac: it finds a refusal itself in seconds, and the test here held its film up)
         bad = preflight(cmd, tmp)
         if bad:
             log('  not started: %s: %s' % (item['name'], bad))
