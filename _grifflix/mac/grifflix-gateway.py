@@ -44,8 +44,7 @@ EXPORT_CACHE = os.path.join(APP_DIR, 'export-cache.json')
 # series. Put right at the start of every Update, so it's always so, whatever was run before (John, 8 Nov 2026: Frampton
 # "should have been done, as it's been there from the start"). A box set inside another collection isn't listed on its own.
 ARRANGE = {'The Criterion Collection': {
-    'sets': ['A Hollis Frampton Odyssey', 'By Brakhage: An Anthology, Volumes One and Two', 'Martha Graham: Dance on Film', 'Scorsese Shorts',
-             'Symbiopsychotaxiplasm: Two Takes by William Greaves', 'The Kennedy Films of Robert Drew & Associates', 'The Signifyin’ Works of Marlon Riggs'],
+    'sets': [],   # (the box sets once kept here as collections, taken apart by John's Allow, as Criterion's other box sets are: 18 Nov 2026)
     'series': ['The Underground Railroad', 'Tanner 88', 'Fishing with John']}}
 INSTALLED = os.path.join(APP_DIR, 'installed.json')   # which commit of the Mac's Grifflix files this is (the admin page's Update the Mac)
 REPO = 'cooperking/cooperking.github.io'
@@ -1241,6 +1240,9 @@ def make_handler(g):
                         # and cover: John, 18 Nov 2026, "the same may be true of other unusual criterion collection items")
                         FOLDN_ = __import__("collections").Counter(os.path.dirname(i.get('Path') or '') for i in raw) if key == 'movies' else {}
                         ANTH_ = {}
+                        # (the box sets once kept as collections, by each film's folder, as they were when they were taken apart: John,
+                        # 18 Nov 2026, "Remove them from normal collections when they were as the others do")
+                        SETF_ = {f__: n__ for n__, fs__ in (load(os.path.expanduser('~/Grifflix/criterion-set-members.json'), {}) or {}).items() for f__ in fs__}
                         for f_ in load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or []:
                             if '/films/' in str(f_.get('link') or ''):
                                 ANTH_.setdefault(fold(f_.get('title')), f_)
@@ -1269,6 +1271,18 @@ def make_handler(g):
                                     d_ = d_ or str(af_.get('director') or '')[:160]
                                     c_ = c_ or str(af_.get('country') or '')[:60]
                                     sl0_ = sl0_ or str(af_.get('link') or '').replace('https://www.criterion.com/films/', '')
+                                sm_ = SETF_.get(i.get('Path') if key == 'tv' else fd_)
+                                if sm_ and sm_ not in s_:
+                                    f2_ = ANTH_.get(fold(sm_)) or {}
+                                    if f2_:
+                                        SMETA.setdefault(fold(sm_), (str(f2_.get('spine') or ''), str(f2_.get('img') or '')))
+                                    SNAME.setdefault(fold(sm_), sm_)
+                                    s_ = list(s_) + [sm_]
+                                    if not sp and str(f2_.get('spine') or '').isdigit():
+                                        sp = int(f2_['spine'])
+                                        o_['spine'] = sp
+                                    d_ = d_ or str(f2_.get('director') or '')[:160]
+                                    c_ = c_ or str(f2_.get('country') or '')[:60]
                                 if sl0_:
                                     OWNED.add(sl0_)
                                 for x_ in s_:
@@ -4364,6 +4378,73 @@ def act_brakhage_split(g, req):
         len(done), len(folders), ', '.join(os.path.basename(f) for f in folders))
 
 
+def _crit_sets(g):
+    """The box sets kept as collections inside The Criterion Collection: (criterion collection, [(set, [its films and series])])."""
+    q = lambda **k: (g.jf.call('GET', '/Users/%s/Items' % g.uid, query=k) or {}).get('Items', [])
+    allsets = q(Recursive='true', IncludeItemTypes='BoxSet')
+    crit = next((b for b in allsets if (b.get('Name') or '').strip().lower() == 'the criterion collection'), None)
+    if not crit:
+        return None, []
+    out = []
+    for b in q(ParentId=crit['Id']):
+        if b.get('Type') == 'BoxSet':
+            out.append((b, [k for k in q(ParentId=b['Id'], Fields='Path') if k.get('Type') in ('Movie', 'Series', 'Video')]))
+    return crit, out
+
+
+def ask_crit_flatten(req):
+    g = G_REF[0] if G_REF else None
+    crit, L = _crit_sets(g) if g else (None, [])
+    if not L:
+        raise RuntimeError('no box set is kept as a collection inside The Criterion Collection now')
+    req['detail'] = '%d collections: %s. Their films go into The Criterion Collection itself first, each keeping its box set; the films aren’t touched. Then missing backdrops are fetched for the Criterion films without one.' % (
+        len(L), '; '.join('%s (%d films)' % (b['Name'], len(k)) for b, k in L))
+
+
+def act_crit_flatten(g, req):
+    """Each box set kept as a collection inside The Criterion Collection taken apart, as Criterion's other box sets are: its films (and
+    any others in the same folder, as Process Red was left out of A Hollis Frampton Odyssey) put in The Criterion Collection itself,
+    the set they're in kept by folder for the site, then the collection deleted (the films stay). Then backdrops fetched for Criterion
+    films with none, their own pictures kept (John, 18 Nov 2026, "Make sure all art work is in place")."""
+    crit, L = _crit_sets(g)
+    if not crit:
+        return 'No Criterion Collection found.'
+    mf = os.path.expanduser('~/Grifflix/criterion-set-members.json')
+    mem = load(mf, {}) or {}
+    q = lambda **k: (g.jf.call('GET', '/Users/%s/Items' % g.uid, query=k) or {}).get('Items', [])
+    movies = q(Recursive='true', IncludeItemTypes='Movie', Fields='Path')
+    gone, put = [], 0
+    for b, kids in L:
+        folders = sorted(set(k.get('Path') if k.get('Type') == 'Series' else os.path.dirname(k.get('Path') or '') for k in kids if k.get('Path')))
+        ids = [k['Id'] for k in kids] + [m['Id'] for m in movies if os.path.dirname(m.get('Path') or '') in folders and m['Id'] not in [k['Id'] for k in kids]]
+        mem[b['Name']] = sorted(set(mem.get(b['Name'], [])) | set(folders))
+        save(mf, mem)
+        g.jf.call('POST', '/Collections/%s/Items' % crit['Id'], query={'Ids': ','.join(ids)})
+        put += len(ids)
+        g.jf.call('DELETE', '/Items/%s' % b['Id'])
+        gone.append('%s (%d)' % (b['Name'], len(ids)))
+    for nm in list(ARRANGE.get('The Criterion Collection', {}).get('sets', [])):
+        ARRANGE['The Criterion Collection']['sets'].remove(nm)   # (not put back as a collection by the next Update)
+    def backdrops():
+        n = 0
+        for it in q(ParentId=crit['Id'], Fields='BackdropImageTags'):
+            if it.get('Type') in ('Movie', 'Series') and not it.get('BackdropImageTags'):
+                try:
+                    g.jf.call('POST', '/Items/%s/Refresh' % it['Id'], query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'FullRefresh', 'ReplaceAllMetadata': 'false', 'ReplaceAllImages': 'false'})
+                    n += 1
+                    time.sleep(3)
+                except Exception as e:
+                    log('Backdrop for %s: %s' % (it.get('Name'), e))
+        log('Criterion: the media server asked for backdrops for %d film(s) without one' % n)
+        g.forget()
+        g.publish_soon = time.time() + 300
+    threading.Thread(target=backdrops, daemon=True).start()
+    g.forget()
+    g.publish_soon = time.time() + 300
+    log('Criterion: box sets taken apart: %s' % ', '.join(gone))
+    return '%d collections taken apart (%s): %d films now in The Criterion Collection itself, each keeping its box set. Backdrops are being fetched for Criterion films without one; the site follows in a few minutes.' % (len(gone), ', '.join(gone), put)
+
+
 ACTIONS = {
     'plex-off': ('Quit Plex and keep it off', act_plex_off, None),
     'plex-on': ('Start Plex again and let it be', act_plex_on, None),
@@ -4371,6 +4452,7 @@ ACTIONS = {
     'converter-restart': ('Restart the converter (it starts its film again)', act_converter_restart, None),
     'setaside-empty': ('Empty “Set aside” on the G-Drive (deleted for good)', act_setaside_empty, ask_setaside),
     'extras-rename': ('Rename each film’s “Other” folder to “Extras”, so the media server shows its extras', act_extras_rename, ask_extras_rename),
+    'criterion-sets-flatten': ('Take apart the box sets kept as collections inside The Criterion Collection, so they’re like its other box sets (the films stay)', act_crit_flatten, ask_crit_flatten),
     'brakhage-split': ('Give each By Brakhage film its own folder (Volume One, Volume Two and the seven films from Volume One)', act_brakhage_split, ask_brakhage_split),
 }
 
