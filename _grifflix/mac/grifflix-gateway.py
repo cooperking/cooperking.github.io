@@ -1142,6 +1142,7 @@ def make_handler(g):
             # (what's owned, and which film carries each box set, across films and TV together: a set with a series in it (Fanny and
             # Alexander's television version) said its films were missing, each library seeing only its own: John, 18 Nov 2026)
             OWNED, SFILM, ctj_, FINFO = set(), {}, {}, {}
+            snm = lambda x: x
             for key, types in (('movies', 'Movie'), ('tv', 'Series')):
                 if libs.get(key):
                     raw = [i for i in shown(g.items(ParentId=libs[key], Recursive='true', IncludeItemTypes=types, SortBy='SortName', Fields=quick + ',SpecialFeatureCount').get('Items', [])) if not making(i)]
@@ -1155,10 +1156,20 @@ def make_handler(g):
                         for k_, v_ in (ctj_.get('tags') or {}).items():
                             for sl_ in v_:
                                 TG.setdefault(sl_, []).append(k_)
-                        SMETA = {}   # (each box set's spine and cover, from Criterion's list already here: no bookmarklet needed: John, 18 Nov 2026)
+                        SMETA, SNAME = {}, {}   # (each box set's spine and cover, from Criterion's list already here: no bookmarklet needed: John, 18 Nov 2026)
                         for f_ in load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or []:
                             if '/boxsets/' in str(f_.get('link') or ''):
                                 SMETA[fold(f_.get('title'))] = (str(f_.get('spine') or ''), str(f_.get('img') or ''))
+                                SNAME[fold(f_.get('title'))] = str(f_.get('title') or '')   # (and its name as Criterion writes it: the bookmarklet's
+                                # were lower case without punctuation: John, 18 Nov 2026, "I'm not sure why everything is lower case")
+                        import difflib
+
+                        def snm(x, _c={}):
+                            if x not in _c:
+                                k = fold(x)
+                                m = SNAME.get(k) or next((SNAME[c] for c in difflib.get_close_matches(k, list(SNAME), 1, .75)), None)
+                                _c[x] = m or x[:1].upper() + x[1:]
+                            return _c[x]
                         if not ctj_.get('sets'):   # (till the bookmarklet has read each set's page: a numbered set's films are the spine numbers straight
                             # after its own, while each is one of Criterion's Collector's Sets films (The Apu Trilogy 782: 783 to 785). Right for half
                             # the numbered sets; the rest, and Eclipse's, wait for the bookmarklet: John, 18 Nov 2026, "I can't see the box set covers")
@@ -1210,12 +1221,12 @@ def make_handler(g):
                                     if t_:
                                         o_['ctags'] = t_
                                     if s_:
-                                        o_['cset'] = s_
+                                        o_['cset'] = [snm(x_) for x_ in s_]
                                         o_['csetsp'] = [str((ctj_.get('setspine') or {}).get(x_) or SMETA.get(fold(x_), ('', ''))[0] or '') for x_ in s_]   # (each box set's spine, beside its name)
                                         o_['csetimg'] = [str(SMETA.get(fold(x_), ('', ''))[1] or (ctj_.get('setimg') or {}).get(x_) or '') for x_ in s_]   # (and its cover)
                                         dsc_ = {x_: (ctj_.get('setdesc') or {}).get(x_) for x_ in s_ if x_ not in SDONE and (ctj_.get('setdesc') or {}).get(x_)}
                                         if dsc_:   # (its description, carried by one of its films only, not repeated on each)
-                                            o_['csetdesc'] = dsc_
+                                            o_['csetdesc'] = {snm(k__): v__ for k__, v__ in dsc_.items()}
                                             SDONE.update(dsc_)
                     lists[key] = [i['Id'] for i in raw if i['Id'] in items]
                     if key == 'movies':
@@ -1246,7 +1257,7 @@ def make_handler(g):
             for nm_, mem_ in (ctj_.get('sets') or {}).items():
                 miss_ = [FINFO.get(x_, (x_.split('-', 1)[-1].replace('-', ' ').title(), '', '')) for x_ in mem_ if x_ not in OWNED]
                 if nm_ in SFILM and SFILM[nm_] in items:
-                    items[SFILM[nm_]].setdefault('csetmiss', {})[nm_] = [list(m_) for m_ in miss_]
+                    items[SFILM[nm_]].setdefault('csetmiss', {})[snm(nm_)] = [list(m_) for m_ in miss_]
             sets = g.items(Recursive='true', IncludeItemTypes='BoxSet', SortBy='SortName', Fields=quick).get('Items', [])
             for o in resolve(sets, extra):
                 items[o['id']] = o
@@ -4501,7 +4512,9 @@ def crit_missing(g):
             if sl in owned:
                 continue
             t, y, fsp, link = info.get(sl, (sl.split('-', 1)[-1].replace('-', ' ').title(), '', '', 'https://www.criterion.com/films/' + sl))
-            rows.append([set_nm.get(fold(nm)) or (nm.title() if nm == nm.lower() else nm), sp, t, y, fsp, link])
+            import difflib
+            nm2 = set_nm.get(fold(nm)) or next((set_nm[c] for c in difflib.get_close_matches(fold(nm), list(set_nm), 1, .75)), None) or nm
+            rows.append([nm2, sp, t, y, fsp, link])
     return rows
 
 
