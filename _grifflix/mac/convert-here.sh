@@ -13,6 +13,9 @@ set -u
 HERE="$HOME/Grifflix"
 APP="$HOME/Applications/Grifflix Convert.app"
 MINI="192.168.68.125"
+# (a copy to the G-Drive started on its own, in a session of its own: started from the helper's minute job, launchd stopped it with
+# that job, so from 13:26 on 18 Nov 2026 no film made on John's Mac reached the G-Drive ("Have the films converted on my Mac not come on yet?"))
+detach() { /usr/bin/perl -MPOSIX -e 'POSIX::setsid(); open(STDIN, "<", "/dev/null"); exec @ARGV or die "exec: $!"' -- "$@" >>"$HERE/agent.log" 2>&1 & disown; }
 
 if [[ "${1:-}" == "setup" ]]; then
   mkdir -p "$HOME/Applications" "$HERE"
@@ -62,6 +65,7 @@ if [[ "${1:-}" == "agent-setup" ]]; then
   <key>ProgramArguments</key><array><string>/bin/zsh</string><string>$HERE/convert-here.sh</string><string>agent</string></array>
   <key>StartInterval</key><integer>60</integer>
   <key>RunAtLoad</key><true/>
+  <key>AbandonProcessGroup</key><true/>
   <key>StandardOutPath</key><string>$HERE/agent.log</string>
   <key>StandardErrorPath</key><string>$HERE/agent.log</string>
 </dict></plist>
@@ -121,11 +125,17 @@ if [[ "${1:-}" == "agent" ]]; then
   lock="$HERE/agent.lock"
   if [[ -f "$lock" ]] && kill -0 "$(cat "$lock" 2>/dev/null)" 2>/dev/null; then exit 0; fi   # (one film at a time)
   home=0; ping -c 1 -t 2 "$MINI" >/dev/null 2>&1 && home=1   # (at home: the Mac mini answers on the home network)
+  if [[ "$home" == 1 ]]; then   # (films made here the Mac mini is still waiting for, left in out/ with no record of where they go: recorded)
+    mkdir -p "$HERE/out/pending"
+    curl -fsS -m 30 -H "Authorization: Bearer $key" "$base/macagent/copying" 2>/dev/null | while IFS=$'\t' read -r bn tmp jurl; do
+      [[ -n "$bn" && -f "$HERE/out/$bn" && ! -f "$HERE/out/pending/$bn.job" ]] && printf '%s\n%s\n%s\n' "$HERE/out/$bn" "$tmp" "$base$jurl" > "$HERE/out/pending/$bn.job" && echo "$(date '+%Y-%m-%d %H:%M') $bn: made here earlier, copied over now"
+    done
+  fi
   if [[ "$home" == 1 ]] && ls "$HERE/out/pending/"*.job >/dev/null 2>&1; then   # (films converted but not yet on the G-Drive: again now it's home)
     [[ -d /Volumes/G-Drive ]] || { open "smb://$MINI/G-Drive"; for i in {1..60}; do [[ -d /Volumes/G-Drive ]] && break; sleep 1; done; }
     for r in "$HERE/out/pending/"*.job; do
       a=("${(@f)$(cat "$r")}")
-      nohup /usr/bin/caffeinate -i /bin/zsh "$HERE/convert-here.sh" copyback "${a[1]}" "${a[2]}" "${a[3]}" >>"$HERE/agent.log" 2>&1 &!
+      detach /usr/bin/caffeinate -i /bin/zsh "$HERE/convert-here.sh" copyback "${a[1]}" "${a[2]}" "${a[3]}"
     done
   fi
   ans=$(curl -fsS -m 90 -H "Authorization: Bearer $key" "$base/macagent/next?home=$home") || exit 0
@@ -196,7 +206,7 @@ if "$FF" -nostdin -y -v error -stats -progress "$prog" "${args[@]}"; then
   echo "Made. Copying it to the G-Drive by itself (this window can be closed); the Mac mini then checks it and puts it in place."
   curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d '{"stage":"copying to the G-Drive","copying":1}' "$url/progress" >/dev/null 2>&1
   # (the copy on its own, kept awake, so this Mac takes up the next film meanwhile; the Mac mini told when it's there, or why not)
-  nohup /usr/bin/caffeinate -i /bin/zsh "$HERE/convert-here.sh" copyback "$lt" "$tmp" "$url" >>"$HERE/agent.log" 2>&1 &!
+  detach /usr/bin/caffeinate -i /bin/zsh "$HERE/convert-here.sh" copyback "$lt" "$tmp" "$url"
 else
   kill $reporter 2>/dev/null; rm -f "$prog" "$lt"
   if [[ ! -f "$src" ]]; then   # (the G-Drive gone part-way: the network, or the lid closed): back in the queue, from the start
