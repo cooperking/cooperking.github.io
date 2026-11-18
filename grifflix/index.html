@@ -2279,7 +2279,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '0363dca46752' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: 'a226a52ff8a8' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6124,9 +6124,11 @@ function itemSheet(it, ctx) {
   var pst = it.poster && it.type !== 'episode' ? img(it.poster, 'Primary', 400) : '';   // (the poster, whole, beside the words on a big screen)
   S.sheetIt = it; S.sheetCtx = ctx;
   var kept = sheetKeep() || ($('#sheetIn > .film') && SHEETBACK.length) || ctx.kept;   // (from a page of films: that page kept, and a way back to it)
-  openSheet('<div class="film' + (pst ? ' hasposter' : '') + (it.type === 'series' ? ' series' : '') + '">' + (kept && !TV ? '<button type="button" class="fback" id="fback" aria-label="Back">‹ Back</button>' : '') + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it)) + (it.spine ? ' · Criterion no. ' + esc(String(it.spine)) : '')) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');
+  openSheet('<div class="film' + (pst ? ' hasposter' : '') + (it.type === 'series' ? ' series' : '') + '">' + (!TV ? '<button type="button" class="fback" id="fback" aria-label="Back">‹ Back</button>' : '') + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it)) + (it.spine ? ' · Criterion no. ' + esc(String(it.spine)) : '')) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');
   $$('#sheetIn [data-dstep]').forEach(function (b) { b.onclick = function () { dayStep(+b.dataset.dstep); }; });
-  var fb = $('#fback'); if (fb) fb.onclick = sheetBack;
+  // (a Back on every film: to the page of films it came from, else closed, back where you were: John, 18 Nov 2026, "Films should have a back
+  // on them - there was before, so you're not stuck in a film")
+  var fb = $('#fback'); if (fb) fb.onclick = function () { if (SHEETBACK.length) sheetBack(); else closeSheet(); };
   wireBody(it, ctx); setTimeout(tvFit, 30);
   var mine = function (full) { if (PUBLIC || DEMO || !full.id) return full;   // (the member's own: from the Mac, if it's on)
     own('lists').then(function (L) { var h = L.hearts.some(function (x) { return x.id === it.id; }); if (h !== !!it.hearted) { it.hearted = full.hearted = h; var b = $('#aheart'); if (b && dlg.open) b.innerHTML = HEART(h); } }).catch(function () {});
