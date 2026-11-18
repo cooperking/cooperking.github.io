@@ -7,7 +7,7 @@
    "auto": "draft",
    "title": "Put the draft live",
    "why": "Changes to the site are on the draft until you put them live (Queue for my Mac's button on films, the Criterion pages).",
-   "how": "Updates: look at the Preview, then press Update everything."
+   "how": "Home: look at the Preview, then press Update everything."
   },
   {
    "id": "mac-helper",
@@ -15,7 +15,7 @@
    "auto": "macagent",
    "title": "Set up your Mac to take queued films",
    "why": "So the big films you queue are converted on your Mac by themselves, freeing space on the G-Drive.",
-   "how": "On your Mac: Films › Conversions › Set up your Mac to take queued films, press Copy, paste into Terminal, press Return. Then Queue for my Mac on each big film."
+   "how": "On your Mac: Conversions › Set up your Mac to take queued films, press Copy, paste into Terminal, press Return. Then Queue for my Mac on each big film."
   },
   {
    "id": "gdrive-space",
@@ -23,14 +23,14 @@
    "auto": "space",
    "title": "Free up space on the G-Drive",
    "why": "It's nearly full; downloads and conversions need room to work.",
-   "how": "Queue the biggest films for your Mac (Films › Every film's quality › Largest, then Queue for my Mac on each). Delete originals you're happy with (Films › Conversions › Originals kept). Empty “Set aside” on the G-Drive when you're sure."
+   "how": "Queue the biggest films for your Mac (Library › Largest, then Queue for my Mac on each). Delete originals you're happy with (Conversions › Originals kept). Empty “Set aside” on the G-Drive when you're sure (Mac mini › The G-Drive has the Bin)."
   },
   {
    "id": "criterion-genres-bm",
    "added": "2026-11-18",
    "title": "Run the newest Criterion genres bookmarklet",
    "why": "It brings each box set's exact films, its description, and the Eclipse sets.",
-   "how": "Films › Criterion's covers: drag “Grifflix: Criterion genres” to your bookmarks bar again (replacing the old one), open Criterion's list, click it, then choose the criterion-tags.json it saves.",
+   "how": "Criterion: drag “Grifflix: Criterion genres” to your bookmarks bar again (replacing the old one), open Criterion's list, click it, then choose the criterion-tags.json it saves.",
    "done": "2026-11-18"
   },
   {
@@ -119,7 +119,7 @@
    "added": "2026-11-18",
    "title": "Run both Criterion bookmarklets again, for the special features",
    "why": "Criterion's special features lists, for each film and each box set, ticked where you have that extra.",
-   "how": "Films › Criterion's covers: drag both bookmarks to your bar again (replacing the old ones). Genres: open Criterion's list, click it, choose criterion-tags.json. Synopses: Copy your list, open criterion.com, click it, paste, then choose criterion-synopses.json (it reads every film again once, about 3 seconds each, and carries on if Criterion pauses it)."
+   "how": "Criterion: drag both bookmarks to your bar again (replacing the old ones). Genres: open Criterion's list, click it, choose criterion-tags.json. Synopses: Copy your list, open criterion.com, click it, paste, then choose criterion-synopses.json (it reads every film again once, about 3 seconds each, and carries on if Criterion pauses it)."
   }
  ]
 }
