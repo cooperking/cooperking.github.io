@@ -2279,7 +2279,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '15e1a87cf777' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '0363dca46752' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5519,7 +5519,7 @@ function collectionView(id, into) {
         if (openSet && BS[openSet]) {   // one box set, opened: its films
           var L = BS[openSet].slice().sort(function (x, y) { return (+x.spine || 0) - (+y.spine || 0) || nameKey(x).localeCompare(nameKey(y)); });
           g.className = 'csets';
-          g.innerHTML = '<div class="csetopen"><button type="button" class="pill" id="csetback">‹ ' + (ecl ? 'Eclipse' : 'All box sets') + '</button>' + (BSI[openSet] ? '<img class="csetcov" alt="" src="' + esc(BSI[openSet]) + '">' : '') + '<h3>' + (BSP[openSet] ? '<span class="cssp">No. ' + BSP[openSet] + '</span>' : '') + esc(openSet) + '<small>' + L.length + (L.length === 1 ? ' film' : ' films') + '</small></h3></div><div class="gridcards">' + L.map(function (i) { return cardHTML(i, false, true); }).join('') + '</div>';
+          g.innerHTML = '<div class="csetopen"><button type="button" class="pill" id="csetback">‹ ' + (ecl ? 'Eclipse' : 'All box sets') + '</button>' + (BSI[openSet] ? '<img class="csetcov" alt="" src="' + esc(BSI[openSet].replace('_small.', '_large.')) + '">' : '') + '<h3>' + (BSP[openSet] ? '<span class="cssp">No. ' + BSP[openSet] + '</span>' : '') + esc(openSet) + '<small>' + L.length + (L.length === 1 ? ' film' : ' films') + '</small></h3></div><div class="gridcards">' + L.map(function (i) { return cardHTML(i, false, true); }).join('') + '</div>';
           $('#csetback').onclick = function () { openSet = null; draw(); };
           wireCards(g, L); return;
         }
