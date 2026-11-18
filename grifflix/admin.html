@@ -1897,16 +1897,34 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     // it: a bookmark's code loses its line breaks, and a comment would swallow the rest)
     var BM = function () {
       if (!/(^|\.)criterion\.com$/.test(location.hostname)) { alert('Open criterion.com first, then click this bookmark there.'); return; }
-      var K = 'grifflix-synopses', st = null;
+var feats = function (doc) {
+        var pick = function (u) { return [].map.call(u.querySelectorAll('li'), function (li) { return li.textContent.replace(/\s+/g, ' ').trim(); }).filter(function (t) { return t.length > 2; }); };
+        var u0 = doc.querySelector('.product-features-list ul, .special-features ul, .film-features ul');
+        if (u0) { var r0 = pick(u0); if (r0.length) return r0.slice(0, 80); }
+        var out = [];
+        [].some.call(doc.querySelectorAll('h1, h2, h3, h4, h5, h6, dt, strong, b, p, div, span'), function (h) {
+          if (!/^\s*special(\s+edition)?\s+features\s*:?\s*$/i.test(h.textContent || '')) return false;
+          var el = h;
+          for (var n = 0; n < 5 && el; n++) {
+            var nx = el.nextElementSibling;
+            while (nx) { var u = nx.tagName === 'UL' ? nx : (nx.querySelector && nx.querySelector('ul')); if (u) { out = pick(u); return out.length > 0; } nx = nx.nextElementSibling; }
+            el = el.parentElement;
+          }
+          return false;
+        });
+        return out.slice(0, 80);
+      };
+            var K = 'grifflix-synopses', st = null;
       try { st = JSON.parse(localStorage.getItem(K) || 'null'); } catch (e) {}
       if (st && st.left && st.left.length && confirm('Carry on reading Criterion’s synopses? ' + st.left.length + ' films left, ' + Object.keys(st.out).length + ' read so far. (Cancel to paste a new list.)')) {}
       else {
         var t = prompt('Paste the list from Grifflix’s admin page'); if (!t) return;
         var L; try { L = JSON.parse(t); } catch (e) { alert('That isn’t the list: press Copy your list on the admin page again.'); return; }
-        st = { left: L, out: {}, miss: 0 };
+        st = { left: L, out: {}, feat: {}, miss: 0 };
       }
+      st.feat = st.feat || {};
       var save = function () { try { localStorage.setItem(K, JSON.stringify(st)); } catch (e) {} };
-      var file = function () { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(st.out)], { type: 'application/json' })); a.download = 'criterion-synopses.json'; document.body.appendChild(a); a.click(); };
+      var file = function () { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(Object.assign({}, st.out, { __features__: st.feat }))], { type: 'application/json' })); a.download = 'criterion-synopses.json'; document.body.appendChild(a); a.click(); };
       var d = document.createElement('div'); d.style.cssText = 'position:fixed;z-index:2147483647;top:12px;right:12px;background:#111;color:#fff;padding:14px 18px;font:15px/1.4 sans-serif;border-radius:8px;max-width:360px;box-shadow:0 8px 30px rgba(0,0,0,.4)'; document.body.appendChild(d);
       var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
       var total = st.left.length + Object.keys(st.out).length + st.miss;
@@ -1929,11 +1947,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           var syn = [].map.call(doc.querySelectorAll('.product-summary p'), function (p) { return p.textContent.replace(/\s+/g, ' ').trim(); }).filter(Boolean).join('\n\n');
           if (!syn) { var m = doc.querySelector('meta[property="og:description"], meta[name="description"]'); syn = m ? m.content.trim() : ''; }
           if (syn.length > 40) st.out[slug] = syn; else st.miss++;
+          st.feat[slug] = feats(doc);
           st.left.shift(); save();
           await wait(2500 + Math.random() * 1500);
         }
         file(); localStorage.removeItem(K);
-        d.textContent = 'Grifflix: done. ' + Object.keys(st.out).length + ' synopses saved as criterion-synopses.json in your Downloads' + (st.miss ? ' (' + st.miss + ' pages had none)' : '') + '. Choose it on the admin page.';
+        d.textContent = 'Grifflix: done. ' + Object.keys(st.out).length + ' synopses and ' + Object.keys(st.feat).filter(function (k) { return st.feat[k].length; }).length + ' special features lists saved as criterion-synopses.json in your Downloads' + (st.miss ? ' (' + st.miss + ' pages had no synopsis)' : '') + '. Choose it on the admin page.';
       })();
     };
     $('#synbm').href = 'javascript:(' + BM.toString() + ')();void 0';
@@ -1965,8 +1984,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var f = this.files[0]; this.value = ''; if (!f) return;
       f.text().then(function (t) { var o = JSON.parse(t); if (!o || typeof o !== 'object' || Array.isArray(o)) throw new Error('That isn’t the synopses file.');
         if (!GW) throw new Error('The Mac mini isn’t answering.');
-        $('#synstate').textContent = 'Sending ' + Object.keys(o).length + ' synopses to the Mac mini…';
-        return critCall({ synopses: o }).then(function (j) { toast('The Mac mini has them'); synPaint(j); }); })
+        var F = o.__features__; delete o.__features__;
+        $('#synstate').textContent = 'Sending ' + Object.keys(o).length + ' synopses' + (F ? ' and ' + Object.keys(F).length + ' films’ special features' : '') + ' to the Mac mini…';
+        return critCall(F ? { synopses: o, features: F } : { synopses: o }).then(function (j) { toast('The Mac mini has them'); synPaint(j); }); })
         .catch(function (e) { toast(e.message || 'That didn’t work.'); $('#synstate').textContent = 'Not sent: ' + (e.message || 'that didn’t work') + '. Choose the file again.'; });
     };
   })();
@@ -1993,7 +2013,24 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var TBM = function () {
       if (!/(^|\.)criterion\.com$/.test(location.hostname) || !/\/shop\/browse/.test(location.pathname)) { alert('Open Criterion’s list (criterion.com/shop/browse/list), let it load, then click this bookmark there.'); return; }
       var W = ['Director Approved', 'Criterion', 'Criterion Premieres', 'Eclipse', 'Collector’s Sets', 'English Language', 'Action/Adventure', 'Animation', 'Avant-garde', 'Comedy', 'Crime', 'Documentary', 'Drama', 'Fantasy', 'Film Noir', 'Horror', 'Music', 'Musical', 'Romance', 'Samurai', 'Science Fiction', 'Shorts', 'Silent', 'Thriller', 'War', 'Western'];
-      var norm = function (t) { return String(t || '').replace(/[’']/g, '').replace(/\(\s*[\d,]+\s*\)/g, '').replace(/\s+/g, ' ').trim().toLowerCase(); };
+var feats = function (doc) {
+        var pick = function (u) { return [].map.call(u.querySelectorAll('li'), function (li) { return li.textContent.replace(/\s+/g, ' ').trim(); }).filter(function (t) { return t.length > 2; }); };
+        var u0 = doc.querySelector('.product-features-list ul, .special-features ul, .film-features ul');
+        if (u0) { var r0 = pick(u0); if (r0.length) return r0.slice(0, 80); }
+        var out = [];
+        [].some.call(doc.querySelectorAll('h1, h2, h3, h4, h5, h6, dt, strong, b, p, div, span'), function (h) {
+          if (!/^\s*special(\s+edition)?\s+features\s*:?\s*$/i.test(h.textContent || '')) return false;
+          var el = h;
+          for (var n = 0; n < 5 && el; n++) {
+            var nx = el.nextElementSibling;
+            while (nx) { var u = nx.tagName === 'UL' ? nx : (nx.querySelector && nx.querySelector('ul')); if (u) { out = pick(u); return out.length > 0; } nx = nx.nextElementSibling; }
+            el = el.parentElement;
+          }
+          return false;
+        });
+        return out.slice(0, 80);
+      };
+            var norm = function (t) { return String(t || '').replace(/[’']/g, '').replace(/\(\s*[\d,]+\s*\)/g, '').replace(/\s+/g, ' ').trim().toLowerCase(); };
       var d = document.createElement('div'); d.style.cssText = 'position:fixed;z-index:2147483647;top:12px;right:12px;background:#111;color:#fff;padding:14px 18px;font:15px/1.4 sans-serif;border-radius:8px;max-width:380px;box-shadow:0 8px 30px rgba(0,0,0,.4)'; document.body.appendChild(d);
       var urls = {}, dbg = {};
       W.forEach(function (w) {
@@ -2040,6 +2077,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
                   var dd = '', dp = [].filter.call(bd.querySelectorAll('main p, article p, .product-summary p, .boxset p, p'), function (q) { return q.textContent.trim().length > 120 && !q.closest('footer, header, nav, aside, form'); })[0];
                   dd = (dp ? dp.textContent : ((bd.querySelector('meta[name="description"]') || bd.querySelector('meta[property="og:description"]') || {}).content || '')).replace(/\s+/g, ' ').trim();
                   if (dd.length > 40) { out.setdesc = out.setdesc || {}; out.setdesc[st] = dd.slice(0, 2000); }
+                  var sfe = feats(bd); if (sfe.length) { out.setfeat = out.setfeat || {}; out.setfeat[st] = sfe; }
                   var ci = rws[k].im || ((bd.querySelector('meta[property="og:image"]') || {}).content || '');
                   if (/^https?:|^\/\//.test(ci)) { out.setimg = out.setimg || {}; out.setimg[st] = new URL(ci, location.href).href; } }
               } catch (e2) {}

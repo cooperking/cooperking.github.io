@@ -1201,7 +1201,7 @@ def make_handler(g):
                             if i['Id'] in items:
                                 sp = spine_of(i.get('Path'), key == 'tv')
                                 o_ = items[i['Id']]
-                                for k_ in ('spine', 'cdir', 'ccty', 'ctags', 'cset', 'csetsp', 'csetimg', 'csetdesc', 'csetmiss'):
+                                for k_ in ('spine', 'cdir', 'ccty', 'ctags', 'cset', 'csetsp', 'csetimg', 'csetdesc', 'csetmiss', 'csetfeat'):
                                     o_.pop(k_, None)
                                 if sp:
                                     o_['spine'] = sp
@@ -1227,6 +1227,9 @@ def make_handler(g):
                                         dsc_ = {x_: (ctj_.get('setdesc') or {}).get(x_) for x_ in s_ if x_ not in SDONE and (ctj_.get('setdesc') or {}).get(x_)}
                                         if dsc_:   # (its description, carried by one of its films only, not repeated on each)
                                             o_['csetdesc'] = {snm(k__): v__ for k__, v__ in dsc_.items()}
+                                            ft_ = {snm(k__): (ctj_.get('setfeat') or {}).get(k__) for k__ in dsc_ if (ctj_.get('setfeat') or {}).get(k__)}
+                                            if ft_:   # (and its special features, with it)
+                                                o_['csetfeat'] = ft_
                                             SDONE.update(dsc_)
                     lists[key] = [i['Id'] for i in raw if i['Id'] in items]
                     if key == 'movies':
@@ -1834,6 +1837,19 @@ def make_handler(g):
                                  'disks': disks(),
                                  'next': [x for x in (cur or {}).get('next') or [] if x.get('id') not in done],   # (one already made, here or on John's Mac, off the list at once: John, 17 Nov 2026) 'left': (cur or {}).get('left'), 'pins': [x for x in P['pins'] if x.get('id') not in (st.get('done') or {}) and x.get('id') not in (st.get('failed') or {})], 'remux_first': P['remux_first'], 'log': tail,
                                  'ask': [dict(v, id=k, chosen=(P.get('langs') or {}).get(k)) for k, v in (st.get('ask') or {}).items()]})
+
+        def api_cfeat(self, me, user, q, b):
+            """A Criterion film's special features (read from criterion.com by John's browser), for its page."""
+            iid = str(q.get('id') or '')
+            if not re.match(r'^[0-9a-f]{32}$', iid):
+                return self.send_json(400, {'error': 'Which film?'})
+            if not CFEAT or time.time() - CFEAT.get('_at', 0) > 1800:
+                CFEAT.clear()
+                CFEAT.update({k: v for k, v in crit_pairs(g)})
+                CFEAT['_at'] = time.time()
+            sl = CFEAT.get(iid)
+            F_ = (load(os.path.expanduser('~/Grifflix/criterion-features.json'), {}) or {}).get('films') or {}
+            return self.send_json(200, {'features': F_.get(sl) or [] if sl else [], 'page': ('https://www.criterion.com/films/' + sl) if sl else ''})
 
         def api_criterionmissing(self, me, user, q, b):
             """John's only: every box set's films not in Grifflix, one row each, for a spreadsheet (John, 18 Nov 2026: "Want one list of
@@ -2559,13 +2575,33 @@ def make_handler(g):
                 # (then every other film on Criterion's list too, so a Criterion film that comes in later has its synopsis waiting, given
                 # by itself: John, 16 Nov 2026, "we may as well get the bookmark to get all remaining criterion films into json")
                 pairs, pages = crit_pairs(g), (load(os.path.join(home, 'criterion-synopses.json'), {}) or {}).get('pages', {})
-                mine = sorted(set(sl for _, sl in pairs if not pages.get('https://www.criterion.com/films/' + sl)))
+                # (and each film's special features, read from the same page: a film read before they were wanted is read again: John,
+                # 18 Nov 2026, "I need this for all criterion films too. I have extras for some")
+                fchk = (load(os.path.join(home, 'criterion-features.json'), {}) or {}).get('checked') or {}
+                need = lambda sl: not pages.get('https://www.criterion.com/films/' + sl) or sl not in fchk
+                mine = sorted(set(sl for _, sl in pairs if need(sl)))
                 rest = []
                 for f in load(os.path.join(home, 'criterion-list.json'), []) or []:
                     sl = str(f.get('link') or '').replace('https://www.criterion.com/films/', '')
-                    if sl and '/' not in sl and re.match(r'^[\w-]{3,160}$', sl) and not pages.get('https://www.criterion.com/films/' + sl) and sl not in mine and sl not in rest:
+                    if sl and '/' not in sl and re.match(r'^[\w-]{3,160}$', sl) and need(sl) and sl not in mine and sl not in rest:
                         rest.append(sl)
                 return self.send_json(200, {'want': mine + rest, 'mine': len(mine), 'have': len(pages), 'films': len(pairs)})
+            if b and isinstance(b.get('features'), dict):   # (each film's special features, read with its synopsis)
+                ff = os.path.join(home, 'criterion-features.json')
+                F_ = load(ff, {}) or {}
+                FF, FC = F_.setdefault('films', {}), F_.setdefault('checked', {})
+                for k, v in b['features'].items():
+                    k = str(k)
+                    if re.match(r'^[\w-]{3,160}$', k) and isinstance(v, list):
+                        L_ = [re.sub(r'\s+', ' ', str(x)).strip()[:400] for x in v if str(x).strip()][:80]
+                        if L_:
+                            FF[k] = L_
+                        FC[k] = int(time.time())
+                save(ff, F_)
+                CFEAT.clear()
+                log('Criterion special features: %d films read, %d with a list' % (len(b['features']), sum(1 for v in b['features'].values() if v)))
+                if not isinstance(b.get('synopses'), dict):
+                    return self.send_json(200, syn_state())
             if b and isinstance(b.get('synopses'), dict):   # (what John's browser read: kept at once, then each film given its synopsis in the background)
                 sf = os.path.join(home, 'criterion-synopses.json')
                 S_ = load(sf, {}) or {}
@@ -2589,7 +2625,8 @@ def make_handler(g):
                 SSP = {str(k)[:160]: str(v)[:6] for k, v in (b['tags'].get('setspine') or {}).items() if str(v).isdigit()}   # (each box set's own spine number)
                 SIM = {str(k)[:160]: str(v)[:400] for k, v in (b['tags'].get('setimg') or {}).items() if re.match(r'^https://[\w.-]+/', str(v))}   # (each box set's own cover)
                 SDE = {str(k)[:160]: str(v)[:2000] for k, v in (b['tags'].get('setdesc') or {}).items() if len(str(v or '')) > 40}   # (each box set's description: John, 18 Nov 2026)
-                save(os.path.join(home, 'criterion-tags.json'), {'tags': T, 'sets': SE, 'setspine': SSP, 'setimg': SIM, 'setdesc': SDE, 'missing': [str(x)[:120] for x in (b['tags'].get('missing') or [])][:40],
+                SFE = {str(k)[:160]: [re.sub(r'\s+', ' ', str(x)).strip()[:400] for x in v if str(x).strip()][:80] for k, v in (b['tags'].get('setfeat') or {}).items() if isinstance(v, list) and v}   # (and its special features)
+                save(os.path.join(home, 'criterion-tags.json'), {'tags': T, 'sets': SE, 'setspine': SSP, 'setimg': SIM, 'setdesc': SDE, 'setfeat': SFE, 'missing': [str(x)[:120] for x in (b['tags'].get('missing') or [])][:40],
                                                                  'debug': {str(k)[:60]: str(v)[:300] for k, v in (b['tags'].get('debug') or {}).items()}, 'at': int(time.time())})
                 n = sum(len(v) for v in T.values())
                 log('Criterion genres: %d kinds, %d films in them, %d box sets, from John’s browser' % (len(T), n, len(SE)))
@@ -3902,6 +3939,7 @@ def backup_main():
 # ---- what Claude may ask to have done on the Mac mini, each only once John allows it on the admin page (John, 18 Nov 2026: "can I give
 # you control to do things like quit plex?" ... "yes, build the approval list - I want to use screensharing as little as possible").
 # Claude can only ask, and only for what's listed here; John's Allow does it, and each one is kept with what came of it.
+CFEAT = {}   # (film id: its page on criterion.com, for its special features)
 ACTIONS_AT = os.path.expanduser('~/Grifflix/claude-asks.json')
 ACT_LOCK = threading.Lock()
 PLEX_APP = 'Plex Media Server'
