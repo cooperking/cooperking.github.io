@@ -359,7 +359,9 @@ def spine_of(path, folder=False):
         return None
     if not path:
         return None
-    return SPINES['map'].get(os.path.basename(path.rstrip('/')) if folder else os.path.basename(os.path.dirname(path)))   # (a series: its own folder)
+    k = os.path.basename(path.rstrip('/')) if folder else os.path.basename(os.path.dirname(path))   # (a series: its own folder)
+    own = load(os.path.expanduser('~/Grifflix/criterion-spines-own.json'), {}) or {}   # (set by hand, kept whatever criterion-covers matches)
+    return own.get(k) or SPINES['map'].get(k)
 
 
 def item_out(it, prog=None):
@@ -3420,6 +3422,71 @@ MACQ = os.path.expanduser('~/Grifflix/mac-queue.json')   # (films queued for Joh
 MACAGENT = {}   # (when his Mac's helper last asked, and whether it was at home)
 
 
+def fanny_series(g):
+    """Once: Fanny and Alexander's television version, four files in a film's folder (the media server took them for one film's parts and
+    showed part 1, 1 h 36), made a miniseries in the TV library, its parts its episodes in order; put in The Criterion Collection; it and the
+    cinema version and The Making Of given their spine numbers, so they come together as their box set (261) (John, 18 Nov 2026: "it should
+    probably treat a mini series like a tv miniseries and the files should be ordered and put in a file structure where it understands that.
+    Then just added to the collection in a box set")."""
+    import shutil
+    mk = os.path.expanduser('~/Grifflix/fanny-series.done')
+    if os.path.exists(mk):
+        return
+    time.sleep(150)
+    try:
+        roots = {v.get('CollectionType'): (v.get('Locations') or [None])[0] for v in (g.jf.call('GET', '/Library/VirtualFolders') or [])}
+        mv, tv = roots.get('movies'), roots.get('tvshows')
+        src = os.path.join(mv or '', 'Fanny and Alexander - Television Version(1983)')
+        if not (mv and tv and os.path.isdir(src)):
+            open(mk, 'w').write('nothing to do')
+            return
+        name = 'Fanny and Alexander (1983)'
+        sdir = os.path.join(tv, name, 'Season 01')
+        os.makedirs(sdir, exist_ok=True)
+        parts = sorted((n for n in os.listdir(src) if re.search(r'-pt(\d+)\.(mkv|mp4|m4v|avi)$', n, re.I)), key=lambda n: int(re.search(r'-pt(\d+)\.', n, re.I).group(1)))
+        moved = []
+        for n in parts:
+            ep = int(re.search(r'-pt(\d+)\.', n, re.I).group(1))
+            to = os.path.join(sdir, '%s S01E%02d%s' % (name, ep, os.path.splitext(n)[1].lower()))
+            shutil.move(os.path.join(src, n), to)
+            moved.append(to)
+        if os.path.exists(os.path.join(src, 'poster.jpg')):
+            shutil.move(os.path.join(src, 'poster.jpg'), os.path.join(tv, name, 'poster.jpg'))
+        for n in os.listdir(src):   # (what's left: the Finder's own files)
+            if n.startswith('.') or n.startswith('._'):
+                try:
+                    os.remove(os.path.join(src, n))
+                except OSError:
+                    pass
+        try:
+            os.rmdir(src)
+            os.remove(os.path.join(mv, '._Fanny and Alexander - Television Version(1983)'))
+        except OSError:
+            pass
+        own_f = os.path.expanduser('~/Grifflix/criterion-spines-own.json')
+        own = load(own_f, {}) or {}
+        own.update({name: 262, 'Fanny And Alexander (1982)': 263, 'The Making Of Fanny And Alexander (1984)': 264})
+        save(own_f, own)
+        log('Fanny and Alexander: the television version made a miniseries, %d episodes, in %s' % (len(moved), os.path.join(tv, name)))
+        try:
+            g.jf.call('POST', '/Library/Media/Updated', {'Updates': [{'Path': src, 'UpdateType': 'Deleted'}, {'Path': os.path.join(tv, name), 'UpdateType': 'Created'}]})
+        except Exception:
+            g.jf.call('POST', '/Library/Refresh')
+        box = next((x for x in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'BoxSet'}) or {}).get('Items', []) if (x.get('Name') or '').strip().lower() == 'the criterion collection'), None)
+        for _ in range(30):   # (once the media server has the series: into The Criterion Collection)
+            time.sleep(60)
+            ser = next((x for x in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Series', 'SearchTerm': 'Fanny', 'Fields': 'Path'}) or {}).get('Items', [])
+                        if (x.get('Path') or '').rstrip('/').endswith(name)), None)
+            if ser:
+                if box:
+                    g.jf.call('POST', '/Collections/%s/Items' % box['Id'], None, {'Ids': ser['Id']})
+                log('Fanny and Alexander: the miniseries in The Criterion Collection')
+                break
+        open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+    except Exception as e:
+        log('Fanny and Alexander as a miniseries:', str(e)[:200])
+
+
 def mac_job(iid):
     """A film planned for John's Mac, as the Mac mini's converter would plan it, and handed over by a one-time address: (code, answer)."""
     if not re.match(r'^[0-9a-f]{32}$', iid):
@@ -4340,6 +4407,7 @@ def serve():
         covers_now()
         open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
     threading.Thread(target=covers_once, daemon=True).start()   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
+    threading.Thread(target=fanny_series, args=(g,), daemon=True).start()
     threading.Thread(target=keep_gdrive, daemon=True).start()
     threading.Thread(target=keep_fetch_unstuck, daemon=True).start()
     srv.daemon_threads = True
