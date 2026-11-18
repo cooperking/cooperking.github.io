@@ -374,6 +374,7 @@ SPINES = {'at': 0, 'map': {}}
 # against Criterion's list, John, 18 Nov 2026, "Yes look into any mismatch")
 SPINE_SEED = {'Martha Graham-Dance on Film (1959)': 406, 'A Hollis Frampton Odyssey (1966)': 607, 'Symbiopsychotaxiplasm - Take One (1968)': 360,
               'Secrets and Lies (1996)': 1070, 'Lady Snowblood 2 Love Song Of Vengeance (1974)': 791, 'By Brakhage An Anthlogy Vol 1-2 (1954)': 184,
+              'By Brakhage - An Anthology, Volume One (2003)': 184, 'By Brakhage - An Anthology, Volume Two (2010)': 517,
               'Fanny and Alexander (1983)': 262, 'Fanny And Alexander (1982)': 263, 'The Making Of Fanny And Alexander (1984)': 264}
 
 
@@ -4193,6 +4194,123 @@ def act_extras_rename(g, req):
     return '%d films’ Other folders are Extras now; the media server is reading each again (a few seconds a film).' % n
 
 
+BRAK_SRC = '/Volumes/G-Drive/Grifflix/Movies/By Brakhage An Anthlogy Vol 1-2 (1954)'
+# (each file in the one Brakhage folder: its own folder and name, and its spine (Criterion's: Volume One 184, Volume Two 517; the films
+# from Volume One with it): John, 18 Nov 2026, "By Brakhage isn't being treated correctly by the criterion collection")
+BRAK_PLAN = [
+    (r'^By\.Brakhage\.An\.Anthology\.Vol\.1\.', 'By Brakhage - An Anthology, Volume One (2003)', '', 184),
+    (r'^By\.Brakhage\.An\.Anthology\.Vol\.2\.Disc\.1\.', 'By Brakhage - An Anthology, Volume Two (2010)', ' - part1', 517),
+    (r'^By\.Brakhage\.An\.Anthology\.Vol\.2\.Disc\.2\.', 'By Brakhage - An Anthology, Volume Two (2010)', ' - part2', 517),
+    (r'^Dog\.Star\.Man\.Prelude\.', 'Prelude - Dog Star Man (1961)', '', 184),
+    (r'^Dog\.Star\.Man\.Part\.I\.(?!I)', 'Dog Star Man - Part I (1962)', '', 184),
+    (r'^Dog\.Star\.Man\.Part\.II\.(?!I)', 'Dog Star Man - Part II (1963)', '', 184),
+    (r'^Dog\.Star\.Man\.Part\.III\.', 'Dog Star Man - Part III (1964)', '', 184),
+    (r'^Dog\.Star\.Man\.Part\.IV\.', 'Dog Star Man - Part IV (1964)', '', 184),
+    (r'^Wedlock\.House\.An\.Intercourse\.', 'Wedlock House - An Intercourse (1959)', '', 184),
+    (r'^The\.Act\.of\.Seeing\.with\.Ones\.Own\.Eyes\.', "The Act of Seeing with One's Own Eyes (1971)", '', 184),
+]
+
+
+def _brak_moves():
+    """[(from, to)] for every file in the Brakhage folder, by BRAK_PLAN: its film as the folder's name (a part's with " - part1"), its
+    pictures as poster.jpg and fanart.jpg."""
+    out = []
+    for n in sorted(os.listdir(BRAK_SRC)):
+        if n.startswith('.') or not os.path.isfile(os.path.join(BRAK_SRC, n)):
+            continue
+        for rx, folder, part, _sp in BRAK_PLAN:
+            if re.match(rx, n):
+                m = re.search(r'-(poster|fanart)\.(jpg|png)$', n)
+                if m:
+                    if part and part != ' - part1':
+                        break   # (one picture each: the first part's)
+                    to = '%s.%s' % (m.group(1), m.group(2))
+                else:
+                    to = folder + part + os.path.splitext(n)[1]
+                out.append((os.path.join(BRAK_SRC, n), os.path.join(os.path.dirname(BRAK_SRC), folder, to)))
+                break
+    return out
+
+
+def ask_brakhage_split(req):
+    if not os.path.isdir(BRAK_SRC):
+        raise RuntimeError('the By Brakhage folder isn’t there (done already?)')
+    mv = _brak_moves()
+    if not mv:
+        raise RuntimeError('nothing in the By Brakhage folder to move')
+    for a, b in mv:
+        if os.path.exists(b):
+            raise RuntimeError('%s is there already' % b)
+    req['detail'] = '%d files into %d folders: %s. Nothing deleted: what’s left of the old folder goes to Set aside.' % (
+        len(mv), len(set(os.path.dirname(b) for _, b in mv)), ', '.join(sorted(set(os.path.basename(os.path.dirname(b)) for _, b in mv))))
+
+
+def act_brakhage_split(g, req):
+    import shutil
+    mv = _brak_moves()
+    # (what the old films were in, and their ids by file, to carry over to the new ones once the media server has them)
+    olds = {}
+    for it in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie,Video', 'Fields': 'Path'}) or {}).get('Items', []):
+        if (it.get('Path') or '').startswith(BRAK_SRC + '/'):
+            olds[it['Path']] = it['Id']
+    sets = [b for b in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'BoxSet'}) or {}).get('Items', [])]
+    member = {}
+    for b in sets:
+        for i in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': b['Id']}) or {}).get('Items', []):
+            if i['Id'] in olds.values():
+                member.setdefault(b['Id'], set()).add(i['Id'])
+    in_any = [b for b, m in member.items()]   # (each set any of them was in: every new film goes in it)
+    done = []
+    for a, b in mv:
+        os.makedirs(os.path.dirname(b), exist_ok=True)
+        os.rename(a, b)
+        done.append((a, b))
+    own_f = os.path.expanduser('~/Grifflix/criterion-spines-own.json')
+    own = load(own_f, {}) or {}
+    for _rx, folder, _p, sp in BRAK_PLAN:
+        own[folder] = sp
+    own.pop(os.path.basename(BRAK_SRC), None)
+    save(own_f, own)
+    os.makedirs(SETASIDE, exist_ok=True)
+    left = os.path.join(SETASIDE, os.path.basename(BRAK_SRC))
+    if os.path.exists(left):
+        left += ' (%d)' % time.time()
+    shutil.move(BRAK_SRC, left)
+    folders = sorted(set(os.path.dirname(b) for _, b in done))
+    try:
+        g.jf.call('POST', '/Library/Media/Updated', {'Updates': [{'Path': BRAK_SRC, 'UpdateType': 'Deleted'}] + [{'Path': f, 'UpdateType': 'Created'} for f in folders]})
+    except Exception:
+        g.jf.call('POST', '/Library/Refresh')
+    newpath = dict(done)
+
+    def follow():   # (the new films, once the media server has them: in the same collections, and calendars, lists and progress moved over)
+        for _ in range(60):
+            time.sleep(30)
+            by = {it.get('Path'): it['Id'] for it in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path'}) or {}).get('Items', []) if any((it.get('Path') or '').startswith(f + '/') for f in folders)}
+            if len(by) >= len(folders):
+                break
+        for b_ in in_any:
+            try:
+                g.jf.call('POST', '/Collections/%s/Items' % b_, query={'Ids': ','.join(by.values())})
+            except Exception as e:
+                log('By Brakhage: into a collection: %s' % e)
+        m = {}
+        for p_, i_ in olds.items():
+            n_ = newpath.get(p_)
+            if n_:
+                n2 = by.get(n_) or by.get(re.sub(r' - part\d+(\.\w+)$', r' - part1\1', n_))
+                if n2:
+                    m[i_] = n2
+        if m:
+            g.remap(m)
+        g.forget()
+        g.publish_soon = time.time() + 120
+        log('By Brakhage: %d films in their own folders, in %d collection(s); %d moved over in calendars and lists' % (len(by), len(in_any), len(m)))
+    threading.Thread(target=follow, daemon=True).start()
+    return '%d files moved into %d folders (%s); the old folder’s leftovers are in Set aside. The media server is reading them; the collections follow in a few minutes.' % (
+        len(done), len(folders), ', '.join(os.path.basename(f) for f in folders))
+
+
 ACTIONS = {
     'plex-off': ('Quit Plex and keep it off', act_plex_off, None),
     'plex-on': ('Start Plex again and let it be', act_plex_on, None),
@@ -4200,6 +4318,7 @@ ACTIONS = {
     'converter-restart': ('Restart the converter (it starts its film again)', act_converter_restart, None),
     'setaside-empty': ('Empty “Set aside” on the G-Drive (deleted for good)', act_setaside_empty, ask_setaside),
     'extras-rename': ('Rename each film’s “Other” folder to “Extras”, so the media server shows its extras', act_extras_rename, ask_extras_rename),
+    'brakhage-split': ('Give each By Brakhage film its own folder (Volume One, Volume Two and the seven films from Volume One)', act_brakhage_split, ask_brakhage_split),
 }
 
 
