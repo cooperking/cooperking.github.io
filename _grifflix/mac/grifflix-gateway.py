@@ -1082,6 +1082,20 @@ def make_handler(g):
                         for f_ in load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or []:
                             if '/boxsets/' in str(f_.get('link') or ''):
                                 SMETA[fold(f_.get('title'))] = (str(f_.get('spine') or ''), str(f_.get('img') or ''))
+                        if not ctj_.get('sets'):   # (till the bookmarklet has read each set's page: a numbered set's films are the spine numbers straight
+                            # after its own, while each is one of Criterion's Collector's Sets films (The Apu Trilogy 782: 783 to 785). Right for half
+                            # the numbered sets; the rest, and Eclipse's, wait for the bookmarklet: John, 18 Nov 2026, "I can't see the box set covers")
+                            cs_ = set(((ctj_.get('tags') or {}).get('Collector’s Sets')) or [])
+                            fsp_, ssp_ = {}, {}
+                            for f_ in load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or []:
+                                if str(f_.get('spine') or '').isdigit():
+                                    (ssp_ if '/boxsets/' in str(f_.get('link') or '') else fsp_)[int(f_['spine'])] = str(f_.get('title') or '') if '/boxsets/' in str(f_.get('link') or '') else str(f_.get('link') or '').replace('https://www.criterion.com/films/', '')
+                            guess_ = {}
+                            for S_, nm_ in ssp_.items():
+                                k_ = S_ + 1
+                                while k_ in fsp_ and fsp_[k_] in cs_ and k_ not in ssp_:
+                                    guess_.setdefault(nm_, []).append(fsp_[k_]); k_ += 1
+                            ctj_ = dict(ctj_, sets=guess_)
                         for k_, v_ in (ctj_.get('sets') or {}).items():   # (the box set each film is in, Collector's Sets: John, 17 Nov 2026)
                             for sl_ in v_:
                                 TS.setdefault(sl_, []).append(k_)
