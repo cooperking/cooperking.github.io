@@ -1821,6 +1821,56 @@ def make_handler(g):
                                  'next': [x for x in (cur or {}).get('next') or [] if x.get('id') not in done],   # (one already made, here or on John's Mac, off the list at once: John, 17 Nov 2026) 'left': (cur or {}).get('left'), 'pins': [x for x in P['pins'] if x.get('id') not in (st.get('done') or {}) and x.get('id') not in (st.get('failed') or {})], 'remux_first': P['remux_first'], 'log': tail,
                                  'ask': [dict(v, id=k, chosen=(P.get('langs') or {}).get(k)) for k, v in (st.get('ask') or {}).items()]})
 
+        def api_criterionmissing(self, me, user, q, b):
+            """John's only: every box set's films not in Grifflix, one row each, for a spreadsheet (John, 18 Nov 2026: "Want one list of
+            every box set film you're missing?" ... "Yes")."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            return self.send_json(200, {'rows': crit_missing(g)})
+
+        def api_bin(self, me, user, q, b):
+            """John's only: the Grifflix Bin (what was deleted, kept 30 days): how much is in it, and emptied now (John, 18 Nov 2026:
+            "I should have a button to do this, and know how much is in it")."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            import shutil
+            bins = grifflix_bins(g)
+            if b and b.get('op') == 'empty':
+                n = 0
+                for bn in bins:
+                    for x in os.listdir(bn):
+                        if x.startswith('.'):
+                            continue
+                        p_ = os.path.join(bn, x)
+                        try:
+                            shutil.rmtree(p_) if os.path.isdir(p_) and not os.path.islink(p_) else os.remove(p_)
+                            n += 1
+                        except OSError as e:
+                            log('Grifflix Bin: couldn’t delete %s: %s' % (x, e))
+                log('Grifflix Bin: emptied by John (%d)' % n)
+            items, size = [], 0
+            for bn in bins:
+                for x in sorted(os.listdir(bn)):
+                    if x.startswith('.'):
+                        continue
+                    p_ = os.path.join(bn, x)
+                    sz = 0
+                    if os.path.isdir(p_):
+                        for t_, _, fs in os.walk(p_):
+                            for f_ in fs:
+                                try:
+                                    sz += os.path.getsize(os.path.join(t_, f_))
+                                except OSError:
+                                    pass
+                    else:
+                        try:
+                            sz = os.path.getsize(p_)
+                        except OSError:
+                            pass
+                    size += sz
+                    items.append({'name': x, 'size': sz})
+            return self.send_json(200, {'items': items[:300], 'count': len(items), 'size': size})
+
         def api_originals(self, me, user, q, b):
             """John's: the originals convert.py kept in "Grifflix Originals" (what they take, the drive's free space), and
             deleting them from the admin page (John, 8 Nov 2026: "can I delete from the app"). Only files convert.py moved
@@ -4393,6 +4443,104 @@ def give_synopses(g):
     SYN['at'] = time.time()
 
 
+def grifflix_bins(g):
+    """The Grifflix Bin beside each library's drive folder (as keep_scanning empties after 30 days)."""
+    out = []
+    for v in g.jf.call('GET', '/Library/VirtualFolders') or []:
+        for r in v.get('Locations') or []:
+            bn = os.path.join(os.path.dirname(os.path.dirname(r.rstrip('/'))), 'Grifflix Bin')
+            if os.path.isdir(bn) and bn not in out:
+                out.append(bn)
+    return out
+
+
+def crit_missing(g):
+    """Every box set's films not in Grifflix, from Criterion's own sets (criterion-tags.json) and list: [set, set's spine, title, year,
+    spine, Criterion's page], in the sets' order."""
+    home = os.path.expanduser('~/Grifflix')
+    ct = load(os.path.join(home, 'criterion-tags.json'), {}) or {}
+    lst = load(os.path.join(home, 'criterion-list.json'), []) or []
+    info, by_spine, by_ty, set_sp, set_nm = {}, {}, {}, {}, {}
+    for f in lst:
+        link = str(f.get('link') or '')
+        sl = link.replace('https://www.criterion.com/films/', '').replace('https://www.criterion.com/boxsets/', '')
+        if '/boxsets/' in link:
+            set_sp[fold(f.get('title'))] = str(f.get('spine') or '')
+            set_nm[fold(f.get('title'))] = str(f.get('title') or '')   # (its name as Criterion writes it)
+            continue
+        info[sl] = (str(f.get('title') or ''), str(f.get('year') or ''), str(f.get('spine') or ''), link)
+        if str(f.get('spine') or '').isdigit():
+            by_spine.setdefault(int(f['spine']), sl)
+        if re.match(r'^\d{4}$', str(f.get('year') or '')):
+            by_ty.setdefault((fold(f.get('title')), int(f['year'])), sl)
+    owned = set(sl for _, sl in crit_pairs(g))
+    try:
+        its = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie,Series', 'Fields': 'Path,ProductionYear'}).get('Items') or []
+        for it in its:
+            sp = spine_of(it.get('Path'), it.get('Type') == 'Series')
+            if sp and str(sp).isdigit() and int(sp) in by_spine:
+                owned.add(by_spine[int(sp)])
+            y = it.get('ProductionYear') or 0
+            for d in (0, 1, -1):
+                if (fold(it.get('Name')), y + d) in by_ty:
+                    owned.add(by_ty[(fold(it.get('Name')), y + d)])
+                    break
+    except Exception as e:
+        log('Criterion missing:', e)
+    rows = []
+    sp_of = ct.get('setspine') or {}
+    def order(kv):
+        sp = str(sp_of.get(kv[0]) or set_sp.get(fold(kv[0])) or '')
+        return (0 if sp.isdigit() else 1, int(sp) if sp.isdigit() else 0, kv[0])
+    for nm, mem in sorted((ct.get('sets') or {}).items(), key=order):
+        sp = str(sp_of.get(nm) or set_sp.get(fold(nm)) or '')
+        for sl in mem:
+            if sl in owned:
+                continue
+            t, y, fsp, link = info.get(sl, (sl.split('-', 1)[-1].replace('-', ' ').title(), '', '', 'https://www.criterion.com/films/' + sl))
+            rows.append([set_nm.get(fold(nm)) or (nm.title() if nm == nm.lower() else nm), sp, t, y, fsp, link])
+    return rows
+
+
+def give_countries(g):
+    """Each film of The Criterion Collection given Criterion's own country (or countries) in place of the media server's, kept from being
+    changed back (John, 18 Nov 2026: "Use Criterion's country on the media server too?" ... "yes")."""
+    home = os.path.expanduser('~/Grifflix')
+    cty = {}
+    for f in load(os.path.join(home, 'criterion-list.json'), []) or []:
+        sl = str(f.get('link') or '').replace('https://www.criterion.com/films/', '')
+        c = [x.strip() for x in re.split(r'[,/]', str(f.get('country') or '')) if x.strip()]
+        if sl and c:
+            cty[sl] = c
+    if not cty:
+        return
+    gf = os.path.join(home, 'criterion-countries-given.json')
+    given = load(gf, {}) or {}
+    put = 0
+    try:
+        for iid, sl in crit_pairs(g):
+            cs = cty.get(sl)
+            if not cs or given.get(iid) == cs:
+                continue
+            try:
+                full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid)) or {}
+                if (full.get('ProductionLocations') or []) != cs:
+                    full['ProductionLocations'] = cs
+                    full['LockedFields'] = sorted(set((full.get('LockedFields') or []) + ['ProductionLocations']))
+                    g.jf.call('POST', '/Items/%s' % iid, full)
+                    put += 1
+                given[iid] = cs
+            except Exception as e:
+                log('Criterion country for %s: %s' % (iid, e))
+        save(gf, given)
+    except Exception as e:
+        log('Criterion countries:', e)
+    if put:
+        log('Criterion countries: %d films given Criterion’s own' % put)
+        g.forget()
+        g.publish_soon = time.time() + 120
+
+
 def crit_pairs(g):
     """The films of The Criterion Collection, each with its page on criterion.com (from Criterion's list John last gave: its title and
     year, a year either side allowed): [(item id, page)]."""
@@ -4611,6 +4759,7 @@ def covers_now():
                     if G_REF:
                         give_synopses(G_REF[0])
                         give_genres(G_REF[0])
+                        give_countries(G_REF[0])
                 except Exception as e:
                     log('Criterion synopses:', e)
             if put or col:
@@ -5097,6 +5246,14 @@ def serve():
     threading.Thread(target=keep_disk_health, daemon=True).start()
     threading.Thread(target=keep_backup, args=(g,), daemon=True).start()
     threading.Thread(target=keep_plex_off, args=(g,), daemon=True).start()
+    def countries_once():   # (once: every Criterion film given Criterion's country now, then each as it comes in)
+        mk = os.path.expanduser('~/Grifflix/criterion-countries.done')
+        if os.path.exists(mk):
+            return
+        time.sleep(240)
+        give_countries(g)
+        open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+    threading.Thread(target=countries_once, daemon=True).start()
     try:   # (once: the film lost before the fix in /macagent/next, put back first)
         mk = os.path.expanduser('~/Grifflix/macq-lost3.done')   # (again, after the planning bug of 18 Nov 2026 passed it over, and the test run held it up)
         if not os.path.exists(mk):
