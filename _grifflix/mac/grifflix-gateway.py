@@ -297,6 +297,29 @@ def conv_why(ms):
     return ''
 
 
+LANGS3 = {'eng': 'English', 'fre': 'French', 'fra': 'French', 'ger': 'German', 'deu': 'German', 'ita': 'Italian', 'spa': 'Spanish', 'jpn': 'Japanese',
+          'chi': 'Chinese', 'zho': 'Chinese', 'kor': 'Korean', 'rus': 'Russian', 'swe': 'Swedish', 'dan': 'Danish', 'nor': 'Norwegian', 'dut': 'Dutch',
+          'nld': 'Dutch', 'por': 'Portuguese', 'pol': 'Polish', 'cze': 'Czech', 'ces': 'Czech', 'hun': 'Hungarian', 'fin': 'Finnish', 'gre': 'Greek',
+          'ell': 'Greek', 'hin': 'Hindi', 'ara': 'Arabic', 'heb': 'Hebrew', 'tur': 'Turkish', 'per': 'Persian', 'fas': 'Persian', 'ice': 'Icelandic'}
+
+
+def sound_list(aus):
+    """A film's soundtracks for the player's Sound menu: each by its name (a commentary's own, such as "Commentary with the director") or
+    language, with stereo or surround; the converter's two of the same language (stereo first, the original after) told apart that way."""
+    out = []
+    for a in aus:
+        t = (a.get('Title') or '').strip()
+        lang = LANGS3.get((a.get('Language') or '').lower(), (a.get('Language') or '').upper() if a.get('Language') not in (None, '', 'und') else '')
+        com = 'comment' in t.lower()
+        ch = int(a.get('Channels') or 0)
+        name = t if t and t.lower() not in ('stereo', 'surround', 'mono') else (lang or 'Soundtrack %d' % (len(out) + 1))
+        if com and lang and lang != 'English' and lang.lower() not in name.lower():
+            name += ' (%s)' % lang
+        out.append({'i': a.get('Index'), 'name': name, 'ch': '' if com else 'mono' if ch == 1 else 'stereo' if ch == 2 else '%d.1' % (ch - 1) if ch > 2 else '',
+                    'com': com})
+    return out
+
+
 def make_key(secret, uid):
     exp = int(time.time()) + KEY_HOURS * 3600
     body = '%s.%d' % (b64(uid.encode()), exp)
@@ -2156,14 +2179,22 @@ def make_handler(g):
                 # own recorded, as most MKV files haven't, though the device plays it: John, 12 Nov 2026, Rushmore converted for an iPhone that plays it)
                 del hq['MaxStreamingBitrate']
                 hq.update(AllowVideoStreamCopy='true', EnableAutoStreamCopy='true')
-            hls = ('/v/%s/master.m3u8?' % iid) + urllib.parse.urlencode(hq)
-            direct = None
             vs = [s for s in ms.get('MediaStreams', []) if s.get('Type') == 'Video']
             aus = [s for s in ms.get('MediaStreams', []) if s.get('Type') == 'Audio']
+            # (a soundtrack chosen in the player, such as a commentary: the stream with that one, as the whole file plays only its first:
+            # John, 18 Nov 2026, "can mp4s play extra tracks like this then? How do we choose them?")
+            aud = str(q.get('audio') or '')
+            pick = next((a for a in aus if str(a.get('Index')) == aud), None) if aud.isdigit() else None
+            if pick and aus and pick is not aus[0]:
+                hq['AudioStreamIndex'] = pick['Index']
+            else:
+                pick = None
+            hls = ('/v/%s/master.m3u8?' % iid) + urllib.parse.urlencode(hq)
+            direct = None
             # (the whole file, when it's an MP4 whose picture and first sound this device plays as they are: the surest way to play
             # anywhere. AC3 and E-AC3 only where the device says it plays them (Safari does, Chrome doesn't): John, 12 Nov 2026)
             snd = ('aac', 'mp3') + (('ac3', 'eac3') if q.get('ac3') == '1' else ())
-            if not q.get('nodirect') and any(c in ('mp4', 'm4v', 'mov') for c in (ms.get('Container') or '').split(',')) and vs and plays \
+            if not pick and not q.get('nodirect') and any(c in ('mp4', 'm4v', 'mov') for c in (ms.get('Container') or '').split(',')) and vs and plays \
                     and all((a.get('Codec') or '') in snd for a in aus[:1]):
                 direct = '/v/%s/stream?' % iid + urllib.parse.urlencode({'Static': 'true', 'MediaSourceId': msid, 'g': key})
             subs = self.subs_out(iid, ms, key)
@@ -2178,6 +2209,7 @@ def make_handler(g):
                                'hevc': hevc, 'hevc10': q.get('hevc10') == '1', 'br': br, 'kind': (q.get('kind') or '')[:40], 'at': time.time(), 'seen': time.time()}
             g.watched()
             self.send_json(200, {'hls': hls, 'direct': direct, 'hv': bool(hevc and v0c in ('hevc', 'h265')), 'subs': subs, 'ps': ps, 'device': dev,
+                                 'audio': sound_list(aus), 'aud': pick['Index'] if pick else (aus[0].get('Index') if aus else None),
                                  'pos': user['progress'].get(iid, {}).get('pos', 0), 'secs': round((it.get('RunTimeTicks') or 0) / 1e7)})
 
         def subs_out(self, iid, ms, key):

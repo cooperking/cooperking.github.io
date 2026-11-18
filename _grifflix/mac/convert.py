@@ -519,7 +519,12 @@ def convert(item, ffmpeg, ffprobe, st):
         for n, a in enumerate(keep, 1):
             fits = mkv or a.get('codec_name') in ('ac3', 'eac3', 'aac')
             cmd += ['-c:a:%d' % n, 'copy'] if fits else ['-c:a:%d' % n, 'ac3', '-b:a:%d' % n, '640k' if a is main_a else '448k', '-ac:a:%d' % n, str(min(6, int(a.get('channels') or 2)))]
-            cmd += ['-disposition:a:%d' % n, '0']
+            if commentary(a):   # (still marked as a commentary, and named one if it had no name, so the players list it as one: John, 18 Nov 2026)
+                cmd += ['-disposition:a:%d' % n, 'comment']
+                if not ((a.get('tags') or {}).get('title') or '').strip():
+                    cmd += ['-metadata:s:a:%d' % n, 'title=Commentary']
+            else:
+                cmd += ['-disposition:a:%d' % n, '0']
     if mkv:
         cmd += ['-c:s', 'copy', '-c:t', 'copy']
     else:
