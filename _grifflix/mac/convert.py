@@ -965,7 +965,8 @@ def leftovers():
     if n:
         log('%d half-made file%s from before taken out of the libraries' % (n, '' if n == 1 else 's'))
         try:
-            call('POST', '/Library/Refresh')   # (Jellyfin looks again, so they go from Grifflix too)
+            if not any(g(t, 'Key') == 'RefreshLibrary' and g(t, 'State') == 'Running' for t in call('GET', '/ScheduledTasks') or []):   # (not one under way cancelled and begun again: 18 Nov 2026)
+                call('POST', '/Library/Refresh')   # (Jellyfin looks again, so they go from Grifflix too)
         except Exception:
             pass
 NEWF = os.path.join(HOME, 'convert-new.json')   # (films gdrive.py has just brought in, by their path)
