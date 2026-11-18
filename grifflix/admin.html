@@ -604,7 +604,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   function flA(id, text) { return '<a class="flink" href="' + SITE + '#film/' + id + '" target="grifflix" rel="noopener" title="Open it in Grifflix">' + esc(text) + '</a>'; }
   if (location.hostname === 'admin.grifflix.co.uk') [].forEach.call(document.querySelectorAll('a[href^="/grifflix/"]'), function (a) { a.href = 'https://grifflix.co.uk' + a.getAttribute('href'); a.target = 'grifflix'; });
   // (and from grifflix.co.uk, a way to it, signed in: what this page knows of John's sign-in carried in the link's #, never sent anywhere)
-  if (location.hostname === 'grifflix.co.uk' && !matchMedia('(display-mode: standalone)').matches) {
+  // (admin.grifflix.co.uk opened straight, not signed in there yet: one tap to grifflix.co.uk's admin, which sends it back signed in)
+  if (location.hostname === 'admin.grifflix.co.uk' && $('#gate .links')) $('#gate .links').insertAdjacentHTML('afterbegin', '<a class="btn primary" href="https://grifflix.co.uk/admin#toapp">Sign in here from Grifflix</a>');
+  if (location.hostname === 'grifflix.co.uk' && location.hash === '#toapp') {
+    var o1 = {}; try { for (var j1 = 0; j1 < localStorage.length; j1++) { var k1 = localStorage.key(j1); if (/^grifflix-/.test(k1)) o1[k1] = localStorage.getItem(k1); } } catch (e) {}
+    location.replace('https://admin.grifflix.co.uk/#carry=' + encodeURIComponent(JSON.stringify(o1)));
+  }
+  if (location.hostname === 'grifflix.co.uk') {
     var bar0 = document.querySelector('.bar'), o0 = {};
     try { for (var j0 = 0; j0 < localStorage.length; j0++) { var k0 = localStorage.key(j0); if (/^grifflix-/.test(k0)) o0[k0] = localStorage.getItem(k0); } } catch (e) {}
     if (bar0) bar0.insertAdjacentHTML('beforeend', '<a class="btn small" style="float:right" href="https://admin.grifflix.co.uk/#carry=' + encodeURIComponent(JSON.stringify(o0)) + '" title="Opens the admin page at its own address, admin.grifflix.co.uk, where Chrome offers to install it as an app of its own">Admin as an app</a>');
