@@ -145,6 +145,11 @@ SHRINK = 'to make smaller'   # (a file that plays, much bigger than it need be: 
 REPACK = 'to repackage'   # (a film whose picture plays as it is, put in an MP4 with sound every device plays: the picture copied, not converted)
 
 
+def is_hdr(v):
+    tr = (g(v, 'ColorTransfer') or '').lower()
+    return (g(v, 'VideoRange') or '').upper() == 'HDR' or tr in ('smpte2084', 'arib-std-b67') or 'dovi' in (g(v, 'VideoRangeType') or '').lower()
+
+
 def why(ms):
     streams = g(ms, 'MediaStreams', [])
     v = next((x for x in streams if g(x, 'Type') == 'Video'), None)
@@ -832,6 +837,21 @@ def claimed(iid):
         return False
 
 
+def shrink_item(iid, name=None):
+    """Any film, to be made smaller at the careful setting, whatever the converter would have said of it (the largest, chosen by John);
+    not an HDR one (its colours would be spoilt)."""
+    it = call('GET', '/Users/%s/Items/%s' % (s['jf_user_id'], iid), Fields='MediaSources,Path,ProductionYear,CommunityRating,DateCreated') or {}
+    path = g(it, 'Path') or ''
+    if not path or not os.path.exists(path):
+        return None
+    v = next((x for x in g((g(it, 'MediaSources') or [{}])[0], 'MediaStreams') or [] if g(x, 'Type') == 'Video'), {})
+    if is_hdr(v):
+        return None
+    return {'id': iid, 'name': g(it, 'Name') or name or '?', 'year': g(it, 'ProductionYear', ''), 'lib': 'movies' if g(it, 'Type') == 'Movie' else 'tv',
+            'why': SHRINK + ' (chosen by you)', 'mode': 'shrink', 'path': path, 'mins': round((g(it, 'RunTimeTicks') or 0) / 6e8),
+            'rating': g(it, 'CommunityRating') or 0, 'gb': round(os.path.getsize(path) / 1e9, 1), 'added': g(it, 'DateCreated') or ''}
+
+
 if CMD in ('plan', 'finish'):   # (John's "Convert on this Mac", 16 Nov 2026: the plan made here, the film made there, put in place here)
     ffmpeg_, ffprobe_ = tools()
     if CMD == 'plan':
@@ -944,26 +964,6 @@ def chosen(st, have):
         if f:
             out.append(f)
     return out
-
-
-def is_hdr(v):
-    tr = (g(v, 'ColorTransfer') or '').lower()
-    return (g(v, 'VideoRange') or '').upper() == 'HDR' or tr in ('smpte2084', 'arib-std-b67') or 'dovi' in (g(v, 'VideoRangeType') or '').lower()
-
-
-def shrink_item(iid, name=None):
-    """Any film, to be made smaller at the careful setting, whatever the converter would have said of it (the largest, chosen by John);
-    not an HDR one (its colours would be spoilt)."""
-    it = call('GET', '/Users/%s/Items/%s' % (s['jf_user_id'], iid), Fields='MediaSources,Path,ProductionYear,CommunityRating,DateCreated') or {}
-    path = g(it, 'Path') or ''
-    if not path or not os.path.exists(path):
-        return None
-    v = next((x for x in g((g(it, 'MediaSources') or [{}])[0], 'MediaStreams') or [] if g(x, 'Type') == 'Video'), {})
-    if is_hdr(v):
-        return None
-    return {'id': iid, 'name': g(it, 'Name') or name or '?', 'year': g(it, 'ProductionYear', ''), 'lib': 'movies' if g(it, 'Type') == 'Movie' else 'tv',
-            'why': SHRINK + ' (chosen by you)', 'mode': 'shrink', 'path': path, 'mins': round((g(it, 'RunTimeTicks') or 0) / 6e8),
-            'rating': g(it, 'CommunityRating') or 0, 'gb': round(os.path.getsize(path) / 1e9, 1), 'added': g(it, 'DateCreated') or ''}
 
 
 def unpin(iid):
