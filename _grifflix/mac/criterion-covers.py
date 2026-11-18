@@ -376,9 +376,16 @@ def beyond(films):
             b = bysets.get(k(f['title']))
             if b:
                 todo.append(('set', b, c, None, None))
-            for x in byser.get(k(f['title']), []):
+            # (a series: by a film's own entry, never a box set's, which has no year: Fanny and Alexander's set cover went on its TV version;
+            # and a "…: Television Version" entry is the series' own: John, 18 Nov 2026)
+            if '/boxsets/' in (f.get('link') or ''):
+                continue
+            tv = re.sub(r'\s*[:(\[-]\s*(the\s+)?(television|tv)(\s+(version|cut|series))?\s*[)\]]?\s*$', '', f['title'], flags=re.I)
+            for x in byser.get(k(tv), []):
                 yr = g(x, 'ProductionYear')
-                if not yr or not re.match(r'^\d{4}$', f['year']) or abs(int(yr) - int(f['year'])) <= 1:
+                if tv == f['title'] and any(k(tv) == k(o['title'].split(':')[0]) and re.search(r'(television|tv)\b', o['title'], re.I) for o in films if o is not f):
+                    continue   # (the film of the same name, when Criterion has the series as its own entry)
+                if yr and re.match(r'^\d{4}$', f['year']) and abs(int(yr) - int(f['year'])) <= 1:
                     todo.append(('series', x, c, g(x, 'Path'), re.sub(r'[^0-9]', '', f['spine'])))
         movies = os.path.join(BASE, 'Movies')
         if PARTS:
