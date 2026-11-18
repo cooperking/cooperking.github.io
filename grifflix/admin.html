@@ -27,6 +27,8 @@ page shown inside another, stay where they are. On grifflix.co.uk, what came wit
 <meta name="robots" content="noindex, nofollow">
 <title>Grifflix admin</title>
 <link rel="icon" type="image/png" sizes="96x96" href="/grifflix/favicon-96.png">
+<link rel="manifest" href="/grifflix/admin.webmanifest">   <!-- (its own app, in its own window: John, 18 Nov 2026, "I'd like to be able to save the Admin page as a separate chrome app") -->
+<link rel="apple-touch-icon" href="/grifflix/admin-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Hanken+Grotesk:wght@400;500;600;700&family=Bebas+Neue&family=Oswald:wght@500&display=swap">
@@ -331,7 +333,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     <div class="newrow" id="seedcode" hidden><input type="text" class="name" id="scode" placeholder="6-letter code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false"><button class="btn primary" id="seed2" type="button">Start</button></div></div></div>
 
   <div id="app" hidden>
-    <div class="top"><button type="button" class="reload" id="reload" aria-label="Reload" title="Reload" onclick="location.reload()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><h1>Grifflix <em>admin</em></h1><p class="sub" id="hello"></p></div>
+    <div class="top"><button type="button" class="btn" id="ainstall" hidden style="float:right;margin-left:8px">Install as an app</button><button type="button" class="reload" id="reload" aria-label="Reload" title="Reload" onclick="location.reload()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><h1>Grifflix <em>admin</em></h1><p class="sub" id="hello"></p></div>
     <nav class="tabs" id="tabs" role="tablist" aria-label="Admin">
       <button type="button" role="tab" data-go="updates">Updates</button><button type="button" role="tab" data-go="films">Films</button><button type="button" role="tab" data-go="themes">Themes</button><button type="button" role="tab" data-go="requests">Requests</button><button type="button" role="tab" data-go="members">Members</button><button type="button" role="tab" data-go="mac">Mac</button><button type="button" role="tab" data-go="dupes" id="dupetab" hidden>Copies</button>
     </nav>
@@ -1445,6 +1447,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       }).catch(function (e) { $('#dhealth').innerHTML = e && e.message === 'old' ? '<p class="stat">The G-Drive’s health: the Mac mini takes its update within a few minutes.</p>' : ''; });
   }
   setTimeout(dHealth, 3200);
+
+  // (the admin page as an app of its own, in its own window, from its own icon: John, 18 Nov 2026)
+  (function () {
+    var ev = null;
+    window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); ev = e; $('#ainstall').hidden = false; });
+    window.addEventListener('appinstalled', function () { $('#ainstall').hidden = true; toast('Installed: Grifflix Admin is in your apps'); });
+    $('#ainstall').onclick = function () { if (!ev) return; ev.prompt(); ev.userChoice.then(function () { ev = null; $('#ainstall').hidden = true; }); };
+  })();
 
   // ---- the Grifflix Bin: what's been deleted, kept 30 days; how much, and emptied now (John, 18 Nov 2026: "I should have a button to do this,
   // and know how much is in it")
