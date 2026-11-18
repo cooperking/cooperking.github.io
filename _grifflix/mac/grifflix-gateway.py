@@ -347,6 +347,13 @@ def shown(items):   # a series with nothing in it (an empty folder, e.g. "untitl
 SPINES = {'at': 0, 'map': {}}
 
 
+# (spine numbers criterion-covers missed, its folder's name too unlike Criterion's title: found by checking every Criterion film in Grifflix
+# against Criterion's list, John, 18 Nov 2026, "Yes look into any mismatch")
+SPINE_SEED = {'Martha Graham-Dance on Film (1959)': 406, 'A Hollis Frampton Odyssey (1966)': 607, 'Symbiopsychotaxiplasm - Take One (1968)': 360,
+              'Secrets and Lies (1996)': 1070, 'Lady Snowblood 2 Love Song Of Vengeance (1974)': 791, 'By Brakhage An Anthlogy Vol 1-2 (1954)': 184,
+              'Fanny and Alexander (1983)': 262, 'Fanny And Alexander (1982)': 263, 'The Making Of Fanny And Alexander (1984)': 264}
+
+
 def spine_of(path, folder=False):
     """A Criterion film's spine number, by its folder (criterion-covers.py writes them from Criterion's list): John, 16 Nov 2026, "get the
     spine number from the criterion collection and be able to sort by spine number in Grifflix"."""
@@ -360,7 +367,7 @@ def spine_of(path, folder=False):
     if not path:
         return None
     k = os.path.basename(path.rstrip('/')) if folder else os.path.basename(os.path.dirname(path))   # (a series: its own folder)
-    own = load(os.path.expanduser('~/Grifflix/criterion-spines-own.json'), {}) or {}   # (set by hand, kept whatever criterion-covers matches)
+    own = dict(SPINE_SEED, **(load(os.path.expanduser('~/Grifflix/criterion-spines-own.json'), {}) or {}))   # (set by hand, kept whatever criterion-covers matches)
     return own.get(k) or SPINES['map'].get(k)
 
 
