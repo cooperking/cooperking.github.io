@@ -2302,7 +2302,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '4787a6d26171' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '1b0fa820fd49' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2789,7 +2789,9 @@ function img(id, kind, w) {
   // version in it: the browser and Grifflix's service worker keep each one, shown at once next time, as the songs' covers)
   kind = kind || 'Primary';
   if (TV && w >= 1100 && kind !== 'Primary') w = 1920;   // (a TV: its full-screen pictures sharp at 1080p)
-  var sizes = { Primary: [400], Backdrop: [480, 1100, 1920], Thumb: [480, 1100, 1920] }[kind] || [400], size = sizes.filter(function (x) { return x >= (w || 0); })[0] || sizes[sizes.length - 1];
+  // (each as sharp as the screen shows it, up to the picture as the Mac has it ('full'): John, 18 Nov 2026, "they should be stored at the size we get them")
+  if (!TV && (window.devicePixelRatio || 1) > 1.4) w = (w || 0) * 2;
+  var sizes = { Primary: [400, 800, 'full'], Backdrop: [480, 1100, 1920, 'full'], Thumb: [480, 1100, 1920, 'full'] }[kind] || [400], size = sizes.filter(function (x) { return x === 'full' || x >= (w || 0); })[0];
   var t = PICTAG[id + kind];
   // (v=2: every picture asked for afresh once, 16 Nov 2026: some posters had been kept in their old version under their new address)
   return WORKER + '/gp/' + id + '/' + kind + '-' + size + '.jpg?v=2' + (t ? '&t=' + t : '') + (PUBLIC ? '' : '&m=1');   // (signed out: the site's copies only, never the Mac)
