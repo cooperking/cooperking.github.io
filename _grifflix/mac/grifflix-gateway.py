@@ -951,7 +951,7 @@ def make_handler(g):
                     if not hmac.compare_digest(self.headers.get('X-Grifflix-Secret', ''), g.st['secret']):
                         return self.send_json(403, {'error': 'Not here.'})
                     try:
-                        g.jf.call('POST', '/Library/Refresh')
+                        jf_look(g, [str(self.body().get('path') or '')])
                     except Exception as e:
                         log('Asking the media server to look:', e)
                     g.forget()
@@ -4503,6 +4503,31 @@ def claim_renew(iid):
         pass
 
 
+def jf_look(g, paths):
+    """The media server told of these files or folders only, not the whole library looked at again: each whole look cancelled the one
+    under way and started it from nothing, so the re-reading of 1624 films' Extras folders never got to the end while films kept
+    arriving (John, 18 Nov 2026, "Get everything up to date and working"). Only with no paths: the whole library, and not while it's
+    already being looked at."""
+    folders = []
+    for p_ in paths or []:
+        if p_:
+            f_ = p_ if os.path.isdir(p_) else os.path.dirname(p_)
+            if f_ and f_ not in folders:
+                folders.append(f_)
+    if folders:
+        try:
+            g.jf.call('POST', '/Library/Media/Updated', {'Updates': [{'Path': f_, 'UpdateType': 'Created'} for f_ in folders[:300]]})
+            return
+        except Exception as e:
+            log('The media server told of %d folder(s): %s; it looks at the whole library instead' % (len(folders), e))
+    try:
+        if any(t.get('Key') == 'RefreshLibrary' and t.get('State') == 'Running' for t in g.jf.call('GET', '/ScheduledTasks') or []):
+            return
+    except Exception:
+        pass
+    g.jf.call('POST', '/Library/Refresh')
+
+
 def macq_again(j, now, why):
     """A film John's Mac didn't finish through no fault of its own, back at the front of its queue (once: its job marked lost)."""
     Q = load(MACQ, []) or []
@@ -5416,7 +5441,7 @@ def keep_scanning(g):
                     log('Gone from the library (%d): %s' % (len(gone), ', '.join(os.path.basename(x) for x in gone[:5])))
                     publish_at = publish_at or time.time() + 300
                 if new:
-                    g.jf.call('POST', '/Library/Refresh')
+                    jf_look(g, new)
                     log('New in the library (%d): %s: the media server asked to look' % (len(new), ', '.join(os.path.basename(x) for x in new[:5]) + (' …' if len(new) > 5 else '')))
                     CONV_NOW.set()   # (the converter started for them, if it isn't running)
                     # (a Criterion film among them: its cover, spine and place in The Criterion Collection, from the list John last gave, once
