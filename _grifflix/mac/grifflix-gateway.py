@@ -1863,6 +1863,15 @@ def make_handler(g):
                                  'next': [x for x in (cur or {}).get('next') or [] if x.get('id') not in done],   # (one already made, here or on John's Mac, off the list at once: John, 17 Nov 2026) 'left': (cur or {}).get('left'), 'pins': [x for x in P['pins'] if x.get('id') not in (st.get('done') or {}) and x.get('id') not in (st.get('failed') or {})], 'remux_first': P['remux_first'], 'log': tail,
                                  'ask': [dict(v, id=k, chosen=(P.get('langs') or {}).get(k)) for k, v in (st.get('ask') or {}).items()]})
 
+        def api_sound(self, me, user, q, b):
+            """A film's soundtracks and commentaries, listed on its page (John, 18 Nov 2026: "Audio tracks need to be listed on a titles page too")."""
+            iid = str(q.get('id') or '')
+            if not re.match(r'^[0-9a-f]{32}$', iid):
+                return self.send_json(400, {'error': 'Which film?'})
+            it = g.one(g.now_id(iid))
+            ms = (it.get('MediaSources') or [{}])[0]
+            return self.send_json(200, {'audio': sound_list([s for s in ms.get('MediaStreams', []) if s.get('Type') == 'Audio'])})
+
         def api_cfeat(self, me, user, q, b):
             """A Criterion film's special features (read from criterion.com by John's browser), for its page."""
             iid = str(q.get('id') or '')
