@@ -1073,7 +1073,7 @@ def make_handler(g):
                     if True:   # (Criterion's spine numbers, kept apart from each film's remembered details, so they're always current; a series' too)
                         # (and Criterion's own director and country for it, for the Criterion pages' filters: John, 17 Nov 2026, "I would like
                         # all the same filters available to me on the criterion page in my collection too")
-                        CL, TG, TS = {}, {}, {}
+                        CL, TG, TS, SDONE = {}, {}, {}, set()
                         ctj_ = load(os.path.expanduser('~/Grifflix/criterion-tags.json'), {}) or {}
                         for k_, v_ in (ctj_.get('tags') or {}).items():
                             for sl_ in v_:
@@ -1131,6 +1131,10 @@ def make_handler(g):
                                         o_['cset'] = s_
                                         o_['csetsp'] = [str((ctj_.get('setspine') or {}).get(x_) or SMETA.get(fold(x_), ('', ''))[0] or '') for x_ in s_]   # (each box set's spine, beside its name)
                                         o_['csetimg'] = [str(SMETA.get(fold(x_), ('', ''))[1] or (ctj_.get('setimg') or {}).get(x_) or '') for x_ in s_]   # (and its cover)
+                                        dsc_ = {x_: (ctj_.get('setdesc') or {}).get(x_) for x_ in s_ if x_ not in SDONE and (ctj_.get('setdesc') or {}).get(x_)}
+                                        if dsc_:   # (its description, carried by one of its films only, not repeated on each)
+                                            o_['csetdesc'] = dsc_
+                                            SDONE.update(dsc_)
                     lists[key] = [i['Id'] for i in raw if i['Id'] in items]
                     if key == 'movies':
                         self.extras(raw, items, lists)
@@ -2381,7 +2385,8 @@ def make_handler(g):
                 SE = {str(k)[:160]: [str(x)[:160] for x in (v or []) if re.match(r'^[\w-]{3,160}$', str(x))][:200] for k, v in (b['tags'].get('sets') or {}).items() if isinstance(v, list)}   # (each box set's films: John, 17 Nov 2026)
                 SSP = {str(k)[:160]: str(v)[:6] for k, v in (b['tags'].get('setspine') or {}).items() if str(v).isdigit()}   # (each box set's own spine number)
                 SIM = {str(k)[:160]: str(v)[:400] for k, v in (b['tags'].get('setimg') or {}).items() if re.match(r'^https://[\w.-]+/', str(v))}   # (each box set's own cover)
-                save(os.path.join(home, 'criterion-tags.json'), {'tags': T, 'sets': SE, 'setspine': SSP, 'setimg': SIM, 'missing': [str(x)[:120] for x in (b['tags'].get('missing') or [])][:40],
+                SDE = {str(k)[:160]: str(v)[:2000] for k, v in (b['tags'].get('setdesc') or {}).items() if len(str(v or '')) > 40}   # (each box set's description: John, 18 Nov 2026)
+                save(os.path.join(home, 'criterion-tags.json'), {'tags': T, 'sets': SE, 'setspine': SSP, 'setimg': SIM, 'setdesc': SDE, 'missing': [str(x)[:120] for x in (b['tags'].get('missing') or [])][:40],
                                                                  'debug': {str(k)[:60]: str(v)[:300] for k, v in (b['tags'].get('debug') or {}).items()}, 'at': int(time.time())})
                 n = sum(len(v) for v in T.values())
                 log('Criterion genres: %d kinds, %d films in them, %d box sets, from John’s browser' % (len(T), n, len(SE)))
