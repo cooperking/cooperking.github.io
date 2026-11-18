@@ -79,7 +79,7 @@ if [[ "${1:-}" == "agent" ]]; then
   lock="$HERE/agent.lock"
   if [[ -f "$lock" ]] && kill -0 "$(cat "$lock" 2>/dev/null)" 2>/dev/null; then exit 0; fi   # (one film at a time)
   home=0; ping -c 1 -t 2 "$MINI" >/dev/null 2>&1 && home=1   # (at home: the Mac mini answers on the home network)
-  ans=$(curl -fsS -m 20 -H "Authorization: Bearer $key" "$base/macagent/next?home=$home") || exit 0
+  ans=$(curl -fsS -m 90 -H "Authorization: Bearer $key" "$base/macagent/next?home=$home") || exit 0
   [[ "$home" == 1 ]] || exit 0
   job=$(printf '%s' "$ans" | /usr/bin/sed -n 's/.*"job": *"\([^"]*\)".*/\1/p')
   [[ -n "$job" ]] || exit 0
