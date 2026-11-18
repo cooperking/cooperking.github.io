@@ -205,6 +205,10 @@ html.tv .pic.odd::before { filter: brightness(.35); inset: 0; }
 .csettile b { font: 600 14px/1.3 var(--kfont); } .csettile small { font: 500 11px/1 var(--kfont); letter-spacing: .14em; text-transform: uppercase; opacity: .6; }
 .clrow.csrow, html.gcrit #cbody .clrow.csrow { grid-template-columns: 84px 48px minmax(0, 1fr) 90px; } @media (max-width: 760px) { .clrow.csrow, html.gcrit #cbody .clrow.csrow { grid-template-columns: 58px 40px minmax(0, 1fr) 64px; } }
 .csetopen { margin: 4px 4px 30px; }
+.incoll { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin: 14px 0 0; font: 400 14px/1.4 var(--sans); }
+.incoll span { font: 500 11px/1 var(--sans); letter-spacing: .2em; text-transform: uppercase; opacity: .6; }
+.incoll a { color: inherit; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(127,127,127,.5); }
+.incoll a:hover { text-decoration-color: currentColor; }
 .cfeat { margin: 26px 4px 10px; } .cfeat h3 { font: 600 13px/1 var(--kfont); letter-spacing: .16em; text-transform: uppercase; margin: 0 0 10px; padding-bottom: 10px; border-bottom: 2px solid var(--gc-ink, currentColor); }
 .cfeat h3 small { opacity: .6; margin-left: 6px; letter-spacing: .08em; } .cfeat ul { list-style: none; margin: 0; padding: 0; }
 .cfeat li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--gc-line, rgba(127,127,127,.25)); font: 400 15px/1.4 var(--kfont); }
@@ -2297,7 +2301,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '82bf8e5e4dfa' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '7b45218a9c7e' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5777,6 +5781,7 @@ function drawLists(L) {
 /* ------------------------------------------------------------------ pop-ups */
 var dlg = $('#sheet');
 function openSheet(html) {
+  S.backItem = null;
   [].forEach.call(dlg.querySelectorAll('.sfout, .sfdim'), function (x) { x.remove(); });   // (a sort or filter panel of the last pop-up gone with it)
   $('#sheetIn').innerHTML = html;
   // (what the remote's on in a pop-up is kept when it's redrawn only if they moved there: the browser's own first choice, the day
@@ -5998,16 +6003,17 @@ function dayStep(d) {
 
 function pictureSheet(it, kind) {   // John's: every poster (or background) the media server can find for it; tap one to use it
   var poster = kind !== 'backdrop';
-  openSheet('<div class="form" style="position:relative"><h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + (poster ? 'A poster' : 'A background') + ' for <i>' + esc(it.name || 'this') + '</i></h2>' +
+  openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg);padding-right:44px">' + (poster ? 'A poster' : 'A background') + ' for <i>' + esc(it.name || 'this') + '</i></h2>' +
     '<p class="ov" style="margin:8px 0 14px">Tap one, then tap it again to use it. The best-liked come first. The one it has now is kept, so it can be put back.</p><div id="picundo"></div><div id="piclocal"></div>' +
     '<div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px"><input type="url" id="picurl" placeholder="Or a picture’s web address (right-click a picture: Copy Image Address)" style="flex:1 1 260px"><button class="pill go" id="picurlgo">Use it</button></div><div class="picgrid" id="picgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(' + (poster ? '130px' : '220px') + ',1fr));gap:12px"><p class="ov">Looking…</p></div></div>');
+  backTo(it);
   mac('images?id=' + it.id + '&kind=' + kind).then(function (j) {
     var L = j.images || [];
     $('#picurlgo').onclick = function () {
       var u = $('#picurl').value.trim(), bb = $('#picurlgo'); if (!/^https?:\/\//.test(u)) return toast('A web address starting https://');
       if (!bb.dataset.sure) { bb.dataset.sure = 1; bb.textContent = 'Use it? Tap again'; return; }
       bb.disabled = true;
-      mac('images', { id: it.id, kind: kind, url: u }).then(function () { toast((poster ? 'Poster' : 'Background') + ' changed: Grifflix shows it within a few minutes'); closeSheet(); })
+      mac('images', { id: it.id, kind: kind, url: u }).then(function () { toast((poster ? 'Poster' : 'Background') + ' changed: Grifflix shows it within a few minutes'); itemSheet(it); })
         .catch(function (e) { bb.disabled = false; toast(e.message || 'Couldn’t reach the Mac mini'); });
     };
     if ((j.local || []).length) {   // (the pictures in the film's own folder: John, 16 Nov 2026, the Criterion poster he'd put there "wasn't even an option")
@@ -6035,7 +6041,7 @@ function pictureSheet(it, kind) {   // John's: every poster (or background) the 
         return;
       }
       b.style.opacity = .5;
-      mac('images', x.local ? { id: it.id, kind: kind, local: x.local } : { id: it.id, kind: kind, url: x.url }).then(function () { toast((poster ? 'Poster' : 'Background') + ' changed: Grifflix shows it within a few minutes'); closeSheet(); })
+      mac('images', x.local ? { id: it.id, kind: kind, local: x.local } : { id: it.id, kind: kind, url: x.url }).then(function () { toast((poster ? 'Poster' : 'Background') + ' changed: Grifflix shows it within a few minutes'); itemSheet(it); })
         .catch(function (e) { b.style.opacity = 1; toast(e.message || 'Couldn’t reach the Mac mini'); });
     }; });
   }).catch(function (e) { $('#picgrid').innerHTML = '<p class="ov">' + esc(e.status === 404 ? 'Press Update everything first (the Mac mini needs its update).' : e.message || 'Couldn’t reach the Mac mini') + '</p>'; });
@@ -6044,7 +6050,7 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
   var nm = String(it.name || '').replace(/[._]/g, ' ').replace(/\s+/g, ' ').trim(), yr = it.year || '';
   // (and its name and pictures: John, 16 Nov 2026: two copies of one film he "can't distinguish between"; "can I choose a different image
   // easily from the page")
-  openSheet('<div class="form" style="position:relative">' + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">Edit <i>' + esc(it.name || 'this') + '</i></h2>' +
+  openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg);padding-right:44px">Edit <i>' + esc(it.name || 'this') + '</i></h2>' +
     '<div class="xblock" style="margin:16px 0 22px"><h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">Its name in Grifflix</h4>' +
     '<div style="display:flex;gap:10px;flex-wrap:wrap"><input type="text" id="rnq" value="' + esc(it.name || '') + '" placeholder="Name" style="flex:1 1 260px"><button class="pill go" id="rngo">Save</button><button class="pill" id="rnown">Its own name</button></div>' +
     '</div>' +
@@ -6060,12 +6066,13 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
     '<div style="display:flex;gap:10px;flex-wrap:wrap"><input type="text" id="idq" value="' + esc(nm) + '" placeholder="Title" style="flex:1 1 220px"><input type="text" id="idy" value="' + esc(String(yr)) + '" placeholder="Year" inputmode="numeric" style="flex:0 0 90px"><button class="pill go" id="idgo">Find</button></div>' +
     '<ul class="results idres" id="idres" style="max-height:none"></ul></div>');
   var rename = function (nm) {
-    mac('rename', { id: it.id, name: nm }).then(function () { toast(nm ? 'Now “' + nm + '”: Grifflix shows it within a few minutes' : 'Its own name again: within a few minutes'); closeSheet(); })
+    mac('rename', { id: it.id, name: nm }).then(function () { toast(nm ? 'Now “' + nm + '”: Grifflix shows it within a few minutes' : 'Its own name again: within a few minutes'); itemSheet(it); })
       .catch(function (e) { toast(e.status === 404 ? 'Press Update everything first (the Mac mini needs its update)' : e.message || 'Couldn’t reach the Mac mini'); });
   };
   $('#rngo').onclick = function () { var v = $('#rnq').value.trim(); if (v) rename(v); };
   $('#rnown').onclick = function () { rename(''); };
   $$('#sheetIn [data-pick]').forEach(function (b) { b.onclick = function () { pictureSheet(it, b.dataset.pick); }; });
+  backTo(it);
   // (the film's file as it is: John, 16 Nov 2026, "I need to see file format details in the edit section too")
   if ($('#finfo')) mac('fileinfo?id=' + it.id).then(function (j) {
     var CH = { 1: 'mono', 2: 'stereo', 6: '5.1', 8: '7.1' }, up = function (x) { return String(x || '?').toUpperCase(); };
@@ -6238,7 +6245,7 @@ function bodyHTML(it, ctx) {
   if (!PUBLIC && !it.ext) {   // (none of these for a film Grifflix hasn't)
     h += '<button class="ico" id="aheart" aria-label="Save for later">' + HEART(it.hearted) + '</button>';
     if (NOTES) h += '<button class="pill" id="aaddpl">+ Playlist</button><button class="pill" id="aaddcal">+ My calendar</button>';
-    if (ME && ME.owner && it.type !== 'video') h += '<button class="pill" id="acoll">Collections</button>';
+    if (ME && ME.owner && it.type !== 'video') h += '<button class="pill" id="acoll">Edit collections</button>';
     // (John's: the Mac mini to do this one next, when it needs anything: John, 13 Nov 2026, "a convert now option to films if I need them sooner")
     if (ME && ME.owner && it.conv) h += '<button class="pill" id="aconv" title="' + esc('The Mac mini will ' + it.conv.replace(/^to /, '')) + '"' + (it.convNow || it.convNext ? ' disabled' : '') + '>' +
       (it.convNow ? 'Converting now' : it.convNext ? 'Next for the Mac mini ✓' : /^to make smaller/.test(it.conv) ? 'Make smaller next' : 'Convert next') + '</button>';
@@ -6250,6 +6257,12 @@ function bodyHTML(it, ctx) {
   // (John's Delete: last in the row, apart from the rest)
   if (!PUBLIC && !it.ext && ME && ME.owner && !TV && (it.type === 'movie' || it.type === 'series')) h += '<button class="pill danger" id="adel">' + (it.type === 'series' ? 'Delete the series' : 'Delete') + '</button>';
   h += '</div>';   // (the row closed whatever's in it: with no Share button it was left open and a series' episodes went inside it, Play and the heart floating beside them)
+  // (the collections it's in, listed on its page, each opening that collection: John, 18 Nov 2026, "It should just list the collections it's in
+  // on the film's page")
+  if (!PUBLIC && LIB && LIB.sets && LIB.collections) {
+    var inC = LIB.collections.filter(function (cid) { return (LIB.sets[cid] || []).indexOf(it.id) >= 0 && LIB.items[cid]; });
+    if (inC.length) h += '<div class="incoll"><span>In</span>' + inC.map(function (cid) { return '<a href="#collection/' + cid + '" data-incoll="' + cid + '">' + esc(LIB.items[cid].name) + '</a>'; }).join('') + '</div>';
+  }
   if (isSeries && it.episodes) {
     var seasons = {}; it.episodes.forEach(function (e) { (seasons[e.season || 0] = seasons[e.season || 0] || []).push(e); });
     var keys = Object.keys(seasons).sort(function (a, b) { return a - b; }), cur = ctx.season || (it.next ? (it.episodes.filter(function (e) { return e.id === it.next; })[0] || {}).season : keys[0]) || keys[0];
@@ -6466,6 +6479,14 @@ function collPicker(it) {
     $('#cpgo').onclick = make; $('#cpnew').onkeydown = function (e) { if (e.key === 'Enter') make(); };
   };
   api('collections', { op: 'in', item: item }).then(draw).catch(oops);
+  backTo(it);
+}
+// (a pop-up opened from a film's page (its collections, its pictures, Edit): closed, or done, back on the film, not the home page underneath:
+// John, 18 Nov 2026, "editing a poster returns you to the homepage of grifflix, should remain on the film")
+function backTo(it) {
+  var c = $('#sheetIn .close'); if (c) c.onclick = function () { itemSheet(it); };
+  S.backItem = it;   // (Escape, or a tap outside, too)
+  if (!dlg._bk) { dlg._bk = 1; dlg.addEventListener('cancel', function (e) { if (S.backItem) { var b = S.backItem; e.preventDefault(); itemSheet(b); } }); }
 }
 function ask(title, ph, val, done) {
   openSheet('<div class="form" style="position:relative">' + X + '<h2 style="font:400 34px/1.1 var(--serif);color:var(--fg)">' + esc(title) + '</h2><input type="text" id="askv" placeholder="' + esc(ph) + '" value="' + esc(val) + '"><div class="acts"><button class="pill go" id="askok">OK</button></div></div>');
