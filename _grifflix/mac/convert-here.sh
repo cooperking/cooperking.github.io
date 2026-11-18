@@ -81,7 +81,7 @@ if [[ "${1:-}" == "copyback" ]]; then
   # (a converted film to the G-Drive, kept on this Mac until it's there and the Mac mini has been told: tried again by itself, when this
   # Mac is home, if the network went: John, 18 Nov 2026, "what happens if my mac leaves the network while a conversion is running?")
   lt="$2"; tmp="$3"; url="$4"; pend="$HERE/out/pending"; rec="$pend/${lt:t}.job"; mkdir -p "$pend"
-  if [[ -f "$rec.lock" ]] && kill -0 "$(cat "$rec.lock" 2>/dev/null)" 2>/dev/null; then exit 0; fi
+  if [[ -f "$rec.lock" ]] && [[ "$(cat "$rec.lock" 2>/dev/null)" != "$$" ]] && kill -0 "$(cat "$rec.lock" 2>/dev/null)" 2>/dev/null; then exit 0; fi
   echo $$ > "$rec.lock"; trap 'rm -f "$rec.lock"' EXIT
   [[ -f "$rec" ]] || printf '%s\n%s\n%s\n' "$lt" "$tmp" "$url" > "$rec"
   if ! grep -qx copied "$rec" && [[ ! -f "$lt" ]]; then rm -f "$rec"; echo "$(date '+%Y-%m-%d %H:%M') ${lt:t}: no longer on this Mac"; exit 1; fi
@@ -96,7 +96,7 @@ if [[ "${1:-}" == "copyback" ]]; then
         grep -qx copied "$o" && continue
         [[ "$o" -ot "$rec" ]] && ahead=$((ahead + 1))
       done
-      busy=0; [[ -f "$tl" ]] && kill -0 "$(cat "$tl" 2>/dev/null)" 2>/dev/null && busy=1
+      busy=0; [[ -f "$tl" ]] && [[ "$(cat "$tl" 2>/dev/null)" != "$$" ]] && kill -0 "$(cat "$tl" 2>/dev/null)" 2>/dev/null && busy=1
       (( ahead == 0 && busy == 0 )) && break
       say="waiting to copy to the G-Drive ($(( ahead > 0 ? ahead : 1 )) ahead of it)"
       [[ "$say" != "$said" ]] && echo "$(date '+%Y-%m-%d %H:%M') ${lt:t}: $say"
@@ -106,11 +106,21 @@ if [[ "${1:-}" == "copyback" ]]; then
     done
     echo $$ > "$tl"; trap 'rm -f "$rec.lock" "$tl"' EXIT
     curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d '{"stage":"copying to the G-Drive","copying":1}' "$url/progress" >/dev/null 2>&1
-    if [[ -d "${tmp:h}" ]] && cp "$lt" "$tmp.copying" && mv -f "$tmp.copying" "$tmp"; then
+    # (why a copy didn't work, said to the Mac mini, so the admin page shows it: John, 18 Nov 2026, "It should have by now so something must be wrong")
+    why=""
+    if [[ ! -f "$lt" ]]; then why="the film isn't on this Mac any more"
+    elif [[ ! -d "${tmp:h}" ]]; then why="this Mac can't see the G-Drive's folder ${tmp:h}"
+    else why=$(cp "$lt" "$tmp.copying" 2>&1 >/dev/null) && why=$(mv -f "$tmp.copying" "$tmp" 2>&1) && why=""; [[ -z "$why" && ! -f "$tmp" ]] && why="the copy didn't reach the G-Drive"; fi
+    if [[ -z "$why" ]]; then
       echo copied >> "$rec"
     else
       rm -f "$tmp.copying" 2>/dev/null
-      echo "$(date '+%Y-%m-%d %H:%M') couldn't copy ${lt:t} to the G-Drive: kept on this Mac, tried again when it's home"; exit 1
+      why=${why//$'\n'/ }; why=${why//\"/\'}; why=${why:0:160}
+      curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d "{\"stage\":\"couldn't copy to the G-Drive: $why (tried again between films)\",\"copying\":1}" "$url/progress" >/dev/null 2>&1
+      echo "$(date '+%Y-%m-%d %H:%M') couldn't copy ${lt:t} to the G-Drive ($why): kept on this Mac, tried again in 2 minutes"
+      # (tried again by itself every 2 minutes for 3 hours, not only between films (none start while one converts)), the next in line let go meanwhile
+      rm -f "$tl"; n_=$(( ${COPYTRY:-0} + 1 )); (( n_ > 90 )) && exit 1
+      sleep 120; COPYTRY=$n_ exec /bin/zsh "$HERE/convert-here.sh" copyback "$lt" "$tmp" "$url"
     fi
   fi
   code=$(curl -sS -m 30 -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{"ok":true}' "$url/done")
