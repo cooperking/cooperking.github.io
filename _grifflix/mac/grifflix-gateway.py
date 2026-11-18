@@ -1858,7 +1858,34 @@ def make_handler(g):
             every box set film you're missing?" ... "Yes")."""
             if not me.get('owner'):
                 return self.send_json(403, {'error': 'Only John.'})
-            return self.send_json(200, {'rows': crit_missing(g)})
+            conf = load(os.path.expanduser('~/Grifflix/criterion.json'), {}) or {}
+            links = {'criterion': ('https://docs.google.com/spreadsheets/d/%s/edit' % conf['sheet']) if conf.get('sheet') else '',
+                     'missing': ('https://docs.google.com/spreadsheets/d/%s/edit' % conf['missing_sheet']) if conf.get('missing_sheet') else ''}
+            if q.get('links'):   # (the Google Sheets, to open from the Criterion tab: John, 18 Nov 2026)
+                return self.send_json(200, dict(links, sheetjob=MSHEET.get('state'), sheeterr=MSHEET.get('error'), sheetat=MSHEET.get('at')))
+            if b and b.get('op') == 'sheet':   # (made or brought up to date in Google Sheets, in the background: a minute at most)
+                if MSHEET.get('state') != 'making':
+                    MSHEET.clear(); MSHEET.update(state='making', at=int(time.time()))
+
+                    def mk():
+                        import subprocess, tempfile
+                        try:
+                            rows = crit_missing(g)
+                            f = tempfile.NamedTemporaryFile('w', suffix='.json', delete=False)
+                            json.dump(rows, f); f.close()
+                            r = subprocess.run([sys.executable, os.path.expanduser('~/Grifflix/criterion.py'), 'missing', f.name], capture_output=True, text=True, timeout=300,
+                                               cwd=os.path.expanduser('~/Grifflix'), stdin=subprocess.DEVNULL)
+                            os.remove(f.name)
+                            out = ([l for l in (r.stdout or '').splitlines() if l.startswith('{')] or [''])[-1]
+                            if not out:
+                                raise RuntimeError(((r.stdout or '') + (r.stderr or '')).strip()[-200:] or 'it didn’t say why')
+                            MSHEET.update(state='done', at=int(time.time()), **json.loads(out))
+                            log('Criterion box set films missing: the Google Sheet brought up to date (%s rows)' % MSHEET.get('rows'))
+                        except Exception as e:
+                            MSHEET.update(state='failed', error=str(e)[:200], at=int(time.time()))
+                    threading.Thread(target=mk, daemon=True).start()
+                return self.send_json(200, dict(links, sheetjob='making'))
+            return self.send_json(200, dict(links, rows=crit_missing(g)))
 
         def api_bin(self, me, user, q, b):
             """John's only: the Grifflix Bin (what was deleted, kept 30 days): how much is in it, and emptied now (John, 18 Nov 2026:
@@ -3942,6 +3969,7 @@ def backup_main():
 # you control to do things like quit plex?" ... "yes, build the approval list - I want to use screensharing as little as possible").
 # Claude can only ask, and only for what's listed here; John's Allow does it, and each one is kept with what came of it.
 CFEAT = {}   # (film id: its page on criterion.com, for its special features)
+MSHEET = {}   # (the missing box set films' Google Sheet, being made)
 ACTIONS_AT = os.path.expanduser('~/Grifflix/claude-asks.json')
 ACT_LOCK = threading.Lock()
 PLEX_APP = 'Plex Media Server'

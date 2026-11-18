@@ -288,7 +288,36 @@ def mark(sid, sheet, go):
     return len(updates)
 
 
+def missing_sheet(rows_file):
+    """python3 criterion.py missing <rows.json>: the box set films not in Grifflix put in a Google Sheet of their own, made the first time
+    and brought up to date after (John, 18 Nov 2026: "can it actually create or update a google sheet that I open"). Prints its address."""
+    rows = json.load(open(rows_file))
+    try:
+        c = json.load(open(CONF))
+    except Exception:
+        c = {}
+    sheet = google()
+    sid = c.get('missing_sheet')
+    if sid:
+        try:
+            sheet.get(spreadsheetId=sid, fields='spreadsheetId').execute()
+        except Exception:
+            sid = None   # (deleted in Drive: a new one)
+    if not sid:
+        r = sheet.create(body={'properties': {'title': 'Grifflix: Criterion box set films not in Grifflix'},
+                               'sheets': [{'properties': {'title': 'Missing', 'gridProperties': {'frozenRowCount': 1}}}]}).execute()
+        sid = r['spreadsheetId']
+        c['missing_sheet'] = sid
+        json.dump(c, open(CONF, 'w'))
+    sheet.values().clear(spreadsheetId=sid, range='Missing!A:Z').execute()
+    sheet.values().update(spreadsheetId=sid, range='Missing!A1', valueInputOption='USER_ENTERED',
+                          body={'values': [['Box set', 'Set spine', 'Film', 'Year', 'Spine', 'Criterion page']] + rows}).execute()
+    print(json.dumps({'url': 'https://docs.google.com/spreadsheets/d/%s/edit' % sid, 'rows': len(rows)}))
+
+
 def main():
+    if len(sys.argv) > 2 and sys.argv[1] == 'missing':
+        return missing_sheet(sys.argv[2])
     if not os.path.isdir(MOVIES):
         sys.exit('No %s: is the G-Drive plugged in?' % MOVIES)
     if 'tmdb' in sys.argv[1:]:   # (every row's TMDB link at once: python3 criterion.py tmdb go)
