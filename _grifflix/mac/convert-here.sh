@@ -124,13 +124,18 @@ stage "the G-Drive is connected: starting to convert"
 # the plan as the Mac mini made it, -stats for how far it's got, and every few seconds the Mac mini told how far (the film's Edit panel
 # shows it: John, 16 Nov 2026, "I'd like to see the progress"); Ctrl-C stops it and the Mac mini goes back to it later
 prog=$(mktemp)
+# (made on this Mac's own disk, then copied to the G-Drive once, by itself, while the next film starts: the last step, rewriting the file so
+# it plays at once, ran over the network and held the next film up: John, 18 Nov 2026, "If the ffmpeg work is done, it should be able to
+# start the next one while a move is working")
+out="$HERE/out"; mkdir -p "$out"; lt="$out/${tmp:t}"; rm -f "$lt"
+args[-1]="$lt"
 # (at the end, ffmpeg writes the file over again so it plays from the start at once: minutes over the network, with nothing moving on screen;
 # said so, here and on the admin page: John, 17 Nov 2026, "this seems to have stalled but I can't tell")
 ( fin=0; while sleep 4; do
     t=$(grep '^out_time_us=' "$prog" 2>/dev/null | tail -1 | cut -d= -f2); sp=$(grep '^speed=' "$prog" 2>/dev/null | tail -1 | cut -d= -f2 | tr -d ' ')
     if (( ! fin )) && { grep -q '^progress=end' "$prog" 2>/dev/null || { [[ "$t" == <-> && "$dur" == <-> ]] && (( dur > 0 && t / 1000000 >= dur - 8 )); }; }; then
-      fin=1; echo; echo "Grifflix: the film is converted. Now putting the file together, which copies it over the network once more: a few minutes, with nothing moving here. Leave this window open."
-      curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d '{"stage":"finishing: putting the file together (a few minutes)"}' "$url/progress" >/dev/null 2>&1
+      fin=1; echo; echo "Grifflix: the film is converted. Putting the file together on this Mac (a minute or so)."
+      curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d '{"stage":"finishing: putting the file together on your Mac (a minute or so)"}' "$url/progress" >/dev/null 2>&1
     fi
     [[ "$t" == <-> ]] && curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d "{\"t\":$((t / 1000000)),\"speed\":\"$sp\"}" "$url/progress" >/dev/null 2>&1
   done ) &
@@ -138,9 +143,18 @@ reporter=$!
 trap 'kill $reporter 2>/dev/null; rm -f "$prog"; echo; echo "Stopped."; curl -fsS -X POST -H "Content-Type: application/json" -d "{\"ok\":false,\"error\":\"stopped\"}" "$url/done" >/dev/null; exit 1' INT TERM HUP
 if "$FF" -nostdin -y -v error -stats -progress "$prog" "${args[@]}"; then
   kill $reporter 2>/dev/null; rm -f "$prog"
-  echo "Made. The Mac mini is checking it and putting it in place."
-  curl -fsS -X POST -H 'Content-Type: application/json' -d '{"ok":true}' "$url/done" >/dev/null && echo "Done: Grifflix shows the new copy within a few minutes. This window can be closed."
+  trap - INT TERM HUP
+  echo "Made. Copying it to the G-Drive by itself (this window can be closed); the Mac mini then checks it and puts it in place."
+  curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d '{"stage":"copying to the G-Drive","copying":1}' "$url/progress" >/dev/null 2>&1
+  # (the copy on its own, kept awake, so this Mac takes up the next film meanwhile; the Mac mini told when it's there, or why not)
+  nohup /usr/bin/caffeinate -i /bin/zsh -c '
+    if cp "$1" "$2.copying" && mv -f "$2.copying" "$2"; then
+      curl -fsS -m 30 -X POST -H "Content-Type: application/json" -d "{\"ok\":true}" "$3/done" >/dev/null
+    else
+      rm -f "$2.copying"; curl -fsS -m 30 -X POST -H "Content-Type: application/json" -d "{\"ok\":false,\"error\":\"couldn’t copy it to the G-Drive\"}" "$3/done" >/dev/null
+    fi
+    rm -f "$1"' grifflix-copy "$lt" "$tmp" "$url" >>"$HERE/agent.log" 2>&1 &!
 else
-  kill $reporter 2>/dev/null; rm -f "$prog"
+  kill $reporter 2>/dev/null; rm -f "$prog" "$lt"
   echo "It didn't convert."; curl -fsS -X POST -H 'Content-Type: application/json' -d '{"ok":false,"error":"ffmpeg failed"}' "$url/done" >/dev/null
 fi

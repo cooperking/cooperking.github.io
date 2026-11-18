@@ -215,7 +215,7 @@ def tmdb_links(sid, sheet, rows, go, most=600, retry=False):
 
 def has_extras(folder):   # (its "Other" folder, or "Others", holding anything but notes)
     for n in os.listdir(folder):
-        if n.lower() in ('other', 'others') and os.path.isdir(os.path.join(folder, n)):
+        if n.lower() in ('other', 'others', 'extras') and os.path.isdir(os.path.join(folder, n)):
             for d, dirs, files in os.walk(os.path.join(folder, n)):
                 if any(not x.startswith('.') and not x.endswith('.txt') for x in files):
                     return True

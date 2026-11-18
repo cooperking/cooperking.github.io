@@ -737,7 +737,7 @@ def _run(check):
                 dest = os.path.join(dest_dir, epname + ext)
             elif xf is not None:   # (beside its film, in Other, as itself)
                 dest_dir = os.path.join(root, title)
-                dest = os.path.join(dest_dir, 'Other', re.sub(r'[/:\\]', '-', f['xname']))
+                dest = os.path.join(dest_dir, 'Extras', re.sub(r'[/:\\]', '-', f['xname']))   # (Extras: the name the media server knows; it didn't know Other: 18 Nov 2026)
             else:
                 dest_dir = os.path.join(root, title)
                 dest = os.path.join(dest_dir, title + ext)

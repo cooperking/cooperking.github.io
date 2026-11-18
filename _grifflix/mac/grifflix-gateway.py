@@ -864,6 +864,8 @@ def make_handler(g):
                     body = self.body()
                     if len(parts) > 3 and parts[3] == 'progress' and body.get('stage') and 't' not in body:   # (a step on John's Mac, said: John, 17 Nov 2026)
                         job['stage'], job['seen'] = str(body.get('stage'))[:160], time.time()
+                        if body.get('copying'):   # (made: copying itself to the G-Drive while John's Mac takes up the next film)
+                            job['state'] = 'copying'
                         convjobs_save()
                         claim_renew(job['id'])
                         return self.send_json(200, {'ok': True})
@@ -2325,7 +2327,7 @@ def make_handler(g):
                 st_ = j.get('state') or 'waiting'
                 if st_ in ('notstarted', 'lost') or (st_ in ('done', 'failed') and now_ - (j.get('ended') or j['at']) > 1800) or now_ - j['at'] > 86400:
                     continue
-                if st_ in ('started', 'converting'):
+                if st_ in ('started', 'converting', 'copying'):
                     heard = j.get('seen') or j['at']
                     if now_ - heard > 600 and (last_mac > heard + 60 or now_ - heard > 3 * 3600 or ((done_.get(j['id']) or {}).get('at') or 0) > j['at']):
                         continue
@@ -4050,12 +4052,68 @@ def ask_setaside(req):
     req['detail'] = '%d files, %.1f GB: %s' % (len(L), sum(b for _, b in L) / 1e9, '; '.join(os.path.relpath(p, SETASIDE) for p, _ in L[:40]) + (' …' if len(L) > 40 else ''))
 
 
+def _other_dirs(g):
+    """Each film's "Other" (or "Others") folder holding extras: [(film folder, its Other folder)]."""
+    out = []
+    for v in g.jf.call('GET', '/Library/VirtualFolders') or []:
+        if (v.get('CollectionType') or '') != 'movies':
+            continue
+        for r in v.get('Locations') or []:
+            try:
+                films = os.listdir(r)
+            except OSError:
+                continue
+            for f in films:
+                d = os.path.join(r, f)
+                if f.startswith('.') or not os.path.isdir(d):
+                    continue
+                try:
+                    for x in os.listdir(d):
+                        if x.lower() in ('other', 'others') and os.path.isdir(os.path.join(d, x)):
+                            out.append((d, os.path.join(d, x)))
+                except OSError:
+                    pass
+    return out
+
+
+def ask_extras_rename(req):
+    g = G_REF[0] if G_REF else None
+    L = _other_dirs(g) if g else []
+    if not L:
+        raise RuntimeError('no film has an Other folder')
+    req['detail'] = '%d films: %s' % (len(L), ', '.join(os.path.basename(d) for d, _ in L[:25]) + (' …' if len(L) > 25 else ''))
+
+
+def act_extras_rename(g, req):
+    """Each film's "Other" folder named "Extras", the name this media server knows (10.8 doesn't know "Other", Plex's name), its
+    extras in it as they were; then each film asked to be read again (John, 18 Nov 2026: The Crying Game's extras not shown)."""
+    import shutil
+    n = 0
+    for d, o in _other_dirs(g):
+        x = os.path.join(d, 'Extras')
+        try:
+            if not os.path.exists(x):
+                os.rename(o, x)
+            else:
+                for f in os.listdir(o):
+                    if not os.path.exists(os.path.join(x, f)):
+                        shutil.move(os.path.join(o, f), os.path.join(x, f))
+                if not [f for f in os.listdir(o) if not f.startswith('.')]:
+                    shutil.rmtree(o, ignore_errors=True)
+            n += 1
+        except OSError as e:
+            log('Extras folder for %s: %s' % (os.path.basename(d), e))
+    threading.Thread(target=extras_fix, args=(g, 2000), daemon=True).start()
+    return '%d films’ Other folders are Extras now; the media server is reading each again (a few seconds a film).' % n
+
+
 ACTIONS = {
     'plex-off': ('Quit Plex and keep it off', act_plex_off, None),
     'plex-on': ('Start Plex again and let it be', act_plex_on, None),
     'jellyfin-restart': ('Restart the media server (not while anyone watches)', act_jellyfin_restart, None),
     'converter-restart': ('Restart the converter (it starts its film again)', act_converter_restart, None),
     'setaside-empty': ('Empty “Set aside” on the G-Drive (deleted for good)', act_setaside_empty, ask_setaside),
+    'extras-rename': ('Rename each film’s “Other” folder to “Extras”, so the media server shows its extras', act_extras_rename, ask_extras_rename),
 }
 
 
