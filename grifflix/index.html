@@ -2301,7 +2301,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '7b45218a9c7e' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: 'e7816b02cb74' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5839,7 +5839,8 @@ function navWords(on) {
   var base = on === 'calendar' || on === 'theme' ? on : VIEW() === 'themes' && !S.mcal ? 'theme' : 'calendar';
   return '<button type="button" class="vtog ' + (base === 'theme' ? 'vt-thm' : 'vt-cal') + '" role="switch" aria-checked="' + (base === 'theme') + '" aria-label="Calendar or theme" data-nv="' + (base === 'theme' ? 'calendar' : 'theme') + '"><span>Calendar</span><span>Theme</span></button>' +
     (PUBLIC && !DEMO ? '' : '<button type="button" class="critbtn" data-nv="criterion" aria-label="The Criterion Collection at Grifflix" title="The Criterion Collection at Grifflix">' + gcMark() + '</button>') +
-    (PUBLIC && !DEMO ? '' : '<button type="button" data-nv="search"' + (on === 'search' ? ' class="on" aria-current="page"' : '') + '>Search</button>');   // (signed out: no searching the library)
+    // (named for what it finds, Film & TV; on a phone, its magnifying glass as before: John, 18 Nov 2026)
+    (PUBLIC && !DEMO ? '' : '<button type="button" data-nv="search" aria-label="Search films and TV"' + (on === 'search' ? ' class="on" aria-current="page"' : '') + '>Film &amp; TV</button>');   // (signed out: no searching the library)
 }
 
 // ---- Grifflix at Criterion: the C beside the switch, its intro, its page and its cover (John, 17 Nov 2026)
@@ -5923,7 +5924,7 @@ function shBrand() {   // GRIFFLIX over a pop-up, just where the bar's is (the b
   nav.innerHTML = navWords(oncal ? 'calendar' : onsearch ? 'search' : ''); nav.hidden = false;
   $$('#shnav [data-nv]').forEach(function (x) { x.onclick = function () { navGo(x.dataset.nv); }; });
   var bn = $('#barnav'), br = bn && bn.offsetParent ? bn.getBoundingClientRect() : null;
-  nav.style.top = Math.round(br ? br.top : r.top) + 'px'; nav.style.left = Math.round(br ? br.left : r.right + 28) + 'px'; nav.style.height = Math.round(br ? br.height : r.height) + 'px';
+  nav.style.top = Math.round(br ? br.top : r.top) + 'px'; nav.style.left = Math.round(br ? br.left : (hi ? hi.getBoundingClientRect().right : r.right) + 28) + 'px';   // (after the home icon, not on it: John, 18 Nov 2026, "calendar is pressed against home") nav.style.height = Math.round(br ? br.height : r.height) + 'px';
   b.hidden = false; b.style.left = Math.round(r.left) + 'px'; b.style.top = Math.round(r.top) + 'px'; b.style.width = Math.round(r.width) + 'px'; b.style.height = Math.round(r.height) + 'px'; ['fontFamily', 'fontWeight', 'fontSize', 'lineHeight', 'letterSpacing', 'color', 'textTransform'].forEach(function (k) { b.style[k] = cs[k]; });
   // (the pop-up's own words start below the logo and its words, never under them: John, 9 Nov 2026: "profile pop up on computer
   // causes words to be on top of each other - be careful of clashes"); what scrolls up passes under a strip, not through them
