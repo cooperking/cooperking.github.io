@@ -403,6 +403,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div id="cvq"></div>
         <p class="stat" id="cvdisks" hidden></p>
         <div id="dhealth"></div>
+        <div id="backup"></div>
         <div class="cvord" id="cvord" hidden>
           <label class="cvsw"><input type="checkbox" id="cvrf"> <span>Repackage every MKV first, then the conversions <small>(repackaging takes minutes a film, converting hours)</small></span></label>
           <div id="cvpins"></div>
@@ -1416,6 +1417,28 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       }).catch(function (e) { $('#dhealth').innerHTML = e && e.message === 'old' ? '<p class="stat">The G-Drive’s health: the Mac mini takes its update within 15 minutes.</p>' : ''; });
   }
   setTimeout(dHealth, 3200);
+  // ---- the nightly backup to Google Drive (John, 18 Nov 2026): when it last went, what's in it, and Back up now
+  function bkShow(now) {
+    if (!TOKEN) return; if (!GW) return setTimeout(bkShow, 3000);
+    fetch(GW + '/api/backup', { method: now ? 'POST' : 'GET', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: now ? '{}' : undefined, cache: 'no-store' })
+      .then(function (r) { if (r.status === 404) throw new Error('old'); return r.json(); }).then(function (k) {
+        var sz = function (b) { return b >= 1e12 ? (b / 1e12).toFixed(1) + ' TB' : b >= 1e9 ? (b / 1e9).toFixed(1) + ' GB' : Math.round(b / 1e6) + ' MB'; };
+        var head = k.running ? '<b>Backing up now…</b>' : !k.at ? 'Not yet: the first is made within a few minutes of the Mac mini’s update' :
+          k.ok ? '<b style="color:#3c9a5f">Backed up</b> <span style="opacity:.7">(' + esc(when(k.at * 1000)) + ')</span>' :
+          '<b style="color:#d0453a">The last didn’t work</b> <span style="opacity:.7">(' + esc(when(k.at * 1000)) + ')</span>: ' + esc(k.why || '') + (k.last_ok ? ' · last good one ' + esc(when(k.last_ok * 1000)) : '');
+        var bits = [];
+        if (k.films) bits.push(k.films.toLocaleString('en-GB') + ' films and series listed');
+        if (k.files) bits.push(k.files.toLocaleString('en-GB') + ' files, ' + sz(k.bytes || 0));
+        if (k.gfree != null) bits.push(sz(k.gfree) + ' free on Google Drive');
+        $('#backup').innerHTML = '<p class="stat" style="margin:14px 0 4px"><b>Backup to Google Drive:</b> ' + head + '</p>' +
+          (bits.length ? '<p class="stat" style="margin:0 0 4px">' + bits.join(' · ') + '</p>' : '') +
+          '<p class="stat" style="margin:0 0 4px;opacity:.85">Each night, in “' + esc(k.to || 'Grifflix Backup') + '” on your Google Drive: the film list, your Grifflix data and scripts, the media server’s records, and the Grifflix files from GitHub. Anything changed is kept ' + (k.keep || 14) + ' days under Earlier. No sign-ins or keys go.</p>' +
+          '<div class="state"><button class="btn" type="button" id="bknow"' + (k.running ? ' disabled' : '') + '>' + (k.running ? 'Backing up…' : 'Back up now') + '</button></div>';
+        $('#bknow').onclick = function () { this.disabled = true; this.textContent = 'Backing up…'; bkShow(true); };
+        clearTimeout(bkShow.t); bkShow.t = setTimeout(bkShow, k.running ? 30000 : 600000);
+      }).catch(function (e) { $('#backup').innerHTML = e && e.message === 'old' ? '<p class="stat">Backup to Google Drive: the Mac mini takes its update within 15 minutes.</p>' : ''; });
+  }
+  setTimeout(bkShow, 3400);
   function cvPost(body) {
     return fetch(GW + '/api/convert', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       .then(function (r) { if (r.status === 404) throw new Error('Update the Mac (Update everything) first.'); if (!r.ok) throw new Error('The Mac mini isn’t answering.'); return r.json(); });
