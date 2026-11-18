@@ -422,6 +422,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <ul class="changes cvl" id="cvlist"></ul>
         <p class="stat" id="orsay" style="margin-top:14px"></p>
         <div class="state"><button class="btn" id="orsee" type="button" hidden>The originals</button></div>
+        <p class="stat" id="binsay" style="margin-top:14px"></p>
+        <div class="state"><button class="btn" id="binsee" type="button" hidden>What’s in it</button><button class="btn" id="bingo" type="button" hidden>Empty the Bin</button></div>
+        <ul class="changes" id="binlist" hidden></ul>
       </section>
       <section class="card" data-tab="films">
         <div class="kicker">Playing now</div>
@@ -541,6 +544,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           <li><label class="btn primary" for="tagfile">Choose criterion-tags.json</label><input type="file" id="tagfile" accept=".json,application/json" hidden></li>
         </ol>
         <p class="stat" id="tagstate" style="font-weight:600"></p>
+        <h3 style="margin:22px 0 6px;font-size:17px">Box set films you don’t have</h3>
+        <p class="stat">Every Criterion box set’s films not in Grifflix, one list, for a spreadsheet: the set, its spine, the film, its year and spine, and its page on Criterion.</p>
+        <div class="state"><button class="btn" id="cmcopy" type="button">Copy for Google Sheets</button><button class="btn" id="cmcsv" type="button">Download (CSV)</button></div>
+        <p class="stat" id="cmsay"></p>
       </section>
       <section class="card" data-tab="mac">
         <div class="kicker">Claude</div>
@@ -1438,6 +1445,45 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       }).catch(function (e) { $('#dhealth').innerHTML = e && e.message === 'old' ? '<p class="stat">The G-Drive’s health: the Mac mini takes its update within a few minutes.</p>' : ''; });
   }
   setTimeout(dHealth, 3200);
+
+  // ---- the Grifflix Bin: what's been deleted, kept 30 days; how much, and emptied now (John, 18 Nov 2026: "I should have a button to do this,
+  // and know how much is in it")
+  function binCall(body) {
+    return fetch(GW + '/api/bin', { method: body ? 'POST' : 'GET', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' })
+      .then(function (r) { if (r.status === 404) throw new Error('old'); return r.json(); });
+  }
+  function binDraw(j) {
+    var sz = function (b) { return b >= 1e12 ? (b / 1e12).toFixed(1) + ' TB' : b >= 1e9 ? (b / 1e9).toFixed(1) + ' GB' : Math.round(b / 1e6) + ' MB'; };
+    $('#binsay').innerHTML = j.count ? '<b>Grifflix Bin:</b> ' + j.count + ' thing' + (j.count === 1 ? '' : 's') + ', ' + sz(j.size) + ' (what was deleted from Grifflix, kept 30 days, then gone by itself)' : '<b>Grifflix Bin:</b> empty';
+    $('#binsee').hidden = $('#bingo').hidden = !j.count; $('#bingo').textContent = 'Empty the Bin'; delete $('#bingo').dataset.sure; $('#bingo').disabled = false;
+    $('#binlist').innerHTML = (j.items || []).map(function (x) { return '<li>' + esc(x.name) + '<span class="when">' + sz(x.size) + '</span></li>'; }).join('');
+  }
+  function binLoad() { if (!TOKEN) return; if (!GW) return setTimeout(binLoad, 3000); binCall().then(binDraw).catch(function (e) { $('#binsay').textContent = e.message === 'old' ? 'Grifflix Bin: the Mac mini takes its update in a few minutes.' : ''; }); }
+  $('#binsee').onclick = function () { $('#binlist').hidden = !$('#binlist').hidden; };
+  $('#bingo').onclick = function () {
+    var b = this; if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Sure? Deleted for good'; return; }
+    b.disabled = true; b.textContent = 'Emptying…';
+    binCall({ op: 'empty' }).then(function (j) { binDraw(j); toast('The Bin is empty'); }).catch(function () { b.disabled = false; toast('The Mac mini didn’t answer.'); });
+  };
+  setTimeout(binLoad, 3600);
+
+  // ---- every box set's films not in Grifflix, as one spreadsheet (John, 18 Nov 2026: "Want one list of every box set film you're missing?" "Yes")
+  function cmGet(how) {
+    $('#cmsay').textContent = 'Making the list…';
+    fetch(GW + '/api/criterionmissing', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { if (r.status === 404) throw new Error('The Mac mini takes its update in a few minutes.'); return r.json(); }).then(function (j) {
+      var R = [['Box set', 'Set spine', 'Film', 'Year', 'Spine', 'Criterion page']].concat(j.rows || []), n = (j.rows || []).length;
+      $('#cmsay').textContent = n + ' film' + (n === 1 ? '' : 's') + ' missing from ' + new Set((j.rows || []).map(function (r) { return r[0]; })).size + ' box sets.';
+      if (how === 'copy') {
+        var t = R.map(function (r) { return r.map(function (c) { return String(c).replace(/[\t\n]/g, ' '); }).join('\t'); }).join('\n');
+        (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { toast('Copied ' + n + ' films: in a Google Sheet, click A1 and paste'); }, function () { toast('Couldn’t copy here: use Download instead'); });
+        return;
+      }
+      var csv = R.map(function (r) { return r.map(function (c) { c = String(c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\r\n');
+      var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+      a.download = 'Criterion box set films missing ' + new Date().toISOString().slice(0, 10) + '.csv'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    }).catch(function (e) { $('#cmsay').textContent = e.message || 'The Mac mini didn’t answer.'; });
+  }
+  $('#cmcopy').onclick = function () { cmGet('copy'); }; $('#cmcsv').onclick = function () { cmGet('csv'); };
   // ---- Waiting on you (John, 18 Nov 2026: "I could do with a waiting on you section in my admin, so I know what has and hasn't been
   // done"): the list kept by Claude in waiting.json; some tick themselves off from the Mac mini, the rest John ticks off (kept on the Mac mini)
   var WT = { items: null, done: {}, auto: {}, gw: true };

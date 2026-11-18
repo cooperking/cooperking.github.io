@@ -55,7 +55,8 @@
    "ask": true,
    "title": "Want one list of every box set film you're missing?",
    "why": "Each set shows its own missing films; this would be one spreadsheet across all of them.",
-   "how": "Tell Claude yes or no."
+   "how": "Tell Claude yes or no.",
+   "done": "2026-11-18"
   },
   {
    "id": "ask-synopses-sets",
@@ -64,7 +65,8 @@
    "ask": true,
    "title": "Should the synopses bookmarklet fetch box sets too?",
    "why": "So each box set gets Criterion's own text without the genres bookmarklet.",
-   "how": "Tell Claude yes or no."
+   "how": "Tell Claude yes or no.",
+   "done": "2026-11-18"
   },
   {
    "id": "ask-old-bin",
@@ -73,7 +75,8 @@
    "ask": true,
    "title": "Empty the old Grifflix Bin?",
    "why": "It's taking space on the G-Drive.",
-   "how": "Tell Claude yes or no."
+   "how": "Tell Claude yes or no.",
+   "done": "2026-11-18"
   },
   {
    "id": "ask-country",
@@ -82,7 +85,8 @@
    "ask": true,
    "title": "Use Criterion's country on the media server too?",
    "why": "Where Criterion and the media server disagree about a film's country.",
-   "how": "Tell Claude yes or no."
+   "how": "Tell Claude yes or no.",
+   "done": "2026-11-18"
   },
   {
    "id": "ask-plex",
@@ -91,7 +95,8 @@
    "ask": true,
    "title": "Is Plex still used? If not, quit it on the Mac mini",
    "why": "It runs beside the media server on a Mac with only 4 GB of memory, and looks through the same drive.",
-   "how": "Tell Claude. If it isn’t used, Claude asks to quit it and keep it off, and you press Allow here: no Screen Sharing."
+   "how": "Tell Claude. If it isn’t used, Claude asks to quit it and keep it off, and you press Allow here: no Screen Sharing.",
+   "done": "2026-11-18"
   },
   {
    "id": "mac-memory",
