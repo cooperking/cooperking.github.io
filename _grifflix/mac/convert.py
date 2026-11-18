@@ -451,42 +451,6 @@ def watching():
 
 # ---------------------------------------------------------------- one file
 
-def preflight(cmd, tmp):
-    """The plan tried on the film's first 8 seconds, quickly (the fast setting, not the careful one), onto the Mac's own disk. What
-    ffmpeg says if it refuses, else ''. Inconclusive (too slow to tell, or the test itself couldn't run): '' too, and the film goes ahead."""
-    test = os.path.join(HOME, 'preflight-test.mp4')
-    t = []
-    i = 0
-    while i < len(cmd):
-        a = cmd[i]
-        if a == '-preset':
-            t += ['-preset', 'ultrafast']
-            i += 2
-            continue
-        if a == tmp:
-            t += ['-t', '8', test]
-        else:
-            t.append(a)
-        i += 1
-    try:
-        r = subprocess.run(t, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, timeout=120, preexec_fn=lambda: os.nice(15))
-    except subprocess.TimeoutExpired:
-        return ''
-    except OSError:
-        return ''
-    finally:
-        ok = os.path.exists(test) and os.path.getsize(test) > 10000
-        try:
-            os.remove(test)
-        except OSError:
-            pass
-    if r.returncode == 0 and ok:
-        return ''
-    lines = [l.strip() for l in (r.stderr or '').splitlines() if l.strip() and not l.strip().startswith(('frame=', 'size=', 'Stream #', 'Input #', 'Output #', 'Duration', 'Metadata', 'Press'))]
-    said = re.sub(r'/\S*preflight-test\.mp4', 'the test file', ' '.join(lines[-3:]))
-    return 'ffmpeg refused it in a test: ' + said[-240:]
-
-
 def convert(item, ffmpeg, ffprobe, st):
     src = item['path']
     info = probe(ffprobe, src)
@@ -567,14 +531,6 @@ def convert(item, ffmpeg, ffprobe, st):
         cmd += ['-c:s', 'mov_text'] + ([] if big else ['-movflags', '+faststart'])
     cmd += ['-max_muxing_queue_size', '9999', tmp]
 
-    # (a test first, on the first few seconds, onto the Mac's own disk: what ffmpeg would refuse (a soundtrack or subtitle an MP4 can't
-    # hold, a broken stream) found in a minute, not after hours, and the film not started, its reason shown: John, 18 Nov 2026, "if a
-    # conversion on the mac mini is bound to fail before it begins, it shouldn't start and should be flagged. It's a waste")
-    if not item.get('premade') and not item.get('plan_only'):   # (not for John's Mac: it finds a refusal itself in seconds, and the test here held its film up)
-        bad = preflight(cmd, tmp)
-        if bad:
-            log('  not started: %s: %s' % (item['name'], bad))
-            raise RuntimeError('not started: ' + bad)
     if item.get('plan_only'):   # (for the Mac John's on, which converts it with its own hardware: what to do, not done here)
         return {'cmd': cmd[1:], 'src': src, 'tmp': tmp, 'dur': dur, 'remux': remux}
     t0 = time.time()

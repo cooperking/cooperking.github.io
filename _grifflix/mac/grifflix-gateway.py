@@ -5098,7 +5098,7 @@ def serve():
     threading.Thread(target=keep_backup, args=(g,), daemon=True).start()
     threading.Thread(target=keep_plex_off, args=(g,), daemon=True).start()
     try:   # (once: the film lost before the fix in /macagent/next, put back first)
-        mk = os.path.expanduser('~/Grifflix/macq-lost2.done')   # (again, after the planning bug of 18 Nov 2026 passed it over)
+        mk = os.path.expanduser('~/Grifflix/macq-lost3.done')   # (again, after the planning bug of 18 Nov 2026 passed it over, and the test run held it up)
         if not os.path.exists(mk):
             DD = '31d5f95bc1b179690baa01d3c10776cf'
             Q = load(MACQ, []) or []
