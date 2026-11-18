@@ -2094,6 +2094,14 @@ def make_handler(g):
                 save(os.path.expanduser('~/Grifflix/disk-health.json'), h)
             return self.send_json(200, DHEALTH)
 
+        def api_backup(self, me, user, q, b):
+            """John's only: the nightly backup to Google Drive, how the last went (POST: one now)."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            if b:
+                BACKUP_NOW.set()
+            return self.send_json(200, dict(load(BACKUP_AT, {}) or {}, running=bool(BACKUP_STATE.get('running')) or bool(b), keep=BACKUP_KEEP, to=BACKUP_TO))
+
         def api_macqueue(self, me, user, q, b):
             """John's only: films queued for his own Mac, which takes them up by itself, one after another, wherever he queued them from
             (John, 18 Nov 2026: "Is it possible to switch on convert on my Mac remotely?" ... "Yes"). Its helper's key is made here, shown once."""
@@ -3422,6 +3430,233 @@ def keep_disk_health():
         time.sleep(24 * 3600)
 
 
+# ---- the nightly backup to Google Drive (John, 18 Nov 2026: what can't be got again, "Full film list should be backed up with it.
+# Scripts included. Plus grifflix files from GitHub"). Into "Grifflix Backup" on his Google Drive (never the Grifflix folder there: that's
+# where films come in from, each deleted once it's on the G-Drive). Each night's copy replaces the last; anything changed or gone kept
+# under Earlier/<date> for BACKUP_KEEP days. Nothing secret goes: no sign-ins, keys or tokens.
+BACKUP_AT = os.path.expanduser('~/Grifflix/backup.json')
+BACKUP_STAGE = os.path.expanduser('~/Grifflix-backup')   # (made here first: outside ~/Grifflix, so it isn't sent twice)
+BACKUP_TO = 'Grifflix Backup'
+BACKUP_KEEP = 14
+BACKUP_HOUR = 3   # (each night at about 03:40, the Mac's own time)
+BACKUP_NOW = threading.Event()
+BACKUP_STATE = {}
+# (what never goes: sign-ins, keys and tokens; the big programs it can get again; films on their way in; the Mac's own leftovers)
+BACKUP_SKIP = ['rclone', 'rclone.conf', '*.conf', 'settings.json', 'torbox.json', '*secret*', '*token*', '*.pickle', '*key*', '*.pem',
+               '*.pkg', '*.zip', '*.dmg', 'incoming/**', '__pycache__/**', '*.pyc', '*.prev', '*.lock', '*.tmp', '._*', '.DS_Store',
+               '*.part', '*.rlog', 'watching', 'fetch-waiting', '.shas.json', 'Grifflix Converting/**', 'tunnel.log', 'setup.log']
+GH_PARTS = ('grifflix/', '_grifflix/', '.claude/skills/grifflix-theme/')   # (the Grifflix files in the repository)
+
+
+def backup_github(dest):
+    """The Grifflix files from GitHub into dest, only those changed since last night fetched (GitHub's own fingerprint of each)."""
+    def fetch(url, accept='application/vnd.github+json'):
+        req = urllib.request.Request(url, headers={'User-Agent': 'Grifflix gateway', 'Accept': accept})
+        with urllib.request.urlopen(req, timeout=120, context=tls()) as r:
+            return r.read()
+    tree = json.loads(fetch('https://api.github.com/repos/%s/git/trees/main?recursive=1' % REPO))
+    want = {t['path']: t['sha'] for t in tree.get('tree') or [] if t.get('type') == 'blob' and t['path'].startswith(GH_PARTS)}
+    if not want:
+        raise RuntimeError('GitHub listed no Grifflix files')
+    shas_at = os.path.join(dest, '.shas.json')
+    had = load(shas_at, {}) or {}
+    got = 0
+    for p, sha in want.items():
+        f = os.path.join(dest, *p.split('/'))
+        if had.get(p) == sha and os.path.exists(f):
+            continue
+        data = fetch('https://raw.githubusercontent.com/%s/main/%s' % (REPO, urllib.parse.quote(p)), '*/*')
+        os.makedirs(os.path.dirname(f), exist_ok=True)
+        with open(f + '.tmp', 'wb') as o:
+            o.write(data)
+        os.replace(f + '.tmp', f)
+        had[p] = sha
+        got += 1
+    for p in [p for p in had if p not in want]:   # (gone from GitHub: gone here too; last night's copy kept under Earlier)
+        try:
+            os.remove(os.path.join(dest, *p.split('/')))
+        except OSError:
+            pass
+        had.pop(p, None)
+    save(shas_at, had)
+    return len(want), got
+
+
+def backup_lists(g, dest):
+    """The full film list (and the series), and every file on the G-Drive, as spreadsheets: what to get again if the drive were lost."""
+    import csv
+    os.makedirs(dest, exist_ok=True)
+    cache = (load(os.path.expanduser('~/Grifflix/library-cache.json'), {}) or {}).get('rows') or {}
+    items, start = [], 0
+    while True:
+        r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie,Series', 'Fields': 'Path,ProductionYear',
+                                                               'StartIndex': start, 'Limit': 500, 'SortBy': 'SortName', 'EnableImages': 'false'}) or {}
+        items += r.get('Items') or []
+        start += 500
+        if start >= (r.get('TotalRecordCount') or 0):
+            break
+    if not items:
+        raise RuntimeError('the media server listed no films')
+    res = lambda w, h: '' if not w else '4K' if w >= 3200 or h >= 1700 else '1080p' if w >= 1800 or h >= 1000 else '720p' if w >= 1200 or h >= 700 else 'SD'
+    with open(os.path.join(dest, 'Grifflix film list.csv'), 'w', newline='', encoding='utf-8-sig') as f:
+        w = csv.writer(f)
+        w.writerow(['Kind', 'Title', 'Year', 'Size', 'Width', 'Height', 'Format', 'Mbps', 'GB', 'Minutes', 'Sound', 'Where it is'])
+        for it in sorted(items, key=lambda x: (x.get('Type') != 'Movie', (x.get('Name') or '').lower())):
+            d = (cache.get(it.get('Id')) or {}).get('r') or {}
+            w.writerow(['Film' if it.get('Type') == 'Movie' else 'Series', it.get('Name') or '', it.get('ProductionYear') or '',
+                        res(d.get('w') or 0, d.get('h') or 0), d.get('w') or '', d.get('h') or '', (d.get('v') or '').upper(), d.get('mbps') or '',
+                        d.get('gb') or '', d.get('mins') or '', d.get('a') or '', it.get('Path') or ''])
+    root, n = '/Volumes/G-Drive/Grifflix', 0
+    if os.path.isdir(root):
+        with open(os.path.join(dest, 'Every file on the G-Drive.csv'), 'w', newline='', encoding='utf-8-sig') as f:
+            w = csv.writer(f)
+            w.writerow(['Folder', 'File', 'GB', 'Changed'])
+            for top, dirs, files in os.walk(root):
+                dirs[:] = sorted(d for d in dirs if not d.startswith('.') and d != 'Grifflix Converting')
+                for fn in sorted(files):
+                    if fn.startswith('.'):
+                        continue
+                    try:
+                        st = os.stat(os.path.join(top, fn))
+                    except OSError:
+                        continue
+                    w.writerow([os.path.relpath(top, root), fn, round(st.st_size / 1e9, 2), time.strftime('%Y-%m-%d', time.localtime(st.st_mtime))])
+                    n += 1
+    return len(items), n
+
+
+def backup_media_server(dest):
+    """The media server's own records (watch history, collections, the library), each database copied whole as it is, while it runs."""
+    import sqlite3, shutil
+    base = os.path.expanduser('~/.local/share/jellyfin')
+    os.makedirs(dest, exist_ok=True)
+    for name in ('library.db', 'jellyfin.db'):
+        src = os.path.join(base, 'data', name)
+        if not os.path.exists(src):
+            continue
+        out = os.path.join(dest, name)
+        a = sqlite3.connect(src, timeout=60)
+        b_ = sqlite3.connect(out + '.tmp')
+        try:
+            a.backup(b_)
+        finally:
+            b_.close(); a.close()
+        os.replace(out + '.tmp', out)
+    for sub in ('data/collections', 'data/playlists', 'config', 'root'):   # (small: each collection, playlist, the settings, the libraries)
+        s = os.path.join(base, *sub.split('/'))
+        d = os.path.join(dest, *sub.split('/'))
+        if os.path.isdir(s):
+            shutil.rmtree(d, ignore_errors=True)
+            shutil.copytree(s, d, ignore=shutil.ignore_patterns('*.log', '._*', '.DS_Store'))
+
+
+def backup_now(g):
+    """One backup: made, sent, the old ones beyond BACKUP_KEEP days cleared. What happened, for the admin page."""
+    import shutil, subprocess
+    home = os.path.expanduser('~/Grifflix')
+    rcl, conf = os.path.join(home, 'rclone'), os.path.join(home, 'rclone.conf')
+    t0, day = time.time(), time.strftime('%Y-%m-%d')
+    out = {'at': int(t0), 'ok': False, 'parts': {}}
+    BACKUP_STATE.clear(); BACKUP_STATE.update({'running': True, 'started': int(t0)})
+    try:
+        if not (os.path.exists(rcl) and os.path.exists(conf)):
+            raise RuntimeError('Google Drive isn’t set up on the Mac mini (gdrive.py setup)')
+        os.makedirs(BACKUP_STAGE, exist_ok=True)
+        # (its own copy of the sign-in, so this and the downloads never write the same file at once)
+        cf = os.path.join(BACKUP_STAGE, '.rclone.conf')
+        shutil.copyfile(conf, cf); os.chmod(cf, 0o600)
+        notes = []
+        try:
+            n, got = backup_github(os.path.join(BACKUP_STAGE, 'GitHub'))
+            notes.append('%d Grifflix files from GitHub (%d new or changed)' % (n, got))
+        except Exception as e:
+            notes.append('GitHub: ' + str(e)[:150])
+        try:
+            films, files = backup_lists(g, os.path.join(BACKUP_STAGE, 'Film list'))
+            out['films'] = films
+            notes.append('the list of %d films and series, %d files on the G-Drive' % (films, files))
+        except Exception as e:
+            notes.append('film list: ' + str(e)[:150])
+        try:
+            backup_media_server(os.path.join(BACKUP_STAGE, 'Media server'))
+        except Exception as e:
+            notes.append('media server: ' + str(e)[:150])
+        parts = [('Grifflix folder', home), ('Gateway', APP_DIR), ('Scripts', '/Volumes/G-Drive/Grifflix/scripts'),
+                 ('Film list', os.path.join(BACKUP_STAGE, 'Film list')), ('Media server', os.path.join(BACKUP_STAGE, 'Media server')),
+                 ('GitHub', os.path.join(BACKUP_STAGE, 'GitHub'))]
+        skip = sum((['--exclude', x] for x in BACKUP_SKIP), [])
+        bad = []
+        for name, src in parts:
+            if not os.path.isdir(src):
+                out['parts'][name] = 'not there'
+                continue
+            r = subprocess.run([rcl, '--config', cf, 'sync', src, 'gdrive:%s/Latest/%s' % (BACKUP_TO, name),
+                                '--backup-dir', 'gdrive:%s/Earlier/%s/%s' % (BACKUP_TO, day, name), '--copy-links', '--checksum', '--transfers', '4',
+                                '--retries', '3', '--low-level-retries', '10', '--stats-one-line', '-q'] + skip,
+                               capture_output=True, text=True, timeout=6 * 3600)
+            if r.returncode:
+                bad.append(name)
+                out['parts'][name] = 'failed: ' + (r.stderr or '').strip()[-200:]
+            else:
+                out['parts'][name] = 'ok'
+        try:   # (how much it all is, on Google Drive)
+            sz = json.loads(subprocess.run([rcl, '--config', cf, 'size', '--json', 'gdrive:%s/Latest' % BACKUP_TO], capture_output=True, text=True, timeout=900).stdout or '{}')
+            out['files'], out['bytes'] = sz.get('count'), sz.get('bytes')
+        except Exception:
+            pass
+        try:   # (the earlier ones beyond BACKUP_KEEP days cleared)
+            ls = subprocess.run([rcl, '--config', cf, 'lsf', '--dirs-only', 'gdrive:%s/Earlier' % BACKUP_TO], capture_output=True, text=True, timeout=300).stdout
+            cut = time.strftime('%Y-%m-%d', time.localtime(t0 - BACKUP_KEEP * 86400))
+            for d in [x.strip('/') for x in ls.split()]:
+                if re.match(r'^\d{4}-\d\d-\d\d$', d) and d < cut:
+                    subprocess.run([rcl, '--config', cf, 'purge', 'gdrive:%s/Earlier/%s' % (BACKUP_TO, d)], capture_output=True, timeout=900)
+        except Exception:
+            pass
+        try:
+            ab = json.loads(subprocess.run([rcl, '--config', cf, 'about', '--json', 'gdrive:'], capture_output=True, text=True, timeout=300).stdout or '{}')
+            out['gfree'] = ab.get('free')
+        except Exception:
+            pass
+        out['ok'] = not bad
+        out['notes'] = notes
+        if bad:
+            out['why'] = 'not sent: ' + ', '.join(bad)
+        log('Backup to Google Drive: %s in %d min; %s' % ('done' if not bad else out['why'], round((time.time() - t0) / 60), '; '.join(notes)))
+    except Exception as e:
+        out['why'] = str(e)[:200]
+        log('Backup to Google Drive: couldn’t:', out['why'])
+    finally:
+        try:
+            os.remove(os.path.join(BACKUP_STAGE, '.rclone.conf'))
+        except OSError:
+            pass
+        out['took'] = int(time.time() - t0)
+        BACKUP_STATE.clear()
+    last = load(BACKUP_AT, {}) or {}
+    if out['ok']:
+        out['last_ok'] = out['at']
+    elif last.get('last_ok'):
+        out['last_ok'] = last['last_ok']
+    save(BACKUP_AT, out)
+    return out
+
+
+def keep_backup(g):
+    """Each night at about 03:40, and whenever the admin page's Back up now is pressed; missed nights (the Mac off) made up at the next start."""
+    time.sleep(600)
+    while True:
+        try:
+            last = load(BACKUP_AT, {}) or {}
+            lt = time.localtime()
+            due = time.time() - (last.get('at') or 0) > 26 * 3600 or (lt.tm_hour == BACKUP_HOUR and lt.tm_min >= 40 and time.time() - (last.get('at') or 0) > 6 * 3600)
+            if BACKUP_NOW.is_set() or due:
+                BACKUP_NOW.clear()
+                backup_now(g)
+        except Exception as e:
+            log('Backup to Google Drive:', str(e)[:200])
+        BACKUP_NOW.wait(300)
+
+
 def disks():
     """Free space on the Mac's own disk and the drives its films are on, for the admin page (John, 12 Nov 2026: the Mac's own disk
     filled up unnoticed, and nothing on the Mac could write)."""
@@ -4484,6 +4719,7 @@ def serve():
     threading.Thread(target=covers_once, daemon=True).start()   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
     threading.Thread(target=fanny_series, args=(g,), daemon=True).start()
     threading.Thread(target=keep_disk_health, daemon=True).start()
+    threading.Thread(target=keep_backup, args=(g,), daemon=True).start()
     threading.Thread(target=keep_gdrive, daemon=True).start()
     threading.Thread(target=keep_fetch_unstuck, daemon=True).start()
     srv.daemon_threads = True
