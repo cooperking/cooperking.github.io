@@ -2144,7 +2144,7 @@ def make_handler(g):
                 return self.send_json(403, {'error': 'Only John.'})
             if b:
                 BACKUP_NOW.set()
-            return self.send_json(200, dict(load(BACKUP_AT, {}) or {}, running=bool(BACKUP_STATE.get('running')) or bool(b), keep=BACKUP_KEEP, to=BACKUP_TO))
+            return self.send_json(200, dict(load(BACKUP_AT, {}) or {}, running=bool(backup_running()) or bool(b), keep=BACKUP_KEEP, to=BACKUP_TO))
 
         def api_claudeasks(self, me, user, q, b):
             """John's only: what Claude has asked to have done on the Mac mini, and his Allow or Decline."""
@@ -2635,7 +2635,7 @@ def make_handler(g):
             LOOKED['at'] = time.time()
             home = os.path.expanduser('~/Grifflix')
             LOGS = {'duplicates': os.path.join(home, 'duplicates.log'), 'criterion': os.path.join(home, 'criterion-covers.log'), 'criterion-auto': os.path.join(home, 'criterion-auto.log'), 'criterion-sheet': os.path.join(home, 'criterion-sheet.log'), 'gateway': os.path.join(APP_DIR, 'gateway.log'), 'tunnel': os.path.join(APP_DIR, 'tunnel.log'), 'setup': os.path.join(APP_DIR, 'setup.log'),
-                    'convert': os.path.join(home, 'convert.log'), 'convert-out': os.path.join(home, 'convert.out'), 'gdrive': os.path.join(home, 'gdrive.log')}
+                    'convert': os.path.join(home, 'convert.log'), 'convert-out': os.path.join(home, 'convert.out'), 'gdrive': os.path.join(home, 'gdrive.log'), 'backup': os.path.join(home, 'backup.out')}
             SECRETISH = re.compile(r'(rclone\.conf|token|secret|password|\.pickle$|client_secret|\.pem$|\.key$|settings\.json$)', re.I)
             def inside(p):
                 rp = os.path.realpath(p)
@@ -3673,7 +3673,7 @@ def audio_sheet_once():
     cf = os.path.join(BACKUP_STAGE, '.rclone-audio.conf')
     shutil.copyfile(conf, cf); os.chmod(cf, 0o600)
     try:
-        r = subprocess.run([rcl, '--config', cf, 'copyto', out, 'gdrive:Grifflix audio metadata.csv', '--drive-import-formats', 'csv', '-q'],
+        r = subprocess.run([rcl, '--config', cf, 'copyto', out, 'gdrive:Grifflix audio metadata.csv', '--drive-import-formats', 'csv', '--drive-export-formats', 'csv', '-q'],
                            capture_output=True, text=True, timeout=1800)
     finally:
         os.remove(cf)
@@ -3775,24 +3775,64 @@ def backup_now(g):
     return out
 
 
-def keep_backup(g):
-    """Each night at about 03:40, and whenever the admin page's Back up now is pressed; missed nights (the Mac off) made up at the next start."""
-    time.sleep(600)
+BACKUP_LOCK = os.path.expanduser('~/Grifflix/backup.lock')
+
+
+def backup_running():
     try:
-        audio_sheet_once()
-    except Exception as e:
-        log('Audio spreadsheet to a Google Sheet:', str(e)[:200])
+        pid = int(open(BACKUP_LOCK).read().strip())
+        os.kill(pid, 0)
+        return pid
+    except (OSError, ValueError):
+        return 0
+
+
+def keep_backup(g):
+    """Each night at about 03:40, and whenever the admin page's Back up now is pressed; missed nights (the Mac off) made up at the next start.
+    Made by a process of its own, so a restart of the gateway (each of its updates) doesn't stop it part way: the first backup was
+    started and stopped five times on 18 Nov 2026, never finishing."""
+    import subprocess
+    time.sleep(120)
     while True:
         try:
             last = load(BACKUP_AT, {}) or {}
             lt = time.localtime()
             due = time.time() - (last.get('at') or 0) > 26 * 3600 or (lt.tm_hour == BACKUP_HOUR and lt.tm_min >= 40 and time.time() - (last.get('at') or 0) > 6 * 3600)
-            if BACKUP_NOW.is_set() or due:
+            if (BACKUP_NOW.is_set() or due) and not backup_running():
                 BACKUP_NOW.clear()
-                backup_now(g)
+                out = open(os.path.expanduser('~/Grifflix/backup.out'), 'a')
+                subprocess.Popen([sys.executable, os.path.abspath(__file__), 'backup'], stdout=out, stderr=out, stdin=subprocess.DEVNULL,
+                                 start_new_session=True, cwd=os.path.expanduser('~/Grifflix'))
+                log('Backup to Google Drive: started')
+                time.sleep(60)
         except Exception as e:
             log('Backup to Google Drive:', str(e)[:200])
         BACKUP_NOW.wait(300)
+
+
+def backup_main():
+    """python3 grifflix-gateway.py backup: one backup, by itself (keep_backup starts it). Only what a backup needs: not the gateway's members
+    store, which only the gateway writes."""
+    if backup_running():
+        sys.exit('A backup is running already.')
+    open(BACKUP_LOCK, 'w').write(str(os.getpid()))
+    try:
+        st = load(SETTINGS, {})
+
+        class L:
+            pass
+        lg = L()
+        lg.st, lg.jf, lg.uid = st, Jellyfin(st['jellyfin'], st['jf_token']), st['jf_user_id']
+        try:
+            audio_sheet_once()
+        except Exception as e:
+            log('Audio spreadsheet to a Google Sheet:', str(e)[:200])
+        backup_now(lg)
+    finally:
+        try:
+            os.remove(BACKUP_LOCK)
+        except OSError:
+            pass
 
 
 # ---- what Claude may ask to have done on the Mac mini, each only once John allows it on the admin page (John, 18 Nov 2026: "can I give
@@ -5092,5 +5132,7 @@ if __name__ == '__main__':
         setup(sys.argv[2:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'serve':
         serve()
+    elif len(sys.argv) > 1 and sys.argv[1] == 'backup':
+        backup_main()
     else:
         print(__doc__)
