@@ -4110,6 +4110,60 @@ def claude_answer(g, rid, allow):
     return 200, {'ok': True}
 
 
+XDIRS = ('other', 'extras', 'featurettes', 'behind the scenes', 'deleted scenes', 'interviews', 'scenes', 'shorts', 'clips', 'trailers', 'samples')
+XVID = ('.mp4', '.mkv', '.m4v', '.mov', '.avi')
+
+
+def extras_fix(g, most=60):
+    """Films whose extras sit in their folder (Other, Extras, Featurettes…) but the media server has none for: it's asked to look at
+    each again. A film converted or repackaged is a new file, and the media server didn't find the old one's extras for it (John,
+    18 Nov 2026: "how do I see the extras on a film. The Crying Game for instance": five in its Other folder, none shown)."""
+    lid = (g.st.get('libraries') or {}).get('movies')
+    if not lid:
+        return 0
+    its, start = [], 0
+    while True:
+        r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path,SpecialFeatureCount',
+                                                               'StartIndex': start, 'Limit': 500, 'EnableImages': 'false'}) or {}
+        its += r.get('Items') or []
+        start += 500
+        if start >= (r.get('TotalRecordCount') or 0):
+            break
+    asked = []
+    for it in its:
+        if (it.get('SpecialFeatureCount') or 0) or len(asked) >= most:
+            continue
+        d = os.path.dirname(it.get('Path') or '')
+        try:
+            subs = [x for x in os.listdir(d) if x.lower() in XDIRS and os.path.isdir(os.path.join(d, x))]
+        except OSError:
+            continue
+        if not any(f.lower().endswith(XVID) and not f.startswith('.') for x in subs for f in os.listdir(os.path.join(d, x))):
+            continue
+        try:
+            g.jf.call('POST', '/Items/%s/Refresh' % it['Id'], query={'Recursive': 'true', 'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'Default', 'ReplaceAllMetadata': 'false', 'ReplaceAllImages': 'false'})
+            asked.append(it.get('Name'))
+            time.sleep(2)
+        except Exception as e:
+            log('Extras for %s: %s' % (it.get('Name'), e))
+    if asked:
+        log('Extras: the media server asked to look again at %d film%s with extras it hadn’t found: %s' % (len(asked), '' if len(asked) == 1 else 's', ', '.join(asked[:12]) + (' …' if len(asked) > 12 else '')))
+        g.forget()
+        g.publish_soon = time.time() + 600
+    return len(asked)
+
+
+def keep_extras(g):
+    """extras_fix 6 minutes after the start, then every 6 hours (each new conversion's extras found within the day)."""
+    time.sleep(360)
+    while True:
+        try:
+            extras_fix(g)
+        except Exception as e:
+            log('Extras:', str(e)[:200])
+        time.sleep(6 * 3600)
+
+
 def keep_plex_off(g):
     """While John has had Plex kept off: quit again if it starts (at login, or by itself), every 5 minutes."""
     time.sleep(120)
@@ -5300,6 +5354,7 @@ def serve():
     threading.Thread(target=keep_disk_health, daemon=True).start()
     threading.Thread(target=keep_backup, args=(g,), daemon=True).start()
     threading.Thread(target=keep_plex_off, args=(g,), daemon=True).start()
+    threading.Thread(target=keep_extras, args=(g,), daemon=True).start()
     def countries_once():   # (once: every Criterion film given Criterion's country now, then each as it comes in)
         mk = os.path.expanduser('~/Grifflix/criterion-countries.done')
         if os.path.exists(mk):
