@@ -808,19 +808,47 @@ def make_handler(g):
                     MACAGENT['seen'] = int(time.time()); MACAGENT['home'] = q.get('home') == '1'
                     if q.get('home') != '1':   # (away from home, the G-Drive out of reach: the queue kept for when it's back)
                         return self.send_json(200, {'wait': 'away'})
-                    busy = [j for j in CONVJOBS.values() if j.get('mac') and j.get('state') in ('waiting', 'started', 'converting') and time.time() - (j.get('seen') or j['at']) < 900]
+                    # (the plan made in the background and handed over at the next ask: planning took longer than the 20 seconds John's
+                    # Mac waited, so it gave up, and the film planned for it was handed to no one: John, 18 Nov 2026, Disclosure Day
+                    # "waiting for your Mac to take it up - nothing seems to be happening")
+                    now = time.time()
+                    for t_, j in list(CONVJOBS.items()):   # (handed out but never collected: back to the front of the queue)
+                        if j.get('mac') and j.get('state') == 'waiting' and not j.get('ended') and j.get('given') and now - j['given'] > 300:
+                            Q = load(MACQ, []) or []
+                            if not any(x.get('id') == j['id'] for x in Q):
+                                Q.insert(0, dict({'id': j['id'], 'name': j['plan']['item'].get('name') or '', 'at': int(now)}, **({'force': True} if j.get('force') else {})))
+                                save(MACQ, Q)
+                            j['state'], j['ended'] = 'lost', now
+                            log('Queue for John’s Mac: %s never collected, back at the front' % j['plan']['item'].get('name'))
+                            convjobs_save()
+                    busy = [j for j in CONVJOBS.values() if j.get('mac') and j.get('state') in ('started', 'converting') and now - (j.get('seen') or j['at']) < 900]
                     if busy:
                         return self.send_json(200, {'wait': 'busy'})
-                    Q = load(MACQ, []) or []
-                    while Q:
+                    ready = sorted([(j['at'], t_) for t_, j in CONVJOBS.items() if j.get('mac') and j.get('state') == 'waiting' and not j.get('ended') and not j.get('given')])
+                    if ready:
+                        t_ = ready[0][1]
+                        CONVJOBS[t_]['given'] = now
+                        convjobs_save()
+                        return self.send_json(200, {'job': '/convjob/' + t_, 'name': CONVJOBS[t_]['plan']['item'].get('name')})
+                    with MACPLAN_LOCK:
+                        if MACPLAN.get('t') and MACPLAN['t'].is_alive():
+                            return self.send_json(200, {'wait': 'planning', 'name': MACPLAN.get('name')})
+                        Q = load(MACQ, []) or []
+                        if not Q:
+                            return self.send_json(200, {'wait': 'empty'})
                         x = Q.pop(0)
                         save(MACQ, Q)
-                        code, j = mac_job(x['id'], x.get('force'))
-                        if code == 200:
-                            CONVJOBS[j['token']]['mac'] = True
-                            return self.send_json(200, {'job': '/convjob/' + j['token'], 'name': j.get('name')})
-                        log('Queue for John’s Mac: %s passed over (%s)' % (x.get('name') or x['id'], j.get('error')))
-                    return self.send_json(200, {'wait': 'empty'})
+
+                        def plan_it(x=x):
+                            code, j = mac_job(x['id'], x.get('force'))
+                            if code == 200:
+                                CONVJOBS[j['token']].update(mac=True, force=bool(x.get('force')))
+                                convjobs_save()
+                            else:
+                                log('Queue for John’s Mac: %s passed over (%s)' % (x.get('name') or x['id'], j.get('error')))
+                        MACPLAN.update(t=threading.Thread(target=plan_it, daemon=True), name=x.get('name'))
+                        MACPLAN['t'].start()
+                    return self.send_json(200, {'wait': 'planning', 'name': x.get('name')})
                 if u.path.startswith('/convjob/'):   # (John's Mac, converting a film for the Mac mini: its job, and word when it's done)
                     parts = u.path.split('/')
                     job = CONVJOBS.get(parts[2] if len(parts) > 2 else '')
@@ -2215,7 +2243,7 @@ def make_handler(g):
             last_mac = max([x.get('seen') or x['at'] for x in CONVJOBS.values() if x.get('state') not in ('waiting', 'notstarted')] or [0])
             for j in sorted(CONVJOBS.values(), key=lambda j: -j['at']):
                 st_ = j.get('state') or 'waiting'
-                if st_ in ('notstarted',) or (st_ in ('done', 'failed') and now_ - (j.get('ended') or j['at']) > 1800) or now_ - j['at'] > 86400:
+                if st_ in ('notstarted', 'lost') or (st_ in ('done', 'failed') and now_ - (j.get('ended') or j['at']) > 1800) or now_ - j['at'] > 86400:
                     continue
                 if st_ in ('started', 'converting'):
                     heard = j.get('seen') or j['at']
@@ -4169,6 +4197,7 @@ def vt_args(cmd):
 
 
 SCAN_NOW = threading.Event()   # (a film just brought in: the library looked at now, not at the next 10 minutes)
+MACPLAN, MACPLAN_LOCK = {}, threading.Lock()   # (the next film for John's Mac, being planned)
 CONV_NOW = threading.Event()   # (films just brought in: the converter started for them now, if it isn't running)
 GDRIVE_NOW = threading.Event()   # (admin's Look now: a look straight away, not at the next quarter hour)
 GDRIVE_NEXT = [0]
@@ -5028,6 +5057,22 @@ def serve():
     threading.Thread(target=keep_disk_health, daemon=True).start()
     threading.Thread(target=keep_backup, args=(g,), daemon=True).start()
     threading.Thread(target=keep_plex_off, args=(g,), daemon=True).start()
+    try:   # (once: the film lost before the fix in /macagent/next, put back first)
+        mk = os.path.expanduser('~/Grifflix/macq-lost.done')
+        if not os.path.exists(mk):
+            DD = '31d5f95bc1b179690baa01d3c10776cf'
+            Q = load(MACQ, []) or []
+            if not any(x.get('id') == DD for x in Q):
+                Q.insert(0, {'id': DD, 'name': 'Disclosure Day', 'at': int(time.time())})
+                save(MACQ, Q)
+            for j in CONVJOBS.values():
+                if j.get('id') == DD and j.get('state') == 'waiting':
+                    j['state'], j['ended'] = 'lost', time.time()
+            convjobs_save()
+            open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+            log('Queue for John’s Mac: Disclosure Day, lost earlier, back at the front')
+    except Exception as e:
+        log('Queue for John’s Mac:', e)
     threading.Thread(target=keep_gdrive, daemon=True).start()
     threading.Thread(target=keep_fetch_unstuck, daemon=True).start()
     srv.daemon_threads = True
