@@ -82,6 +82,31 @@
    "title": "Use Criterion's country on the media server too?",
    "why": "Where Criterion and the media server disagree about a film's country.",
    "how": "Tell Claude yes or no."
+  },
+  {
+   "id": "ask-plex",
+   "added": "2026-11-18",
+   "optional": true,
+   "ask": true,
+   "title": "Is Plex still used? If not, quit it on the Mac mini",
+   "why": "It runs beside the media server on a Mac with only 4 GB of memory, and looks through the same drive.",
+   "how": "Tell Claude. If it isn't used: on the Mac mini, quit Plex Media Server and take it out of Login Items (System Preferences › Users & Groups)."
+  },
+  {
+   "id": "mac-memory",
+   "added": "2026-11-18",
+   "optional": true,
+   "title": "More memory for the Mac mini (about £20–£30)",
+   "why": "It has 4 GB and is short of it: macOS is squashing and swapping memory all day, which slows everything.",
+   "how": "Two 4 GB DDR3 1066 MHz SO-DIMM sticks (8 GB) for a Mac mini Mid 2010: the base unscrews by hand. Or tell Claude and it'll help."
+  },
+  {
+   "id": "mac-replace",
+   "added": "2026-11-18",
+   "optional": true,
+   "title": "Decide whether to replace the Mac mini",
+   "why": "It's a 2010 model: USB 2 only (the G-Drive runs at a fraction of its speed), a 2-core processor flat out, and macOS too old for current tools.",
+   "how": "A used Mac mini from 2018 or later (about £200–£350) with the same drive on USB 3. Tell Claude before buying, to check the model."
   }
  ]
 }
