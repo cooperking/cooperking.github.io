@@ -2584,7 +2584,7 @@ def make_handler(g):
                 return any(rp == r_ or rp.startswith(r_.rstrip('/') + '/') for r_ in self.look_roots()) and not rp.startswith(os.path.realpath(APP_DIR))
             if what in ('', 'help'):
                 return self.send_json(200, {'version': VERSION, 'logs': {k: (os.path.getsize(v) if os.path.exists(v) else None) for k, v in LOGS.items()}, 'roots': self.look_roots(),
-                                            'use': ['/look/log?name=gateway&n=200&find=text', '/look/ls?path=/Volumes/...', '/look/read?path=~/Grifflix/x.json', '/look/ps', '/look/jf?path=/Items/<id>']})
+                                            'use': ['/look/log?name=gateway&n=200&find=text', '/look/ls?path=/Volumes/...', '/look/read?path=~/Grifflix/x.json', '/look/ps', '/look/sys?only=hardware,usb', '/look/jf?path=/Items/<id>']})
             if what == 'log':
                 f = LOGS.get(q.get('name') or '')
                 if not f or not os.path.exists(f):
@@ -2627,6 +2627,29 @@ def make_handler(g):
                 df = subprocess.run(['df', '-h'], capture_output=True, text=True, timeout=20).stdout.splitlines()
                 up = subprocess.run(['uptime'], capture_output=True, text=True, timeout=20).stdout.strip()
                 return self.send_json(200, {'ps': keep, 'df': df, 'uptime': up, 'version': VERSION, 'sha': (load(INSTALLED, {}).get('sha') or '')[:7]})
+            if what == 'sys':   # (the Mac mini itself, for Claude's look at the whole set-up: John, 18 Nov 2026, "can you look and do a complete
+                # assessment of the set up yourself?"). A fixed list of macOS's own reports, read only; serial numbers and IDs blanked
+                import subprocess
+                cmds = {'macos': ['sw_vers'], 'hardware': ['system_profiler', 'SPHardwareDataType'], 'usb': ['system_profiler', 'SPUSBDataType'],
+                        'thunderbolt': ['system_profiler', 'SPThunderboltDataType'], 'storage': ['system_profiler', 'SPStorageDataType'],
+                        'sata': ['system_profiler', 'SPSerialATADataType'], 'disks': ['diskutil', 'list'], 'gdrive': ['diskutil', 'info', '/Volumes/G-Drive'],
+                        'power': ['pmset', '-g'], 'battery_ups': ['pmset', '-g', 'ps'], 'memory': ['vm_stat'], 'swap': ['sysctl', 'vm.swapusage'],
+                        'load': ['sysctl', 'vm.loadavg', 'hw.ncpu', 'hw.memsize', 'hw.model', 'machdep.cpu.brand_string'],
+                        'network': ['system_profiler', 'SPNetworkDataType'], 'ethernet': ['ifconfig', 'en0'], 'wifi': ['ifconfig', 'en1'],
+                        'io': ['iostat', '-d', '-c', '3', '-w', '2'], 'top': ['top', '-l', '1', '-n', '8', '-o', 'cpu', '-stats', 'pid,command,cpu,mem,state'],
+                        'uptime': ['uptime'], 'software_update': ['softwareupdate', '--history'], 'timemachine': ['tmutil', 'destinationinfo']}
+                want = [k for k in (q.get('only') or '').split(',') if k in cmds] or list(cmds)
+                out = {}
+                for k in want:
+                    try:
+                        r = subprocess.run(cmds[k], capture_output=True, text=True, timeout=90)
+                        t = (r.stdout or '') + (('\n' + r.stderr) if r.stderr and not r.stdout else '')
+                    except Exception as e:
+                        t = 'couldn’t: %s' % str(e)[:100]
+                    t = re.sub(r'(?im)^(\s*(?:serial number[^:]*|hardware uuid|provisioning udid|uuid|volume uuid|disk / partition uuid|ether|inet6?|router|ipv4 addresses|ipv6 addresses|subnet masks|mac address|bssid|ssid)\s*[: ]).*$', r'\1 ***', t)
+                    t = re.sub(r'\b([0-9a-f]{2}:){5}[0-9a-f]{2}\b', '**:**', t, flags=re.I)
+                    out[k] = t[-20000:]
+                return self.send_json(200, out)
             if what == 'jf':   # (the media server's own answers, asked only; e.g. /Items/<id>, /Library/VirtualFolders)
                 path = q.get('path') or ''
                 if not re.match(r'^/(Items|Users/[0-9a-f]{32}/Items|Library/VirtualFolders|System/Info|Sessions|ScheduledTasks|Shows|Search/Hints)', path):
