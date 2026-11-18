@@ -823,6 +823,20 @@ def make_handler(g):
                     if not fn or method != 'GET':
                         return self.send_json(404, {'error': 'Not here.'})
                     return fn(q)
+                if u.path == '/macagent/copying':   # (John's Mac's helper: the films it made that the Mac mini is still waiting for, to copy over)
+                    tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
+                    want = (g.st.get('macagent') or {}).get('key')
+                    if not want or not tok or not hmac.compare_digest(hashlib.sha256(tok.encode()).hexdigest(), want):
+                        return self.send_json(403, {'error': 'Not allowed.'})
+                    rows = ['%s\t%s\t%s' % (os.path.basename(j['plan']['tmp']), j['plan']['tmp'], '/convjob/' + t_)
+                            for t_, j in CONVJOBS.items() if j.get('mac') and j.get('state') == 'copying' and not j.get('ended')]
+                    body_ = ('\n'.join(rows) + '\n').encode()
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'text/plain; charset=utf-8')
+                    self.send_header('Content-Length', str(len(body_)))
+                    self.end_headers()
+                    self.wfile.write(body_)
+                    return
                 if u.path == '/macagent/next':   # (John's Mac's helper, asking every minute: the next film queued for it, as a job)
                     tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
                     want = (g.st.get('macagent') or {}).get('key')
