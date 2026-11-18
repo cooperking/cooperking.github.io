@@ -2767,7 +2767,7 @@ def make_handler(g):
                 for k, v in b['features'].items():
                     k = str(k)
                     if re.match(r'^[\w-]{3,160}$', k) and isinstance(v, list):
-                        L_ = [re.sub(r'\s+', ' ', str(x)).strip()[:400] for x in v if str(x).strip()][:80]
+                        L_ = [re.sub(r'\s+', ' ', str(x)).strip()[:4000] for x in v if str(x).strip()][:200]   # (a set's whole list of films in one line: 18 Nov 2026)
                         if L_:
                             FF[k] = L_
                         FC[k] = int(time.time())
@@ -2799,7 +2799,7 @@ def make_handler(g):
                 SSP = {str(k)[:160]: str(v)[:6] for k, v in (b['tags'].get('setspine') or {}).items() if str(v).isdigit()}   # (each box set's own spine number)
                 SIM = {str(k)[:160]: str(v)[:400] for k, v in (b['tags'].get('setimg') or {}).items() if re.match(r'^https://[\w.-]+/', str(v))}   # (each box set's own cover)
                 SDE = {str(k)[:160]: str(v)[:2000] for k, v in (b['tags'].get('setdesc') or {}).items() if len(str(v or '')) > 40}   # (each box set's description: John, 18 Nov 2026)
-                SFE = {str(k)[:160]: [re.sub(r'\s+', ' ', str(x)).strip()[:400] for x in v if str(x).strip()][:80] for k, v in (b['tags'].get('setfeat') or {}).items() if isinstance(v, list) and v}   # (and its special features)
+                SFE = {str(k)[:160]: [re.sub(r'\s+', ' ', str(x)).strip()[:4000] for x in v if str(x).strip()][:200] for k, v in (b['tags'].get('setfeat') or {}).items() if isinstance(v, list) and v}   # (and its special features)
                 save(os.path.join(home, 'criterion-tags.json'), {'tags': T, 'sets': SE, 'setspine': SSP, 'setimg': SIM, 'setdesc': SDE, 'setfeat': SFE, 'missing': [str(x)[:120] for x in (b['tags'].get('missing') or [])][:40],
                                                                  'debug': {str(k)[:60]: str(v)[:300] for k, v in (b['tags'].get('debug') or {}).items()}, 'at': int(time.time())})
                 n = sum(len(v) for v in T.values())
