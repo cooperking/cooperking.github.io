@@ -5848,6 +5848,27 @@ def serve():
         give_countries(g)
         open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
     threading.Thread(target=countries_once, daemon=True).start()
+    def brak_into_criterion():   # (once: the By Brakhage films put in The Criterion Collection, which the move John allowed was to do but a
+        # restart cut off (18 Nov 2026, "By Brakhage still not showing up properly"))
+        mk = os.path.expanduser('~/Grifflix/brakhage-criterion.done')
+        if os.path.exists(mk):
+            return
+        time.sleep(90)
+        try:
+            q = lambda **k: (g.jf.call('GET', '/Users/%s/Items' % g.uid, query=k) or {}).get('Items', [])
+            crit = next((b for b in q(Recursive='true', IncludeItemTypes='BoxSet') if (b.get('Name') or '').strip().lower() == 'the criterion collection'), None)
+            movies_dir = os.path.dirname(BRAK_SRC)
+            want = {os.path.join(movies_dir, f) for _rx, f, _p, _s in BRAK_PLAN}
+            ids = [m['Id'] for m in q(Recursive='true', IncludeItemTypes='Movie', Fields='Path') if os.path.dirname(m.get('Path') or '') in want and not re.search(r' - part[2-9]\.\w+$', m.get('Path') or '')]
+            if crit and ids:
+                g.jf.call('POST', '/Collections/%s/Items' % crit['Id'], query={'Ids': ','.join(ids)})
+                log('By Brakhage: %d films put in The Criterion Collection' % len(ids))
+                g.forget()
+                g.publish_soon = time.time() + 120
+                open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+        except Exception as e:
+            log('By Brakhage into The Criterion Collection:', e)
+    threading.Thread(target=brak_into_criterion, daemon=True).start()
     try:   # (once: the film lost before the fix in /macagent/next, put back first)
         mk = os.path.expanduser('~/Grifflix/macq-lost3.done')   # (again, after the planning bug of 18 Nov 2026 passed it over, and the test run held it up)
         if not os.path.exists(mk):
