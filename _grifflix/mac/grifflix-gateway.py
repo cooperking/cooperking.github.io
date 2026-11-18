@@ -840,9 +840,9 @@ def make_handler(g):
                         save(MACQ, Q)
 
                         def plan_it(x=x):
-                            code, j = mac_job(x['id'], x.get('force'))
+                            code, j = mac_job(x['id'], True)   # (always made smaller on John's Mac: see convert.py plan)
                             if code == 200:
-                                CONVJOBS[j['token']].update(mac=True, force=bool(x.get('force')))
+                                CONVJOBS[j['token']].update(mac=True, force=True)
                                 convjobs_save()
                             else:
                                 log('Queue for John’s Mac: %s passed over (%s)' % (x.get('name') or x['id'], j.get('error')))

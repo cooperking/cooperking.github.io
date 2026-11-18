@@ -774,9 +774,11 @@ if CMD in ('plan', 'finish'):   # (John's "Convert on this Mac", 16 Nov 2026: th
     ffmpeg_, ffprobe_ = tools()
     if CMD == 'plan':
         found = [i for i in fresh(gather(), st) if i['id'] == sys.argv[2]]
-        if not found and 'force' in sys.argv[3:]:   # (one of the largest, queued for John's Mac to make smaller: John, 18 Nov 2026)
+        # (one queued for John's Mac: made smaller, never only repackaged, which there frees nothing and copies the whole film over the
+        # network twice: Disclosure Day, 40.6 GB, at 0.6x: John, 18 Nov 2026, "I'm going to save space by converting the bigger files on my mac")
+        if 'force' in sys.argv[3:] and (not found or found[0].get('mode') == 'remux'):
             f = shrink_item(sys.argv[2])
-            found = [f] if f else []
+            found = [f] if f else found
         if not found:
             print(json.dumps({'error': 'It plays everywhere as it is: nothing to convert.'}))
             sys.exit()
