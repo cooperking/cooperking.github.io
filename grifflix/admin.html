@@ -1823,7 +1823,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   }
   function dupPaint(j) {
     var G = j.groups || [], W = j.wrong || [];
-    $('#dupetab').hidden = !G.length && !j.running; $('#dupetab').textContent = 'Copies' + (G.length ? ' ' + G.length : '');
+    $('#dupetab').hidden = !G.length && !W.length && !j.running; $('#dupetab').textContent = 'Copies' + (G.length + W.length ? ' ' + (G.length + W.length) : '');   // (and the ones to look at: 18 Nov 2026)
     $('#duphead').innerHTML = G.length ? G.length + ' film' + (G.length === 1 ? '' : 's') + ' you have <em>twice</em>' : 'No duplicates';
     var q = function (c) { return c.h + 'p ' + esc(c.codec) + (c.bits > 8 ? ' 10-bit' : '') + ' · ' + c.gb + ' GB · ' + c.mbps + ' Mbps · ' + c.mins + ' min'; };
     $('#duplist').innerHTML = G.map(function (g, i) {
