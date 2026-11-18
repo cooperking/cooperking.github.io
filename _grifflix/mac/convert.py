@@ -518,13 +518,15 @@ def convert(item, ffmpeg, ffprobe, st):
         # that starved it to nothing, stuck at 0% for hours; it pauses the moment someone watches instead, checked every 5 seconds:
         # John, 14 Nov 2026, "It doesn't need to run on lowest priority if is just pauses when a movie is playing anyway")
         p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, preexec_fn=lambda: os.nice(15))
-        err_tail, at = [], [0.0]
+        err_tail, at, second = [], [0.0], [0.0]
         def read_err():
             for line in p.stderr:   # (ffmpeg's progress lines: "... time=00:41:07.12 ...")
                 m = re.search(r'time=(\d+):(\d\d):(\d\d(?:\.\d+)?)', line)
                 if m:
                     at[0] = int(m.group(1)) * 3600 + int(m.group(2)) * 60 + float(m.group(3))
                 else:
+                    if 'Starting second pass' in line:   # (the file rewritten so it plays at once: no progress shown, and slow on a big film)
+                        second[0] = time.time()
                     err_tail.append(line)
                     del err_tail[:-30]
         threading.Thread(target=read_err, daemon=True).start()
@@ -547,7 +549,10 @@ def convert(item, ffmpeg, ffprobe, st):
                         sz = 0
                     if at[0] > mark[0] or sz > mark[1] + 1000000:
                         mark, stuck_since = (at[0], sz), work
-                    elif work - stuck_since > STALL:
+                    # (ffmpeg's last step, rewriting the whole file so it plays from the start, says nothing and grows nothing: allowed
+                    # time for the film's size at 4 MB/s, the G-Drive at its slowest. Wild at Heart, 30.7 GB, was given up 30 minutes into it
+                    # and would have been tried again and again: 18 Nov 2026)
+                    elif work - stuck_since > (max(STALL, (item.get('gb') or 0) * 1e9 / 4e6 + 600) if second[0] else STALL):
                         p.terminate()
                         try:
                             p.wait(30)
@@ -556,8 +561,8 @@ def convert(item, ffmpeg, ffprobe, st):
                         if os.path.exists(tmp):
                             os.remove(tmp)
                         said = ' '.join(x.strip() for x in err_tail[-4:] if x.strip())[-300:]
-                        log('  no progress in 30 minutes: given up' + (' (ffmpeg: %s)' % said if said else ''))
-                        raise RuntimeError('no progress in 30 minutes, given up' + (': ' + said if said else ''))
+                        log('  no progress in %d minutes: given up' % round((work - stuck_since) / 60) + (' (ffmpeg: %s)' % said if said else ''))
+                        raise RuntimeError('no progress in %d minutes, given up' % round((work - stuck_since) / 60) + (': ' + said if said else ''))
                 try:   # (John's Skip: this film given up now, the next one started)
                     skip = open(SKIP).read().strip() == item['id']
                 except OSError:
