@@ -26,7 +26,7 @@ report() {
     echo "== out/"; ls -la "$HERE/out" "$HERE/out/pending" 2>&1 | tail -40
     echo "== pending records"; for r in "$HERE/out/pending/"*.job(N); do echo "-- ${r:t}"; cat "$r"; done
     echo "== running"; ps -axo pid,etime,command | grep -E "[c]opyback|[c]p /Users|[f]fmpeg" | cut -c1-220
-    echo "== agent.log"; tail -40 "$HERE/agent.log" 2>/dev/null; } | curl -fsS -m 20 -X POST -H "Authorization: Bearer $k" -H 'Content-Type: text/plain; charset=utf-8' --data-binary @- "$b/macagent/report" >/dev/null 2>&1
+    echo "== agent.log"; grep -av 'frame=\|^size=\|speed=' "$HERE/agent.log" 2>/dev/null | tail -40 | cut -c1-300; } | curl -fsS -m 20 -X POST -H "Authorization: Bearer $k" -H 'Content-Type: text/plain; charset=utf-8' --data-binary @- "$b/macagent/report" >/dev/null 2>&1
 }
 
 if [[ "${1:-}" == "setup" ]]; then
@@ -100,12 +100,17 @@ if [[ "${1:-}" == "copyback" ]]; then
   if ! grep -qx copied "$rec"; then
     # (one at a time, oldest first, each waiting its turn and saying so: three copying at once over the one network to the one USB 2 drive
     # slowed them all: John, 18 Nov 2026, "Films from my Mac also need to be in the queue to transfer")
-    tl="$pend/transfer.lock"; said=""
+    tl="$pend/transfer.lock"; said=""; sm=$(stat -f %m "$HERE/convert-here.sh" 2>/dev/null)
     while true; do
+      # (a newer helper while waiting: taken up at once, so a fix reaches copies already in the queue)
+      [[ -n "$sm" && "$(stat -f %m "$HERE/convert-here.sh" 2>/dev/null)" != "$sm" ]] && exec /bin/zsh "$HERE/convert-here.sh" copyback "$lt" "$tmp" "$url"
       ahead=0
       for o in "$pend/"*.job(N); do
         [[ "$o" == "$rec" ]] && continue
         grep -qx copied "$o" && continue
+        # (only one that's being copied, or waiting with its own copy alive: one nobody's working on doesn't hold the rest up, as Short Cuts
+        # did all evening on 18 Nov 2026; it's taken up again by itself)
+        [[ -f "$o.lock" ]] && kill -0 "$(cat "$o.lock" 2>/dev/null)" 2>/dev/null || continue
         [[ "$o" -ot "$rec" ]] && ahead=$((ahead + 1))
       done
       busy=0; [[ -f "$tl" ]] && [[ "$(cat "$tl" 2>/dev/null)" != "$$" ]] && kill -0 "$(cat "$tl" 2>/dev/null)" 2>/dev/null && busy=1
