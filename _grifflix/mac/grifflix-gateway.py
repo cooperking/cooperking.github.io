@@ -749,6 +749,7 @@ def make_handler(g):
                 self.close_connection = True
                 return
             raw = self.rfile.read(n) if n else b''
+            self._raw = raw   # (as sent: John's Mac's report is plain text)
             try:
                 v = json.loads(raw or b'{}')
                 self._b = v if isinstance(v, dict) else {}
@@ -823,6 +824,16 @@ def make_handler(g):
                     if not fn or method != 'GET':
                         return self.send_json(404, {'error': 'Not here.'})
                     return fn(q)
+                if u.path == '/macagent/report' and method == 'POST':   # (John's Mac's own account of itself, for the admin page and Claude)
+                    tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
+                    want = (g.st.get('macagent') or {}).get('key')
+                    if not want or not tok or not hmac.compare_digest(hashlib.sha256(tok.encode()).hexdigest(), want):
+                        return self.send_json(403, {'error': 'Not allowed.'})
+                    raw_ = getattr(self, '_raw', None) or b''
+                    with open(os.path.expanduser('~/Grifflix/mac-report.txt'), 'wb') as f_:
+                        f_.write(raw_[:200000])
+                    MACAGENT['report'] = int(time.time())
+                    return self.send_json(200, {'ok': True})
                 if u.path == '/macagent/copying':   # (John's Mac's helper: the films it made that the Mac mini is still waiting for, to copy over)
                     tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
                     want = (g.st.get('macagent') or {}).get('key')
