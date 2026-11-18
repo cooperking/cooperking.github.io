@@ -204,10 +204,15 @@ html.tv .pic.odd::before { filter: brightness(.35); inset: 0; }
 .csettile:hover .csm, .csettile:focus-visible .csm { transform: translateY(-3px); }
 .csettile b { font: 600 14px/1.3 var(--kfont); } .csettile small { font: 500 11px/1 var(--kfont); letter-spacing: .14em; text-transform: uppercase; opacity: .6; }
 .clrow.csrow, html.gcrit #cbody .clrow.csrow { grid-template-columns: 84px 48px minmax(0, 1fr) 90px; } @media (max-width: 760px) { .clrow.csrow, html.gcrit #cbody .clrow.csrow { grid-template-columns: 58px 40px minmax(0, 1fr) 64px; } }
-.csetopen { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 4px 4px 18px; } .csetopen h3 { margin: 0; font: 700 20px/1.2 var(--kfont); text-transform: uppercase; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
-.csetcov { width: 92px; aspect-ratio: 4 / 5; object-fit: cover; box-shadow: 0 8px 20px rgba(0,0,0,.12); } .cssp { font: 500 13px/1 var(--kfont); letter-spacing: .1em; opacity: .6; }
-.csetdesc { flex: 1 0 100%; max-width: 70ch; margin: 4px 0 0; font: 400 15px/1.55 var(--serif); }
-.csetopen h3 small { font: 500 11px/1 var(--kfont); letter-spacing: .14em; opacity: .6; }
+.csetopen { margin: 4px 4px 30px; }
+.csethero { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: clamp(22px, 4vw, 56px); align-items: start; margin-top: 22px; }
+.csethero.nocov { grid-template-columns: minmax(0, 1fr); }
+.csetcov { width: 100%; height: auto; display: block; border: 1px solid var(--gc-line, rgba(255,255,255,.2)); box-shadow: 0 18px 44px rgba(0,0,0,.14); }
+.csettxt h2 { margin: 6px 0 8px; font: 400 clamp(30px, 4.4vw, 52px)/1.08 var(--display); }
+.cssp { font: 500 12px/1 var(--kfont); letter-spacing: .16em; text-transform: uppercase; opacity: .6; }
+.csn { display: block; font: 500 11px/1 var(--kfont); letter-spacing: .16em; text-transform: uppercase; opacity: .6; }
+.csetdesc { max-width: 62ch; margin: 22px 0 0; padding-top: 18px; border-top: 1px solid var(--gc-line, rgba(255,255,255,.2)); font: 400 17px/1.6 var(--serif); }
+@media (max-width: 760px) { .csethero { grid-template-columns: minmax(0, 1fr); } .csetcov { max-width: 520px; } }
 @media (max-width: 600px) { .csettiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; } }
 .cset { margin: 0 0 34px; } .cset h3 { display: flex; align-items: baseline; gap: 12px; margin: 0 4px 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,.18); font-size: 20px; letter-spacing: .02em; }
 .cset h3 small { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; opacity: .65; }
@@ -5521,7 +5526,12 @@ function collectionView(id, into) {
         if (openSet && BS[openSet]) {   // one box set, opened: its films
           var L = BS[openSet].slice().sort(function (x, y) { return (+x.spine || 0) - (+y.spine || 0) || nameKey(x).localeCompare(nameKey(y)); });
           g.className = 'csets';
-          g.innerHTML = '<div class="csetopen"><button type="button" class="pill" id="csetback">‹ ' + (ecl ? 'Eclipse' : 'All box sets') + '</button>' + (BSI[openSet] ? '<img class="csetcov" alt="" src="' + esc(BSI[openSet].replace('_small.', '_large.')) + '">' : '') + '<h3>' + (BSP[openSet] ? '<span class="cssp">No. ' + BSP[openSet] + '</span>' : '') + esc(openSet) + '<small>' + L.length + (L.length === 1 ? ' film' : ' films') + '</small></h3>' + (BSD[openSet] ? '<p class="csetdesc">' + esc(BSD[openSet]) + '</p>' : '') + '</div><div class="gridcards">' + L.map(function (i) { return cardHTML(i, false, true); }).join('') + '</div>';
+          // (the set opened as Criterion's own page for it: its cover large, its name, its description, then its films: John, 18 Nov 2026, "I'd like
+          // to be able to see the picture of the box set cover larger, as it is on criterion")
+          g.innerHTML = '<div class="csetopen"><button type="button" class="pill" id="csetback">‹ ' + (ecl ? 'Eclipse' : 'All box sets') + '</button>' +
+            '<div class="csethero' + (BSI[openSet] ? '' : ' nocov') + '">' + (BSI[openSet] ? '<img class="csetcov" alt="' + esc(openSet) + '" src="' + esc(BSI[openSet].replace('_small.', '_large.')) + '">' : '') +
+            '<div class="csettxt">' + (BSP[openSet] ? '<span class="cssp">Spine No. ' + BSP[openSet] + '</span>' : '') + '<h2>' + esc(openSet) + '</h2><span class="csn">' + L.length + (L.length === 1 ? ' film here' : ' films here') + '</span>' +
+            (BSD[openSet] ? '<p class="csetdesc">' + esc(BSD[openSet]) + '</p>' : '') + '</div></div></div><div class="gridcards">' + L.map(function (i) { return cardHTML(i, false, true); }).join('') + '</div>';
           $('#csetback').onclick = function () { openSet = null; draw(); };
           wireCards(g, L); return;
         }
