@@ -1236,6 +1236,14 @@ def make_handler(g):
                                 CL.setdefault(int(f_['spine']), v_)
                             if re.match(r'^\d{4}$', str(f_.get('year') or '')):
                                 CT.setdefault((fold(f_.get('title')), int(f_['year'])), v_)
+                        # (an anthology: one Criterion release of several films, kept in one folder named after it (A Hollis Frampton Odyssey,
+                        # Martha Graham: Dance on Film, Three Documentaries): its films grouped as a box set under the release, with its spine
+                        # and cover: John, 18 Nov 2026, "the same may be true of other unusual criterion collection items")
+                        FOLDN_ = __import__("collections").Counter(os.path.dirname(i.get('Path') or '') for i in raw) if key == 'movies' else {}
+                        ANTH_ = {}
+                        for f_ in load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or []:
+                            if '/films/' in str(f_.get('link') or ''):
+                                ANTH_.setdefault(fold(f_.get('title')), f_)
                         for i in raw:
                             if i['Id'] in items:
                                 sp = spine_of(i.get('Path'), key == 'tv')
@@ -1248,6 +1256,19 @@ def make_handler(g):
                                 if not (d_ or t_) and key == 'movies':
                                     y_ = i.get('ProductionYear') or 0
                                     d_, c_, t_, s_, sl0_ = next((CT[(fold(i.get('Name')), y_ + dy)] for dy in (0, 1, -1) if (fold(i.get('Name')), y_ + dy) in CT), ('', '', [], [], ''))
+                                fd_ = os.path.dirname(i.get('Path') or '')
+                                af_ = ANTH_.get(fold(re.sub(r'\s*\((19|20)\d\d\)\s*$', '', os.path.basename(fd_)))) if key == 'movies' and FOLDN_.get(fd_, 0) > 1 else None
+                                if af_ and fold(af_.get('title')) != fold(i.get('Name')):
+                                    an_ = str(af_.get('title') or '')
+                                    SMETA.setdefault(fold(an_), (str(af_.get('spine') or ''), str(af_.get('img') or '')))
+                                    SNAME.setdefault(fold(an_), an_)
+                                    s_ = list(s_) + ([an_] if an_ not in s_ else [])
+                                    if not sp and str(af_.get('spine') or '').isdigit():
+                                        sp = int(af_['spine'])
+                                        o_['spine'] = sp
+                                    d_ = d_ or str(af_.get('director') or '')[:160]
+                                    c_ = c_ or str(af_.get('country') or '')[:60]
+                                    sl0_ = sl0_ or str(af_.get('link') or '').replace('https://www.criterion.com/films/', '')
                                 if sl0_:
                                     OWNED.add(sl0_)
                                 for x_ in s_:
