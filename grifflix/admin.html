@@ -794,7 +794,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var w = [WAIT.mac, WAIT.page, WAIT.themes].filter(Boolean);
     $('#allhead').innerHTML = w.length ? w.length + ' thing' + (w.length === 1 ? '' : 's') + ' <em>waiting</em>' : 'All <em>up to date</em>';
     var pageItems = WAIT.page ? [].map.call(document.querySelectorAll('#changes li'), function (li) { var t = li.firstChild.textContent; return /kubrick|to try|trial|\?look=|\?tvhero=/i.test(t) ? t + ' (a trial look: only on a device that asks for it)' : t; }) : [];
-    $('#alllist').innerHTML = (WAIT.mac ? '<li>' + esc(WAIT.mac) + '</li>' : '') + (WAIT.themes ? '<li><b>Goes live for everyone:</b> ' + esc(WAIT.themes) + '</li>' : '') +
+    $('#alllist').innerHTML = (WAIT.mac ? '<li>' + esc(WAIT.mac) + ((WAIT.macList || []).length ? '<ul style="margin:6px 0 0 18px;padding:0">' + WAIT.macList.map(function (t) { return '<li style="background:none;padding:2px 0">' + esc(t) + '</li>'; }).join('') + '</ul>' : '') + '</li>' : '') + (WAIT.themes ? '<li><b>Goes live for everyone:</b> ' + esc(WAIT.themes) + '</li>' : '') +
       (pageItems.length ? '<li><b>Goes live for everyone:</b><ul style="margin:6px 0 0 18px;padding:0">' + pageItems.map(function (t) { return '<li style="background:none;padding:2px 0">' + esc(t) + '</li>'; }).join('') + '</ul></li>' : '');
     $('#allgo').textContent = WAIT.page || WAIT.themes ? 'Update everything and put the draft live' : 'Update everything';
   }
@@ -1070,10 +1070,22 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       if (!sw.sha) { $('#swsay').innerHTML = 'Its Grifflix files: Update everything brings them up to date from GitHub (and from then on, says when there’s something new).'; WAIT.mac = 'The Mac’s Grifflix files (first time)'; summary(); return; }
       return gh('/compare/' + sw.sha + '...main').then(function (c) {
         var mac = (c.files || []).some(function (f) { return /^_grifflix\/mac\//.test(f.filename); });
-        var msgs = (c.commits || []).filter(function () { return mac; }).map(function (x) { return x.commit; }).filter(function (x) { return /^Grifflix/.test(x.message) && !/^Grifflix (live|data|Android|iPhone|TV)\b/.test(x.message); }).slice(-5);
-        $('#swsay').innerHTML = mac ? '<b>An update for the Mac is waiting</b> (Update everything, at the top; the converter carries on, starting its film again).' : 'Its Grifflix files are up to date (' + esc(sw.sha.slice(0, 7)) + ', ' + esc(when(sw.at * 1000)) + ').';
-        $('#swlist').innerHTML = msgs.map(function (x) { return '<li>' + esc(x.message.split('\n')[0].replace(/^Grifflix[^:]*:\s*/i, '')) + '<span class="when">' + when(x.committer.date) + '</span></li>'; }).join('');
-        WAIT.mac = mac ? 'An update for the Mac' + (msgs.length ? ': ' + msgs.map(function (x) { var t = x.message.split('\n')[0].replace(/^Grifflix[^:]*:\s*/i, ''); return t.length > 90 ? t.slice(0, 88) + '…' : t; }).slice(-2).join('; ') : '') : null; summary();
+        // (what's in it, each change and which of the Mac's files: John, 18 Nov 2026, "I often see 1 thing waiting · An update for the Mac,
+        // but I need actual details". The changes are the commits since the Mac's own that touched its files, whatever they're called)
+        var files = (c.files || []).filter(function (f) { return /^_grifflix\/mac\//.test(f.filename); }).map(function (f) { return f.filename.replace(/^_grifflix\/mac\//, ''); });
+        var after = {}; (c.commits || []).forEach(function (x) { after[x.sha] = 1; });
+        return (mac ? gh('/commits?sha=main&path=_grifflix/mac&per_page=30&since=' + new Date((sw.at - 60) * 1000).toISOString()) : Promise.resolve([])).then(function (cm) {
+          var msgs = (Array.isArray(cm) ? cm : []).filter(function (x) { return after[x.sha]; }).map(function (x) { return x.commit; }).reverse();
+          var line = function (x) { return x.message.split('\n')[0].replace(/^Grifflix[^:]*:\s*/i, ''); };
+          // (it takes them by itself, every 15 minutes, its gateway restarted only when nobody's watching)
+          $('#swsay').innerHTML = mac ? '<b>An update for the Mac is waiting</b>: ' + msgs.length + ' change' + (msgs.length === 1 ? '' : 's') + (files.length ? ' to ' + esc(files.join(', ')) : '') +
+            '. The Mac mini takes it by itself within 15 minutes (its gateway restarts once nobody’s watching), or now with Update everything, at the top.' :
+            'Its Grifflix files are up to date (' + esc(sw.sha.slice(0, 7)) + ', ' + esc(when(sw.at * 1000)) + ').';
+          $('#swlist').innerHTML = msgs.map(function (x) { return '<li>' + esc(line(x)) + '<span class="when">' + when(x.committer.date) + '</span></li>'; }).join('');
+          WAIT.mac = mac ? 'An update for the Mac mini' + (files.length ? ' (' + files.join(', ') + ')' : '') + ': it takes it by itself within 15 minutes' : null;
+          WAIT.macList = mac ? (msgs.length ? msgs.map(function (x) { var t = line(x); return (t.length > 160 ? t.slice(0, 158) + '…' : t) + ' (' + when(x.committer.date) + ')'; }) : ['(GitHub didn’t say what: look again in a minute)']) : [];
+          summary();
+        });
       });
     }).catch(function (e) { if (e && e.message === 'old') { $('#swsay').innerHTML = 'To update the Mac from here, it needs this one last Terminal command (from Claude); after that, it’s this button.'; } });
   }
