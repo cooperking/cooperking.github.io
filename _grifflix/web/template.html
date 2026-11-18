@@ -2031,15 +2031,15 @@ html.gcrit #cbody { color: var(--gc-ink); }
 /* (its cover larger, its count in it, no title under it, and no Collections button above: John, 17 Nov 2026, "The collection picture looks
    messy with the title underneath. Should be a bit larger with the number visible in the picture ... We can remove the collections button") */
 html.gcrit #main > .tabs:first-child { display: none; }
-html.gcrit #cbody .collhead { grid-template-columns: 132px minmax(0, 1fr); gap: 28px; align-items: center; margin: 6px 4px 18px; }   /* (compact: the cover says it already; John, 18 Nov 2026, "this isn't a very good use of space") */
+html.gcrit #cbody .collhead { grid-template-columns: 176px minmax(0, 1fr); gap: 30px; align-items: end; margin: -6px 0 0; padding: 20px clamp(14px, 2.4vw, 32px) 22px; background: var(--gc-panel); }   /* (compact: the cover says it already; John, 18 Nov 2026, "this isn't a very good use of space") */
 html.gcrit #cbody .collhead .kick { margin-bottom: 6px; }
 html.gcrit #cbody .colltitle { font-size: clamp(30px, 4vw, 44px) !important; margin: 0 0 6px; }
 html.gcrit #cbody .cstats { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 10px 0 0; font: 500 12px/1.4 var(--kfont); letter-spacing: .14em; text-transform: uppercase; color: var(--gc-grey, var(--fg-2)); }
 html.gcrit #cbody .cstats b { font-weight: 700; color: var(--gc-ink, var(--fg)); letter-spacing: .06em; margin-right: 5px; }
 html.gcrit #cbody .collpic { background: none; box-shadow: none; }
 html.gcrit #cbody .collpic .t, html.gcrit #cbody .collpic .s { display: none; }
-html.gcrit #cbody .collpic .ccov { box-shadow: 0 18px 40px rgba(0, 0, 0, .12); }
-@media (max-width: 760px) { html.gcrit #cbody .collhead { grid-template-columns: 96px minmax(0, 1fr); gap: 16px; } }
+html.gcrit #cbody .collpic .ccov { box-shadow: none; }
+@media (max-width: 760px) { html.gcrit #cbody .collhead { grid-template-columns: 116px minmax(0, 1fr); gap: 16px; } }
 html.gcrit .bar-top { background: var(--gc-page) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: 0 1px 0 var(--gc-line) !important; }
 html.gcrit body::before, html.gcrit body::after { background-color: var(--gc-page) !important; background-image: none !important; }
 @media (max-width: 600px) { html.gcrit #cbody .collhead + .tabs { flex-wrap: wrap !important; overflow: visible !important; row-gap: 8px; } html.gcrit #cbody .tabs .sfbar { position: static; margin-left: 0; padding-left: 0; box-shadow: none; background: none; } #cbody .cviews { flex: 1 0 100%; order: 9; } #cbody .cviews .pill { flex: 1; justify-content: center; } #cbody .tabs .cfind { flex: 1 1 140px; min-width: 0; } }
@@ -2048,7 +2048,7 @@ html.gcrit #cbody .kick::after { content: " · at Grifflix"; }
 html.gcrit #cbody .colltitle { font-family: var(--kfont); font-weight: 700; text-transform: uppercase; letter-spacing: .02em; color: var(--gc-ink); }
 html.gcrit #cbody .hsub, html.gcrit #cbody .ov { color: #555; }
 html.gcrit #cbody .collhead + .tabs, html.gcrit #cbody #cgrid { background: var(--gc-panel); }
-html.gcrit #cbody .collhead + .tabs { margin: 0; padding: 22px clamp(14px, 2.4vw, 32px) 0; }
+html.gcrit #cbody .collhead + .tabs { margin: 0; padding: 4px clamp(14px, 2.4vw, 32px) 0; border-top: 1px solid var(--gc-line); padding-top: 18px; }
 html.gcrit #cbody #cgrid { padding: 8px clamp(14px, 2.4vw, 32px) 28px; }
 html.gcrit #cbody .pill, html.gcrit #cbody .cfind { border: 1px solid var(--gc-line); color: var(--gc-ink); background: var(--gc-panel); font-family: var(--kfont); }
 html.gcrit #cbody .pill.on, html.gcrit #cbody .sfb.on { background: #eee; color: var(--gc-ink); }
