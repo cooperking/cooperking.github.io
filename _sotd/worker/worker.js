@@ -59,6 +59,7 @@ class HttpError extends Error {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (url.hostname === 'admin.' + G_LINK_HOST) return await gAdminProxy(request, url);   // (Grifflix's admin page as an app of its own: John, 18 Nov 2026)
     if (url.hostname === G_LINK_HOST) {   // grifflix.co.uk: Grifflix's own links (invitations, a day's film) and nothing of the songs' (John, 9 Nov 2026: "it still said song of the day in the link")
       if (url.pathname === '/g/ping') return new Response('grifflix', { headers: { 'Cache-Control': 'no-store' } });
       if (url.pathname === '/.well-known/webauthn') return new Response(JSON.stringify({ origins: G_WA_ORIGINS }), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600', 'Access-Control-Allow-Origin': '*' } });   // (Grifflix's passkeys work on the apps' address too)
@@ -1679,7 +1680,7 @@ async function gWeekly(env) {   // Monday morning: the week's Movies of the Day,
 }
 // ---- Grifflix's members
 const G_INVITE_USES = 5, G_INVITE_DAYS = 30, G_ORIGIN = 'https://cooperking.github.io';
-const G_ORIGINS = ['https://grifflix.co.uk', 'https://cooperking.github.io'], G_FROM = /^https:\/\/(cooperking\.github\.io|grifflix\.co\.uk)(\/|$)/;
+const G_ORIGINS = ['https://grifflix.co.uk', 'https://admin.grifflix.co.uk', 'https://cooperking.github.io'], G_FROM = /^https:\/\/(cooperking\.github\.io|(admin\.)?grifflix\.co\.uk)(\/|$)/;
 function gOrigin(request) { const o = request.headers.get('Origin') || ''; return G_ORIGINS.includes(o) ? o : G_ORIGIN; }   // (Grifflix's page on either address)
 // Grifflix on grifflix.co.uk: its pages from GitHub Pages (/grifflix/ there), at the root here: / the page, /admin its admin page,
 // /sw.js its service worker (so it covers the whole site), the rest as on the site (/grifflix/... as it is, else under /grifflix/)
@@ -1708,6 +1709,23 @@ async function gSiteProxy(request, url, env) {
     const to = new URL(r.headers.get('Location') || '/', 'https://cooperking.github.io');
     h.set('Location', to.pathname.replace(/^\/grifflix\//, '/') + to.search);
   }
+  return new Response(r.body, { status: r.status, headers: h });
+}
+// Grifflix's admin page on admin.grifflix.co.uk, an address of its own, so Chrome installs it as an app apart from Grifflix (on grifflix.co.uk
+// it counted as part of Grifflix's app, and offered only "Open in app": John, 18 Nov 2026, "I'd like to be able to save the Admin page as a
+// separate chrome app"). / the admin page, /manifest.webmanifest its own, the rest from GitHub Pages as it is (/grifflix/..., /songs/...)
+async function gAdminProxy(request, url) {
+  if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Not here.', { status: 405 });
+  let p = url.pathname;
+  if (p === '/manifest.webmanifest') return new Response(JSON.stringify({ id: '/', name: 'Grifflix Admin', short_name: 'Admin', start_url: '/', scope: '/', display: 'standalone',
+    background_color: '#1c1c1e', theme_color: '#1c1c1e', icons: [{ src: '/grifflix/admin-192.png', sizes: '192x192', type: 'image/png' }, { src: '/grifflix/admin-512.png', sizes: '512x512', type: 'image/png' },
+      { src: '/grifflix/admin-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }] }), { headers: { 'Content-Type': 'application/manifest+json', 'Cache-Control': 'public, max-age=300' } });
+  if (p === '/' || p === '/index.html' || p === '/admin' || p === '/admin.html') p = '/grifflix/admin.html';
+  else if (!p.startsWith('/grifflix/') && !p.startsWith('/songs/')) return new Response('Not here.', { status: 404 });
+  const r = await fetch('https://cooperking.github.io' + p + url.search, { headers: { 'User-Agent': request.headers.get('User-Agent') || 'Grifflix' }, cf: { cacheTtl: 60 } });
+  const h = new Headers(r.headers);
+  ['x-github-request-id', 'x-fastly-request-id', 'x-served-by', 'x-cache', 'x-cache-hits', 'x-timer', 'via', 'access-control-allow-origin'].forEach(k => h.delete(k));
+  if (r.status === 301 || r.status === 302) { const to = new URL(r.headers.get('Location') || '/', 'https://cooperking.github.io'); h.set('Location', to.pathname + to.search); }
   return new Response(r.body, { status: r.status, headers: h });
 }
 async function gAll(env) { return (await env.SOTD.get('gmembers', 'json')) || {}; }

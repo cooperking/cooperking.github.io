@@ -7,7 +7,10 @@ its sign-in and choices with it (in the link's #, never sent anywhere), and keep
 page shown inside another, stay where they are. On grifflix.co.uk, what came with it is kept and the link tidied */
 (function () {
   var L = location, ls; try { ls = localStorage; } catch (e) { return; }
-  if (L.hostname === 'grifflix.co.uk' && L.hash.indexOf('#carry=') === 0) {
+  if (L.hostname === 'admin.grifflix.co.uk') {   // (the admin page as an app of its own: its own manifest, so Chrome installs it apart from Grifflix: John, 18 Nov 2026)
+    var mf = document.createElement('link'); mf.rel = 'manifest'; mf.href = '/manifest.webmanifest'; document.head.appendChild(mf);
+  }
+  if (/^(admin\.)?grifflix\.co\.uk$/.test(L.hostname) && L.hash.indexOf('#carry=') === 0) {
     var i = L.hash.indexOf('|'), raw = i < 0 ? L.hash.slice(7) : L.hash.slice(7, i), rest = i < 0 ? '' : L.hash.slice(i + 1);
     try { var o = JSON.parse(decodeURIComponent(raw)); Object.keys(o).forEach(function (k) { if (/^grifflix-/.test(k) && ls.getItem(k) == null) ls.setItem(k, o[k]); }); } catch (e) {}
     try { history.replaceState(null, '', L.pathname + L.search + (rest ? '#' + rest : '')); } catch (e) {}
@@ -597,7 +600,15 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     if (!LIBIDX) return null; var m = String(name || '').match(/^(.*?)\s*\((\d{4})\)\s*$/), nm = m ? m[1] : name, y = year || (m ? m[2] : '');
     var k = FK(nm); return (y && (LIBIDX[k + '|' + y] || LIBIDX[k + '|' + (+y - 1)] || LIBIDX[k + '|' + (+y + 1)])) || LIBIDX[k] || null;
   }
-  function flA(id, text) { return '<a class="flink" href="/grifflix/#film/' + id + '" target="grifflix" rel="noopener" title="Open it in Grifflix">' + esc(text) + '</a>'; }
+  var SITE = location.hostname === 'admin.grifflix.co.uk' ? 'https://grifflix.co.uk/grifflix/' : '/grifflix/';   // (on the admin's own address, Grifflix is on its own)
+  function flA(id, text) { return '<a class="flink" href="' + SITE + '#film/' + id + '" target="grifflix" rel="noopener" title="Open it in Grifflix">' + esc(text) + '</a>'; }
+  if (location.hostname === 'admin.grifflix.co.uk') [].forEach.call(document.querySelectorAll('a[href^="/grifflix/"]'), function (a) { a.href = 'https://grifflix.co.uk' + a.getAttribute('href'); a.target = 'grifflix'; });
+  // (and from grifflix.co.uk, a way to it, signed in: what this page knows of John's sign-in carried in the link's #, never sent anywhere)
+  if (location.hostname === 'grifflix.co.uk' && !matchMedia('(display-mode: standalone)').matches) {
+    var bar0 = document.querySelector('.bar'), o0 = {};
+    try { for (var j0 = 0; j0 < localStorage.length; j0++) { var k0 = localStorage.key(j0); if (/^grifflix-/.test(k0)) o0[k0] = localStorage.getItem(k0); } } catch (e) {}
+    if (bar0) bar0.insertAdjacentHTML('beforeend', '<a class="btn small" style="float:right" href="https://admin.grifflix.co.uk/#carry=' + encodeURIComponent(JSON.stringify(o0)) + '" title="Opens the admin page at its own address, admin.grifflix.co.uk, where Chrome offers to install it as an app of its own">Admin as an app</a>');
+  }
   function FL(name, year, id) {   // (the site's own id for it first: a list's may be from before it was converted, and lead nowhere)
     var f = flId(name, year); if (f) return flA(f, name);
     if (id && /^[0-9a-f]{32}$/.test(id) && LIBIDX && LIBIDX['#' + id]) return flA(id, name);
