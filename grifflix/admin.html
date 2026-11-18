@@ -1432,7 +1432,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         if (k.gfree != null) bits.push(sz(k.gfree) + ' free on Google Drive');
         $('#backup').innerHTML = '<p class="stat" style="margin:14px 0 4px"><b>Backup to Google Drive:</b> ' + head + '</p>' +
           (bits.length ? '<p class="stat" style="margin:0 0 4px">' + bits.join(' · ') + '</p>' : '') +
-          '<p class="stat" style="margin:0 0 4px;opacity:.85">Each night, in “' + esc(k.to || 'Grifflix Backup') + '” on your Google Drive: the film list, your Grifflix data and scripts, the media server’s records, and the Grifflix files from GitHub. Anything changed is kept ' + (k.keep || 14) + ' days under Earlier. No sign-ins or keys go.</p>' +
+          '<p class="stat" style="margin:0 0 4px;opacity:.85">Each night, in “' + esc(k.to || 'Grifflix Backup') + '” on your Google Drive: the film list, your Grifflix data and scripts, the media server’s collections and settings (not watch history), and the Grifflix files from GitHub. Anything changed is kept ' + (k.keep || 14) + ' days under Earlier. No sign-ins or keys go.</p>' +
           '<div class="state"><button class="btn" type="button" id="bknow"' + (k.running ? ' disabled' : '') + '>' + (k.running ? 'Backing up…' : 'Back up now') + '</button></div>';
         $('#bknow').onclick = function () { this.disabled = true; this.textContent = 'Backing up…'; bkShow(true); };
         clearTimeout(bkShow.t); bkShow.t = setTimeout(bkShow, k.running ? 30000 : 600000);

@@ -3444,7 +3444,7 @@ BACKUP_STATE = {}
 # (what never goes: sign-ins, keys and tokens; the big programs it can get again; films on their way in; the Mac's own leftovers)
 BACKUP_SKIP = ['rclone', 'rclone.conf', '*.conf', 'settings.json', 'torbox.json', '*secret*', '*token*', '*.pickle', '*key*', '*.pem',
                '*.pkg', '*.zip', '*.dmg', 'incoming/**', '__pycache__/**', '*.pyc', '*.prev', '*.lock', '*.tmp', '._*', '.DS_Store',
-               '*.part', '*.rlog', 'watching', 'fetch-waiting', '.shas.json', 'Grifflix Converting/**', 'tunnel.log', 'setup.log']
+               '*.part', '*.rlog', 'watching', 'fetch-waiting', '.shas.json', 'Grifflix Converting/**', 'tunnel.log', 'setup.log', 'audio_metadata.csv']
 GH_PARTS = ('grifflix/', '_grifflix/', '.claude/skills/grifflix-theme/')   # (the Grifflix files in the repository)
 
 
@@ -3511,7 +3511,11 @@ def backup_lists(g, dest):
         with open(os.path.join(dest, 'Every file on the G-Drive.csv'), 'w', newline='', encoding='utf-8-sig') as f:
             w = csv.writer(f)
             w.writerow(['Folder', 'File', 'GB', 'Changed'])
+            t_end = time.time() + 1200   # (a drive this busy: the list as far as it got in 20 minutes, not the backup held up)
             for top, dirs, files in os.walk(root):
+                if time.time() > t_end:
+                    w.writerow(['(the drive was too busy to list the rest tonight)', '', '', ''])
+                    break
                 dirs[:] = sorted(d for d in dirs if not d.startswith('.') and d != 'Grifflix Converting')
                 for fn in sorted(files):
                     if fn.startswith('.'):
@@ -3526,37 +3530,59 @@ def backup_lists(g, dest):
 
 
 def backup_media_server(dest):
-    """The media server's own records (watch history, collections, the library), each database copied whole as it is, while it runs."""
-    import sqlite3, shutil
+    """The media server's own settings: each collection, playlist, its settings and its libraries. Not its databases: they're the
+    watch history (John, 18 Nov 2026: "I don't need to keep watch history") and what it reads from the films, made again by a scan."""
+    import shutil
     base = os.path.expanduser('~/.local/share/jellyfin')
     os.makedirs(dest, exist_ok=True)
-    for name in ('library.db', 'jellyfin.db'):
-        src = os.path.join(base, 'data', name)
-        if not os.path.exists(src):
-            continue
-        out = os.path.join(dest, name)
-        a = sqlite3.connect(src, timeout=60)
-        b_ = sqlite3.connect(out + '.tmp')
+    for old in ('library.db', 'jellyfin.db', 'library.db.gz', 'jellyfin.db.gz'):   # (an earlier backup's copies)
         try:
-            a.backup(b_)
-        finally:
-            b_.close(); a.close()
-        # (squashed: a database shrinks to a fraction, and a new copy goes each night: John, 18 Nov 2026, "That's surprisingly large")
-        import gzip
-        with open(out + '.tmp', 'rb') as i, gzip.open(out + '.gz.tmp', 'wb', 6) as o:
-            shutil.copyfileobj(i, o, 1 << 20)
-        os.remove(out + '.tmp')
-        os.replace(out + '.gz.tmp', out + '.gz')
-        try:
-            os.remove(out)   # (an older backup's unsquashed copy)
+            os.remove(os.path.join(dest, old))
         except OSError:
             pass
-    for sub in ('data/collections', 'data/playlists', 'config', 'root'):   # (small: each collection, playlist, the settings, the libraries)
+    for sub in ('data/collections', 'data/playlists', 'config', 'root'):
         s = os.path.join(base, *sub.split('/'))
         d = os.path.join(dest, *sub.split('/'))
         if os.path.isdir(s):
             shutil.rmtree(d, ignore_errors=True)
             shutil.copytree(s, d, ignore=shutil.ignore_patterns('*.log', '._*', '.DS_Store'))
+
+
+def audio_sheet_once():
+    """Once: the audio spreadsheet (scripts/audio_metadata.csv) made a Google Sheet of its own, "Grifflix audio metadata", on John's
+    Google Drive, without the cover pictures held inside it (30 MB of them); it's left out of the nightly backup (John, 18 Nov 2026:
+    "Keep that audio spreadsheet separate and put in a google sheet - doesn't need normal back up")."""
+    import csv, shutil, subprocess
+    mk = os.path.expanduser('~/Grifflix/audio-sheet.done')
+    src = '/Volumes/G-Drive/Grifflix/scripts/audio_metadata.csv'
+    home = os.path.expanduser('~/Grifflix')
+    rcl, conf = os.path.join(home, 'rclone'), os.path.join(home, 'rclone.conf')
+    if os.path.exists(mk) or not os.path.exists(src) or not os.path.exists(conf):
+        return
+    csv.field_size_limit(1 << 30)
+    os.makedirs(BACKUP_STAGE, exist_ok=True)
+    with open(src, newline='', encoding='utf-8', errors='replace') as f:
+        R = list(csv.reader(f))
+    h = R[0]
+    big = set(i for i in range(len(h)) if any(len(r[i]) > 2000 for r in R[1:] if i < len(r)))   # (the pictures)
+    keep = [i for i in range(len(h)) if i not in big and any(i < len(r) and r[i].strip() for r in R[1:])]
+    out = os.path.join(BACKUP_STAGE, 'Grifflix audio metadata.csv')
+    with open(out, 'w', newline='', encoding='utf-8') as f:
+        w = csv.writer(f)
+        for r in R:
+            w.writerow([(r[i] if i < len(r) else '')[:45000] for i in keep])
+    cf = os.path.join(BACKUP_STAGE, '.rclone-audio.conf')
+    shutil.copyfile(conf, cf); os.chmod(cf, 0o600)
+    try:
+        r = subprocess.run([rcl, '--config', cf, 'copyto', out, 'gdrive:Grifflix audio metadata.csv', '--drive-import-formats', 'csv', '-q'],
+                           capture_output=True, text=True, timeout=1800)
+    finally:
+        os.remove(cf)
+    if r.returncode:
+        log('Audio spreadsheet to a Google Sheet: couldn’t:', (r.stderr or '').strip()[-200:])
+        return
+    log('Audio spreadsheet: a Google Sheet now, “Grifflix audio metadata” on Google Drive (%d rows, %d columns; the cover pictures left out)' % (len(R) - 1, len(keep)))
+    open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
 
 
 def backup_now(g):
@@ -3653,6 +3679,10 @@ def backup_now(g):
 def keep_backup(g):
     """Each night at about 03:40, and whenever the admin page's Back up now is pressed; missed nights (the Mac off) made up at the next start."""
     time.sleep(600)
+    try:
+        audio_sheet_once()
+    except Exception as e:
+        log('Audio spreadsheet to a Google Sheet:', str(e)[:200])
     while True:
         try:
             last = load(BACKUP_AT, {}) or {}
