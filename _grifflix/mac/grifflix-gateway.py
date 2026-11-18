@@ -1078,6 +1078,10 @@ def make_handler(g):
                         for k_, v_ in (ctj_.get('tags') or {}).items():
                             for sl_ in v_:
                                 TG.setdefault(sl_, []).append(k_)
+                        SMETA = {}   # (each box set's spine and cover, from Criterion's list already here: no bookmarklet needed: John, 18 Nov 2026)
+                        for f_ in load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or []:
+                            if '/boxsets/' in str(f_.get('link') or ''):
+                                SMETA[fold(f_.get('title'))] = (str(f_.get('spine') or ''), str(f_.get('img') or ''))
                         for k_, v_ in (ctj_.get('sets') or {}).items():   # (the box set each film is in, Collector's Sets: John, 17 Nov 2026)
                             for sl_ in v_:
                                 TS.setdefault(sl_, []).append(k_)
@@ -1111,8 +1115,8 @@ def make_handler(g):
                                         o_['ctags'] = t_
                                     if s_:
                                         o_['cset'] = s_
-                                        o_['csetsp'] = [str((ctj_.get('setspine') or {}).get(x_) or '') for x_ in s_]   # (each box set's spine, beside its name)
-                                        o_['csetimg'] = [str((ctj_.get('setimg') or {}).get(x_) or '') for x_ in s_]   # (and its cover)
+                                        o_['csetsp'] = [str((ctj_.get('setspine') or {}).get(x_) or SMETA.get(fold(x_), ('', ''))[0] or '') for x_ in s_]   # (each box set's spine, beside its name)
+                                        o_['csetimg'] = [str(SMETA.get(fold(x_), ('', ''))[1] or (ctj_.get('setimg') or {}).get(x_) or '') for x_ in s_]   # (and its cover)
                     lists[key] = [i['Id'] for i in raw if i['Id'] in items]
                     if key == 'movies':
                         self.extras(raw, items, lists)
