@@ -42,12 +42,18 @@ SKIP = os.path.join(HOME, 'convert-skip')   # (John's Skip on the admin page: th
 MINE = os.path.getmtime(os.path.abspath(__file__))   # (this version: a newer one taken up between films, not by stopping one part way)
 
 
+class MacBusy(Exception):
+    """John's Mac took up converting: the Mac mini's own film stopped and cleared, back at the front of its list."""
+
+
 def mac_converting():
-    """John's own Mac converting a film this minute (its job heard from in the last 2 minutes): the Mac mini's own converting waits,
-    since both read the one G-Drive over its USB 2 and each slows the other (John, 18 Nov 2026: "is there no way to sort this out")."""
+    """John's own Mac converting a film this minute (its job heard from in the last 2 minutes), or copying one it made back to the
+    G-Drive: the Mac mini's own converting stops, since both use the one G-Drive over its USB 2 and each slows the other (John, 18 Nov
+    2026: "is there no way to sort this out"; "the conversion should have been stopped and cleared when I started converting on my mac")."""
     try:
         J = json.load(open(os.path.join(HOME, 'convert-jobs.json')))
-        return any(j.get('state') in ('started', 'converting') and time.time() - (j.get('seen') or 0) < 120 for j in J.values())
+        return any(j.get('mac') and not j.get('ended') and ((j.get('state') in ('started', 'converting') and time.time() - (j.get('seen') or 0) < 120)
+                   or (j.get('state') == 'copying' and time.time() - (j.get('seen') or 0) < 1800)) for j in J.values())
     except (OSError, ValueError, AttributeError):
         return False
 
@@ -627,7 +633,9 @@ def convert(item, ffmpeg, ffprobe, st):
                         show()
                 if k % 4 == 0:   # (how far it's got: every 20 seconds)
                     show(why_ if paused else '')
-                why_ = 'someone is watching' if watching() else 'your Mac is converting' if mac_converting() and not item.get('fetched') and not item.get('urgent') else 'a film is downloading' if item.get('mode') == 'remux' and not item.get('fetched') and not item.get('new') and not item.get('redo') and downloading() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() and not item.get('urgent') else '')
+                if mac_converting():   # (stopped and cleared, not paused: John, 18 Nov 2026)
+                    raise MacBusy()
+                why_ = 'someone is watching' if watching() else 'a film is downloading' if item.get('mode') == 'remux' and not item.get('fetched') and not item.get('new') and not item.get('redo') and downloading() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() and not item.get('urgent') else '')
                 if why_ and not paused:
                     p.send_signal(signal.SIGSTOP); paused = True; log('  paused: ' + why_)
                 elif not why_ and paused:
@@ -1118,11 +1126,20 @@ while rest:
         while not night():
             now('waiting', why='waiting for %d am' % NIGHT[0])
             time.sleep(60)
+    # (only while John's Mac isn't converting and nothing is playing: John, 18 Nov 2026, "only picking up when I'm not and nothing is playing")
+    while mac_converting() or watching():
+        now('waiting', why='your Mac is converting' if mac_converting() else 'someone is watching')
+        time.sleep(30)
     if not os.path.exists(it['path']):   # (renamed or deleted since it was listed: looked at again under its new name later)
         log('  %s isn’t where it was (renamed or deleted): skipped for now' % it['name'])
         continue
     try:
-        convert(it, ffmpeg, ffprobe, st)
+        try:
+            convert(it, ffmpeg, ffprobe, st)
+        except MacBusy:
+            log('  stopped and cleared: your Mac is converting. %s is back at the front, for when it isn’t' % it['name'])
+            rest.insert(0, it)
+            continue
         if it.get('redo'):   # (made again in John's language: the flag down)
             st['ask'].pop(it['id'], None)
             save_state(st)

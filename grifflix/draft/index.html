@@ -2302,7 +2302,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '1b0fa820fd49' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '43006d2fcaa6' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6135,6 +6135,7 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
           : st === 'done' ? '<p class="ov" style="margin:0;font-size:14px">Done: Grifflix shows the new copy within a few minutes.</p>'
           // (John's Mac never took it up, or went quiet part way: said plainly, when it was asked for: John, 17 Nov 2026, "how can I tell what
           // happened with the convert from my mac command")
+          : st === 'again' ? '<p class="ov" style="margin:0;font-size:14px">Back at the front of your Mac’s queue' + (j.error ? ' (' + esc(j.error) + ')' : '') + ': it starts again when your Mac is home.</p>'
           : st === 'notstarted' ? '<p class="ov" style="margin:0;font-size:14px">Your Mac never started it (asked for ' + esc(new Date(j.at * 1000).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + '): no Terminal window opened, or it stopped before it began. The Mac mini will do it in its own time, or press Convert on this Mac again (on a Mac where the Grifflix Convert app is set up: the admin page, Conversions).</p>'
           : st === 'quiet' && !j.t ? '<p class="ov" style="margin:0;font-size:14px">Your Mac took it up but didn’t start converting' + (j.stage ? ' (it got as far as: ' + esc(j.stage) + ')' : '') + '. Its Terminal window may be waiting for an answer, or was closed. Press Convert on this Mac to try again; the Mac mini will do it otherwise.</p>'
           : st === 'quiet' ? '<p class="ov" style="margin:0;font-size:14px">Your Mac stopped saying how far it’s got (at ' + Math.round(j.dur ? j.t / j.dur * 100 : 0) + '%, ' + esc(new Date((j.seen || j.at) * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })) + '): is it asleep, or its Terminal window closed? Look at that window on your Mac.</p>'

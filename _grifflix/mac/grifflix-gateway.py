@@ -844,6 +844,13 @@ def make_handler(g):
                             j['state'], j['ended'] = 'lost', now
                             log('Queue for John’s Mac: %s never collected, back at the front' % j['plan']['item'].get('name'))
                             convjobs_save()
+                    # (a film John's Mac went quiet on, home again now: the network went, or the lid closed. Back at the front of its queue,
+                    # from the start; one made and waiting to be copied over is left three days, the Mac keeping it to copy when it can:
+                    # John, 18 Nov 2026, "what happens if my mac leaves the network while a conversion is running?")
+                    for t_, j in list(CONVJOBS.items()):
+                        quiet_ = now - (j.get('seen') or j['at'])
+                        if j.get('mac') and not j.get('ended') and ((j.get('state') in ('started', 'converting') and quiet_ > 1200) or (j.get('state') == 'copying' and quiet_ > 3 * 86400)):
+                            macq_again(j, now, 'no word from John’s Mac since %s' % time.strftime('%H:%M', time.localtime(j.get('seen') or j['at'])))
                     busy = [j for j in CONVJOBS.values() if j.get('mac') and j.get('state') in ('started', 'converting') and now - (j.get('seen') or j['at']) < 900]
                     if busy:
                         return self.send_json(200, {'wait': 'busy'})
@@ -875,7 +882,7 @@ def make_handler(g):
                 if u.path.startswith('/convjob/'):   # (John's Mac, converting a film for the Mac mini: its job, and word when it's done)
                     parts = u.path.split('/')
                     job = CONVJOBS.get(parts[2] if len(parts) > 2 else '')
-                    if not job or time.time() - job['at'] > 12 * 3600:
+                    if not job or time.time() - job['at'] > (4 * 86400 if method == 'POST' else 12 * 3600):   # (a film made, copied over when John's Mac is home again)
                         return self.send_json(404, {'error': 'That job isn’t here (the Mac mini may have restarted): press Convert on this Mac again.'})
                     pl = job['plan']
                     if method == 'GET':
@@ -885,6 +892,10 @@ def make_handler(g):
                         convjobs_save()
                         return self.send_json(200, {'name': pl['item'].get('name'), 'src': pl['src'], 'tmp': pl['tmp'], 'dur': pl['dur'], 'args': vt_args(pl['cmd'])})
                     body = self.body()
+                    if job.get('state') == 'lost' and job.get('again') and len(parts) > 3 and parts[3] == 'progress':   # (not lost after all: on again)
+                        Q = [x for x in (load(MACQ, []) or []) if x.get('id') != job['id']]
+                        save(MACQ, Q); job.pop('ended', None); job.pop('again', None)
+                        log('Queue for John’s Mac: %s going again on John’s Mac, out of the queue' % pl['item'].get('name'))
                     if len(parts) > 3 and parts[3] == 'progress' and body.get('stage') and 't' not in body:   # (a step on John's Mac, said: John, 17 Nov 2026)
                         job['stage'], job['seen'] = str(body.get('stage'))[:160], time.time()
                         if body.get('copying'):   # (made: copying itself to the G-Drive while John's Mac takes up the next film)
@@ -919,6 +930,8 @@ def make_handler(g):
                                 CONV_NOW.set()
                             else:
                                 log('Not converted on John’s Mac: %s (%s)' % (job['plan']['item'].get('name'), str(body.get('error') or '')[:200]))
+                                if body.get('again'):   # (the G-Drive went part-way: back at the front of its queue)
+                                    macq_again(job, time.time(), str(body.get('error') or ''))
                                 try:
                                     os.remove(job['plan']['tmp'])
                                 except OSError:
@@ -2393,6 +2406,8 @@ def make_handler(g):
             last_mac = max([x.get('seen') or x['at'] for x in CONVJOBS.values() if x.get('state') not in ('waiting', 'notstarted')] or [0])
             for j in sorted(CONVJOBS.values(), key=lambda j: -j['at']):
                 st_ = j.get('state') or 'waiting'
+                if st_ == 'lost' and j.get('again') and now_ - (j.get('ended') or j['at']) < 1800:
+                    st_ = 'again'   # (back in John's Mac's queue, said why, for half an hour)
                 if st_ in ('notstarted', 'lost') or (st_ in ('done', 'failed') and now_ - (j.get('ended') or j['at']) > 1800) or now_ - j['at'] > 86400:
                     continue
                 if st_ in ('started', 'converting', 'copying'):
@@ -4486,6 +4501,20 @@ def claim_renew(iid):
         save(f, c)
     except Exception:
         pass
+
+
+def macq_again(j, now, why):
+    """A film John's Mac didn't finish through no fault of its own, back at the front of its queue (once: its job marked lost)."""
+    Q = load(MACQ, []) or []
+    if not any(x.get('id') == j['id'] for x in Q):
+        Q.insert(0, dict({'id': j['id'], 'name': j['plan']['item'].get('name') or '', 'at': int(now)}, **({'force': True} if j.get('force') else {})))
+        save(MACQ, Q)
+    j['state'], j['ended'], j['again'], j['error'] = 'lost', now, True, why[:200]
+    claims = load(os.path.expanduser('~/Grifflix/convert-claims.json'), {}) or {}
+    if claims.pop(j['id'], None) is not None:
+        save(os.path.expanduser('~/Grifflix/convert-claims.json'), claims)
+    log('Queue for John’s Mac: %s back at the front (%s)' % (j['plan']['item'].get('name'), why))
+    convjobs_save()
 
 
 def convjobs_save():
