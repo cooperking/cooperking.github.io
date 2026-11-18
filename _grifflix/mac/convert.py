@@ -153,7 +153,10 @@ def why(ms):
     cont0 = [c.strip() for c in (g(ms, 'Container') or '').lower().split(',') if c.strip()]
     if cont0 and not any(c in ('mp4', 'm4v', 'mov') for c in cont0):
         return REPACK + ' (%s file)' % cont0[0].upper()
-    if w > MAX_W + 8 or h > MAX_H + 8:
+    # (an HDR picture (HDR10, Dolby Vision, HLG) is never made smaller or turned into 1080p here: its colours need converting too, which
+    # this ffmpeg can't, and it came out washed out. It's kept as it is, only repackaged if need be: 18 Nov 2026, Wild at Heart)
+    hdr = is_hdr(v)
+    if (w > MAX_W + 8 or h > MAX_H + 8) and not hdr:
         return 'bigger than 1080p (%dx%d)' % (w, h)
     # (10-bit HEVC left as it is too, like 8-bit: every player John has plays it, and a device that can't is sent a conversion made as
     # it plays (John, 16 Nov 2026: "new films already turned to mp4, but now being converted again just because HEVC. I haven't found a
@@ -174,7 +177,7 @@ def why(ms):
         # "converted to a smaller size without losing noticeable quality", "I don't want to convert films twice"). Grifflix's own
         # conversions are all under 8 Mbps, so never made again; HEVC is already efficient, so only far bigger ones)
         thr = (8.5 if h >= 900 else 5 if h >= 600 else 3) * (1.6 if vc in ('hevc', 'h265') else 1)
-        if mbps > thr:
+        if mbps > thr and not hdr:
             return SHRINK + ' (%.1f Mbps)' % mbps
         return None
     return 'format (%s%s)' % (vc or '?', ', 10-bit' if bits > 8 or '10' in prof else '')
@@ -774,11 +777,13 @@ if CMD in ('plan', 'finish'):   # (John's "Convert on this Mac", 16 Nov 2026: th
     ffmpeg_, ffprobe_ = tools()
     if CMD == 'plan':
         found = [i for i in fresh(gather(), st) if i['id'] == sys.argv[2]]
-        if not found and 'force' in sys.argv[3:]:   # (one of the largest, queued for John's Mac to make smaller: John, 18 Nov 2026)
+        # (one queued for John's Mac: made smaller, never only repackaged, which there frees nothing and copies the whole film over the
+        # network twice: Disclosure Day, 40.6 GB, at 0.6x: John, 18 Nov 2026, "I'm going to save space by converting the bigger files on my mac")
+        if 'force' in sys.argv[3:] and (not found or found[0].get('mode') == 'remux'):
             f = shrink_item(sys.argv[2])
-            found = [f] if f else []
+            found = [f] if f else []   # (an HDR one: passed over here; the Mac mini repackages it itself if it needs it)
         if not found:
-            print(json.dumps({'error': 'It plays everywhere as it is: nothing to convert.'}))
+            print(json.dumps({'error': 'It plays everywhere as it is, or it’s HDR (kept as it is so its colours aren’t spoilt): nothing to convert.'}))
             sys.exit()
         try:
             print(json.dumps(dict(convert(dict(found[0], plan_only=True, urgent=True), ffmpeg_, ffprobe_, st), item=found[0])))
@@ -882,11 +887,20 @@ def chosen(st, have):
     return out
 
 
+def is_hdr(v):
+    tr = (g(v, 'ColorTransfer') or '').lower()
+    return (g(v, 'VideoRange') or '').upper() == 'HDR' or tr in ('smpte2084', 'arib-std-b67') or 'dovi' in (g(v, 'VideoRangeType') or '').lower()
+
+
 def shrink_item(iid, name=None):
-    """Any film, to be made smaller at the careful setting, whatever the converter would have said of it (the largest, chosen by John)."""
+    """Any film, to be made smaller at the careful setting, whatever the converter would have said of it (the largest, chosen by John);
+    not an HDR one (its colours would be spoilt)."""
     it = call('GET', '/Users/%s/Items/%s' % (s['jf_user_id'], iid), Fields='MediaSources,Path,ProductionYear,CommunityRating,DateCreated') or {}
     path = g(it, 'Path') or ''
     if not path or not os.path.exists(path):
+        return None
+    v = next((x for x in g((g(it, 'MediaSources') or [{}])[0], 'MediaStreams') or [] if g(x, 'Type') == 'Video'), {})
+    if is_hdr(v):
         return None
     return {'id': iid, 'name': g(it, 'Name') or name or '?', 'year': g(it, 'ProductionYear', ''), 'lib': 'movies' if g(it, 'Type') == 'Movie' else 'tv',
             'why': SHRINK + ' (chosen by you)', 'mode': 'shrink', 'path': path, 'mins': round((g(it, 'RunTimeTicks') or 0) / 6e8),
