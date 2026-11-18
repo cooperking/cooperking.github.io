@@ -113,6 +113,13 @@
    "title": "Decide whether to replace the Mac mini",
    "why": "It's a 2010 model: USB 2 only (the G-Drive runs at a fraction of its speed), a 2-core processor flat out, and macOS too old for current tools.",
    "how": "A used Mac mini from 2018 or later (about £200–£350) with the same drive on USB 3. Tell Claude before buying, to check the model."
+  },
+  {
+   "id": "criterion-features-bm",
+   "added": "2026-11-18",
+   "title": "Run both Criterion bookmarklets again, for the special features",
+   "why": "Criterion's special features lists, for each film and each box set, ticked where you have that extra.",
+   "how": "Films › Criterion's covers: drag both bookmarks to your bar again (replacing the old ones). Genres: open Criterion's list, click it, choose criterion-tags.json. Synopses: Copy your list, open criterion.com, click it, paste, then choose criterion-synopses.json (it reads every film again once, about 3 seconds each, and carries on if Criterion pauses it)."
   }
  ]
 }
