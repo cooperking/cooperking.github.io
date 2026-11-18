@@ -544,7 +544,12 @@ def convert(item, ffmpeg, ffprobe, st):
     if mkv:
         cmd += ['-c:s', 'copy', '-c:t', 'copy']
     else:
-        cmd += ['-c:s', 'mov_text', '-movflags', '+faststart']
+        # (the index put at the front, so it plays from the start at once, is a second pass that rewrites the whole file, showing
+        # nothing: for a big film repackaged here, over this Mac's USB 2, that's an hour or more, and it was given up on twice for
+        # Disclosure Day (40.6 GB). Known before it starts, so not done: the index stays at the end, and players (the media server, browsers,
+        # TVs) ask for that part first, as they do for any large file. A file made smaller is small, so it keeps it: John, 18 Nov 2026)
+        big = remux and os.path.getsize(src) > 10e9
+        cmd += ['-c:s', 'mov_text'] + ([] if big else ['-movflags', '+faststart'])
     cmd += ['-max_muxing_queue_size', '9999', tmp]
 
     # (a test first, on the first few seconds, onto the Mac's own disk: what ffmpeg would refuse (a soundtrack or subtitle an MP4 can't
