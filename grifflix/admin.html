@@ -822,7 +822,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     if (typeof wtDraw === 'function') wtDraw();
   }
   // (each step shown as it goes, and what it did; kept on this device, so the last update's outcome is there after a reload)
-  var STEPS = [['mac', 'The Mac mini’s own software'], ['data', 'Films, TV and Movie of the Day sent to the site'], ['themes', 'New themes put live'], ['page', 'The draft put live for everyone']];
+  var STEPS = [['mac', 'The Mac mini’s own software'], ['page', 'The draft (and any new themes) put live for everyone'], ['data', 'The library: films, TV and Movie of the Day sent to the site']];
   var ST = { at: 0, s: {} }, MACRESTART = false, pageWatch = 0;
   try { var st0 = JSON.parse(store.get('grifflix-lastupdate') || 'null'); if (st0 && st0.at) ST = st0; } catch (e) {}
   var hm = function (t) { return new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); };
@@ -872,37 +872,43 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     if (!armed) { armed = setTimeout(function () { armed = 0; b.style.background = ''; summary(); }, 12000); b.style.background = '#f08a4b'; b.textContent = WAIT.page || WAIT.themes ? 'Sure? Tap again: the draft goes live for everyone' : 'Sure? Tap again to update everything'; return; }
     clearTimeout(armed); armed = 0; b.style.background = ''; b.disabled = true; RUNNING = true; WAIT.fail = [];
     ST = { at: Date.now(), s: {} }; MACRESTART = false; clearInterval(pageWatch);
-    STEPS.forEach(function (k) { stepSet(k[0], 'waiting', 'to come'); });
+    // (only what's needed, in this order: the Mac's software if there's an update for it; the draft, with any new themes, if there's
+    // something to put live; the library last: John, 18 Nov 2026, "the update everything button should only update the mac if there is an
+    // update and only update the site if there is something to put live. themes shouldn't be its own separate thing ... The library should
+    // be done last")
+    var doMac = !!WAIT.mac, doPage = !!(WAIT.page || WAIT.themes);
+    if (doMac) stepSet('mac', 'waiting', 'to come');
+    if (doPage) stepSet('page', 'waiting', 'to come');
+    stepSet('data', 'waiting', 'to come');
     var run = function (k, fn, none) {
       cur = k; stepSet(k, 'working', 'starting…');
       return fn().then(function (r) { cur = ''; stepSet(k, r ? 'done' : 'skip', r || none); return r; }, function (e) { cur = ''; stepSet(k, 'failed', e.message || 'didn’t work'); throw e; });
     };
-    // (each step on its own: one that fails is said, plainly, at the top, and the rest still go: the draft wasn't put live when the Mac's
-    // step failed before it: John, 18 Nov 2026)
-    var LBL = { mac: 'the Mac mini’s software', data: 'films sent to the site', themes: 'the themes', page: 'putting the draft live' };
+    // (each step on its own: one that fails is said, plainly, at the top, and the rest still go)
+    var LBL = { mac: 'the Mac mini’s software', data: 'films sent to the site', page: 'putting the draft live' };
     var soft = function (k, fn, none) { return run(k, fn, none).catch(function (e) { WAIT.fail.push([LBL[k], e.message || 'it didn’t work']); return ''; }); };
-    soft('mac', function () {   // (the gateway itself updated: a second pass, so anything new only it knew to fetch comes too)
+    var watchLive = function () {   // (the page: watched until it's really live, as GitHub publishes it)
+      WAIT.going = true; summary();
+      stepSet('page', 'waiting', 'sent: GitHub is publishing it (usually a minute or two)…');
+      var t0 = Date.now(); clearInterval(pageWatch);
+      pageWatch = setInterval(function () {
+        Promise.all([page('/grifflix/draft/index.html'), page('/grifflix/index.html')]).then(function (r) {
+          if (r[0] === r[1]) { clearInterval(pageWatch); stepSet('page', 'done', 'live for everyone at ' + hm(Date.now()) + ' (a phone or the app may need closing and opening again to show it)'); draftLive(); }
+          else if (Date.now() - t0 > 6 * 60000) { clearInterval(pageWatch); stepSet('page', 'failed', 'still not live after 6 minutes'); WAIT.going = false; WAIT.fail.push(['putting the draft live', 'GitHub hadn’t published it after 6 minutes: press Update everything again; if it happens again, tell Claude']); draftLive(); }
+        }).catch(function () {});
+      }, 10000);
+    };
+    (doMac ? soft('mac', function () {   // (the gateway itself updated: a second pass, so anything new only it knew to fetch comes too)
       return stepMac(say).then(function (m) { return MACRESTART ? stepMac(say).then(function (m2) { return m + (m2 ? '; then ' + m2 : ''); }) : m; });
-    }, 'already up to date')
+    }, 'already up to date') : Promise.resolve(''))
       .then(function (m) { if (m) done.push('Mac ' + m); return unrepeat(say).then(function (u) { if (u) done.push(u + ' repeated day' + (u === 1 ? '' : 's') + ' given a new film'); }, function () {}); })
-      .then(function () { return soft('data', function () { return stepData(say, false); }, 'nothing new'); })
-      .then(function (d) { if (d) done.push(d); return soft('themes', function () { return stepThemes(say); }, 'none waiting'); })
-      .then(function (t) { if (t) done.push(t); return draftLive().then(function () { return soft('page', function () { return stepPublish(say); }, 'nothing waiting: the live page is the draft'); }); })
-      .then(function (p) {
-        b.disabled = false; RUNNING = false; if (p) WAIT.going = true; summary();
+      .then(function () { return doPage ? draftLive().then(function () { return soft('page', function () { return stepThemes(say).then(function (t) { return stepPublish(say).then(function (p) { return [t, p].filter(Boolean).join('; '); }); }); }, 'nothing waiting: the live page is the draft'); }) : ''; })
+      .then(function (p) { if (p) { done.push('the draft ' + p); watchLive(); } return soft('data', function () { return stepData(say, false); }, 'nothing new'); })
+      .then(function (d) {
+        if (d) done.push(d);
+        b.disabled = false; RUNNING = false; summary();
         toast(WAIT.fail.length ? 'Didn’t work: ' + WAIT.fail.map(function (f) { return f[0]; }).join(', ') + ' (see the top)' : done.join(' · ') || 'Everything was up to date');
-        if (p) {   // (the page: watched until it's really live, as GitHub publishes it)
-          stepSet('page', 'waiting', 'sent: GitHub is publishing it (usually a minute or two)…');
-          var t0 = Date.now(); clearInterval(pageWatch);
-          pageWatch = setInterval(function () {
-            Promise.all([page('/grifflix/draft/index.html'), page('/grifflix/index.html')]).then(function (r) {
-              if (r[0] === r[1]) { clearInterval(pageWatch); stepSet('page', 'done', 'live for everyone at ' + hm(Date.now()) + ' (a phone or the app may need closing and opening again to show it)'); draftLive(); }
-              else if (Date.now() - t0 > 6 * 60000) { clearInterval(pageWatch); stepSet('page', 'failed', 'still not live after 6 minutes: look at Builds on GitHub (Mac tab)'); WAIT.going = false; WAIT.fail.push(['putting the draft live', 'GitHub hadn’t published it after 6 minutes: press Update everything again; if it happens again, tell Claude']); draftLive(); }
-            }).catch(function () {});
-          }, 10000);
-        }
-      })
-      .catch(function (e) { b.disabled = false; RUNNING = false; summary(); toast(e.message); STEPS.forEach(function (k) { if (ST.s[k[0]] && ST.s[k[0]].st === 'waiting') stepSet(k[0], 'skip', 'not done: a step before it failed'); }); });
+      });
   };
   function stepThemes(say) {   // (the months' themes saved on the admin page, put live)
     if (!WAIT.themes) return Promise.resolve('');
@@ -1524,6 +1530,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         '<span class="state" style="margin-top:6px"><button class="btn small primary" type="button" data-ca="' + esc(x.id) + '" data-op="allow">Allow</button><button class="btn small" type="button" data-ca="' + esc(x.id) + '" data-op="decline">Decline</button></span></li>';
     }).join('');
     var ST2 = { doing: 'doing it now…', done: '✓', failed: 'didn’t work', declined: 'declined' };
+    var recent = past.filter(function (x) { return Date.now() / 1000 - (x.finished || x.answered || x.at) < 3600 && x.state !== 'declined'; });
+    $('#calist').innerHTML += recent.map(function (x) { return '<li style="opacity:.85"><b>' + (x.state === 'done' ? '✓ Done: ' : x.state === 'doing' ? 'Doing now: ' : '✕ Didn’t work: ') + esc(x.title) + '</b><span class="when">' + esc(x.result || '') + ' · ' + esc(when((x.finished || x.answered || x.at) * 1000)) + '</span></li>'; }).join('');
     $('#cadone').hidden = !past.length; $('#cadone summary').textContent = 'What Claude asked (' + past.length + ')';
     $('#cadonelist').innerHTML = past.slice(0, 20).map(function (x) { return '<li>' + esc(x.title) + ' · <b>' + (ST2[x.state] || esc(x.state)) + '</b><span class="when">' + esc(x.result || x.why || '') + ' · ' + esc(when((x.finished || x.answered || x.at) * 1000)) + '</span></li>'; }).join('');
     [].forEach.call(document.querySelectorAll('[data-ca]'), function (b) { b.onclick = function () {
@@ -1531,7 +1539,19 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       [].forEach.call(b.parentNode.querySelectorAll('button'), function (x) { x.disabled = true; });
       fetch(GW + '/api/claudeasks', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ id: b.dataset.ca, op: b.dataset.op }) })
         .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'No'); return j; }); })
-        .then(function (j) { WT.asks = j.asks || []; wtDraw(); toast(b.dataset.op === 'allow' ? 'Allowed: being done now' : 'Declined'); setTimeout(wtAuto, 8000); setTimeout(wtAuto, 30000); })
+        .then(function (j) { WT.asks = j.asks || []; wtDraw(); toast(b.dataset.op === 'allow' ? 'Allowed: being done now…' : 'Declined');
+          // (followed till it's done, and what came of it said: John, 18 Nov 2026, "I already clicked the plex button a while ago, so something
+          // isn't being picked up": it had been done, but the page never said so)
+          if (b.dataset.op !== 'allow') return;
+          var id = b.dataset.ca, n = 0, look = function () {
+            fetch(GW + '/api/claudeasks', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (k) {
+              WT.asks = k.asks || []; wtDraw();
+              var x = WT.asks.filter(function (a) { return a.id === id; })[0];
+              if (x && (x.state === 'done' || x.state === 'failed')) toast((x.state === 'done' ? 'Done: ' : 'Didn’t work: ') + (x.result || x.title));
+              else if (n++ < 120) setTimeout(look, 5000);
+            }).catch(function () { if (n++ < 120) setTimeout(look, 5000); });
+          };
+          setTimeout(look, 3000); })
         .catch(function (e) { [].forEach.call(b.parentNode.querySelectorAll('button'), function (x) { x.disabled = false; }); toast(e.message || 'The Mac mini didn’t answer.'); });
     }; });
     var need = open.filter(function (x) { return !x.optional; }).length + ask.length, opt = open.length - open.filter(function (x) { return !x.optional; }).length;

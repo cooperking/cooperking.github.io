@@ -19,6 +19,8 @@ import json, os, pickle, re, sys, unicodedata, urllib.parse
 GO = 'go' in sys.argv[1:]
 BASE = os.environ.get('GRIFFLIX_MEDIA') or '/Volumes/G-Drive/Grifflix'
 MOVIES = os.path.join(BASE, 'Movies')
+TV = os.path.join(BASE, 'TV')   # (a series, too: Criterion lists them as titles, Fanny and Alexander's television version, Dekalog: John, 18 Nov 2026,
+# "the google spreadsheet Criterion script ... also isn't picking up TV properly")
 KEYS = os.path.join(BASE, 'scripts')   # the Google sign-in (token.pickle) and app file, where the old script kept them
 CONF = os.path.expanduser('~/Grifflix/criterion.json')
 RANGE = 'Criterion Films!A2:F'
@@ -213,9 +215,12 @@ def tmdb_links(sid, sheet, rows, go, most=600, retry=False):
     return found
 
 
-def has_extras(folder):   # (its "Other" folder, or "Others", holding anything but notes)
+XD = ('other', 'others', 'extras', 'featurettes', 'behind the scenes', 'deleted scenes', 'interviews', 'trailers', 'shorts', 'scenes', 'clips')
+
+
+def has_extras(folder):   # (its "Extras" folder (once "Other", Plex's name), or another the media server knows, holding anything but notes)
     for n in os.listdir(folder):
-        if n.lower() in ('other', 'others', 'extras') and os.path.isdir(os.path.join(folder, n)):
+        if n.lower() in XD and os.path.isdir(os.path.join(folder, n)):
             for d, dirs, files in os.walk(os.path.join(folder, n)):
                 if any(not x.startswith('.') and not x.endswith('.txt') for x in files):
                     return True
@@ -227,16 +232,22 @@ def mark(sid, sheet, go):
     criterion-covers.py found it, or by its folder's name), F "Yes" when it has extras in "Other". Only what's changed is written.
     Returns the number of rows changed."""
     folders = {}
-    for f in os.scandir(MOVIES):
-        if f.is_dir() and not f.name.startswith('.'):
-            folders.setdefault(key(f.name), f.name)
+    for root in (MOVIES, TV):
+        if os.path.isdir(root):
+            for f in os.scandir(root):
+                if f.is_dir() and not f.name.startswith('.'):
+                    folders.setdefault(key(f.name), f.path)
     by_spine = {}
-    try:
-        for fo, sp in json.load(open(os.path.expanduser('~/Grifflix/criterion-spines.json'))).items():
-            if os.path.isdir(os.path.join(MOVIES, fo)):
-                by_spine.setdefault(str(sp), []).append(fo)
-    except Exception:
-        pass
+    sp_ = {}
+    for fn in ('criterion-spines.json', 'criterion-spines-own.json'):   # (the hand-set ones over the matched)
+        try:
+            sp_.update(json.load(open(os.path.expanduser('~/Grifflix/' + fn))))
+        except Exception:
+            pass
+    for fo, sp in sp_.items():
+        for root in (MOVIES, TV):
+            if os.path.isdir(os.path.join(root, fo)):
+                by_spine.setdefault(str(sp), []).append(os.path.join(root, fo))
     rows = sheet.values().get(spreadsheetId=sid, range=RANGE).execute().get('values', [])
     try:   # (column J: TMDB's page for each film)
         rj = sheet.values().get(spreadsheetId=sid, range='Criterion Films!A2:J').execute().get('values', [])
@@ -256,7 +267,7 @@ def mark(sid, sheet, go):
                 folder = next((folders.get(key('%s (%d)' % (title, int(year) + d))) for d in (1, -1) if folders.get(key('%s (%d)' % (title, int(year) + d)))), None)
             found = [folder] if folder else []
         e = 'Yes' if found else 'No'
-        f = 'Yes' if any(has_extras(os.path.join(MOVIES, fo)) for fo in found) else 'No'
+        f = 'Yes' if any(has_extras(fo) or any(has_extras(os.path.join(fo, x)) for x in os.listdir(fo) if re.match(r'^(season|series)\b', x, re.I) and os.path.isdir(os.path.join(fo, x))) for fo in found) else 'No'
         have += bool(found); extras += f == 'Yes'
         if (row[4].strip(), row[5].strip()) != (e, f):   # (only what's changed)
             updates.append({'range': 'Criterion Films!E%d:F%d' % (i, i), 'values': [[e, f]]})

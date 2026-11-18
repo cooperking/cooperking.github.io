@@ -4056,7 +4056,8 @@ def _other_dirs(g):
     """Each film's "Other" (or "Others") folder holding extras: [(film folder, its Other folder)]."""
     out = []
     for v in g.jf.call('GET', '/Library/VirtualFolders') or []:
-        if (v.get('CollectionType') or '') != 'movies':
+        tv = (v.get('CollectionType') or '') == 'tvshows'   # (and each series', in its own folder or a season's: John, 18 Nov 2026, "I assume TV extras need updating to jellyfin rules too")
+        if (v.get('CollectionType') or '') not in ('movies', 'tvshows'):
             continue
         for r in v.get('Locations') or []:
             try:
@@ -4068,9 +4069,10 @@ def _other_dirs(g):
                 if f.startswith('.') or not os.path.isdir(d):
                     continue
                 try:
-                    for x in os.listdir(d):
-                        if x.lower() in ('other', 'others') and os.path.isdir(os.path.join(d, x)):
-                            out.append((d, os.path.join(d, x)))
+                    for d2 in [d] + ([os.path.join(d, x) for x in os.listdir(d) if re.match(r'^(season|series|specials)\b', x, re.I) and os.path.isdir(os.path.join(d, x))] if tv else []):
+                        for x in os.listdir(d2):
+                            if x.lower() in ('other', 'others') and os.path.isdir(os.path.join(d2, x)):
+                                out.append((d2, os.path.join(d2, x)))
                 except OSError:
                     pass
     return out
@@ -4176,22 +4178,22 @@ def extras_fix(g, most=60):
     """Films whose extras sit in their folder (Other, Extras, Featurettes…) but the media server has none for: it's asked to look at
     each again. A film converted or repackaged is a new file, and the media server didn't find the old one's extras for it (John,
     18 Nov 2026: "how do I see the extras on a film. The Crying Game for instance": five in its Other folder, none shown)."""
-    lid = (g.st.get('libraries') or {}).get('movies')
-    if not lid:
-        return 0
-    its, start = [], 0
-    while True:
-        r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path,SpecialFeatureCount',
-                                                               'StartIndex': start, 'Limit': 500, 'EnableImages': 'false'}) or {}
-        its += r.get('Items') or []
-        start += 500
-        if start >= (r.get('TotalRecordCount') or 0):
-            break
+    its = []
+    for key_, typ_ in (('movies', 'Movie'), ('tv', 'Series')):
+        lid = (g.st.get('libraries') or {}).get(key_)
+        start = 0
+        while lid:
+            r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': typ_, 'Fields': 'Path,SpecialFeatureCount',
+                                                                   'StartIndex': start, 'Limit': 500, 'EnableImages': 'false'}) or {}
+            its += r.get('Items') or []
+            start += 500
+            if start >= (r.get('TotalRecordCount') or 0):
+                break
     asked = []
     for it in its:
         if (it.get('SpecialFeatureCount') or 0) or len(asked) >= most:
             continue
-        d = os.path.dirname(it.get('Path') or '')
+        d = (it.get('Path') or '') if it.get('Type') == 'Series' else os.path.dirname(it.get('Path') or '')
         try:
             subs = [x for x in os.listdir(d) if x.lower() in XDIRS and os.path.isdir(os.path.join(d, x))]
         except OSError:
@@ -5413,6 +5415,13 @@ def serve():
     threading.Thread(target=keep_backup, args=(g,), daemon=True).start()
     threading.Thread(target=keep_plex_off, args=(g,), daemon=True).start()
     threading.Thread(target=keep_extras, args=(g,), daemon=True).start()
+    try:   # (the spines set by hand, where criterion.py, for the Google sheet, reads them too)
+        f_ = os.path.expanduser('~/Grifflix/criterion-spines-own.json')
+        own_ = load(f_, {}) or {}
+        if any(k not in own_ for k in SPINE_SEED):
+            save(f_, dict(SPINE_SEED, **own_))
+    except Exception:
+        pass
     def countries_once():   # (once: every Criterion film given Criterion's country now, then each as it comes in)
         mk = os.path.expanduser('~/Grifflix/criterion-countries.done')
         if os.path.exists(mk):
