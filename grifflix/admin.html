@@ -605,8 +605,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   if (location.hostname === 'admin.grifflix.co.uk') [].forEach.call(document.querySelectorAll('a[href^="/grifflix/"]'), function (a) { a.href = 'https://grifflix.co.uk' + a.getAttribute('href'); a.target = 'grifflix'; });
   // (and from grifflix.co.uk, a way to it, signed in: what this page knows of John's sign-in carried in the link's #, never sent anywhere)
   // (admin.grifflix.co.uk opened straight, not signed in there yet: one tap to grifflix.co.uk's admin, which sends it back signed in)
-  if (location.hostname === 'admin.grifflix.co.uk' && $('#gate .links')) $('#gate .links').insertAdjacentHTML('afterbegin', '<a class="btn primary" href="https://grifflix.co.uk/admin#toapp">Sign in here from Grifflix</a>');
-  if (location.hostname === 'grifflix.co.uk' && location.hash === '#toapp') {
+  // (a fresh address each time (?toapp=…), so no copy a browser kept from before can stand in for it: John, 18 Nov 2026, "I can't put a code in")
+  if (location.hostname === 'admin.grifflix.co.uk' && $('#gate .links')) {
+    $('#gate .links').insertAdjacentHTML('afterbegin', '<a class="btn primary" href="https://grifflix.co.uk/admin?toapp=' + Date.now() + '">Sign in here from Grifflix</a>');
+    $('#gatewhy').innerHTML = 'This is the admin app’s own address, so it needs signing in once. Press <b>Sign in here from Grifflix</b>: it opens Grifflix, where you’re signed in, and comes straight back here signed in. No code needed.';
+  }
+  if (location.hostname === 'grifflix.co.uk' && /[?&]toapp=/.test(location.search)) {
     var o1 = {}; try { for (var j1 = 0; j1 < localStorage.length; j1++) { var k1 = localStorage.key(j1); if (/^grifflix-/.test(k1)) o1[k1] = localStorage.getItem(k1); } } catch (e) {}
     location.replace('https://admin.grifflix.co.uk/#carry=' + encodeURIComponent(JSON.stringify(o1)));
   }
@@ -626,7 +630,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     return fetch(WORKER + '/g/' + op, body ? { method: 'POST', headers: { Authorization: 'Bearer ' + (tok || TOKEN), 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: { Authorization: 'Bearer ' + (tok || TOKEN) } })
       .then(function (r) { return r.json().then(function (j) { if (!r.ok) { var e = new Error(j.error || 'That didn’t work.'); e.status = r.status; throw e; } return j; }); });
   }
-  function gate(why, seed) { $('#gate').hidden = false; if (why) $('#gatewhy').textContent = why; $('#seed').hidden = !seed; }
+  function gate(why, seed) { $('#gate').hidden = false; if (why && !(location.hostname === 'admin.grifflix.co.uk' && !TOKEN)) $('#gatewhy').textContent = why; $('#seed').hidden = !seed; }
 
   // signed in to Grifflix as John? The first time, before Grifflix has members, his other sign-in on this site starts them
   (TOKEN ? g('me') : Promise.reject({ status: 401 })).then(function (me) {
