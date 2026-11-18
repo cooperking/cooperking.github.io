@@ -1801,7 +1801,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
             var r = await fetch(urls[w], { credentials: 'include' }), h = await r.text();
             if (/Just a moment|challenges\.cloudflare\.com/.test(h.slice(0, 6000))) { d.textContent = 'Grifflix: Criterion asked to slow down: waiting a minute…'; await wait(60000); i--; continue; }
             var doc = new DOMParser().parseFromString(h, 'text/html');
-            var hrefs = [].map.call(doc.querySelectorAll('tr.gridFilm, tr[data-href], [data-href*="/films/"], [data-href*="/boxsets/"], td a[href*="/boxsets/"], .gridFilm a[href*="/boxsets/"]'), function (el) { return el.getAttribute('data-href') || el.getAttribute('href') || ''; }).filter(Boolean);
+            var rws = [].map.call(doc.querySelectorAll('tr.gridFilm, tr[data-href], [data-href*="/films/"], [data-href*="/boxsets/"], td a[href*="/boxsets/"], .gridFilm a[href*="/boxsets/"]'), function (el) { var tr = (el.closest && el.closest('tr')) || el, td = tr.querySelector ? tr.querySelector('td') : null; return { h: el.getAttribute('data-href') || el.getAttribute('href') || '', sp: ((td ? td.textContent : '').trim().match(/^\d+$/) || [''])[0] }; }).filter(function (x) { return x.h; });
+            var hrefs = rws.map(function (x) { return x.h; });
             var slugs = [], seenH = {};
             for (var k = 0; k < hrefs.length; k++) {
               var hr = hrefs[k].replace(/[?\u0023].*$/, ''); if (seenH[hr]) continue; seenH[hr] = 1;
@@ -1817,7 +1818,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
                 var inset = [];
                 [].forEach.call(bd.querySelectorAll('a[href*="/films/"]'), function (a2) { var sl = a2.getAttribute('href').replace(/^.*\/films\//, '').replace(/[?\u0023/].*$/, ''); if (/^\d+-/.test(sl)) { slugs.push(sl); if (inset.indexOf(sl) < 0) inset.push(sl); } });
                 var st = ((bd.querySelector('h1') || {}).textContent || '').replace(/\s+/g, ' ').trim() || hr.replace(/^.*\/boxsets\/\d+-/, '').replace(/-/g, ' ');
-                if (inset.length) out.sets[st] = inset;
+                if (inset.length) { out.sets[st] = inset; if (rws[k].sp) { out.setspine = out.setspine || {}; out.setspine[st] = rws[k].sp; } }
               } catch (e2) {}
             }
             out.tags[w] = slugs.filter(function (x, n) { return x && slugs.indexOf(x) === n; });
