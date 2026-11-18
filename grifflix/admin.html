@@ -402,6 +402,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div id="cvmac"></div>
         <div id="cvq"></div>
         <p class="stat" id="cvdisks" hidden></p>
+        <div id="dhealth"></div>
         <div class="cvord" id="cvord" hidden>
           <label class="cvsw"><input type="checkbox" id="cvrf"> <span>Repackage every MKV first, then the conversions <small>(repackaging takes minutes a film, converting hours)</small></span></label>
           <div id="cvpins"></div>
@@ -1391,6 +1392,30 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     }).catch(function (e) { $('#cvq').innerHTML = e && e.message === 'old' ? '<p class="stat">Queue for your Mac: the Mac mini takes its update within 15 minutes.</p>' : ''; cqT = setTimeout(cvQueue, 60000); });
   }
   setTimeout(cvQueue, 2800);
+  // ---- the G-Drive's health: macOS's verdict and the drive's own record, once a day (John, 18 Nov 2026: "How safe are my films on there?")
+  function dHealth(now) {
+    if (!TOKEN) return; if (!GW) return setTimeout(dHealth, 3000);
+    fetch(GW + '/api/diskhealth', { method: now ? 'POST' : 'GET', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: now ? '{}' : undefined, cache: 'no-store' })
+      .then(function (r) { if (r.status === 404) throw new Error('old'); return r.json(); }).then(function (h) {
+        var tb = function (b) { return b >= 1e12 ? (b / 1e12).toFixed(1) + ' TB' : Math.round(b / 1e9) + ' GB'; };
+        var col = { ok: '#3c9a5f', warn: '#d9a03a', bad: '#d0453a', unknown: 'inherit', missing: '#d0453a' }[h.state] || 'inherit';
+        var head = { ok: 'Healthy', warn: 'Keep an eye on it', bad: 'Starting to fail: copy your films off it now', unknown: 'No health report from the drive', missing: 'Not connected' }[h.state] || '';
+        var bits = [];
+        if (h.hours != null) bits.push(Math.round(h.hours).toLocaleString('en-GB') + ' hours run (about ' + (h.hours / 8766).toFixed(1) + ' years switched on)');
+        if (h.realloc != null) bits.push((h.realloc ? '<b style="color:#d0453a">' + h.realloc + ' bad sectors moved</b>' : 'no bad sectors'));
+        if (h.pending) bits.push('<b style="color:#d0453a">' + h.pending + ' sectors failing</b>');
+        if (h.uncorrect) bits.push('<b style="color:#d0453a">' + h.uncorrect + ' unreadable</b>');
+        if (h.temp) bits.push(h.temp + '°C');
+        if (h.fs) bits.push('format: ' + esc(h.fs));
+        if (h.total) bits.push(tb(h.free) + ' free of ' + tb(h.total));
+        $('#dhealth').innerHTML = '<p class="stat" style="margin:12px 0 4px"><b>The G-Drive’s health:</b> <b style="color:' + col + '">' + head + '</b>' + (h.at ? ' <span style="opacity:.7">(' + esc(when(h.at * 1000)) + ')</span>' : '') + '</p>' +
+          (bits.length ? '<p class="stat" style="margin:0 0 4px">' + bits.join(' · ') + '</p>' : '') +
+          (!h.smartctl && h.state !== 'missing' ? '<p class="stat" style="margin:0 0 4px;opacity:.85">For the drive’s own record (hours run, failing sectors), the Mac mini needs a small free tool, smartmontools. On the Mac mini, in Terminal: <code>brew install smartmontools</code> (if Homebrew is there).</p>' : '') +
+          '<div class="state"><button class="btn" type="button" id="dhnow">Check now</button></div>';
+        $('#dhnow').onclick = function () { this.disabled = true; this.textContent = 'Checking…'; dHealth(true); };
+      }).catch(function (e) { $('#dhealth').innerHTML = e && e.message === 'old' ? '<p class="stat">The G-Drive’s health: the Mac mini takes its update within 15 minutes.</p>' : ''; });
+  }
+  setTimeout(dHealth, 3200);
   function cvPost(body) {
     return fetch(GW + '/api/convert', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       .then(function (r) { if (r.status === 404) throw new Error('Update the Mac (Update everything) first.'); if (!r.ok) throw new Error('The Mac mini isn’t answering.'); return r.json(); });

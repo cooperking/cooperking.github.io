@@ -2084,6 +2084,16 @@ def make_handler(g):
             code, j = mac_job(str(q.get('id') or ''))
             return self.send_json(code, j)
 
+        def api_diskhealth(self, me, user, q, b):
+            """John's only: the G-Drive's health, as last looked at (POST: looked at now)."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            if b or not DHEALTH:
+                h = disk_health()
+                DHEALTH.clear(); DHEALTH.update(h)
+                save(os.path.expanduser('~/Grifflix/disk-health.json'), h)
+            return self.send_json(200, DHEALTH)
+
         def api_macqueue(self, me, user, q, b):
             """John's only: films queued for his own Mac, which takes them up by itself, one after another, wherever he queued them from
             (John, 18 Nov 2026: "Is it possible to switch on convert on my Mac remotely?" ... "Yes"). Its helper's key is made here, shown once."""
@@ -3354,6 +3364,64 @@ def make_handler(g):
     return H
 
 
+DHEALTH = {}
+
+
+def disk_health(vol='/Volumes/G-Drive'):
+    """How the G-Drive is (John, 18 Nov 2026: "How safe are my films on there?" ... "Add the health check"): from macOS (its format, what
+    it says of the drive's health) and, if smartmontools is on the Mac, the drive's own record: hours run, sectors failing or moved, its
+    temperature, its own verdict. Read only: nothing on the drive is changed."""
+    import subprocess, plistlib, shutil
+    out = {'at': int(time.time()), 'vol': vol}
+    if not os.path.isdir(vol):
+        out['state'] = 'missing'
+        return out
+    try:
+        info = plistlib.loads(subprocess.run(['diskutil', 'info', '-plist', vol], capture_output=True, timeout=60).stdout)
+        out.update(fs=info.get('FilesystemUserVisibleName') or info.get('FilesystemName'), proto=info.get('BusProtocol'),
+                   smart_mac=info.get('SMARTStatus'), whole=info.get('ParentWholeDisk') or info.get('DeviceIdentifier'), media=info.get('MediaName') or info.get('IORegistryEntryName'))
+    except Exception as e:
+        out['err'] = 'diskutil: %s' % str(e)[:120]
+    u = shutil.disk_usage(vol)
+    out.update(free=u.free, total=u.total)
+    sc = next((x for x in ('/opt/homebrew/bin/smartctl', '/usr/local/bin/smartctl', shutil.which('smartctl') or '') if x and os.path.exists(x)), None)
+    out['smartctl'] = bool(sc)
+    if sc and out.get('whole'):
+        for dev in (['-d', 'sat'], []):   # (through the USB or Thunderbolt bridge, as most external drives need; else as it is)
+            try:
+                r = subprocess.run([sc, '-a', '-j'] + dev + ['/dev/' + out['whole']], capture_output=True, text=True, timeout=90)
+                j = json.loads(r.stdout or '{}')
+            except Exception:
+                continue
+            if not j.get('smart_status') and not j.get('ata_smart_attributes'):
+                continue
+            at = {a.get('id'): a for a in (j.get('ata_smart_attributes') or {}).get('table', [])}
+            raw = lambda i: ((at.get(i) or {}).get('raw') or {}).get('value')
+            out.update(passed=(j.get('smart_status') or {}).get('passed'), hours=(j.get('power_on_time') or {}).get('hours') or raw(9),
+                       realloc=raw(5), pending=raw(197), uncorrect=raw(198), temp=(j.get('temperature') or {}).get('current') or raw(194),
+                       model=(j.get('model_name') or ''), serial_tail=str(j.get('serial_number') or '')[-4:])
+            break
+    bad = out.get('passed') is False or (out.get('realloc') or 0) > 0 or (out.get('pending') or 0) > 0 or (out.get('uncorrect') or 0) > 0 or (out.get('smart_mac') or '').lower() in ('failing',)
+    warn = (out.get('temp') or 0) >= 55 or (out.get('free') or 0) < 0.03 * (out.get('total') or 1)
+    out['state'] = 'bad' if bad else 'warn' if warn else 'ok' if (out.get('passed') or (out.get('smart_mac') or '').lower() == 'verified') else 'unknown'
+    return out
+
+
+def keep_disk_health():
+    """The G-Drive looked at once a day (and at start); a drive starting to fail logged at once."""
+    time.sleep(240)
+    while True:
+        try:
+            h = disk_health()
+            DHEALTH.clear(); DHEALTH.update(h)
+            save(os.path.expanduser('~/Grifflix/disk-health.json'), h)
+            if h.get('state') == 'bad':
+                log('THE G-DRIVE IS STARTING TO FAIL: %s' % {k: h.get(k) for k in ('passed', 'realloc', 'pending', 'uncorrect', 'hours', 'smart_mac')})
+        except Exception as e:
+            log('G-Drive health:', str(e)[:200])
+        time.sleep(24 * 3600)
+
+
 def disks():
     """Free space on the Mac's own disk and the drives its films are on, for the admin page (John, 12 Nov 2026: the Mac's own disk
     filled up unnoticed, and nothing on the Mac could write)."""
@@ -4415,6 +4483,7 @@ def serve():
         open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
     threading.Thread(target=covers_once, daemon=True).start()   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
     threading.Thread(target=fanny_series, args=(g,), daemon=True).start()
+    threading.Thread(target=keep_disk_health, daemon=True).start()
     threading.Thread(target=keep_gdrive, daemon=True).start()
     threading.Thread(target=keep_fetch_unstuck, daemon=True).start()
     srv.daemon_threads = True
