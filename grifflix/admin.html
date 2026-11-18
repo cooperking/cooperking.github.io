@@ -400,6 +400,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="cvbar" id="cvbar" hidden><span id="cvfill"></span></div>
         <div class="state"><button class="btn" id="cvskip" type="button" hidden>Skip this film</button></div>
         <div id="cvmac"></div>
+        <div id="cvq"></div>
         <p class="stat" id="cvdisks" hidden></p>
         <div class="cvord" id="cvord" hidden>
           <label class="cvsw"><input type="checkbox" id="cvrf"> <span>Repackage every MKV first, then the conversions <small>(repackaging takes minutes a film, converting hours)</small></span></label>
@@ -1362,6 +1363,34 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     }).catch(function () { cmT = setTimeout(cvMac, 60000); });
   }
   setTimeout(cvMac, 2500);
+  // ---- films queued for John's Mac, which takes them up by itself while it's on and at home; its helper set up once (John, 18 Nov 2026:
+  // "Is it possible to switch on convert on my Mac remotely?")
+  var cqT = 0;
+  function cvQueue() {
+    clearTimeout(cqT); if (!TOKEN) return; if (!GW) { cqT = setTimeout(cvQueue, 3000); return; }
+    var call = function (body) { return fetch(GW + '/api/macqueue', { method: body ? 'POST' : 'GET', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' }).then(function (r) { if (r.status === 404) throw new Error('old'); return r.json(); }); };
+    call().then(function (j) {
+      if ($('#cqcmd') && $('#cqcmd').innerHTML) { cqT = setTimeout(cvQueue, 30000); return; }   // (the setup command left showing while it's copied)
+      var Q = j.queue || [], ago = j.seen ? Math.round((Date.now() / 1000 - j.seen) / 60) : null;
+      var st = !j.setup ? 'Your Mac isn’t set up to take films yet.' : ago == null ? 'Your Mac hasn’t checked in since the Mac mini last restarted.' : ago <= 3 ? 'Your Mac is on' + (j.home ? ' and at home: it takes the next film within a minute.' : ', but not at home: films wait until it is.') : 'Your Mac last checked in ' + (ago < 120 ? ago + ' min' : Math.round(ago / 60) + ' hours') + ' ago (off or asleep): films wait until it’s on.';
+      $('#cvq').innerHTML = '<p class="stat" style="margin:14px 0 6px"><b>Queued for your Mac</b> (' + Q.length + ') · ' + esc(st) + '</p>' +
+        (Q.length ? '<ul class="changes">' + Q.map(function (x, i) { return '<li>' + FL(x.name, null, x.id) + '<span class="state" style="margin-top:4px">' + (i ? '<button class="btn" type="button" data-cqf="' + x.id + '" data-n="' + esc(x.name) + '">First</button>' : '') + '<button class="btn" type="button" data-cqr="' + x.id + '" data-n="' + esc(x.name) + '">Take off</button></span></li>'; }).join('') + '</ul>' : '<p class="stat" style="margin:0 0 6px">Queue films from their Edit panel (Queue for my Mac), from any device.</p>') +
+        '<div class="state"><button class="btn" type="button" id="cqset">' + (j.setup ? 'Set up your Mac again' : 'Set up your Mac to take queued films') + '</button></div><div id="cqcmd"></div>';
+      Array.prototype.forEach.call(document.querySelectorAll('[data-cqr],[data-cqf]'), function (b) { b.onclick = function () {
+        b.disabled = true; call({ op: b.dataset.cqr ? 'remove' : 'first', id: b.dataset.cqr || b.dataset.cqf, name: b.dataset.n }).then(cvQueue).catch(function () { b.disabled = false; toast('The Mac mini didn’t answer.'); });
+      }; });
+      $('#cqset').onclick = function () {
+        if (j.setup && !confirm('A new key for your Mac: the old one stops working. Go on?')) return;
+        call({ op: 'key' }).then(function (k) {
+          var cmd = 'curl -fsSL https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/convert-here.sh -o ~/Grifflix/convert-here.sh --create-dirs && zsh ~/Grifflix/convert-here.sh agent-setup ' + GW + ' ' + k.key;
+          $('#cqcmd').innerHTML = '<p class="stat" style="margin:10px 0 6px">On your Mac, open Terminal, paste this and press Return (once):</p><pre style="white-space:pre-wrap;word-break:break-all;font-size:12px;padding:10px;border:1px solid var(--line)">' + esc(cmd) + '</pre><div class="state"><button class="btn" type="button" id="cqcopy">Copy</button></div>';
+          $('#cqcopy').onclick = function () { navigator.clipboard.writeText(cmd).then(function () { toast('Copied: paste it into Terminal on your Mac'); }); };
+        }).catch(function () { toast('The Mac mini didn’t answer.'); });
+      };
+      cqT = setTimeout(cvQueue, 30000);
+    }).catch(function (e) { $('#cvq').innerHTML = e && e.message === 'old' ? '<p class="stat">Queue for your Mac: the Mac mini takes its update within 15 minutes.</p>' : ''; cqT = setTimeout(cvQueue, 60000); });
+  }
+  setTimeout(cvQueue, 2800);
   function cvPost(body) {
     return fetch(GW + '/api/convert', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       .then(function (r) { if (r.status === 404) throw new Error('Update the Mac (Update everything) first.'); if (!r.ok) throw new Error('The Mac mini isn’t answering.'); return r.json(); });

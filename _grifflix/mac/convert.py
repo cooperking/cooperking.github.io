@@ -754,6 +754,11 @@ def merge_ext():
 
 
 def claimed(iid):
+    try:   # (queued for John's Mac: left to it: John, 18 Nov 2026)
+        if any(x.get('id') == iid for x in json.load(open(os.path.join(HOME, 'mac-queue.json'))) or []):
+            return True
+    except (OSError, ValueError, AttributeError):
+        pass
     try:
         return time.time() - float(json.load(open(CLAIMS)).get(iid, 0)) < 1800   # (renewed by the gateway with every word from John's Mac: lapses half an hour after the last)
     except (OSError, ValueError):

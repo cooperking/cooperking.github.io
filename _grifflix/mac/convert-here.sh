@@ -44,6 +44,54 @@ APPLESCRIPT
   exit 0
 fi
 
+# Films queued from anywhere, taken up by this Mac by itself (John, 18 Nov 2026: "Is it possible to switch on convert on my Mac remotely?"):
+# a small helper, set up once, asks the Mac mini every minute for the next film queued for this Mac, while it's at home (the G-Drive is
+# on the home network), and converts it in the background, as the button's Terminal window would; its progress is on the admin page.
+AGENT_PLIST="$HOME/Library/LaunchAgents/uk.co.grifflix.convertagent.plist"
+if [[ "${1:-}" == "agent-setup" ]]; then
+  base="${2:-}"; key="${3:-}"
+  [[ "$base" == https://* && -n "$key" ]] || { echo "Grifflix: the setup command wasn't whole: copy it again from the admin page."; exit 1; }
+  mkdir -p "$HERE" "$HOME/Library/LaunchAgents"
+  cp -f "$0" "$HERE/convert-here.sh" 2>/dev/null
+  umask 077; printf 'base=%s\nkey=%s\n' "$base" "$key" > "$HERE/agent.conf"
+  cat > "$AGENT_PLIST" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>uk.co.grifflix.convertagent</string>
+  <key>ProgramArguments</key><array><string>/bin/zsh</string><string>$HERE/convert-here.sh</string><string>agent</string></array>
+  <key>StartInterval</key><integer>60</integer>
+  <key>RunAtLoad</key><true/>
+  <key>StandardOutPath</key><string>$HERE/agent.log</string>
+  <key>StandardErrorPath</key><string>$HERE/agent.log</string>
+</dict></plist>
+PLIST
+  launchctl unload "$AGENT_PLIST" 2>/dev/null; launchctl load -w "$AGENT_PLIST"
+  echo "Set up: this Mac now takes the films you queue for it, while it's on and at home. Its log: ~/Grifflix/agent.log"
+  exit 0
+fi
+if [[ "${1:-}" == "agent-off" ]]; then
+  launchctl unload -w "$AGENT_PLIST" 2>/dev/null; rm -f "$AGENT_PLIST" "$HERE/agent.conf"; echo "The helper is off."; exit 0
+fi
+if [[ "${1:-}" == "agent" ]]; then
+  [[ -f "$HERE/agent.conf" ]] || exit 0
+  base=$(sed -n 's/^base=//p' "$HERE/agent.conf"); key=$(sed -n 's/^key=//p' "$HERE/agent.conf")
+  lock="$HERE/agent.lock"
+  if [[ -f "$lock" ]] && kill -0 "$(cat "$lock" 2>/dev/null)" 2>/dev/null; then exit 0; fi   # (one film at a time)
+  home=0; ping -c 1 -t 2 "$MINI" >/dev/null 2>&1 && home=1   # (at home: the Mac mini answers on the home network)
+  ans=$(curl -fsS -m 20 -H "Authorization: Bearer $key" "$base/macagent/next?home=$home") || exit 0
+  [[ "$home" == 1 ]] || exit 0
+  job=$(printf '%s' "$ans" | /usr/bin/sed -n 's/.*"job": *"\([^"]*\)".*/\1/p')
+  [[ -n "$job" ]] || exit 0
+  echo $$ > "$lock"; trap 'rm -f "$lock"' EXIT
+  echo "$(date '+%Y-%m-%d %H:%M') taking up $job"
+  # (its newest self from GitHub first, as the button's app does)
+  curl -fsSL -m 60 https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/convert-here.sh -o "$HERE/convert-here.sh.new" && mv "$HERE/convert-here.sh.new" "$HERE/convert-here.sh"
+  /usr/bin/caffeinate -i /bin/zsh "$HERE/convert-here.sh" "$base$job"
+  echo "$(date '+%Y-%m-%d %H:%M') finished ($?)"
+  exit 0
+fi
+
 echo "Grifflix: starting…"
 u="${1:-}"; u="${u#grifflix-convert://job?u=}"
 url=$(osascript -l JavaScript -e "decodeURIComponent('${u//\'/}')")
