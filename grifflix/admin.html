@@ -73,6 +73,10 @@ page shown inside another, stay where they are. On grifflix.co.uk, what came wit
 @font-face { font-family: "GF-reel"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/materhornnf-y0ld.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhornnf-y0ld.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhornnf.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhornnf.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-6ndq.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-6ndq.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf-regular.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/materhorn-nf-regular.woff") format("woff"); }   /* (Materhorn NF, Fanfare's revival, freeware but not to be redistributed: John's copy, uploaded on the admin page's Fonts card) */
 @font-face { font-family: "GF-hotel"; font-weight: 100 900; font-display: swap; src: url("https://sotd-playlists.cooperking.workers.dev/gf/archer.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/archer.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/archer-bold.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/archer-bold.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/archer-semibold.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/archer-semibold.woff") format("woff"), url("https://sotd-playlists.cooperking.workers.dev/gf/archer-book.woff2") format("woff2"), url("https://sotd-playlists.cooperking.workers.dev/gf/archer-book.woff") format("woff"); }   /* (Archer, the Grand Budapest's billing face (Fonts In Use): John's own copy, uploaded on the admin page's Fonts card) */
 @font-face { font-family: "Grifflix Display"; font-weight: 400; font-display: swap; src: url("https://cooperking.github.io/grifflix/fonts/GrifflixDisplay.woff2") format("woff2"); }
+/* (eight tabs: each name whole, wrapping onto a second row where there isn't room, not cut off or scrolled away: 18 Nov 2026) */
+#tabs { flex-wrap: wrap; overflow: visible; row-gap: 6px; }
+#tabs button { flex: 1 1 auto; min-width: max-content; padding: 0 12px; letter-spacing: .08em; }
+@media (max-width: 560px) { #tabs button { flex: 1 1 28%; min-width: 0; padding: 0 4px; font-size: 10.5px; letter-spacing: .04em; } }
 </style><!--THEMEFONTS END-->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@500;700&display=swap">
 <style>
@@ -337,7 +341,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   <div id="app" hidden>
     <div class="top"><button type="button" class="reload" id="reload" aria-label="Reload" title="Reload" onclick="location.reload()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><h1>Grifflix <em>admin</em></h1><p class="sub" id="hello"></p></div>
     <nav class="tabs" id="tabs" role="tablist" aria-label="Admin">
-      <button type="button" role="tab" data-go="updates">Updates</button><button type="button" role="tab" data-go="films">Films</button><button type="button" role="tab" data-go="themes">Themes</button><button type="button" role="tab" data-go="requests">Requests</button><button type="button" role="tab" data-go="members">Members</button><button type="button" role="tab" data-go="mac">Mac</button><button type="button" role="tab" data-go="dupes" id="dupetab" hidden>Copies</button>
+      <button type="button" role="tab" data-go="updates">Home</button><button type="button" role="tab" data-go="downloads">Downloads</button><button type="button" role="tab" data-go="convert">Conversions</button><button type="button" role="tab" data-go="library">Library</button><button type="button" role="tab" data-go="criterion">Criterion</button><button type="button" role="tab" data-go="calendar">Calendar</button><button type="button" role="tab" data-go="members">Members</button><button type="button" role="tab" data-go="mac">Mac mini</button><button type="button" role="tab" data-go="dupes" id="dupetab" hidden>Copies</button>
     </nav>
     <div class="cards">
       <section class="card" data-tab="updates" id="wtcard">
@@ -390,7 +394,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat" id="autosay"></p>
         <div class="state"><button class="btn primary" id="autoup" type="button" hidden>Update by itself</button><button class="btn" id="upfull" type="button">Everything again</button></div>
       </section>
-      <section class="card" data-tab="films">
+      <section class="card" data-tab="downloads">
         <div class="kicker">Coming in</div>
         <h2 id="fhead">Looking…</h2>
         <p class="stat" id="fsay"></p>
@@ -404,7 +408,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           <div class="state" style="margin-top:8px"><button class="btn" type="button" id="tbauto" disabled>…</button></div>
         </details>
       </section>
-      <section class="card" data-tab="films">
+      <section class="card" data-tab="convert">
         <div class="kicker">Conversions</div>
         <h2 id="cvhead">Looking…</h2>
         <p class="stat" id="cvsay"></p>
@@ -414,8 +418,6 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div id="cvmac"></div>
         <div id="cvq"></div>
         <p class="stat" id="cvdisks" hidden></p>
-        <div id="dhealth"></div>
-        <div id="backup"></div>
         <div class="cvord" id="cvord" hidden>
           <label class="cvsw"><input type="checkbox" id="cvrf"> <span>Repackage every MKV first, then the conversions <small>(repackaging takes minutes a film, converting hours)</small></span></label>
           <div id="cvpins"></div>
@@ -426,35 +428,15 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <ul class="changes cvl" id="cvlist"></ul>
         <p class="stat" id="orsay" style="margin-top:14px"></p>
         <div class="state"><button class="btn" id="orsee" type="button" hidden>The originals</button></div>
-        <p class="stat" id="binsay" style="margin-top:14px"></p>
-        <div class="state"><button class="btn" id="binsee" type="button" hidden>What’s in it</button><button class="btn" id="bingo" type="button" hidden>Empty the Bin</button></div>
-        <ul class="changes" id="binlist" hidden></ul>
       </section>
-      <section class="card" data-tab="films">
+      <section class="card" data-tab="updates">
         <div class="kicker">Playing now</div>
         <h2 id="pnhead">What’s <em>playing</em></h2>
         <p class="stat" id="pnsay">Who’s watching what, on which device, and whether the Mac mini is converting it as it plays (slow work for the old Mac) or sending it as it is.</p>
         <ul class="changes lbl" id="pnlist"></ul>
         <div class="state"><button class="btn" id="pngo" type="button">Look</button></div>
       </section>
-      <section class="card" data-tab="films">
-        <div class="kicker">Matching</div>
-        <h2>Films matched by <em>TMDB</em></h2>
-        <p class="stat" id="tmsay">With your TMDB key on the Mac mini, a film the media server has taken for another (No shown as No Country for Old Men) is put right by itself, by TMDB’s own details, its length included, so two films of the same name (the two Good Boys) are told apart. Get a key at <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">themoviedb.org/settings/api</a> (the “API Key”, or the “API Read Access Token”); your old get_metadata.py script has one in it too. Kept on the Mac only.</p>
-        <div class="state"><input type="text" id="tmkey" class="name" placeholder="TMDB API key" autocomplete="off" spellcheck="false" style="flex:1 1 260px"><button class="btn primary" id="tmgo" type="button">Save</button></div>
-      </section>
-      <section class="card" data-tab="films">
-        <div class="kicker">Subtitles</div>
-        <h2>Subtitles, <em>in time</em></h2>
-        <p class="stat" id="ossay">Members find subtitles for a film in the player (the subtitles button, then <b>Find subtitles…</b>). They come from OpenSubtitles, and the Mac mini times each one to the film’s sound. It needs your OpenSubtitles account and an API key, kept on the Mac only: make a free account at opensubtitles.com, then get a key at <a href="https://www.opensubtitles.com/en/consumers" target="_blank" rel="noopener">opensubtitles.com/en/consumers</a> (“New consumer”, any name).</p>
-        <div id="osform" style="display:grid;gap:8px;margin-top:12px">
-          <input type="text" id="oskey" class="name" placeholder="API key" autocomplete="off" spellcheck="false">
-          <input type="text" id="osuser" class="name" placeholder="OpenSubtitles username" autocomplete="off" autocapitalize="off" spellcheck="false">
-          <input type="password" id="ospass" class="name" placeholder="OpenSubtitles password" autocomplete="new-password">
-        </div>
-        <div class="state"><button class="btn primary" id="osgo" type="button">Save</button></div>
-      </section>
-      <section class="card" data-tab="films">
+      <section class="card" data-tab="library">
         <div class="kicker">Library</div>
         <h2 id="lbhead">Every film’s <em>quality</em></h2>
         <p class="stat" id="lbsay">Each film’s file as it is on the Mac: its picture, format, rate, size and sound, by its size (4K, 1080p, 720p, SD) and judged against that size: <b>Good</b>; <b>Replace</b>, a poor copy for its size (too little picture for its rate); or <b>Convert</b>, bigger than 1080p or a bigger file than its size needs. All of it can be copied into a Google Sheet.</p>
@@ -470,13 +452,31 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           <div class="state"><button class="btn" id="lbmore" type="button" style="display:none">More</button></div>
         </div>
       </section>
-      <section class="card" data-tab="films">
+      <section class="card" data-tab="library">
+        <div class="kicker">Matching</div>
+        <h2>Films matched by <em>TMDB</em></h2>
+        <p class="stat" id="tmsay">With your TMDB key on the Mac mini, a film the media server has taken for another (No shown as No Country for Old Men) is put right by itself, by TMDB’s own details, its length included, so two films of the same name (the two Good Boys) are told apart. Get a key at <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">themoviedb.org/settings/api</a> (the “API Key”, or the “API Read Access Token”); your old get_metadata.py script has one in it too. Kept on the Mac only.</p>
+        <div class="state"><input type="text" id="tmkey" class="name" placeholder="TMDB API key" autocomplete="off" spellcheck="false" style="flex:1 1 260px"><button class="btn primary" id="tmgo" type="button">Save</button></div>
+      </section>
+      <section class="card" data-tab="library">
+        <div class="kicker">Subtitles</div>
+        <h2>Subtitles, <em>in time</em></h2>
+        <p class="stat" id="ossay">Members find subtitles for a film in the player (the subtitles button, then <b>Find subtitles…</b>). They come from OpenSubtitles, and the Mac mini times each one to the film’s sound. It needs your OpenSubtitles account and an API key, kept on the Mac only: make a free account at opensubtitles.com, then get a key at <a href="https://www.opensubtitles.com/en/consumers" target="_blank" rel="noopener">opensubtitles.com/en/consumers</a> (“New consumer”, any name).</p>
+        <div id="osform" style="display:grid;gap:8px;margin-top:12px">
+          <input type="text" id="oskey" class="name" placeholder="API key" autocomplete="off" spellcheck="false">
+          <input type="text" id="osuser" class="name" placeholder="OpenSubtitles username" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <input type="password" id="ospass" class="name" placeholder="OpenSubtitles password" autocomplete="new-password">
+        </div>
+        <div class="state"><button class="btn primary" id="osgo" type="button">Save</button></div>
+      </section>
+      
+      <section class="card" data-tab="calendar">
         <div class="kicker">Movie of the Day</div>
         <h2 id="peekhead">Each one a <em>surprise</em></h2>
         <p class="stat">Each day’s film shows on the calendar at 8am that day, when the alert goes out, for everyone, you too. Switch this on to see what’s coming (only you).</p>
         <div class="state"><button class="btn" id="peek" type="button" disabled>Show upcoming films</button></div>
       </section>
-      <section class="card" data-tab="films">
+      <section class="card" data-tab="calendar">
         <div class="kicker">A day’s film</div>
         <h2>Change <em>a day</em></h2>
         <p class="stat">Choose a day to change its film or take it off (only here now, not on the site). A day still to come stays a surprise: you change it without seeing what it was. Changes are made on the Mac; <b>Update everything</b> puts them on the site.</p>
@@ -484,7 +484,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="state"><button class="btn" id="dchange" type="button" disabled>Choose another film</button><button class="btn" id="dclear" type="button" disabled>Take it off</button></div>
         <div id="dpick" hidden><input type="search" id="dq" class="name" placeholder="A film’s name" autocomplete="off" style="width:100%"><ul class="dres" id="dres"></ul></div>
       </section>
-      <section class="card" data-tab="themes">
+      <section class="card" data-tab="calendar">
         <div class="kicker">Themes</div>
         <h2>The <em>months</em> and their themes</h2>
         <p class="stat">Each year’s twelve months in their themes. <b>Drag</b> any theme from <i>The themes</i> below onto a month (on a phone, hold then drag), or a month onto another to swap them; tap one to see it working. <b>Save</b> keeps it and shows it on the draft; <b>Update everything</b> puts it live for everyone.</p>
@@ -498,7 +498,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="thxview" id="thxview" hidden><div class="row"><b id="thxname"></b><span class="state"><button class="btn" id="thxlead" type="button" hidden>Play the 3 2 1</button><a class="btn" id="thxopen" target="grifflix-preview" rel="noopener">Open it full screen</a></span></div><div class="thxfmt" id="thxfmt" role="group" aria-label="Shown on"><button type="button" data-fmt="computer" class="on">Computer</button><button type="button" data-fmt="iphone">iPhone</button><button type="button" data-fmt="ipad">iPad</button><button type="button" data-fmt="tv">TV</button></div><div class="thxbox" id="thxbox"><iframe id="thxf" title="The theme, working" loading="lazy" allow="autoplay"></iframe></div></div>
         <p class="stat">Saving puts each month’s theme film on its 1st: Grifflix’s own copy, or its trailer if Grifflix hasn’t got it (that film goes on your <a href="#requests">Requests</a>). <b>Update everything</b> puts them on the site.</p>
       </section>
-      <section class="card" data-tab="films">
+      <section class="card" data-tab="members">
         <div class="kicker">Downloads</div>
         <h2 id="dlh">Looking…</h2>
         <p class="stat">Members can keep a film on their phone or computer (a Download button on each film; not the Fire TV app). It comes from the Mac, so the Mac must be on while it downloads.</p>
@@ -510,7 +510,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat" id="notsay"></p>
         <div class="state"><button class="btn" id="mailsee" type="button">See the alert email</button><button class="btn" id="mailme" type="button">Send it to me</button></div>
       </section>
-      <section class="card" data-tab="requests">
+      <section class="card" data-tab="downloads">
         <div class="kicker">Film requests</div>
         <h2>Films to <em>get</em></h2>
         <p class="stat">Films Grifflix hasn’t got yet: a month’s theme film is added here when you save it on a month (its trailer stands in on the 1st till then), and you can add your own. Each one says when it’s in Grifflix.</p>
@@ -523,8 +523,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat" id="macsay"></p>
         <p class="stat" id="swsay"></p>
         <ul class="changes" id="swlist"></ul>
+              <h3 style="margin:22px 0 4px;font-size:17px">The G-Drive</h3>
+        <div id="dhealth"></div>
+        <div id="backup"></div>
+        <p class="stat" id="binsay" style="margin-top:14px"></p>
+        <div class="state"><button class="btn" id="binsee" type="button" hidden>What’s in it</button><button class="btn" id="bingo" type="button" hidden>Empty the Bin</button></div>
+        <ul class="changes" id="binlist" hidden></ul>
       </section>
-      <section class="card" data-tab="films">
+      <section class="card" data-tab="criterion">
         <div class="kicker">Criterion</div>
         <h2>Criterion’s covers</h2>
         <p class="stat">Every Criterion cover, as Criterion makes it, on each Criterion film in Grifflix (and in your Google Drive’s “Criterion images”, and new films added to the Criterion sheet). Criterion’s site only lets a person’s own browser see its list, so: open <a href="https://www.criterion.com/shop/browse/list?sort=spine_number" target="_blank" rel="noopener">Criterion’s list</a>, let it load, then <b>File → Save Page As…</b> (<b>Web Page, HTML Only</b>, or in Safari <b>Page Source</b>; not “Complete”), and choose that file here. Only when Criterion has added films to its list since you last did: every Criterion film you bring in is checked against the list you last gave, by itself, and gets its cover, spine number and place in The Criterion Collection.</p>
@@ -560,7 +566,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="state"><button class="btn primary" id="lookmake">Make a key</button><button class="btn" id="lookoff" hidden>Turn it off</button></div>
         <div id="lookkey" hidden><p class="stat">Copy this now (it’s shown only once) and paste it into the form Claude shows you, as the key for <b>media.grifflix.co.uk</b>. Don’t paste it into the chat.</p><div class="state"><input type="text" id="lookval" readonly style="flex:1 1 260px;font-family:ui-monospace,monospace"><button class="btn" id="lookcopy">Copy</button></div></div>
       </section>
-      <section class="card" data-tab="themes">
+      <section class="card" data-tab="calendar">
         <div class="kicker">Fonts</div>
         <h2 id="fonthead">Futura</h2>
         <p class="stat" id="fontsay">Your own fonts (.woff2, .woff, .ttf or .otf, or a .zip of them), kept in Grifflix’s own storage, not on GitHub: Futura (Book, Bold, Light), and the themes’ own, such as Magneto for The Lane (name it magneto).</p>
@@ -2562,8 +2568,11 @@ var feats = function (doc) {
     var wait = setInterval(function () { if (GW) { clearInterval(wait); look(); } }, 500); setTimeout(function () { clearInterval(wait); if (!GW) $('#dsay').textContent = 'The Mac mini isn’t connected just now.'; }, 15000);
   })();
   (function () {   // ---- the tabs: one group of cards at a time, the last one chosen kept (and #themes etc. in the address)
-    var TABS = ['updates', 'films', 'themes', 'requests', 'members', 'mac', 'dupes'];
+    // (each kind of thing in a tab of its own, so nothing needs scrolling for: John, 18 Nov 2026, "Can you tidy up admin putting everything
+    // into clear findable tabs, so I don't have to always scroll to find things"; the old tabs' names lead to the new)
+    var TABS = ['updates', 'downloads', 'convert', 'library', 'criterion', 'calendar', 'members', 'mac', 'dupes'], OLD = { films: 'library', themes: 'calendar', requests: 'downloads' };
     function show(t, push) {
+      t = OLD[t] || t;
       if (TABS.indexOf(t) < 0) t = 'updates';
       [].forEach.call(document.querySelectorAll('.cards > [data-tab]'), function (c) { c.classList.toggle('tabon', c.dataset.tab === t); });
       [].forEach.call(document.querySelectorAll('#tabs [data-go]'), function (b) { var on = b.dataset.go === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
