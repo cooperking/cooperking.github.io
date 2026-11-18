@@ -297,6 +297,29 @@ def conv_why(ms):
     return ''
 
 
+LANGS3 = {'eng': 'English', 'fre': 'French', 'fra': 'French', 'ger': 'German', 'deu': 'German', 'ita': 'Italian', 'spa': 'Spanish', 'jpn': 'Japanese',
+          'chi': 'Chinese', 'zho': 'Chinese', 'kor': 'Korean', 'rus': 'Russian', 'swe': 'Swedish', 'dan': 'Danish', 'nor': 'Norwegian', 'dut': 'Dutch',
+          'nld': 'Dutch', 'por': 'Portuguese', 'pol': 'Polish', 'cze': 'Czech', 'ces': 'Czech', 'hun': 'Hungarian', 'fin': 'Finnish', 'gre': 'Greek',
+          'ell': 'Greek', 'hin': 'Hindi', 'ara': 'Arabic', 'heb': 'Hebrew', 'tur': 'Turkish', 'per': 'Persian', 'fas': 'Persian', 'ice': 'Icelandic'}
+
+
+def sound_list(aus):
+    """A film's soundtracks for the player's Sound menu: each by its name (a commentary's own, such as "Commentary with the director") or
+    language, with stereo or surround; the converter's two of the same language (stereo first, the original after) told apart that way."""
+    out = []
+    for a in aus:
+        t = (a.get('Title') or '').strip()
+        lang = LANGS3.get((a.get('Language') or '').lower(), (a.get('Language') or '').upper() if a.get('Language') not in (None, '', 'und') else '')
+        com = 'comment' in t.lower()
+        ch = int(a.get('Channels') or 0)
+        name = t if t and t.lower() not in ('stereo', 'surround', 'mono') else (lang or 'Soundtrack %d' % (len(out) + 1))
+        if com and lang and lang != 'English' and lang.lower() not in name.lower():
+            name += ' (%s)' % lang
+        out.append({'i': a.get('Index'), 'name': name, 'ch': '' if com else 'mono' if ch == 1 else 'stereo' if ch == 2 else '%d.1' % (ch - 1) if ch > 2 else '',
+                    'com': com})
+    return out
+
+
 def make_key(secret, uid):
     exp = int(time.time()) + KEY_HOURS * 3600
     body = '%s.%d' % (b64(uid.encode()), exp)
@@ -821,6 +844,13 @@ def make_handler(g):
                             j['state'], j['ended'] = 'lost', now
                             log('Queue for John’s Mac: %s never collected, back at the front' % j['plan']['item'].get('name'))
                             convjobs_save()
+                    # (a film John's Mac went quiet on, home again now: the network went, or the lid closed. Back at the front of its queue,
+                    # from the start; one made and waiting to be copied over is left three days, the Mac keeping it to copy when it can:
+                    # John, 18 Nov 2026, "what happens if my mac leaves the network while a conversion is running?")
+                    for t_, j in list(CONVJOBS.items()):
+                        quiet_ = now - (j.get('seen') or j['at'])
+                        if j.get('mac') and not j.get('ended') and ((j.get('state') in ('started', 'converting') and quiet_ > 1200) or (j.get('state') == 'copying' and quiet_ > 3 * 86400)):
+                            macq_again(j, now, 'no word from John’s Mac since %s' % time.strftime('%H:%M', time.localtime(j.get('seen') or j['at'])))
                     busy = [j for j in CONVJOBS.values() if j.get('mac') and j.get('state') in ('started', 'converting') and now - (j.get('seen') or j['at']) < 900]
                     if busy:
                         return self.send_json(200, {'wait': 'busy'})
@@ -852,7 +882,7 @@ def make_handler(g):
                 if u.path.startswith('/convjob/'):   # (John's Mac, converting a film for the Mac mini: its job, and word when it's done)
                     parts = u.path.split('/')
                     job = CONVJOBS.get(parts[2] if len(parts) > 2 else '')
-                    if not job or time.time() - job['at'] > 12 * 3600:
+                    if not job or time.time() - job['at'] > (4 * 86400 if method == 'POST' else 12 * 3600):   # (a film made, copied over when John's Mac is home again)
                         return self.send_json(404, {'error': 'That job isn’t here (the Mac mini may have restarted): press Convert on this Mac again.'})
                     pl = job['plan']
                     if method == 'GET':
@@ -862,6 +892,10 @@ def make_handler(g):
                         convjobs_save()
                         return self.send_json(200, {'name': pl['item'].get('name'), 'src': pl['src'], 'tmp': pl['tmp'], 'dur': pl['dur'], 'args': vt_args(pl['cmd'])})
                     body = self.body()
+                    if job.get('state') == 'lost' and job.get('again') and len(parts) > 3 and parts[3] == 'progress':   # (not lost after all: on again)
+                        Q = [x for x in (load(MACQ, []) or []) if x.get('id') != job['id']]
+                        save(MACQ, Q); job.pop('ended', None); job.pop('again', None)
+                        log('Queue for John’s Mac: %s going again on John’s Mac, out of the queue' % pl['item'].get('name'))
                     if len(parts) > 3 and parts[3] == 'progress' and body.get('stage') and 't' not in body:   # (a step on John's Mac, said: John, 17 Nov 2026)
                         job['stage'], job['seen'] = str(body.get('stage'))[:160], time.time()
                         if body.get('copying'):   # (made: copying itself to the G-Drive while John's Mac takes up the next film)
@@ -896,6 +930,8 @@ def make_handler(g):
                                 CONV_NOW.set()
                             else:
                                 log('Not converted on John’s Mac: %s (%s)' % (job['plan']['item'].get('name'), str(body.get('error') or '')[:200]))
+                                if body.get('again'):   # (the G-Drive went part-way: back at the front of its queue)
+                                    macq_again(job, time.time(), str(body.get('error') or ''))
                                 try:
                                     os.remove(job['plan']['tmp'])
                                 except OSError:
@@ -1840,6 +1876,15 @@ def make_handler(g):
                                  'next': [x for x in (cur or {}).get('next') or [] if x.get('id') not in done],   # (one already made, here or on John's Mac, off the list at once: John, 17 Nov 2026) 'left': (cur or {}).get('left'), 'pins': [x for x in P['pins'] if x.get('id') not in (st.get('done') or {}) and x.get('id') not in (st.get('failed') or {})], 'remux_first': P['remux_first'], 'log': tail,
                                  'ask': [dict(v, id=k, chosen=(P.get('langs') or {}).get(k)) for k, v in (st.get('ask') or {}).items()]})
 
+        def api_sound(self, me, user, q, b):
+            """A film's soundtracks and commentaries, listed on its page (John, 18 Nov 2026: "Audio tracks need to be listed on a titles page too")."""
+            iid = str(q.get('id') or '')
+            if not re.match(r'^[0-9a-f]{32}$', iid):
+                return self.send_json(400, {'error': 'Which film?'})
+            it = g.one(g.now_id(iid))
+            ms = (it.get('MediaSources') or [{}])[0]
+            return self.send_json(200, {'audio': sound_list([s for s in ms.get('MediaStreams', []) if s.get('Type') == 'Audio'])})
+
         def api_cfeat(self, me, user, q, b):
             """A Criterion film's special features (read from criterion.com by John's browser), for its page."""
             iid = str(q.get('id') or '')
@@ -2156,14 +2201,22 @@ def make_handler(g):
                 # own recorded, as most MKV files haven't, though the device plays it: John, 12 Nov 2026, Rushmore converted for an iPhone that plays it)
                 del hq['MaxStreamingBitrate']
                 hq.update(AllowVideoStreamCopy='true', EnableAutoStreamCopy='true')
-            hls = ('/v/%s/master.m3u8?' % iid) + urllib.parse.urlencode(hq)
-            direct = None
             vs = [s for s in ms.get('MediaStreams', []) if s.get('Type') == 'Video']
             aus = [s for s in ms.get('MediaStreams', []) if s.get('Type') == 'Audio']
+            # (a soundtrack chosen in the player, such as a commentary: the stream with that one, as the whole file plays only its first:
+            # John, 18 Nov 2026, "can mp4s play extra tracks like this then? How do we choose them?")
+            aud = str(q.get('audio') or '')
+            pick = next((a for a in aus if str(a.get('Index')) == aud), None) if aud.isdigit() else None
+            if pick and aus and pick is not aus[0]:
+                hq['AudioStreamIndex'] = pick['Index']
+            else:
+                pick = None
+            hls = ('/v/%s/master.m3u8?' % iid) + urllib.parse.urlencode(hq)
+            direct = None
             # (the whole file, when it's an MP4 whose picture and first sound this device plays as they are: the surest way to play
             # anywhere. AC3 and E-AC3 only where the device says it plays them (Safari does, Chrome doesn't): John, 12 Nov 2026)
             snd = ('aac', 'mp3') + (('ac3', 'eac3') if q.get('ac3') == '1' else ())
-            if not q.get('nodirect') and any(c in ('mp4', 'm4v', 'mov') for c in (ms.get('Container') or '').split(',')) and vs and plays \
+            if not pick and not q.get('nodirect') and any(c in ('mp4', 'm4v', 'mov') for c in (ms.get('Container') or '').split(',')) and vs and plays \
                     and all((a.get('Codec') or '') in snd for a in aus[:1]):
                 direct = '/v/%s/stream?' % iid + urllib.parse.urlencode({'Static': 'true', 'MediaSourceId': msid, 'g': key})
             subs = self.subs_out(iid, ms, key)
@@ -2178,6 +2231,7 @@ def make_handler(g):
                                'hevc': hevc, 'hevc10': q.get('hevc10') == '1', 'br': br, 'kind': (q.get('kind') or '')[:40], 'at': time.time(), 'seen': time.time()}
             g.watched()
             self.send_json(200, {'hls': hls, 'direct': direct, 'hv': bool(hevc and v0c in ('hevc', 'h265')), 'subs': subs, 'ps': ps, 'device': dev,
+                                 'audio': sound_list(aus), 'aud': pick['Index'] if pick else (aus[0].get('Index') if aus else None),
                                  'pos': user['progress'].get(iid, {}).get('pos', 0), 'secs': round((it.get('RunTimeTicks') or 0) / 1e7)})
 
         def subs_out(self, iid, ms, key):
@@ -2352,6 +2406,8 @@ def make_handler(g):
             last_mac = max([x.get('seen') or x['at'] for x in CONVJOBS.values() if x.get('state') not in ('waiting', 'notstarted')] or [0])
             for j in sorted(CONVJOBS.values(), key=lambda j: -j['at']):
                 st_ = j.get('state') or 'waiting'
+                if st_ == 'lost' and j.get('again') and now_ - (j.get('ended') or j['at']) < 1800:
+                    st_ = 'again'   # (back in John's Mac's queue, said why, for half an hour)
                 if st_ in ('notstarted', 'lost') or (st_ in ('done', 'failed') and now_ - (j.get('ended') or j['at']) > 1800) or now_ - j['at'] > 86400:
                     continue
                 if st_ in ('started', 'converting', 'copying'):
@@ -4445,6 +4501,20 @@ def claim_renew(iid):
         save(f, c)
     except Exception:
         pass
+
+
+def macq_again(j, now, why):
+    """A film John's Mac didn't finish through no fault of its own, back at the front of its queue (once: its job marked lost)."""
+    Q = load(MACQ, []) or []
+    if not any(x.get('id') == j['id'] for x in Q):
+        Q.insert(0, dict({'id': j['id'], 'name': j['plan']['item'].get('name') or '', 'at': int(now)}, **({'force': True} if j.get('force') else {})))
+        save(MACQ, Q)
+    j['state'], j['ended'], j['again'], j['error'] = 'lost', now, True, why[:200]
+    claims = load(os.path.expanduser('~/Grifflix/convert-claims.json'), {}) or {}
+    if claims.pop(j['id'], None) is not None:
+        save(os.path.expanduser('~/Grifflix/convert-claims.json'), claims)
+    log('Queue for John’s Mac: %s back at the front (%s)' % (j['plan']['item'].get('name'), why))
+    convjobs_save()
 
 
 def convjobs_save():

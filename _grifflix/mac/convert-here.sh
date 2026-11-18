@@ -73,12 +73,41 @@ fi
 if [[ "${1:-}" == "agent-off" ]]; then
   launchctl unload -w "$AGENT_PLIST" 2>/dev/null; rm -f "$AGENT_PLIST" "$HERE/agent.conf"; echo "The helper is off."; exit 0
 fi
+if [[ "${1:-}" == "copyback" ]]; then
+  # (a converted film to the G-Drive, kept on this Mac until it's there and the Mac mini has been told: tried again by itself, when this
+  # Mac is home, if the network went: John, 18 Nov 2026, "what happens if my mac leaves the network while a conversion is running?")
+  lt="$2"; tmp="$3"; url="$4"; pend="$HERE/out/pending"; rec="$pend/${lt:t}.job"; mkdir -p "$pend"
+  if [[ -f "$rec.lock" ]] && kill -0 "$(cat "$rec.lock" 2>/dev/null)" 2>/dev/null; then exit 0; fi
+  echo $$ > "$rec.lock"; trap 'rm -f "$rec.lock"' EXIT
+  [[ -f "$rec" ]] || printf '%s\n%s\n%s\n' "$lt" "$tmp" "$url" > "$rec"
+  if ! grep -qx copied "$rec" && [[ ! -f "$lt" ]]; then rm -f "$rec"; echo "$(date '+%Y-%m-%d %H:%M') ${lt:t}: no longer on this Mac"; exit 1; fi
+  if ! grep -qx copied "$rec"; then
+    if [[ -d "${tmp:h}" ]] && cp "$lt" "$tmp.copying" && mv -f "$tmp.copying" "$tmp"; then
+      echo copied >> "$rec"
+    else
+      rm -f "$tmp.copying" 2>/dev/null
+      echo "$(date '+%Y-%m-%d %H:%M') couldn't copy ${lt:t} to the G-Drive: kept on this Mac, tried again when it's home"; exit 1
+    fi
+  fi
+  code=$(curl -sS -m 30 -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{"ok":true}' "$url/done")
+  if [[ "$code" == 2* ]]; then rm -f "$lt" "$rec"; echo "$(date '+%Y-%m-%d %H:%M') ${lt:t}: on the G-Drive, the Mac mini told"
+  elif [[ "$code" == 404 ]]; then rm -f "$lt" "$rec" "$tmp"; echo "$(date '+%Y-%m-%d %H:%M') ${lt:t}: the Mac mini no longer has that job; it will plan the film again"
+  else echo "$(date '+%Y-%m-%d %H:%M') ${lt:t}: on the G-Drive; the Mac mini not told yet (tried again)"; exit 1; fi
+  exit 0
+fi
 if [[ "${1:-}" == "agent" ]]; then
   [[ -f "$HERE/agent.conf" ]] || exit 0
   base=$(sed -n 's/^base=//p' "$HERE/agent.conf"); key=$(sed -n 's/^key=//p' "$HERE/agent.conf")
   lock="$HERE/agent.lock"
   if [[ -f "$lock" ]] && kill -0 "$(cat "$lock" 2>/dev/null)" 2>/dev/null; then exit 0; fi   # (one film at a time)
   home=0; ping -c 1 -t 2 "$MINI" >/dev/null 2>&1 && home=1   # (at home: the Mac mini answers on the home network)
+  if [[ "$home" == 1 ]] && ls "$HERE/out/pending/"*.job >/dev/null 2>&1; then   # (films converted but not yet on the G-Drive: again now it's home)
+    [[ -d /Volumes/G-Drive ]] || { open "smb://$MINI/G-Drive"; for i in {1..60}; do [[ -d /Volumes/G-Drive ]] && break; sleep 1; done; }
+    for r in "$HERE/out/pending/"*.job; do
+      a=("${(@f)$(cat "$r")}")
+      nohup /usr/bin/caffeinate -i /bin/zsh "$HERE/convert-here.sh" copyback "${a[1]}" "${a[2]}" "${a[3]}" >>"$HERE/agent.log" 2>&1 &!
+    done
+  fi
   ans=$(curl -fsS -m 90 -H "Authorization: Bearer $key" "$base/macagent/next?home=$home") || exit 0
   [[ "$home" == 1 ]] || exit 0
   job=$(printf '%s' "$ans" | /usr/bin/sed -n 's/.*"job": *"\([^"]*\)".*/\1/p')
@@ -147,14 +176,12 @@ if "$FF" -nostdin -y -v error -stats -progress "$prog" "${args[@]}"; then
   echo "Made. Copying it to the G-Drive by itself (this window can be closed); the Mac mini then checks it and puts it in place."
   curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d '{"stage":"copying to the G-Drive","copying":1}' "$url/progress" >/dev/null 2>&1
   # (the copy on its own, kept awake, so this Mac takes up the next film meanwhile; the Mac mini told when it's there, or why not)
-  nohup /usr/bin/caffeinate -i /bin/zsh -c '
-    if cp "$1" "$2.copying" && mv -f "$2.copying" "$2"; then
-      curl -fsS -m 30 -X POST -H "Content-Type: application/json" -d "{\"ok\":true}" "$3/done" >/dev/null
-    else
-      rm -f "$2.copying"; curl -fsS -m 30 -X POST -H "Content-Type: application/json" -d "{\"ok\":false,\"error\":\"couldn’t copy it to the G-Drive\"}" "$3/done" >/dev/null
-    fi
-    rm -f "$1"' grifflix-copy "$lt" "$tmp" "$url" >>"$HERE/agent.log" 2>&1 &!
+  nohup /usr/bin/caffeinate -i /bin/zsh "$HERE/convert-here.sh" copyback "$lt" "$tmp" "$url" >>"$HERE/agent.log" 2>&1 &!
 else
   kill $reporter 2>/dev/null; rm -f "$prog" "$lt"
-  echo "It didn't convert."; curl -fsS -X POST -H 'Content-Type: application/json' -d '{"ok":false,"error":"ffmpeg failed"}' "$url/done" >/dev/null
+  if [[ ! -f "$src" ]]; then   # (the G-Drive gone part-way: the network, or the lid closed): back in the queue, from the start
+    echo "The G-Drive went part-way through: the film goes back in the queue."; curl -fsS -m 20 -X POST -H 'Content-Type: application/json' -d '{"ok":false,"error":"lost the G-Drive","again":1}' "$url/done" >/dev/null 2>&1
+  else
+    echo "It didn't convert."; curl -fsS -X POST -H 'Content-Type: application/json' -d '{"ok":false,"error":"ffmpeg failed"}' "$url/done" >/dev/null
+  fi
 fi

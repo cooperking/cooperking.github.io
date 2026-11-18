@@ -1448,28 +1448,45 @@ function gFilmHtml(f) {   // one film: its poster, Movie of the Day, the name an
 // calendar. Only function should be playing and getting an update from the Mac"): his Update (admin page) brings
 // everything from the Mac; the site keeps it as its own files (grifflix-data.yml), the pictures are kept in R2 (served
 // here at /gp/), and Movie of the Day's days, the ones to come too, are kept here (gcal), each shown from 8am on its day.
-const G_WORKER = 'https://sotd-playlists.cooperking.workers.dev', G_PIC_KINDS = { Primary: [400], Backdrop: [480, 1100, 1920], Thumb: [480, 1100, 1920] };   // (1920: the TV's full-screen pictures)
+const G_WORKER = 'https://sotd-playlists.cooperking.workers.dev', G_PIC_KINDS = { Primary: [400, 800, 'full'], Backdrop: [480, 1100, 1920, 'full'], Thumb: [480, 1100, 1920, 'full'] };   // ('full': as the Mac has it, John, 18 Nov 2026: "they should be stored at the size we get them")   // (1920: the TV's full-screen pictures)
 function gPicUrl(id, kind, w, tag) {   // a picture's address: its size the nearest kept one; its version (tag) in it, so a new picture is a new address
   if (typeof id === 'string' && id[0] === '/') return 'https://image.tmdb.org/t/p/' + ((w || 0) > 500 ? 'w1280' : 'w500') + id;   // (a theme's film Grifflix hasn't: TMDB's picture)
-  const sizes = G_PIC_KINDS[kind] || [400], size = sizes.find(x => x >= (w || 0)) || sizes[sizes.length - 1];
+  const sizes = G_PIC_KINDS[kind] || [400], size = sizes.find(x => x === 'full' || x >= (w || 0));
   return id ? G_WORKER + '/gp/' + id + '/' + kind + '-' + size + '.jpg' + (tag ? '?t=' + tag : '') : '';
 }
 async function gPicGet(request, url, env, ctx) {   // /gp/<id>/<Kind>-<w>.jpg: from R2; one not copied yet comes from the Mac
-  const m = /^\/gp\/([0-9a-f]{32})\/(Primary|Backdrop|Thumb)-(\d+)\.jpg$/.exec(url.pathname);
-  if (!m || !(G_PIC_KINDS[m[2]] || []).includes(+m[3])) return new Response('Not here.', { status: 404 });
+  const m = /^\/gp\/([0-9a-f]{32})\/(Primary|Backdrop|Thumb)-(\d+|full)\.jpg$/.exec(url.pathname);
+  if (!m || !(G_PIC_KINDS[m[2]] || []).some(x => String(x) === m[3])) return new Response('Not here.', { status: 404 });
+  const ask = G_API + '/pimg/' + m[1] + '/' + m[2] + '.jpg?' + (m[3] === 'full' ? 'quality=92' : 'maxWidth=' + m[3] + '&quality=82');
   const cache = caches.default, hit = await cache.match(request);
   if (hit) return hit;
   const key = 'grifflix/p/' + m[1] + '/' + m[2] + '-' + m[3] + '.jpg';
-  let o = await env.MEDIA.get(key).catch(() => null), body;
-  if (!o && url.searchParams.get('m') !== '1') return new Response('Not here.', { status: 404, headers: { 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=300' } });   // (a visitor, not signed in: the site's copies only, never the Mac: John, 10 Nov 2026)
-  if (!o) {   // not copied yet: from the Mac now, and kept from then on (if the Mac answers)
-    const r = await fetch(G_API + '/pimg/' + m[1] + '/' + m[2] + '.jpg?maxWidth=' + m[3] + '&quality=82', { headers: { 'User-Agent': 'Grifflix Worker' } }).catch(() => null);
-    if (!r || !r.ok || !/image\/jpeg/.test(r.headers.get('Content-Type') || '')) return Response.redirect(G_API + '/pimg/' + m[1] + '/' + m[2] + '.jpg?maxWidth=' + m[3], 302);
-    body = await r.arrayBuffer();
-    if (body.byteLength > 200) { if (ctx) ctx.waitUntil(env.MEDIA.put(key, body, { httpMetadata: { contentType: 'image/jpeg' } })); else await env.MEDIA.put(key, body, { httpMetadata: { contentType: 'image/jpeg' } }); }
+  let o = await env.MEDIA.get(key).catch(() => null), body, type = '';
+  // (a picture changed on the Mac (its version, t, not the one kept): asked for afresh, for a member, the kept one still shown if the Mac doesn't
+  // answer; the first copy was otherwise kept for ever: John, 18 Nov 2026, Fanny and Alexander's poster blurred long after a sharp one replaced it)
+  const want = url.searchParams.get('t') || '', had = o && o.customMetadata ? o.customMetadata.t || '' : '';
+  const stale = !!(o && want && want !== had && url.searchParams.get('m') === '1');
+  if (!o && url.searchParams.get('m') !== '1') {   // (a visitor: the nearest size already kept, while the bigger one isn't yet)
+    const all = G_PIC_KINDS[m[2]].map(String), at = all.indexOf(m[3]);
+    for (const x of all.slice(0, at).reverse().concat(all.slice(at + 1))) {
+      const near = await env.MEDIA.get('grifflix/p/' + m[1] + '/' + m[2] + '-' + x + '.jpg').catch(() => null);
+      if (near) return new Response(near.body, { headers: { 'Content-Type': (near.httpMetadata || {}).contentType || 'image/jpeg', 'Cache-Control': 'public, max-age=3600', 'Access-Control-Allow-Origin': '*' } });
+    }
   }
-  const res = new Response(o ? o.body : body, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=' + (url.search ? 31536000 : 86400), 'Access-Control-Allow-Origin': '*' } });
-  if (ctx) ctx.waitUntil(cache.put(request, res.clone()));
+  if (!o && url.searchParams.get('m') !== '1') return new Response('Not here.', { status: 404, headers: { 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=300' } });   // (a visitor, not signed in: the site's copies only, never the Mac: John, 10 Nov 2026)
+  if (!o || stale) {   // not copied yet, or changed: from the Mac now, and kept from then on (if the Mac answers)
+    const r = await fetch(ask, { headers: { 'User-Agent': 'Grifflix Worker' } }).catch(() => null);
+    const ct = r ? (r.headers.get('Content-Type') || '').split(';')[0] : '', good = r && r.ok && /^image\/(jpeg|png|webp)$/.test(ct);
+    if (!good && !o) return Response.redirect(ask, 302);
+    if (good) {
+      body = await r.arrayBuffer();
+      if (body.byteLength > 200) { o = null; type = ct; const put = env.MEDIA.put(key, body, { httpMetadata: { contentType: ct }, customMetadata: { t: want } }); if (ctx) ctx.waitUntil(put); else await put; }
+      else body = null;
+    }
+    if (!body && !o) return Response.redirect(ask, 302);
+  }
+  const res = new Response(o ? o.body : body, { headers: { 'Content-Type': (o ? (o.httpMetadata || {}).contentType : type) || 'image/jpeg', 'Cache-Control': 'public, max-age=' + (url.search ? 31536000 : 86400), 'Access-Control-Allow-Origin': '*' } });
+  if (ctx && !(stale && o)) ctx.waitUntil(cache.put(request, res.clone()));   // (the old one, the Mac not answering: not kept under the new version)
   return res;
 }
 function gRevealed(day) { const t = londonDay(); return day < t || (day === t && londonHour() >= 8); }
