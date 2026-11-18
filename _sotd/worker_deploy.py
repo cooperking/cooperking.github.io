@@ -232,11 +232,10 @@ def after_upload(base, before, code):
         note('/songs.json FAILS (%s): %s' % (s, words), 'warning')
 
 
-def grifflix_domain():
+def grifflix_domain(host='grifflix.co.uk'):
     """6. Grifflix's links on John's own domain: the Worker as grifflix.co.uk (a Cloudflare custom domain), so an invitation's
     link doesn't say sotd-playlists (John, 9 Nov 2026). Needs the token to see the zone and add Workers custom domains; if it
     can't, it says what to do by hand and the links stay on the Worker's own address."""
-    host = 'grifflix.co.uk'
     try:
         doms = cf('GET', '/accounts/%s/workers/domains?hostname=%s' % (ACCOUNT, host)) or []
         if any(d.get('hostname') == host and d.get('service') == NAME for d in doms):
@@ -256,6 +255,7 @@ if __name__ == '__main__':
         main()
         if TOKEN:
             grifflix_domain()
+            grifflix_domain('admin.grifflix.co.uk')   # (the admin page as an app of its own: John, 18 Nov 2026)
     except Refused as e:
         note(str(e), 'error'); raise SystemExit(1)
     except SystemExit as e:
