@@ -82,6 +82,26 @@ if [[ "${1:-}" == "copyback" ]]; then
   [[ -f "$rec" ]] || printf '%s\n%s\n%s\n' "$lt" "$tmp" "$url" > "$rec"
   if ! grep -qx copied "$rec" && [[ ! -f "$lt" ]]; then rm -f "$rec"; echo "$(date '+%Y-%m-%d %H:%M') ${lt:t}: no longer on this Mac"; exit 1; fi
   if ! grep -qx copied "$rec"; then
+    # (one at a time, oldest first, each waiting its turn and saying so: three copying at once over the one network to the one USB 2 drive
+    # slowed them all: John, 18 Nov 2026, "Films from my Mac also need to be in the queue to transfer")
+    tl="$pend/transfer.lock"; said=""
+    while true; do
+      ahead=0
+      for o in "$pend/"*.job(N); do
+        [[ "$o" == "$rec" ]] && continue
+        grep -qx copied "$o" && continue
+        [[ "$o" -ot "$rec" ]] && ahead=$((ahead + 1))
+      done
+      busy=0; [[ -f "$tl" ]] && kill -0 "$(cat "$tl" 2>/dev/null)" 2>/dev/null && busy=1
+      (( ahead == 0 && busy == 0 )) && break
+      say="waiting to copy to the G-Drive ($(( ahead > 0 ? ahead : 1 )) ahead of it)"
+      [[ "$say" != "$said" ]] && echo "$(date '+%Y-%m-%d %H:%M') ${lt:t}: $say"
+      said="$say"
+      curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d "{\"stage\":\"$say\",\"copying\":1}" "$url/progress" >/dev/null 2>&1
+      sleep 30
+    done
+    echo $$ > "$tl"; trap 'rm -f "$rec.lock" "$tl"' EXIT
+    curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d '{"stage":"copying to the G-Drive","copying":1}' "$url/progress" >/dev/null 2>&1
     if [[ -d "${tmp:h}" ]] && cp "$lt" "$tmp.copying" && mv -f "$tmp.copying" "$tmp"; then
       echo copied >> "$rec"
     else

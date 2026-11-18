@@ -1434,7 +1434,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         var say = x.state === 'converting' && (pc >= 99.5 || /^finishing/.test(x.stage || '')) ? 'converted: now putting the file together, which copies it over the network once more (a few minutes; nothing moves on your Mac’s screen meanwhile)'
           : x.state === 'converting' ? pc.toFixed(0) + '%' + (sp ? ' · ' + x.speed + (x.dur && sp ? ' · about ' + mm((x.dur - x.t) / sp) + ' to go' : '') : '')
           : x.state === 'waiting' ? 'waiting for your Mac to take it up' : x.state === 'started' ? (x.stage || 'starting') + '…'
-          : x.state === 'copying' ? 'made: copying itself to the G-Drive (your Mac has moved on to the next film)'
+          : x.state === 'copying' ? (/^waiting/.test(x.stage || '') ? 'made: ' + x.stage : 'made: copying itself to the G-Drive (your Mac has moved on to the next film)')
           : x.state === 'checking' ? 'made: the Mac mini is checking it and putting it in place' : x.state === 'done' ? 'converted on your Mac' + (x.ended ? ' at ' + new Date(x.ended * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '') + ', and in Grifflix now'
           : x.state === 'again' ? 'back at the front of your Mac’s queue, to start again when it’s home' + (x.error ? ' (' + x.error + ')' : '')
           : x.state === 'quiet' ? 'no word from your Mac since ' + new Date((x.seen || x.at) * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ' (asleep, or its window closed?)'
