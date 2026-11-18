@@ -42,6 +42,16 @@ SKIP = os.path.join(HOME, 'convert-skip')   # (John's Skip on the admin page: th
 MINE = os.path.getmtime(os.path.abspath(__file__))   # (this version: a newer one taken up between films, not by stopping one part way)
 
 
+def mac_converting():
+    """John's own Mac converting a film this minute (its job heard from in the last 2 minutes): the Mac mini's own converting waits,
+    since both read the one G-Drive over its USB 2 and each slows the other (John, 18 Nov 2026: "is there no way to sort this out")."""
+    try:
+        J = json.load(open(os.path.join(HOME, 'convert-jobs.json')))
+        return any(j.get('state') in ('started', 'converting') and time.time() - (j.get('seen') or 0) < 120 for j in J.values())
+    except (OSError, ValueError, AttributeError):
+        return False
+
+
 def downloading():
     """A film coming in from TorBox or Google Drive this minute (gdrive.py's lock, its process alive), and not waiting for one it
     brought in to be repackaged. Repackaging older films waits for it: the G-Drive can't do both at speed (John, 15 Nov 2026,
@@ -651,7 +661,7 @@ def convert(item, ffmpeg, ffprobe, st):
                         show()
                 if k % 4 == 0:   # (how far it's got: every 20 seconds)
                     show(why_ if paused else '')
-                why_ = 'someone is watching' if watching() else 'a film is downloading' if item.get('mode') == 'remux' and not item.get('fetched') and not item.get('new') and not item.get('redo') and downloading() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() and not item.get('urgent') else '')
+                why_ = 'someone is watching' if watching() else 'your Mac is converting' if mac_converting() and not item.get('fetched') and not item.get('urgent') else 'a film is downloading' if item.get('mode') == 'remux' and not item.get('fetched') and not item.get('new') and not item.get('redo') and downloading() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() and not item.get('urgent') else '')
                 if why_ and not paused:
                     p.send_signal(signal.SIGSTOP); paused = True; log('  paused: ' + why_)
                 elif not why_ and paused:
