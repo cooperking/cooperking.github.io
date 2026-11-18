@@ -123,7 +123,6 @@ if [[ "${1:-}" == "agent" ]]; then
   [[ -f "$HERE/agent.conf" ]] || exit 0
   base=$(sed -n 's/^base=//p' "$HERE/agent.conf"); key=$(sed -n 's/^key=//p' "$HERE/agent.conf")
   lock="$HERE/agent.lock"
-  if [[ -f "$lock" ]] && kill -0 "$(cat "$lock" 2>/dev/null)" 2>/dev/null; then exit 0; fi   # (one film at a time)
   home=0; ping -c 1 -t 2 "$MINI" >/dev/null 2>&1 && home=1   # (at home: the Mac mini answers on the home network)
   if [[ "$home" == 1 ]]; then   # (films made here the Mac mini is still waiting for, left in out/ with no record of where they go: recorded)
     mkdir -p "$HERE/out/pending"
@@ -138,6 +137,7 @@ if [[ "${1:-}" == "agent" ]]; then
       detach /usr/bin/caffeinate -i /bin/zsh "$HERE/convert-here.sh" copyback "${a[1]}" "${a[2]}" "${a[3]}"
     done
   fi
+  if [[ -f "$lock" ]] && kill -0 "$(cat "$lock" 2>/dev/null)" 2>/dev/null; then exit 0; fi   # (one film at a time; copies over go on all the same)
   ans=$(curl -fsS -m 90 -H "Authorization: Bearer $key" "$base/macagent/next?home=$home") || exit 0
   [[ "$home" == 1 ]] || exit 0
   job=$(printf '%s' "$ans" | /usr/bin/sed -n 's/.*"job": *"\([^"]*\)".*/\1/p')
