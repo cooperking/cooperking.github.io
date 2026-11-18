@@ -1260,7 +1260,7 @@ html.tv #sheet .bsheet .hero { margin-bottom: 26px; }
 /* a page of its own (Films, a collection, My list) in a themed month: under the bar that floats over the theme, never behind it
    (John, 8 Nov 2026: "careful that it looks tidy - those screenshots had text on text") */
 html.hall[data-page] #main, html.table[data-page] #main { padding-top: 104px; }
-html.mob[data-page] #main { padding-top: calc(78px + env(safe-area-inset-top)); }
+html.mob[data-page] #main { padding-top: 66px; }   /* (the iPhone's top strip counted once, by .wrap, not twice: a page's words had a wide gap under the bar: John, 18 Nov 2026) */
 html.tv[data-page] #main { padding-top: 120px; }
 html[data-page] .hero { margin-top: 0; }
 /* the logo over a pop-up; the full-screen pop-ups' tops kept clear of it */
@@ -2328,7 +2328,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'f328a8eb1fbd' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '24058f69a5ee' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
