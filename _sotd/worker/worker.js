@@ -1702,6 +1702,9 @@ async function gSiteProxy(request, url, env) {
   const h = new Headers(r.headers);
   ['x-github-request-id', 'x-fastly-request-id', 'x-served-by', 'x-cache', 'x-cache-hits', 'x-timer', 'via', 'access-control-allow-origin'].forEach(k => h.delete(k));
   if (url.pathname === '/sw.js') h.set('Service-Worker-Allowed', '/');
+  // (Grifflix's pages always looked at afresh, not a copy a browser kept for up to 4 hours: a change put live, or the admin page's own,
+  // didn't show: John, 18 Nov 2026. Pictures, fonts and the films' data keep their own times)
+  if (/text\/html/.test(h.get('Content-Type') || '')) h.set('Cache-Control', 'no-cache');
   if (p.endsWith('manifest.webmanifest') && r.ok) {   // (installed from here: the whole of grifflix.co.uk its own)
     const m = await r.json().catch(() => null); if (m) { m.start_url = '/'; m.scope = '/'; h.delete('content-length'); return new Response(JSON.stringify(m), { status: 200, headers: h }); }
   }
@@ -1726,6 +1729,7 @@ async function gAdminProxy(request, url) {
   const h = new Headers(r.headers);
   ['x-github-request-id', 'x-fastly-request-id', 'x-served-by', 'x-cache', 'x-cache-hits', 'x-timer', 'via', 'access-control-allow-origin'].forEach(k => h.delete(k));
   if (r.status === 301 || r.status === 302) { const to = new URL(r.headers.get('Location') || '/', 'https://cooperking.github.io'); h.set('Location', to.pathname + to.search); }
+  if (/text\/html/.test(h.get('Content-Type') || '')) h.set('Cache-Control', 'no-cache');   // (the page always looked at afresh: a kept copy stood in for a new one)
   return new Response(r.body, { status: r.status, headers: h });
 }
 async function gAll(env) { return (await env.SOTD.get('gmembers', 'json')) || {}; }
