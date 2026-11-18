@@ -1139,6 +1139,9 @@ def make_handler(g):
                     kept[i['Id']] = {'e': i.get('Etag'), 'o': o}
                     out.append(o)
                 return out
+            # (what's owned, and which film carries each box set, across films and TV together: a set with a series in it (Fanny and
+            # Alexander's television version) said its films were missing, each library seeing only its own: John, 18 Nov 2026)
+            OWNED, SFILM, ctj_, FINFO = set(), {}, {}, {}
             for key, types in (('movies', 'Movie'), ('tv', 'Series')):
                 if libs.get(key):
                     raw = [i for i in shown(g.items(ParentId=libs[key], Recursive='true', IncludeItemTypes=types, SortBy='SortName', Fields=quick + ',SpecialFeatureCount').get('Items', [])) if not making(i)]
@@ -1147,7 +1150,7 @@ def make_handler(g):
                     if True:   # (Criterion's spine numbers, kept apart from each film's remembered details, so they're always current; a series' too)
                         # (and Criterion's own director and country for it, for the Criterion pages' filters: John, 17 Nov 2026, "I would like
                         # all the same filters available to me on the criterion page in my collection too")
-                        CL, TG, TS, SDONE, FINFO, OWNED, SFILM = {}, {}, {}, set(), {}, set(), {}
+                        CL, TG, TS, SDONE, FINFO = {}, {}, {}, set(), {}
                         ctj_ = load(os.path.expanduser('~/Grifflix/criterion-tags.json'), {}) or {}
                         for k_, v_ in (ctj_.get('tags') or {}).items():
                             for sl_ in v_:
@@ -1214,12 +1217,6 @@ def make_handler(g):
                                         if dsc_:   # (its description, carried by one of its films only, not repeated on each)
                                             o_['csetdesc'] = dsc_
                                             SDONE.update(dsc_)
-                        # (each box set's films not in Grifflix, carried by one of its films that is: John, 18 Nov 2026, "I'll need a list of films
-                        # missing from the box sets too")
-                        for nm_, mem_ in (ctj_.get('sets') or {}).items():
-                            miss_ = [FINFO.get(x_, (x_.split('-', 1)[-1].replace('-', ' ').title(), '', '')) for x_ in mem_ if x_ not in OWNED]
-                            if nm_ in SFILM and SFILM[nm_] in items:
-                                items[SFILM[nm_]].setdefault('csetmiss', {})[nm_] = [list(m_) for m_ in miss_]
                     lists[key] = [i['Id'] for i in raw if i['Id'] in items]
                     if key == 'movies':
                         self.extras(raw, items, lists)
@@ -1244,6 +1241,12 @@ def make_handler(g):
                             xs_ = items[i['Id']].setdefault('extras', [])
                             if e['Id'] not in xs_:
                                 xs_.append(e['Id'])
+            # (each box set's films not in Grifflix, carried by one of its films that is, once films and TV are both counted: John, 18 Nov
+            # 2026, "I'll need a list of films missing from the box sets too")
+            for nm_, mem_ in (ctj_.get('sets') or {}).items():
+                miss_ = [FINFO.get(x_, (x_.split('-', 1)[-1].replace('-', ' ').title(), '', '')) for x_ in mem_ if x_ not in OWNED]
+                if nm_ in SFILM and SFILM[nm_] in items:
+                    items[SFILM[nm_]].setdefault('csetmiss', {})[nm_] = [list(m_) for m_ in miss_]
             sets = g.items(Recursive='true', IncludeItemTypes='BoxSet', SortBy='SortName', Fields=quick).get('Items', [])
             for o in resolve(sets, extra):
                 items[o['id']] = o
