@@ -127,12 +127,16 @@ if [[ "${1:-}" == "copyback" ]]; then
     why=""
     if [[ ! -f "$lt" ]]; then why="the film isn't on this Mac any more"
     elif [[ ! -d "${tmp:h}" ]]; then why="this Mac can't see the G-Drive's folder ${tmp:h}"
-    else why=$(cp "$lt" "$tmp.copying" 2>&1 >/dev/null) && why=$(mv -f "$tmp.copying" "$tmp" 2>&1) && why=""; [[ -z "$why" && ! -f "$tmp" ]] && why="the copy didn't reach the G-Drive"; fi
+    # (the film's contents only: macOS's cp also copies a file's extended attributes, which the network share refuses: "Operation not permitted",
+    # every film from John's Mac refused on 18 Nov 2026)
+    else why=$( { /bin/cat "$lt" > "$tmp.copying"; } 2>&1 ) && why=$(mv -f "$tmp.copying" "$tmp" 2>&1) && why=""
+      [[ -z "$why" && ! -f "$tmp" ]] && why="the copy didn't reach the G-Drive"
+      [[ -z "$why" && "$(stat -f %z "$tmp" 2>/dev/null)" != "$(stat -f %z "$lt" 2>/dev/null)" ]] && { why="the copy on the G-Drive isn't the whole film"; rm -f "$tmp"; }; fi
     if [[ -z "$why" ]]; then
       echo copied >> "$rec"
     else
       rm -f "$tmp.copying" 2>/dev/null
-      why=${why//$'\n'/ }; why=${why//\"/\'}; why=${why:0:160}
+      why=${why//$'\n'/ }; why=${why//\"/\'}; why=${why//$HOME\/Grifflix\/out\//}; why=${why//\/Volumes\/G-Drive\/Grifflix\/Grifflix Converting\//}; why=${why:0:240}
       curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d "{\"stage\":\"couldn't copy to the G-Drive: $why (tried again between films)\",\"copying\":1}" "$url/progress" >/dev/null 2>&1
       echo "$(date '+%Y-%m-%d %H:%M') couldn't copy ${lt:t} to the G-Drive ($why): kept on this Mac, tried again in 2 minutes"
       report
