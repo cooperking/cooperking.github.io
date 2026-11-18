@@ -6051,12 +6051,22 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
     // (Convert on this Mac, when the Mac mini says this file needs converting (or making smaller): from the file itself, not the film page's
     // details, which hadn't always come: John, 16 Nov 2026, "the option isn't there for a lot of them")
     var cv = ((j.sources || [])[0] || {}).convert;
-    if (cv && !TV && /Mac/.test(navigator.platform || '') && !('ontouchend' in document) && $('#tmbox')) {
-      $('#tmbox').innerHTML = '<div class="xblock" style="margin:0 0 22px"><h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">Convert on this Mac</h4>' +
+    // (and Queue for my Mac, from any device: his own Mac takes it up by itself when it's on and at home: John, 18 Nov 2026)
+    var onMac = /Mac/.test(navigator.platform || '') && !('ontouchend' in document);
+    if (cv && !TV && $('#tmbox')) {
+      $('#tmbox').innerHTML = '<div class="xblock" style="margin:0 0 22px"><h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">Convert on your Mac</h4>' +
         '<p class="ov" style="margin:0 0 10px;font-size:14px">' + esc(/^to make smaller/.test(cv) ? 'It’s bigger than it needs to be' + (cv.match(/\(([^)]*)\)/) ? ' (' + cv.match(/\(([^)]*)\)/)[1] + ')' : '') + ': it can be made smaller'
           : /^to repackage/.test(cv) ? 'It needs repackaging ' + cv.replace(/^to repackage\s*/, '') : 'It needs converting (' + cv.replace(/^to /, '') + ')') + '. This Mac does it much faster than the Mac mini, which checks it and puts it in place.</p>' +
-        '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="pill" id="thismac">Convert on this Mac</button></div><div id="tmprog" style="margin-top:10px"></div></div>';
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">' + (onMac ? '<button class="pill" id="thismac">Convert on this Mac</button>' : '') + '<button class="pill" id="queuemac">Queue for my Mac</button></div><div id="tmprog" style="margin-top:10px"></div></div>';
       wireThisMac();
+      $('#queuemac').onclick = function () {
+        var b = this; b.disabled = true;
+        mac('macqueue', { op: 'add', id: it.id, name: showName(it) }).then(function (r) {
+          var n = (r.queue || []).length, at = (r.queue || []).map(function (x) { return x.id; }).indexOf(it.id) + 1;
+          b.textContent = 'Queued for your Mac ✓';
+          toast(r.setup ? showName(it) + ': number ' + at + ' of ' + n + ' for your Mac. It starts when your Mac is on and at home.' : 'Queued. Set your Mac up to take queued films: admin page, Conversions, On your Mac.');
+        }).catch(function (e) { b.disabled = false; toast(e.status === 404 ? 'The Mac mini needs its update first (within 15 minutes).' : e.message || 'The Mac mini didn’t answer'); });
+      };
     }
   }).catch(function (e) { $('#finfo').textContent = e.status === 404 ? 'Press Update everything first (the Mac mini needs its update).' : (e.message || 'Couldn’t reach the Mac mini'); });
   var wireThisMac = function () {

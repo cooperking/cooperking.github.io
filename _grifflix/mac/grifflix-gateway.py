@@ -775,6 +775,27 @@ def make_handler(g):
                     if not fn or method != 'GET':
                         return self.send_json(404, {'error': 'Not here.'})
                     return fn(q)
+                if u.path == '/macagent/next':   # (John's Mac's helper, asking every minute: the next film queued for it, as a job)
+                    tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
+                    want = (g.st.get('macagent') or {}).get('key')
+                    if not want or not tok or not hmac.compare_digest(hashlib.sha256(tok.encode()).hexdigest(), want):
+                        return self.send_json(403, {'error': 'Not allowed.'})
+                    MACAGENT['seen'] = int(time.time()); MACAGENT['home'] = q.get('home') == '1'
+                    if q.get('home') != '1':   # (away from home, the G-Drive out of reach: the queue kept for when it's back)
+                        return self.send_json(200, {'wait': 'away'})
+                    busy = [j for j in CONVJOBS.values() if j.get('mac') and j.get('state') in ('waiting', 'started', 'converting') and time.time() - (j.get('seen') or j['at']) < 900]
+                    if busy:
+                        return self.send_json(200, {'wait': 'busy'})
+                    Q = load(MACQ, []) or []
+                    while Q:
+                        x = Q.pop(0)
+                        save(MACQ, Q)
+                        code, j = mac_job(x['id'])
+                        if code == 200:
+                            CONVJOBS[j['token']]['mac'] = True
+                            return self.send_json(200, {'job': '/convjob/' + j['token'], 'name': j.get('name')})
+                        log('Queue for John’s Mac: %s passed over (%s)' % (x.get('name') or x['id'], j.get('error')))
+                    return self.send_json(200, {'wait': 'empty'})
                 if u.path.startswith('/convjob/'):   # (John's Mac, converting a film for the Mac mini: its job, and word when it's done)
                     parts = u.path.split('/')
                     job = CONVJOBS.get(parts[2] if len(parts) > 2 else '')
@@ -2051,29 +2072,33 @@ def make_handler(g):
             Mac the job by a one-time address, leaves the film alone meanwhile, and puts the result in place when it's done."""
             if not me.get('owner'):
                 return self.send_json(403, {'error': 'Only John.'})
-            iid = str(q.get('id') or '')
-            if not re.match(r'^[0-9a-f]{32}$', iid):
-                return self.send_json(400, {'error': 'Which film?'})
-            import subprocess
-            home = os.path.expanduser('~/Grifflix')
-            cur = load(os.path.join(home, 'convert-now.json'), None) or {}
-            if cur.get('id') == iid and conv_alive(cur):   # (the Mac mini at it already: not both)
-                return self.send_json(409, {'error': 'The Mac mini is converting it itself right now (%s%%): it carries on.' % cur.get('pct', 0)})
-            r = subprocess.run([sys.executable, os.path.join(home, 'convert.py'), 'plan', iid], capture_output=True, text=True, timeout=600, cwd=home)
-            try:
-                plan = json.loads([l for l in (r.stdout or '').splitlines() if l.startswith('{')][-1])
-            except (IndexError, ValueError):
-                return self.send_json(500, {'error': 'The Mac mini couldn’t plan it: ' + (r.stderr or '').strip()[-200:]})
-            if plan.get('error'):
-                return self.send_json(400, {'error': plan['error']})
-            tok = secrets.token_urlsafe(18)
-            CONVJOBS[tok] = {'plan': plan, 'at': time.time(), 'id': iid, 'state': 'waiting'}
-            convjobs_save()
-            claims = load(os.path.join(home, 'convert-claims.json'), {}) or {}
-            claims[iid] = time.time()
-            save(os.path.join(home, 'convert-claims.json'), claims)
-            log('To be converted on John’s Mac: %s' % plan['item'].get('name'))
-            return self.send_json(200, {'token': tok, 'name': plan['item'].get('name')})
+            code, j = mac_job(str(q.get('id') or ''))
+            return self.send_json(code, j)
+
+        def api_macqueue(self, me, user, q, b):
+            """John's only: films queued for his own Mac, which takes them up by itself, one after another, wherever he queued them from
+            (John, 18 Nov 2026: "Is it possible to switch on convert on my Mac remotely?" ... "Yes"). Its helper's key is made here, shown once."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            Q = load(MACQ, []) or []
+            if b:
+                op, iid = str(b.get('op') or ''), str(b.get('id') or '')
+                if op == 'key':   # (a new key for his Mac's helper: the old one stops working)
+                    k = secrets.token_urlsafe(24)
+                    g.st['macagent'] = {'key': hashlib.sha256(k.encode()).hexdigest(), 'made': int(time.time())}
+                    save(SETTINGS, g.st)
+                    return self.send_json(200, {'key': k})
+                if not re.match(r'^[0-9a-f]{32}$', iid):
+                    return self.send_json(400, {'error': 'Which film?'})
+                Q = [x for x in Q if x.get('id') != iid]
+                if op == 'add':
+                    Q.append({'id': iid, 'name': str(b.get('name') or '')[:200], 'at': int(time.time())})
+                elif op == 'first':
+                    Q.insert(0, {'id': iid, 'name': str(b.get('name') or '')[:200], 'at': int(time.time())})
+                save(MACQ, Q)
+                log('Queue for John’s Mac: %s %s' % ({'add': 'added', 'first': 'put first', 'remove': 'taken off'}.get(op, op), b.get('name') or iid))
+            a = g.st.get('macagent') or {}
+            return self.send_json(200, {'queue': Q, 'setup': bool(a.get('key')), 'seen': MACAGENT.get('seen'), 'home': MACAGENT.get('home')})
 
         def api_fileinfo(self, me, user, q, b):
             """John's only: a film's file as it is, for its Edit panel (John, 16 Nov 2026: "I need to see file format details in the edit
@@ -3389,6 +3414,36 @@ def site_update(g, why=''):
 
 CONVJOBS = {}   # (films being converted on John's Mac: their one-time addresses)
 CONVJOBS_AT = os.path.expanduser('~/Grifflix/convert-jobs.json')   # (kept through a restart: the film's Edit panel can still say how it went)
+
+
+MACQ = os.path.expanduser('~/Grifflix/mac-queue.json')   # (films queued for John's Mac, in his order)
+MACAGENT = {}   # (when his Mac's helper last asked, and whether it was at home)
+
+
+def mac_job(iid):
+    """A film planned for John's Mac, as the Mac mini's converter would plan it, and handed over by a one-time address: (code, answer)."""
+    if not re.match(r'^[0-9a-f]{32}$', iid):
+        return 400, {'error': 'Which film?'}
+    import subprocess
+    home = os.path.expanduser('~/Grifflix')
+    cur = load(os.path.join(home, 'convert-now.json'), None) or {}
+    if cur.get('id') == iid and conv_alive(cur):   # (the Mac mini at it already: not both)
+        return 409, {'error': 'The Mac mini is converting it itself right now (%s%%): it carries on.' % cur.get('pct', 0)}
+    r = subprocess.run([sys.executable, os.path.join(home, 'convert.py'), 'plan', iid], capture_output=True, text=True, timeout=600, cwd=home)
+    try:
+        plan = json.loads([l for l in (r.stdout or '').splitlines() if l.startswith('{')][-1])
+    except (IndexError, ValueError):
+        return 500, {'error': 'The Mac mini couldn’t plan it: ' + (r.stderr or '').strip()[-200:]}
+    if plan.get('error'):
+        return 400, {'error': plan['error']}
+    tok = secrets.token_urlsafe(18)
+    CONVJOBS[tok] = {'plan': plan, 'at': time.time(), 'id': iid, 'state': 'waiting'}
+    convjobs_save()
+    claims = load(os.path.join(home, 'convert-claims.json'), {}) or {}
+    claims[iid] = time.time()
+    save(os.path.join(home, 'convert-claims.json'), claims)
+    log('To be converted on John’s Mac: %s' % plan['item'].get('name'))
+    return 200, {'token': tok, 'name': plan['item'].get('name')}
 
 
 def claim_renew(iid):
