@@ -336,6 +336,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       <button type="button" role="tab" data-go="updates">Updates</button><button type="button" role="tab" data-go="films">Films</button><button type="button" role="tab" data-go="themes">Themes</button><button type="button" role="tab" data-go="requests">Requests</button><button type="button" role="tab" data-go="members">Members</button><button type="button" role="tab" data-go="mac">Mac</button><button type="button" role="tab" data-go="dupes" id="dupetab" hidden>Copies</button>
     </nav>
     <div class="cards">
+      <section class="card" data-tab="updates" id="wtcard">
+        <div class="kicker">Waiting on you</div>
+        <h2 id="wthead">Looking…</h2>
+        <ul class="changes" id="wtlist"></ul>
+        <details id="wtdone" hidden><summary class="stat" style="cursor:pointer;margin-top:10px"></summary><ul class="changes" id="wtdonelist"></ul></details>
+      </section>
       <section class="card" data-tab="dupes">
         <div class="kicker">Duplicates</div>
         <h2 id="duphead">Films you have twice</h2>
@@ -797,6 +803,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     $('#alllist').innerHTML = (WAIT.mac ? '<li>' + esc(WAIT.mac) + ((WAIT.macList || []).length ? '<ul style="margin:6px 0 0 18px;padding:0">' + WAIT.macList.map(function (t) { return '<li style="background:none;padding:2px 0">' + esc(t) + '</li>'; }).join('') + '</ul>' : '') + '</li>' : '') + (WAIT.themes ? '<li><b>Goes live for everyone:</b> ' + esc(WAIT.themes) + '</li>' : '') +
       (pageItems.length ? '<li><b>Goes live for everyone:</b><ul style="margin:6px 0 0 18px;padding:0">' + pageItems.map(function (t) { return '<li style="background:none;padding:2px 0">' + esc(t) + '</li>'; }).join('') + '</ul></li>' : '');
     $('#allgo').textContent = WAIT.page || WAIT.themes ? 'Update everything and put the draft live' : 'Update everything';
+    if (typeof wtDraw === 'function') wtDraw();
   }
   // (each step shown as it goes, and what it did; kept on this device, so the last update's outcome is there after a reload)
   var STEPS = [['mac', 'The Mac mini’s own software'], ['data', 'Films, TV and Movie of the Day sent to the site'], ['themes', 'New themes put live'], ['page', 'The draft put live for everyone']];
@@ -1429,6 +1436,51 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       }).catch(function (e) { $('#dhealth').innerHTML = e && e.message === 'old' ? '<p class="stat">The G-Drive’s health: the Mac mini takes its update within 15 minutes.</p>' : ''; });
   }
   setTimeout(dHealth, 3200);
+  // ---- Waiting on you (John, 18 Nov 2026: "I could do with a waiting on you section in my admin, so I know what has and hasn't been
+  // done"): the list kept by Claude in waiting.json; some tick themselves off from the Mac mini, the rest John ticks off (kept on the Mac mini)
+  var WT = { items: null, done: {}, auto: {}, gw: true };
+  function wtAuto() {
+    if (!GW || !TOKEN) return;
+    var get = function (p) { return fetch(GW + '/api/' + p, { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); };
+    Promise.all([get('macqueue'), get('diskhealth'), get('waiting')]).then(function (r) {
+      if (r[0]) WT.auto.macagent = !!r[0].seen;
+      if (r[1]) { WT.auto.smart = !!r[1].smartctl; if (r[1].free) WT.auto.space = r[1].free > 150e9; WT.free = r[1].free; }
+      WT.gw = !!r[2]; if (r[2]) WT.done = r[2].done || {};
+      wtDraw();
+    });
+  }
+  function wtDraw() {
+    if (!WT.items) return;
+    WT.auto.draft = !(WAIT.page || WAIT.themes);
+    var isDone = function (x) { return x.done ? Date.parse(x.done) / 1000 : x.auto ? (WT.auto[x.auto] ? -1 : 0) : WT.done[x.id] || 0; };
+    var open = WT.items.filter(function (x) { return !isDone(x); }), shut = WT.items.filter(function (x) { return isDone(x); });
+    var need = open.filter(function (x) { return !x.optional; }).length, opt = open.length - need;
+    $('#wthead').innerHTML = open.length ? need + ' thing' + (need === 1 ? '' : 's') + ' <em>for you to do</em>' + (opt ? ' <span style="font-size:.6em;opacity:.7">+ ' + opt + ' if you want</span>' : '') : 'Nothing <em>waiting on you</em>';
+    var GBs = function (b) { return b >= 1e12 ? (b / 1e12).toFixed(1) + ' TB' : Math.round(b / 1e9) + ' GB'; };
+    $('#wtlist').innerHTML = open.sort(function (p, q) { return !!p.optional - !!q.optional || !!p.ask - !!q.ask; }).map(function (x) {
+      var tag = x.ask ? 'A question' : x.optional ? 'If you want' : '';
+      return '<li><b>' + esc(x.title) + '</b>' + (tag ? ' <span class="when" style="display:inline">· ' + tag + '</span>' : '') +
+        '<span class="when">' + esc(x.why || '') + (x.auto === 'space' && WT.free ? ' (' + GBs(WT.free) + ' free now)' : '') + '</span>' +
+        (x.how ? '<span class="cvba">' + esc(x.how) + '</span>' : '') +
+        '<span class="state" style="margin-top:6px">' + (x.auto ? '<span class="stat" style="opacity:.7">Ticks itself off when it’s done</span>' : WT.gw ? '<button class="btn small" type="button" data-wt="' + esc(x.id) + '" data-on="1">' + (x.ask ? 'Answered' : 'Done') + '</button>' : '') + '</span></li>';
+    }).join('');
+    $('#wtdone').hidden = !shut.length;
+    $('#wtdone summary').textContent = 'Done (' + shut.length + ')';
+    $('#wtdonelist').innerHTML = shut.map(function (x) { var t = isDone(x);
+      return '<li>✓ ' + esc(x.title) + '<span class="when">' + (t > 0 ? esc(when(t * 1000)) : 'done') + '</span>' + (!x.auto && !x.done && WT.gw ? '<span class="state" style="margin-top:4px"><button class="btn small" type="button" data-wt="' + esc(x.id) + '">Not done</button></span>' : '') + '</li>'; }).join('');
+    [].forEach.call(document.querySelectorAll('[data-wt]'), function (b) { b.onclick = function () {
+      b.disabled = true;
+      fetch(GW + '/api/waiting', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ id: b.dataset.wt, done: !!b.dataset.on }) })
+        .then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { WT.done = j.done || {}; wtDraw(); })
+        .catch(function () { b.disabled = false; toast('The Mac mini didn’t answer.'); });
+    }; });
+  }
+  function waiting() {
+    fetch('/grifflix/waiting.json?' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) { WT.items = j.items || []; wtDraw(); wtAuto(); })
+      .catch(function () { $('#wthead').textContent = 'Couldn’t read what’s waiting.'; });
+    clearTimeout(waiting.t); waiting.t = setTimeout(waiting, 300000);
+  }
+  setTimeout(waiting, 2600);
   // ---- the nightly backup to Google Drive (John, 18 Nov 2026): when it last went, what's in it, and Back up now
   function bkShow(now) {
     if (!TOKEN) return; if (!GW) return setTimeout(bkShow, 3000);
