@@ -16,6 +16,18 @@ MINI="192.168.68.125"
 # (a copy to the G-Drive started on its own, in a session of its own: started from the helper's minute job, launchd stopped it with
 # that job, so from 13:26 on 18 Nov 2026 no film made on John's Mac reached the G-Drive ("Have the films converted on my Mac not come on yet?"))
 detach() { /usr/bin/perl -MPOSIX -e 'POSIX::setsid(); open(STDIN, "<", "/dev/null"); exec @ARGV or die "exec: $!"' -- "$@" >>"$HERE/agent.log" 2>&1 & disown; }
+# (how this Mac's side is going, sent to the Mac mini for the admin page and Claude: its log's end, the films waiting in out/, any copy
+# running: John, 18 Nov 2026, "I am trying to do it without the Mac so I can't go to the Mac")
+report() {
+  local b k
+  b=$(sed -n 's/^base=//p' "$HERE/agent.conf" 2>/dev/null); k=$(sed -n 's/^key=//p' "$HERE/agent.conf" 2>/dev/null)
+  [[ -n "$b" && -n "$k" ]] || return 0
+  { echo "== $(date '+%Y-%m-%d %H:%M:%S') $(scutil --get ComputerName 2>/dev/null)"; echo "== G-Drive: $( [[ -d /Volumes/G-Drive ]] && echo mounted || echo NOT mounted)"; df -h "$HERE" 2>/dev/null | tail -1
+    echo "== out/"; ls -la "$HERE/out" "$HERE/out/pending" 2>&1 | tail -40
+    echo "== pending records"; for r in "$HERE/out/pending/"*.job(N); do echo "-- ${r:t}"; cat "$r"; done
+    echo "== running"; ps -axo pid,etime,command | grep -E "[c]opyback|[c]p /Users|[f]fmpeg" | cut -c1-220
+    echo "== agent.log"; tail -40 "$HERE/agent.log" 2>/dev/null; } | curl -fsS -m 20 -X POST -H "Authorization: Bearer $k" -H 'Content-Type: text/plain; charset=utf-8' --data-binary @- "$b/macagent/report" >/dev/null 2>&1
+}
 
 if [[ "${1:-}" == "setup" ]]; then
   mkdir -p "$HOME/Applications" "$HERE"
@@ -118,6 +130,7 @@ if [[ "${1:-}" == "copyback" ]]; then
       why=${why//$'\n'/ }; why=${why//\"/\'}; why=${why:0:160}
       curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d "{\"stage\":\"couldn't copy to the G-Drive: $why (tried again between films)\",\"copying\":1}" "$url/progress" >/dev/null 2>&1
       echo "$(date '+%Y-%m-%d %H:%M') couldn't copy ${lt:t} to the G-Drive ($why): kept on this Mac, tried again in 2 minutes"
+      report
       # (tried again by itself every 2 minutes for 3 hours, not only between films (none start while one converts)), the next in line let go meanwhile
       rm -f "$tl"; n_=$(( ${COPYTRY:-0} + 1 )); (( n_ > 90 )) && exit 1
       sleep 120; COPYTRY=$n_ exec /bin/zsh "$HERE/convert-here.sh" copyback "$lt" "$tmp" "$url"
@@ -134,6 +147,7 @@ if [[ "${1:-}" == "agent" ]]; then
   base=$(sed -n 's/^base=//p' "$HERE/agent.conf"); key=$(sed -n 's/^key=//p' "$HERE/agent.conf")
   lock="$HERE/agent.lock"
   home=0; ping -c 1 -t 2 "$MINI" >/dev/null 2>&1 && home=1   # (at home: the Mac mini answers on the home network)
+  report
   if [[ "$home" == 1 ]]; then   # (films made here the Mac mini is still waiting for, left in out/ with no record of where they go: recorded)
     mkdir -p "$HERE/out/pending"
     curl -fsS -m 30 -H "Authorization: Bearer $key" "$base/macagent/copying" 2>/dev/null | while IFS=$'\t' read -r bn tmp jurl; do
@@ -200,7 +214,8 @@ out="$HERE/out"; mkdir -p "$out"; lt="$out/${tmp:t}"; rm -f "$lt"
 args[-1]="$lt"
 # (at the end, ffmpeg writes the file over again so it plays from the start at once: minutes over the network, with nothing moving on screen;
 # said so, here and on the admin page: John, 17 Nov 2026, "this seems to have stalled but I can't tell")
-( fin=0; while sleep 4; do
+( fin=0; rc=0; while sleep 4; do (( ++rc % 75 == 1 )) && report   # (every 5 minutes while it converts)
+   
     t=$(grep '^out_time_us=' "$prog" 2>/dev/null | tail -1 | cut -d= -f2); sp=$(grep '^speed=' "$prog" 2>/dev/null | tail -1 | cut -d= -f2 | tr -d ' ')
     if (( ! fin )) && { grep -q '^progress=end' "$prog" 2>/dev/null || { [[ "$t" == <-> && "$dur" == <-> ]] && (( dur > 0 && t / 1000000 >= dur - 8 )); }; }; then
       fin=1; echo; echo "Grifflix: the film is converted. Putting the file together on this Mac (a minute or so)."
