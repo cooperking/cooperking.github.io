@@ -197,6 +197,15 @@ html.tv .pic.odd::before { filter: brightness(.35); inset: 0; }
 /* (a Criterion page's list, as Criterion's own: Spine #, the cover, Title, Director, Country, Year) */
 .clist { display: flex; flex-direction: column; padding: 0 4px; }
 .cviews { display: inline-flex; gap: 6px; flex-wrap: wrap; } .csets { display: block; }
+.csettiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 22px 18px; padding: 6px 4px; }
+.csettile { display: flex; flex-direction: column; gap: 8px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.csettile .csm { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; aspect-ratio: 1; padding: 8px; background: var(--gc-panel, #fff); border: 1px solid var(--gc-line, rgba(255,255,255,.2)); box-shadow: 0 10px 24px rgba(0,0,0,.08); transition: transform .25s ease; }
+.csettile .csm img, .csettile .csm span { width: 100%; height: 100%; object-fit: cover; background: #e8e8e8; } .csettile .csm.one { grid-template-columns: 1fr; }
+.csettile:hover .csm, .csettile:focus-visible .csm { transform: translateY(-3px); }
+.csettile b { font: 600 14px/1.3 var(--kfont); } .csettile small { font: 500 11px/1 var(--kfont); letter-spacing: .14em; text-transform: uppercase; opacity: .6; }
+.csetopen { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 4px 4px 18px; } .csetopen h3 { margin: 0; font: 700 20px/1.2 var(--kfont); text-transform: uppercase; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.csetopen h3 small { font: 500 11px/1 var(--kfont); letter-spacing: .14em; opacity: .6; }
+@media (max-width: 600px) { .csettiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; } }
 .cset { margin: 0 0 34px; } .cset h3 { display: flex; align-items: baseline; gap: 12px; margin: 0 4px 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,.18); font-size: 20px; letter-spacing: .02em; }
 .cset h3 small { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; opacity: .65; }
 .clrow { display: grid; grid-template-columns: 84px 44px minmax(0, 2.4fr) minmax(0, 1.6fr) minmax(0, 1fr) 56px; gap: 14px; align-items: center; padding: 8px 6px; border: 0; border-bottom: 1px solid rgba(255,255,255,.1); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; width: 100%; }
@@ -5479,19 +5488,33 @@ function collectionView(id, into) {
       // the ability to edit collections properly, as well as search within them")
       '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find in this collection" aria-label="Find in this collection" autocomplete="off"><span class="sp"></span>' + sfBar() + '</div>' +
       '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>';
-    var editing = false, fq = '', cmode = { covers: 'covers', sets: 'sets' }[store.get('grifflix-clist')] || 'list', clist = cmode === 'list';
+    var editing = false, fq = '', openSet = null, cmode = { covers: 'covers', sets: 'sets' }[store.get('grifflix-clist')] || 'list', clist = cmode === 'list';
     var fits = function (i) { if (!fq) return true; var t = (showName(i) + ' ' + (i.year || '') + ' ' + (i.spine ? 'no ' + i.spine : '')).toLowerCase(); return fq.split(/\s+/).every(function (w) { return t.indexOf(w) >= 0; }); };
     var draw = function () {
       var items = sfSort(c.items.filter(sfFits(SF.f)).filter(fits), sfKey(), sfDirOf());
-      if (SPINEOK && cmode === 'sets' && !editing) {   // (each box set and its films, Collector's Sets: John, 17 Nov 2026, "with a box set collection in there too")
-        var BS = {}; items.forEach(function (i) { (i.cset || []).forEach(function (b) { (BS[b] = BS[b] || []).push(i); }); });
-        var bn = Object.keys(BS).sort(function (a, b) { return a.localeCompare(b); });
-        $('#cgrid').className = 'csets';
-        $('#cgrid').innerHTML = bn.length ? bn.map(function (b) {
-          var L = BS[b].slice().sort(function (x, y) { return (+x.spine || 0) - (+y.spine || 0) || nameKey(x).localeCompare(nameKey(y)); });
-          return '<section class="cset"><h3><span>' + esc(b) + '</span><small>' + L.length + (L.length === 1 ? ' film' : ' films') + '</small></h3><div class="gridcards">' + L.map(function (i) { return cardHTML(i, false, true); }).join('') + '</div></section>';
-        }).join('') : '<div class="empty">' + (c.items.some(function (i) { return (i.cset || []).length; }) ? 'No box set has a film like that.' : 'The box sets come with Criterion’s genres: run the “Grifflix: Criterion genres” bookmark on Criterion’s list, then choose its file on the admin page.') + '</div>';
-        wireCards($('#cgrid'), items); return;
+      // (box sets as tiles, each opened to its films; the Eclipse filter shows Eclipse's sets, not their films: John, 18 Nov 2026, "The actual
+      // films shouldn't come up when you filter eclipse but the box sets should, which you can then open to see the films")
+      var ecl = SPINEOK && (SF.f.cats || []).indexOf('Eclipse') >= 0;
+      if (SPINEOK && (cmode === 'sets' || ecl) && !editing) {
+        var pool = ecl ? sfSort(c.items.filter(sfFits(Object.assign({}, SF.f, { cats: (SF.f.cats || []).filter(function (x) { return x !== 'Eclipse'; }) }))).filter(fits), sfKey(), sfDirOf()) : items;
+        var BS = {}; pool.forEach(function (i) { (i.cset || []).forEach(function (b) { if (!ecl || /^eclipse/i.test(b)) (BS[b] = BS[b] || []).push(i); }); });
+        var bn = Object.keys(BS).sort(function (a, b) { var na = +(a.match(/series\s+(\d+)/i) || [])[1], nb = +(b.match(/series\s+(\d+)/i) || [])[1]; return (na && nb) ? na - nb : a.localeCompare(b); });
+        var g = $('#cgrid');
+        if (openSet && BS[openSet]) {   // one box set, opened: its films
+          var L = BS[openSet].slice().sort(function (x, y) { return (+x.spine || 0) - (+y.spine || 0) || nameKey(x).localeCompare(nameKey(y)); });
+          g.className = 'csets';
+          g.innerHTML = '<div class="csetopen"><button type="button" class="pill" id="csetback">‹ ' + (ecl ? 'Eclipse' : 'All box sets') + '</button><h3>' + esc(openSet) + '<small>' + L.length + (L.length === 1 ? ' film' : ' films') + '</small></h3></div><div class="gridcards">' + L.map(function (i) { return cardHTML(i, false, true); }).join('') + '</div>';
+          $('#csetback').onclick = function () { openSet = null; draw(); };
+          wireCards(g, L); return;
+        }
+        openSet = null;
+        g.className = 'csettiles';
+        g.innerHTML = bn.length ? bn.map(function (b) {
+          var L = BS[b], pics = L.slice(0, 4).map(function (i) { var u = img(i.poster, 'Primary', 200); return u ? '<img loading="lazy" alt="" src="' + esc(u) + '">' : '<span></span>'; }).join('');
+          return '<button type="button" class="csettile" data-cset="' + esc(b) + '"><span class="csm' + (L.length === 1 ? ' one' : '') + '">' + pics + '</span><b>' + esc(b) + '</b><small>' + L.length + (L.length === 1 ? ' film here' : ' films here') + '</small></button>';
+        }).join('') : '<div class="empty">' + (c.items.some(function (i) { return (i.cset || []).length; }) ? (ecl ? 'No Eclipse box set has a film like that.' : 'No box set has a film like that.') : 'The box sets come with Criterion’s genres: run the newest “Grifflix: Criterion genres” bookmark on Criterion’s list, then choose its file on the admin page.') + '</div>';
+        $$('[data-cset]', g).forEach(function (t) { t.onclick = function () { openSet = t.dataset.cset; draw(); window.scrollTo({ top: g.getBoundingClientRect().top + scrollY - 90 }); }; });
+        return;
       }
       var asList = SPINEOK && clist && !editing;
       $('#cgrid').className = asList ? 'clist' : 'gridcards';
