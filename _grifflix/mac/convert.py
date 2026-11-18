@@ -774,6 +774,9 @@ if CMD in ('plan', 'finish'):   # (John's "Convert on this Mac", 16 Nov 2026: th
     ffmpeg_, ffprobe_ = tools()
     if CMD == 'plan':
         found = [i for i in fresh(gather(), st) if i['id'] == sys.argv[2]]
+        if not found and 'force' in sys.argv[3:]:   # (one of the largest, queued for John's Mac to make smaller: John, 18 Nov 2026)
+            f = shrink_item(sys.argv[2])
+            found = [f] if f else []
         if not found:
             print(json.dumps({'error': 'It plays everywhere as it is: nothing to convert.'}))
             sys.exit()
@@ -873,14 +876,21 @@ def chosen(st, have):
             continue
         if max((st['done'].get(iid) or {}).get('at', 0), (st['failed'].get(iid) or {}).get('at', 0)) >= x.get('at', 0):
             continue
-        it = call('GET', '/Users/%s/Items/%s' % (s['jf_user_id'], iid), Fields='MediaSources,Path,ProductionYear,CommunityRating,DateCreated') or {}
-        path = g(it, 'Path') or ''
-        if not path or not os.path.exists(path):
-            continue
-        out.append({'id': iid, 'name': g(it, 'Name') or x.get('name') or '?', 'year': g(it, 'ProductionYear', ''), 'lib': 'movies' if g(it, 'Type') == 'Movie' else 'tv',
-                    'why': SHRINK + ' (chosen by you)', 'mode': 'shrink', 'path': path, 'mins': round((g(it, 'RunTimeTicks') or 0) / 6e8),
-                    'rating': g(it, 'CommunityRating') or 0, 'gb': round(os.path.getsize(path) / 1e9, 1), 'added': g(it, 'DateCreated') or ''})
+        f = shrink_item(iid, x.get('name'))
+        if f:
+            out.append(f)
     return out
+
+
+def shrink_item(iid, name=None):
+    """Any film, to be made smaller at the careful setting, whatever the converter would have said of it (the largest, chosen by John)."""
+    it = call('GET', '/Users/%s/Items/%s' % (s['jf_user_id'], iid), Fields='MediaSources,Path,ProductionYear,CommunityRating,DateCreated') or {}
+    path = g(it, 'Path') or ''
+    if not path or not os.path.exists(path):
+        return None
+    return {'id': iid, 'name': g(it, 'Name') or name or '?', 'year': g(it, 'ProductionYear', ''), 'lib': 'movies' if g(it, 'Type') == 'Movie' else 'tv',
+            'why': SHRINK + ' (chosen by you)', 'mode': 'shrink', 'path': path, 'mins': round((g(it, 'RunTimeTicks') or 0) / 6e8),
+            'rating': g(it, 'CommunityRating') or 0, 'gb': round(os.path.getsize(path) / 1e9, 1), 'added': g(it, 'DateCreated') or ''}
 
 
 def unpin(iid):
