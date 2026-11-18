@@ -1332,6 +1332,38 @@ def make_handler(g):
                 members[c['Id']] = [k['Id'] for k in kids if k['Id'] in items]
                 inside.update(k['Id'] for k in kids if k.get('Type') == 'BoxSet')
             lists['collections'] = [c['Id'] for c in sets if c['Id'] not in inside]
+            # (a box set kept inside The Criterion Collection (By Brakhage, Hollis Frampton, Scorsese Shorts…): its films listed there one by
+            # one, each with the set as its box set, as Criterion's other box sets are, and the set itself not an entry of its own: John,
+            # 18 Nov 2026, "So long as they are treated as other box sets in the criterion collection they don't need to be separate
+            # grifflix collections")
+            crit_ = next((c for c in sets if (c.get('Name') or '').strip().lower() == 'the criterion collection'), None)
+            if crit_:
+                cl_ = {}
+                for f_ in load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or []:
+                    cl_.setdefault(fold(f_.get('title')), f_)
+                new_ = []
+                for m_ in members.get(crit_['Id'], []):
+                    if (items.get(m_) or {}).get('type') != 'collection':
+                        new_.append(m_)
+                        continue
+                    nm_ = items[m_].get('name') or ''
+                    f_ = cl_.get(fold(nm_)) or {}
+                    for k_ in members.get(m_, []):
+                        o_ = items.get(k_)
+                        if not o_:
+                            continue
+                        if nm_ not in (o_.get('cset') or []):
+                            o_['cset'] = (o_.get('cset') or []) + [nm_]
+                            o_['csetsp'] = (o_.get('csetsp') or [''] * (len(o_['cset']) - 1)) + [str(f_.get('spine') or '')]
+                            o_['csetimg'] = (o_.get('csetimg') or [''] * (len(o_['cset']) - 1)) + [str(f_.get('img') or '')]
+                        if not o_.get('spine') and str(f_.get('spine') or '').isdigit() and '/films/' in str(f_.get('link') or ''):
+                            o_['spine'] = int(f_['spine'])
+                        for kk_, vv_ in (('cdir', 'director'), ('ccty', 'country')):
+                            if not o_.get(kk_) and f_.get(vv_):
+                                o_[kk_] = str(f_[vv_])[:160]
+                        if k_ not in new_:
+                            new_.append(k_)
+                members[crit_['Id']] = list(dict.fromkeys(new_))
             series = {}
             if libs.get('tv'):
                 eps = [x for x in g.items(ParentId=libs['tv'], Recursive='true', IncludeItemTypes='Episode', SortBy='SortName', Fields=quick).get('Items', []) if x.get('SeriesId') and not making(x)]
