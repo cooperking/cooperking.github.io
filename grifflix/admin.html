@@ -77,6 +77,10 @@ page shown inside another, stay where they are. On grifflix.co.uk, what came wit
 #tabs { flex-wrap: wrap; overflow: visible; row-gap: 6px; }
 #tabs button { flex: 1 1 auto; min-width: max-content; padding: 0 12px; letter-spacing: .08em; }
 @media (max-width: 560px) { #tabs button { flex: 1 1 28%; min-width: 0; padding: 0 4px; font-size: 10.5px; letter-spacing: .04em; } }
+.subtabs { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: -4px 0 18px; }
+.subtabs button { border: 0; border-bottom: 2px solid transparent; background: none; color: var(--ink); opacity: .65; padding: 6px 2px; margin-right: 12px; font: 600 12px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
+.subtabs button.on { opacity: 1; border-bottom-color: currentColor; }
+.subtabs button:hover { opacity: 1; }
 </style><!--THEMEFONTS END-->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@500;700&display=swap">
 <style>
@@ -343,6 +347,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     <nav class="tabs" id="tabs" role="tablist" aria-label="Admin">
       <button type="button" role="tab" data-go="updates">Home</button><button type="button" role="tab" data-go="downloads">Downloads</button><button type="button" role="tab" data-go="convert">Conversions</button><button type="button" role="tab" data-go="library">Library</button><button type="button" role="tab" data-go="criterion">Criterion</button><button type="button" role="tab" data-go="calendar">Calendar</button><button type="button" role="tab" data-go="members">Members</button><button type="button" role="tab" data-go="mac">Mac mini</button><button type="button" role="tab" data-go="dupes" id="dupetab" hidden>Copies</button>
     </nav>
+    <nav class="subtabs" id="subtabs" aria-label="In this tab" hidden></nav>
     <div class="cards">
       <section class="card" data-tab="updates" id="wtcard">
         <div class="kicker">Waiting on you</div>
@@ -533,6 +538,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       <section class="card" data-tab="criterion">
         <div class="kicker">Criterion</div>
         <h2>Criterion’s covers</h2>
+        <div class="state" id="csheets" hidden><a class="btn primary" id="csheet" href="#" target="_blank" rel="noopener">Open the Criterion Google Sheet</a></div>
         <p class="stat">Every Criterion cover, as Criterion makes it, on each Criterion film in Grifflix (and in your Google Drive’s “Criterion images”, and new films added to the Criterion sheet). Criterion’s site only lets a person’s own browser see its list, so: open <a href="https://www.criterion.com/shop/browse/list?sort=spine_number" target="_blank" rel="noopener">Criterion’s list</a>, let it load, then <b>File → Save Page As…</b> (<b>Web Page, HTML Only</b>, or in Safari <b>Page Source</b>; not “Complete”), and choose that file here. Only when Criterion has added films to its list since you last did: every Criterion film you bring in is checked against the list you last gave, by itself, and gets its cover, spine number and place in The Criterion Collection.</p>
         <div class="state"><label class="btn primary" for="critfile">Choose the saved page</label><input type="file" id="critfile" accept=".html,.htm,text/html" hidden></div>
         <p class="stat" id="critsay"></p>
@@ -556,7 +562,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat" id="tagstate" style="font-weight:600"></p>
         <h3 style="margin:22px 0 6px;font-size:17px">Box set films you don’t have</h3>
         <p class="stat">Every Criterion box set’s films not in Grifflix, one list, for a spreadsheet: the set, its spine, the film, its year and spine, and its page on Criterion.</p>
-        <div class="state"><button class="btn" id="cmcopy" type="button">Copy for Google Sheets</button><button class="btn" id="cmcsv" type="button">Download (CSV)</button></div>
+        <div class="state"><button class="btn primary" id="cmsheet" type="button">Make the Google Sheet</button><a class="btn" id="cmopen" href="#" target="_blank" rel="noopener" hidden>Open it</a><button class="btn" id="cmcsv" type="button">Download (CSV)</button></div>
         <p class="stat" id="cmsay"></p>
       </section>
       <section class="card" data-tab="mac">
@@ -1530,7 +1536,31 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       a.download = 'Criterion box set films missing ' + new Date().toISOString().slice(0, 10) + '.csv'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
     }).catch(function (e) { $('#cmsay').textContent = e.message || 'The Mac mini didn’t answer.'; });
   }
-  $('#cmcopy').onclick = function () { cmGet('copy'); }; $('#cmcsv').onclick = function () { cmGet('csv'); };
+  $('#cmcsv').onclick = function () { cmGet('csv'); };
+  // (a Google Sheet of its own, made the first time and brought up to date after, opened from here; and the Criterion sheet: John, 18 Nov 2026,
+  // "Copy for google sheets doesn't copy just makes a list - can it actually create or update a google sheet that I open", "Can the criterion
+  // google sheet also be opened from the correct tab")
+  function cmLinks(j) {
+    if (j.criterion) { $('#csheet').href = j.criterion; $('#csheets').hidden = false; }
+    if (j.missing) { $('#cmopen').href = j.missing; $('#cmopen').hidden = false; $('#cmsheet').textContent = 'Bring the Google Sheet up to date'; }
+  }
+  function cmLook(wait) {
+    if (!GW || !TOKEN) return setTimeout(function () { cmLook(wait); }, 3000);
+    fetch(GW + '/api/criterionmissing?links=1', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { if (r.status === 404) throw new Error('old'); return r.json(); }).then(function (j) {
+      cmLinks(j);
+      if (j.sheetjob === 'making') { $('#cmsay').textContent = 'Making the Google Sheet…'; return setTimeout(function () { cmLook(true); }, 3000); }
+      $('#cmsheet').disabled = false;
+      if (wait && j.sheetjob === 'done') { $('#cmsay').innerHTML = 'The Google Sheet is up to date. <a href="' + esc(j.missing) + '" target="_blank" rel="noopener">Open it</a>'; window.open(j.missing, '_blank'); }
+      else if (wait && j.sheetjob === 'failed') $('#cmsay').textContent = 'The Google Sheet couldn’t be made: ' + (j.sheeterr || 'it didn’t say why');
+    }).catch(function (e) { if (e.message === 'old') $('#cmsay').textContent = 'The Mac mini takes its update in a few minutes.'; });
+  }
+  $('#cmsheet').onclick = function () {
+    var b = this; b.disabled = true; $('#cmsay').textContent = 'Making the Google Sheet…';
+    fetch(GW + '/api/criterionmissing', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'sheet' }) })
+      .then(function (r) { return r.json(); }).then(function (j) { cmLinks(j); setTimeout(function () { cmLook(true); }, 3000); })
+      .catch(function () { b.disabled = false; $('#cmsay').textContent = 'The Mac mini didn’t answer.'; });
+  };
+  setTimeout(function () { cmLook(false); }, 3800);
   // ---- Waiting on you (John, 18 Nov 2026: "I could do with a waiting on you section in my admin, so I know what has and hasn't been
   // done"): the list kept by Claude in waiting.json; some tick themselves off from the Mac mini, the rest John ticks off (kept on the Mac mini)
   var WT = { items: null, done: {}, auto: {}, gw: true };
@@ -2574,7 +2604,14 @@ var feats = function (doc) {
     function show(t, push) {
       t = OLD[t] || t;
       if (TABS.indexOf(t) < 0) t = 'updates';
-      [].forEach.call(document.querySelectorAll('.cards > [data-tab]'), function (c) { c.classList.toggle('tabon', c.dataset.tab === t); });
+      // (and within a tab, one part at a time, chosen from a row of its own: John, 18 Nov 2026, "can you make subtabs too")
+      var parts = [].filter.call(document.querySelectorAll('.cards > [data-tab]'), function (c) { return c.dataset.tab === t; });
+      var names = parts.map(function (c) { var k = c.querySelector('.kicker'); return k ? k.textContent.trim() : ''; });
+      var cur = store.get('grifflix-adminsub-' + t); if (names.indexOf(cur) < 0) cur = names[0];
+      [].forEach.call(document.querySelectorAll('.cards > [data-tab]'), function (c) { c.classList.toggle('tabon', c.dataset.tab === t && (parts.length < 2 || names[parts.indexOf(c)] === cur)); });
+      var st = $('#subtabs'); st.hidden = parts.length < 2;
+      st.innerHTML = parts.length < 2 ? '' : names.map(function (n) { return '<button type="button" data-sub="' + esc(n) + '" class="' + (n === cur ? 'on' : '') + '" aria-pressed="' + (n === cur) + '">' + esc(n) + '</button>'; }).join('');
+      [].forEach.call(st.querySelectorAll('[data-sub]'), function (b) { b.onclick = function () { store.set('grifflix-adminsub-' + t, b.dataset.sub); show(t); }; });
       [].forEach.call(document.querySelectorAll('#tabs [data-go]'), function (b) { var on = b.dataset.go === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
       store.set('grifflix-admintab', t);
       if (push) { try { history.replaceState(null, '', '#' + t); } catch (e) {} }
