@@ -223,12 +223,17 @@ html.tv .pic.odd::before { filter: brightness(.35); inset: 0; }
 .csethero.nocov { grid-template-columns: minmax(0, 1fr); }
 /* (the TV: a set's cover smaller beside its words, its description kept short, its films on the first screen; every row reachable and
    lit, kept clear of the bar as the remote moves: John, 18 Nov 2026) */
-html.tv .csethero { grid-template-columns: 140px minmax(0, 1fr); gap: 26px; margin-top: 8px; }
-html.tv .csettxt h2 { font-size: 30px; margin: 2px 0 4px; } html.tv .csettxt .cssp, html.tv .csettxt .csn { font-size: 11px; }
-html.tv .csetdesc { margin-top: 10px; font-size: 17px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+html.tv .csethero { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: calc(100vh - 112px); gap: 34px; margin-top: 8px; align-items: stretch; overflow: hidden; }
+html.tv .csethero.nocov { grid-template-columns: minmax(0, 1fr); }
+html.tv .csetcov { height: 100%; min-height: 0; width: auto; max-width: 48vw; object-fit: contain; object-position: left top; border: 0; box-shadow: none; }
+html.tv .csettxt { display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow: hidden; }
+html.tv .csettxt h2 { font-size: 30px; line-height: 1.1; margin: 4px 0 6px; } html.tv .csettxt .cssp, html.tv .csettxt .csn { font-size: 11px; }
+html.tv .csetdesc { flex: 0 1 auto; min-height: 0; margin: 12px 0 0; font-size: 16px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; flex-shrink: 0; }
+html.tv .csetrow { flex: 0 0 auto; display: flex !important; grid-template-columns: none !important; gap: 16px !important; margin-top: auto; padding: 14px 6px 6px !important; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; scroll-padding: 0 12px; }
+html.tv .csetrow::-webkit-scrollbar { display: none; }
+html.tv #main .csetrow .card { scroll-margin: 0 12px !important; }   /* (along the row only: the page itself kept still) */
+html.tv .csetrow .card { flex: 0 0 96px; } html.tv .csetrow .card .t { font-size: 13px; } html.tv .csetrow .card .s { font-size: 10px; }
 html.tv .csetopen { margin-bottom: 14px; }
-html.tv #cgrid .csetopen + .gridcards { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)) !important; gap: 18px 16px !important; }
-html.tv #cgrid .csetopen + .gridcards .card .t { font-size: 14px; } html.tv #cgrid .csetopen + .gridcards .card .s { font-size: 11px; }
 html.tv #main :is(button, a[href], input, [tabindex="0"]) { scroll-margin: 130px 0 70px; }
 html.tv .cfeat li[tabindex]:focus, html.tv .csmiss li[tabindex]:focus { outline: 3px solid #f08a4b; outline-offset: -3px; background: rgba(240, 138, 75, .1); }
 html.gcrit.tv #cbody .collhead { grid-template-columns: 96px minmax(0, 1fr); gap: 20px; padding: 10px 24px; }
@@ -5583,23 +5588,27 @@ function collectionView(id, into) {
           // (the set opened as Criterion's own page for it: its cover large, its name, its description, then its films: John, 18 Nov 2026, "I'd like
           // to be able to see the picture of the box set cover larger, as it is on criterion")
           g.innerHTML = '<div class="csetopen"><button type="button" class="pill" id="csetback">‹ ' + (ecl ? 'Eclipse' : 'All box sets') + '</button>' +
-            '<div class="csethero' + (BSI[openSet] ? '' : ' nocov') + '">' + (BSI[openSet] ? '<img class="csetcov" alt="' + esc(openSet) + '" src="' + esc(BSI[openSet].replace('_small.', '_large.')) + '">' : '') +
+            '<div class="csethero' + (BSI[openSet] ? '' : ' nocov') + '">' + (BSI[openSet] ? '<img class="csetcov" alt="' + esc(openSet) + '" src="' + esc(BSI[openSet].replace(/_(small|thumbnail)\./, '_large.')) + '">' : '') +
             '<div class="csettxt">' + (BSP[openSet] ? '<span class="cssp">Spine No. ' + BSP[openSet] + '</span>' : '') + '<h2>' + esc(openSet) + '</h2><span class="csn">' + L.length + (BSM[openSet] && BSM[openSet].length ? ' of ' + (L.length + BSM[openSet].length) + ' films here' : (L.length === 1 ? ' film here' : ' films here')) + '</span>' +
-            (BSD[openSet] ? '<p class="csetdesc">' + esc(BSD[openSet]) + '</p>' : '') + '</div></div></div><div class="gridcards">' + L.map(function (i) { return cardHTML(i, false, true); }).join('') + '</div>' +
+            (BSD[openSet] ? '<p class="csetdesc">' + esc(BSD[openSet]) + '</p>' : '') +
+            // (the TV: the films a row at the foot of the words, beside the cover, along with left and right: John, 18 Nov 2026, "Cover should be
+            // big, sized to the size of the tv in the left. Caption on the right. Films in the bottom, scrolling left or right")
+            (TV ? '<div class="gridcards csetrow">' + L.map(function (i) { return cardHTML(i, false, true); }).join('') + '</div>' : '') +
+            '</div></div></div>' + (TV ? '' : '<div class="gridcards">' + L.map(function (i) { return cardHTML(i, false, true); }).join('') + '</div>') +
             featHTML(BSF[openSet], [].concat.apply([], L.map(function (i) { return LIB && i.extras ? i.extras.map(function (id) { return LIB.items[id]; }).filter(Boolean).map(extraName) : []; })), 'The set’s special features') +
             (BSM[openSet] && BSM[openSet].length ? '<div class="csmiss"><h3>Not in Grifflix yet <small>' + BSM[openSet].length + '</small></h3><ul>' + BSM[openSet].map(function (m) { return '<li' + (TV ? ' tabindex="0"' : '') + '><span class="cls">' + esc(m[2] || '') + '</span><b>' + esc(m[0]) + '</b><span>' + esc(m[1] || '') + '</span></li>'; }).join('') + '</ul></div>' : '');
           var was_ = openSet;
           $('#csetback').onclick = function () { openSet = null; draw(); if (TV) { var c_ = $$('[data-cset]', g).filter(function (x) { return x.dataset.cset === was_; })[0]; if (c_) { c_.focus({ preventScroll: true }); c_.scrollIntoView({ block: 'center' }); } } };
           // (the TV: a set opened with its first film lit, the set's top under the bar; Back to all the box sets: John, 18 Nov 2026, "Just
           // looked at box sets on fire tv and needs work")
-          if (TV) setTimeout(function () { var f_ = $('.gridcards .card', g) || $('#csetback'); if (f_) f_.focus({ preventScroll: true }); var h_ = $('.csethero', g) || g; window.scrollTo({ top: h_.getBoundingClientRect().top + scrollY - 96 }); if (f_ && f_.getBoundingClientRect().bottom > innerHeight - 4) f_.scrollIntoView({ block: 'end' }); }, 30);
+          if (TV) setTimeout(function () { var f_ = $('.csetrow .card', g) || $('.gridcards .card', g) || $('#csetback'); if (f_) f_.focus({ preventScroll: true }); var h_ = $('.csethero', g) || g; window.scrollTo({ top: h_.getBoundingClientRect().top + scrollY - 96 }); if (f_ && f_.getBoundingClientRect().bottom > innerHeight - 4) f_.scrollIntoView({ block: 'end' }); }, 30);
           wireCards(g, L); return;
         }
         openSet = null;
         var hereOf = function (b) { var L = BS[b]; return BSM[b] && BSM[b].length ? L.length + ' of ' + (L.length + BSM[b].length) + ' here' : L.length + (L.length === 1 ? ' film' : ' films'); };
         if (cmode === 'covers') {   // (the sets as covers, in Criterion's shape)
           g.className = 'gridcards';
-          g.innerHTML = bn.length ? bn.map(function (b) { var L = BS[b], u = BSI[b] ? BSI[b].replace('_small.', '_large.') : img(L[0].poster, 'Primary', 400);
+          g.innerHTML = bn.length ? bn.map(function (b) { var L = BS[b], u = BSI[b] ? BSI[b].replace(/_(small|thumbnail)\./, '_large.') : img(L[0].poster, 'Primary', 400);
             return '<button type="button" class="card csett" data-cset="' + esc(b) + '"><div class="pic">' + (u ? '<img loading="lazy" alt="" src="' + esc(u) + '">' : '') + '</div><div class="t">' + esc(b) + '</div><div class="s">' + (BSP[b] ? 'No. ' + BSP[b] + ' · ' : '') + hereOf(b) + '</div></button>';
           }).join('') : '<div class="empty">' + (ecl ? 'No Eclipse box set has a film like that.' : 'No box set has a film like that.') + '</div>';
           $$('[data-cset]', g).forEach(function (t) { t.onclick = function () { openSet = t.dataset.cset; draw(); window.scrollTo({ top: g.getBoundingClientRect().top + scrollY - 90 }); }; });
@@ -5607,7 +5616,7 @@ function collectionView(id, into) {
         }
         g.className = 'clist';   // (a list, as Criterion's own list of its sets: its spine number, a cover, its name, how many of its films are here)
         g.innerHTML = bn.length ? '<div class="clrow clhead csrow"><span class="cls">Spine #</span><span class="clp"></span><span class="clt">' + (ecl ? 'Eclipse box set' : 'Box set') + '</span><span class="cly">Here</span></div>' + bn.map(function (b) {
-          var L = BS[b], u = BSI[b] || img(L[0].poster, 'Primary', 120);   // (the set's own cover, from Criterion; else its first film's)
+          var L = BS[b], u = BSI[b] ? BSI[b].replace('_thumbnail.', '_small.') : img(L[0].poster, 'Primary', 120);   // (a film page's cover: its thumbnail too small, 18 Nov 2026)   // (the set's own cover, from Criterion; else its first film's)
           return '<button type="button" class="clrow csrow" data-cset="' + esc(b) + '"><span class="cls">' + (BSP[b] || '') + '</span><span class="clp">' + (u ? '<img loading="lazy" alt="" src="' + esc(u) + '">' : '') + '</span><span class="clt">' + esc(b) + '</span><span class="cly">' + (BSM[b] && BSM[b].length ? L.length + ' of ' + (L.length + BSM[b].length) : L.length + (L.length === 1 ? ' film' : ' films')) + '</span></button>';
         }).join('') : '<div class="empty">' + (c.items.some(function (i) { return (i.cset || []).length; }) ? (ecl ? 'No Eclipse box set has a film like that.' : 'No box set has a film like that.') : 'The box sets come with Criterion’s genres: run the newest “Grifflix: Criterion genres” bookmark on Criterion’s list, then choose its file on the admin page.') + '</div>';
         $$('[data-cset]', g).forEach(function (t) { t.onclick = function () { openSet = t.dataset.cset; draw(); window.scrollTo({ top: g.getBoundingClientRect().top + scrollY - 90 }); }; });
