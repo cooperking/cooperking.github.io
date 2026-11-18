@@ -213,6 +213,7 @@ html.tv .pic.odd::before { filter: brightness(.35); inset: 0; }
 .cfeat { margin: 26px 4px 10px; } .cfeat h3 { font: 600 13px/1 var(--kfont); letter-spacing: .16em; text-transform: uppercase; margin: 0 0 10px; padding-bottom: 10px; border-bottom: 2px solid var(--gc-ink, currentColor); }
 .cfeat h3 small { opacity: .6; margin-left: 6px; letter-spacing: .08em; } .cfeat ul { list-style: none; margin: 0; padding: 0; }
 .cfeat li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--gc-line, rgba(127,127,127,.25)); font: 400 15px/1.4 var(--kfont); }
+.cfeat li.fh { display: block; padding: 18px 4px 6px; font: 600 12px/1.3 var(--kfont); letter-spacing: .14em; text-transform: uppercase; opacity: .75; }
 .cfeat li i { font-style: normal; opacity: .3; } .cfeat li.have i { opacity: 1; color: #3c9a5f; font-weight: 700; } .cfeat li.have { font-weight: 500; }
 .csmiss { margin: 36px 4px 10px; } .csmiss h3 { font: 600 13px/1 var(--kfont); letter-spacing: .16em; text-transform: uppercase; margin: 0 0 10px; padding-bottom: 10px; border-bottom: 2px solid var(--gc-ink, currentColor); }
 .csmiss h3 small { opacity: .6; margin-left: 6px; } .csmiss ul { list-style: none; margin: 0; padding: 0; }
@@ -2310,7 +2311,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '89fc2db2dede' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'dbaa6e05395f' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2417,8 +2418,9 @@ function featWords(t) { return String(t || '').toLowerCase().replace(/[^a-z0-9 ]
 function featHas(f, names) { var fw = featWords(f); return names.some(function (n) { var nw = featWords(n); if (!nw.length) return false; var hit = nw.filter(function (x) { return fw.indexOf(x) >= 0; }).length; return hit >= Math.max(1, Math.ceil(nw.length * .6)); }); }
 function featHTML(list, names, title) {
   if (!list || !list.length) return '';
-  var had = 0, li = list.map(function (f) { var h = names.length && featHas(f, names); if (h) had++; return '<li' + (h ? ' class="have"' : '') + '><i>' + (h ? '✓' : '·') + '</i><span>' + esc(f) + '</span></li>'; }).join('');
-  return '<div class="cfeat"><h3>' + esc(title || 'Criterion’s special features') + ' <small>' + (names.length ? had + ' of ' + list.length + ' here' : list.length) + '</small></h3><ul>' + li + '</ul></div>';
+  // (a section's own heading, "VOLUME ONE (ONE DISC)", marked § by the bookmark: shown as a heading, not counted: John, 18 Nov 2026)
+  var had = 0, n = 0, li = list.map(function (f) { if (/^§ /.test(f)) return '<li class="fh"><span>' + esc(f.slice(2)) + '</span></li>'; n++; var h = names.length && featHas(f, names); if (h) had++; return '<li' + (h ? ' class="have"' : '') + '><i>' + (h ? '✓' : '·') + '</i><span>' + esc(f) + '</span></li>'; }).join('');
+  return '<div class="cfeat"><h3>' + esc(title || 'Criterion’s special features') + ' <small>' + (names.length ? had + ' of ' + n + ' here' : n) + '</small></h3><ul>' + li + '</ul></div>';
 }
 function extraName(i) { return String(i.name || '').replace(/-[A-Za-z0-9]+$/, '').replace(/[._]+/g, ' ').trim(); }
 function library() {
