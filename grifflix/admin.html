@@ -1430,7 +1430,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         if (h.total) bits.push(tb(h.free) + ' free of ' + tb(h.total));
         $('#dhealth').innerHTML = '<p class="stat" style="margin:12px 0 4px"><b>The G-Drive’s health:</b> <b style="color:' + col + '">' + head + '</b>' + (h.at ? ' <span style="opacity:.7">(' + esc(when(h.at * 1000)) + ')</span>' : '') + '</p>' +
           (bits.length ? '<p class="stat" style="margin:0 0 4px">' + bits.join(' · ') + '</p>' : '') +
-          (!h.smartctl && h.state !== 'missing' ? '<p class="stat" style="margin:0 0 4px;opacity:.85">For the drive’s own record (hours run, failing sectors), the Mac mini needs a small free tool, smartmontools. On the Mac mini, in Terminal: <code>brew install smartmontools</code> (if Homebrew is there).</p>' : '') +
+          (!h.smartctl && h.state !== 'missing' ? '<p class="stat" style="margin:0 0 4px;opacity:.85">The drive’s own record (hours run, failing sectors) can’t be read on this Mac mini: its macOS (10.13) is too old for the tool, and the drive’s USB link doesn’t pass it on. The checks here, and the nightly backup, are what watch it.</p>' : '') +
           '<div class="state"><button class="btn" type="button" id="dhnow">Check now</button></div>';
         $('#dhnow').onclick = function () { this.disabled = true; this.textContent = 'Checking…'; dHealth(true); };
       }).catch(function (e) { $('#dhealth').innerHTML = e && e.message === 'old' ? '<p class="stat">The G-Drive’s health: the Mac mini takes its update within 15 minutes.</p>' : ''; });
