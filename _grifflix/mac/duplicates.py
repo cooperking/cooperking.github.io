@@ -45,7 +45,7 @@ NUM = 'zero one two three four five six seven eight nine ten eleven twelve thirt
 
 
 def key(t):
-    t = unicodedata.normalize('NFKD', t or '').encode('ascii', 'ignore').decode().lower()
+    t = unicodedata.normalize('NFKD', (t or '').replace('&', ' and ')).encode('ascii', 'ignore').decode().lower()   # ("Secrets & Lies" = "Secrets and Lies": 18 Nov 2026)
     t = re.sub(r'\b(\d{1,2})\b', lambda m: NUM[int(m.group(1))] if int(m.group(1)) <= 20 else m.group(1), t)   # (Number 17 = Number Seventeen)
     t = re.sub(r'[^a-z0-9]', '', t)
     return t[3:] if t.startswith('the') and len(t) > 7 else t
