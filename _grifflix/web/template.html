@@ -206,6 +206,7 @@ html.tv .pic.odd::before { filter: brightness(.35); inset: 0; }
 .clrow.csrow, html.gcrit #cbody .clrow.csrow { grid-template-columns: 84px 48px minmax(0, 1fr) 90px; } @media (max-width: 760px) { .clrow.csrow, html.gcrit #cbody .clrow.csrow { grid-template-columns: 58px 40px minmax(0, 1fr) 64px; } }
 .csetopen { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 4px 4px 18px; } .csetopen h3 { margin: 0; font: 700 20px/1.2 var(--kfont); text-transform: uppercase; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
 .csetcov { width: 92px; aspect-ratio: 4 / 5; object-fit: cover; box-shadow: 0 8px 20px rgba(0,0,0,.12); } .cssp { font: 500 13px/1 var(--kfont); letter-spacing: .1em; opacity: .6; }
+.csetdesc { flex: 1 0 100%; max-width: 70ch; margin: 4px 0 0; font: 400 15px/1.55 var(--serif); }
 .csetopen h3 small { font: 500 11px/1 var(--kfont); letter-spacing: .14em; opacity: .6; }
 @media (max-width: 600px) { .csettiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; } }
 .cset { margin: 0 0 34px; } .cset h3 { display: flex; align-items: baseline; gap: 12px; margin: 0 4px 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,.18); font-size: 20px; letter-spacing: .02em; }
@@ -5507,6 +5508,7 @@ function collectionView(id, into) {
       var ecl = SPINEOK && (SF.f.cats || []).indexOf('Eclipse') >= 0;
       if (SPINEOK && (cmode === 'sets' || ecl) && !editing) {
         var pool = ecl ? sfSort(c.items.filter(sfFits(Object.assign({}, SF.f, { cats: (SF.f.cats || []).filter(function (x) { return x !== 'Eclipse'; }) }))).filter(fits), sfKey(), sfDirOf()) : items;
+        var BSD = {}; c.items.forEach(function (i) { if (i.csetdesc) Object.keys(i.csetdesc).forEach(function (k) { BSD[k] = i.csetdesc[k]; }); });
         var BS = {}, BSP = {}, BSI = {}; pool.forEach(function (i) { (i.cset || []).forEach(function (b, n) { if (!ecl || /^eclipse/i.test(b)) { (BS[b] = BS[b] || []).push(i); if ((i.csetsp || [])[n]) BSP[b] = +i.csetsp[n]; if ((i.csetimg || [])[n]) BSI[b] = i.csetimg[n]; } }); });
         // (in Criterion's order: by the set's own spine number, those without one (Eclipse, by its series number) after; or by title)
         var ser = function (x) { return +(x.match(/series\s+(\d+)/i) || [])[1] || 0; }, byT = sfKey() === 'name', dd = sfDirOf();
@@ -5519,7 +5521,7 @@ function collectionView(id, into) {
         if (openSet && BS[openSet]) {   // one box set, opened: its films
           var L = BS[openSet].slice().sort(function (x, y) { return (+x.spine || 0) - (+y.spine || 0) || nameKey(x).localeCompare(nameKey(y)); });
           g.className = 'csets';
-          g.innerHTML = '<div class="csetopen"><button type="button" class="pill" id="csetback">‹ ' + (ecl ? 'Eclipse' : 'All box sets') + '</button>' + (BSI[openSet] ? '<img class="csetcov" alt="" src="' + esc(BSI[openSet].replace('_small.', '_large.')) + '">' : '') + '<h3>' + (BSP[openSet] ? '<span class="cssp">No. ' + BSP[openSet] + '</span>' : '') + esc(openSet) + '<small>' + L.length + (L.length === 1 ? ' film' : ' films') + '</small></h3></div><div class="gridcards">' + L.map(function (i) { return cardHTML(i, false, true); }).join('') + '</div>';
+          g.innerHTML = '<div class="csetopen"><button type="button" class="pill" id="csetback">‹ ' + (ecl ? 'Eclipse' : 'All box sets') + '</button>' + (BSI[openSet] ? '<img class="csetcov" alt="" src="' + esc(BSI[openSet].replace('_small.', '_large.')) + '">' : '') + '<h3>' + (BSP[openSet] ? '<span class="cssp">No. ' + BSP[openSet] + '</span>' : '') + esc(openSet) + '<small>' + L.length + (L.length === 1 ? ' film' : ' films') + '</small></h3>' + (BSD[openSet] ? '<p class="csetdesc">' + esc(BSD[openSet]) + '</p>' : '') + '</div><div class="gridcards">' + L.map(function (i) { return cardHTML(i, false, true); }).join('') + '</div>';
           $('#csetback').onclick = function () { openSet = null; draw(); };
           wireCards(g, L); return;
         }

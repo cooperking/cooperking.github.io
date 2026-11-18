@@ -1819,6 +1819,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
                 [].forEach.call(bd.querySelectorAll('a[href*="/films/"]'), function (a2) { var sl = a2.getAttribute('href').replace(/^.*\/films\//, '').replace(/[?\u0023/].*$/, ''); if (/^\d+-/.test(sl)) { slugs.push(sl); if (inset.indexOf(sl) < 0) inset.push(sl); } });
                 var st = ((bd.querySelector('h1') || {}).textContent || '').replace(/\s+/g, ' ').trim() || hr.replace(/^.*\/boxsets\/\d+-/, '').replace(/-/g, ' ');
                 if (inset.length) { out.sets[st] = inset; if (rws[k].sp) { out.setspine = out.setspine || {}; out.setspine[st] = rws[k].sp; }
+                  var dd = '', dp = [].filter.call(bd.querySelectorAll('main p, article p, .product-summary p, .boxset p, p'), function (q) { return q.textContent.trim().length > 120 && !q.closest('footer, header, nav, aside, form'); })[0];
+                  dd = (dp ? dp.textContent : ((bd.querySelector('meta[name="description"]') || bd.querySelector('meta[property="og:description"]') || {}).content || '')).replace(/\s+/g, ' ').trim();
+                  if (dd.length > 40) { out.setdesc = out.setdesc || {}; out.setdesc[st] = dd.slice(0, 2000); }
                   var ci = rws[k].im || ((bd.querySelector('meta[property="og:image"]') || {}).content || '');
                   if (/^https?:|^\/\//.test(ci)) { out.setimg = out.setimg || {}; out.setimg[st] = new URL(ci, location.href).href; } }
               } catch (e2) {}
