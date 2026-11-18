@@ -339,8 +339,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       <section class="card" data-tab="updates" id="wtcard">
         <div class="kicker">Waiting on you</div>
         <h2 id="wthead">Looking…</h2>
+        <ul class="changes" id="calist"></ul>
         <ul class="changes" id="wtlist"></ul>
         <details id="wtdone" hidden><summary class="stat" style="cursor:pointer;margin-top:10px"></summary><ul class="changes" id="wtdonelist"></ul></details>
+        <details id="cadone" hidden><summary class="stat" style="cursor:pointer;margin-top:6px"></summary><ul class="changes" id="cadonelist"></ul></details>
       </section>
       <section class="card" data-tab="dupes">
         <div class="kicker">Duplicates</div>
@@ -1442,7 +1444,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   function wtAuto() {
     if (!GW || !TOKEN) return;
     var get = function (p) { return fetch(GW + '/api/' + p, { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); };
-    Promise.all([get('macqueue'), get('diskhealth'), get('waiting')]).then(function (r) {
+    Promise.all([get('macqueue'), get('diskhealth'), get('waiting'), get('claudeasks')]).then(function (r) {
+      WT.asks = r[3] ? r[3].asks || [] : [];
       if (r[0]) WT.auto.macagent = !!r[0].seen;
       if (r[1]) { WT.auto.smart = !!r[1].smartctl; if (r[1].free) WT.auto.space = r[1].free > 150e9; WT.free = r[1].free; }
       WT.gw = !!r[2]; if (r[2]) WT.done = r[2].done || {};
@@ -1454,8 +1457,25 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     WT.auto.draft = !(WAIT.page || WAIT.themes);
     var isDone = function (x) { return x.done ? Date.parse(x.done) / 1000 : x.auto ? (WT.auto[x.auto] ? -1 : 0) : WT.done[x.id] || 0; };
     var open = WT.items.filter(function (x) { return !isDone(x); }), shut = WT.items.filter(function (x) { return isDone(x); });
-    var need = open.filter(function (x) { return !x.optional; }).length, opt = open.length - need;
-    $('#wthead').innerHTML = open.length ? need + ' thing' + (need === 1 ? '' : 's') + ' <em>for you to do</em>' + (opt ? ' <span style="font-size:.6em;opacity:.7">+ ' + opt + ' if you want</span>' : '') : 'Nothing <em>waiting on you</em>';
+    // (what Claude has asked to have done on the Mac mini: John's Allow does it (John, 18 Nov 2026: "I want to use screensharing as little as possible"))
+    var asks = WT.asks || [], ask = asks.filter(function (x) { return x.state === 'asked'; }), past = asks.filter(function (x) { return x.state !== 'asked'; }).reverse();
+    $('#calist').innerHTML = ask.map(function (x) {
+      return '<li><b>Claude asks: ' + esc(x.title) + '</b><span class="when">' + esc(x.why || '') + ' · ' + esc(when(x.at * 1000)) + '</span>' + (x.detail ? '<span class="cvba">' + esc(x.detail) + '</span>' : '') +
+        '<span class="state" style="margin-top:6px"><button class="btn small primary" type="button" data-ca="' + esc(x.id) + '" data-op="allow">Allow</button><button class="btn small" type="button" data-ca="' + esc(x.id) + '" data-op="decline">Decline</button></span></li>';
+    }).join('');
+    var ST2 = { doing: 'doing it now…', done: '✓', failed: 'didn’t work', declined: 'declined' };
+    $('#cadone').hidden = !past.length; $('#cadone summary').textContent = 'What Claude asked (' + past.length + ')';
+    $('#cadonelist').innerHTML = past.slice(0, 20).map(function (x) { return '<li>' + esc(x.title) + ' · <b>' + (ST2[x.state] || esc(x.state)) + '</b><span class="when">' + esc(x.result || x.why || '') + ' · ' + esc(when((x.finished || x.answered || x.at) * 1000)) + '</span></li>'; }).join('');
+    [].forEach.call(document.querySelectorAll('[data-ca]'), function (b) { b.onclick = function () {
+      if (b.dataset.op === 'allow' && !b.dataset.sure && /Empty/.test(b.closest('li').textContent)) { b.dataset.sure = 1; b.textContent = 'Sure? Deleted for good'; return; }
+      [].forEach.call(b.parentNode.querySelectorAll('button'), function (x) { x.disabled = true; });
+      fetch(GW + '/api/claudeasks', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ id: b.dataset.ca, op: b.dataset.op }) })
+        .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'No'); return j; }); })
+        .then(function (j) { WT.asks = j.asks || []; wtDraw(); toast(b.dataset.op === 'allow' ? 'Allowed: being done now' : 'Declined'); setTimeout(wtAuto, 8000); setTimeout(wtAuto, 30000); })
+        .catch(function (e) { [].forEach.call(b.parentNode.querySelectorAll('button'), function (x) { x.disabled = false; }); toast(e.message || 'The Mac mini didn’t answer.'); });
+    }; });
+    var need = open.filter(function (x) { return !x.optional; }).length + ask.length, opt = open.length - open.filter(function (x) { return !x.optional; }).length;
+    $('#wthead').innerHTML = open.length || ask.length ? need + ' thing' + (need === 1 ? '' : 's') + ' <em>for you to do</em>' + (opt ? ' <span style="font-size:.6em;opacity:.7">+ ' + opt + ' if you want</span>' : '') : 'Nothing <em>waiting on you</em>';
     var GBs = function (b) { return b >= 1e12 ? (b / 1e12).toFixed(1) + ' TB' : Math.round(b / 1e9) + ' GB'; };
     $('#wtlist').innerHTML = open.sort(function (p, q) { return !!p.optional - !!q.optional || !!p.ask - !!q.ask; }).map(function (x) {
       var tag = x.ask ? 'A question' : x.optional ? 'If you want' : '';

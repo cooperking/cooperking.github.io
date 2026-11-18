@@ -752,6 +752,15 @@ def make_handler(g):
             try:
                 if u.path == '/health':
                     return self.send_json(200, {'ok': True, 'version': VERSION, 'sha': (load(INSTALLED, {}).get('sha') or '')[:7]})
+                if u.path == '/claude/ask':   # (Claude asking for one of ACTIONS, done only when John allows it on the admin page)
+                    tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
+                    want = g.st.get('look_key')
+                    if not want or not tok or not hmac.compare_digest(hashlib.sha256(tok.encode()).hexdigest(), want):
+                        return self.send_json(403, {'error': 'Not allowed.'})
+                    if method != 'POST':
+                        return self.send_json(200, {'can': {k: v[0] for k, v in ACTIONS.items()}, 'asked': [{k: v for k, v in x.items() if k != 'files'} for x in (load(ACTIONS_AT, []) or [])[-20:]]})
+                    code, j = claude_ask(str(self._b.get('action') or ''), self._b.get('why'))
+                    return self.send_json(code, j)
                 if u.path.startswith('/look/'):   # (Claude, looking on John's behalf with the key John made for it: reading only)
                     tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
                     want = g.st.get('look_key')
@@ -2101,6 +2110,17 @@ def make_handler(g):
             if b:
                 BACKUP_NOW.set()
             return self.send_json(200, dict(load(BACKUP_AT, {}) or {}, running=bool(BACKUP_STATE.get('running')) or bool(b), keep=BACKUP_KEEP, to=BACKUP_TO))
+
+        def api_claudeasks(self, me, user, q, b):
+            """John's only: what Claude has asked to have done on the Mac mini, and his Allow or Decline."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            if b:
+                code, j = claude_answer(g, str(b.get('id') or ''), b.get('op') == 'allow')
+                if code != 200:
+                    return self.send_json(code, j)
+            L = [{k: v for k, v in x.items() if k != 'files'} for x in (load(ACTIONS_AT, []) or [])]
+            return self.send_json(200, {'asks': L[-30:], 'plex_off': bool(g.st.get('plex_off'))})
 
         def api_waiting(self, me, user, q, b):
             """John's only: what he's ticked off on the admin page's Waiting on you (John, 18 Nov 2026: "I could do with a waiting on you
@@ -3740,6 +3760,195 @@ def keep_backup(g):
         BACKUP_NOW.wait(300)
 
 
+# ---- what Claude may ask to have done on the Mac mini, each only once John allows it on the admin page (John, 18 Nov 2026: "can I give
+# you control to do things like quit plex?" ... "yes, build the approval list - I want to use screensharing as little as possible").
+# Claude can only ask, and only for what's listed here; John's Allow does it, and each one is kept with what came of it.
+ACTIONS_AT = os.path.expanduser('~/Grifflix/claude-asks.json')
+ACT_LOCK = threading.Lock()
+PLEX_APP = 'Plex Media Server'
+SETASIDE = '/Volumes/G-Drive/Grifflix/Set aside'
+
+
+def _run(cmd, t=60):
+    import subprocess
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=t)
+    return r.returncode, ((r.stdout or '') + (r.stderr or '')).strip()
+
+
+def _plex_running():
+    return _run(['pgrep', '-x', PLEX_APP])[0] == 0
+
+
+def act_plex_off(g, req):
+    """Plex quit, and kept off: if it starts again (at login, or by itself), it's quit again (keep_plex_off)."""
+    g.st['plex_off'] = True
+    save(SETTINGS, g.st)
+    _run(['osascript', '-e', 'quit app "%s"' % PLEX_APP], 30)
+    for _ in range(20):
+        if not _plex_running():
+            break
+        time.sleep(1)
+    if _plex_running():
+        _run(['pkill', '-x', PLEX_APP])
+        time.sleep(3)
+    return 'Plex quit, and kept off from now on.' if not _plex_running() else 'Plex wouldn’t quit; it’s kept off, and tried again in 5 minutes.'
+
+
+def act_plex_on(g, req):
+    g.st['plex_off'] = False
+    save(SETTINGS, g.st)
+    _run(['open', '-a', PLEX_APP], 30)
+    time.sleep(5)
+    return 'Plex started again, and left alone from now on.' if _plex_running() else 'Plex was let be, but didn’t start: it may need opening on the Mac mini.'
+
+
+def act_jellyfin_restart(g, req):
+    if someone_watching(g):
+        raise RuntimeError('someone is watching: not restarted (allow it again later)')
+    _run(['pkill', '-x', 'Jellyfin Server'])
+    _run(['pkill', '-x', 'jellyfin'])
+    time.sleep(8)
+    _run(['open', '-a', 'Jellyfin'], 30)
+    for _ in range(60):
+        time.sleep(2)
+        try:
+            urllib.request.urlopen('http://127.0.0.1:8096/System/Info/Public', timeout=5).read()
+            return 'The media server restarted and is answering again.'
+        except Exception:
+            pass
+    return 'The media server was restarted but isn’t answering yet: it may still be starting.'
+
+
+def act_converter_restart(g, req):
+    home = os.path.expanduser('~/Grifflix')
+    cur = load(os.path.join(home, 'convert-now.json'), None) or {}
+    _run(['pkill', '-f', 'convert.py go'])
+    time.sleep(5)
+    CONV_NOW.set()   # (keep_converting starts it again at once)
+    return 'The converter was stopped and starts again within a minute%s.' % ((' (it was on %s)' % cur.get('name')) if cur.get('name') else '')
+
+
+def _setaside_list():
+    out = []
+    if os.path.isdir(SETASIDE):
+        for top, dirs, files in os.walk(SETASIDE):
+            dirs[:] = [d for d in dirs if not d.startswith('.')]
+            for f in files:
+                if f.startswith('.'):
+                    continue
+                p = os.path.join(top, f)
+                try:
+                    out.append((p, os.path.getsize(p)))
+                except OSError:
+                    pass
+    return out
+
+
+def act_setaside_empty(g, req):
+    """Only the files listed when it was asked for, and only inside Set aside."""
+    import shutil
+    gone, size = 0, 0
+    real = os.path.realpath(SETASIDE) + os.sep
+    for p, _ in [(x['p'], x['b']) for x in (req.get('files') or [])]:
+        rp = os.path.realpath(p)
+        if not rp.startswith(real) or not os.path.isfile(rp):
+            continue
+        try:
+            size += os.path.getsize(rp)
+            os.remove(rp)
+            gone += 1
+        except OSError:
+            pass
+    for top, dirs, files in sorted(os.walk(SETASIDE), key=lambda x: -len(x[0])):   # (folders left empty taken away too)
+        if top != SETASIDE and not [f for f in os.listdir(top) if not f.startswith('.')]:
+            shutil.rmtree(top, ignore_errors=True)
+    return '%d file%s deleted from Set aside, %.1f GB freed.' % (gone, '' if gone == 1 else 's', size / 1e9)
+
+
+def ask_setaside(req):
+    L = _setaside_list()
+    if not L:
+        raise RuntimeError('Set aside is empty')
+    req['files'] = [{'p': p, 'b': b} for p, b in L][:2000]
+    req['detail'] = '%d files, %.1f GB: %s' % (len(L), sum(b for _, b in L) / 1e9, '; '.join(os.path.relpath(p, SETASIDE) for p, _ in L[:40]) + (' …' if len(L) > 40 else ''))
+
+
+ACTIONS = {
+    'plex-off': ('Quit Plex and keep it off', act_plex_off, None),
+    'plex-on': ('Start Plex again and let it be', act_plex_on, None),
+    'jellyfin-restart': ('Restart the media server (not while anyone watches)', act_jellyfin_restart, None),
+    'converter-restart': ('Restart the converter (it starts its film again)', act_converter_restart, None),
+    'setaside-empty': ('Empty “Set aside” on the G-Drive (deleted for good)', act_setaside_empty, ask_setaside),
+}
+
+
+def claude_ask(action, why):
+    if action not in ACTIONS:
+        return 400, {'error': 'Not something that can be asked for.', 'can': sorted(ACTIONS)}
+    with ACT_LOCK:
+        L = load(ACTIONS_AT, []) or []
+        if sum(1 for x in L if x.get('state') == 'asked') >= 10:
+            return 429, {'error': 'Ten are already waiting for John.'}
+        if any(x.get('state') == 'asked' and x.get('action') == action for x in L):
+            return 409, {'error': 'Already asked, waiting for John.'}
+        req = {'id': secrets.token_hex(6), 'action': action, 'title': ACTIONS[action][0], 'why': str(why or '')[:500], 'at': int(time.time()), 'state': 'asked'}
+        if ACTIONS[action][2]:
+            try:
+                ACTIONS[action][2](req)
+            except Exception as e:
+                return 400, {'error': str(e)[:200]}
+        L.append(req)
+        save(ACTIONS_AT, L[-100:])
+    log('Claude asks: %s (%s)' % (req['title'], req['why'][:120]))
+    return 200, {k: v for k, v in req.items() if k != 'files'}
+
+
+def claude_answer(g, rid, allow):
+    with ACT_LOCK:
+        L = load(ACTIONS_AT, []) or []
+        req = next((x for x in L if x.get('id') == rid), None)
+        if not req or req.get('state') != 'asked':
+            return 404, {'error': 'Not waiting.'}
+        req['state'] = 'doing' if allow else 'declined'
+        req['answered'] = int(time.time())
+        save(ACTIONS_AT, L)
+    if not allow:
+        log('Claude asked, John declined: %s' % req['title'])
+        return 200, {'ok': True}
+
+    def run():
+        try:
+            res, st = ACTIONS[req['action']][1](g, req), 'done'
+        except Exception as e:
+            res, st = str(e)[:300], 'failed'
+        with ACT_LOCK:
+            L2 = load(ACTIONS_AT, []) or []
+            for x in L2:
+                if x.get('id') == rid:
+                    x.update(state=st, result=res, finished=int(time.time()))
+                    x.pop('files', None)
+            save(ACTIONS_AT, L2)
+        log('Claude asked, John allowed: %s: %s' % (req['title'], res))
+    threading.Thread(target=run, daemon=True).start()
+    return 200, {'ok': True}
+
+
+def keep_plex_off(g):
+    """While John has had Plex kept off: quit again if it starts (at login, or by itself), every 5 minutes."""
+    time.sleep(120)
+    while True:
+        try:
+            if g.st.get('plex_off') and _plex_running():
+                _run(['osascript', '-e', 'quit app "%s"' % PLEX_APP], 30)
+                time.sleep(15)
+                if _plex_running():
+                    _run(['pkill', '-x', PLEX_APP])
+                log('Plex had started: quit again (kept off)')
+        except Exception as e:
+            log('Keeping Plex off:', str(e)[:150])
+        time.sleep(300)
+
+
 def disks():
     """Free space on the Mac's own disk and the drives its films are on, for the admin page (John, 12 Nov 2026: the Mac's own disk
     filled up unnoticed, and nothing on the Mac could write)."""
@@ -4803,6 +5012,7 @@ def serve():
     threading.Thread(target=fanny_series, args=(g,), daemon=True).start()
     threading.Thread(target=keep_disk_health, daemon=True).start()
     threading.Thread(target=keep_backup, args=(g,), daemon=True).start()
+    threading.Thread(target=keep_plex_off, args=(g,), daemon=True).start()
     threading.Thread(target=keep_gdrive, daemon=True).start()
     threading.Thread(target=keep_fetch_unstuck, daemon=True).start()
     srv.daemon_threads = True
