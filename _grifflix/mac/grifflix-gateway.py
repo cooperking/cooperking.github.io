@@ -4274,8 +4274,12 @@ def extras_fix(g, most=60):
             if start >= (r.get('TotalRecordCount') or 0):
                 break
     asked = []
+    # (each film asked about rests a day, so the next ones get their turn: the same first 60 were asked every time and those after them,
+    # The Crying Game among them, never were: John, 18 Nov 2026, "I still can't see Extras")
+    af = os.path.expanduser('~/Grifflix/extras-asked.json')
+    had = {k: v for k, v in (load(af, {}) or {}).items() if time.time() - v < 86400}
     for it in its:
-        if (it.get('SpecialFeatureCount') or 0) or len(asked) >= most:
+        if (it.get('SpecialFeatureCount') or 0) or len(asked) >= most or it['Id'] in had:
             continue
         d = (it.get('Path') or '') if it.get('Type') == 'Series' else os.path.dirname(it.get('Path') or '')
         try:
@@ -4287,9 +4291,11 @@ def extras_fix(g, most=60):
         try:
             g.jf.call('POST', '/Items/%s/Refresh' % it['Id'], query={'Recursive': 'true', 'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'Default', 'ReplaceAllMetadata': 'false', 'ReplaceAllImages': 'false'})
             asked.append(it.get('Name'))
+            had[it['Id']] = time.time()
             time.sleep(2)
         except Exception as e:
             log('Extras for %s: %s' % (it.get('Name'), e))
+    save(af, had)
     if asked:
         log('Extras: the media server asked to look again at %d film%s with extras it hadn’t found: %s' % (len(asked), '' if len(asked) == 1 else 's', ', '.join(asked[:12]) + (' …' if len(asked) > 12 else '')))
         g.forget()
@@ -4298,14 +4304,19 @@ def extras_fix(g, most=60):
 
 
 def keep_extras(g):
-    """extras_fix 6 minutes after the start, then every 6 hours (each new conversion's extras found within the day)."""
+    """extras_fix 6 minutes after the start, then every half hour while there are films to ask about, but not while the media server is
+    looking at the whole library (which finds them itself), else every 6 hours."""
     time.sleep(360)
     while True:
+        n_ = 0
         try:
-            extras_fix(g)
+            if not any(t.get('Key') == 'RefreshLibrary' and t.get('State') == 'Running' for t in g.jf.call('GET', '/ScheduledTasks') or []):
+                n_ = extras_fix(g)
+            else:
+                n_ = 1   # (looked at again in half an hour)
         except Exception as e:
             log('Extras:', str(e)[:200])
-        time.sleep(6 * 3600)
+        time.sleep(1800 if n_ else 6 * 3600)
 
 
 def keep_plex_off(g):
