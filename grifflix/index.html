@@ -2031,11 +2031,15 @@ html.gcrit #cbody { color: var(--gc-ink); }
 /* (its cover larger, its count in it, no title under it, and no Collections button above: John, 17 Nov 2026, "The collection picture looks
    messy with the title underneath. Should be a bit larger with the number visible in the picture ... We can remove the collections button") */
 html.gcrit #main > .tabs:first-child { display: none; }
-html.gcrit #cbody .collhead { grid-template-columns: 240px minmax(0, 1fr); margin-top: 8px; }
+html.gcrit #cbody .collhead { grid-template-columns: 132px minmax(0, 1fr); gap: 28px; align-items: center; margin: 6px 4px 18px; }   /* (compact: the cover says it already; John, 18 Nov 2026, "this isn't a very good use of space") */
+html.gcrit #cbody .collhead .kick { margin-bottom: 6px; }
+html.gcrit #cbody .colltitle { font-size: clamp(30px, 4vw, 44px) !important; margin: 0 0 6px; }
+html.gcrit #cbody .cstats { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 10px 0 0; font: 500 12px/1.4 var(--kfont); letter-spacing: .14em; text-transform: uppercase; color: var(--gc-grey, var(--fg-2)); }
+html.gcrit #cbody .cstats b { font-weight: 700; color: var(--gc-ink, var(--fg)); letter-spacing: .06em; margin-right: 5px; }
 html.gcrit #cbody .collpic { background: none; box-shadow: none; }
 html.gcrit #cbody .collpic .t, html.gcrit #cbody .collpic .s { display: none; }
 html.gcrit #cbody .collpic .ccov { box-shadow: 0 18px 40px rgba(0, 0, 0, .12); }
-@media (max-width: 760px) { html.gcrit #cbody .collhead { grid-template-columns: 150px minmax(0, 1fr); } }
+@media (max-width: 760px) { html.gcrit #cbody .collhead { grid-template-columns: 96px minmax(0, 1fr); gap: 16px; } }
 html.gcrit .bar-top { background: var(--gc-page) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: 0 1px 0 var(--gc-line) !important; }
 html.gcrit body::before, html.gcrit body::after { background-color: var(--gc-page) !important; background-image: none !important; }
 @media (max-width: 600px) { html.gcrit #cbody .collhead + .tabs { flex-wrap: wrap !important; overflow: visible !important; row-gap: 8px; } html.gcrit #cbody .tabs .sfbar { position: static; margin-left: 0; padding-left: 0; box-shadow: none; background: none; } #cbody .cviews { flex: 1 0 100%; order: 9; } #cbody .cviews .pill { flex: 1; justify-content: center; } #cbody .tabs .cfind { flex: 1 1 140px; min-width: 0; } }
@@ -2289,7 +2293,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'e81bc4f6a775' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '3a28006d6c40' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5503,6 +5507,10 @@ function collectionView(id, into) {
     var cov = collCard({ id: c.id, name: c.name, children: c.items.length }).replace(/^<a [^>]*>|<\/a>$/g, '');   // (its drawn cover, as on the shelf)
     $('#cbody').innerHTML = '<div class="collhead"><div class="card coll collpic">' + cov + '</div>' +
       '<div><div class="kick">Collection</div><h1 class="colltitle">' + esc(c.name) + '</h1><div class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' title' : ' titles') + '</i></div>' +
+      // (Criterion's: what's in it at a glance, in the room the big cover took)
+      (/criterion/i.test(c.name) ? (function () { var sets = {}, sp = 0, dirs = {}, ctys = {}; c.items.forEach(function (i) { (i.cset || []).forEach(function (b) { sets[b] = 1; }); if (i.spine) sp++; if (i.cdir) dirs[i.cdir] = 1; if (i.ccty) ctys[i.ccty] = 1; });
+        var ns = Object.keys(sets).length, nd = Object.keys(dirs).length, nc = Object.keys(ctys).length;
+        return '<div class="cstats">' + (sp ? '<span><b>' + sp + '</b>spine numbers</span>' : '') + (ns ? '<span><b>' + ns + '</b>box sets</span>' : '') + (nd ? '<span><b>' + nd + '</b>directors</span>' : '') + (nc ? '<span><b>' + nc + '</b>countries</span>' : '') + '</div>'; })() : '') +
       (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
       // (a search within it, for everyone; for John, its films taken out and added here, and its description: John, 16 Nov 2026, "I need
       // the ability to edit collections properly, as well as search within them")
