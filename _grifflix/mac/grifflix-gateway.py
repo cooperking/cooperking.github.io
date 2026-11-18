@@ -2102,6 +2102,24 @@ def make_handler(g):
                 BACKUP_NOW.set()
             return self.send_json(200, dict(load(BACKUP_AT, {}) or {}, running=bool(BACKUP_STATE.get('running')) or bool(b), keep=BACKUP_KEEP, to=BACKUP_TO))
 
+        def api_waiting(self, me, user, q, b):
+            """John's only: what he's ticked off on the admin page's Waiting on you (John, 18 Nov 2026: "I could do with a waiting on you
+            section in my admin, so I know what has and hasn't been done"). The list itself is grifflix/waiting.json on the site."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            at = os.path.expanduser('~/Grifflix/waiting-done.json')
+            d = load(at, {}) or {}
+            if b:
+                iid = str(b.get('id') or '')
+                if not re.match(r'^[a-z0-9-]{1,80}$', iid):
+                    return self.send_json(400, {'error': 'Which?'})
+                if b.get('done'):
+                    d[iid] = int(time.time())
+                else:
+                    d.pop(iid, None)
+                save(at, d)
+            return self.send_json(200, {'done': d})
+
         def api_macqueue(self, me, user, q, b):
             """John's only: films queued for his own Mac, which takes them up by itself, one after another, wherever he queued them from
             (John, 18 Nov 2026: "Is it possible to switch on convert on my Mac remotely?" ... "Yes"). Its helper's key is made here, shown once."""
