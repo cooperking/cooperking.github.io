@@ -23,6 +23,9 @@ report() {
   b=$(sed -n 's/^base=//p' "$HERE/agent.conf" 2>/dev/null); k=$(sed -n 's/^key=//p' "$HERE/agent.conf" 2>/dev/null)
   [[ -n "$b" && -n "$k" ]] || return 0
   { echo "== $(date '+%Y-%m-%d %H:%M:%S') $(scutil --get ComputerName 2>/dev/null)"; echo "== G-Drive: $( [[ -d /Volumes/G-Drive ]] && echo mounted || echo NOT mounted)"; df -h "$HERE" 2>/dev/null | tail -1
+    echo "== G-Drive connection"; mount | grep -i 'g-drive' | sed -E 's#//[^@]*@#//(user)@#'; ls -ldeO "/Volumes/G-Drive/Grifflix/Grifflix Converting" 2>&1 | head -5
+    t_="/Volumes/G-Drive/Grifflix/Grifflix Converting/.grifflix-write-test-$$"; if ( : > "$t_" ) 2>/dev/null; then echo "write test: OK"; rm -f "$t_"; else echo "write test: REFUSED ($( ( : > "$t_" ) 2>&1 ))"; fi
+    t_="/Volumes/G-Drive/Grifflix/.grifflix-write-test-$$"; if ( : > "$t_" ) 2>/dev/null; then echo "write test in Grifflix/: OK"; rm -f "$t_"; else echo "write test in Grifflix/: REFUSED"; fi
     echo "== out/"; ls -la "$HERE/out" "$HERE/out/pending" 2>&1 | tail -40
     echo "== pending records"; for r in "$HERE/out/pending/"*.job(N); do echo "-- ${r:t}"; cat "$r"; done
     echo "== running"; ps -axo pid,etime,command | grep -E "[c]opyback|[c]p /Users|[f]fmpeg" | cut -c1-220
@@ -142,7 +145,10 @@ if [[ "${1:-}" == "copyback" ]]; then
       report
       # (tried again by itself every 2 minutes for 3 hours, not only between films (none start while one converts)), the next in line let go meanwhile
       rm -f "$tl"; n_=$(( ${COPYTRY:-0} + 1 )); (( n_ > 90 )) && exit 1
-      sleep 120; COPYTRY=$n_ exec /bin/zsh "$HERE/convert-here.sh" copyback "$lt" "$tmp" "$url"
+      sleep 120
+      # (the newest helper from GitHub before trying again, so a fix reaches a copy within minutes, not only when a film starts)
+      curl -fsSL -m 60 https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/convert-here.sh -o "$HERE/convert-here.sh.new.$$" 2>/dev/null && zsh -n "$HERE/convert-here.sh.new.$$" && mv -f "$HERE/convert-here.sh.new.$$" "$HERE/convert-here.sh"; rm -f "$HERE/convert-here.sh.new.$$"
+      COPYTRY=$n_ exec /bin/zsh "$HERE/convert-here.sh" copyback "$lt" "$tmp" "$url"
     fi
   fi
   code=$(curl -sS -m 30 -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{"ok":true}' "$url/done")
