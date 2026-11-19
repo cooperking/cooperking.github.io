@@ -6386,9 +6386,18 @@ function a24Draw(g, items, fq) {
   // put it under the bar going up: John, 19 Nov 2026, "scrolling back up moves the choice over the header")
   var clear = function (r) {
     if (!TV) return; var bt = $('.bar-top'), bb = bt && getComputedStyle(bt).position === 'fixed' ? bt.getBoundingClientRect().bottom : 0, x = r.getBoundingClientRect();
+    // (the first film: the page back to its top, ALL FILMS and all, if the film still shows there: John, 19 Nov 2026, "The fire tv doesn't
+    // scroll back up to ALL FILMS on A24")
+    if (r === rows[0] && x.bottom - x.top + (x.top + scrollY) < innerHeight - 24) { window.scrollTo(0, 0); return; }
     if (x.top < bb + 24) window.scrollBy(0, x.top - bb - 24); else if (x.bottom > innerHeight - 24) window.scrollBy(0, x.bottom - innerHeight + 24);
   };
-  $$('.a24r[data-item]', g).forEach(function (r) { r.onmouseenter = function () { show(r); }; r.onfocus = function () { clear(r); show(r); }; });
+  var rows = $$('.a24r[data-item]', g);
+  rows.forEach(function (r) { r.onmouseenter = function () { show(r); }; r.onfocus = function () { clear(r); show(r); }; });
+  // (and up past it, to the heading's buttons or the bar: the top of the page)
+  if (TV && !document._a24up) { document._a24up = 1; document.addEventListener('focusin', function (e) {
+    var t = e.target; if (!document.documentElement.classList.contains('ga24') || !t || !t.closest) return;
+    if (t.closest('.a24head, .bar-top')) window.scrollTo(0, 0);
+  }); }
   g.onmouseleave = function () { show(null); }; g.onfocusout = function (e) { if (!g.contains(e.relatedTarget)) show(null); };
 }
 // (the admin page's Intros preview: ?intro=criterion or ?intro=a24 plays that one as the page opens: John, 19 Nov 2026, "Can we add the
