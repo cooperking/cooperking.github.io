@@ -31,6 +31,25 @@ report() {
     echo "== running"; ps -axo pid,etime,command | grep -E "[c]opyback|[c]p /Users|[f]fmpeg" | cut -c1-220
     echo "== agent.log"; grep -av 'frame=\|^size=\|speed=' "$HERE/agent.log" 2>/dev/null | tail -40 | cut -c1-300; } | curl -fsS -m 20 -X POST -H "Authorization: Bearer $k" -H 'Content-Type: text/plain; charset=utf-8' --data-binary @- "$b/macagent/report" >/dev/null 2>&1
 }
+# (a film sent to the Mac mini, which writes it to the G-Drive itself: macOS won't let this helper write to a network drive. Over the home
+# network first, else out through Grifflix's own address, in pieces, carrying on from where it got to: John, 19 Nov 2026)
+upload() {
+  local lt="$1" url="$2" b k t total have host mb r skip
+  b=${url%/convjob/*}; t=${url:t}; k=$(sed -n 's/^key=//p' "$HERE/agent.conf" 2>/dev/null)
+  total=$(stat -f %z "$lt" 2>/dev/null) || return 1
+  for host in "http://$MINI:8098" "$b"; do
+    have=$(curl -fsS -m 20 --connect-timeout 5 -H "Authorization: Bearer $k" "$host/macagent/upload?job=$t" 2>/dev/null | sed -n 's/.*"size": *\([0-9]*\).*/\1/p')
+    [[ -n "$have" ]] || continue
+    [[ "$host" == http://* ]] && mb=200 || mb=48
+    while (( have < total )); do
+      skip=$(( have / 1048576 ))
+      r=$(dd if="$lt" bs=1048576 skip=$skip count=$mb 2>/dev/null | curl -fsS -m 1800 -X PUT -H "Authorization: Bearer $k" -H 'Content-Type: application/octet-stream' --data-binary @- "$host/macagent/upload?job=$t&off=$(( skip * 1048576 ))&total=$total" 2>/dev/null) || break
+      have=$(printf '%s' "$r" | sed -n 's/.*"size": *\([0-9]*\).*/\1/p'); [[ -n "$have" ]] || break
+    done
+    (( have >= total )) && { echo "$(date '+%Y-%m-%d %H:%M') ${lt:t}: sent to the Mac mini (${host%%:*})"; return 0; }
+  done
+  return 1
+}
 
 if [[ "${1:-}" == "setup" ]]; then
   mkdir -p "$HOME/Applications" "$HERE"
@@ -135,6 +154,7 @@ if [[ "${1:-}" == "copyback" ]]; then
     else why=$( { /bin/cat "$lt" > "$tmp.copying"; } 2>&1 ) && why=$(mv -f "$tmp.copying" "$tmp" 2>&1) && why=""
       [[ -z "$why" && ! -f "$tmp" ]] && why="the copy didn't reach the G-Drive"
       [[ -z "$why" && "$(stat -f %z "$tmp" 2>/dev/null)" != "$(stat -f %z "$lt" 2>/dev/null)" ]] && { why="the copy on the G-Drive isn't the whole film"; rm -f "$tmp"; }; fi
+    [[ -n "$why" ]] && upload "$lt" "$url" && why=""   # (not allowed onto the drive from here: sent to the Mac mini instead)
     if [[ -z "$why" ]]; then
       echo copied >> "$rec"
     else

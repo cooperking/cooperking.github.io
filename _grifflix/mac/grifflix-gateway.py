@@ -769,11 +769,60 @@ def make_handler(g):
         def do_POST(self):
             self.route('POST')
 
+        def do_PUT(self):   # (a film from John's Mac, a piece at a time: /macagent/upload)
+            self.route('PUT')
+
         def route(self, method):
             self.take_body(method)
             u = urllib.parse.urlparse(self.path)
             q = dict(urllib.parse.parse_qsl(u.query))
+            if getattr(self.server, 'lan', False) and u.path != '/macagent/upload':   # (the home network's door: John's Mac's films only)
+                return self.send_json(404, {'error': 'Not here.'})
             try:
+                if u.path == '/macagent/upload':
+                    # (a film made on John's Mac, sent here and written to the G-Drive by this Mac, as macOS on his Mac won't let its
+                    # helper write to a network drive ("operation not permitted"): John, 19 Nov 2026, "Any luck on the films?")
+                    tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
+                    want = (g.st.get('macagent') or {}).get('key')
+                    if not want or not tok or not hmac.compare_digest(hashlib.sha256(tok.encode()).hexdigest(), want):
+                        return self.send_json(403, {'error': 'Not allowed.'})
+                    job = CONVJOBS.get(str(q.get('job') or ''))
+                    if not job or not job.get('mac'):
+                        return self.send_json(404, {'error': 'No such job.'})
+                    dst = job['plan']['tmp'] + '.uploading'
+                    cur = os.path.getsize(dst) if os.path.exists(dst) else 0
+                    if method == 'GET':
+                        if os.path.exists(job['plan']['tmp']):
+                            return self.send_json(200, {'size': os.path.getsize(job['plan']['tmp']), 'whole': True})
+                        return self.send_json(200, {'size': cur - cur % 1048576})   # (from a whole MiB, to carry on from)
+                    if method != 'PUT':
+                        return self.send_json(405, {'error': 'PUT or GET.'})
+                    try:
+                        off, total, n = int(q.get('off') or 0), int(q.get('total') or 0), int(self.headers.get('Content-Length') or -1)
+                    except ValueError:
+                        return self.send_json(400, {'error': 'Numbers.'})
+                    if n < 0 or n > 300 * 1048576 or off > cur or total <= 0 or off + n > total:
+                        self.close_connection = True
+                        return self.send_json(409, {'error': 'Not from there.', 'size': cur - cur % 1048576})
+                    with open(dst, 'r+b' if os.path.exists(dst) else 'wb') as f_:
+                        f_.seek(off)
+                        f_.truncate(off)
+                        left = n
+                        while left > 0:
+                            b_ = self.rfile.read(min(left, 1048576))
+                            if not b_:
+                                break
+                            f_.write(b_)
+                            left -= len(b_)
+                    size = os.path.getsize(dst)
+                    job['seen'], job['state'] = time.time(), 'copying'
+                    job['stage'] = 'copying to the Mac mini: %d%% of %.1f GB' % (size * 100 // total, total / 1e9)
+                    if size >= total:
+                        os.replace(dst, job['plan']['tmp'])
+                        job['stage'] = 'on the G-Drive: the Mac mini checking it'
+                        log('From John’s Mac: %s, %.1f GB, on the G-Drive' % (job['plan']['item'].get('name'), total / 1e9))
+                    convjobs_save()
+                    return self.send_json(200, {'size': size, 'whole': size >= total})
                 if u.path == '/health':
                     return self.send_json(200, {'ok': True, 'version': VERSION, 'sha': (load(INSTALLED, {}).get('sha') or '')[:7]})
                 if u.path == '/claude/update':   # (Claude: something's just gone onto GitHub, so look now; it can only make the Mac look sooner)
@@ -5825,6 +5874,13 @@ def serve():
     G_REF.append(g)   # (for what runs on its own: covers_now's synopses)
     port = int(g.st.get('port', 8097))
     srv = ThreadingHTTPServer(('127.0.0.1', port), make_handler(g))
+    try:   # (the home network's door, one port up: only John's Mac's films, with its key; a film over the home network, not out and back)
+        lan = ThreadingHTTPServer(('0.0.0.0', port + 1), make_handler(g))
+        lan.lan = True
+        lan.daemon_threads = True
+        threading.Thread(target=lan.serve_forever, daemon=True).start()
+    except OSError as e:
+        log('The home network door (port %d) didn’t open:' % (port + 1), e)
     # (the jobs only once this is the gateway, its port taken: a start that fails, as one does while the old gateway still holds the
     # port during an update, starts nothing. Each such start stopped the downloads: John, 15 Nov 2026, every one "went missing")
     threading.Thread(target=keep_converting, daemon=True).start()
