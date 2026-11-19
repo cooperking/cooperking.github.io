@@ -3062,6 +3062,20 @@ def make_handler(g):
                     t = re.sub(r'\b([0-9a-f]{2}:){5}[0-9a-f]{2}\b', '**:**', t, flags=re.I)
                     out[k] = t[-20000:]
                 return self.send_json(200, out)
+            if what == 'icloud':   # (whether the Mac is signed in to iCloud, and to what; never the account's name: John, 19 Nov 2026, "make sure
+                # that I'm not connected to icloud - I shouldn't be")
+                import subprocess
+                out = {}
+                try:
+                    r = subprocess.run(['defaults', 'read', 'MobileMeAccounts', 'Accounts'], capture_output=True, text=True, timeout=20)
+                    txt = r.stdout or ''
+                    out['signed_in'] = 'AccountID' in txt
+                    out['services_on'] = sorted(set(m.group(1) for m in re.finditer(r'Name = (\w+);[^}]*?Enabled = 1', txt, re.S)))
+                except Exception as e:
+                    out['error'] = str(e)[:100]
+                md = os.path.expanduser('~/Library/Mobile Documents')
+                out['icloud_drive_folder'] = os.path.isdir(md) and len(os.listdir(md)) if os.path.isdir(md) else 0
+                return self.send_json(200, out)
             if what == 'du':   # (how much room each folder takes on the Mac's own disk, sizes only, nothing changed: John, 19 Nov 2026, "I only use
                 # the mac mini for grifflix, so happy to clear out space - do a check through")
                 import subprocess
@@ -4636,6 +4650,87 @@ def act_collection_move(g, req):
     return '%d films moved from %s to %s%s; the site follows in a few minutes.' % (len(a['ids']), a.get('name'), a['to'], ' (only you see it)' if owner_only_set(a['to']) else '')
 
 
+TIDY_HOME = os.path.expanduser('~')
+TIDY_GONE = ['Desktop/00008150-000974A60238C01C', 'Desktop/whatsapp-export']   # (an old iPhone backup and a WhatsApp export, from iCloud: not needed)
+TIDY_APPS = ['/Applications/Atom.app', '/Applications/MakeMKV.app', '/Applications/NordVPN.app', '/Applications/Plex Media Server.app']
+TIDY_PLEX = os.path.join(TIDY_HOME, 'Library/Application Support/Plex Media Server')
+
+
+def _du(p):
+    import subprocess
+    try:
+        r = subprocess.run(['du', '-sk', p], capture_output=True, text=True, timeout=300)
+        return int((r.stdout.split() or ['0'])[0]) * 1024
+    except Exception:
+        return 0
+
+
+def ask_disk_tidy(req):
+    """Room made on the Mac mini's own disk, on John's Allow (John, 19 Nov 2026: "iphone backup and whatsapp ... can be deleted completely..
+    Plex can go, so long as nothing useful from the library could not be used. Old apps can go. Empty cache"): what goes, and how big."""
+    import shutil
+    parts = []
+    for rel in TIDY_GONE:
+        p = os.path.join(TIDY_HOME, rel)
+        if os.path.exists(p):
+            parts.append('%s (%.1f GB)' % (rel, _du(p) / 1e9))
+    if os.path.isdir(TIDY_PLEX):
+        parts.append('Plex’s library data (%.1f GB; its database copied to the G-Drive first, so its watch history and settings are kept)' % (_du(TIDY_PLEX) / 1e9))
+    for a in TIDY_APPS:
+        if os.path.exists(a):
+            parts.append('%s (%.1f GB)' % (os.path.basename(a), _du(a) / 1e9))
+    parts.append('the caches in ~/Library/Caches (%.1f GB)' % (_du(os.path.join(TIDY_HOME, 'Library/Caches')) / 1e9))
+    req['title'] = 'Make room on the Mac mini’s own disk'
+    req['detail'] = 'Deleted for good: ' + '; '.join(parts)
+
+
+def act_disk_tidy(g, req):
+    import shutil
+    free0, done, kept = shutil.disk_usage('/').free, [], []
+    for rel in TIDY_GONE:
+        p = os.path.join(TIDY_HOME, rel)
+        if os.path.exists(p):
+            shutil.rmtree(p, ignore_errors=True)
+            (kept if os.path.exists(p) else done).append(rel.split('/')[-1])
+    if os.path.isdir(TIDY_PLEX):   # (Plex quit and kept off; its database kept on the G-Drive; only then the rest of it gone)
+        try:
+            act_plex_off(g, req)
+        except Exception:
+            pass
+        db = os.path.join(TIDY_PLEX, 'Plug-in Support', 'Databases')
+        to = os.path.join(os.environ.get('GRIFFLIX_MEDIA') or '/Volumes/G-Drive/Grifflix', 'Plex database (kept)')
+        try:
+            if os.path.isdir(db):
+                shutil.copytree(db, to, dirs_exist_ok=True)
+            pref = os.path.join(TIDY_HOME, 'Library/Preferences/com.plexapp.plexmediaserver.plist')
+            if os.path.exists(pref):
+                shutil.copy2(pref, to)
+            ok = not os.path.isdir(db) or all(os.path.exists(os.path.join(to, f)) for f in os.listdir(db))
+        except Exception as e:
+            ok = False
+            log('Tidy: Plex’s database couldn’t be copied (%s): Plex left as it was' % e)
+        if ok:
+            shutil.rmtree(TIDY_PLEX, ignore_errors=True)
+            (kept if os.path.exists(TIDY_PLEX) else done).append('Plex’s library data (its database kept in “Plex database (kept)” on the G-Drive)')
+        else:
+            kept.append('Plex’s library data (its database couldn’t be copied to the G-Drive first)')
+    for a in TIDY_APPS:
+        if os.path.exists(a):
+            shutil.rmtree(a, ignore_errors=True)
+            (kept if os.path.exists(a) else done).append(os.path.basename(a))
+    cache = os.path.join(TIDY_HOME, 'Library/Caches')
+    for n in os.listdir(cache) if os.path.isdir(cache) else []:
+        x = os.path.join(cache, n)
+        try:
+            shutil.rmtree(x) if os.path.isdir(x) and not os.path.islink(x) else os.remove(x)
+        except Exception:
+            pass
+    done.append('the caches')
+    freed = (shutil.disk_usage('/').free - free0) / 1e9
+    log('Tidy, on John’s Allow: %s%s; %.1f GB made' % (', '.join(done), (' (not: ' + ', '.join(kept) + ')') if kept else '', freed))
+    return '%.1f GB made on the Mac mini’s own disk (%.0f GB free now). Gone: %s.%s' % (freed, shutil.disk_usage('/').free / 1e9, ', '.join(done), (' Couldn’t remove: ' + ', '.join(kept) + '.') if kept else '')
+
+
 ACTIONS = {
     'plex-off': ('Quit Plex and keep it off', act_plex_off, None),
     'plex-on': ('Start Plex again and let it be', act_plex_on, None),
@@ -4646,6 +4741,7 @@ ACTIONS = {
     'criterion-sets-flatten': ('Take apart the box sets kept as collections inside The Criterion Collection, so they’re like its other box sets (the films stay)', act_crit_flatten, ask_crit_flatten),
     'collection-add': ('Put films in a collection', act_collection_add, ask_collection_add),
     'collection-move': ('Move films from one collection to another', act_collection_move, ask_collection_move),
+    'disk-tidy': ('Make room on the Mac mini’s own disk (old backups, Plex, old apps, caches)', act_disk_tidy, ask_disk_tidy),
     'brakhage-split': ('Give each By Brakhage film its own folder (Volume One, Volume Two and the seven films from Volume One)', act_brakhage_split, ask_brakhage_split),
 }
 
