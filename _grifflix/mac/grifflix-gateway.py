@@ -3062,6 +3062,28 @@ def make_handler(g):
                     t = re.sub(r'\b([0-9a-f]{2}:){5}[0-9a-f]{2}\b', '**:**', t, flags=re.I)
                     out[k] = t[-20000:]
                 return self.send_json(200, out)
+            if what == 'du':   # (how much room each folder takes on the Mac's own disk, sizes only, nothing changed: John, 19 Nov 2026, "I only use
+                # the mac mini for grifflix, so happy to clear out space - do a check through")
+                import subprocess
+                path = os.path.realpath(os.path.expanduser(q.get('path') or '~'))
+                if not (path == '/' or path == os.path.expanduser('~') or path.startswith(os.path.expanduser('~') + '/') or path.split('/')[1:2] in (['Applications'], ['Library'], ['private'], ['Users'])):
+                    return self.send_json(403, {'error': 'Not a folder that can be measured.'})
+                try:
+                    r = subprocess.run(['du', '-k', '-x', '-d', '1', path], capture_output=True, text=True, timeout=600)
+                except subprocess.TimeoutExpired:
+                    return self.send_json(504, {'error': 'Took too long to measure.'})
+                rows = []
+                for line in (r.stdout or '').splitlines():
+                    k, _, f = line.partition('\t')
+                    if k.strip().isdigit():
+                        rows.append({'path': f, 'gb': round(int(k) / 1e6, 2)})
+                rows.sort(key=lambda x: -x['gb'])
+                snaps = ''
+                try:
+                    snaps = subprocess.run(['tmutil', 'listlocalsnapshots', '/'], capture_output=True, text=True, timeout=30).stdout.strip()[:2000]
+                except Exception:
+                    pass
+                return self.send_json(200, {'path': path, 'folders': rows[:40], 'snapshots': snaps, 'unreadable': len([l for l in (r.stderr or '').splitlines() if 'denied' in l.lower() or 'not permitted' in l.lower()])})
             if what == 'jf':   # (the media server's own answers, asked only; e.g. /Items/<id>, /Library/VirtualFolders)
                 path = q.get('path') or ''
                 if not re.match(r'^/(Items|Users/[0-9a-f]{32}/Items|Library/VirtualFolders|System/Info|Sessions|ScheduledTasks|Shows|Search/Hints)', path):
