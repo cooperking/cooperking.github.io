@@ -482,6 +482,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         </div>
       </section>
       <section class="card" data-tab="library">
+        <div class="kicker">Collections</div>
+        <h2>Your <em>collections</em></h2>
+        <p class="stat">Every collection in Grifflix, to look through or change. Only from here: Film and TV no longer show a Collections tab (John, 19 Nov 2026).</p>
+        <div class="state"><a class="btn primary" id="collgo" href="/grifflix/#browse/collections">Open your collections</a></div>
+      </section>
+      <section class="card" data-tab="library">
         <div class="kicker">Matching</div>
         <h2>Films matched by <em>TMDB</em></h2>
         <p class="stat" id="tmsay">With your TMDB key on the Mac mini, a film the media server has taken for another (No shown as No Country for Old Men) is put right by itself, by TMDB’s own details, its length included, so two films of the same name (the two Good Boys) are told apart. Get a key at <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">themoviedb.org/settings/api</a> (the “API Key”, or the “API Read Access Token”); your old get_metadata.py script has one in it too. Kept on the Mac only.</p>
@@ -679,7 +685,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     if (!LIBIDX) return null; var m = String(name || '').match(/^(.*?)\s*\((\d{4})\)\s*$/), nm = m ? m[1] : name, y = year || (m ? m[2] : '');
     var k = FK(nm); return (y && (LIBIDX[k + '|' + y] || LIBIDX[k + '|' + (+y - 1)] || LIBIDX[k + '|' + (+y + 1)])) || LIBIDX[k] || null;
   }
-  var SITE = location.hostname === 'admin.grifflix.co.uk' ? 'https://grifflix.co.uk/grifflix/' : '/grifflix/';   // (on the admin's own address, Grifflix is on its own)
+  var SITE = location.hostname === 'admin.grifflix.co.uk' ? 'https://grifflix.co.uk/grifflix/' : '/grifflix/';
+  (function () { var c = document.getElementById('collgo'); if (c) c.href = SITE + '#browse/collections'; })();   // (on the admin's own address, Grifflix is on its own)
   function flA(id, text) { return '<a class="flink" href="' + SITE + '#film/' + id + '" target="grifflix" rel="noopener" title="Open it in Grifflix">' + esc(text) + '</a>'; }
   if (location.hostname === 'admin.grifflix.co.uk') [].forEach.call(document.querySelectorAll('a[href^="/grifflix/"]'), function (a) { a.href = 'https://grifflix.co.uk' + a.getAttribute('href'); a.target = 'grifflix'; });
   // (and from grifflix.co.uk, a way to it, signed in: what this page knows of John's sign-in carried in the link's #, never sent anywhere)
