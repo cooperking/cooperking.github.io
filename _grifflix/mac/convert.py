@@ -194,6 +194,12 @@ def why(ms):
             return REPACK + ' (%s file)' % ((cont[0] if cont else '?').upper())
         if a and (g(a, 'Codec') or '').lower() not in ('aac', 'mp3'):
             return REPACK + ' (%s sound)' % ((g(a, 'Codec') or '?').upper())
+        # (more than a gigabyte of soundtracks beyond the one kept (dubs, second copies; commentaries stay): repackaged to one, the
+        # picture copied, a few minutes: John, 19 Nov 2026, "I only need one English soundtrack")
+        extra = [x for x in auds if x is not a and 'comment' not in (g(x, 'Title') or '').lower()]
+        secs = (g(ms, 'RunTimeTicks') or 0) / 1e7
+        if extra and sum((g(x, 'BitRate') or 640000) for x in extra) * secs / 8 / 1e9 >= 1.0:
+            return REPACK + ' (%d soundtracks: one kept)' % (len(extra) + 1)
         # (a file much bigger than its picture needs: made smaller, once, at the careful setting, last of all (John, 12 Nov 2026:
         # "converted to a smaller size without losing noticeable quality", "I don't want to convert films twice"). Grifflix's own
         # conversions are all under 8 Mbps, so never made again; HEVC is already efficient, so only far bigger ones)
@@ -492,14 +498,18 @@ def convert(item, ffmpeg, ffprobe, st):
     vf = "scale=w='min(%d,iw)':h='min(%d,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2" % (MAX_W, MAX_H)   # (only ever smaller, never enlarged)
     cmd = [ffmpeg, '-hide_banner', '-nostdin', '-y', '-i', src, '-map', '0:%d' % v['index']]
     main_a, chose, unsure = pick_sound(audio, item, s)
-    if main_a:   # sound: the film's own language as AAC stereo first (plays everywhere, and the one everyone hears), then every soundtrack:
-        # as it is where an MP4 can hold it, else as AC3 (surround kept): no language lost (DTS and Opus ones were dropped before)
+    if main_a:   # (of that language's soundtracks, the fullest: its 5.1, not a stereo copy made from it before)
+        same_ = [a for a in audio if not commentary(a) and lang(a) == lang(main_a)]
+        main_a = max(same_ or [main_a], key=lambda a: (int(a.get('channels') or 2), a is main_a))
+    if main_a:   # sound: ONE soundtrack, the film's own language, as AAC (plays everywhere), its surround kept as 5.1; and its commentaries.
+        # The dubs and the second copies dropped: a new film's eight dubs were more than half of it (John, 19 Nov 2026: Disclosure Day
+        # "only went down to 11gb after conversion", "I only need one English soundtrack")
         cmd += ['-map', '0:%d' % main_a['index']]
-        keep = [main_a] + [a for a in audio if a is not main_a and not commentary(a)] + [a for a in audio if a is not main_a and commentary(a)]
+        keep = [a for a in audio if a is not main_a and commentary(a)]
         for a in keep:
             cmd += ['-map', '0:%d' % a['index']]
         if len(audio) > 1:
-            log('  sound: %s first%s; %d soundtrack%s in all' % (lang_name(main_a), ' (%s)' % chose if chose else '', len(keep), '' if len(keep) == 1 else 's'))
+            log('  sound: %s%s, one soundtrack%s (%d dropped)' % (lang_name(main_a), ' (%s)' % chose if chose else '', ' and %d commentar%s' % (len(keep), 'y' if len(keep) == 1 else 'ies') if keep else '', len(audio) - 1 - len(keep)))
     text_subs = [x for x in subs if x.get('codec_name') in ('subrip', 'srt', 'ass', 'ssa', 'mov_text', 'webvtt', 'text')]
     if mkv:
         cmd += ['-map', '0:s?', '-map', '0:t?']   # every subtitle (pictures too) and attached fonts, as they are
@@ -521,10 +531,11 @@ def convert(item, ffmpeg, ffprobe, st):
         cmd += ['-c:v', 'libx264', '-preset', 'slow', '-crf', '21', '-maxrate', '%dk' % cap, '-bufsize', '%dk' % (cap * 2),
                 '-profile:v', 'high', '-level', '4.1', '-pix_fmt', 'yuv420p', '-vf', vf, '-disposition:v:0', 'default']
     if main_a:
-        cmd += ['-c:a:0', 'aac', '-b:a:0', '192k', '-ac:a:0', '2', '-metadata:s:a:0', 'title=Stereo', '-disposition:a:0', 'default']
+        ch_ = 6 if int(main_a.get('channels') or 2) >= 6 else 2
+        cmd += ['-c:a:0', 'aac', '-b:a:0', '384k' if ch_ == 6 else '192k', '-ac:a:0', str(ch_), '-metadata:s:a:0', 'title=' + ('%s 5.1' % lang_name(main_a) if ch_ == 6 else 'Stereo'), '-disposition:a:0', 'default']
         for n, a in enumerate(keep, 1):
             fits = mkv or a.get('codec_name') in ('ac3', 'eac3', 'aac')
-            cmd += ['-c:a:%d' % n, 'copy'] if fits else ['-c:a:%d' % n, 'ac3', '-b:a:%d' % n, '640k' if a is main_a else '448k', '-ac:a:%d' % n, str(min(6, int(a.get('channels') or 2)))]
+            cmd += ['-c:a:%d' % n, 'copy'] if fits else ['-c:a:%d' % n, 'aac', '-b:a:%d' % n, '128k', '-ac:a:%d' % n, '2']
             if commentary(a):   # (still marked as a commentary, and named one if it had no name, so the players list it as one: John, 18 Nov 2026)
                 cmd += ['-disposition:a:%d' % n, 'comment']
                 if not ((a.get('tags') or {}).get('title') or '').strip():
