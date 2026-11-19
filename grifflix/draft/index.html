@@ -1316,6 +1316,14 @@ html:not(.phone) .film { display: grid; grid-template-columns: minmax(220px, 30v
 html:not(.phone) .film .heroimg { display: none !important; }
 html:not(.phone) .film:not(.hasposter) .heroimg { display: block !important; position: relative !important; inset: auto !important; height: auto !important; aspect-ratio: 16 / 9 !important; width: 100% !important; border: 1px solid rgba(var(--kink), .25); }
 html:not(.phone) .film:not(.hasposter) { grid-template-columns: minmax(300px, 42vw) minmax(0, 1fr); }
+/* (the poster at the top, kept in view as the words or a series' episodes scroll beside it, not centred against them, where a long right side
+   left it halfway down: John, 19 Nov 2026, "pictures aren't correctly placed and it's noticeable particularly when the right side has a lot of info") */
+html:not(.phone) .film { align-items: start !important; }
+html:not(.phone) .film .ipost, html:not(.phone) .film:not(.hasposter) .heroimg { position: sticky !important; top: 96px; align-self: start; }
+html:not(.phone) .film > .in { align-self: start; }
+/* (the tagline, the synopsis and the credits to one width, so no paragraph stops short of the others: John, 19 Nov 2026, "Words on synopsis cut off
+   before words in other paragraphs") */
+html:not(.tv) .film .tag, html:not(.tv) .film .ov, html:not(.tv) .film .cred, html:not(.tv) .film .credits { max-width: 1040px !important; }
 html:not(.phone) .film .ipost img { display: block; width: 100%; height: auto; max-height: calc(100vh - 170px); object-fit: contain; object-position: center; box-shadow: 0 24px 60px rgba(0, 0, 0, .35); }
 html:not(.phone) .film .in { padding: 0 !important; min-height: 0 !important; display: block !important; }
 html.tv .film .ov { font-size: var(--ovfs, 21px) !important; max-width: none !important; display: block !important; -webkit-line-clamp: unset !important; overflow: visible !important; }   /* (all of it, made smaller to fit: tvFit) */
@@ -2389,7 +2397,16 @@ html .th-picture .vday.has::before { content: ""; position: absolute; left: 50%;
 .th-picture .vday.soon { background: #141210 !important; box-shadow: inset 0 0 0 1px rgba(244, 236, 216, .25) !important; }
 .th-picture .vday.soon .cs { display: grid !important; font: 600 15px/1.2 var(--kfont) !important; letter-spacing: .28em; color: rgba(244, 236, 216, .55) !important; text-transform: uppercase; }
 /* the look made consistent across the phone, the computer and the TV (a review of every screen: 15 Nov 2026) */
-.homeic[hidden] { display: none !important; }   /* (a home icon hidden over pop-ups showed all the same, alone in the top corner of a phone) */
+.homeic[hidden] { display: none !important; }
+/* (Criterion's and A24's pages: the bar on solid ground right across the screen, down to its line, which runs edge to edge, so nothing shows through
+   beside it as the page scrolls: John, 19 Nov 2026, "top bar ... doesn't go all the way across the page") */
+html.ga24:not(.tv) .bar-top::before, html.gcrit:not(.tv) .bar-top::before { content: "" !important; position: absolute !important; left: -100vw !important; right: -100vw !important; top: -160px !important; bottom: 0 !important; height: auto !important; background: var(--a24-page) !important; border-bottom: 1px solid var(--a24-line); z-index: -1 !important; pointer-events: none; }
+html.gcrit:not(.tv) .bar-top::before { background: var(--gc-page) !important; border-bottom-color: var(--gc-line); }
+/* (and there, the bar as on any page, at the top, whatever the month's theme: the Table's and the Hall's bar is set down from the top and
+   narrower, for their own scenes: John, 19 Nov 2026, "top bar has extra space at the top") */
+html.ga24.hall[data-page] #main, html.ga24.table[data-page] #main, html.gcrit.hall[data-page] #main, html.gcrit.table[data-page] #main { padding-top: 0 !important; }   /* (no room kept for the Table's lowered bar) */
+html.ga24.table:not(.tv) .bar-top, html.ga24.hall:not(.tv) .bar-top, html.gcrit.table:not(.tv) .bar-top, html.gcrit.hall:not(.tv) .bar-top { position: sticky !important; top: max(8px, calc(env(safe-area-inset-top) + 10px)) !important; left: auto !important; right: auto !important; }
+html.ga24 .bar-top, html.gcrit .bar-top { box-shadow: none !important; }   /* (a home icon hidden over pop-ups showed all the same, alone in the top corner of a phone) */
 html:not(.hall):not(.table):not(.tv) .bar-top::before { content: ""; position: fixed; left: 0; right: 0; top: 0; height: calc(env(safe-area-inset-top) + 66px); background: linear-gradient(var(--bg) 82%, rgba(0, 0, 0, 0)); z-index: -1; pointer-events: none; }   /* (the bar on its own ground, as the page scrolls under it: the calendar's films showed through CALENDAR and THEME) */
 html:not(.phone):not(.tv) #sheet #sq, html.tv #sheet #sq { width: 100% !important; }   /* (Search's box to the edge: the room kept for the X it no longer has) */
 #sheet input::placeholder, #sq::placeholder { color: var(--fg-2); opacity: 1; }   /* (the hint readable in every theme's colours) */
@@ -2475,7 +2492,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'e880407b5e61' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'ba13f799fb3b' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
