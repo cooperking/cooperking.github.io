@@ -2163,6 +2163,15 @@ html.ga24 .a24btn { background: var(--a24-ink) !important; color: var(--a24-page
 .a24in .go:hover, .a24in .go:focus-visible { background: #000; color: #fff; }
 @media (prefers-reduced-motion: reduce) { .a24in *, .a24in.end * { animation-duration: .01s !important; animation-delay: 0s !important; } }
 @media (max-width: 600px) { .a24in .cut figcaption { flex-direction: column; gap: 8px; bottom: 8vh; } }
+/* (a phone held upright: each still whole, the screen's width, its year and name under it, not a wide picture cut to a tall screen: John,
+   19 Nov 2026, "You don't really see the images well if it's on a phone with the intro") */
+@media (orientation: portrait), (max-aspect-ratio: 1/1) {
+  .a24in .cut figure { display: flex; flex-direction: column; justify-content: center; }
+  .a24in .cut img { height: auto; aspect-ratio: auto; object-fit: contain; }
+  .a24in .cut figcaption { position: static; flex-direction: column; align-items: flex-start; gap: 10px; padding: 22px 6vw 0; text-shadow: none; }
+  .a24in .cut figcaption span { font-size: clamp(30px, 10vw, 60px); }
+  .a24in .cut::after { display: none; }
+}
 /* its page: white, black, A24's list */
 html.ga24 { --bg: #fff !important; --kink: 0, 0, 0 !important; --line: rgba(0, 0, 0, .12) !important; --tile: rgba(0, 0, 0, .05) !important; --shadow: rgba(0, 0, 0, .1) !important; color-scheme: light; }
 html.ga24, html.ga24 body { background: var(--a24-page) !important; }
@@ -2444,7 +2453,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'c72edd37398d' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'ec16570165f0' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6067,7 +6076,7 @@ function a24Intro() {
   var later = function (f, ms) { timers.push(setTimeout(f, ms)); };
   var key = function (e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
   var go = function () {
-    if (done) return; done = true; clearTimeout(auto); timers.forEach(clearTimeout);
+    if (done) return; done = true; clearTimeout(auto); timers.forEach(clearTimeout); if (snd) snd.stop();
     if (coll) location.hash = '#collection/' + coll.id;
     el.classList.add('out'); setTimeout(function () { el.remove(); }, 600);
     document.removeEventListener('keydown', key, true);
@@ -6084,12 +6093,13 @@ function a24Intro() {
     later(tick, 1000);
   };
   var end = function (d) {   // (black, then A, 2, 4, each cut on, as a title card)
-    if (ended || done) return; ended = true; el.classList.add('end'); count(d);
+    if (ended || done) return; ended = true; el.classList.add('end'); count(d); if (snd) snd.hit();
     auto = setTimeout(go, 3200);
     if (TV) later(function () { var b = el.querySelector('.go'); if (b) b.focus(); }, 1300);
   };
   var data = null;
-  later(function () { end(data); }, 5000);   // (whatever happens, the name by then)
+  later(function () { end(data); }, 5000);
+  var snd = a24Sound();   // (its own few notes, made here: John, 19 Nov 2026, "Can we give it a simple soundtrack")   // (whatever happens, the name by then)
   a24Find().then(function (c) {
     coll = c; if (!c) return end(null);
     return Promise.all([api('collection?id=' + encodeURIComponent(c.id)), getJSON('/grifflix/img/a24/index.json').catch(function () { return []; })]).then(function (r) {
@@ -6108,13 +6118,68 @@ function a24Intro() {
       });
       var run = function () {
         if (started || ended || done) return; started = true;
-        var holds = [420, 340, 280, 230, 190, 160, 135, 115, 100, 90], t = 0, shown = figs.filter(function (f) { return f.firstChild.complete && f.firstChild.naturalWidth; });
-        shown.forEach(function (f, k) { later(function () { figs.forEach(function (x) { x.classList.toggle('on', x === f); }); }, t); t += holds[k] || 90; });
-        later(function () { end(data); }, t);
+        var holds = [600, 480, 380, 300, 240, 190, 150, 120, 100, 90], k = 0;
+        if (snd) snd.rise(2.65);
+        var ready = function (f) { return f.firstChild.complete && f.firstChild.naturalWidth; };
+        var left = figs.slice(), t0 = Date.now();
+        var step = function () {   // (whichever picture has come next; none yet, a moment's wait for one, but never long)
+          if (done || ended) return;
+          var n = left.filter(ready)[0];
+          if (!n) return left.length && Date.now() - t0 < 3200 ? later(step, 60) : end(data);
+          left.splice(left.indexOf(n), 1); figs.forEach(function (x) { x.classList.toggle('on', x === n); }); if (snd) snd.cut(k / (holds.length - 1));
+          later(step, holds[k++] || 90);
+        };
+        step();
       };
       later(function () { if (!started) { if (loaded >= 2) run(); else end(data); } }, 1500);   // (slow pictures: what's come, or straight to the name)
     });
   }).catch(function () { end(data); });
+}
+// (the intro's soundtrack, made by the browser, nothing to fetch: a low drone that climbs under the cut, a beat on each picture, quicker
+// as they come quicker, then, as the screen cuts to black, nothing for a breath and one deep hit with A24. Only when Grifflix's music is
+// on; the theme's music quietened while it plays)
+function a24Sound() {
+  if (!TMUS.on || CALM) return null;
+  var c = musicCtx(); if (!c) return null;
+  try { musicHush(); } catch (e) {}
+  var out = c.createGain(); out.gain.value = .0001; out.connect(c.destination);
+  out.gain.exponentialRampToValueAtTime(.55, c.currentTime + .4);
+  var noise = function (len) { var b = c.createBuffer(1, Math.ceil(c.sampleRate * len), c.sampleRate), d = b.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; };
+  // the drone: two low saws a hair apart, through a filter that opens as the cut goes on
+  var lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 180; lp.Q.value = 6; lp.connect(out);
+  var dg = c.createGain(); dg.gain.value = .0001; dg.connect(lp);
+  var oscs = [55, 55.4, 82.4].map(function (f, i) { var o = c.createOscillator(); o.type = i === 2 ? 'triangle' : 'sawtooth'; o.frequency.value = f; o.connect(dg); o.start(); return o; });
+  dg.gain.exponentialRampToValueAtTime(.35, c.currentTime + .8);
+  var stopped = false, api = {
+    rise: function (secs) {   // (the filter opening and the pitch edging up over the length of the cut)
+      var t = c.currentTime; lp.frequency.setValueAtTime(180, t); lp.frequency.exponentialRampToValueAtTime(2400, t + secs);
+      oscs.forEach(function (o) { o.frequency.setValueAtTime(o.frequency.value, t); o.frequency.exponentialRampToValueAtTime(o.frequency.value * 1.5, t + secs); });
+    },
+    cut: function (k) {   // (each picture: a low thud and a short tick, brighter as they speed up)
+      if (stopped) return; var t = c.currentTime;
+      var o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(48, t + .14);
+      g.gain.setValueAtTime(.9, t); g.gain.exponentialRampToValueAtTime(.001, t + .18); o.connect(g); g.connect(out); o.start(t); o.stop(t + .2);
+      var n = c.createBufferSource(), bp = c.createBiquadFilter(), ng = c.createGain(); n.buffer = noise(.05); bp.type = 'bandpass'; bp.frequency.value = 2500 + 5000 * k; bp.Q.value = 1.2;
+      ng.gain.setValueAtTime(.25 + .35 * k, t); ng.gain.exponentialRampToValueAtTime(.001, t + .05); n.connect(bp); bp.connect(ng); ng.connect(out); n.start(t);
+    },
+    hit: function () {   // (black: the drone cut dead, a breath, then one deep hit as the A comes on, ringing out)
+      if (stopped) return; var t = c.currentTime;
+      dg.gain.cancelScheduledValues(t); dg.gain.setValueAtTime(dg.gain.value, t); dg.gain.linearRampToValueAtTime(0, t + .02);
+      var h = t + .02, o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(90, h); o.frequency.exponentialRampToValueAtTime(38, h + .5);
+      g.gain.setValueAtTime(.0001, h); g.gain.exponentialRampToValueAtTime(1, h + .01); g.gain.exponentialRampToValueAtTime(.001, h + 2.8); o.connect(g); g.connect(out); o.start(h); o.stop(h + 3);
+      var n = c.createBufferSource(), lo = c.createBiquadFilter(), ng = c.createGain(); n.buffer = noise(1.5); lo.type = 'lowpass'; lo.frequency.setValueAtTime(3000, h); lo.frequency.exponentialRampToValueAtTime(200, h + 1.2);
+      ng.gain.setValueAtTime(.35, h); ng.gain.exponentialRampToValueAtTime(.001, h + 1.4); n.connect(lo); lo.connect(ng); ng.connect(out); n.start(h);
+      // (a high, quiet ring left under the name)
+      var r = c.createOscillator(), rg = c.createGain(); r.type = 'sine'; r.frequency.value = 880; rg.gain.setValueAtTime(.0001, h + .3); rg.gain.exponentialRampToValueAtTime(.05, h + .8); rg.gain.exponentialRampToValueAtTime(.0001, h + 3.4); r.connect(rg); rg.connect(out); r.start(h + .3); r.stop(h + 3.5);
+      setTimeout(function () { oscs.forEach(function (x) { try { x.stop(); } catch (e) {} }); }, 200);
+    },
+    stop: function () {   // (Enter, or a tap: faded out with the picture)
+      if (stopped) return; stopped = true; var t = c.currentTime;
+      out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(Math.max(.0001, out.gain.value), t); out.gain.exponentialRampToValueAtTime(.0001, t + .5);
+      setTimeout(function () { oscs.forEach(function (x) { try { x.stop(); } catch (e) {} }); try { out.disconnect(); } catch (e) {} }, 700);
+    }
+  };
+  return api;
 }
 var A24IMG = {}; (function () { var p = 0; window.a24Imgs = function () { if (p) return; p = 1; getJSON('/grifflix/img/a24/index.json').then(function (L) { (L || []).forEach(function (id) { A24IMG[id] = 1; }); }).catch(function () { p = 0; }); }; })();
 var A24D = {}, A24S = store.get('grifflix-a24sort') === 'name' ? 'name' : 'year', A24DIR = store.get('grifflix-a24dir') === '1' ? 1 : -1;
