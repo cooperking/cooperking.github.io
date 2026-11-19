@@ -2474,7 +2474,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '21c7ebcc8ade' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'ae162fe8dd33' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -3089,7 +3089,7 @@ var THEMEALL = THEMES.concat(THEMES_LATER), THEMEDEF = THEMES.slice();
 // a month not yet given a theme, from December 2026: plain black, a holding space till John chooses its theme on the admin page
 // (John, 9 Nov 2026: "can upcoming months have no theme - on the screen it will just be black, as a holding space - until I
 // have added them in. It makes it easier to choose")
-var BLANKFROM = '2026-12', THEMEBLANK = { key: 'blank', mob: [0, 0, 1280, 720], name: 'Grifflix', film: '', year: 0, by: '', bg: '#173a5e', ink: '#fff', font: 'var(--serif)', tw: 500, tt: 'none' };
+var BLANKFROM = '2026-12', THEMEBLANK = { key: 'blank', mob: [0, 0, 1280, 720], name: 'No theme yet',   /* (not a theme, and not called Grifflix, the zoetrope's name: John, 19 Nov 2026) */ film: '', year: 0, by: '', bg: '#173a5e', ink: '#fff', font: 'var(--serif)', tw: 500, tt: 'none' };
 THEMEALL.push(THEMEBLANK);
 var THEMEMONTHS = {};   // (months given their own theme on the admin page: { 'YYYY-MM': key })
 function themeOrder(keys) {   // true when the months changed
