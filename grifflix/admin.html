@@ -183,6 +183,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .mrow { display: grid; grid-template-columns: 56px minmax(0, 1fr) minmax(0, .8fr) auto; gap: 4px 14px; align-items: baseline; padding: 7px 0; border-top: 1px solid var(--line, rgba(255,255,255,.12)); font-size: 14px; }
 .mrow .y { font-variant-numeric: tabular-nums; opacity: .75; } .mrow b { font-weight: 600; } .mrow .d { opacity: .75; } .mrow .s { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; opacity: .8; white-space: nowrap; }
 .mrow.cb { grid-template-columns: 56px minmax(0, 1fr) 56px; }
+.mlist .mhead { margin-top: 30px; padding-top: 14px; border-top: 2px solid currentColor; }
+.mset summary { cursor: pointer; padding: 8px 0; border-top: 1px solid var(--line, rgba(255,255,255,.12)); font-size: 14px; font-weight: 600; } .mset summary small { font-weight: 400; opacity: .7; margin-left: 8px; }
+.mset[open] summary { padding-bottom: 4px; } .mset .mrow { padding-left: 14px; }
 @media (max-width: 600px) { .mrow { grid-template-columns: 44px minmax(0, 1fr); } .mrow .d, .mrow .s { grid-column: 2; } }
 /* the intros, each with where and when it plays, and a preview (John, 19 Nov 2026) */
 .inxlist { display: grid; gap: 10px; margin: 12px 0 16px; }
@@ -1058,6 +1061,15 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         return '<h3>' + (sp[b] ? 'No. ' + sp[b] + ' · ' : '') + esc(b) + '<small>' + have[b] + ' of ' + (have[b] + gone[b].length) + ' here</small></h3>' +
           gone[b].map(function (m) { return '<div class="mrow cb"><span class="y">' + esc(m[1] || '') + '</span><b>' + esc(m[0]) + '</b><span class="s">' + (m[2] ? 'No. ' + esc(m[2]) : '') + '</span></div>'; }).join('');
       }).join('') : '<p class="stat">Every box set begun is complete.</p>';
+      // (and those not begun: none of their films here yet, each opened to its films: John, 19 Nov 2026, "Can it also list box sets not started")
+      var none = (L.csetsnone || []).slice().sort(function (a, b) { return (+a.sp || 1e9) - (+b.sp || 1e9) || a.n.localeCompare(b.n); });
+      if (none.length) {
+        $('#cbnote').textContent += ' ' + none.length + ' more not begun, below.';
+        $('#cbmiss').insertAdjacentHTML('beforeend', '<h3 class="mhead">Not begun<small>' + none.length + ' box sets, ' + none.reduce(function (n, b) { return n + b.f.length; }, 0) + ' films</small></h3>' + none.map(function (b) {
+          return '<details class="mset"><summary>' + (b.sp ? 'No. ' + esc(b.sp) + ' · ' : '') + esc(b.n) + '<small>' + b.f.length + (b.f.length === 1 ? ' film' : ' films') + '</small></summary>' +
+            b.f.map(function (m) { return '<div class="mrow cb"><span class="y">' + esc(m[1] || '') + '</span><b>' + esc(m[0]) + '</b><span class="s">' + (m[2] ? 'No. ' + esc(m[2]) : '') + '</span></div>'; }).join('') + '</details>';
+        }).join(''));
+      } else if (!('csetsnone' in L)) $('#cbmiss').insertAdjacentHTML('beforeend', '<p class="stat">The box sets not begun come with the next Update from the Mac.</p>');
     }).catch(function (e) { $('#a24miss').innerHTML = $('#cbmiss').innerHTML = '<p class="stat">Couldn’t read the lists: ' + esc(e.message) + '</p>'; });
   })();
   function a24Look() {   // (A24 CHECKS: John's own collection, from the Mac, linked from here: John, 19 Nov 2026)

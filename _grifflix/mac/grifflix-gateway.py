@@ -1431,6 +1431,10 @@ def make_handler(g):
                 miss_ = [FINFO.get(x_, (x_.split('-', 1)[-1].replace('-', ' ').title(), '', '')) for x_ in mem_ if x_ not in OWNED]
                 if nm_ in SFILM and SFILM[nm_] in items:
                     items[SFILM[nm_]].setdefault('csetmiss', {})[snm(nm_)] = [list(m_) for m_ in miss_]
+                elif miss_ and len(miss_) == len(mem_):   # (a box set none of whose films is here yet, for the admin page's list: John,
+                    # 19 Nov 2026, "Can it also list box sets not started")
+                    sp_ = str((ctj_.get('setspine') or {}).get(nm_) or (SMETA.get(fold(snm(nm_)), ('', ''))[0] if 'SMETA' in dir() else '') or '')
+                    lists.setdefault('csetsnone', []).append({'n': snm(nm_), 'sp': sp_, 'f': [list(m_) for m_ in miss_]})
             sets = [s for s in g.items(Recursive='true', IncludeItemTypes='BoxSet', SortBy='SortName', Fields=quick).get('Items', []) if not owner_only_set(s.get('Name'))]   # (John's own collections: not in the site's files, which anyone can read)
             for o in resolve(sets, extra):
                 items[o['id']] = o
