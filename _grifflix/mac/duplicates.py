@@ -71,6 +71,8 @@ def films():
             parts = rel.split(os.sep)
             if rel.startswith('..') or len(parts) < 2 or (len(parts) > 2 and parts[1].lower() in EXTRAS) or '{edition-' in p.lower():
                 continue
+            if not os.path.exists(p):   # (a film just converted: the media server still has its old file, gone now, for a few minutes, which
+                continue                # showed as a copy of the new one: John, 19 Nov 2026, "it's showing two of the same film")
             ms = (g(it, 'MediaSources') or [{}])[0]
             v = next((s for s in g(ms, 'MediaStreams') or [] if g(s, 'Type') == 'Video'), {})
             out.append({'id': g(it, 'Id'), 'name': g(it, 'Name') or '', 'year': g(it, 'ProductionYear'), 'path': p, 'folder': parts[0],
