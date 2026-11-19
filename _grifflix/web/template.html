@@ -6047,17 +6047,17 @@ function critIntro() {
   el.innerHTML = '<div class="shelf" aria-hidden="true">' + sp.join('') + '</div><div class="core"><span class="lockup">' + gcMark('mark') +
     '<span class="cc">The Criterion<br>Collection</span></span><span class="at">at</span><span class="g gcx">Grifflix</span><span class="n" aria-live="polite">&nbsp;</span><button type="button" class="go">Enter</button></div>';
   document.body.appendChild(el);
-  var coll = null, done = false, t0 = Date.now(), auto = 0;
+  var coll = null, done = false, t0 = Date.now(), auto = 0, snd = critSound();   // (its own sound: John, 19 Nov 2026, "Can the criterion intro have sound too")
   var key = function (e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
-  var go = function () {
-    if (done) return; done = true; clearTimeout(auto);
+  var go = function (byItself) {
+    if (done) return; done = true; clearTimeout(auto); if (snd && byItself !== true) snd.stop();   // (by itself: its chord left to ring out)
     if (coll) location.hash = '#collection/' + coll.id;
     el.classList.add('out'); setTimeout(function () { el.remove(); }, 700);
     document.removeEventListener('keydown', key, true);
   };
   document.addEventListener('keydown', key, true);
-  el.onclick = go;
-  auto = setTimeout(go, 4200);
+  el.onclick = function () { go(); };
+  auto = setTimeout(function () { go(true); }, 4200);
   if (TV) setTimeout(function () { var b = el.querySelector('.go'); if (b) b.focus(); }, 2300);
   gcFind().then(function (c) {
     coll = c; var box = $('.gcin .n'); if (!c) { if (box) box.textContent = 'No Criterion collection in Grifflix yet'; return; }
@@ -6070,9 +6070,53 @@ function critIntro() {
         box.innerHTML = '<b>' + Math.round(n * e).toLocaleString('en-GB') + '</b> films' + (top ? ' · spines to <b>No. ' + Math.round(top * e).toLocaleString('en-GB') + '</b>' : '');
         if (k < 1 && !done) requestAnimationFrame(tick);
       };
-      setTimeout(tick, Math.max(0, 2000 - (Date.now() - t0)));
+      setTimeout(function () { if (snd && !done) snd.count(1.4); tick(); }, Math.max(0, 2000 - (Date.now() - t0)));
     });
   }).catch(function () {});
+}
+// (the Criterion intro's sound, made by the browser: quiet and classical, as its white page and spines are, apart from A24's: a soft
+// swish as the shelf of spines slides in, a piano's rising notes as the C draws itself, a warm chord as GRIFFLIX comes, and soft wooden
+// clicks as the films and spine numbers count up. Only when Grifflix's music is on)
+function critSound() {
+  if (!TMUS.on || CALM) return null;
+  var c = musicCtx(); if (!c) return null;
+  try { musicHush(); } catch (e) {}
+  var t0 = c.currentTime + .05, out = c.createGain(), stopped = false; out.gain.value = .5; out.connect(c.destination);
+  var verb = c.createConvolver(), vl = c.sampleRate * 2.2, ir = c.createBuffer(2, vl, c.sampleRate);   // (a small room's ring)
+  for (var ch = 0; ch < 2; ch++) { var dd = ir.getChannelData(ch); for (var i = 0; i < vl; i++) dd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / vl, 3); }
+  verb.buffer = ir; var wet = c.createGain(); wet.gain.value = .22; verb.connect(wet); wet.connect(out);
+  var noise = function (len) { var b = c.createBuffer(1, Math.ceil(c.sampleRate * len), c.sampleRate), d = b.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; };
+  var piano = function (f, at, v, len) {   // (a soft piano-like note: its first few overtones, a quick strike and a long fall)
+    [[1, 1], [2, .45], [3, .18], [4, .08]].forEach(function (h) {
+      var o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = f * h[0]; o.detune.value = (h[0] - 1) * 1.5;
+      g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(v * h[1], at + .008); g.gain.exponentialRampToValueAtTime(.0001, at + (len || 2.6) / h[0]);
+      o.connect(g); g.connect(out); g.connect(verb); o.start(at); o.stop(at + (len || 2.6) + .1);
+    });
+  };
+  // the shelf sliding in: a breath of filtered noise
+  var n = c.createBufferSource(), bp = c.createBiquadFilter(), ng = c.createGain(); n.buffer = noise(1.8); bp.type = 'bandpass'; bp.Q.value = .7;
+  bp.frequency.setValueAtTime(400, t0); bp.frequency.exponentialRampToValueAtTime(2200, t0 + .9); bp.frequency.exponentialRampToValueAtTime(900, t0 + 1.7);
+  ng.gain.setValueAtTime(.0001, t0); ng.gain.exponentialRampToValueAtTime(.12, t0 + .5); ng.gain.exponentialRampToValueAtTime(.0001, t0 + 1.7);
+  n.connect(bp); bp.connect(ng); ng.connect(out); n.start(t0);
+  // the C drawing itself: D, F sharp, A, D rising
+  [293.66, 369.99, 440, 587.33].forEach(function (f, k) { piano(f, t0 + .2 + k * .28, .16 - k * .015, 2.4); });
+  // GRIFFLIX: a D major chord, warm and low, ringing out
+  [73.42, 146.83, 220, 293.66, 369.99, 440, 587.33].forEach(function (f, k) { piano(f, t0 + 1.6 + k * .012, [.14, .16, .12, .11, .09, .08, .05][k], 4.2); });
+  return {
+    count: function (secs) {   // (soft wooden clicks as the numbers climb, quick then slowing, as they do)
+      if (stopped) return; var t = c.currentTime;
+      for (var k = 0; k < 14; k++) {
+        var at = t + secs * (1 - Math.pow(1 - k / 13, 2)) * .95, s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+        s.buffer = noise(.03); f.type = 'bandpass'; f.frequency.value = 1800 + (k % 3) * 300; f.Q.value = 6;
+        g.gain.setValueAtTime(.18, at); g.gain.exponentialRampToValueAtTime(.001, at + .03); s.connect(f); f.connect(g); g.connect(out); s.start(at);
+      }
+    },
+    stop: function () {
+      if (stopped) return; stopped = true; var t = c.currentTime;
+      out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(out.gain.value, t); out.gain.exponentialRampToValueAtTime(.0001, t + .5);
+      setTimeout(function () { try { out.disconnect(); } catch (e) {} }, 700);
+    }
+  };
 }
 // ---- A24 at Grifflix: its button beside Criterion's, its intro, and its page, in A24's own list of its films: the year, the film, who
 // directed it, who's in it, a still over the right half as you point at one (John, 19 Nov 2026, "I want an A24 page in the same way we
