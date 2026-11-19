@@ -2164,6 +2164,7 @@ html.ga24 .a24btn { background: var(--a24-ink) !important; color: var(--a24-page
    "The A24 intro is a bit too similar to the criterion one. Can we have a more original one") */
 .a24in { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; overflow: hidden; background: #000; color: #fff; cursor: pointer; transition: opacity .5s ease; }
 .a24in.out { opacity: 0; pointer-events: none; }
+html.introtop, html.introtop body { background: var(--introtop) !important; }
 .a24in .cut { position: absolute; inset: 0; }
 .a24in .cut figure { position: absolute; inset: 0; margin: 0; visibility: hidden; }
 .a24in .cut figure.on { visibility: visible; }
@@ -3170,7 +3171,7 @@ function monthTint(m) {   // the month's theme's one flat colour, and its ink: b
   R.setProperty('--bg', t.bg);
   R.setProperty('--gc-c', own ? GX.title : gcTint(t.bg));   // (the C on the bar in a colour of its own against the month's, easy to read: John, 18 Nov 2026)
   if (!dim) store.set('grifflix-lastbg', t.bg); R.background = t.bg;   // (the next load opens in it, lights up)
-  var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = t.bg;
+  var tc = document.querySelector('meta[name="theme-color"]'); if (tc && !document.documentElement.classList.contains('introtop')) tc.content = t.bg;
 }
 window.addEventListener('resize', function () { setTimeout(zBeamFit, 120); });
 window.addEventListener('resize', function () { setTimeout(function () { if ($('#globe')) THEMEFX.globe.fit(); }, 160); });   // (Kane's globe kept on the picture's)
@@ -3617,7 +3618,7 @@ function hallInfo(b) {   // the day you're on, in words: its day large (as The S
 // the table (November): the month round a table (Dr. Strangelove's War Room), black and white, the day you're on at the front
 function drawTable(C, n, m, mine) {
   var R = document.documentElement.style; R.setProperty('--bg', '#0a0a0a'); R.setProperty('--kink', '255, 255, 255');   // (black and white, always)
-  var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = '#0a0a0a';
+  var tc = document.querySelector('meta[name="theme-color"]'); if (tc && !document.documentElement.classList.contains('introtop')) tc.content = '#0a0a0a';
   var h = '<div class="thstage"><div class="thv">' + bigBoard() + '<div class="tring"></div><div class="tlamp"></div><div class="tcentre" id="tcentre"></div>';
   themeKeys().forEach(function (key) {   // (with the neighbouring months' nearest days: see drawTheme)
     var d = +key.slice(8), om = key.slice(0, 7) !== S.month, it = C.days[key];
@@ -3826,7 +3827,22 @@ function near(k) { return Math.max(0, 1 - Math.abs(k)); }   // (1 for the day yo
 var TMUS = { on: store.get('grifflix-music') ? store.get('grifflix-music') !== 'off' : !(/iP(hone|ad|od)/.test(navigator.userAgent) && !/[?&]app=/.test(location.search)),   // (an iPhone's browser plays nothing till a touch: there, off till turned on: John, 9 Nov 2026)
    list: null, a: null, k: null, ok: /[?&](sound=1|app=)/.test(location.search) || /GRIFFLIXTV\//.test(navigator.userAgent), pj: null, ctx: null };   // (Grifflix's own apps let sound start without a tap: the 3 2 1 and the music from the start; if one won't, the first tap)   // (sound=1: admin's preview, opened by a click there, may play at once)
 fetch('/grifflix/data/thememusic.json').then(function (r) { return r.json(); }).then(function (j) { TMUS.list = j; if (TMUS.k && !TMUS.a && !TMUS.pj) { var k = TMUS.k; TMUS.k = null; themeMusic(k); } }).catch(function () {});
-function musicCtx() { var A = window.AudioContext || window.webkitAudioContext; if (!A) return null; if (!TMUS.ctx) TMUS.ctx = new A(); if (TMUS.ctx.state === 'suspended') TMUS.ctx.resume(); return TMUS.ctx; }
+// (the sounds made here played as music is on an iPhone, through its silent switch, as the themes' recorded music already is: an iPhone
+// otherwise treats them as a ringer would and keeps them quiet on silent: John, 19 Nov 2026, "For some reason the phone can't be on silent -
+// but that's not true of other things"). Newer iPhones are told so; older ones are kept as music by a silent recording playing alongside
+function musicAsMedia() {
+  try { if (navigator.audioSession) { navigator.audioSession.type = 'playback'; return; } } catch (e) {}
+  if (TMUS.keep || !/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) || !('ontouchend' in document)) return;
+  try {
+    var sr = 8000, n = sr / 2, b = new ArrayBuffer(44 + n), v = new DataView(b), w = function (o, t) { for (var i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+    w(0, 'RIFF'); v.setUint32(4, 36 + n, true); w(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, sr, true); v.setUint32(28, sr, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true); w(36, 'data'); v.setUint32(40, n, true);
+    for (var i = 0; i < n; i++) v.setUint8(44 + i, 128);
+    var a = new Audio(URL.createObjectURL(new Blob([b], { type: 'audio/wav' }))); a.loop = true; a.setAttribute('playsinline', ''); TMUS.keep = a;
+    var p = a.play(); if (p && p.catch) p.catch(function () { TMUS.keep = null; });
+  } catch (e) {}
+}
+function musicCtx() { var A = window.AudioContext || window.webkitAudioContext; if (!A) return null; musicAsMedia(); if (!TMUS.ctx) TMUS.ctx = new A(); if (TMUS.ctx.state === 'suspended') TMUS.ctx.resume(); return TMUS.ctx; }
 function themeMusic(k) {   // the theme on the page now (null: none)
   if (k === TMUS.k && (TMUS.a || TMUS.pj || !TMUS.ok)) return;
   musicHush(); TMUS.k = k;
@@ -6115,18 +6131,25 @@ function gcMark(cls) { return '<svg class="' + (cls || '') + '" viewBox="-2 -2 6
 function gcFind() {   // The Criterion Collection itself (else the first collection called Criterion anything)
   return api('collections').then(function (r) { var L = r.collections || []; return L.filter(function (c) { return /^the criterion collection$/i.test(c.name); })[0] || L.filter(function (c) { return /criterion/i.test(c.name); })[0]; });
 }
+// (while an intro is on, the phone's strip at the top (the time, the battery) in the intro's colour, not the page's behind it: John, 19 Nov
+// 2026, a photo of the A24 intro: "White bar at the top doesn't look good")
+function introTop(col) {
+  var R = document.documentElement, tc = document.querySelector('meta[name="theme-color"]'), was = tc ? tc.content : '';
+  R.style.setProperty('--introtop', col); R.classList.add('introtop'); if (tc) tc.content = col;
+  return function () { R.classList.remove('introtop'); R.style.removeProperty('--introtop'); var t = document.querySelector('meta[name="theme-color"]'), bg = getComputedStyle(R).getPropertyValue('--bg').trim(); if (t) t.content = bg || was; };
+}
 function critIntro() {
   if ($('.gcin')) return;
   var el = document.createElement('div'); el.className = 'gcin'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'The Criterion Collection at Grifflix');
   var sp = []; for (var i = 1; i <= 90; i++) sp.push('<i><b>' + ((i * 13 + 7) % 1400) + '</b></i>');
   el.innerHTML = '<div class="shelf" aria-hidden="true">' + sp.join('') + '</div><div class="core"><span class="lockup">' + gcMark('mark') +
     '<span class="cc">The Criterion<br>Collection</span></span><span class="at">at</span><span class="g gcx">Grifflix</span><span class="n" aria-live="polite">&nbsp;</span></div>';
-  document.body.appendChild(el);
+  document.body.appendChild(el); var unTop = introTop(getComputedStyle(el).backgroundColor);
   var coll = null, done = false, t0 = Date.now(), auto = 0, snd = critSound();   // (its own sound: John, 19 Nov 2026, "Can the criterion intro have sound too")
   var key = function (e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
   var go = function (byItself) {
     if (done) return; done = true; clearTimeout(auto); if (snd && byItself !== true) snd.stop();   // (by itself: its chord left to ring out)
-    if (coll) location.hash = '#collection/' + coll.id;
+    if (coll) location.hash = '#collection/' + coll.id; setTimeout(unTop, 650);
     el.classList.add('out'); setTimeout(function () { el.remove(); }, 700);
     document.removeEventListener('keydown', key, true);
   };
@@ -6200,14 +6223,14 @@ function a24Intro() {
   if ($('.a24in')) return; a24Fonts();
   var el = document.createElement('div'); el.className = 'a24in'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'A24 at Grifflix');
   el.innerHTML = '<div class="cut" aria-hidden="true"></div><div class="core">' + a24Mark('big') + '<span class="at">at</span><span class="g gcx">Grifflix</span><span class="n" aria-live="polite">&nbsp;</span></div>';
-  document.body.appendChild(el);
+  document.body.appendChild(el); var unTop = introTop('#000');
   var coll = null, done = false, auto = 0, timers = [], ended = false;
   var later = function (f, ms) { timers.push(setTimeout(f, ms)); };
   var key = function (e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
   var go = function (byItself) {
     if (done) return; done = true; clearTimeout(auto); timers.forEach(clearTimeout); if (snd && byItself !== true) snd.stop();   // (by itself: the chord left to ring out over the A24 page)
     if (coll) location.hash = '#collection/' + coll.id;
-    el.classList.add('out'); setTimeout(function () { el.remove(); }, 600);
+    el.classList.add('out'); setTimeout(function () { el.remove(); unTop(); }, 600);
     document.removeEventListener('keydown', key, true);
   };
   document.addEventListener('keydown', key, true);
