@@ -2317,6 +2317,10 @@ html.tv .a24list { --ayw: 150px; } html.tv .a24r .af { font-size: 34px; } html.t
   html.phone .vtog span { padding: 6px 5px 5px; letter-spacing: .04em; text-indent: .04em; font-size: 9.5px; }
   html.phone .bar-top .ico, html.tview.hall .bar-top .ico.tmute, html.tview.table .bar-top .ico.tmute { width: 26px !important; }
 }
+/* (GRIFFLIX on a phone spaced as it is everywhere else, wide, not squeezed up to fit: there's room for it: John, 19 Nov 2026, a photo of the
+   bar over A24's "at GRIFFLIX": "the spacing is correct on the lower one and not on the top") */
+@media (max-width: 600px) { html .bar-top .brand, html.phone .bar-top .brand, html #shbrand { letter-spacing: .45em !important; } }
+@media (max-width: 359px) { html .bar-top .brand, html.phone .bar-top .brand, html #shbrand { font-size: 10px !important; letter-spacing: .4em !important; } }
 /* the TV: one highlight for whatever's chosen, everywhere: a white ring a little out from it, a dark band between, so it reads on
    a light picture or a dark room; the same thickness and gap however large the chosen thing is drawn (--ks: one over its scale)
    (John, 11 Nov 2026: "highlighting can sometimes be a white box sometimes a white border, depending on the theme. Either way
@@ -2502,7 +2506,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'd0ecf86b45df' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '479cfa59cf9d' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
