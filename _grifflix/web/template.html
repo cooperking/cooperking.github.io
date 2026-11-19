@@ -6156,6 +6156,9 @@ function a24Draw(g, items, fq) {
   $$('.a24r[data-item]', g).forEach(function (r) { r.onmouseenter = function () { show(r); }; r.onfocus = function () { show(r); }; });
   g.onmouseleave = function () { show(null); }; g.onfocusout = function (e) { if (!g.contains(e.relatedTarget)) show(null); };
 }
+// (the admin page's Intros preview: ?intro=criterion or ?intro=a24 plays that one as the page opens: John, 19 Nov 2026, "Can we add the
+// intros to the theme section for review too")
+(function () { var m = /[?&]intro=(criterion|a24)(&|$)/.exec(location.search); if (!m) return; var n = 0, t = setInterval(function () { if (!ME && ++n < 20) return; clearInterval(t); if (m[1] === 'a24') a24Intro(); else critIntro(); }, 300); })();
 function navGo(w) {
   if (w === 'criterion') { if (dlg.open) closeSheet(); return critIntro(); }
   if (w === 'a24') { if (dlg.open) closeSheet(); return a24Intro(); }
