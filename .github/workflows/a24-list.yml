@@ -1,0 +1,36 @@
+name: A24 list
+# A24's own list of its films read afresh each week, so a new A24 film is recognised: the Mac puts it in the A24 collection as it
+# comes in, and its still is fetched (John, 19 Nov 2026).
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 5 * * 1"   # (Mondays, early)
+
+permissions:
+  contents: write
+
+concurrency:
+  group: grifflix-data
+  cancel-in-progress: false
+
+jobs:
+  a24:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: pip install --quiet playwright pillow && python -m playwright install --with-deps chromium
+      - name: A24's list, and stills for A24 films without one
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          python3 _grifflix/a24_list.py
+          python3 _grifflix/a24_stills.py || echo "A24 stills: skipped"
+          git add grifflix/a24-list.json grifflix/img/a24
+          if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
+          git commit --quiet -m "A24's list, read afresh"
+          for i in 1 2 3 4 5; do git pull --quiet --rebase origin main && git push --quiet origin HEAD:main && exit 0; sleep 5; done
+          exit 1

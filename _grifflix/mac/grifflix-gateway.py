@@ -4676,7 +4676,7 @@ def ask_disk_tidy(req):
         if os.path.exists(p):
             parts.append('%s (%.1f GB)' % (rel, _du(p) / 1e9))
     if os.path.isdir(TIDY_PLEX):
-        parts.append('Plex’s library data (%.1f GB; its database copied to the G-Drive first, so its watch history and settings are kept)' % (_du(TIDY_PLEX) / 1e9))
+        parts.append('Plex’s library data, all of it (%.1f GB)' % (_du(TIDY_PLEX) / 1e9))
     for a in TIDY_APPS:
         if os.path.exists(a):
             parts.append('%s (%.1f GB)' % (os.path.basename(a), _du(a) / 1e9))
@@ -4693,28 +4693,14 @@ def act_disk_tidy(g, req):
         if os.path.exists(p):
             shutil.rmtree(p, ignore_errors=True)
             (kept if os.path.exists(p) else done).append(rel.split('/')[-1])
-    if os.path.isdir(TIDY_PLEX):   # (Plex quit and kept off; its database kept on the G-Drive; only then the rest of it gone)
+    if os.path.isdir(TIDY_PLEX):   # (Plex quit and kept off, then all of it gone: nothing from it wanted: John, 19 Nov 2026, "don't need watch
+        # history kept from plex - probably don't need any of it now")
         try:
             act_plex_off(g, req)
         except Exception:
             pass
-        db = os.path.join(TIDY_PLEX, 'Plug-in Support', 'Databases')
-        to = os.path.join(os.environ.get('GRIFFLIX_MEDIA') or '/Volumes/G-Drive/Grifflix', 'Plex database (kept)')
-        try:
-            if os.path.isdir(db):
-                shutil.copytree(db, to, dirs_exist_ok=True)
-            pref = os.path.join(TIDY_HOME, 'Library/Preferences/com.plexapp.plexmediaserver.plist')
-            if os.path.exists(pref):
-                shutil.copy2(pref, to)
-            ok = not os.path.isdir(db) or all(os.path.exists(os.path.join(to, f)) for f in os.listdir(db))
-        except Exception as e:
-            ok = False
-            log('Tidy: Plex’s database couldn’t be copied (%s): Plex left as it was' % e)
-        if ok:
-            shutil.rmtree(TIDY_PLEX, ignore_errors=True)
-            (kept if os.path.exists(TIDY_PLEX) else done).append('Plex’s library data (its database kept in “Plex database (kept)” on the G-Drive)')
-        else:
-            kept.append('Plex’s library data (its database couldn’t be copied to the G-Drive first)')
+        shutil.rmtree(TIDY_PLEX, ignore_errors=True)
+        (kept if os.path.exists(TIDY_PLEX) else done).append('Plex’s library data')
     for a in TIDY_APPS:
         if os.path.exists(a):
             shutil.rmtree(a, ignore_errors=True)
