@@ -3888,7 +3888,7 @@ function projector() {   // (the zoetrope turning: a soft whirr of air through i
     }
   };
 }
-function musicKick(days) { if (TMUS.pj) TMUS.pj.kick(days, 1100); }   // (the drum turning, by so many days)
+function musicKick(days, ms) { if (TMUS.pj) TMUS.pj.kick(days, ms || 1100); }   // (the drum turning, by so many days)
 function musicBeep(at) {   // (the leader's beep on each number, at its moment on the sound's own clock)
   if (!TMUS.on || !TMUS.ok) return; var c = musicCtx(); if (!c) return;
   var o = c.createOscillator(), g = c.createGain(), t = at || c.currentTime; o.frequency.value = 1000; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.14, t + .01); g.gain.linearRampToValueAtTime(0, t + .13); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + .15);
@@ -4140,8 +4140,11 @@ function sheetStep(d) { return $('#sheetIn .tcal') ? calStep(d) : dayStep(d); } 
 function gestStart() { var f = $('#cal button.front'); S.gest = { at: f ? f.dataset.day : null }; }   // (a swipe begun: where from)
 function themeStep(dir, g) {   // the day after or before with a film; at a month's end, on into the next month's theme (g: part of a swipe)
   if (S.wiping) return false;   // (a month's wipe under way: the rest of the swipe waits)
-  var sel = '#cal button.vday, #cal button.hday, #cal button.tday', bs = $$(sel), i = bs.indexOf(document.activeElement);
-  if (i < 0) i = bs.indexOf($('#cal button.front'));   // (a phone's buttons, a click: from the day that's showing)
+  // (from the day that's showing, not from whichever button has the focus: a day the film strip has hidden for the moment can't take it,
+  // so the next press went from the day before again, and the arrows stuck: John, 19 Nov 2026, "it was stuck by pressing the arrow and
+  // wouldn't move past the 4th of this month")
+  var sel = '#cal button.vday, #cal button.hday, #cal button.tday', bs = $$(sel), i = bs.indexOf($('#cal button.front'));
+  if (i < 0) i = bs.indexOf(document.activeElement);
   var nb = bs[i + dir];
   // (from the month's own 1st or last day onto the other month's: that month's theme at once, as the scroll leaves it, never after it's
   // stopped: John, 9 Nov 2026: "Change the moment the scroll leaves the first of the month into the last month, or the moment it leaves
@@ -4970,7 +4973,7 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
   },
   swipe: function (c) { return { x: -1, y: 0, px: c.mob ? 60 : 90 }; },   // (turn the drum with the finger)
   place: function (all, at, c) {
-    this.all = all; this.c = c; this._tgt = at; if (this._at != null && Math.abs(this._at - at) > .3) musicKick(Math.abs(this._at - at));
+    this.all = all; this.c = c; this._tgt = at; if (this._at != null && Math.abs(this._at - at) > .3 && performance.now() > (this._bigKick || 0)) musicKick(Math.abs(this._at - at));   /* (not again as a big spin lands: its sound was its own, all the way) */
     var now = performance.now(), mv = this._at != null && Math.abs(at - this._at) > 1e-3;
     if (mv && !this._intro && !this._tplay && now - (this._lp || 0) > 650 && $('#zstagef.open')) this.trainOnce(1700);
     if (mv) this._lp = now;
@@ -5057,6 +5060,9 @@ THEMEFX.picture = { own: true,   // (the month's own days only: John, 10 Nov 202
     var xs0 = me._xs || .5, xt = .5 + (H[rf] - me._d0) * NB, G = 26, want = dir * G * T / 1000 / m, Sd = xt - xs0;
     Sd += NB * Math.round((want - Sd) / NB); if (Sd * dir <= 0) Sd += dir * NB;
     var t0 = performance.now(), tok = me._gtok = {}; me._bigUntil = t0 + T; me._gal = true;
+    // (its whirr from the moment it's spun, as long as it spins, not after: John, 19 Nov 2026, "The sound of the spin doesn't work on a big spin
+    // either and happens afterwards")
+    musicKick(3, T); me._bigKick = t0 + T + 600;
     (function f(t) {
       if (tok !== me._gtok || !$('#zstagef') || me._at == null) { me._fpos = null; return; }
       var u = Math.min(1, (t - t0) / T), r = rs + S * h(u);
