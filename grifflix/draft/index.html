@@ -2241,7 +2241,7 @@ html.ga24 #cbody .card .t, html.ga24 #cbody .card .s, html.ga24 #cbody .empty { 
 .a24list.st .a24r.on::before { border-top-color: rgba(255, 255, 255, .8); }
 /* (a title running on over the still: white over it, as on A24's: its colour split at the still's edge, half the screen's width: John,
    19 Nov 2026, "when a title on the A24 site goes over a picture, the font colour changes for that part of it") */
-.a24list.st .a24r.on .af { color: transparent; background: linear-gradient(90deg, var(--a24-dim) 50vw, #fff 50vw) fixed; -webkit-background-clip: text; background-clip: text; }
+.a24list.st .a24r.on .af { color: transparent; background: linear-gradient(90deg, var(--a24-dim) 50vw, #fff 50vw) fixed; -webkit-background-clip: text; background-clip: text; padding: .14em 0 .22em; margin: -.14em 0 -.22em; }   /* (room for the g's and y's tails and an accent's top, painted, not cut: John, 19 Nov 2026, Sing Sing) */
 .a24list.st .a24r.on .as b { background: #fff; color: #000; text-shadow: none; }
 .a24r:focus-visible { outline: none; } .a24r:focus-visible .af { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: .12em; }
 @media (max-width: 1000px) { .a24r { grid-template-columns: var(--ayw) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); } .a24r .as { display: none; } }
@@ -2492,7 +2492,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '82b9565f378c' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '2a460a7c9cb2' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
