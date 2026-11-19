@@ -1797,13 +1797,20 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       // delete original if in doubt")
       var ask = (c.ask || []).filter(function (x) { return x.chosen !== 'ok'; });
       $('#cvask').innerHTML = ask.length ? '<p class="stat" style="margin:14px 0 6px"><b style="color:#f08a4b">Check the language</b>: not sure these are heard in their original language. Each was done with the best guess, and its original kept.</p>' + ask.map(function (x) {
-        var ch = x.chosen && x.chosen !== x.chose ? x.chosen : '';
-        return '<div class="cvpin" style="flex-wrap:wrap;gap:8px"><b style="flex-basis:100%">' + FL(x.name, x.year, x.id) + (x.year ? ' (' + x.year + ')' : '') + ': heard in ' + esc(ch || x.chose) + ' <small style="color:var(--muted);font-weight:400">' + (ch ? 'changing now' : esc(x.why || '')) + '</small></b>' +
+        var ch = x.chosen && x.chosen !== x.chose ? x.chosen : '', named = /^is:/.test(ch); if (named) ch = ch.slice(3);
+        return '<div class="cvpin" style="flex-wrap:wrap;gap:8px"><b style="flex-basis:100%">' + FL(x.name, x.year, x.id) + (x.year ? ' (' + x.year + ')' : '') + ': heard in ' + esc(ch || x.chose) + ' <small style="color:var(--muted);font-weight:400">' + (named ? 'its soundtrack named so when the converter next runs' : ch ? 'changing now' : esc(x.why || '')) + '</small></b>' +
           (ch ? '' : (x.options || []).filter(function (o) { return o !== x.chose; }).map(function (o) { return '<button type="button" data-lgid="' + x.id + '" data-lg="' + esc(o) + '" data-n="' + esc(x.name) + '">Change to ' + esc(o) + '</button>'; }).join('') +
-            '<button type="button" data-lgid="' + x.id + '" data-lg="ok" data-n="' + esc(x.name) + '">' + esc(x.chose) + ' is right</button>') + '</div>';
+            (x.chose === 'unnamed'   // (a soundtrack with no language named: John says which it is, and it's written on it: John, 19 Nov 2026, Donnie Darko)
+              ? '<button type="button" data-lgid="' + x.id + '" data-lg="is:English" data-n="' + esc(x.name) + '">It’s English</button><select data-lgsel="' + x.id + '" data-n="' + esc(x.name) + '" aria-label="It’s in another language"><option value="">It’s in another language…</option>' +
+                ['French', 'German', 'Spanish', 'Italian', 'Japanese', 'Korean', 'Chinese', 'Portuguese', 'Russian', 'Polish', 'Swedish', 'Danish', 'Norwegian', 'Finnish', 'Dutch', 'Czech', 'Hungarian', 'Greek', 'Turkish', 'Persian', 'Hebrew', 'Hindi', 'Arabic', 'Catalan', 'Thai', 'Ukrainian', 'Romanian'].map(function (l) { return '<option>' + l + '</option>'; }).join('') + '</select>'
+              : '<button type="button" data-lgid="' + x.id + '" data-lg="ok" data-n="' + esc(x.name) + '">' + esc(x.chose) + ' is right</button>')) + '</div>';
       }).join('') : '';
       Array.prototype.forEach.call(document.querySelectorAll('[data-lgid]'), function (b) { b.onclick = function () {
-        cvPost({ op: 'lang', id: b.dataset.lgid, lang: b.dataset.lg, name: b.dataset.n }).then(function (j) { toast(b.dataset.lg === 'ok' ? 'Thanks: ' + b.dataset.n + ' left as it is (its original is in The originals)' : b.dataset.n + ': changing to ' + b.dataset.lg + ', a few minutes'); convert.draw(j); }).catch(function (e) { toast(e.message); });
+        cvPost({ op: 'lang', id: b.dataset.lgid, lang: b.dataset.lg, name: b.dataset.n }).then(function (j) { toast(b.dataset.lg === 'ok' ? 'Thanks: ' + b.dataset.n + ' left as it is (its original is in The originals)' : /^is:/.test(b.dataset.lg) ? b.dataset.n + ': its soundtrack named ' + b.dataset.lg.slice(3) + ' when the converter next runs' : b.dataset.n + ': changing to ' + b.dataset.lg + ', a few minutes'); convert.draw(j); }).catch(function (e) { toast(e.message); });
+      }; });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-lgsel]'), function (sl) { sl.onchange = function () {
+        if (!sl.value) return; var l = sl.value;
+        cvPost({ op: 'lang', id: sl.dataset.lgsel, lang: 'is:' + l, name: sl.dataset.n }).then(function (j) { toast(sl.dataset.n + ': its soundtrack named ' + l + ' when the converter next runs'); convert.draw(j); }).catch(function (e) { toast(e.message); });
       }; });
       if (c.disks && c.disks.length) {   // (each disk's free space, and a warning before one fills: John, 12 Nov 2026, the Mac's own disk filled unnoticed)
         var gb = function (b) { return b >= 1e12 ? (b / 1e12).toFixed(1) + ' TB' : Math.round(b / 1e9) + ' GB'; };
