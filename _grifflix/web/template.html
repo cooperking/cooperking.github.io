@@ -1981,6 +1981,7 @@ body { font-size: 14px; } .film h2 { font-size: clamp(34px, 4.1vw, 68px) !import
 .zlead .gx { color: #fff !important; }
 .gxs { display: inline-block; vertical-align: -.12em; } .brand .gxs { display: block; } .gxs { height: 1em; overflow: visible; fill: none; stroke: currentColor; stroke-width: 1.2px; stroke-width: max(1.15px, .075em); stroke-linejoin: miter; stroke-miterlimit: 3; shape-rendering: geometricPrecision; }
 .gxs path { vector-effect: non-scaling-stroke; }
+.gcin .g .gxs, .a24in .g .gxs { stroke-width: 1.2px; stroke-width: max(1.15px, .034em); }   /* (the intros' GRIFFLIX the same picture, its finer line, large: John, 19 Nov 2026, "The criterion picture for the collection doesn't look like it's using the svg") */
 .zlt { font-family: "Grifflix Display", "Federo", Georgia, serif !important; font-weight: 400 !important; font-size: 1.15em; }
 /* Grifflix's own look (its palette: Orange, Vista Bleu, Amande, Bleu Oxford): the room flat in its colour, the type in its ink,
    the zoetrope and the cinema in the palette, no red velvet (John, 10 Nov 2026) */
@@ -6153,7 +6154,7 @@ function critIntro() {
   var el = document.createElement('div'); el.className = 'gcin'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'The Criterion Collection at Grifflix');
   var sp = []; for (var i = 1; i <= 90; i++) sp.push('<i><b>' + ((i * 13 + 7) % 1400) + '</b></i>');
   el.innerHTML = '<div class="shelf" aria-hidden="true">' + sp.join('') + '</div><div class="core"><span class="lockup">' + gcMark('mark') +
-    '<span class="cc">The Criterion<br>Collection</span></span><span class="at">at</span><span class="g gcx">Grifflix</span><span class="n" aria-live="polite">&nbsp;</span></div>';
+    '<span class="cc">The Criterion<br>Collection</span></span><span class="at">at</span><span class="g gcx" aria-label="Grifflix">' + gxSvg(.5) + '</span><span class="n" aria-live="polite">&nbsp;</span></div>';
   document.body.appendChild(el); var unTop = introTop(getComputedStyle(el).backgroundColor);
   var coll = null, done = false, t0 = Date.now(), auto = 0, snd = critSound();   // (its own sound: John, 19 Nov 2026, "Can the criterion intro have sound too")
   var key = function (e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
@@ -6237,7 +6238,7 @@ function a24Find() { return api('collections').then(function (r) { return (r.col
 function a24Intro() {
   if ($('.a24in')) return; a24Fonts();
   var el = document.createElement('div'); el.className = 'a24in'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'A24 at Grifflix');
-  el.innerHTML = '<div class="cut" aria-hidden="true"></div><div class="core">' + a24Mark('big') + '<span class="at">at</span><span class="g gcx">Grifflix</span><span class="n" aria-live="polite">&nbsp;</span></div>';
+  el.innerHTML = '<div class="cut" aria-hidden="true"></div><div class="core">' + a24Mark('big') + '<span class="at">at</span><span class="g gcx" aria-label="Grifflix">' + gxSvg(.5) + '</span><span class="n" aria-live="polite">&nbsp;</span></div>';
   document.body.appendChild(el); var unTop = introTop('#000');
   var coll = null, done = false, auto = 0, timers = [], ended = false;
   var later = function (f, ms) { timers.push(setTimeout(f, ms)); };
