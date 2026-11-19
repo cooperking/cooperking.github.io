@@ -2492,7 +2492,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'ba13f799fb3b' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '0d351b4da295' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6139,40 +6139,35 @@ function critIntro() {
     });
   }).catch(function () {});
 }
-// (the Criterion intro's sound, made by the browser, as an old film's opening titles, not twee: a low swell of strings rising as the
-// shelf slides in and the C draws itself, a soft drum as GRIFFLIX comes, and a broad, warm chord of brass ringing out (John, 19 Nov 2026,
-// "Can we have different music for the criterion channel. It's too twee"). Only when Grifflix's music is on)
+// (the Criterion intro's sound, made by the browser, quiet and subtle: a soft swell of strings under the C as it draws itself, then a warm chord
+// blooming slowly under GRIFFLIX and fading away; no drum, nothing bright (John, 19 Nov 2026, "not quite right yet. More subtle"). Only when
+// Grifflix's music is on)
 function critSound() {
   if (!TMUS.on || CALM) return null;
   var c = musicCtx(); if (!c) return null;
   try { musicHush(); } catch (e) {}
-  var t0 = c.currentTime + .05, out = c.createGain(), stopped = false; out.gain.value = .55; out.connect(c.destination);
-  var verb = c.createConvolver(), vl = c.sampleRate * 3, ir = c.createBuffer(2, vl, c.sampleRate);   // (a hall's ring)
-  for (var ch = 0; ch < 2; ch++) { var dd = ir.getChannelData(ch); for (var i = 0; i < vl; i++) dd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / vl, 2.5); }
-  verb.buffer = ir; var wet = c.createGain(); wet.gain.value = .35; verb.connect(wet); wet.connect(out);
-  var voice = function (f, type, at, att, hold, rel, v, lpFrom, lpTo, into) {   // (one held note: a slow rise, held, a slow fall, a filter opening)
-    var o = c.createOscillator(), o2 = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain();
-    o.type = o2.type = type; o.frequency.value = o2.frequency.value = f; o.detune.value = -7; o2.detune.value = 7;
-    lp.type = 'lowpass'; lp.Q.value = .6; lp.frequency.setValueAtTime(lpFrom, at); lp.frequency.exponentialRampToValueAtTime(lpTo, at + att + hold * .5);
+  var t0 = c.currentTime + .05, out = c.createGain(), stopped = false; out.gain.value = .32; out.connect(c.destination);
+  var verb = c.createConvolver(), vl = c.sampleRate * 3.2, ir = c.createBuffer(2, vl, c.sampleRate);   // (a soft hall's ring)
+  for (var ch = 0; ch < 2; ch++) { var dd = ir.getChannelData(ch); for (var i = 0; i < vl; i++) dd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / vl, 3); }
+  verb.buffer = ir; var wet = c.createGain(); wet.gain.value = .5; verb.connect(wet); wet.connect(out);
+  var voice = function (f, at, att, hold, rel, v, lp) {   // (one soft held note: two rounded tones a hair apart, a slow rise and a long fall)
+    var o = c.createOscillator(), o2 = c.createOscillator(), fl = c.createBiquadFilter(), g = c.createGain();
+    o.type = 'triangle'; o2.type = 'sine'; o.frequency.value = o2.frequency.value = f; o.detune.value = -4; o2.detune.value = 4;
+    fl.type = 'lowpass'; fl.frequency.value = lp || 1200; fl.Q.value = .3;
     g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(v, at + att); g.gain.setValueAtTime(v, at + att + hold); g.gain.exponentialRampToValueAtTime(.0001, at + att + hold + rel);
-    o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(into || out); g.connect(verb); o.start(at); o2.start(at); o.stop(at + att + hold + rel + .1); o2.stop(at + att + hold + rel + .1);
+    o.connect(fl); o2.connect(fl); fl.connect(g); g.connect(out); g.connect(verb); o.start(at); o2.start(at); o.stop(at + att + hold + rel + .1); o2.stop(at + att + hold + rel + .1);
   };
-  // the strings: low D and A, rising out of nothing as the spines slide by and the C draws itself
-  [[73.42, .09], [110, .07], [146.83, .05]].forEach(function (n) { voice(n[0], 'sawtooth', t0, 1.3, .3, 1.6, n[1], 180, 900); });
-  // the drum: soft and low, as GRIFFLIX comes
-  var h = t0 + 1.6, d = c.createOscillator(), dg = c.createGain(); d.type = 'sine'; d.frequency.setValueAtTime(82, h); d.frequency.exponentialRampToValueAtTime(46, h + .6);
-  dg.gain.setValueAtTime(.0001, h); dg.gain.exponentialRampToValueAtTime(.7, h + .015); dg.gain.exponentialRampToValueAtTime(.001, h + 1.8); d.connect(dg); dg.connect(out); dg.connect(verb); d.start(h); d.stop(h + 2);
-  var nb = c.createBuffer(1, c.sampleRate * .8, c.sampleRate), nd = nb.getChannelData(0); for (var j = 0; j < nd.length; j++) nd[j] = Math.random() * 2 - 1;
-  var n = c.createBufferSource(), nl = c.createBiquadFilter(), ng = c.createGain(); n.buffer = nb; nl.type = 'lowpass'; nl.frequency.value = 500;
-  ng.gain.setValueAtTime(.18, h); ng.gain.exponentialRampToValueAtTime(.001, h + .7); n.connect(nl); nl.connect(ng); ng.connect(out); n.start(h);
-  // the brass: a broad D major, low and warm, swelling and ringing out under the name
-  [[73.42, .08], [146.83, .07], [220, .055], [293.66, .045], [369.99, .035], [440, .025]].forEach(function (n2) { voice(n2[0], 'sawtooth', h + .05, .55, 1.2, 2.6, n2[1], 400, 1700); });
+  // the swell: D and A, low and quiet, rising out of nothing as the spines slide by and the C draws
+  voice(146.83, t0, 1.4, .2, 1.4, .07, 700); voice(220, t0 + .15, 1.3, .2, 1.4, .05, 700);
+  // the chord: D major, warm, opening slowly under GRIFFLIX and fading away
+  var h = t0 + 1.5;
+  [[73.42, .05], [146.83, .055], [220, .045], [293.66, .04], [369.99, .03], [440, .018]].forEach(function (n, k) { voice(n[0], h + k * .06, .9, .9, 2.8, n[1], 1400); });
   return {
-    count: function () {},   // (no clicks: the music carries it)
+    count: function () {},
     stop: function () {
       if (stopped) return; stopped = true; var t = c.currentTime;
-      out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(out.gain.value, t); out.gain.exponentialRampToValueAtTime(.0001, t + .5);
-      setTimeout(function () { try { out.disconnect(); } catch (e) {} }, 700);
+      out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(out.gain.value, t); out.gain.exponentialRampToValueAtTime(.0001, t + .6);
+      setTimeout(function () { try { out.disconnect(); } catch (e) {} }, 800);
     }
   };
 }
