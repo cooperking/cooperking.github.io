@@ -293,6 +293,7 @@ dialog::backdrop { background: rgba(10, 4, 12, .62); backdrop-filter: blur(6px);
 /* (a collection's own search, and John's editing of it: John, 16 Nov 2026) */
 .cfind { flex: 1 1 220px; max-width: 360px; min-width: 0; padding: 9px 12px; font: 500 15px/1.2 var(--sans); color: var(--fg); background: rgba(var(--kink), .06); border: 1px solid rgba(var(--kink), .3); border-radius: 0; }
 .cfind::placeholder, .caddbox input::placeholder { color: var(--fg-2); opacity: 1; }
+.bsbar { display: flex; margin: 4px 0 14px; } .bsbar .cfind { max-width: 480px; }
 .cedit { position: relative; display: flex; flex-direction: column; min-width: 0; }
 .cedit .crm { margin-top: 6px; padding: 7px 8px; font: 600 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--fg); background: none; border: 1px solid rgba(var(--kink), .45); cursor: pointer; }
 .cedit .crm:hover { background: #b3261e; border-color: #b3261e; color: #fff; }
@@ -2474,7 +2475,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'a3a41539430a' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: 'e880407b5e61' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -3392,6 +3393,7 @@ function monthsOf(days) {
 // give me the ability in admin page only"): no choosing, changing or taking off on the site, for anyone
 var SITEEDIT = false;
 function drawMonth() {
+  if (TV) setTimeout(function () { var ae = document.activeElement; if ((!ae || ae === document.body) && VIEW() === 'themes' && S.view === 'home' && !dlg.open) { var f = $('#cal button.front'); if (f) f.focus({ preventScroll: true }); } }, 1200);   // (the TV: the day's own film chosen as the theme comes up)
   var C = S.calData, mine = C.mine && SITEEDIT, months = monthsOf(C.days);
   if (months.indexOf(S.month) < 0) S.month = months[months.length - 1];
   var y = +S.month.slice(0, 4), m = +S.month.slice(5, 7) - 1, inMonth = Object.keys(C.days).filter(function (d) { return d.slice(0, 7) === S.month && !C.days[d].secret; });   // (a day still to come, chosen but a surprise till 8am that day: not counted or listed)
@@ -5915,9 +5917,25 @@ function browse(into) {
   if (S.browse === 'home') S.browse = 'movies';
   main.innerHTML = '<div class="hero"><h1>' + { now: 'Now showing', movies: 'Films', tv: 'TV', collections: 'Collections' }[S.browse] + '</h1><div class="hsub" id="bcount"></div></div>' +
     '<div class="tabs">' + tabs.map(function (t) { return '<button class="pill' + (t[0] === S.browse ? ' on' : '') + '" data-b="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
-    '<span class="sp"></span>' + (into || PUBLIC ? '' : '<button class="pill" type="button" id="bsrch" aria-label="Search films and TV">Search</button>') + (S.browse === 'collections' || S.browse === 'now' ? '' : sfBar()) + '</div>' +
-    '<div class="moods" id="moods"></div><div id="bgrid"></div>';
-  var bs_ = $('#bsrch', main); if (bs_) bs_.onclick = function () { searchSheet(); };   // (search, from the Films and TV pages)
+    '<span class="sp"></span>' + (S.browse === 'collections' || S.browse === 'now' ? '' : sfBar()) + '</div>' +
+    // (Films and TV each with its own search bar, finding in what the page shows: John, 19 Nov 2026, "both should show the search bar, so there
+    // isn't a need for a separate search box")
+    (!into && !PUBLIC && (S.browse === 'movies' || S.browse === 'tv') ? '<div class="bsbar"><input type="search" class="cfind" id="bsq" placeholder="' + (S.browse === 'tv' ? 'Find on TV' : 'Find a film') + '" aria-label="' + (S.browse === 'tv' ? 'Search TV' : 'Search films') + '" autocomplete="off"' + (TV ? ' readonly' : '') + '></div>' : '') +
+    '<div class="moods" id="moods"></div><div id="bsres" class="gridcards" hidden></div><div id="bgrid"></div>';
+  var bq = $('#bsq', main);
+  if (bq && TV) bq.onclick = bq.onkeydown = function (e) { if (!e.key || e.key === 'Enter') { e.preventDefault && e.preventDefault(); searchSheet(); } };   // (the TV: its own letters, in the search pop-up)
+  else if (bq) { var bqt = 0, kind = S.browse === 'tv' ? 'series' : 'movie';
+    bq.oninput = function () { var q = bq.value.trim(); clearTimeout(bqt); bqt = setTimeout(function () {
+      var res = $('#bsres', main), grid = $('#bgrid', main), mo = $('#moods', main); if (!res) return;
+      if (q.length < 2) { res.hidden = true; res.innerHTML = ''; grid.hidden = false; if (mo) mo.hidden = false; return; }
+      api('search?q=' + encodeURIComponent(q)).then(function (r) { if (bq.value.trim() !== q) return;
+        var L = (r.items || []).filter(function (i) { return i.type === kind; });
+        grid.hidden = true; if (mo) mo.hidden = true; res.hidden = false;
+        res.innerHTML = L.length ? L.map(function (i) { return cardHTML(i); }).join('') : '<div class="empty">' + (kind === 'series' ? 'Nothing on TV called that.' : 'No film called that.') + '</div>';
+        wireCards(res, L);
+      }).catch(function () {});
+    }, 160); };
+  }
   $$('[data-b]', main).forEach(function (b) { b.onclick = function () { if (into) { S.browse = b.dataset.b; browse(into); var f = $('#bsin [data-b].on'); if (f && TV) f.focus(); } else location.hash = '#browse/' + b.dataset.b; }; });
   // genres and moods (Films and TV): a row of moods, and every genre the shelves have, with how many
   if (S.browse !== 'collections' && S.browse !== 'now' && !DEMO) library().then(function (L) {
@@ -8155,6 +8173,11 @@ document.addEventListener('keydown', function (e) {
   var k = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', Enter: 'ok', MediaPlayPause: 'play', MediaFastForward: 'ff', MediaRewind: 'rew' }[e.key];
   if (!k) return;
   var ae = document.activeElement, inText = /^(INPUT|TEXTAREA|SELECT)$/.test((ae || {}).tagName || '');
+  // (nothing chosen yet on the month's theme: the remote starts from the day's own film, not the nearest frame of the film behind it:
+  // John, 19 Nov 2026, "it loads and today's film isn't selected - it seems like the focus goes to the film strip behind")
+  if ((!ae || ae === document.body) && VIEW() === 'themes' && S.view === 'home' && !dlg.open && !(P && P.el && P.el.classList.contains('on')) && (k === 'left' || k === 'right' || k === 'down' || k === 'ok')) {
+    var fr0 = $('#cal button.front'); if (fr0) { e.preventDefault(); fr0.focus({ preventScroll: true }); if (k === 'left' || k === 'right') themeStep(k === 'right' ? 1 : -1); else if (k === 'ok') fr0.click(); return; }
+  }
   if (!$('#psf').hidden) {   // (finding subtitles: up and down through the language and the list, OK to choose)
     if (k === 'up' || k === 'down') { var fs = $$('#psf select, #psf button').filter(function (x) { return !x.disabled && x.offsetParent; }), i = fs.indexOf(ae);
       var n = fs[Math.max(0, Math.min(fs.length - 1, i < 0 ? 0 : i + (k === 'down' ? 1 : -1)))]; if (n) n.focus(); e.preventDefault(); }
