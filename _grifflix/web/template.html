@@ -6201,20 +6201,19 @@ function critSound() {
   am.gain.value = .6; depth.gain.value = .4; lfo.connect(depth); depth.connect(am.gain);
   env.gain.setValueAtTime(.0001, t0); env.gain.exponentialRampToValueAtTime(.05, t0 + .35); env.gain.setValueAtTime(.05, t0 + 1.1); env.gain.exponentialRampToValueAtTime(.0001, t0 + 1.8);
   n.connect(bp); bp.connect(lp); lp.connect(am); am.connect(env); env.connect(out); n.start(t0); lfo.start(t0); n.stop(t0 + 2.3); lfo.stop(t0 + 2.3);
-  // the bell: C, struck once, with a real bell's own tones (John, 19 Nov 2026, "The bell doesn't sound right on the criterion intro": the
-  // first was a bar's tones, tinny): the hum an octave down, the strike note, its minor third (what makes a bell a bell), the fifth, the
-  // octave above and the higher ones, each pair a breath apart so it shimmers, the low ones ringing longest; a soft knock as it's struck
-  var h = t0 + 1.6, C = 261.63, bell = c.createGain(); bell.gain.value = .07; bell.connect(out); bell.connect(verb);
-  [[.5, .5, 7], [1, .6, 5.5], [1.189, .42, 4.2], [1.5, .22, 3.2], [2, .75, 3], [2.5, .26, 1.9], [2.997, .16, 1.4], [4, .12, 1], [5.33, .05, .6]].forEach(function (p, k) {
-    [-1, 1].forEach(function (side) {
-      var o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = C * p[0] + side * (.35 + k * .12);
-      g.gain.setValueAtTime(.0001, h); g.gain.exponentialRampToValueAtTime(p[1] / 2, h + .004 + k * .001); g.gain.exponentialRampToValueAtTime(.0001, h + p[2]);
-      o.connect(g); g.connect(bell); o.start(h); o.stop(h + p[2] + .1);
+  // the close: one soft, low piano chord, C major spread wide, as a film's last chord (John, 19 Nov 2026, of four tried: "Piano chord is nice
+  // but can be louder"; a bell "isn't the right sound"). Each note a piano's: its partials a little stretched, a quick strike, a two-stage
+  // fall, darkening as it rings
+  var h = t0 + 1.6, piano = function (at, f, amp, len) {
+    var g0 = c.createGain(), lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(Math.min(9000, f * 9), at); lp.frequency.exponentialRampToValueAtTime(Math.max(500, f * 2.5), at + len * .6);
+    g0.connect(lp); lp.connect(out); lp.connect(verb);
+    [1, 2, 3, 4, 5, 6].forEach(function (k, i) {
+      var o = c.createOscillator(), g = c.createGain(), a = amp / Math.pow(k, 1.3); o.frequency.value = f * k * Math.sqrt(1 + .0004 * k * k);
+      g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(a, at + .006); g.gain.exponentialRampToValueAtTime(a * .35, at + .25); g.gain.exponentialRampToValueAtTime(.0001, at + len / (1 + i * .35));
+      o.connect(g); g.connect(g0); o.start(at); o.stop(at + len + .1);
     });
-  });
-  var kb = c.createBuffer(1, Math.floor(c.sampleRate * .04), c.sampleRate), kd = kb.getChannelData(0); for (var q = 0; q < kd.length; q++) kd[q] = (Math.random() * 2 - 1) * Math.pow(1 - q / kd.length, 4);
-  var kn = c.createBufferSource(), kf = c.createBiquadFilter(), kg = c.createGain(); kn.buffer = kb; kf.type = 'bandpass'; kf.frequency.value = 2400; kf.Q.value = .8; kg.gain.value = .05;
-  kn.connect(kf); kf.connect(kg); kg.connect(out); kg.connect(verb); kn.start(h);
+  };
+  [[65.41, .05], [98, .04], [130.81, .045], [164.81, .035], [196, .03]].forEach(function (x, i) { piano(h + i * .012, x[0], x[1] * 2, 5); });   // (twice as loud as tried)
   return {
     count: function () {},
     stop: function () {
