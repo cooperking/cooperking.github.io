@@ -6089,14 +6089,14 @@ function a24Intro() {
   var coll = null, done = false, auto = 0, timers = [], ended = false;
   var later = function (f, ms) { timers.push(setTimeout(f, ms)); };
   var key = function (e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
-  var go = function () {
-    if (done) return; done = true; clearTimeout(auto); timers.forEach(clearTimeout); if (snd) snd.stop();
+  var go = function (byItself) {
+    if (done) return; done = true; clearTimeout(auto); timers.forEach(clearTimeout); if (snd && byItself !== true) snd.stop();   // (by itself: the chord left to ring out over the A24 page)
     if (coll) location.hash = '#collection/' + coll.id;
     el.classList.add('out'); setTimeout(function () { el.remove(); }, 600);
     document.removeEventListener('keydown', key, true);
   };
   document.addEventListener('keydown', key, true);
-  el.onclick = go;
+  el.onclick = function () { go(); };
   var count = function (d) {   // (how many, and the years they span, counted up under the name)
     var box = $('.a24in .n'), it = (d && d.items || []).filter(function (x) { return x.year; }); if (!box) return;
     if (!d) { box.textContent = 'No A24 collection in Grifflix yet'; return; }
@@ -6108,7 +6108,7 @@ function a24Intro() {
   };
   var end = function (d) {   // (black, then A, 2, 4, each cut on, as a title card)
     if (ended || done) return; ended = true; el.classList.add('end'); count(d); if (snd) snd.hit();
-    auto = setTimeout(go, 3200);
+    auto = setTimeout(function () { go(true); }, 3400);
     if (TV) later(function () { var b = el.querySelector('.go'); if (b) b.focus(); }, 1300);
   };
   var data = null;
@@ -6167,7 +6167,7 @@ function a24Sound() {
   var stopped = false, api = {
     rise: function (secs) {   // (the filter opening and the pitch edging up over the length of the cut)
       var t = c.currentTime; lp.frequency.setValueAtTime(180, t); lp.frequency.exponentialRampToValueAtTime(2400, t + secs);
-      oscs.forEach(function (o) { o.frequency.setValueAtTime(o.frequency.value, t); o.frequency.exponentialRampToValueAtTime(o.frequency.value * 1.5, t + secs); });
+      oscs.forEach(function (o) { o.frequency.setValueAtTime(o.frequency.value, t); o.frequency.exponentialRampToValueAtTime(o.frequency.value * 1.4983, t + secs); });   // (A up to E, the fifth: left waiting to come home)
     },
     cut: function (k) {   // (each picture: a low thud and a short tick, brighter as they speed up)
       if (stopped) return; var t = c.currentTime;
@@ -6183,8 +6183,17 @@ function a24Sound() {
       g.gain.setValueAtTime(.0001, h); g.gain.exponentialRampToValueAtTime(1, h + .01); g.gain.exponentialRampToValueAtTime(.001, h + 2.8); o.connect(g); g.connect(out); o.start(h); o.stop(h + 3);
       var n = c.createBufferSource(), lo = c.createBiquadFilter(), ng = c.createGain(); n.buffer = noise(1.5); lo.type = 'lowpass'; lo.frequency.setValueAtTime(3000, h); lo.frequency.exponentialRampToValueAtTime(200, h + 1.2);
       ng.gain.setValueAtTime(.35, h); ng.gain.exponentialRampToValueAtTime(.001, h + 1.4); n.connect(lo); lo.connect(ng); ng.connect(out); n.start(h);
-      // (a high, quiet ring left under the name)
-      var r = c.createOscillator(), rg = c.createGain(); r.type = 'sine'; r.frequency.value = 880; rg.gain.setValueAtTime(.0001, h + .3); rg.gain.exponentialRampToValueAtTime(.05, h + .8); rg.gain.exponentialRampToValueAtTime(.0001, h + 3.4); r.connect(rg); rg.connect(out); r.start(h + .3); r.stop(h + 3.5);
+      // (and home: the drone climbed to E, the fifth, under the cut; here it resolves, an A major chord blooming under the name and ringing
+      // out, a harmonious ending: John, 19 Nov 2026, "The soundtrack needs a harmonious conclusion")
+      var ch = c.createGain(), cf = c.createBiquadFilter(); cf.type = 'lowpass'; cf.frequency.setValueAtTime(900, h); cf.frequency.linearRampToValueAtTime(2600, h + 1.2); cf.Q.value = .5;
+      ch.gain.setValueAtTime(.0001, h + .08); ch.gain.exponentialRampToValueAtTime(.32, h + .6); ch.gain.setValueAtTime(.32, h + 1.6); ch.gain.exponentialRampToValueAtTime(.0001, h + 4.6);
+      ch.connect(cf); cf.connect(out);
+      [[110, 'triangle', .9], [164.81, 'triangle', .55], [220, 'sine', .7], [277.18, 'sine', .5], [329.63, 'sine', .45], [440, 'sine', .22], [659.25, 'sine', .1]].forEach(function (n, j) {
+        [-3, 3].forEach(function (cents) {   // (each note twice, a hair apart: a warm, slow shimmer)
+          var o2 = c.createOscillator(), g2 = c.createGain(); o2.type = n[1]; o2.frequency.value = n[0]; o2.detune.value = cents;
+          g2.gain.value = n[2] / 2; o2.connect(g2); g2.connect(ch); o2.start(h + .08 + j * .03); o2.stop(h + 4.8);
+        });
+      });
       setTimeout(function () { oscs.forEach(function (x) { try { x.stop(); } catch (e) {} }); }, 200);
     },
     stop: function () {   // (Enter, or a tap: faded out with the picture)
