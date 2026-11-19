@@ -293,6 +293,7 @@ dialog::backdrop { background: rgba(10, 4, 12, .62); backdrop-filter: blur(6px);
 /* (a collection's own search, and John's editing of it: John, 16 Nov 2026) */
 .cfind { flex: 1 1 220px; max-width: 360px; min-width: 0; padding: 9px 12px; font: 500 15px/1.2 var(--sans); color: var(--fg); background: rgba(var(--kink), .06); border: 1px solid rgba(var(--kink), .3); border-radius: 0; }
 .cfind::placeholder, .caddbox input::placeholder { color: var(--fg-2); opacity: 1; }
+.bsbar { display: flex; margin: 4px 0 14px; } .bsbar .cfind { max-width: 480px; }
 .cedit { position: relative; display: flex; flex-direction: column; min-width: 0; }
 .cedit .crm { margin-top: 6px; padding: 7px 8px; font: 600 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--fg); background: none; border: 1px solid rgba(var(--kink), .45); cursor: pointer; }
 .cedit .crm:hover { background: #b3261e; border-color: #b3261e; color: #fff; }
@@ -5915,9 +5916,25 @@ function browse(into) {
   if (S.browse === 'home') S.browse = 'movies';
   main.innerHTML = '<div class="hero"><h1>' + { now: 'Now showing', movies: 'Films', tv: 'TV', collections: 'Collections' }[S.browse] + '</h1><div class="hsub" id="bcount"></div></div>' +
     '<div class="tabs">' + tabs.map(function (t) { return '<button class="pill' + (t[0] === S.browse ? ' on' : '') + '" data-b="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
-    '<span class="sp"></span>' + (into || PUBLIC ? '' : '<button class="pill" type="button" id="bsrch" aria-label="Search films and TV">Search</button>') + (S.browse === 'collections' || S.browse === 'now' ? '' : sfBar()) + '</div>' +
-    '<div class="moods" id="moods"></div><div id="bgrid"></div>';
-  var bs_ = $('#bsrch', main); if (bs_) bs_.onclick = function () { searchSheet(); };   // (search, from the Films and TV pages)
+    '<span class="sp"></span>' + (S.browse === 'collections' || S.browse === 'now' ? '' : sfBar()) + '</div>' +
+    // (Films and TV each with its own search bar, finding in what the page shows: John, 19 Nov 2026, "both should show the search bar, so there
+    // isn't a need for a separate search box")
+    (!into && !PUBLIC && (S.browse === 'movies' || S.browse === 'tv') ? '<div class="bsbar"><input type="search" class="cfind" id="bsq" placeholder="' + (S.browse === 'tv' ? 'Find on TV' : 'Find a film') + '" aria-label="' + (S.browse === 'tv' ? 'Search TV' : 'Search films') + '" autocomplete="off"' + (TV ? ' readonly' : '') + '></div>' : '') +
+    '<div class="moods" id="moods"></div><div id="bsres" class="gridcards" hidden></div><div id="bgrid"></div>';
+  var bq = $('#bsq', main);
+  if (bq && TV) bq.onclick = bq.onkeydown = function (e) { if (!e.key || e.key === 'Enter') { e.preventDefault && e.preventDefault(); searchSheet(); } };   // (the TV: its own letters, in the search pop-up)
+  else if (bq) { var bqt = 0, kind = S.browse === 'tv' ? 'series' : 'movie';
+    bq.oninput = function () { var q = bq.value.trim(); clearTimeout(bqt); bqt = setTimeout(function () {
+      var res = $('#bsres', main), grid = $('#bgrid', main), mo = $('#moods', main); if (!res) return;
+      if (q.length < 2) { res.hidden = true; res.innerHTML = ''; grid.hidden = false; if (mo) mo.hidden = false; return; }
+      api('search?q=' + encodeURIComponent(q)).then(function (r) { if (bq.value.trim() !== q) return;
+        var L = (r.items || []).filter(function (i) { return i.type === kind; });
+        grid.hidden = true; if (mo) mo.hidden = true; res.hidden = false;
+        res.innerHTML = L.length ? L.map(function (i) { return cardHTML(i); }).join('') : '<div class="empty">' + (kind === 'series' ? 'Nothing on TV called that.' : 'No film called that.') + '</div>';
+        wireCards(res, L);
+      }).catch(function () {});
+    }, 160); };
+  }
   $$('[data-b]', main).forEach(function (b) { b.onclick = function () { if (into) { S.browse = b.dataset.b; browse(into); var f = $('#bsin [data-b].on'); if (f && TV) f.focus(); } else location.hash = '#browse/' + b.dataset.b; }; });
   // genres and moods (Films and TV): a row of moods, and every genre the shelves have, with how many
   if (S.browse !== 'collections' && S.browse !== 'now' && !DEMO) library().then(function (L) {

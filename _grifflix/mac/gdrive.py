@@ -589,6 +589,9 @@ def conv_running():
         return False
 
 
+PENDING = {}   # (the film just brought in, still being repackaged: the next download's copy onto the G-Drive waits for it)
+
+
 def wait_repack(dest, title):
     """The film just brought in repackaged before the next download (the drive does one at a time well): waited for, at most 45 minutes,
     or 6 if the converter isn't running by then."""
@@ -820,12 +823,19 @@ def _run(check):
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         part = dest + '.adding'
         work = stage_for(part, size)   # (made on the Mac's own disk if it has room, in many streams; else here, in one)
+        if not work and PENDING.get('dest') and os.path.exists(PENDING['dest']):   # (made on the G-Drive itself: after the repackaging)
+            wait_repack(PENDING['dest'], PENDING['title']); PENDING.clear()
         status(now={'from': src['name'], 'file': path, 'to': title, 'extra': p.get('extra'), 'size': size, 'part': work or part, 'since': int(time.time())})
         came = lambda ok, why='', title=title + (' · extra: ' + os.path.splitext(p['extra'])[0] if p.get('extra') else ''), src=src, size=size: status(now=None, came={'to': title, 'from': src['name'], 'gb': round(size / 1e9, 1), 'at': int(time.time()), 'ok': ok, 'why': why})
         said = ''
         try:   # (in Terminal: how far, how fast, how long to go, as it downloads)
             said = fetch(loc, path, work or part, show=sys.stdout.isatty(), streams=16 if work else 0)
             if work and os.path.exists(work):   # (onto the G-Drive whole, in one go)
+                # (the film before still being repackaged: the copy onto the G-Drive waits for it, so the drive does one big thing at a time;
+                # the download itself, on the Mac's own disk, went on meanwhile: John, 19 Nov 2026, "if both could happen without difficulty yes")
+                if PENDING.get('dest') and os.path.exists(PENDING['dest']):
+                    wait_repack(PENDING['dest'], PENDING['title'])
+                PENDING.clear()
                 status(now={'from': src['name'], 'file': path, 'to': title, 'extra': p.get('extra'), 'size': size, 'part': part, 'since': int(time.time()), 'moving': True})
                 shutil.move(work, part)
         except Exception as e:
@@ -922,8 +932,13 @@ def _run(check):
                 json.dump(have + [{'path': dest, 'name': title, 'at': int(time.time())}], open(nf, 'w'))
             except OSError:
                 pass
-        if ext not in ('.mp4', '.m4v') and not check:   # (repackaged before the next download: John, 15 Nov 2026, "when downloaded it should be repackaged first")
-            wait_repack(dest, title)
+        if ext not in ('.mp4', '.m4v') and not check:   # (repackaged first: John, 15 Nov 2026, "when downloaded it should be repackaged first")
+            if shutil.disk_usage(STAGE if os.path.isdir(STAGE) else HOME).free > 60e9:
+                # (the next download made on the Mac's own disk while this one's repackaged; only its copy onto the G-Drive waits)
+                PENDING.update(dest=dest, title=title)
+                log('  %s: being repackaged; the next download comes in meanwhile on the Mac’s own disk' % title)
+            else:   # (no room on the Mac's own disk: the next would be made on the G-Drive itself, so it waits, as before)
+                wait_repack(dest, title)
         if src['delete']:
             rc('rmdirs', '--leave-root', loc('').rstrip('/'), check=False)   # (download folders left empty)
         try:
