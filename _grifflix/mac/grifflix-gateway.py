@@ -1189,7 +1189,13 @@ def make_handler(g):
                 # take longer than the 100 seconds the link to the Mac waits, and the admin page said the Mac wasn't answering: John, 12 Nov 2026)
                 J = g.export_job
                 with g.plays_lock:
-                    if J.get('state') == 'done':   # (kept until it's taken, never thrown away: the Mac counts what it made as sent)
+                    if J.get('state') == 'done' and not J.get('given') and time.time() - (J.get('at') or 0) > 900:
+                        # (one made long ago and never taken, the admin page closed before it came: thrown away and made afresh, so an
+                        # old list isn't put on the site over a newer one: 19 Nov 2026, A24 put back to 175 by a list made before the
+                        # move to A24 CHECKS and taken 40 minutes later. The films it read stay remembered, so nothing is lost)
+                        log('Update: a list made %d minutes ago and never taken, made afresh' % ((time.time() - (J.get('at') or 0)) // 60))
+                        g.export_job = J = {}
+                    if J.get('state') == 'done':   # (kept until it's taken: the Mac counts what it made as sent)
                         # (and kept ten minutes more once given, so a big list lost on its way, the link broken, can be asked for again:
                         # John, 17 Nov 2026, Update everything stuck at "listing the films… (9 s)" with 619 films changed)
                         code, body = J['code'], J['body']
