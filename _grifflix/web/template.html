@@ -2089,6 +2089,10 @@ html.gcrit #main > .tabs:first-child { display: none; }
 html.gcrit #cbody .collhead { grid-template-columns: 150px minmax(0, 1fr); gap: 28px; align-items: center; margin: -6px 0 0; padding: 16px clamp(14px, 2.4vw, 32px) 16px; background: var(--gc-panel); }   /* (compact: the cover says it already; John, 18 Nov 2026, "this isn't a very good use of space") */
 html.gcrit #cbody .collhead .kick { margin-bottom: 6px; }
 html.gcrit #cbody .colltitle { font-size: clamp(30px, 4vw, 44px) !important; margin: 0 0 6px; }
+/* (the title in Criterion's own lettering, spaced capitals, as on its covers and its intro here, not Grifflix's serif: John, 19 Nov 2026, "Can
+   criterion font be used on the criterion collection title") */
+html.gcrit #cbody .colltitle { font: 500 clamp(20px, 2.6vw, 30px)/1.2 var(--kfont) !important; letter-spacing: .14em !important; text-transform: uppercase !important; }
+html.gcrit.tv #cbody .colltitle { font-size: 24px !important; }
 html.gcrit #cbody .cstats { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 10px 0 0; font: 500 12px/1.4 var(--kfont); letter-spacing: .14em; text-transform: uppercase; color: var(--gc-grey, var(--fg-2)); }
 html.gcrit #cbody .cstats b { font-weight: 700; color: var(--gc-ink, var(--fg)); letter-spacing: .06em; margin-right: 5px; }
 html.gcrit #cbody .collpic { background: none; box-shadow: none; }
@@ -2554,7 +2558,7 @@ var IN_APP = TV || /GrifflixApp\//.test(navigator.userAgent) || !!(window.Capaci
 if (TV) document.documentElement.classList.add('tv');   // the Song of the Day sign-in: same site, so the same storage
 var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 var DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-var S = { view: 'home', cal: 'motd', calData: null, cals: [], month: null, browse: 'collections', sort: 'year', lists: null, csort: store.get('grifflix-csort') || 'new' };
+var S = { view: 'home', cal: 'motd', calData: null, cals: [], month: null, browse: 'movies', sort: 'year', lists: null, csort: store.get('grifflix-csort') || 'new' };
 // a collection's own sort (John, 8 Nov 2026): newest to oldest first, as Films and TV; a box set by its newest film's year
 var CSORTS = [['new', 'Newest to oldest'], ['old', 'Oldest to newest'], ['name', 'A–Z'], ['rating', 'Rating'], ['added', 'Recently added']];
 function sortItems(items, how) {
@@ -5758,7 +5762,7 @@ function collArt(h, nm, full) {
 }
 function collectionView(id, into) {
   var main = into || $('#main');
-  main.innerHTML = '<div class="tabs" style="margin-top:22px"><a class="pill" href="#browse/collections">‹ Collections</a></div><div id="cbody"><div class="empty">Looking on the shelves…</div></div>';
+  main.innerHTML = '<div class="tabs" style="margin-top:22px">' + (ME && ME.owner ? '<a class="pill" href="#browse/collections">‹ Collections</a>' : '<a class="pill" href="#browse/movies">‹ Films</a>') + '</div><div id="cbody"><div class="empty">Looking on the shelves…</div></div>';
   apiMemo('collection?id=' + encodeURIComponent(id), function (c) {
     if (!$('#cbody')) return;
     sfMode(/criterion/i.test(c.name));   // (before its bar is drawn: the bar shows Criterion's sort)
@@ -5959,7 +5963,9 @@ function browse(into) {
   var main = into || $('#main');
   if (!into) try { navBar(); } catch (e) {}   // (Film or TV marked in the bar as the page you're on)
   S.sheetInto = into || null;
-  var tabs = [['now', 'Now showing'], ['collections', 'Collections'], ['movies', 'Films'], ['tv', 'TV']];   // (Now showing: Carry on watching, New films, New on TV - John, 8 Nov 2026: "it should be a tab like collections")   // (no Home videos tab: John, 7 Nov 2026; the gateway still serves a home videos library if one is added)
+  // (Collections not among them, but for the one who opened it (from the admin page's link): John, 19 Nov 2026, "Can collections link be removed
+  // from film and tv, with just a private link to my collections from admin")
+  var tabs = [['now', 'Now showing'], ['collections', 'Collections'], ['movies', 'Films'], ['tv', 'TV']].filter(function (t) { return t[0] !== 'collections' || S.browse === 'collections'; });   // (Now showing: Carry on watching, New films, New on TV - John, 8 Nov 2026: "it should be a tab like collections")   // (no Home videos tab: John, 7 Nov 2026; the gateway still serves a home videos library if one is added)
   if (S.browse === 'home') S.browse = 'movies';
   main.innerHTML = '<div class="hero"><h1>' + { now: 'Now showing', movies: 'Films', tv: 'TV', collections: 'Collections' }[S.browse] + '</h1><div class="hsub" id="bcount"></div></div>' +
     '<div class="tabs">' + tabs.map(function (t) { return '<button class="pill' + (t[0] === S.browse ? ' on' : '') + '" data-b="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
