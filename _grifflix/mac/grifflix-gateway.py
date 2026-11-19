@@ -1043,6 +1043,7 @@ def make_handler(g):
                     for t_ in (90, 240):
                         threading.Timer(t_, CONV_NOW.set).start()
                     threading.Timer(150, covers_now).start()   # (a Criterion film: its cover, once the media server has it)
+                    threading.Timer(180, a24_now).start()   # (an A24 film: in the A24 collection)
                     log('Just brought in: %s: the media server asked to look' % os.path.basename(str(self.body().get('path') or ''))[:120])
                     return self.send_json(200, {'ok': True})
                 if u.path == '/local/remap' and method == 'POST':   # convert.py on this Mac: a film's new file has a new id; calendars, lists and progress follow it
@@ -5579,6 +5580,41 @@ def sheet_now():
         log('Criterion sheet: %s' % e)
 
 
+def a24_now():
+    """A film in A24's own list (a24films.com/films, kept with the site as a24-list.json), put in the A24 collection when it comes in,
+    as a Criterion film goes in The Criterion Collection (John, 19 Nov 2026: "Misty Green and Tony should have been added to the A24
+    collection correctly but haven't been yet"). Matched by title and year (a year either way); never one John put in A24 CHECKS."""
+    g = G_REF[0] if G_REF else None
+    if not g:
+        return
+    try:
+        with urllib.request.urlopen(urllib.request.Request('https://cooperking.github.io/grifflix/a24-list.json', headers={'User-Agent': 'Grifflix gateway'}), timeout=60, context=tls()) as r_:
+            films = json.loads(r_.read().decode('utf-8')).get('films') or []
+        sets = g.items(Recursive='true', IncludeItemTypes='BoxSet', Fields='').get('Items', [])
+        a24 = next((x for x in sets if (x.get('Name') or '').strip().lower() == 'a24'), None)
+        if not a24 or not films:
+            return
+        held = set()
+        for x in sets:
+            if (x.get('Name') or '').strip().lower() in ('a24', 'a24 checks'):
+                held.update(i['Id'] for i in g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': x['Id'], 'Fields': ''}).get('Items', []))
+        want = {}
+        for f in films:
+            want.setdefault(fold(f.get('t')), []).append(int(f.get('y') or 0))
+        libs = g.st.get('libraries', {})
+        if not libs.get('movies'):
+            return
+        movies = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': libs['movies'], 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'ProductionYear'}).get('Items', [])
+        add = [m for m in movies if m['Id'] not in held and any(not m.get('ProductionYear') or abs(y - int(m['ProductionYear'])) <= 1 for y in want.get(fold(m.get('Name')), []))]
+        if add:
+            g.jf.call('POST', '/Collections/%s/Items' % a24['Id'], query={'Ids': ','.join(m['Id'] for m in add)})
+            g.forget()
+            g.publish_soon = time.time() + 120
+            log('A24, for what came in: put in the A24 collection: %s' % ', '.join('%s (%s)' % (m.get('Name'), m.get('ProductionYear') or '?') for m in add)[:600])
+    except Exception as e:
+        log('A24, for what came in: %s' % e)
+
+
 def covers_now():
     """A film just come in: if it's a Criterion film, everything a Criterion film has, from the start (John, 16 Nov 2026: "a new film - the
     secret agent wasn't added to the criterion collection automatically"): its cover, its spine number and its place in The Criterion
@@ -6011,6 +6047,7 @@ def keep_scanning(g):
                     # the media server has it; however it came in, not only by download: John, 16 Nov 2026, "I shouldn't have to reupload the
                     # criterion html every time to check if a new film is criterion")
                     threading.Timer(240, covers_now).start()
+                    threading.Timer(270, a24_now).start()   # (an A24 film, however it came in: in the A24 collection: John, 19 Nov 2026)
                     # (an extra put in a film's Other or Extras folder: the Criterion sheet's Extras column marked: John, 17 Nov 2026, "the job
                     # should run when extras are added")
                     XD = ('other', 'others', 'extras', 'extra', 'featurettes', 'behind the scenes', 'deleted scenes', 'interviews', 'trailers', 'shorts', 'scenes', 'bonus')
@@ -6104,7 +6141,8 @@ def serve():
         time.sleep(300)
         covers_now()
         open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
-    threading.Thread(target=covers_once, daemon=True).start()   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
+    threading.Thread(target=covers_once, daemon=True).start()
+    threading.Timer(200, a24_now).start()   # (and once each start: any A24 film come in before this, Tony and Misty Green, put in)   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
     threading.Thread(target=fanny_series, args=(g,), daemon=True).start()
     threading.Thread(target=keep_disk_health, daemon=True).start()
     threading.Thread(target=keep_backup, args=(g,), daemon=True).start()
