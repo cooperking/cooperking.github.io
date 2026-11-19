@@ -345,7 +345,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   <div id="app" hidden>
     <div class="top"><button type="button" class="reload" id="reload" aria-label="Reload" title="Reload" onclick="location.reload()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><h1>Grifflix <em>admin</em></h1><p class="sub" id="hello"></p></div>
     <nav class="tabs" id="tabs" role="tablist" aria-label="Admin">
-      <button type="button" role="tab" data-go="updates">Home</button><button type="button" role="tab" data-go="downloads">Downloads</button><button type="button" role="tab" data-go="convert">Conversions</button><button type="button" role="tab" data-go="library">Library</button><button type="button" role="tab" data-go="criterion">Criterion</button><button type="button" role="tab" data-go="calendar">Calendar</button><button type="button" role="tab" data-go="members">Members</button><button type="button" role="tab" data-go="mac">Mac mini</button><button type="button" role="tab" data-go="dupes" id="dupetab" hidden>Copies</button>
+      <button type="button" role="tab" data-go="updates">Home</button><button type="button" role="tab" data-go="downloads">Downloads</button><button type="button" role="tab" data-go="convert">Conversions</button><button type="button" role="tab" data-go="library">Library</button><button type="button" role="tab" data-go="criterion">Criterion</button><button type="button" role="tab" data-go="a24">A24</button><button type="button" role="tab" data-go="calendar">Calendar</button><button type="button" role="tab" data-go="members">Members</button><button type="button" role="tab" data-go="mac">Mac mini</button><button type="button" role="tab" data-go="dupes" id="dupetab" hidden>Copies</button>
     </nav>
     <nav class="subtabs" id="subtabs" aria-label="In this tab" hidden></nav>
     <div class="cards">
@@ -564,6 +564,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat">Every Criterion box set’s films not in Grifflix, one list, for a spreadsheet: the set, its spine, the film, its year and spine, and its page on Criterion.</p>
         <div class="state"><button class="btn primary" id="cmsheet" type="button">Make the Google Sheet</button><a class="btn" id="cmopen" href="#" target="_blank" rel="noopener" hidden>Open it</a><button class="btn" id="cmcsv" type="button">Download (CSV)</button></div>
         <p class="stat" id="cmsay"></p>
+      </section>
+      <section class="card" data-tab="a24">
+        <div class="kicker">A24</div>
+        <h2>A24 CHECKS</h2>
+        <p class="stat">The films from the A24 collection that aren’t in A24’s own list of its films (a24films.com/films), kept apart to check. Only you see this collection: it isn’t on the site for anyone else, and the A24 page shows only the films A24 lists.</p>
+        <div class="state"><a class="btn primary" id="a24open" href="#" target="_blank" rel="noopener" hidden>Open A24 CHECKS</a><a class="btn" id="a24draft" href="#" target="_blank" rel="noopener" hidden>On the draft</a></div>
+        <p class="stat" id="a24say">Looking on the Mac mini…</p>
       </section>
       <section class="card" data-tab="mac">
         <div class="kicker">Claude</div>
@@ -979,6 +986,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 
   // ---- Update from the Mac: the Mac's films, TV, collections and Movie of the Day, kept by the site as its own
   var GW = '';
+  function a24Look() {   // (A24 CHECKS: John's own collection, from the Mac, linked from here: John, 19 Nov 2026)
+    fetch(GW + '/api/collections', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('The Mac mini didn’t answer.')); }).then(function (j) {
+      var c = (j.collections || []).filter(function (x) { return /^a24 checks$/i.test(x.name || ''); })[0];
+      if (!c) { $('#a24say').textContent = 'There’s no A24 CHECKS collection yet: it’s made when you Allow “Move films from one collection to another” on the Home tab.'; return; }
+      $('#a24open').href = '/grifflix/#collection/' + c.id; $('#a24draft').href = '/grifflix/draft/#collection/' + c.id; $('#a24open').hidden = $('#a24draft').hidden = false;
+      $('#a24say').textContent = (c.children || 0) + ' film' + (c.children === 1 ? '' : 's') + ' in it.';
+    }).catch(function (e) { $('#a24say').textContent = e.message; });
+  }
   function dataStatus() {
     g('admin', { op: 'datastatus' }).then(function (j) {
       var l = j.last;
@@ -2696,7 +2711,7 @@ var feats = function (doc) {
     fetch('/grifflix/config.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (c) {
       var gw = String(c.gateway || '').replace(/\/$/, ''), t0 = Date.now();
       if (!gw) { $('#machead').textContent = 'Not connected'; return; }
-      GW = gw; convert(); fetching(); software(); dlLook(); hhLoad(); autoState(); lbAuto(); originals().then(orLine).catch(function () {});
+      GW = gw; a24Look(); convert(); fetching(); software(); dlLook(); hhLoad(); autoState(); lbAuto(); originals().then(orLine).catch(function () {});
       return fetch(gw + '/api/me', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (me) {
         var L = me.libraries || {};
         $('#machead').innerHTML = 'Answering <em>(' + (Date.now() - t0) + ' ms)</em>';

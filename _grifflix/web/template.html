@@ -2808,7 +2808,8 @@ function fromSite(path) {   // what the site's own files answer (null: a thing o
     }
     if (name === 'collections') return { collections: get(L.collections) };
     if (name === 'collection') {
-      var c = I[q.get('id')]; if (!c) { var e = new Error('No such collection.'); e.status = 404; throw e; }
+      var c = I[q.get('id')]; if (!c && ME && ME.owner) return null;   // (one of John's own, never in the site's files: from the Mac: John, 19 Nov 2026, A24 CHECKS)
+      if (!c) { var e = new Error('No such collection.'); e.status = 404; throw e; }
       return details(c).then(function (o) { o.items = get(L.sets[c.id] || []); return o; });
     }
     if (name === 'item') {

@@ -46,6 +46,15 @@ EXPORT_CACHE = os.path.join(APP_DIR, 'export-cache.json')
 ARRANGE = {'The Criterion Collection': {
     'sets': [],   # (the box sets once kept here as collections, taken apart by John's Allow, as Criterion's other box sets are: 18 Nov 2026)
     'series': ['The Underground Railroad', 'Tanner 88', 'Fishing with John']}}
+# Collections for John alone: on his own page and his admin page, never in the site's files, to members or to visitors (John, 19 Nov
+# 2026, "put everything not listed on the website in a new collection A24 CHECKS, keep it hidden apart from to me")
+OWNER_ONLY_SETS = ('a24 checks',)
+
+
+def owner_only_set(name):
+    return (name or '').strip().lower() in OWNER_ONLY_SETS
+
+
 INSTALLED = os.path.join(APP_DIR, 'installed.json')   # which commit of the Mac's Grifflix files this is (the admin page's Update the Mac)
 REPO = 'cooperking/cooperking.github.io'
 # the Mac's Grifflix files, where each is kept: (in the repository's _grifflix/mac/, on this Mac, what must be in it)
@@ -1142,17 +1151,17 @@ def make_handler(g):
             self.send_json(200, o)
 
         # collections (John's, from Plex: Jellyfin's BoxSets), for members and visitors alike
-        def collections_out(self, public):
+        def collections_out(self, public, owner=False):
             r = g.items(Recursive='true', IncludeItemTypes='BoxSet', SortBy='SortName')
-            sets = r.get('Items', [])
+            sets = [s for s in r.get('Items', []) if owner or not owner_only_set(s.get('Name'))]   # (John's own: his alone)
             # a box set inside another collection (Martha Graham in the Criterion Collection) shows only there, as one
             # entry, not in the list of collections too (John, 7 Nov 2026)
             inside = set(i['Id'] for c in sets for i in g.items(ParentId=c['Id'], Fields='', EnableImageTypes='').get('Items', []) if i.get('Type') == 'BoxSet')
             return [item_out(i) for i in sets if i['Id'] not in inside and (not public or g.is_public_set(i['Id']))]
 
-        def collection_out(self, iid, prog, public):
+        def collection_out(self, iid, prog, public, owner=False):
             c = g.one(iid)
-            if not c or c.get('Type') != 'BoxSet':
+            if not c or c.get('Type') != 'BoxSet' or (owner_only_set(c.get('Name')) and not owner):
                 return None
             o = item_out(c)
             r = g.items(ParentId=iid, SortBy='ProductionYear,SortName')
@@ -1416,7 +1425,7 @@ def make_handler(g):
                 miss_ = [FINFO.get(x_, (x_.split('-', 1)[-1].replace('-', ' ').title(), '', '')) for x_ in mem_ if x_ not in OWNED]
                 if nm_ in SFILM and SFILM[nm_] in items:
                     items[SFILM[nm_]].setdefault('csetmiss', {})[snm(nm_)] = [list(m_) for m_ in miss_]
-            sets = g.items(Recursive='true', IncludeItemTypes='BoxSet', SortBy='SortName', Fields=quick).get('Items', [])
+            sets = [s for s in g.items(Recursive='true', IncludeItemTypes='BoxSet', SortBy='SortName', Fields=quick).get('Items', []) if not owner_only_set(s.get('Name'))]   # (John's own collections: not in the site's files, which anyone can read)
             for o in resolve(sets, extra):
                 items[o['id']] = o
             inside, members = set(), {}
@@ -2268,7 +2277,7 @@ def make_handler(g):
 
         def api_collections(self, me, user, q, b):
             if not b:
-                return self.send_json(200, {'collections': self.collections_out(False)})
+                return self.send_json(200, {'collections': self.collections_out(False, me.get('owner'))})
             # John's own changes, made here (Grifflix keeps its collections in Jellyfin, nothing from Plex):
             # in (which hold an item), add, remove, create, rename, delete
             if not me.get('owner'):
@@ -2316,7 +2325,7 @@ def make_handler(g):
             self.send_json(200, {'ok': True, 'id': cid})
 
         def api_collection(self, me, user, q, b):
-            o = self.collection_out(q.get('id', ''), user['progress'], False)
+            o = self.collection_out(q.get('id', ''), user['progress'], False, me.get('owner'))
             self.send_json(200 if o else 404, o or {'error': 'No such collection.'})
 
         def api_search(self, me, user, q, b):
@@ -4557,6 +4566,44 @@ def act_collection_add(g, req):
     return '%d films are in %s now; the site follows in a few minutes.' % (len(a['ids']), a.get('name'))
 
 
+def ask_collection_move(req):
+    """Films taken out of one collection and put in another (made if it isn't there yet), on John's Allow, each film named on the
+    request (John, 19 Nov 2026: "put everything not listed on the website in a new collection A24 CHECKS ... and remove them from the main
+    A24 list")."""
+    g = G_REF[0] if G_REF else None
+    a = req.get('args') or {}
+    src, to = str(a.get('from') or ''), re.sub(r'\s+', ' ', str(a.get('to') or '')).strip()[:80]
+    ids = list(dict.fromkeys(str(x) for x in (a.get('ids') or []) if re.match(r'^[0-9a-f]{32}$', str(x))))[:200]
+    if not g or not re.match(r'^[0-9a-f]{32}$', src) or not to or not ids:
+        raise RuntimeError('from which collection, to which, and which films?')
+    c = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, src)) or {}
+    if c.get('Type') != 'BoxSet':
+        raise RuntimeError('no such collection')
+    held = {i['Id']: i for i in g.items(ParentId=src, Fields='', EnableImageTypes='').get('Items', [])}
+    gone = [i for i in ids if i not in held]
+    if gone:
+        raise RuntimeError('%d of those films aren’t in %s' % (len(gone), c.get('Name')))
+    names = sorted('%s (%s)' % (held[i].get('Name'), held[i].get('ProductionYear') or '?') for i in ids)
+    req['title'] = 'Move %d film%s from %s to %s%s' % (len(ids), '' if len(ids) == 1 else 's', c.get('Name'), to, ' (yours alone)' if owner_only_set(to) else '')
+    req['detail'] = ', '.join(names)
+    req['args'] = {'from': src, 'to': to, 'ids': ids, 'name': c.get('Name')}
+
+
+def act_collection_move(g, req):
+    a = req.get('args') or {}
+    sets = g.items(Recursive='true', IncludeItemTypes='BoxSet', Fields='').get('Items', [])
+    dest = next((s for s in sets if (s.get('Name') or '').strip().lower() == a['to'].lower()), None)
+    if dest:
+        g.jf.call('POST', '/Collections/%s/Items' % dest['Id'], query={'Ids': ','.join(a['ids'])})
+    else:
+        dest = g.jf.call('POST', '/Collections', query={'Name': a['to'], 'IsLocked': 'true', 'Ids': ','.join(a['ids'])}) or {}
+    g.jf.call('DELETE', '/Collections/%s/Items' % a['from'], query={'Ids': ','.join(a['ids'])})
+    g.forget()
+    g.publish_soon = time.time() + 120
+    log('Moved from %s to %s, on John’s Allow: %s' % (a.get('name'), a['to'], req.get('detail', '')[:300]))
+    return '%d films moved from %s to %s%s; the site follows in a few minutes.' % (len(a['ids']), a.get('name'), a['to'], ' (only you see it)' if owner_only_set(a['to']) else '')
+
+
 ACTIONS = {
     'plex-off': ('Quit Plex and keep it off', act_plex_off, None),
     'plex-on': ('Start Plex again and let it be', act_plex_on, None),
@@ -4566,6 +4613,7 @@ ACTIONS = {
     'extras-rename': ('Rename each film’s “Other” folder to “Extras”, so the media server shows its extras', act_extras_rename, ask_extras_rename),
     'criterion-sets-flatten': ('Take apart the box sets kept as collections inside The Criterion Collection, so they’re like its other box sets (the films stay)', act_crit_flatten, ask_crit_flatten),
     'collection-add': ('Put films in a collection', act_collection_add, ask_collection_add),
+    'collection-move': ('Move films from one collection to another', act_collection_move, ask_collection_move),
     'brakhage-split': ('Give each By Brakhage film its own folder (Volume One, Volume Two and the seven films from Volume One)', act_brakhage_split, ask_brakhage_split),
 }
 
