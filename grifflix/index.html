@@ -2241,7 +2241,7 @@ html.ga24 #cbody .card .t, html.ga24 #cbody .card .s, html.ga24 #cbody .empty { 
 .a24list.st .a24r.on::before { border-top-color: rgba(255, 255, 255, .8); }
 /* (a title running on over the still: white over it, as on A24's: its colour split at the still's edge, half the screen's width: John,
    19 Nov 2026, "when a title on the A24 site goes over a picture, the font colour changes for that part of it") */
-.a24list.st .a24r.on .af { color: transparent; background: linear-gradient(90deg, var(--a24-dim) 50vw, #fff 50vw) fixed; -webkit-background-clip: text; background-clip: text; }
+.a24list.st .a24r.on .af { color: transparent; background: linear-gradient(90deg, var(--a24-dim) 50vw, #fff 50vw) fixed; -webkit-background-clip: text; background-clip: text; padding: .14em 0 .22em; margin: -.14em 0 -.22em; }   /* (room for the g's and y's tails and an accent's top, painted, not cut: John, 19 Nov 2026, Sing Sing) */
 .a24list.st .a24r.on .as b { background: #fff; color: #000; text-shadow: none; }
 .a24r:focus-visible { outline: none; } .a24r:focus-visible .af { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: .12em; }
 @media (max-width: 1000px) { .a24r { grid-template-columns: var(--ayw) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); } .a24r .as { display: none; } }
@@ -2492,7 +2492,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '0d351b4da295' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '2a460a7c9cb2' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6139,29 +6139,34 @@ function critIntro() {
     });
   }).catch(function () {});
 }
-// (the Criterion intro's sound, made by the browser, quiet and subtle: a soft swell of strings under the C as it draws itself, then a warm chord
-// blooming slowly under GRIFFLIX and fading away; no drum, nothing bright (John, 19 Nov 2026, "not quite right yet. More subtle"). Only when
-// Grifflix's music is on)
+// (the Criterion intro's sound, made by the browser: its own, quiet: a projector's soft whirr and shutter flicker as the shelf of spines runs
+// by, winding down as it stops, then one struck bell on C, for Criterion, ringing out over a low C as GRIFFLIX comes, as a library's bell might
+// (John, 19 Nov 2026: "More subtle", then "now too generic"). Only when Grifflix's music is on)
 function critSound() {
   if (!TMUS.on || CALM) return null;
   var c = musicCtx(); if (!c) return null;
   try { musicHush(); } catch (e) {}
-  var t0 = c.currentTime + .05, out = c.createGain(), stopped = false; out.gain.value = .32; out.connect(c.destination);
-  var verb = c.createConvolver(), vl = c.sampleRate * 3.2, ir = c.createBuffer(2, vl, c.sampleRate);   // (a soft hall's ring)
-  for (var ch = 0; ch < 2; ch++) { var dd = ir.getChannelData(ch); for (var i = 0; i < vl; i++) dd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / vl, 3); }
-  verb.buffer = ir; var wet = c.createGain(); wet.gain.value = .5; verb.connect(wet); wet.connect(out);
-  var voice = function (f, at, att, hold, rel, v, lp) {   // (one soft held note: two rounded tones a hair apart, a slow rise and a long fall)
-    var o = c.createOscillator(), o2 = c.createOscillator(), fl = c.createBiquadFilter(), g = c.createGain();
-    o.type = 'triangle'; o2.type = 'sine'; o.frequency.value = o2.frequency.value = f; o.detune.value = -4; o2.detune.value = 4;
-    fl.type = 'lowpass'; fl.frequency.value = lp || 1200; fl.Q.value = .3;
-    g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(v, at + att); g.gain.setValueAtTime(v, at + att + hold); g.gain.exponentialRampToValueAtTime(.0001, at + att + hold + rel);
-    o.connect(fl); o2.connect(fl); fl.connect(g); g.connect(out); g.connect(verb); o.start(at); o2.start(at); o.stop(at + att + hold + rel + .1); o2.stop(at + att + hold + rel + .1);
-  };
-  // the swell: D and A, low and quiet, rising out of nothing as the spines slide by and the C draws
-  voice(146.83, t0, 1.4, .2, 1.4, .07, 700); voice(220, t0 + .15, 1.3, .2, 1.4, .05, 700);
-  // the chord: D major, warm, opening slowly under GRIFFLIX and fading away
-  var h = t0 + 1.5;
-  [[73.42, .05], [146.83, .055], [220, .045], [293.66, .04], [369.99, .03], [440, .018]].forEach(function (n, k) { voice(n[0], h + k * .06, .9, .9, 2.8, n[1], 1400); });
+  var t0 = c.currentTime + .05, out = c.createGain(), stopped = false; out.gain.value = .5; out.connect(c.destination);
+  var verb = c.createConvolver(), vl = c.sampleRate * 3.5, ir = c.createBuffer(2, vl, c.sampleRate);   // (a quiet room's long ring)
+  for (var ch = 0; ch < 2; ch++) { var dd = ir.getChannelData(ch); for (var i = 0; i < vl; i++) dd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / vl, 3.2); }
+  verb.buffer = ir; var wet = c.createGain(); wet.gain.value = .45; verb.connect(wet); wet.connect(out);
+  // the projector: soft noise, the shutter's flicker in it (24 a second), running as the spines go by, then winding down
+  var nb = c.createBuffer(1, c.sampleRate * 2.4, c.sampleRate), nd = nb.getChannelData(0); for (var j = 0; j < nd.length; j++) nd[j] = Math.random() * 2 - 1;
+  var n = c.createBufferSource(), bp = c.createBiquadFilter(), lp = c.createBiquadFilter(), am = c.createGain(), env = c.createGain(), lfo = c.createOscillator(), depth = c.createGain();
+  n.buffer = nb; bp.type = 'bandpass'; bp.frequency.value = 1500; bp.Q.value = .6; lp.type = 'lowpass'; lp.frequency.value = 3200;
+  lfo.type = 'square'; lfo.frequency.setValueAtTime(24, t0); lfo.frequency.setValueAtTime(24, t0 + 1.1); lfo.frequency.exponentialRampToValueAtTime(5, t0 + 1.7);
+  am.gain.value = .6; depth.gain.value = .4; lfo.connect(depth); depth.connect(am.gain);
+  env.gain.setValueAtTime(.0001, t0); env.gain.exponentialRampToValueAtTime(.05, t0 + .35); env.gain.setValueAtTime(.05, t0 + 1.1); env.gain.exponentialRampToValueAtTime(.0001, t0 + 1.8);
+  n.connect(bp); bp.connect(lp); lp.connect(am); am.connect(env); env.connect(out); n.start(t0); lfo.start(t0); n.stop(t0 + 2.3); lfo.stop(t0 + 2.3);
+  // the bell: C, struck once, its own overtones (a bell's, not an instrument's), ringing out; a low C beneath it, barely there
+  var h = t0 + 1.6, C5 = 523.25;
+  [[1, .05, 4.2], [2, .025, 2.8], [2.76, .018, 2], [5.4, .009, 1.2], [8.93, .005, .8]].forEach(function (p) {
+    var o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = C5 * p[0];
+    g.gain.setValueAtTime(.0001, h); g.gain.exponentialRampToValueAtTime(p[1], h + .006); g.gain.exponentialRampToValueAtTime(.0001, h + p[2]);
+    o.connect(g); g.connect(out); g.connect(verb); o.start(h); o.stop(h + p[2] + .1);
+  });
+  var lo = c.createOscillator(), lg = c.createGain(); lo.type = 'sine'; lo.frequency.value = 130.81;
+  lg.gain.setValueAtTime(.0001, h); lg.gain.exponentialRampToValueAtTime(.035, h + .4); lg.gain.exponentialRampToValueAtTime(.0001, h + 4); lo.connect(lg); lg.connect(out); lg.connect(verb); lo.start(h); lo.stop(h + 4.1);
   return {
     count: function () {},
     stop: function () {
