@@ -2114,6 +2114,103 @@ html.gcrit #cbody .cfind::placeholder { color: var(--gc-grey); opacity: 1; }
 .gcc i { display: block; margin: 6% 0 5%; font: italic 400 7.5cqw/1 var(--serif); color: var(--gc-grey); }
 .gcc .gcx { display: block; font-size: 10cqw; -webkit-text-stroke-width: .14em; }
 .gcc small { display: block; margin-top: 10%; font: 600 5.4cqw/1 var(--kfont); letter-spacing: .18em; text-transform: uppercase; color: #555; }
+/* ---- A24 at Grifflix: A24's own list of its films (its grotesk, its typewriter, black on white), with Grifflix's lettering (John, 19 Nov 2026,
+   "I want an A24 page in the same way we have a criterion one ... blend Grifflix style with A24's ... use the way they list their films") */
+:root { --a24-page: #fff; --a24-ink: #000; --a24-grey: #8f8f8f; --a24-dim: #a39e96; --a24-line: #e3e3e3; --a24-sans: "Inter Tight", "Helvetica Neue", Helvetica, Arial, sans-serif; --a24-mono: "DM Mono", ui-monospace, "SF Mono", Menlo, monospace; }
+.a24m { display: inline-block; font: 800 1em/.8 var(--a24-sans); letter-spacing: -.075em; margin-right: .075em; }
+html.public .a24btn { display: none !important; }
+.a24btn { flex: none; display: inline-grid; place-items: center; height: 32px; padding: 0 6px 0 7px !important; margin-left: 2px; border: 1px solid var(--gc-c, rgba(var(--kink), .45)) !important; background: transparent !important; color: var(--gc-c, var(--fg)) !important; border-radius: 0 !important; cursor: pointer; font: 800 14px/1 var(--a24-sans) !important; letter-spacing: -.07em !important; text-transform: none !important; }
+.a24btn:hover, .a24btn:focus-visible { background: var(--gc-c, rgb(var(--kink))) !important; color: var(--bg) !important; }
+html.ga24 .a24btn { background: var(--a24-ink) !important; color: var(--a24-page) !important; border-color: var(--a24-ink) !important; }
+@media (max-width: 389px) { .a24btn { height: 28px; padding: 0 4px 0 5px !important; font-size: 12px !important; } }
+/* its cover on the shelf: black, A24, at GRIFFLIX */
+.card.coll .ccov.a24c { background: #000; color: #fff; border-color: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 8% 7%; --gc-ink: #fff; --gcx-bg: #000; }
+.a24c .a24m { font-size: 36cqw; }
+.a24c i { display: block; margin: 9% 0 6%; font: normal 400 5.6cqw/1 var(--a24-mono); letter-spacing: .22em; text-transform: uppercase; color: #9a9a9a; }
+.a24c .gcx { display: block; font-size: 9.6cqw; -webkit-text-stroke-width: .14em; }
+.a24c small { display: block; margin-top: 11%; font: 400 5cqw/1 var(--a24-mono); letter-spacing: .14em; text-transform: uppercase; color: #9a9a9a; }
+/* the intro: its films rolling by, as A24's list, and A24 at GRIFFLIX */
+.a24in { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; overflow: hidden; background: var(--a24-page); color: var(--a24-ink); cursor: pointer; transition: opacity .6s ease; }
+.a24in.out { opacity: 0; pointer-events: none; }
+.a24in .roll { position: absolute; left: 0; right: 0; top: 0; padding: 0 4vw; }
+.a24in .roll.on { animation: a24Roll 9s cubic-bezier(.3, 0, .5, 1) forwards; }
+.a24in .roll div { display: grid; grid-template-columns: 15vw minmax(0, 1fr); align-items: baseline; padding: 2.2vh 0 2.4vh; border-top: 1px solid #f0f0f0; white-space: nowrap; overflow: hidden; }
+.a24in .roll b { font: 400 clamp(16px, 2.6vw, 34px)/1 var(--a24-mono); color: #cfcfcf; }
+.a24in .roll span { font: 500 clamp(30px, 5.4vw, 76px)/1 var(--a24-sans); letter-spacing: -.035em; color: #ebebeb; overflow: hidden; text-overflow: clip; }
+@keyframes a24Roll { from { transform: translateY(0); } to { transform: translateY(var(--a24-roll, -50%)); } }
+.a24in .core { position: relative; text-align: center; padding: 34px 54px 30px; background: var(--a24-page); box-shadow: 0 0 0 1px var(--a24-line), 0 30px 70px rgba(0, 0, 0, .07); }
+.a24in .big { display: block; font-size: clamp(92px, 19vw, 210px); clip-path: inset(0 0 100% 0); animation: a24Wipe .9s cubic-bezier(.7, 0, .2, 1) .2s forwards; }
+@keyframes a24Wipe { to { clip-path: inset(-10% -10% -10% -10%); } }
+.a24in .at { display: block; margin: 20px 0 12px; font: 400 12px/1 var(--a24-mono); letter-spacing: .24em; text-transform: uppercase; color: var(--a24-grey); opacity: 0; animation: gcUp .6s ease 1.05s forwards; }
+.a24in .g { display: block; font-size: clamp(26px, 5.4vw, 50px); --gc-ink: #000; --gcx-bg: #fff; opacity: 0; transform: translateY(10px); animation: gcUp .7s ease 1.3s forwards; }
+.a24in .n { display: block; margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--a24-ink); font: 400 12px/1.4 var(--a24-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--a24-grey); opacity: 0; animation: gcUp .6s ease 1.8s forwards; font-variant-numeric: tabular-nums; }
+.a24in .n b { color: var(--a24-ink); font-weight: 500; }
+.a24in .go { margin-top: 18px; padding: 10px 22px 9px; border: 1px solid var(--a24-ink); border-radius: 999px; background: var(--a24-ink); color: var(--a24-page); font: 500 11px/1 var(--a24-mono); letter-spacing: .16em; text-transform: uppercase; cursor: pointer; opacity: 0; animation: gcUp .6s ease 2.1s forwards; }
+.a24in .go:hover, .a24in .go:focus-visible { background: var(--a24-page); color: var(--a24-ink); }
+@media (prefers-reduced-motion: reduce) { .a24in *, .a24in .roll.on { animation-duration: .01s !important; animation-delay: 0s !important; } }
+@media (max-width: 600px) { .a24in .core { padding: 28px 24px 24px; margin: 0 16px; } .a24in .roll div { grid-template-columns: 20vw minmax(0, 1fr); } }
+/* its page: white, black, A24's list */
+html.ga24 { --bg: #fff !important; --kink: 0, 0, 0 !important; --line: rgba(0, 0, 0, .12) !important; --tile: rgba(0, 0, 0, .05) !important; --shadow: rgba(0, 0, 0, .1) !important; color-scheme: light; }
+html.ga24, html.ga24 body { background: var(--a24-page) !important; }
+html.ga24 .bar-top, html.ga24 .bar-top .brand { --fg: var(--a24-ink); --gc-ink: var(--a24-ink); }
+html.ga24 .bar-top { background: var(--a24-page) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: 0 1px 0 var(--a24-line), -100vw 1px 0 var(--a24-line), 100vw 1px 0 var(--a24-line), -100vw 0 0 var(--a24-page), 100vw 0 0 var(--a24-page) !important; }   /* (white to the screen's edges: the list is wider than the bar) */
+html.ga24 .bar-top::before { content: ""; position: absolute; left: -100vw; right: -100vw; bottom: 100%; height: 240px; background: var(--a24-page); pointer-events: none; }
+html.ga24 body::before, html.ga24 body::after { background-color: var(--a24-page) !important; background-image: none !important; }
+html.ga24 #main > .tabs:first-child { display: none; }
+html.ga24 .wrap { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+html.ga24 #cbody { color: var(--a24-ink); font-family: var(--a24-sans); }
+#cbody .a24head { display: block; margin: 8px 0 0; padding: 0; }
+.a24head .a24top { display: flex; align-items: center; gap: 12px 18px; padding: 10px 0 12px; border-bottom: 1px solid var(--a24-ink); font: 400 11px/1 var(--a24-mono); letter-spacing: .12em; text-transform: uppercase; }
+.a24head .a24lock { display: inline-flex; align-items: center; gap: 10px; margin-right: auto; color: var(--a24-ink); }
+.a24head .a24lock .a24m { font-size: 30px; }
+.a24head .a24lock small { font: inherit; color: var(--a24-grey); }
+.a24head .a24lock .gcx { font-size: 15px; --gc-ink: var(--a24-ink); --gcx-bg: var(--a24-page); }
+#cbody .a24head .a24top .hsub, #cbody .a24head .a24top .hsub i { margin: 0; color: var(--a24-grey); font-family: var(--a24-mono) !important; font-style: normal !important; font-weight: 400 !important; font-size: inherit; white-space: nowrap; }
+.a24head:has(.ctoolic) .a24top { padding-right: 50px; } #cbody .a24head > div { position: relative; } .a24head .ctoolic { top: 2px; border-radius: 0; }
+#cbody .a24head h1.colltitle { margin: clamp(26px, 5vw, 56px) 0 8px !important; font: 500 clamp(54px, 9.5vw, 136px)/.86 var(--a24-sans) !important; letter-spacing: -.05em !important; text-transform: none !important; color: var(--a24-ink); }
+#cbody .a24head .ov { max-width: 60ch; margin: 18px 0 0; font: 400 16px/1.45 var(--a24-sans); color: #444; }
+#cbody .a24head + .tabs { margin: 18px 0 0; }
+html.ga24 #cbody .cfind { border: 0; border-bottom: 1px solid var(--a24-ink); border-radius: 0; background: none; color: var(--a24-ink); font: 400 13px/1 var(--a24-mono); letter-spacing: .04em; padding-left: 0; }
+html.ga24 #cbody .cfind::placeholder { color: var(--a24-grey); opacity: 1; }
+html.ga24 #cbody .pill { border-color: var(--a24-ink); color: var(--a24-ink); background: none; font: 400 12px/1 var(--a24-mono); letter-spacing: .08em; text-transform: uppercase; border-radius: 999px; }
+html.ga24 #cbody .pill.on { background: var(--a24-ink); color: var(--a24-page); }
+html.ga24 #cbody .card .t, html.ga24 #cbody .card .s, html.ga24 #cbody .empty { color: var(--a24-ink); font-family: var(--a24-sans); }
+.a24list { --ayw: clamp(70px, 15vw, 236px); margin: 26px 0 48px; }
+.a24r { position: relative; display: grid; grid-template-columns: var(--ayw) minmax(0, 2.2fr) minmax(0, 1fr) minmax(0, 1fr) 118px; column-gap: 22px; align-items: start; width: 100%; padding: 16px 0 20px; margin: 0; border: 0; border-radius: 0; background: none; color: var(--a24-ink); text-align: left; font: inherit; cursor: pointer; scroll-margin: 110px 0 60px; }
+.a24r::before { content: ""; position: absolute; top: 0; right: 0; left: calc(var(--ayw) + 22px); border-top: 1px solid var(--a24-line); }
+.a24r.yr::before, .a24r.a24h::before { left: 0; }
+.a24r.a24h { padding: 0 0 12px; cursor: default; align-items: end; } .a24r.a24h::before { display: none; }
+.a24r.a24h span, .a24r.a24h button { padding-top: 0; font: 400 10px/1 var(--a24-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--a24-ink); }
+.a24h button { padding: 0 !important; margin: 0; min-height: 0 !important; height: auto; border: 0; background: none; cursor: pointer; } .a24h button:not(.on) { color: var(--a24-grey); } .a24h button:hover, .a24h button:focus-visible { color: var(--a24-ink); text-decoration: underline; }
+.a24r .ay { font: 400 clamp(26px, 3vw, 40px)/1 var(--a24-mono); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.a24r .af { font: 500 clamp(26px, 3vw, 42px)/1.04 var(--a24-sans); letter-spacing: -.03em; transition: color .15s; }
+.a24r .ad, .a24r .ac { padding-top: 4px; font: 400 15px/1.3 var(--a24-sans); letter-spacing: -.005em; }
+.a24r .ad span, .a24r .ac span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.a24r .ac { max-height: 5.2em; overflow: hidden; -webkit-mask-image: linear-gradient(#000 45%, transparent); mask-image: linear-gradient(#000 45%, transparent); }
+.a24r .as { padding-top: 6px; text-align: right; font: 400 10px/1.2 var(--a24-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--a24-ink); }
+.a24r .as b { display: inline-block; padding: 3px 5px 2px; background: var(--a24-ink); color: var(--a24-page); font-weight: 400; }
+.a24r .ad:empty::before, .a24r .ac:empty::before { content: "\2014"; color: var(--a24-line); }
+/* the still: the right half of the screen, as A24's, the film's words turned white over it */
+.a24still { position: fixed; z-index: 30; right: 0; top: var(--a24st, 96px); bottom: 24px; width: 50vw; margin: 0; background: #111; opacity: 0; pointer-events: none; transition: opacity .18s ease; }
+.a24still img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.a24still.on { opacity: 1; }
+.a24r.on { z-index: 31; }
+.a24r.on .af { color: var(--a24-dim); }
+.a24list.st .a24r.on .ad, .a24list.st .a24r.on .ac, .a24list.st .a24r.on .as { color: #fff; text-shadow: 0 1px 12px rgba(0, 0, 0, .35); -webkit-mask-image: none; mask-image: none; }
+.a24list.st .a24r.on::before { border-top-color: rgba(255, 255, 255, .8); }
+.a24list.st .a24r.on .as b { background: #fff; color: #000; text-shadow: none; }
+.a24r:focus-visible { outline: none; } .a24r:focus-visible .af { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: .12em; }
+@media (max-width: 1000px) { .a24r { grid-template-columns: var(--ayw) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); } .a24r .as { display: none; } }
+@media (max-width: 760px) {
+  .a24list { --ayw: 58px; } .a24r { grid-template-columns: var(--ayw) minmax(0, 1fr); column-gap: 14px; padding: 13px 0 15px; } .a24r::before { left: calc(var(--ayw) + 14px); }
+  .a24r .ay { font-size: 17px; padding-top: 4px; } .a24r .af { font-size: 25px; } .a24r .ad { grid-column: 2; padding-top: 6px; font-size: 13px; color: #555; } .a24r .ad span { display: inline; } .a24r .ad span + span::before { content: ", "; }
+  .a24r .ac, .a24h .ad, .a24h .ac { display: none; } .a24still { display: none; }
+  .a24head .a24lock { gap: 7px; } .a24head .a24lock .a24m { font-size: 24px; } .a24head .a24lock .gcx { font-size: 11px; }
+}
+@media (max-width: 389px) {
+  #cbody .a24head .a24top .hsub { display: none; }
+}
+html.tv .a24list { --ayw: 150px; } html.tv .a24r .af { font-size: 34px; } html.tv .a24still { bottom: 0; }
 /* the switch square, as every other button of the bar (John, 11 Nov 2026: "the theme calendar toggle is rounded") */
 #barnav button.vtog, #shnav button.vtog, .vtog::before { border-radius: 0 !important; }
 /* the bar on every phone, down to the smallest (320 wide): a little tighter, the draft's tag a yellow dot, and on the smallest no
@@ -3145,7 +3242,8 @@ function route() {
   var h = (location.hash || '#home').slice(1).split('/');
   S.view = h[0] || 'home';
   $('#main').className = '';
-  if (S.view !== 'collection') document.documentElement.classList.remove('gcrit');
+  if (S.view !== 'collection') { document.documentElement.classList.remove('gcrit'); document.documentElement.classList.remove('ga24'); }
+  var st24 = $('.a24still'); if (st24) st24.remove();
   document.documentElement.toggleAttribute('data-page', ['browse', 'collection', 'lists'].indexOf(S.view) >= 0);   // (a page of its own: kept clear of the theme's floating bar)
   $$('.bar-top [data-go]').forEach(function (b) { b.classList.toggle('on', b.dataset.go === S.view && b.classList.contains('pill')); });
   window.scrollTo(0, 0);
@@ -5533,6 +5631,7 @@ function collCard(c) {   // a collection's cover, drawn rather than a picture: a
   var h = 0; for (var i = 0; i < (c.id || nm).length; i++) h = (h * 31 + (c.id || nm).charCodeAt(i)) >>> 0;
   var long = nm.length > 26 ? ' xl' : (nm.length > 13 ? ' l' : ''), n = c.children ? c.children + (c.children === 1 ? ' title' : ' titles') : 'Collection';
   if (/criterion/i.test(c.name)) return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '">' + gcCover(c, n) + '<div class="t">' + esc(c.name) + '</div><div class="s">' + n + '</div></a>';
+  if (/^a24$/i.test(c.name)) { a24Fonts(); return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '"><div class="pic ccov a24c">' + a24Mark() + '<i>at</i><b class="gcx">Grifflix</b><small>' + esc(n) + '</small></div><div class="t">' + esc(c.name) + '</div><div class="s">' + n + '</div></a>'; }
   return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '"><div class="pic ccov" data-cn="' + esc(c.name) + '" data-nm="' + esc(nm) + '" data-ch="' + h + '">' + collArt(h, nm, c.name) +
     '<div class="cc">' + (k ? '<small>' + esc(k) + '</small>' : '') + '<b class="' + long + '">' + esc(nm) + '</b><i></i><span>' + n + '</span></div></div><div class="t">' + esc(c.name) + '</div><div class="s">' + n + '</div></a>';   // (its name under it too, as a film's: John, 8 Nov 2026)
 }
@@ -5556,8 +5655,12 @@ function collectionView(id, into) {
     if (!$('#cbody')) return;
     sfMode(/criterion/i.test(c.name));   // (before its bar is drawn: the bar shows Criterion's sort)
     document.documentElement.classList.toggle('gcrit', /criterion/i.test(c.name));   // (The Criterion Collection at Grifflix: its own look)
+    var A24 = /^a24$/i.test(c.name); document.documentElement.classList.toggle('ga24', A24); if (A24) a24Fonts();   // (A24 at Grifflix: A24's own list: John, 19 Nov 2026)
     var cov = collCard({ id: c.id, name: c.name, children: c.items.length }).replace(/^<a [^>]*>|<\/a>$/g, '');   // (its drawn cover, as on the shelf)
-    $('#cbody').innerHTML = '<div class="collhead"><div class="card coll collpic">' + cov + '</div>' +
+    $('#cbody').innerHTML = (A24 ? '<div class="collhead a24head"><div><div class="a24top"><span class="a24lock">' + a24Mark() + '<small>at</small><b class="gcx">Grifflix</b></span><span class="hsub"><i>' + c.items.length + ' films</i></span></div>' +
+      '<h1 class="colltitle">All films</h1>' + (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
+      '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find an A24 film" aria-label="Find in A24" autocomplete="off"><span class="sp"></span></div>' +
+      '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>' : '<div class="collhead"><div class="card coll collpic">' + cov + '</div>' +
       '<div><div class="kick">Collection</div><h1 class="colltitle">' + esc(c.name) + '</h1><div class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' title' : ' titles') + '</i></div>' +
       // (Criterion's: what's in it at a glance, in the room the big cover took)
       (/criterion/i.test(c.name) ? (function () { var sets = {}, sp = 0, dirs = {}, ctys = {}; c.items.forEach(function (i) { (i.cset || []).forEach(function (b) { sets[b] = 1; }); if (i.spine) sp++; if (i.cdir) dirs[i.cdir] = 1; if (i.ccty) ctys[i.ccty] = 1; });
@@ -5567,10 +5670,11 @@ function collectionView(id, into) {
       // (a search within it, for everyone; for John, its films taken out and added here, and its description: John, 16 Nov 2026, "I need
       // the ability to edit collections properly, as well as search within them")
       '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find in this collection" aria-label="Find in this collection" autocomplete="off"><span class="sp"></span>' + sfBar() + '</div>' +
-      '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>';
+      '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>');
     var editing = false, fq = '', openSet = null, cv0 = store.get('grifflix-clist'), cmode = cv0 === 'covers' ? 'covers' : 'list', csets = cv0 === 'sets' || store.get('grifflix-csets') === '1', clist = cmode === 'list';   // (List or Covers, for the films and for the box sets alike: John, 18 Nov 2026, "you should be able to see box sets in list or covers, not just list")
     var fits = function (i) { if (!fq) return true; var t = (showName(i) + ' ' + (i.year || '') + ' ' + (i.spine ? 'no ' + i.spine : '')).toLowerCase(); return fq.split(/\s+/).every(function (w) { return t.indexOf(w) >= 0; }); };
     var draw = function () {
+      if (A24 && !editing) return a24Draw($('#cgrid'), c.items.filter(fits), fq);
       var items = sfSort(c.items.filter(sfFits(SF.f)).filter(fits), sfKey(), sfDirOf());
       // (box sets as tiles, each opened to its films; the Eclipse filter shows Eclipse's sets, not their films: John, 18 Nov 2026, "The actual
       // films shouldn't come up when you filter eclipse but the box sets should, which you can then open to see the films")
@@ -5648,9 +5752,9 @@ function collectionView(id, into) {
           .catch(function (e) { b.disabled = false; b.textContent = 'Take out'; oops(e); });
       }; });
     };
-    var count = function () { var h = $('#cbody .hsub i'); if (h) h.textContent = c.items.length + (c.items.length === 1 ? ' title' : ' titles'); };
+    var count = function () { var h = $('#cbody .hsub i'); if (h) h.textContent = c.items.length + (A24 ? ' films' : c.items.length === 1 ? ' title' : ' titles'); };
     var ft = 0; $('#cfind').oninput = function () { var v = this.value.trim().toLowerCase(); clearTimeout(ft); ft = setTimeout(function () { fq = v; draw(); }, 120); };
-    sfMode(/criterion/i.test(c.name)); sfWire($('#cbody'), c.items, draw);
+    sfMode(/criterion/i.test(c.name)); if (!A24) sfWire($('#cbody'), c.items, draw);
     if (SPINEOK) {   // (a list, as Criterion's site; or the covers)
       $('#cbody .sfbar').insertAdjacentHTML('beforebegin', '<span class="cviews" role="group" aria-label="Show as">' + [['list', 'List'], ['covers', 'Covers']].map(function (m) { return '<button class="pill' + (cmode === m[0] ? ' on' : '') + '" data-cv="' + m[0] + '" aria-pressed="' + (cmode === m[0]) + '">' + m[1] + '</button>'; }).join('') +
         '<button class="pill' + (csets ? ' on' : '') + '" id="cvsets" aria-pressed="' + csets + '">Box sets</button></span>');
@@ -5696,7 +5800,7 @@ function collectionView(id, into) {
         $('#cdok').onclick = function () { var v = $('#cdtext').value.trim(), b = this; b.disabled = true;
           api('collections', { op: 'describe', id: c.id, text: v }).then(function () { closeSheet(); c.overview = v; toast('Description saved'); collectionPaint(); }).catch(function (e) { b.disabled = false; oops(e); }); };
       };
-      var collectionPaint = function () { var d = $('#cbody .collhead > div:last-child'), ov = d && d.querySelector('.ov'); if (!d) return; if (v0()) { if (!ov) { ov = document.createElement('p'); ov.className = 'ov'; d.querySelector('.hsub').after(ov); } ov.textContent = c.overview; } else if (ov) ov.remove(); $('#cdesc').textContent = c.overview ? 'Change the description' : 'Add a description'; };
+      var collectionPaint = function () { var d = $('#cbody .collhead > div:last-child'), ov = d && d.querySelector('.ov'); if (!d) return; if (v0()) { if (!ov) { ov = document.createElement('p'); ov.className = 'ov'; d.querySelector(A24 ? '.colltitle' : '.hsub').after(ov); } ov.textContent = c.overview; } else if (ov) ov.remove(); $('#cdesc').textContent = c.overview ? 'Change the description' : 'Add a description'; };
       var v0 = function () { return !!c.overview; };
       $('#crename').onclick = function () { ask('Rename the collection', 'Its name', c.name, function (v) { api('collections', { op: 'rename', id: c.id, name: v }).then(function () { toast('Renamed'); c.name = v; var h = $('#cbody .colltitle'); if (h) h.textContent = v; }).catch(oops); }); };
       $('#cdelete').onclick = function () { var b = this; if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Tap again: its films stay'; return; }
@@ -5883,7 +5987,8 @@ function navWords(on) {
   // see one or the other"); its other side what a press takes you to; Search beside it)
   var base = on === 'calendar' || on === 'theme' ? on : VIEW() === 'themes' && !S.mcal ? 'theme' : 'calendar';
   return '<button type="button" class="vtog ' + (base === 'theme' ? 'vt-thm' : 'vt-cal') + '" role="switch" aria-checked="' + (base === 'theme') + '" aria-label="Calendar or theme" data-nv="' + (base === 'theme' ? 'calendar' : 'theme') + '"><span>Calendar</span><span>Theme</span></button>' +
-    (PUBLIC && !DEMO ? '' : '<button type="button" class="critbtn" data-nv="criterion" aria-label="The Criterion Collection at Grifflix" title="The Criterion Collection at Grifflix">' + gcMark() + '</button>') +
+    (PUBLIC && !DEMO ? '' : '<button type="button" class="critbtn" data-nv="criterion" aria-label="The Criterion Collection at Grifflix" title="The Criterion Collection at Grifflix">' + gcMark() + '</button>' +
+      '<button type="button" class="a24btn" data-nv="a24" aria-label="A24 at Grifflix" title="A24 at Grifflix">A24</button>') +   // (A24's beside it: John, 19 Nov 2026)
     // (named for what it finds, Film & TV; on a phone, its magnifying glass as before: John, 18 Nov 2026)
     (PUBLIC && !DEMO ? '' : '<button type="button" data-nv="search" aria-label="Search films and TV"' + (on === 'search' ? ' class="on" aria-current="page"' : '') + '>Film &amp; TV</button>');   // (signed out: no searching the library)
 }
@@ -5928,8 +6033,95 @@ function critIntro() {
     });
   }).catch(function () {});
 }
+// ---- A24 at Grifflix: its button beside Criterion's, its intro, and its page, in A24's own list of its films: the year, the film, who
+// directed it, who's in it, a still over the right half as you point at one (John, 19 Nov 2026, "I want an A24 page in the same way we
+// have a criterion one, with a nice intro screen. This time it will blend Grifflix style with A24's ... use the way they list their films
+// in the all films section")
+function a24Fonts() {   // (A24's grotesk and typewriter, fetched only when A24 is shown)
+  if (a24Fonts.d) return; a24Fonts.d = 1;
+  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;800&family=DM+Mono:wght@400;500&display=swap'; document.head.appendChild(l);
+}
+function a24Mark(cls) { return '<span class="a24m' + (cls ? ' ' + cls : '') + '" aria-hidden="true">A24</span>'; }
+function a24Find() { return api('collections').then(function (r) { return (r.collections || []).filter(function (c) { return /^a24$/i.test(c.name); })[0]; }); }
+function a24Intro() {
+  if ($('.a24in')) return; a24Fonts();
+  var el = document.createElement('div'); el.className = 'a24in'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'A24 at Grifflix');
+  el.innerHTML = '<div class="roll" aria-hidden="true"></div><div class="core">' + a24Mark('big') + '<span class="at">at</span><span class="g gcx">Grifflix</span><span class="n" aria-live="polite">&nbsp;</span><button type="button" class="go">Enter</button></div>';
+  document.body.appendChild(el);
+  var coll = null, done = false, t0 = Date.now(), auto = 0;
+  var key = function (e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
+  var go = function () {
+    if (done) return; done = true; clearTimeout(auto);
+    if (coll) location.hash = '#collection/' + coll.id;
+    el.classList.add('out'); setTimeout(function () { el.remove(); }, 700);
+    document.removeEventListener('keydown', key, true);
+  };
+  document.addEventListener('keydown', key, true);
+  el.onclick = go;
+  auto = setTimeout(go, 4400);
+  if (TV) setTimeout(function () { var b = el.querySelector('.go'); if (b) b.focus(); }, 2300);
+  a24Find().then(function (c) {
+    coll = c; var box = $('.a24in .n'); if (!c) { if (box) box.textContent = 'No A24 collection in Grifflix yet'; return; }
+    return api('collection?id=' + encodeURIComponent(c.id)).then(function (d) {
+      var it = (d.items || []).filter(function (x) { return x.year; }).sort(function (a, b) { return b.year - a.year || showName(a).localeCompare(showName(b)); });
+      var roll = $('.a24in .roll'), last = 0;
+      if (roll && it.length) {   // (its films going by behind, newest first, each year once, as A24's list)
+        roll.innerHTML = it.slice(0, 40).map(function (x) { var y = x.year !== last ? x.year : ''; last = x.year; return '<div><b>' + y + '</b><span>' + esc(showName(x)) + '</span></div>'; }).join('');
+        requestAnimationFrame(function () { var h = roll.scrollHeight; roll.style.setProperty('--a24-roll', -Math.max(0, h - innerHeight) + 'px'); roll.classList.add('on'); });
+      }
+      if (!box) return;
+      var n = (d.items || []).length, ys = it.map(function (x) { return x.year; }), lo = Math.min.apply(null, ys), hi = Math.max.apply(null, ys);
+      var st = 0, tick = function () {
+        if (!st) st = Date.now();
+        var k = Math.min(1, (Date.now() - st) / 1400), e = 1 - Math.pow(1 - k, 3);
+        box.innerHTML = '<b>' + Math.round(n * e) + '</b> films' + (ys.length ? ' · <b>' + lo + '</b>–<b>' + Math.round(lo + (hi - lo) * e) + '</b>' : '');
+        if (k < 1 && !done) requestAnimationFrame(tick);
+      };
+      setTimeout(tick, Math.max(0, 1900 - (Date.now() - t0)));
+    });
+  }).catch(function () {});
+}
+var A24D = {}, A24S = store.get('grifflix-a24sort') === 'name' ? 'name' : 'year', A24DIR = store.get('grifflix-a24dir') === '1' ? 1 : -1;
+function a24Draw(g, items, fq) {
+  var nk = function (i) { return showName(i).replace(/^(the|a|an)\s+/i, '').toLowerCase(); };
+  items = items.slice().sort(A24S === 'name' ? function (a, b) { return A24DIR * -1 * (nk(a) < nk(b) ? -1 : nk(a) > nk(b) ? 1 : 0) || (b.year || 0) - (a.year || 0); }
+    : function (a, b) { return A24DIR * ((a.year || 0) - (b.year || 0)) || nk(a).localeCompare(nk(b)); });
+  var hd = function (k, t) { var on = A24S === k, ar = k === 'year' ? (A24DIR < 0 ? ' ↓' : ' ↑') : (A24DIR < 0 ? ' A–Z' : ' Z–A'); return '<button type="button" class="' + (on ? 'on' : '') + '" data-a24s="' + k + '">' + t + (on ? ar : '') + '</button>'; };
+  var NEW = Date.now() - 30 * 864e5, last = null;
+  g.className = 'a24list';
+  g.innerHTML = '<div class="a24r a24h"><span class="ay">' + hd('year', 'Year') + '</span><span class="af">' + hd('name', 'Film') + '</span><span class="ad">Directed by</span><span class="ac">Starring</span><span class="as"></span></div>' +
+    (items.length ? items.map(function (i) {
+      var y = String(i.year || ''), first = A24S !== 'year' || y !== last; last = y;
+      var m = +i.mins || 0, st = i.added && Date.parse(i.added) > NEW ? '<b>Just added</b>' : m ? (m >= 60 ? Math.floor(m / 60) + ' hr ' : '') + (m % 60 ? (m % 60) + ' min' : '') : '';
+      return '<button type="button" class="a24r' + (first ? ' yr' : '') + '" data-item="' + i.id + '"><span class="ay">' + (first ? esc(y) : '') + '</span><span class="af">' + esc(showName(i)) + '</span><span class="ad"></span><span class="ac"></span><span class="as">' + st + '</span></button>';
+    }).join('') : '<div class="empty">' + (fq ? 'No A24 film called that.' : 'No films in it yet.') + '</div>');
+  $$('[data-a24s]', g).forEach(function (b) { b.onclick = function () { var k = b.dataset.a24s; if (A24S === k) A24DIR = -A24DIR; else { A24S = k; A24DIR = -1; } store.set('grifflix-a24sort', A24S); store.set('grifflix-a24dir', String(A24DIR)); a24Draw(g, items, fq); }; });
+  wireCards(g, items);
+  // (who directed each and who's in it, from each film's own details, a few files at a time, the top of the list first)
+  var put = function (id) { var d = A24D[id], r = g.querySelector('[data-item="' + id + '"]'); if (!r || !d) return;
+    r.querySelector('.ad').innerHTML = (d.directors || []).slice(0, 2).map(function (n) { return '<span>' + esc(n) + '</span>'; }).join('');
+    r.querySelector('.ac').innerHTML = (d.cast || []).slice(0, 5).map(function (n) { return '<span>' + esc(n) + '</span>'; }).join(''); };
+  var order = [], need = {};
+  items.forEach(function (i) { if (A24D[i.id]) return put(i.id); var s = i.id.slice(0, 2); if (!need[s]) { need[s] = []; order.push(s); } need[s].push(i.id); });
+  var k = 0, run = function () { var s = order[k++]; if (!s || !g.isConnected) return;
+    getJSON(DATA + 'd/' + s + '.json').then(function (b) { need[s].forEach(function (id) { A24D[id] = b[id] || {}; put(id); }); }, function () { need[s].forEach(function (id) { A24D[id] = {}; }); }).then(run); };
+  for (var j = 0; j < 6; j++) run();
+  // (the still: the right half of the screen, as A24's, its words white over it; a computer's pointer, or the TV's remote)
+  var still = $('.a24still'); if (!still) { still = document.createElement('figure'); still.className = 'a24still'; still.setAttribute('aria-hidden', 'true'); still.innerHTML = '<img alt="">'; } g.appendChild(still);   // (in the list, so the film pointed at sits over it)
+  var on = null, show = function (r) {
+    if (on === r) return; if (on) on.classList.remove('on'); on = r;
+    var it = r && items.filter(function (x) { return x.id === r.dataset.item; })[0], src = it && (it.backdrop ? img(it.backdrop, 'Backdrop', 1100) : '');
+    if (!r || !src || MOBQ()) { still.classList.remove('on'); g.classList.remove('st'); if (r) r.classList.add('on'); return; }
+    r.classList.add('on'); var bt = $('.bar-top'); still.style.setProperty('--a24st', Math.max(24, (bt ? bt.getBoundingClientRect().bottom : 0) + 24) + 'px');
+    var im = still.firstChild; if (im.getAttribute('src') !== src) { still.classList.remove('on'); im.onload = function () { if (on === r) { still.classList.add('on'); g.classList.add('st'); } }; im.src = src; }
+    else { still.classList.add('on'); g.classList.add('st'); }
+  };
+  $$('.a24r[data-item]', g).forEach(function (r) { r.onmouseenter = function () { show(r); }; r.onfocus = function () { show(r); }; });
+  g.onmouseleave = function () { show(null); }; g.onfocusout = function (e) { if (!g.contains(e.relatedTarget)) show(null); };
+}
 function navGo(w) {
   if (w === 'criterion') { if (dlg.open) closeSheet(); return critIntro(); }
+  if (w === 'a24') { if (dlg.open) closeSheet(); return a24Intro(); }
   var oncal = dlg.open && !!$('#sheetIn .tcal'), onsearch = dlg.open && !!$('#sheetIn #sq'), d = dlg.open ? S.sheetDate : null;
   if (w === 'search') { if (!onsearch) searchSheet(); return; }
   if (w === 'calendar') {
