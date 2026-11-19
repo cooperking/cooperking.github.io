@@ -1381,7 +1381,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var fl = $('#flook'), asked = fetching.asked && Date.now() - fetching.asked < 60000 && !(f.checked && f.checked * 1000 > fetching.asked);
       if (f.running || n) fetching.asked = 0;
       fl.hidden = !f.setup; fl.disabled = !!(f.running || n || asked);
-      fl.textContent = n ? 'Downloading…' : f.running || asked ? 'Looking now…' : 'Look now';
+      fl.textContent = n ? 'Downloading…' : f.running && f.hold ? 'Waiting for ' + f.hold + '…' : f.running || asked ? 'Looking now…' : 'Look now';   // (waiting while the film it brought in is repackaged, said so, not "looking": John, 19 Nov 2026)
       var mins = function (t) { var m = Math.max(0, Math.round((t * 1000 - Date.now()) / 60000)); return m < 1 ? 'any moment' : 'in ' + m + ' min'; };
       if (!f.setup) {
         $('#fhead').innerHTML = 'Not <em>set up</em>'; $('#fsay').innerHTML = 'On the Mac mini: <b>python3 ~/Grifflix/gdrive.py setup</b>';
