@@ -32,7 +32,8 @@
     + '.aptr.back, .aptr-moving.back { transition: transform .28s cubic-bezier(.2, .8, .25, 1), opacity .2s ease; }'
     + '@keyframes aptrspin { to { transform: rotate(360deg); } }';
   // (Grifflix's admin page: Grifflix's own film reel, as on its site, not Song of the Day's record: John, 15 Nov 2026)
-  var REEL = /^\/grifflix\//.test(location.pathname);
+  // (and the admin app, at admin.grifflix.co.uk, whose address doesn't start /grifflix/: it still had the record: John, 19 Nov 2026)
+  var REEL = /^\/grifflix\//.test(location.pathname) || /(^|\.)grifflix\./.test(location.hostname);
   if (REEL) css += '.aptr { background: #fffaf5; } .aptr-turn { background: none; color: var(--bg); } .aptr-turn::before, .aptr-turn::after { display: none; } .aptr-turn svg { display: block; width: 40px; height: 40px; }';
   function start() {
     var body = document.querySelector('.wrap');
