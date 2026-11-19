@@ -196,7 +196,8 @@ def why(ms):
             return REPACK + ' (%s sound)' % ((g(a, 'Codec') or '?').upper())
         # (more than a gigabyte of soundtracks beyond the one kept (dubs, second copies; commentaries stay): repackaged to one, the
         # picture copied, a few minutes: John, 19 Nov 2026, "I only need one English soundtrack")
-        extra = [x for x in auds if x is not a and 'comment' not in (g(x, 'Title') or '').lower()]
+        la = (g(a, 'Language') or '').lower() if a else ''
+        extra = [x for x in auds if x is not a and not ((g(x, 'Language') or '').lower() in (la, '', 'und') and keep_beside(None, None, g(x, 'Title') or '', g(x, 'Channels') or 2))]
         secs = (g(ms, 'RunTimeTicks') or 0) / 1e7
         if extra and sum((g(x, 'BitRate') or 640000) for x in extra) * secs / 8 / 1e9 >= 1.0:
             return REPACK + ' (%d soundtracks: one kept)' % (len(extra) + 1)
@@ -385,6 +386,26 @@ def commentary(a):
     return bool((a.get('disposition') or {}).get('comment')) or 'comment' in ((a.get('tags') or {}).get('title') or '').lower()
 
 
+FORMAT_ONLY = re.compile(r'^\s*(\W*(stereo|mono|surround|downmix(ed)?|original|main|english|eng|dolby|digital|dd|ac-?3|e-?ac-?3|aac|dts|pcm|lpcm|flac|'
+                         r'2\.0|1\.0|5\.1|7\.1|ch|channels?|audio|track|\d+\s*kbps|kbps)\W*)*\s*$', re.I)
+
+
+def keep_beside(a, main, title=None, chans=None):
+    """Kept beside the one soundtrack: a commentary, however it's named ("Neil Jordan", "Director and cast") or unnamed: any other
+    stereo or mono track in the film's own language that isn't just a stereo copy (its name only "Stereo", "2.0"…) or an audio
+    description. A dub, or a second surround copy, isn't (John, 19 Nov 2026: "If it's commentary I need that too")."""
+    t = (title if title is not None else ((a.get('tags') or {}).get('title') or '')).strip().lower()
+    if 'comment' in t or (title is None and commentary(a)):
+        return True
+    if re.search(r'descri|audio desc|\bad\b|narrat|visually', t):
+        return False
+    if int(chans if chans is not None else (a.get('channels') or 2)) > 2:
+        return False
+    if t and FORMAT_ONLY.match(t):
+        return False
+    return True
+
+
 def chosen_lang(iid):
     try:
         return (json.load(open(PRIO)).get('langs') or {}).get(iid)
@@ -505,7 +526,7 @@ def convert(item, ffmpeg, ffprobe, st):
         # The dubs and the second copies dropped: a new film's eight dubs were more than half of it (John, 19 Nov 2026: Disclosure Day
         # "only went down to 11gb after conversion", "I only need one English soundtrack")
         cmd += ['-map', '0:%d' % main_a['index']]
-        keep = [a for a in audio if a is not main_a and commentary(a)]
+        keep = [a for a in audio if a is not main_a and (commentary(a) or (lang(a) in (lang(main_a), None, '', 'und') and keep_beside(a, main_a)))]
         for a in keep:
             cmd += ['-map', '0:%d' % a['index']]
         if len(audio) > 1:
