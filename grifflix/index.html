@@ -1316,6 +1316,14 @@ html:not(.phone) .film { display: grid; grid-template-columns: minmax(220px, 30v
 html:not(.phone) .film .heroimg { display: none !important; }
 html:not(.phone) .film:not(.hasposter) .heroimg { display: block !important; position: relative !important; inset: auto !important; height: auto !important; aspect-ratio: 16 / 9 !important; width: 100% !important; border: 1px solid rgba(var(--kink), .25); }
 html:not(.phone) .film:not(.hasposter) { grid-template-columns: minmax(300px, 42vw) minmax(0, 1fr); }
+/* (the poster at the top, kept in view as the words or a series' episodes scroll beside it, not centred against them, where a long right side
+   left it halfway down: John, 19 Nov 2026, "pictures aren't correctly placed and it's noticeable particularly when the right side has a lot of info") */
+html:not(.phone) .film { align-items: start !important; }
+html:not(.phone) .film .ipost, html:not(.phone) .film:not(.hasposter) .heroimg { position: sticky !important; top: 96px; align-self: start; }
+html:not(.phone) .film > .in { align-self: start; }
+/* (the tagline, the synopsis and the credits to one width, so no paragraph stops short of the others: John, 19 Nov 2026, "Words on synopsis cut off
+   before words in other paragraphs") */
+html:not(.tv) .film .tag, html:not(.tv) .film .ov, html:not(.tv) .film .cred, html:not(.tv) .film .credits { max-width: 1040px !important; }
 html:not(.phone) .film .ipost img { display: block; width: 100%; height: auto; max-height: calc(100vh - 170px); object-fit: contain; object-position: center; box-shadow: 0 24px 60px rgba(0, 0, 0, .35); }
 html:not(.phone) .film .in { padding: 0 !important; min-height: 0 !important; display: block !important; }
 html.tv .film .ov { font-size: var(--ovfs, 21px) !important; max-width: none !important; display: block !important; -webkit-line-clamp: unset !important; overflow: visible !important; }   /* (all of it, made smaller to fit: tvFit) */
@@ -2389,7 +2397,16 @@ html .th-picture .vday.has::before { content: ""; position: absolute; left: 50%;
 .th-picture .vday.soon { background: #141210 !important; box-shadow: inset 0 0 0 1px rgba(244, 236, 216, .25) !important; }
 .th-picture .vday.soon .cs { display: grid !important; font: 600 15px/1.2 var(--kfont) !important; letter-spacing: .28em; color: rgba(244, 236, 216, .55) !important; text-transform: uppercase; }
 /* the look made consistent across the phone, the computer and the TV (a review of every screen: 15 Nov 2026) */
-.homeic[hidden] { display: none !important; }   /* (a home icon hidden over pop-ups showed all the same, alone in the top corner of a phone) */
+.homeic[hidden] { display: none !important; }
+/* (Criterion's and A24's pages: the bar on solid ground right across the screen, down to its line, which runs edge to edge, so nothing shows through
+   beside it as the page scrolls: John, 19 Nov 2026, "top bar ... doesn't go all the way across the page") */
+html.ga24:not(.tv) .bar-top::before, html.gcrit:not(.tv) .bar-top::before { content: "" !important; position: absolute !important; left: -100vw !important; right: -100vw !important; top: -160px !important; bottom: 0 !important; height: auto !important; background: var(--a24-page) !important; border-bottom: 1px solid var(--a24-line); z-index: -1 !important; pointer-events: none; }
+html.gcrit:not(.tv) .bar-top::before { background: var(--gc-page) !important; border-bottom-color: var(--gc-line); }
+/* (and there, the bar as on any page, at the top, whatever the month's theme: the Table's and the Hall's bar is set down from the top and
+   narrower, for their own scenes: John, 19 Nov 2026, "top bar has extra space at the top") */
+html.ga24.hall[data-page] #main, html.ga24.table[data-page] #main, html.gcrit.hall[data-page] #main, html.gcrit.table[data-page] #main { padding-top: 0 !important; }   /* (no room kept for the Table's lowered bar) */
+html.ga24.table:not(.tv) .bar-top, html.ga24.hall:not(.tv) .bar-top, html.gcrit.table:not(.tv) .bar-top, html.gcrit.hall:not(.tv) .bar-top { position: sticky !important; top: max(8px, calc(env(safe-area-inset-top) + 10px)) !important; left: auto !important; right: auto !important; }
+html.ga24 .bar-top, html.gcrit .bar-top { box-shadow: none !important; }   /* (a home icon hidden over pop-ups showed all the same, alone in the top corner of a phone) */
 html:not(.hall):not(.table):not(.tv) .bar-top::before { content: ""; position: fixed; left: 0; right: 0; top: 0; height: calc(env(safe-area-inset-top) + 66px); background: linear-gradient(var(--bg) 82%, rgba(0, 0, 0, 0)); z-index: -1; pointer-events: none; }   /* (the bar on its own ground, as the page scrolls under it: the calendar's films showed through CALENDAR and THEME) */
 html:not(.phone):not(.tv) #sheet #sq, html.tv #sheet #sq { width: 100% !important; }   /* (Search's box to the edge: the room kept for the X it no longer has) */
 #sheet input::placeholder, #sq::placeholder { color: var(--fg-2); opacity: 1; }   /* (the hint readable in every theme's colours) */
@@ -2475,7 +2492,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'e880407b5e61' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '0d351b4da295' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6122,40 +6139,35 @@ function critIntro() {
     });
   }).catch(function () {});
 }
-// (the Criterion intro's sound, made by the browser, as an old film's opening titles, not twee: a low swell of strings rising as the
-// shelf slides in and the C draws itself, a soft drum as GRIFFLIX comes, and a broad, warm chord of brass ringing out (John, 19 Nov 2026,
-// "Can we have different music for the criterion channel. It's too twee"). Only when Grifflix's music is on)
+// (the Criterion intro's sound, made by the browser, quiet and subtle: a soft swell of strings under the C as it draws itself, then a warm chord
+// blooming slowly under GRIFFLIX and fading away; no drum, nothing bright (John, 19 Nov 2026, "not quite right yet. More subtle"). Only when
+// Grifflix's music is on)
 function critSound() {
   if (!TMUS.on || CALM) return null;
   var c = musicCtx(); if (!c) return null;
   try { musicHush(); } catch (e) {}
-  var t0 = c.currentTime + .05, out = c.createGain(), stopped = false; out.gain.value = .55; out.connect(c.destination);
-  var verb = c.createConvolver(), vl = c.sampleRate * 3, ir = c.createBuffer(2, vl, c.sampleRate);   // (a hall's ring)
-  for (var ch = 0; ch < 2; ch++) { var dd = ir.getChannelData(ch); for (var i = 0; i < vl; i++) dd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / vl, 2.5); }
-  verb.buffer = ir; var wet = c.createGain(); wet.gain.value = .35; verb.connect(wet); wet.connect(out);
-  var voice = function (f, type, at, att, hold, rel, v, lpFrom, lpTo, into) {   // (one held note: a slow rise, held, a slow fall, a filter opening)
-    var o = c.createOscillator(), o2 = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain();
-    o.type = o2.type = type; o.frequency.value = o2.frequency.value = f; o.detune.value = -7; o2.detune.value = 7;
-    lp.type = 'lowpass'; lp.Q.value = .6; lp.frequency.setValueAtTime(lpFrom, at); lp.frequency.exponentialRampToValueAtTime(lpTo, at + att + hold * .5);
+  var t0 = c.currentTime + .05, out = c.createGain(), stopped = false; out.gain.value = .32; out.connect(c.destination);
+  var verb = c.createConvolver(), vl = c.sampleRate * 3.2, ir = c.createBuffer(2, vl, c.sampleRate);   // (a soft hall's ring)
+  for (var ch = 0; ch < 2; ch++) { var dd = ir.getChannelData(ch); for (var i = 0; i < vl; i++) dd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / vl, 3); }
+  verb.buffer = ir; var wet = c.createGain(); wet.gain.value = .5; verb.connect(wet); wet.connect(out);
+  var voice = function (f, at, att, hold, rel, v, lp) {   // (one soft held note: two rounded tones a hair apart, a slow rise and a long fall)
+    var o = c.createOscillator(), o2 = c.createOscillator(), fl = c.createBiquadFilter(), g = c.createGain();
+    o.type = 'triangle'; o2.type = 'sine'; o.frequency.value = o2.frequency.value = f; o.detune.value = -4; o2.detune.value = 4;
+    fl.type = 'lowpass'; fl.frequency.value = lp || 1200; fl.Q.value = .3;
     g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(v, at + att); g.gain.setValueAtTime(v, at + att + hold); g.gain.exponentialRampToValueAtTime(.0001, at + att + hold + rel);
-    o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(into || out); g.connect(verb); o.start(at); o2.start(at); o.stop(at + att + hold + rel + .1); o2.stop(at + att + hold + rel + .1);
+    o.connect(fl); o2.connect(fl); fl.connect(g); g.connect(out); g.connect(verb); o.start(at); o2.start(at); o.stop(at + att + hold + rel + .1); o2.stop(at + att + hold + rel + .1);
   };
-  // the strings: low D and A, rising out of nothing as the spines slide by and the C draws itself
-  [[73.42, .09], [110, .07], [146.83, .05]].forEach(function (n) { voice(n[0], 'sawtooth', t0, 1.3, .3, 1.6, n[1], 180, 900); });
-  // the drum: soft and low, as GRIFFLIX comes
-  var h = t0 + 1.6, d = c.createOscillator(), dg = c.createGain(); d.type = 'sine'; d.frequency.setValueAtTime(82, h); d.frequency.exponentialRampToValueAtTime(46, h + .6);
-  dg.gain.setValueAtTime(.0001, h); dg.gain.exponentialRampToValueAtTime(.7, h + .015); dg.gain.exponentialRampToValueAtTime(.001, h + 1.8); d.connect(dg); dg.connect(out); dg.connect(verb); d.start(h); d.stop(h + 2);
-  var nb = c.createBuffer(1, c.sampleRate * .8, c.sampleRate), nd = nb.getChannelData(0); for (var j = 0; j < nd.length; j++) nd[j] = Math.random() * 2 - 1;
-  var n = c.createBufferSource(), nl = c.createBiquadFilter(), ng = c.createGain(); n.buffer = nb; nl.type = 'lowpass'; nl.frequency.value = 500;
-  ng.gain.setValueAtTime(.18, h); ng.gain.exponentialRampToValueAtTime(.001, h + .7); n.connect(nl); nl.connect(ng); ng.connect(out); n.start(h);
-  // the brass: a broad D major, low and warm, swelling and ringing out under the name
-  [[73.42, .08], [146.83, .07], [220, .055], [293.66, .045], [369.99, .035], [440, .025]].forEach(function (n2) { voice(n2[0], 'sawtooth', h + .05, .55, 1.2, 2.6, n2[1], 400, 1700); });
+  // the swell: D and A, low and quiet, rising out of nothing as the spines slide by and the C draws
+  voice(146.83, t0, 1.4, .2, 1.4, .07, 700); voice(220, t0 + .15, 1.3, .2, 1.4, .05, 700);
+  // the chord: D major, warm, opening slowly under GRIFFLIX and fading away
+  var h = t0 + 1.5;
+  [[73.42, .05], [146.83, .055], [220, .045], [293.66, .04], [369.99, .03], [440, .018]].forEach(function (n, k) { voice(n[0], h + k * .06, .9, .9, 2.8, n[1], 1400); });
   return {
-    count: function () {},   // (no clicks: the music carries it)
+    count: function () {},
     stop: function () {
       if (stopped) return; stopped = true; var t = c.currentTime;
-      out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(out.gain.value, t); out.gain.exponentialRampToValueAtTime(.0001, t + .5);
-      setTimeout(function () { try { out.disconnect(); } catch (e) {} }, 700);
+      out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(out.gain.value, t); out.gain.exponentialRampToValueAtTime(.0001, t + .6);
+      setTimeout(function () { try { out.disconnect(); } catch (e) {} }, 800);
     }
   };
 }
