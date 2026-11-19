@@ -1979,8 +1979,8 @@ body { font-size: 14px; } .film h2 { font-size: clamp(34px, 4.1vw, 68px) !import
 .zlead .gx, .welcome h1, .gcin .g, .a24in .g { font-family: "Grifflix Logo Fine", var(--kfont) !important; }
 .bar-top .brand, #shbrand, .zlead .gx, .welcome h1 { font-family: "Grifflix Logo", var(--kfont) !important; font-weight: 700 !important; color: var(--fg) !important; -webkit-text-stroke: 0 !important; }
 .zlead .gx { color: #fff !important; }
-.brand .gxs { display: block; height: 1em; overflow: visible; fill: none; stroke: currentColor; stroke-width: 1.2px; stroke-width: max(1.15px, .075em); stroke-linejoin: miter; stroke-miterlimit: 3; shape-rendering: geometricPrecision; }
-.brand .gxs path { vector-effect: non-scaling-stroke; }
+.gxs { display: inline-block; vertical-align: -.12em; } .brand .gxs { display: block; } .gxs { height: 1em; overflow: visible; fill: none; stroke: currentColor; stroke-width: 1.2px; stroke-width: max(1.15px, .075em); stroke-linejoin: miter; stroke-miterlimit: 3; shape-rendering: geometricPrecision; }
+.gxs path { vector-effect: non-scaling-stroke; }
 .zlt { font-family: "Grifflix Display", "Federo", Georgia, serif !important; font-weight: 400 !important; font-size: 1.15em; }
 /* Grifflix's own look (its palette: Orange, Vista Bleu, Amande, Bleu Oxford): the room flat in its colour, the type in its ink,
    the zoetrope and the cinema in the palette, no red velvet (John, 10 Nov 2026) */
@@ -2319,8 +2319,8 @@ html.tv .a24list { --ayw: 150px; } html.tv .a24r .af { font-size: 34px; } html.t
 }
 /* (GRIFFLIX on a phone spaced as it is everywhere else, wide, not squeezed up to fit: there's room for it: John, 19 Nov 2026, a photo of the
    bar over A24's "at GRIFFLIX": "the spacing is correct on the lower one and not on the top") */
-@media (max-width: 600px) { html .bar-top .brand, html.phone .bar-top .brand, html #shbrand { letter-spacing: .45em !important; } }
-@media (max-width: 359px) { html .bar-top .brand, html.phone .bar-top .brand, html #shbrand { font-size: 10px !important; letter-spacing: .4em !important; } }
+@media (max-width: 600px) { html .bar-top .brand, html.phone .bar-top .brand, html #shbrand { letter-spacing: .5em !important; } }
+@media (max-width: 359px) { html .bar-top .brand, html.phone .bar-top .brand, html #shbrand { font-size: 10px !important; letter-spacing: .45em !important; } }
 /* the TV: one highlight for whatever's chosen, everywhere: a white ring a little out from it, a dark band between, so it reads on
    a light picture or a dark room; the same thickness and gap however large the chosen thing is drawn (--ks: one over its scale)
    (John, 11 Nov 2026: "highlighting can sometimes be a white box sometimes a white border, depending on the theme. Either way
@@ -5729,7 +5729,7 @@ function cardHTML(it, land, spine) {   // (spine: a collection's page, a Criteri
 }
 function gcCover(c, n) {   // (Grifflix at Criterion's cover: John, 17 Nov 2026)
   var sub = (c.name || '').replace(/^the\s+/i, '').replace(/criterion( collection)?/i, '').trim();
-  return '<div class="pic ccov gcc">' + gcMark('gcm') + '<em>The Criterion<br>Collection</em><i>at</i><b class="gcx">Grifflix</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '<small>' + esc(n) + '</small>') + '</div>';
+  return '<div class="pic ccov gcc">' + gcMark('gcm') + '<em>The Criterion<br>Collection</em><i>at</i><b class="gcx" aria-label="Grifflix">' + gxSvg(.5) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '<small>' + esc(n) + '</small>') + '</div>';
 }
 function collCard(c) {   // a collection's cover, drawn rather than a picture: a title poster in the month's theme - its colour,
   // its type, and a graphic of its own for each collection (John, 8 Nov 2026: "replace the images with a creatively styled
@@ -5739,7 +5739,7 @@ function collCard(c) {   // a collection's cover, drawn rather than a picture: a
   var h = 0; for (var i = 0; i < (c.id || nm).length; i++) h = (h * 31 + (c.id || nm).charCodeAt(i)) >>> 0;
   var long = nm.length > 26 ? ' xl' : (nm.length > 13 ? ' l' : ''), n = c.children ? c.children + (c.children === 1 ? ' title' : ' titles') : 'Collection';
   if (/criterion/i.test(c.name)) return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '">' + gcCover(c, n) + '<div class="t">' + esc(c.name) + '</div><div class="s">' + n + '</div></a>';
-  if (/^a24$/i.test(c.name)) { a24Fonts(); return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '"><div class="pic ccov a24c">' + a24Mark() + '<i>at</i><b class="gcx">Grifflix</b><small>' + esc(n) + '</small></div><div class="t">' + esc(c.name) + '</div><div class="s">' + n + '</div></a>'; }
+  if (/^a24$/i.test(c.name)) { a24Fonts(); return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '"><div class="pic ccov a24c">' + a24Mark() + '<i>at</i><b class="gcx" aria-label="Grifflix">' + gxSvg(.5) + '</b><small>' + esc(n) + '</small></div><div class="t">' + esc(c.name) + '</div><div class="s">' + n + '</div></a>'; }
   return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '"><div class="pic ccov" data-cn="' + esc(c.name) + '" data-nm="' + esc(nm) + '" data-ch="' + h + '">' + collArt(h, nm, c.name) +
     '<div class="cc">' + (k ? '<small>' + esc(k) + '</small>' : '') + '<b class="' + long + '">' + esc(nm) + '</b><i></i><span>' + n + '</span></div></div><div class="t">' + esc(c.name) + '</div><div class="s">' + n + '</div></a>';   // (its name under it too, as a film's: John, 8 Nov 2026)
 }
@@ -5765,7 +5765,7 @@ function collectionView(id, into) {
     document.documentElement.classList.toggle('gcrit', /criterion/i.test(c.name));   // (The Criterion Collection at Grifflix: its own look)
     var A24 = /^a24$/i.test(c.name); document.documentElement.classList.toggle('ga24', A24); if (A24) a24Fonts();   // (A24 at Grifflix: A24's own list: John, 19 Nov 2026)
     var cov = collCard({ id: c.id, name: c.name, children: c.items.length }).replace(/^<a [^>]*>|<\/a>$/g, '');   // (its drawn cover, as on the shelf)
-    $('#cbody').innerHTML = (A24 ? '<div class="collhead a24head"><div><div class="a24top"><span class="a24lock">' + a24Mark() + '<small>at</small><b class="gcx">Grifflix</b></span><span class="hsub"><i>' + c.items.length + ' films</i></span></div>' +
+    $('#cbody').innerHTML = (A24 ? '<div class="collhead a24head"><div><div class="a24top"><span class="a24lock">' + a24Mark() + '<small>at</small><b class="gcx" aria-label="Grifflix">' + gxSvg(.5) + '</b></span><span class="hsub"><i>' + c.items.length + ' films</i></span></div>' +
       '<h1 class="colltitle">All films</h1>' + (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
       '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find an A24 film" aria-label="Find in A24" autocomplete="off"><span class="sp"></span></div>' +
       '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>' : '<div class="collhead"><div class="card coll collpic">' + cov + '</div>' +
@@ -6419,14 +6419,24 @@ function navGo(w) {
 // GRIFFLIX in the bar drawn as a picture (SVG), not lettering: Futura Bold's own outlines with a line round each letter that stays a clean,
 // whole pixel or more however small it is drawn, where the lettering's fine line went grey and ragged at the bar's size (John, 19 Nov 2026:
 // "The GRIFFLIX logo should probably be an svg image as it still looks untidy when small"). Its spacing and size the bar's own, as before
-var GXP = {"G":[1724,"M53 -764Q53 -952 114 -1106Q174 -1260 284 -1368Q395 -1477 550 -1536Q705 -1595 891 -1595Q1131 -1595 1309 -1488Q1487 -1380 1587 -1163L1206 -1004Q1165 -1115 1080 -1182Q995 -1249 872 -1249Q774 -1249 698 -1206Q623 -1163 572 -1094Q522 -1024 496 -937Q471 -850 471 -762Q471 -672 498 -585Q524 -498 576 -430Q627 -362 704 -320Q780 -279 879 -279Q1010 -279 1100 -346Q1190 -412 1202 -547H874V-862H1671Q1669 -778 1664 -700Q1659 -621 1642 -545Q1626 -469 1596 -396Q1565 -324 1513 -252Q1398 -92 1234 -20Q1071 51 877 51Q695 51 543 -8Q391 -68 282 -176Q174 -283 114 -432Q53 -582 53 -764Z"],"R":[1392,"M131 0V-1544H731Q846 -1544 944 -1516Q1042 -1489 1114 -1430Q1186 -1372 1227 -1282Q1268 -1192 1268 -1069Q1268 -989 1246 -916Q1225 -844 1182 -786Q1139 -727 1076 -687Q1012 -647 930 -633L1415 0H915L537 -594H532V0ZM532 -852H571Q620 -852 670 -858Q721 -864 761 -884Q801 -905 826 -943Q850 -981 850 -1044Q850 -1107 826 -1146Q801 -1184 761 -1204Q721 -1225 671 -1231Q621 -1237 571 -1237H532Z"],"I":[663,"M131 0V-1544H532V0Z"],"F":[1110,"M131 0V-1544H1018V-1204H532V-946H973V-606H532V0Z"],"L":[1013,"M131 0V-1544H532V-340H1014V0Z"],"X":[1615,"M-16 0 588 -825 94 -1544H588L823 -1145L1059 -1544H1552L1059 -825L1630 0H1147L823 -504L469 0Z"]};
+var GXP = {"G":[1724,"M53 -764Q53 -952 114 -1106Q174 -1260 284 -1368Q395 -1477 550 -1536Q705 -1595 891 -1595Q1131 -1595 1309 -1488Q1487 -1380 1587 -1163L1206 -1004Q1165 -1115 1080 -1182Q995 -1249 872 -1249Q774 -1249 698 -1206Q623 -1163 572 -1094Q522 -1024 496 -937Q471 -850 471 -762Q471 -672 498 -585Q524 -498 576 -430Q627 -362 704 -320Q780 -279 879 -279Q1010 -279 1100 -346Q1190 -412 1202 -547H874V-862H1671Q1669 -778 1664 -700Q1659 -621 1642 -545Q1626 -469 1596 -396Q1565 -324 1513 -252Q1398 -92 1234 -20Q1071 51 877 51Q695 51 543 -8Q391 -68 282 -176Q174 -283 114 -432Q53 -582 53 -764Z",53,1671],"R":[1392,"M131 0V-1544H731Q846 -1544 944 -1516Q1042 -1489 1114 -1430Q1186 -1372 1227 -1282Q1268 -1192 1268 -1069Q1268 -989 1246 -916Q1225 -844 1182 -786Q1139 -727 1076 -687Q1012 -647 930 -633L1415 0H915L537 -594H532V0ZM532 -852H571Q620 -852 670 -858Q721 -864 761 -884Q801 -905 826 -943Q850 -981 850 -1044Q850 -1107 826 -1146Q801 -1184 761 -1204Q721 -1225 671 -1231Q621 -1237 571 -1237H532Z",131,1415],"I":[663,"M131 0V-1544H532V0Z",131,532],"F":[1110,"M131 0V-1544H1018V-1204H532V-946H973V-606H532V0Z",131,1018],"L":[1013,"M131 0V-1544H532V-340H1014V0Z",131,1014],"X":[1615,"M-16 0 588 -825 94 -1544H588L823 -1145L1059 -1544H1552L1059 -825L1630 0H1147L823 -504L469 0Z",-16,1630]};
+// (spaced by eye, not by Futura's own spacing: each letter's visible edge the same distance from the next, where Futura's, set for words,
+// left I far from F but close to R and X once spread wide: John, 19 Nov 2026, "the letter spacing doesn't look the same either way")
+function gxSvg(ls) {   // ls: the space between letters, in em (as letter-spacing): GRIFFLIX as a picture, that wide
+  var w = 'GRIFFLIX', gap = ls * 2048 + 178, x = 0, d = '';
+  for (var i = 0; i < w.length; i++) {
+    var g = GXP[w[i]], tx = i ? x - g[2] : 0;
+    d += '<path transform="translate(' + Math.round(tx) + ' 0)" d="' + g[1] + '"/>';
+    x = tx + g[3] + gap;
+  }
+  var W = x - gap + (GXP.X[0] - GXP.X[3]) + ls * 2048;   // (after the X, its own room and the spacing, as lettering has)
+  return '<svg class="gxs" viewBox="0 -1796 ' + Math.round(W) + ' 2048" style="width:' + (W / 2048).toFixed(3) + 'em" aria-hidden="true" focusable="false">' + d + '</svg>';
+}
 function gxMark(el) {
   if (!el) return;
   var cs = getComputedStyle(el), fs = parseFloat(cs.fontSize) || 15, ls = (parseFloat(cs.letterSpacing) || 0) / fs, key = ls.toFixed(3);
   if (el._gx === key && el.querySelector('.gxs')) return; el._gx = key;
-  var x = 0, d = '';
-  'GRIFFLIX'.split('').forEach(function (c) { d += '<path transform="translate(' + Math.round(x) + ' 0)" d="' + GXP[c][1] + '"/>'; x += GXP[c][0] + ls * 2048; });
-  el.innerHTML = '<svg class="gxs" viewBox="0 -1796 ' + Math.round(x) + ' 2048" style="width:' + (x / 2048).toFixed(3) + 'em" aria-hidden="true" focusable="false">' + d + '</svg>';
+  el.innerHTML = gxSvg(ls);
 }
 function gxMarks() { $$('.bar-top .brand, #shbrand').forEach(gxMark); }
 addEventListener('resize', function () { clearTimeout(gxMarks._t); gxMarks._t = setTimeout(gxMarks, 120); });
