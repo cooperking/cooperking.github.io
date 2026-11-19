@@ -2133,25 +2133,45 @@ html.ga24 .a24btn { background: var(--a24-ink) !important; color: var(--a24-page
 .a24c .gcx { display: block; font-size: 9.6cqw; }
 .a24c small { display: block; margin-top: 11%; font: 400 5cqw/1 var(--a24-mono); letter-spacing: .14em; text-transform: uppercase; color: #9a9a9a; }
 /* the intro: its films rolling by, as A24's list, and A24 at GRIFFLIX */
-.a24in { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; overflow: hidden; background: var(--a24-page); color: var(--a24-ink); cursor: pointer; transition: opacity .6s ease; }
+/* the intro: a trailer's cut through A24's own stills, faster and faster, then black, A24 in white, at GRIFFLIX (John, 19 Nov 2026,
+   "The A24 intro is a bit too similar to the criterion one. Can we have a more original one") */
+.a24in { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; overflow: hidden; background: #000; color: #fff; cursor: pointer; transition: opacity .5s ease; }
 .a24in.out { opacity: 0; pointer-events: none; }
-.a24in .roll { position: absolute; left: 0; right: 0; top: 0; padding: 0 4vw; }
-.a24in .roll.on { animation: a24Roll 9s cubic-bezier(.3, 0, .5, 1) forwards; }
-.a24in .roll div { display: grid; grid-template-columns: 15vw minmax(0, 1fr); align-items: baseline; padding: 2.2vh 0 2.4vh; border-top: 1px solid #f0f0f0; white-space: nowrap; overflow: hidden; }
-.a24in .roll b { font: 400 clamp(16px, 2.6vw, 34px)/1 var(--a24-mono); color: #cfcfcf; }
-.a24in .roll span { font: 500 clamp(30px, 5.4vw, 76px)/1 var(--a24-sans); letter-spacing: -.035em; color: #ebebeb; overflow: hidden; text-overflow: clip; }
-@keyframes a24Roll { from { transform: translateY(0); } to { transform: translateY(var(--a24-roll, -50%)); } }
-.a24in .core { position: relative; text-align: center; padding: 34px 54px 30px; background: var(--a24-page); box-shadow: 0 0 0 1px var(--a24-line), 0 30px 70px rgba(0, 0, 0, .07); }
-.a24in .big { display: block; font-size: clamp(92px, 19vw, 210px); clip-path: inset(0 0 100% 0); animation: a24Wipe .9s cubic-bezier(.7, 0, .2, 1) .2s forwards; }
-@keyframes a24Wipe { to { clip-path: inset(-10% -10% -10% -10%); } }
-.a24in .at { display: block; margin: 20px 0 12px; font: 400 12px/1 var(--a24-mono); letter-spacing: .24em; text-transform: uppercase; color: var(--a24-grey); opacity: 0; animation: gcUp .6s ease 1.05s forwards; }
-.a24in .g { display: block; font-size: clamp(26px, 5.4vw, 50px); --gc-ink: #000; --gcx-bg: #fff; opacity: 0; transform: translateY(10px); animation: gcUp .7s ease 1.3s forwards; }
-.a24in .n { display: block; margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--a24-ink); font: 400 12px/1.4 var(--a24-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--a24-grey); opacity: 0; animation: gcUp .6s ease 1.8s forwards; font-variant-numeric: tabular-nums; }
-.a24in .n b { color: var(--a24-ink); font-weight: 500; }
-.a24in .go { margin-top: 18px; padding: 10px 22px 9px; border: 1px solid var(--a24-ink); border-radius: 999px; background: var(--a24-ink); color: var(--a24-page); font: 500 11px/1 var(--a24-mono); letter-spacing: .16em; text-transform: uppercase; cursor: pointer; opacity: 0; animation: gcUp .6s ease 2.1s forwards; }
-.a24in .go:hover, .a24in .go:focus-visible { background: var(--a24-page); color: var(--a24-ink); }
-@media (prefers-reduced-motion: reduce) { .a24in *, .a24in .roll.on { animation-duration: .01s !important; animation-delay: 0s !important; } }
-@media (max-width: 600px) { .a24in .core { padding: 28px 24px 24px; margin: 0 16px; } .a24in .roll div { grid-template-columns: 20vw minmax(0, 1fr); } }
+.a24in .cut { position: absolute; inset: 0; }
+.a24in .cut figure { position: absolute; inset: 0; margin: 0; visibility: hidden; }
+.a24in .cut figure.on { visibility: visible; }
+.a24in .cut img { width: 100%; height: 100%; object-fit: cover; display: block; transform: scale(1.06); }
+.a24in .cut figure.on img { animation: a24Push .5s linear forwards; }
+@keyframes a24Push { to { transform: scale(1); } }
+.a24in .cut figcaption { position: absolute; left: 4vw; right: 4vw; bottom: 5vh; display: flex; align-items: baseline; gap: 2.4vw; text-shadow: 0 2px 24px rgba(0, 0, 0, .55); }
+.a24in .cut figcaption b { font: 400 clamp(13px, 1.5vw, 20px)/1 var(--a24-mono); letter-spacing: .08em; }
+.a24in .cut figcaption span { font: 500 clamp(30px, 6vw, 92px)/.95 var(--a24-sans); letter-spacing: -.04em; }
+.a24in .cut::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 55%, rgba(0, 0, 0, .55)); pointer-events: none; }
+.a24in.end .cut { display: none; }
+.a24in .core { position: relative; text-align: center; visibility: hidden; }
+.a24in.end .core { visibility: visible; }
+.a24in .big { display: inline-flex; font-size: clamp(110px, 24vw, 290px); }
+.a24in .big i { font-style: normal; visibility: hidden; }
+.a24in.end .big i { animation: a24On 0s linear forwards; } .a24in.end .big i:nth-child(2) { animation-delay: .12s; } .a24in.end .big i:nth-child(3) { animation-delay: .24s; }
+@keyframes a24On { to { visibility: visible; } }
+.a24in .at { display: block; margin: 18px 0 12px; font: 400 12px/1 var(--a24-mono); letter-spacing: .3em; text-transform: uppercase; color: #8a8a8a; opacity: 0; }
+.a24in .g { display: block; font-size: clamp(24px, 5vw, 46px); --gc-ink: #fff; opacity: 0; }
+.a24in .n { display: block; margin: 26px auto 0; font: 400 12px/1.4 var(--a24-mono); letter-spacing: .12em; text-transform: uppercase; color: #8a8a8a; opacity: 0; font-variant-numeric: tabular-nums; }
+.a24in .n b { color: #fff; font-weight: 500; }
+.a24in .go { margin-top: 20px; padding: 10px 22px 9px; border: 1px solid #fff; border-radius: 999px; background: #fff; color: #000; font: 500 11px/1 var(--a24-mono); letter-spacing: .16em; text-transform: uppercase; cursor: pointer; opacity: 0; }
+.a24in.end .at { animation: gcUp .5s ease .55s forwards; } .a24in.end .g { animation: gcUp .6s ease .7s forwards; } .a24in.end .n { animation: gcUp .5s ease 1s forwards; } .a24in.end .go { animation: gcUp .5s ease 1.2s forwards; }
+.a24in .go:hover, .a24in .go:focus-visible { background: #000; color: #fff; }
+@media (prefers-reduced-motion: reduce) { .a24in *, .a24in.end * { animation-duration: .01s !important; animation-delay: 0s !important; } }
+@media (max-width: 600px) { .a24in .cut figcaption { flex-direction: column; gap: 8px; bottom: 8vh; } }
+/* (a phone held upright: each still whole, the screen's width, its year and name under it, not a wide picture cut to a tall screen: John,
+   19 Nov 2026, "You don't really see the images well if it's on a phone with the intro") */
+@media (orientation: portrait), (max-aspect-ratio: 1/1) {
+  .a24in .cut figure { display: flex; flex-direction: column; justify-content: center; }
+  .a24in .cut img { height: auto; aspect-ratio: auto; object-fit: contain; }
+  .a24in .cut figcaption { position: static; flex-direction: column; align-items: flex-start; gap: 10px; padding: 22px 6vw 0; text-shadow: none; }
+  .a24in .cut figcaption span { font-size: clamp(30px, 10vw, 60px); }
+  .a24in .cut::after { display: none; }
+}
 /* its page: white, black, A24's list */
 html.ga24 { --bg: #fff !important; --kink: 0, 0, 0 !important; --line: rgba(0, 0, 0, .12) !important; --tile: rgba(0, 0, 0, .05) !important; --shadow: rgba(0, 0, 0, .1) !important; color-scheme: light; }
 html.ga24, html.ga24 body { background: var(--a24-page) !important; }
@@ -2433,7 +2453,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'de4f6426d4c8' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: 'ec16570165f0' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6050,40 +6070,116 @@ function a24Find() { return api('collections').then(function (r) { return (r.col
 function a24Intro() {
   if ($('.a24in')) return; a24Fonts();
   var el = document.createElement('div'); el.className = 'a24in'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'A24 at Grifflix');
-  el.innerHTML = '<div class="roll" aria-hidden="true"></div><div class="core">' + a24Mark('big') + '<span class="at">at</span><span class="g gcx">Grifflix</span><span class="n" aria-live="polite">&nbsp;</span><button type="button" class="go">Enter</button></div>';
+  el.innerHTML = '<div class="cut" aria-hidden="true"></div><div class="core"><span class="a24m big" aria-hidden="true"><i>A</i><i>2</i><i>4</i></span><span class="at">at</span><span class="g gcx">Grifflix</span><span class="n" aria-live="polite">&nbsp;</span><button type="button" class="go">Enter</button></div>';
   document.body.appendChild(el);
-  var coll = null, done = false, t0 = Date.now(), auto = 0;
+  var coll = null, done = false, auto = 0, timers = [], ended = false;
+  var later = function (f, ms) { timers.push(setTimeout(f, ms)); };
   var key = function (e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
   var go = function () {
-    if (done) return; done = true; clearTimeout(auto);
+    if (done) return; done = true; clearTimeout(auto); timers.forEach(clearTimeout); if (snd) snd.stop();
     if (coll) location.hash = '#collection/' + coll.id;
-    el.classList.add('out'); setTimeout(function () { el.remove(); }, 700);
+    el.classList.add('out'); setTimeout(function () { el.remove(); }, 600);
     document.removeEventListener('keydown', key, true);
   };
   document.addEventListener('keydown', key, true);
   el.onclick = go;
-  auto = setTimeout(go, 4400);
-  if (TV) setTimeout(function () { var b = el.querySelector('.go'); if (b) b.focus(); }, 2300);
+  var count = function (d) {   // (how many, and the years they span, counted up under the name)
+    var box = $('.a24in .n'), it = (d && d.items || []).filter(function (x) { return x.year; }); if (!box) return;
+    if (!d) { box.textContent = 'No A24 collection in Grifflix yet'; return; }
+    var n = d.items.length, ys = it.map(function (x) { return x.year; }), lo = Math.min.apply(null, ys), hi = Math.max.apply(null, ys), st = 0;
+    var tick = function () { if (!st) st = Date.now(); var k = Math.min(1, (Date.now() - st) / 1200), e = 1 - Math.pow(1 - k, 3);
+      box.innerHTML = '<b>' + Math.round(n * e) + '</b> films' + (ys.length ? ' · <b>' + lo + '</b>–<b>' + Math.round(lo + (hi - lo) * e) + '</b>' : '');
+      if (k < 1 && !done) requestAnimationFrame(tick); };
+    later(tick, 1000);
+  };
+  var end = function (d) {   // (black, then A, 2, 4, each cut on, as a title card)
+    if (ended || done) return; ended = true; el.classList.add('end'); count(d); if (snd) snd.hit();
+    auto = setTimeout(go, 3200);
+    if (TV) later(function () { var b = el.querySelector('.go'); if (b) b.focus(); }, 1300);
+  };
+  var data = null;
+  later(function () { end(data); }, 5000);
+  var snd = a24Sound();   // (its own few notes, made here: John, 19 Nov 2026, "Can we give it a simple soundtrack")   // (whatever happens, the name by then)
   a24Find().then(function (c) {
-    coll = c; var box = $('.a24in .n'); if (!c) { if (box) box.textContent = 'No A24 collection in Grifflix yet'; return; }
-    return api('collection?id=' + encodeURIComponent(c.id)).then(function (d) {
-      var it = (d.items || []).filter(function (x) { return x.year; }).sort(function (a, b) { return b.year - a.year || showName(a).localeCompare(showName(b)); });
-      var roll = $('.a24in .roll'), last = 0;
-      if (roll && it.length) {   // (its films going by behind, newest first, each year once, as A24's list)
-        roll.innerHTML = it.slice(0, 40).map(function (x) { var y = x.year !== last ? x.year : ''; last = x.year; return '<div><b>' + y + '</b><span>' + esc(showName(x)) + '</span></div>'; }).join('');
-        requestAnimationFrame(function () { var h = roll.scrollHeight; roll.style.setProperty('--a24-roll', -Math.max(0, h - innerHeight) + 'px'); roll.classList.add('on'); });
-      }
-      if (!box) return;
-      var n = (d.items || []).length, ys = it.map(function (x) { return x.year; }), lo = Math.min.apply(null, ys), hi = Math.max.apply(null, ys);
-      var st = 0, tick = function () {
-        if (!st) st = Date.now();
-        var k = Math.min(1, (Date.now() - st) / 1400), e = 1 - Math.pow(1 - k, 3);
-        box.innerHTML = '<b>' + Math.round(n * e) + '</b> films' + (ys.length ? ' · <b>' + lo + '</b>–<b>' + Math.round(lo + (hi - lo) * e) + '</b>' : '');
-        if (k < 1 && !done) requestAnimationFrame(tick);
+    coll = c; if (!c) return end(null);
+    return Promise.all([api('collection?id=' + encodeURIComponent(c.id)), getJSON('/grifflix/img/a24/index.json').catch(function () { return []; })]).then(function (r) {
+      data = r[0]; var has = {}; (r[1] || []).forEach(function (id) { has[id] = 1; });
+      var pool = (data.items || []).filter(function (x) { return has[x.id]; });
+      for (var i = pool.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+      pool = pool.slice(0, TV ? 7 : 10);
+      if (pool.length < 4 || matchMedia('(prefers-reduced-motion: reduce)').matches) return end(data);
+      // (the cut: each still held a little less than the last, its year and name across the foot, as a trailer's)
+      var cut = $('.a24in .cut'), loaded = 0, started = false, figs = pool.map(function (x) {
+        var f = document.createElement('figure'), im = new Image(); im.alt = '';
+        im.onload = function () { loaded++; if (loaded >= Math.min(4, pool.length) && !started) run(); };
+        im.src = '/grifflix/img/a24/' + x.id + '.jpg'; f.appendChild(im);
+        f.insertAdjacentHTML('beforeend', '<figcaption><b>' + esc(String(x.year || '')) + '</b><span>' + esc(showName(x)) + '</span></figcaption>');
+        cut.appendChild(f); return f;
+      });
+      var run = function () {
+        if (started || ended || done) return; started = true;
+        var holds = [600, 480, 380, 300, 240, 190, 150, 120, 100, 90], k = 0;
+        if (snd) snd.rise(2.65);
+        var ready = function (f) { return f.firstChild.complete && f.firstChild.naturalWidth; };
+        var left = figs.slice(), t0 = Date.now();
+        var step = function () {   // (whichever picture has come next; none yet, a moment's wait for one, but never long)
+          if (done || ended) return;
+          var n = left.filter(ready)[0];
+          if (!n) return left.length && Date.now() - t0 < 3200 ? later(step, 60) : end(data);
+          left.splice(left.indexOf(n), 1); figs.forEach(function (x) { x.classList.toggle('on', x === n); }); if (snd) snd.cut(k / (holds.length - 1));
+          later(step, holds[k++] || 90);
+        };
+        step();
       };
-      setTimeout(tick, Math.max(0, 1900 - (Date.now() - t0)));
+      later(function () { if (!started) { if (loaded >= 2) run(); else end(data); } }, 1500);   // (slow pictures: what's come, or straight to the name)
     });
-  }).catch(function () {});
+  }).catch(function () { end(data); });
+}
+// (the intro's soundtrack, made by the browser, nothing to fetch: a low drone that climbs under the cut, a beat on each picture, quicker
+// as they come quicker, then, as the screen cuts to black, nothing for a breath and one deep hit with A24. Only when Grifflix's music is
+// on; the theme's music quietened while it plays)
+function a24Sound() {
+  if (!TMUS.on || CALM) return null;
+  var c = musicCtx(); if (!c) return null;
+  try { musicHush(); } catch (e) {}
+  var out = c.createGain(); out.gain.value = .0001; out.connect(c.destination);
+  out.gain.exponentialRampToValueAtTime(.55, c.currentTime + .4);
+  var noise = function (len) { var b = c.createBuffer(1, Math.ceil(c.sampleRate * len), c.sampleRate), d = b.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; };
+  // the drone: two low saws a hair apart, through a filter that opens as the cut goes on
+  var lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 180; lp.Q.value = 6; lp.connect(out);
+  var dg = c.createGain(); dg.gain.value = .0001; dg.connect(lp);
+  var oscs = [55, 55.4, 82.4].map(function (f, i) { var o = c.createOscillator(); o.type = i === 2 ? 'triangle' : 'sawtooth'; o.frequency.value = f; o.connect(dg); o.start(); return o; });
+  dg.gain.exponentialRampToValueAtTime(.35, c.currentTime + .8);
+  var stopped = false, api = {
+    rise: function (secs) {   // (the filter opening and the pitch edging up over the length of the cut)
+      var t = c.currentTime; lp.frequency.setValueAtTime(180, t); lp.frequency.exponentialRampToValueAtTime(2400, t + secs);
+      oscs.forEach(function (o) { o.frequency.setValueAtTime(o.frequency.value, t); o.frequency.exponentialRampToValueAtTime(o.frequency.value * 1.5, t + secs); });
+    },
+    cut: function (k) {   // (each picture: a low thud and a short tick, brighter as they speed up)
+      if (stopped) return; var t = c.currentTime;
+      var o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(48, t + .14);
+      g.gain.setValueAtTime(.9, t); g.gain.exponentialRampToValueAtTime(.001, t + .18); o.connect(g); g.connect(out); o.start(t); o.stop(t + .2);
+      var n = c.createBufferSource(), bp = c.createBiquadFilter(), ng = c.createGain(); n.buffer = noise(.05); bp.type = 'bandpass'; bp.frequency.value = 2500 + 5000 * k; bp.Q.value = 1.2;
+      ng.gain.setValueAtTime(.25 + .35 * k, t); ng.gain.exponentialRampToValueAtTime(.001, t + .05); n.connect(bp); bp.connect(ng); ng.connect(out); n.start(t);
+    },
+    hit: function () {   // (black: the drone cut dead, a breath, then one deep hit as the A comes on, ringing out)
+      if (stopped) return; var t = c.currentTime;
+      dg.gain.cancelScheduledValues(t); dg.gain.setValueAtTime(dg.gain.value, t); dg.gain.linearRampToValueAtTime(0, t + .02);
+      var h = t + .02, o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(90, h); o.frequency.exponentialRampToValueAtTime(38, h + .5);
+      g.gain.setValueAtTime(.0001, h); g.gain.exponentialRampToValueAtTime(1, h + .01); g.gain.exponentialRampToValueAtTime(.001, h + 2.8); o.connect(g); g.connect(out); o.start(h); o.stop(h + 3);
+      var n = c.createBufferSource(), lo = c.createBiquadFilter(), ng = c.createGain(); n.buffer = noise(1.5); lo.type = 'lowpass'; lo.frequency.setValueAtTime(3000, h); lo.frequency.exponentialRampToValueAtTime(200, h + 1.2);
+      ng.gain.setValueAtTime(.35, h); ng.gain.exponentialRampToValueAtTime(.001, h + 1.4); n.connect(lo); lo.connect(ng); ng.connect(out); n.start(h);
+      // (a high, quiet ring left under the name)
+      var r = c.createOscillator(), rg = c.createGain(); r.type = 'sine'; r.frequency.value = 880; rg.gain.setValueAtTime(.0001, h + .3); rg.gain.exponentialRampToValueAtTime(.05, h + .8); rg.gain.exponentialRampToValueAtTime(.0001, h + 3.4); r.connect(rg); rg.connect(out); r.start(h + .3); r.stop(h + 3.5);
+      setTimeout(function () { oscs.forEach(function (x) { try { x.stop(); } catch (e) {} }); }, 200);
+    },
+    stop: function () {   // (Enter, or a tap: faded out with the picture)
+      if (stopped) return; stopped = true; var t = c.currentTime;
+      out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(Math.max(.0001, out.gain.value), t); out.gain.exponentialRampToValueAtTime(.0001, t + .5);
+      setTimeout(function () { oscs.forEach(function (x) { try { x.stop(); } catch (e) {} }); try { out.disconnect(); } catch (e) {} }, 700);
+    }
+  };
+  return api;
 }
 var A24IMG = {}; (function () { var p = 0; window.a24Imgs = function () { if (p) return; p = 1; getJSON('/grifflix/img/a24/index.json').then(function (L) { (L || []).forEach(function (id) { A24IMG[id] = 1; }); }).catch(function () { p = 0; }); }; })();
 var A24D = {}, A24S = store.get('grifflix-a24sort') === 'name' ? 'name' : 'year', A24DIR = store.get('grifflix-a24dir') === '1' ? 1 : -1;
@@ -6125,6 +6221,9 @@ function a24Draw(g, items, fq) {
   $$('.a24r[data-item]', g).forEach(function (r) { r.onmouseenter = function () { show(r); }; r.onfocus = function () { show(r); }; });
   g.onmouseleave = function () { show(null); }; g.onfocusout = function (e) { if (!g.contains(e.relatedTarget)) show(null); };
 }
+// (the admin page's Intros preview: ?intro=criterion or ?intro=a24 plays that one as the page opens: John, 19 Nov 2026, "Can we add the
+// intros to the theme section for review too")
+(function () { var m = /[?&]intro=(criterion|a24)(&|$)/.exec(location.search); if (!m) return; var n = 0, t = setInterval(function () { if (!ME && ++n < 20) return; clearInterval(t); if (m[1] === 'a24') a24Intro(); else critIntro(); }, 300); })();
 function navGo(w) {
   if (w === 'criterion') { if (dlg.open) closeSheet(); return critIntro(); }
   if (w === 'a24') { if (dlg.open) closeSheet(); return a24Intro(); }
