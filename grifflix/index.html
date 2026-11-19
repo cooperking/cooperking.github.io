@@ -1956,7 +1956,11 @@ body { font-size: 14px; } .film h2 { font-size: clamp(34px, 4.1vw, 68px) !import
 /* (its own letters: Futura Bold's G R I F L X drawn as a clean line round the outside of each letter, see-through inside, rather than the
    browser's outline down the middle of each edge, which filled the thin letters at the bar's size and left them ragged: John, 19 Nov 2026,
    "I can't work out why the logo looks untidy - like the edges aren't clean") */
-@font-face { font-family: "Grifflix Logo"; font-weight: 100 900; font-display: block; src: url("data:font/woff2;base64,d09GMgABAAAAAAVIAAoAAAAAB8AAAAT8AAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAABmAAgQwKiViIXgE2AiQDIAsSAAQgBWkHMht+BqOiZg1OaIB/JGRu+mhGuewYDllcWnhZUywrvy/jkHmcX+KB7zL/lN3MpbQmWioHEwo2kIYBWYKANQtgnocOJJqbQd0spYhLiomm4Zsoqrue/fuODcBtNSlcra3uoy/aMElfKeljxfyGJBpNkpck1tJLRKwTEqVSQsG2pWeIr0BLteg/2C9K+TX2aRCMNMAOwJ1Nt9ZiYAErXRRHfFuQm/AIT9CsmaapQLiVFomj77OZNbR0jc18mVs5uNV6Rr6e5T59Vn+pvbWnNtdGam7Nqck1UYCZZySTKg3ch5AvFTCBh59qPAY26yUEXN693U5yMy71iFyG23YS7iHBZkM2EwpAVJlkMoOMNZFADRkIY7Wao9Vy9IjPgZIVTnlTnX7U6/Z6s8NhpNJsVuHl1ql63Eql+2mL31/282G/Eay2Hy3pJLl2cFu8arUexwygAWBn7KDBByHIAaEFYyIIeQmUUOt0BoNAAFUCJkReMS7Qq71ud9IehXjRmSbHubzfH7ZaKRuyRSKBQuFBqBFj2VQKAJ8v9BYO+/PEp53pdpuq16nZjEanSRjcmDcgGNTrpz+1WDXlSLUHYbFAaEZBrzzizWaTZ72YwoQ/dwGDNxcsXLAmXC5PQgcw+U0mmlFbJEmteMh2PF6fpIRzOow5WA0AjcagV8vlbvcjHq8il0ql03oOA4PCB/E+vn2Buz+jgsGAwYHtW40AFA7UIyTv7BQbHgzFF5QPXfFvvfH1wUXW1kXG9vLGQtIxQ3K0NId/PMDNruHmj+B/GKgsMDLdILoEHo+0V0T7GJCBN9MzvbT58F4SCRKDlFgPWMrE7cF2efSAEhnUnGQIO5bByJTqPdgkhH9BY523mdvvI1vGml/a3HMRBkkKcCAhHw+Hmgk7sgwE6+v2YFEIN61Fm5cO8Wk5ItxSaxDufqDASZhYEmi/0GJ0zDEvIRsJ17IzjABVmOovdFaiJkG2dm7s25EHO8+UQ4JrXlllVUyckUhQCRnI5vRMXrzjSxIb2PlEqcKhJvAiBvE/XVuwXWjO+3zCJGyAeoYlhSwLTzUoP9Z4pZjs47onC1kw4x1zO56ZyLpvTIuw97DmHMk2IkBF5qGFv8mM+qFVl8Sda8eJW6PsmCF2+pxEzfwK0obuYNhNExV6Ll6JFFAsw5SBlVRqJ5MxfrIEzChgH5tbNXnxDkLMqGDao7820DP0E5nPr+dXs/NN/RFWcuYaqx3WsoTDMGK50XbfYeDbsy5RhQahKp/4iv7+GwFD+1Afmckq4PfLtzOv9clqxnhHoUpUvQvCqmFfN3EKUlo6S+3WjCd62WPPilE6fNpDczdV0FnXGqwCKD11q8rFDafpDcSTjg+MR0v1g3W1oahnUkRQAVBHUABMZF4y3kiYAGhL8ghFx9Jd6DW6DXTFoFutG+RCzTOn1dh24pIsRJSodtJW/k0MV1rWJjJUqRTuLNBsUK4UMlJZatC2VJqfcJRwqv0E40/Rz1PSVu67hfvbhJuEh/sF8lHuAgAGwWv1HdKbJxHfewEt3O/bE8fWNwbXNQ/50s4gwTunSvffS/tRgQ+OTqAxfMkK8atqqlY0TvUvZno8a+DpHbWKneEufwnLAGJNZGpZ/Ox+IIDtSxGhQF/JPTRaEqjj2DwXh/nn52p++xN96PPbGazhYO7TopX17I1Z19aXx8popWoLnEmXx6uRYryAgAwAAAA=") format("woff2"); }
+@font-face { font-family: "Grifflix Logo"; font-weight: 100 900; font-display: block; src: url("data:font/woff2;base64,d09GMgABAAAAAAXMAAoAAAAACMQAAAWDAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAABmAAgQwKi1yKSQE2AiQDIAsSAAQgBWkHMhtpB1GUTc6SAD8SMjcvNZ9wZCuOIrPFDzTRed4BnnZBtwzVQGaki1cn4G31aG5YGsSp3L9j4iET8kIqNMD/rcGfv5+v5ywiKQoHOHyIb5cWFdYlNJv4PJLqf5zxF5EP4da8DdM9pKGpq/5BfxEwvAbdCxTAoVIRQCfIvFAB1jL/ZwKiE/WAlBAg5gk8FHgY+CR6AaTIcWB9KwMMwIAAFfDiw1+oaFly5CvFih8j4jnrlvlL/iMA/p52t6kNgD/ScF11xC9JATgKAwoUQI0QIVYAnYdGF9HVgAQHHzYOov6jQrdjDROsF3BhYQEBhihHXfmrnP3Galw66Q+h6/vi9wB9sg4OjPW5rOk7mRoersBhaUoq5WhER9AD6r1Wa4XB0vJjyT/YIuctjIQNX/bhypm4rnNs6igaJFRVlVIrmKYa2edJv2UxS2OsBBBMEhVGHjdKGJWlqgjfYsIxk6C2UzHKymprVR8ODcGEU606IuDolwbUcAUF01WpWmjJAbQkq1hqEcRP3GfbvGL7eDLYcSeAWLUqHOFMhAyHXWhnEdIkoTF01lfOiDHQdTp4IxEmqT3KcZWphwX0gUE5blmv3vYyKgomv6empCrtAfxkaJkojcsWoYjkUHOjtBMIdDAAn2EjRwwd2poKLYEScZ8O0hiyhG2KVTCtyCgrbYahd7JyUiTKg5TOpqVxhdlccVQUqOqC09IoVEQU89KuR+nEERXjXvEKrfmvEM7lSNNj4uiSLLYELTOdVpSXQ63ME03PFM0pR2okGVfCc2ythPMv7e4r7YDdq879kaOe4Wm8iXVn3KjXv3phqx6fWN1W6mFDfXTMjRPI/H3dOH3Xjm/4IKXIJia7cfHEC+JelOH8L+mmSrJjS1zcsUMP3goTkuImHz+7C97ctWZdx54wD23Z32/PbQgtdbdY8/L2mpblAZiXN+PXgy2bre//5wnJnPquZqiQeNW9hFunVJF1667fWHn5/kQSXapow9aUnUrX1uUwTh+Oz2no3XJxkleW8Uan843E+AryWrLTxqMGXhHpPTOHLvJprr2vZFXd3JbDD/k0187GOzK9mqfvgvXW789LCGLiv3+8vXv/wEGe8w36xYOT1SVcN3NKKm8qRCQzsifkUYfDun2Lt4+8+PBXFpNmqtMzrIEhE+zpSQbzy5NAzvzjqtla63BZAic0dNK9erc0PNrWnPgFYe4MDESd89m1UybiUtivb/df3JypzYi2ket6nXps57VPSqPoip4L99JlNV3NuqrLK6N8bQ0V4eHlLXN9jdmxdvY0+qPLm3vroqJ05MBwe8ShI9sGhlsLXUmp12Yanank7jW7x5yMGQpWJkkrw9eX3Z0W3rTp/r8eb9t9n5p4M4LjE/ogMC00T/wIXcYOMbqUXCv9I8vLRl8hlZT88WpPRV+wCiJIhqxce/rVD4kk5Gv7ntOegpJkdYicyPct8n2QNuttb31jSvnTk2vJTS528qIKvuziE1c+rTGy97WOighPvVasNKw6I6Yp/WpxzEbHQkE7aMXeW7k7rlQDlhlx/xP6nUNAKfwBlEJdYL5/nr3r/a7EmY3EXbt3jT7ffW/2nP7Wx++pVibDux9v3fBwdKyzhaW6hRE7sd/9gPt47PB7plYPN7ZbYbfl7m6XoVYyl0RpFd6cZyz9l7ppsqta7TW4IGIn9Y+c3J5Et/9GYATQeQFHx6H/hJ/Wqr1aIwBggO5cIDr/7QECe1dA3A4IqIzAIYHuX9X/klIMlujAycMjedi3hkAQP22XhUAqAd+CgpZwsIzdQYAKMPahSjfANnAhQEAOmHIaBQL0vUpzMjPzc1g/3SdfGi+Al1I5Mr0vv7/IogL+imQ1dN1DvnQo1ADx8qf0wAIMQBeMwQ4=") format("woff2"); }
+/* (and its fine line, for the logo large, as Vertigo's lettering is: a thin, even line along each letter's edge, see-through inside, white on a
+   colour, black on white: John, 19 Nov 2026, "I want it how the lettering is in the Vertigo theme, but with the Grifflix font") */
+@font-face { font-family: "Grifflix Logo Fine"; font-weight: 100 900; font-display: block; src: url("data:font/woff2;base64,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") format("woff2"); }
+.zlead .gx, .welcome h1, .gcin .g, .a24in .g { font-family: "Grifflix Logo Fine", var(--kfont) !important; }
 .bar-top .brand, #shbrand, .zlead .gx, .welcome h1 { font-family: "Grifflix Logo", var(--kfont) !important; font-weight: 700 !important; color: var(--fg) !important; -webkit-text-stroke: 0 !important; }
 .zlead .gx { color: #fff !important; }
 .zlt { font-family: "Grifflix Display", "Federo", Georgia, serif !important; font-weight: 400 !important; font-size: 1.15em; }
@@ -2054,6 +2058,9 @@ html.gcrit .critbtn { background: var(--gc-ink) !important; color: var(--gc-page
 /* its page: Criterion's pale grey with a white panel, near-black type, grey details, and Grifflix's logo */
 /* (the whole of Grifflix in Criterion's colours while on its page, the bar too, not a box inside the month's: John, 17 Nov 2026, "The new colours
    should be the whole of grifflix, not just a box inside") */
+/* (Criterion's and A24's own colours there at once, not faded into from the month's: John, 19 Nov 2026, "the colour of the Grifflix theme
+   fades into the criterion and A24 collections, but it should have immediately changed") */
+html.gcrit, html.gcrit body, html.gcrit .wrap, html.gcrit .bar-top, html.gcrit #main, html.ga24, html.ga24 body, html.ga24 .wrap, html.ga24 .bar-top, html.ga24 #main { transition: none !important; }
 html.gcrit { --bg: #f4f4f4 !important; --kink: 30, 30, 30 !important; --line: rgba(0, 0, 0, .14) !important; --tile: rgba(0, 0, 0, .06) !important; --shadow: rgba(0, 0, 0, .12) !important; color-scheme: light; }
 html.gcrit, html.gcrit body { background: var(--gc-page) !important; }
 html.gcrit .bar-top, html.gcrit .bar-top .brand { --fg: var(--gc-ink); }
@@ -2216,13 +2223,16 @@ html.ga24 #cbody .card .t, html.ga24 #cbody .card .s, html.ga24 #cbody .empty { 
 .a24r .as b { display: inline-block; padding: 3px 5px 2px; background: var(--a24-ink); color: var(--a24-page); font-weight: 400; }
 .a24r .ad:empty::before, .a24r .ac:empty::before { content: "\2014"; color: var(--a24-line); }
 /* the still: the right half of the screen, as A24's, the film's words turned white over it */
-.a24still { position: fixed; z-index: 30; right: 0; top: var(--a24st, 96px); bottom: 24px; width: 50vw; margin: 0; background: #111; opacity: 0; pointer-events: none; transition: opacity .18s ease; }
+.a24still { position: fixed; z-index: 15; right: 0; top: var(--a24st, 96px); bottom: 24px; width: 50vw; margin: 0; background: #111; opacity: 0; pointer-events: none; transition: opacity .18s ease; }
 .a24still img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .a24still.on { opacity: 1; }
-.a24r.on { z-index: 31; }
+.a24r.on { z-index: 16; }   /* (under the bar, whatever the month: the chosen film never drawn over it: John, 19 Nov 2026, Fire TV) */
 .a24r.on .af { color: var(--a24-dim); }
 .a24list.st .a24r.on .ad, .a24list.st .a24r.on .ac, .a24list.st .a24r.on .as { color: #fff; text-shadow: 0 1px 12px rgba(0, 0, 0, .35); -webkit-mask-image: none; mask-image: none; }
 .a24list.st .a24r.on::before { border-top-color: rgba(255, 255, 255, .8); }
+/* (a title running on over the still: white over it, as on A24's: its colour split at the still's edge, half the screen's width: John,
+   19 Nov 2026, "when a title on the A24 site goes over a picture, the font colour changes for that part of it") */
+.a24list.st .a24r.on .af { color: transparent; background: linear-gradient(90deg, var(--a24-dim) 50vw, #fff 50vw) fixed; -webkit-background-clip: text; background-clip: text; }
 .a24list.st .a24r.on .as b { background: #fff; color: #000; text-shadow: none; }
 .a24r:focus-visible { outline: none; } .a24r:focus-visible .af { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: .12em; }
 @media (max-width: 1000px) { .a24r { grid-template-columns: var(--ayw) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); } .a24r .as { display: none; } }
@@ -2265,8 +2275,17 @@ html.tv .a24list { --ayw: 150px; } html.tv .a24r .af { font-size: 34px; } html.t
   /* (over pop-ups too: one magnifying glass on a phone, the page and its pop-ups alike: John, 15 Nov 2026, "icon everywhere (for phone)") */
   html #barnav button[data-nv="search"], html #shnav button[data-nv="search"] { position: relative; width: 28px; height: 28px; padding: 0 !important; font-size: 0 !important; letter-spacing: 0 !important; flex: none; }
   html #barnav button[data-nv="search"]::after, html #shnav button[data-nv="search"]::after { content: ""; position: absolute; left: 50%; top: 50%; width: 17px; height: 17px; margin: -8.5px 0 0 -8.5px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E") center / contain no-repeat; }
+  html #barnav button[data-nv="movies"], html #shnav button[data-nv="movies"], html #barnav button[data-nv="tv"], html #shnav button[data-nv="tv"] { position: relative; width: 26px; height: 28px; padding: 0 !important; font-size: 0 !important; letter-spacing: 0 !important; flex: none; }
+  html #barnav button[data-nv="movies"]::after, html #shnav button[data-nv="movies"]::after, html #barnav button[data-nv="tv"]::after, html #shnav button[data-nv="tv"]::after { content: ""; position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='16' rx='1'/%3E%3Cpath d='M7 4v16M17 4v16M3 8h4M3 12h4M3 16h4M17 8h4M17 12h4M17 16h4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='16' rx='1'/%3E%3Cpath d='M7 4v16M17 4v16M3 8h4M3 12h4M3 16h4M17 8h4M17 12h4M17 16h4'/%3E%3C/svg%3E") center / contain no-repeat; }
+  html #barnav button[data-nv="tv"]::after, html #shnav button[data-nv="tv"]::after { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Crect x='2.5' y='6' width='19' height='13' rx='1.5'/%3E%3Cpath d='M8 2.5l4 3.5 4-3.5'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Crect x='2.5' y='6' width='19' height='13' rx='1.5'/%3E%3Cpath d='M8 2.5l4 3.5 4-3.5'/%3E%3C/svg%3E"); }
   html #barnav button[data-nv="search"].on, html #shnav button[data-nv="search"].on { text-decoration: none; } html #barnav button[data-nv="search"].on::after, html #shnav button[data-nv="search"].on::after { opacity: 1; }
   html.phone #barnav { gap: 8px !important; }
+  @media (max-width: 440px) {   /* (phones: Film and TV beside the rest, room kept for the music and the profile) */
+    html #barnav, html.phone #barnav { gap: 3px !important; }
+    html .a24btn { padding: 0 4px !important; } html .critbtn { width: 28px; }
+    html #barnav button[data-nv="movies"], html #shnav button[data-nv="movies"], html #barnav button[data-nv="tv"], html #shnav button[data-nv="tv"] { width: 22px; }
+    html #barnav button[data-nv="movies"]::after, html #barnav button[data-nv="tv"]::after, html #shnav button[data-nv="movies"]::after, html #shnav button[data-nv="tv"]::after { width: 16px; height: 16px; margin: -8px 0 0 -8px; }
+  }
 }
 @media (max-width: 600px) { html .bar-top .drafttag { flex: none; width: 9px; height: 9px; min-height: 0; padding: 0; font-size: 0; border-radius: 50%; margin: 0 0 0 2px !important; } }   /* (the draft's tag a dot on any phone) */
 @media (max-width: 430px) {   /* (a phone: no separate home (the switch does it), GRIFFLIX a little smaller, so all of it fits signed in) */
@@ -2455,7 +2474,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'aad819c48e00' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '21c7ebcc8ade' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5884,13 +5903,15 @@ function browseIn(into, tab) {   // Browse drawn inside a pop-up (a collection, 
 }
 function browse(into) {
   var main = into || $('#main');
+  if (!into) try { navBar(); } catch (e) {}   // (Film or TV marked in the bar as the page you're on)
   S.sheetInto = into || null;
   var tabs = [['now', 'Now showing'], ['collections', 'Collections'], ['movies', 'Films'], ['tv', 'TV']];   // (Now showing: Carry on watching, New films, New on TV - John, 8 Nov 2026: "it should be a tab like collections")   // (no Home videos tab: John, 7 Nov 2026; the gateway still serves a home videos library if one is added)
   if (S.browse === 'home') S.browse = 'movies';
   main.innerHTML = '<div class="hero"><h1>' + { now: 'Now showing', movies: 'Films', tv: 'TV', collections: 'Collections' }[S.browse] + '</h1><div class="hsub" id="bcount"></div></div>' +
     '<div class="tabs">' + tabs.map(function (t) { return '<button class="pill' + (t[0] === S.browse ? ' on' : '') + '" data-b="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
-    '<span class="sp"></span>' + (S.browse === 'collections' || S.browse === 'now' ? '' : sfBar()) + '</div>' +
+    '<span class="sp"></span>' + (into || PUBLIC ? '' : '<button class="pill" type="button" id="bsrch" aria-label="Search films and TV">Search</button>') + (S.browse === 'collections' || S.browse === 'now' ? '' : sfBar()) + '</div>' +
     '<div class="moods" id="moods"></div><div id="bgrid"></div>';
+  var bs_ = $('#bsrch', main); if (bs_) bs_.onclick = function () { searchSheet(); };   // (search, from the Films and TV pages)
   $$('[data-b]', main).forEach(function (b) { b.onclick = function () { if (into) { S.browse = b.dataset.b; browse(into); var f = $('#bsin [data-b].on'); if (f && TV) f.focus(); } else location.hash = '#browse/' + b.dataset.b; }; });
   // genres and moods (Films and TV): a row of moods, and every genre the shelves have, with how many
   if (S.browse !== 'collections' && S.browse !== 'now' && !DEMO) library().then(function (L) {
@@ -6031,7 +6052,11 @@ function navWords(on) {
     (PUBLIC && !DEMO ? '' : '<button type="button" class="critbtn" data-nv="criterion" aria-label="The Criterion Collection at Grifflix" title="The Criterion Collection at Grifflix">' + gcMark() + '</button>' +
       '<button type="button" class="a24btn" data-nv="a24" aria-label="A24 at Grifflix" title="A24 at Grifflix">' + a24Mark() + '</button>') +   // (A24's beside it: John, 19 Nov 2026)
     // (named for what it finds, Film & TV; on a phone, its magnifying glass as before: John, 18 Nov 2026)
-    (PUBLIC && !DEMO ? '' : '<button type="button" data-nv="search" aria-label="Search films and TV"' + (on === 'search' ? ' class="on" aria-current="page"' : '') + '>Film &amp; TV</button>');   // (signed out: no searching the library)
+    // (Film and TV, each its own: its page, out of Criterion's or A24's look: John, 19 Nov 2026, "The Film & TV link at the top of the screen
+    // should be separate - film showing film, tv showing tv")
+    // (on a phone, the magnifying glass to Search instead, as before: John, 19 Nov 2026, "film and tv should just be the search icon for mobile and
+    // take you to search instead")
+    (PUBLIC && !DEMO ? '' : !TV && matchMedia('(max-width: 600px)').matches ? '<button type="button" data-nv="search" aria-label="Search films and TV"' + (on === 'search' ? ' class="on" aria-current="page"' : '') + '>Search</button>' : ['movies', 'tv'].map(function (k) { var here = S.view === 'browse' && S.browse === k && !dlg.open; return '<button type="button" data-nv="' + k + '" aria-label="' + (k === 'tv' ? 'TV' : 'Films') + '"' + (here ? ' class="on" aria-current="page"' : '') + '>' + (k === 'tv' ? 'TV' : 'Film') + '</button>'; }).join(''));   // (signed out: no searching the library)
 }
 
 // ---- Grifflix at Criterion: the C beside the switch, its intro, its page and its cover (John, 17 Nov 2026)
@@ -6045,7 +6070,7 @@ function critIntro() {
   var el = document.createElement('div'); el.className = 'gcin'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'The Criterion Collection at Grifflix');
   var sp = []; for (var i = 1; i <= 90; i++) sp.push('<i><b>' + ((i * 13 + 7) % 1400) + '</b></i>');
   el.innerHTML = '<div class="shelf" aria-hidden="true">' + sp.join('') + '</div><div class="core"><span class="lockup">' + gcMark('mark') +
-    '<span class="cc">The Criterion<br>Collection</span></span><span class="at">at</span><span class="g gcx">Grifflix</span><span class="n" aria-live="polite">&nbsp;</span><button type="button" class="go">Enter</button></div>';
+    '<span class="cc">The Criterion<br>Collection</span></span><span class="at">at</span><span class="g gcx">Grifflix</span><span class="n" aria-live="polite">&nbsp;</span></div>';
   document.body.appendChild(el);
   var coll = null, done = false, t0 = Date.now(), auto = 0, snd = critSound();   // (its own sound: John, 19 Nov 2026, "Can the criterion intro have sound too")
   var key = function (e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
@@ -6058,7 +6083,6 @@ function critIntro() {
   document.addEventListener('keydown', key, true);
   el.onclick = function () { go(); };
   auto = setTimeout(function () { go(true); }, 4200);
-  if (TV) setTimeout(function () { var b = el.querySelector('.go'); if (b) b.focus(); }, 2300);
   gcFind().then(function (c) {
     coll = c; var box = $('.gcin .n'); if (!c) { if (box) box.textContent = 'No Criterion collection in Grifflix yet'; return; }
     return api('collection?id=' + encodeURIComponent(c.id)).then(function (d) {   // (how many, and the spines they run to, counted up)
@@ -6074,43 +6098,36 @@ function critIntro() {
     });
   }).catch(function () {});
 }
-// (the Criterion intro's sound, made by the browser: quiet and classical, as its white page and spines are, apart from A24's: a soft
-// swish as the shelf of spines slides in, a piano's rising notes as the C draws itself, a warm chord as GRIFFLIX comes, and soft wooden
-// clicks as the films and spine numbers count up. Only when Grifflix's music is on)
+// (the Criterion intro's sound, made by the browser, as an old film's opening titles, not twee: a low swell of strings rising as the
+// shelf slides in and the C draws itself, a soft drum as GRIFFLIX comes, and a broad, warm chord of brass ringing out (John, 19 Nov 2026,
+// "Can we have different music for the criterion channel. It's too twee"). Only when Grifflix's music is on)
 function critSound() {
   if (!TMUS.on || CALM) return null;
   var c = musicCtx(); if (!c) return null;
   try { musicHush(); } catch (e) {}
-  var t0 = c.currentTime + .05, out = c.createGain(), stopped = false; out.gain.value = .5; out.connect(c.destination);
-  var verb = c.createConvolver(), vl = c.sampleRate * 2.2, ir = c.createBuffer(2, vl, c.sampleRate);   // (a small room's ring)
-  for (var ch = 0; ch < 2; ch++) { var dd = ir.getChannelData(ch); for (var i = 0; i < vl; i++) dd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / vl, 3); }
-  verb.buffer = ir; var wet = c.createGain(); wet.gain.value = .22; verb.connect(wet); wet.connect(out);
-  var noise = function (len) { var b = c.createBuffer(1, Math.ceil(c.sampleRate * len), c.sampleRate), d = b.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; };
-  var piano = function (f, at, v, len) {   // (a soft piano-like note: its first few overtones, a quick strike and a long fall)
-    [[1, 1], [2, .45], [3, .18], [4, .08]].forEach(function (h) {
-      var o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = f * h[0]; o.detune.value = (h[0] - 1) * 1.5;
-      g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(v * h[1], at + .008); g.gain.exponentialRampToValueAtTime(.0001, at + (len || 2.6) / h[0]);
-      o.connect(g); g.connect(out); g.connect(verb); o.start(at); o.stop(at + (len || 2.6) + .1);
-    });
+  var t0 = c.currentTime + .05, out = c.createGain(), stopped = false; out.gain.value = .55; out.connect(c.destination);
+  var verb = c.createConvolver(), vl = c.sampleRate * 3, ir = c.createBuffer(2, vl, c.sampleRate);   // (a hall's ring)
+  for (var ch = 0; ch < 2; ch++) { var dd = ir.getChannelData(ch); for (var i = 0; i < vl; i++) dd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / vl, 2.5); }
+  verb.buffer = ir; var wet = c.createGain(); wet.gain.value = .35; verb.connect(wet); wet.connect(out);
+  var voice = function (f, type, at, att, hold, rel, v, lpFrom, lpTo, into) {   // (one held note: a slow rise, held, a slow fall, a filter opening)
+    var o = c.createOscillator(), o2 = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain();
+    o.type = o2.type = type; o.frequency.value = o2.frequency.value = f; o.detune.value = -7; o2.detune.value = 7;
+    lp.type = 'lowpass'; lp.Q.value = .6; lp.frequency.setValueAtTime(lpFrom, at); lp.frequency.exponentialRampToValueAtTime(lpTo, at + att + hold * .5);
+    g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(v, at + att); g.gain.setValueAtTime(v, at + att + hold); g.gain.exponentialRampToValueAtTime(.0001, at + att + hold + rel);
+    o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(into || out); g.connect(verb); o.start(at); o2.start(at); o.stop(at + att + hold + rel + .1); o2.stop(at + att + hold + rel + .1);
   };
-  // the shelf sliding in: a breath of filtered noise
-  var n = c.createBufferSource(), bp = c.createBiquadFilter(), ng = c.createGain(); n.buffer = noise(1.8); bp.type = 'bandpass'; bp.Q.value = .7;
-  bp.frequency.setValueAtTime(400, t0); bp.frequency.exponentialRampToValueAtTime(2200, t0 + .9); bp.frequency.exponentialRampToValueAtTime(900, t0 + 1.7);
-  ng.gain.setValueAtTime(.0001, t0); ng.gain.exponentialRampToValueAtTime(.12, t0 + .5); ng.gain.exponentialRampToValueAtTime(.0001, t0 + 1.7);
-  n.connect(bp); bp.connect(ng); ng.connect(out); n.start(t0);
-  // the C drawing itself: D, F sharp, A, D rising
-  [293.66, 369.99, 440, 587.33].forEach(function (f, k) { piano(f, t0 + .2 + k * .28, .16 - k * .015, 2.4); });
-  // GRIFFLIX: a D major chord, warm and low, ringing out
-  [73.42, 146.83, 220, 293.66, 369.99, 440, 587.33].forEach(function (f, k) { piano(f, t0 + 1.6 + k * .012, [.14, .16, .12, .11, .09, .08, .05][k], 4.2); });
+  // the strings: low D and A, rising out of nothing as the spines slide by and the C draws itself
+  [[73.42, .09], [110, .07], [146.83, .05]].forEach(function (n) { voice(n[0], 'sawtooth', t0, 1.3, .3, 1.6, n[1], 180, 900); });
+  // the drum: soft and low, as GRIFFLIX comes
+  var h = t0 + 1.6, d = c.createOscillator(), dg = c.createGain(); d.type = 'sine'; d.frequency.setValueAtTime(82, h); d.frequency.exponentialRampToValueAtTime(46, h + .6);
+  dg.gain.setValueAtTime(.0001, h); dg.gain.exponentialRampToValueAtTime(.7, h + .015); dg.gain.exponentialRampToValueAtTime(.001, h + 1.8); d.connect(dg); dg.connect(out); dg.connect(verb); d.start(h); d.stop(h + 2);
+  var nb = c.createBuffer(1, c.sampleRate * .8, c.sampleRate), nd = nb.getChannelData(0); for (var j = 0; j < nd.length; j++) nd[j] = Math.random() * 2 - 1;
+  var n = c.createBufferSource(), nl = c.createBiquadFilter(), ng = c.createGain(); n.buffer = nb; nl.type = 'lowpass'; nl.frequency.value = 500;
+  ng.gain.setValueAtTime(.18, h); ng.gain.exponentialRampToValueAtTime(.001, h + .7); n.connect(nl); nl.connect(ng); ng.connect(out); n.start(h);
+  // the brass: a broad D major, low and warm, swelling and ringing out under the name
+  [[73.42, .08], [146.83, .07], [220, .055], [293.66, .045], [369.99, .035], [440, .025]].forEach(function (n2) { voice(n2[0], 'sawtooth', h + .05, .55, 1.2, 2.6, n2[1], 400, 1700); });
   return {
-    count: function (secs) {   // (soft wooden clicks as the numbers climb, quick then slowing, as they do)
-      if (stopped) return; var t = c.currentTime;
-      for (var k = 0; k < 14; k++) {
-        var at = t + secs * (1 - Math.pow(1 - k / 13, 2)) * .95, s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
-        s.buffer = noise(.03); f.type = 'bandpass'; f.frequency.value = 1800 + (k % 3) * 300; f.Q.value = 6;
-        g.gain.setValueAtTime(.18, at); g.gain.exponentialRampToValueAtTime(.001, at + .03); s.connect(f); f.connect(g); g.connect(out); s.start(at);
-      }
-    },
+    count: function () {},   // (no clicks: the music carries it)
     stop: function () {
       if (stopped) return; stopped = true; var t = c.currentTime;
       out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(out.gain.value, t); out.gain.exponentialRampToValueAtTime(.0001, t + .5);
@@ -6132,7 +6149,7 @@ function a24Find() { return api('collections').then(function (r) { return (r.col
 function a24Intro() {
   if ($('.a24in')) return; a24Fonts();
   var el = document.createElement('div'); el.className = 'a24in'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'A24 at Grifflix');
-  el.innerHTML = '<div class="cut" aria-hidden="true"></div><div class="core">' + a24Mark('big') + '<span class="at">at</span><span class="g gcx">Grifflix</span><span class="n" aria-live="polite">&nbsp;</span><button type="button" class="go">Enter</button></div>';
+  el.innerHTML = '<div class="cut" aria-hidden="true"></div><div class="core">' + a24Mark('big') + '<span class="at">at</span><span class="g gcx">Grifflix</span><span class="n" aria-live="polite">&nbsp;</span></div>';
   document.body.appendChild(el);
   var coll = null, done = false, auto = 0, timers = [], ended = false;
   var later = function (f, ms) { timers.push(setTimeout(f, ms)); };
@@ -6157,7 +6174,6 @@ function a24Intro() {
   var end = function (d) {   // (black, then A, 2, 4, each cut on, as a title card)
     if (ended || done) return; ended = true; el.classList.add('end'); count(d); if (snd) snd.hit();
     auto = setTimeout(function () { go(true); }, 3400);
-    if (TV) later(function () { var b = el.querySelector('.go'); if (b) b.focus(); }, 1300);
   };
   var data = null;
   later(function () { end(data); }, 5000);
@@ -6289,7 +6305,13 @@ function a24Draw(g, items, fq) {
     var im = still.firstChild; if (im.getAttribute('src') !== src) { still.classList.remove('on'); im.onload = function () { if (on === r) { still.classList.add('on'); g.classList.add('st'); } }; im.src = src; }
     else { still.classList.add('on'); g.classList.add('st'); }
   };
-  $$('.a24r[data-item]', g).forEach(function (r) { r.onmouseenter = function () { show(r); }; r.onfocus = function () { show(r); }; });
+  // (the TV: the chosen film kept clear of the bar going up as well as down, the page moved by hand, not left to the TV's browser, which
+  // put it under the bar going up: John, 19 Nov 2026, "scrolling back up moves the choice over the header")
+  var clear = function (r) {
+    if (!TV) return; var bt = $('.bar-top'), bb = bt && getComputedStyle(bt).position === 'fixed' ? bt.getBoundingClientRect().bottom : 0, x = r.getBoundingClientRect();
+    if (x.top < bb + 24) window.scrollBy(0, x.top - bb - 24); else if (x.bottom > innerHeight - 24) window.scrollBy(0, x.bottom - innerHeight + 24);
+  };
+  $$('.a24r[data-item]', g).forEach(function (r) { r.onmouseenter = function () { show(r); }; r.onfocus = function () { clear(r); show(r); }; });
   g.onmouseleave = function () { show(null); }; g.onfocusout = function (e) { if (!g.contains(e.relatedTarget)) show(null); };
 }
 // (the admin page's Intros preview: ?intro=criterion or ?intro=a24 plays that one as the page opens: John, 19 Nov 2026, "Can we add the
@@ -6300,6 +6322,7 @@ function navGo(w) {
   if (w === 'a24') { if (dlg.open) closeSheet(); return a24Intro(); }
   var oncal = dlg.open && !!$('#sheetIn .tcal'), onsearch = dlg.open && !!$('#sheetIn #sq'), d = dlg.open ? S.sheetDate : null;
   if (w === 'search') { if (!onsearch) searchSheet(); return; }
+  if (w === 'movies' || w === 'tv') { if (dlg.open) closeSheet(); location.hash = '#browse/' + w; window.scrollTo(0, 0); return; }
   if (w === 'calendar') {
     if (oncal) return;
     if (dlg.open) closeSheet(); if (d) S.month = d.slice(0, 7);
@@ -8166,7 +8189,7 @@ document.addEventListener('keydown', function (e) {
   }
 }, true);
 function barSearch() {   // up into the bar lands on Search first (John, 8 Nov 2026: "the first click up ... go to Search not calendar")
-  return $('#barnav [data-nv="search"]') || $('.bar-top button');
+  return $('#barnav [data-nv="movies"]') || $('#barnav [data-nv="search"]') || $('.bar-top button');
 }
 window.grifflixTV = {
   away: function () { window.TVAWAY = true; allQuiet(); leaderNewDay.away = Date.now(); },   // (the app left: Home, or another app)
