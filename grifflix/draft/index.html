@@ -2510,7 +2510,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '69a9c9e57628' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '115b85698205' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6200,15 +6200,20 @@ function critSound() {
   am.gain.value = .6; depth.gain.value = .4; lfo.connect(depth); depth.connect(am.gain);
   env.gain.setValueAtTime(.0001, t0); env.gain.exponentialRampToValueAtTime(.05, t0 + .35); env.gain.setValueAtTime(.05, t0 + 1.1); env.gain.exponentialRampToValueAtTime(.0001, t0 + 1.8);
   n.connect(bp); bp.connect(lp); lp.connect(am); am.connect(env); env.connect(out); n.start(t0); lfo.start(t0); n.stop(t0 + 2.3); lfo.stop(t0 + 2.3);
-  // the bell: C, struck once, its own overtones (a bell's, not an instrument's), ringing out; a low C beneath it, barely there
-  var h = t0 + 1.6, C5 = 523.25;
-  [[1, .05, 4.2], [2, .025, 2.8], [2.76, .018, 2], [5.4, .009, 1.2], [8.93, .005, .8]].forEach(function (p) {
-    var o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = C5 * p[0];
-    g.gain.setValueAtTime(.0001, h); g.gain.exponentialRampToValueAtTime(p[1], h + .006); g.gain.exponentialRampToValueAtTime(.0001, h + p[2]);
-    o.connect(g); g.connect(out); g.connect(verb); o.start(h); o.stop(h + p[2] + .1);
+  // the bell: C, struck once, with a real bell's own tones (John, 19 Nov 2026, "The bell doesn't sound right on the criterion intro": the
+  // first was a bar's tones, tinny): the hum an octave down, the strike note, its minor third (what makes a bell a bell), the fifth, the
+  // octave above and the higher ones, each pair a breath apart so it shimmers, the low ones ringing longest; a soft knock as it's struck
+  var h = t0 + 1.6, C = 261.63, bell = c.createGain(); bell.gain.value = .07; bell.connect(out); bell.connect(verb);
+  [[.5, .5, 7], [1, .6, 5.5], [1.189, .42, 4.2], [1.5, .22, 3.2], [2, .75, 3], [2.5, .26, 1.9], [2.997, .16, 1.4], [4, .12, 1], [5.33, .05, .6]].forEach(function (p, k) {
+    [-1, 1].forEach(function (side) {
+      var o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = C * p[0] + side * (.35 + k * .12);
+      g.gain.setValueAtTime(.0001, h); g.gain.exponentialRampToValueAtTime(p[1] / 2, h + .004 + k * .001); g.gain.exponentialRampToValueAtTime(.0001, h + p[2]);
+      o.connect(g); g.connect(bell); o.start(h); o.stop(h + p[2] + .1);
+    });
   });
-  var lo = c.createOscillator(), lg = c.createGain(); lo.type = 'sine'; lo.frequency.value = 130.81;
-  lg.gain.setValueAtTime(.0001, h); lg.gain.exponentialRampToValueAtTime(.035, h + .4); lg.gain.exponentialRampToValueAtTime(.0001, h + 4); lo.connect(lg); lg.connect(out); lg.connect(verb); lo.start(h); lo.stop(h + 4.1);
+  var kb = c.createBuffer(1, Math.floor(c.sampleRate * .04), c.sampleRate), kd = kb.getChannelData(0); for (var q = 0; q < kd.length; q++) kd[q] = (Math.random() * 2 - 1) * Math.pow(1 - q / kd.length, 4);
+  var kn = c.createBufferSource(), kf = c.createBiquadFilter(), kg = c.createGain(); kn.buffer = kb; kf.type = 'bandpass'; kf.frequency.value = 2400; kf.Q.value = .8; kg.gain.value = .05;
+  kn.connect(kf); kf.connect(kg); kg.connect(out); kg.connect(verb); kn.start(h);
   return {
     count: function () {},
     stop: function () {
