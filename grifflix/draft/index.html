@@ -2453,7 +2453,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'ec16570165f0' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '312a00719d94' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2780,8 +2780,13 @@ function sfWire(root, items, redraw) {   // the icons' panels: items are what's 
   };
 }
 function nameKey(i) { return String(i.name || '').replace(/^(the|a|an)\s+/i, '').toLowerCase(); }
+// (each file of the films' longer details fetched once, then kept while the page is open, so a collection or film seen already opens at
+// once, not after "Looking on the shelves…" while the file is checked again: John, 19 Nov 2026, "When the collections load it often has
+// to look on the shelves first which spoils the effect")
+var DSH = {};
+function dShard(p) { return DSH[p] || (DSH[p] = getJSON(DATA + 'd/' + p + '.json').catch(function () { delete DSH[p]; return {}; })); }
 function details(it) {   // a film's longer details (overview, cast, trailers), and a series' episodes, from the site's files
-  var id = it.id, jobs = [getJSON(DATA + 'd/' + id.slice(0, 2) + '.json').then(function (b) { return b[id] || {}; }).catch(function () { return {}; })];
+  var id = it.id, jobs = [dShard(id.slice(0, 2)).then(function (b) { return b[id] || {}; })];
   if (it.type === 'series') jobs.push(getJSON(DATA + 's/' + id + '.json').catch(function () { return {}; }));
   return Promise.all(jobs).then(function (r) {
     var o = Object.assign({}, it, r[0]);
@@ -2830,7 +2835,10 @@ function fromSite(path) {   // what the site's own files answer (null: a thing o
     if (name === 'collection') {
       var c = I[q.get('id')]; if (!c && ME && ME.owner) return null;   // (one of John's own, never in the site's files: from the Mac: John, 19 Nov 2026, A24 CHECKS)
       if (!c) { var e = new Error('No such collection.'); e.status = 404; throw e; }
-      return details(c).then(function (o) { o.items = get(L.sets[c.id] || []); return o; });
+      // (drawn at once from what the page already has, its films and its name; its description follows when its file comes)
+      var o = Object.assign({}, c, { items: get(L.sets[c.id] || []) });
+      o._later = details(c).then(function (d) { return d.overview || ''; });
+      return o;
     }
     if (name === 'item') {
       var it = I[q.get('id')];
@@ -5779,6 +5787,12 @@ function collectionView(id, into) {
     var count = function () { var h = $('#cbody .hsub i'); if (h) h.textContent = c.items.length + (A24 ? ' films' : c.items.length === 1 ? ' title' : ' titles'); };
     var ft = 0; $('#cfind').oninput = function () { var v = this.value.trim().toLowerCase(); clearTimeout(ft); ft = setTimeout(function () { fq = v; draw(); }, 120); };
     sfMode(/criterion/i.test(c.name)); if (!A24) sfWire($('#cbody'), c.items, draw);
+    if (c._later && !c.overview) c._later.then(function (ov) {   // (its description, once its file is here)
+      if (!ov || c.overview || !$('#cbody')) return; c.overview = ov;
+      var d = $('#cbody .collhead > div:last-child'), at = d && d.querySelector(A24 ? '.colltitle' : '.hsub'); if (!at || d.querySelector('.ov')) return;
+      var p = document.createElement('p'); p.className = 'ov'; p.textContent = ov; at.after(p);
+      var cd = $('#cdesc'); if (cd) cd.textContent = 'Change the description';
+    });
     if (SPINEOK) {   // (a list, as Criterion's site; or the covers)
       $('#cbody .sfbar').insertAdjacentHTML('beforebegin', '<span class="cviews" role="group" aria-label="Show as">' + [['list', 'List'], ['covers', 'Covers']].map(function (m) { return '<button class="pill' + (cmode === m[0] ? ' on' : '') + '" data-cv="' + m[0] + '" aria-pressed="' + (cmode === m[0]) + '">' + m[1] + '</button>'; }).join('') +
         '<button class="pill' + (csets ? ' on' : '') + '" id="cvsets" aria-pressed="' + csets + '">Box sets</button></span>');
@@ -6206,7 +6220,7 @@ function a24Draw(g, items, fq) {
   var order = [], need = {};
   items.forEach(function (i) { if (A24D[i.id]) return put(i.id); var s = i.id.slice(0, 2); if (!need[s]) { need[s] = []; order.push(s); } need[s].push(i.id); });
   var k = 0, run = function () { var s = order[k++]; if (!s || !g.isConnected) return;
-    getJSON(DATA + 'd/' + s + '.json').then(function (b) { need[s].forEach(function (id) { A24D[id] = b[id] || {}; put(id); }); }, function () { need[s].forEach(function (id) { A24D[id] = {}; }); }).then(run); };
+    dShard(s).then(function (b) { need[s].forEach(function (id) { A24D[id] = b[id] || {}; put(id); }); }).then(run); };
   for (var j = 0; j < 6; j++) run();
   // (the still: the right half of the screen, as A24's, its words white over it; a computer's pointer, or the TV's remote)
   var still = $('.a24still'); if (!still) { still = document.createElement('figure'); still.className = 'a24still'; still.setAttribute('aria-hidden', 'true'); still.innerHTML = '<img alt="">'; } g.appendChild(still);   // (in the list, so the film pointed at sits over it)
