@@ -1326,6 +1326,13 @@ html:not(.phone) .film > .in { align-self: start; }
 html:not(.tv) .film .tag, html:not(.tv) .film .ov, html:not(.tv) .film .cred, html:not(.tv) .film .credits { max-width: 1040px !important; }
 html:not(.phone) .film .ipost img { display: block; width: 100%; height: auto; max-height: calc(100vh - 170px); object-fit: contain; object-position: center; box-shadow: 0 24px 60px rgba(0, 0, 0, .35); }
 html:not(.phone) .film .in { padding: 0 !important; min-height: 0 !important; display: block !important; }
+/* (the picture as big as the screen's height lets it be, the words beside it taking what's left: John, 19 Nov 2026, "the right hand side should be
+   shrunk in desktop/ fire tv more rather than the left, so the picture can fill the screen better") */
+html:not(.phone) .film { grid-template-columns: minmax(220px, max(30vw, min(50vw, calc((100vh - 150px) * .667)))) minmax(0, 1fr); gap: clamp(28px, 3vw, 56px); padding-left: clamp(28px, 4vw, 80px); }
+html:not(.phone) .film:not(.hasposter) { grid-template-columns: minmax(300px, 52vw) minmax(0, 1fr); }
+html:not(.phone) .film .ipost img { max-height: calc(100vh - 150px); }
+html.tv .film { grid-template-columns: calc((100vh - 116px) * .667) minmax(0, 1fr); }   /* (the TV: the picture its full height, no gap beside it) */
+html.tv .film .ipost img { max-height: calc(100vh - 116px); }
 html.tv .film .ov { font-size: var(--ovfs, 21px) !important; max-width: none !important; display: block !important; -webkit-line-clamp: unset !important; overflow: visible !important; }   /* (all of it, made smaller to fit: tvFit) */
 html.tv .film .tag { font-size: 24px !important; }
 html.tv .film .meta { font-size: 17px !important; }
@@ -1972,6 +1979,8 @@ body { font-size: 14px; } .film h2 { font-size: clamp(34px, 4.1vw, 68px) !import
 .zlead .gx, .welcome h1, .gcin .g, .a24in .g { font-family: "Grifflix Logo Fine", var(--kfont) !important; }
 .bar-top .brand, #shbrand, .zlead .gx, .welcome h1 { font-family: "Grifflix Logo", var(--kfont) !important; font-weight: 700 !important; color: var(--fg) !important; -webkit-text-stroke: 0 !important; }
 .zlead .gx { color: #fff !important; }
+.gxs { display: inline-block; vertical-align: -.12em; } .brand .gxs { display: block; } .gxs { height: 1em; overflow: visible; fill: none; stroke: currentColor; stroke-width: 1.2px; stroke-width: max(1.15px, .075em); stroke-linejoin: miter; stroke-miterlimit: 3; shape-rendering: geometricPrecision; }
+.gxs path { vector-effect: non-scaling-stroke; }
 .zlt { font-family: "Grifflix Display", "Federo", Georgia, serif !important; font-weight: 400 !important; font-size: 1.15em; }
 /* Grifflix's own look (its palette: Orange, Vista Bleu, Amande, Bleu Oxford): the room flat in its colour, the type in its ink,
    the zoetrope and the cinema in the palette, no red velvet (John, 10 Nov 2026) */
@@ -2080,6 +2089,10 @@ html.gcrit #main > .tabs:first-child { display: none; }
 html.gcrit #cbody .collhead { grid-template-columns: 150px minmax(0, 1fr); gap: 28px; align-items: center; margin: -6px 0 0; padding: 16px clamp(14px, 2.4vw, 32px) 16px; background: var(--gc-panel); }   /* (compact: the cover says it already; John, 18 Nov 2026, "this isn't a very good use of space") */
 html.gcrit #cbody .collhead .kick { margin-bottom: 6px; }
 html.gcrit #cbody .colltitle { font-size: clamp(30px, 4vw, 44px) !important; margin: 0 0 6px; }
+/* (the title in Criterion's own lettering, spaced capitals, as on its covers and its intro here, not Grifflix's serif: John, 19 Nov 2026, "Can
+   criterion font be used on the criterion collection title") */
+html.gcrit #cbody .colltitle { font: 500 clamp(20px, 2.6vw, 30px)/1.2 var(--kfont) !important; letter-spacing: .14em !important; text-transform: uppercase !important; }
+html.gcrit.tv #cbody .colltitle { font-size: 24px !important; }
 html.gcrit #cbody .cstats { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 10px 0 0; font: 500 12px/1.4 var(--kfont); letter-spacing: .14em; text-transform: uppercase; color: var(--gc-grey, var(--fg-2)); }
 html.gcrit #cbody .cstats b { font-weight: 700; color: var(--gc-ink, var(--fg)); letter-spacing: .06em; margin-right: 5px; }
 html.gcrit #cbody .collpic { background: none; box-shadow: none; }
@@ -2155,6 +2168,7 @@ html.ga24 .a24btn { background: var(--a24-ink) !important; color: var(--a24-page
    "The A24 intro is a bit too similar to the criterion one. Can we have a more original one") */
 .a24in { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; overflow: hidden; background: #000; color: #fff; cursor: pointer; transition: opacity .5s ease; }
 .a24in.out { opacity: 0; pointer-events: none; }
+html.introtop, html.introtop body { background: var(--introtop) !important; }
 .a24in .cut { position: absolute; inset: 0; }
 .a24in .cut figure { position: absolute; inset: 0; margin: 0; visibility: hidden; }
 .a24in .cut figure.on { visibility: visible; }
@@ -2307,6 +2321,10 @@ html.tv .a24list { --ayw: 150px; } html.tv .a24r .af { font-size: 34px; } html.t
   html.phone .vtog span { padding: 6px 5px 5px; letter-spacing: .04em; text-indent: .04em; font-size: 9.5px; }
   html.phone .bar-top .ico, html.tview.hall .bar-top .ico.tmute, html.tview.table .bar-top .ico.tmute { width: 26px !important; }
 }
+/* (GRIFFLIX on a phone spaced as it is everywhere else, wide, not squeezed up to fit: there's room for it: John, 19 Nov 2026, a photo of the
+   bar over A24's "at GRIFFLIX": "the spacing is correct on the lower one and not on the top") */
+@media (max-width: 600px) { html .bar-top .brand, html.phone .bar-top .brand, html #shbrand { letter-spacing: .5em !important; } }
+@media (max-width: 359px) { html .bar-top .brand, html.phone .bar-top .brand, html #shbrand { font-size: 10px !important; letter-spacing: .45em !important; } }
 /* the TV: one highlight for whatever's chosen, everywhere: a white ring a little out from it, a dark band between, so it reads on
    a light picture or a dark room; the same thickness and gap however large the chosen thing is drawn (--ks: one over its scale)
    (John, 11 Nov 2026: "highlighting can sometimes be a white box sometimes a white border, depending on the theme. Either way
@@ -2492,7 +2510,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '2a460a7c9cb2' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '69a9c9e57628' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2540,7 +2558,7 @@ var IN_APP = TV || /GrifflixApp\//.test(navigator.userAgent) || !!(window.Capaci
 if (TV) document.documentElement.classList.add('tv');   // the Song of the Day sign-in: same site, so the same storage
 var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 var DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-var S = { view: 'home', cal: 'motd', calData: null, cals: [], month: null, browse: 'collections', sort: 'year', lists: null, csort: store.get('grifflix-csort') || 'new' };
+var S = { view: 'home', cal: 'motd', calData: null, cals: [], month: null, browse: 'movies', sort: 'year', lists: null, csort: store.get('grifflix-csort') || 'new' };
 // a collection's own sort (John, 8 Nov 2026): newest to oldest first, as Films and TV; a box set by its newest film's year
 var CSORTS = [['new', 'Newest to oldest'], ['old', 'Oldest to newest'], ['name', 'A–Z'], ['rating', 'Rating'], ['added', 'Recently added']];
 function sortItems(items, how) {
@@ -3161,7 +3179,7 @@ function monthTint(m) {   // the month's theme's one flat colour, and its ink: b
   R.setProperty('--bg', t.bg);
   R.setProperty('--gc-c', own ? GX.title : gcTint(t.bg));   // (the C on the bar in a colour of its own against the month's, easy to read: John, 18 Nov 2026)
   if (!dim) store.set('grifflix-lastbg', t.bg); R.background = t.bg;   // (the next load opens in it, lights up)
-  var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = t.bg;
+  var tc = document.querySelector('meta[name="theme-color"]'); if (tc && !document.documentElement.classList.contains('introtop')) tc.content = t.bg;
 }
 window.addEventListener('resize', function () { setTimeout(zBeamFit, 120); });
 window.addEventListener('resize', function () { setTimeout(function () { if ($('#globe')) THEMEFX.globe.fit(); }, 160); });   // (Kane's globe kept on the picture's)
@@ -3608,7 +3626,7 @@ function hallInfo(b) {   // the day you're on, in words: its day large (as The S
 // the table (November): the month round a table (Dr. Strangelove's War Room), black and white, the day you're on at the front
 function drawTable(C, n, m, mine) {
   var R = document.documentElement.style; R.setProperty('--bg', '#0a0a0a'); R.setProperty('--kink', '255, 255, 255');   // (black and white, always)
-  var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = '#0a0a0a';
+  var tc = document.querySelector('meta[name="theme-color"]'); if (tc && !document.documentElement.classList.contains('introtop')) tc.content = '#0a0a0a';
   var h = '<div class="thstage"><div class="thv">' + bigBoard() + '<div class="tring"></div><div class="tlamp"></div><div class="tcentre" id="tcentre"></div>';
   themeKeys().forEach(function (key) {   // (with the neighbouring months' nearest days: see drawTheme)
     var d = +key.slice(8), om = key.slice(0, 7) !== S.month, it = C.days[key];
@@ -3817,7 +3835,22 @@ function near(k) { return Math.max(0, 1 - Math.abs(k)); }   // (1 for the day yo
 var TMUS = { on: store.get('grifflix-music') ? store.get('grifflix-music') !== 'off' : !(/iP(hone|ad|od)/.test(navigator.userAgent) && !/[?&]app=/.test(location.search)),   // (an iPhone's browser plays nothing till a touch: there, off till turned on: John, 9 Nov 2026)
    list: null, a: null, k: null, ok: /[?&](sound=1|app=)/.test(location.search) || /GRIFFLIXTV\//.test(navigator.userAgent), pj: null, ctx: null };   // (Grifflix's own apps let sound start without a tap: the 3 2 1 and the music from the start; if one won't, the first tap)   // (sound=1: admin's preview, opened by a click there, may play at once)
 fetch('/grifflix/data/thememusic.json').then(function (r) { return r.json(); }).then(function (j) { TMUS.list = j; if (TMUS.k && !TMUS.a && !TMUS.pj) { var k = TMUS.k; TMUS.k = null; themeMusic(k); } }).catch(function () {});
-function musicCtx() { var A = window.AudioContext || window.webkitAudioContext; if (!A) return null; if (!TMUS.ctx) TMUS.ctx = new A(); if (TMUS.ctx.state === 'suspended') TMUS.ctx.resume(); return TMUS.ctx; }
+// (the sounds made here played as music is on an iPhone, through its silent switch, as the themes' recorded music already is: an iPhone
+// otherwise treats them as a ringer would and keeps them quiet on silent: John, 19 Nov 2026, "For some reason the phone can't be on silent -
+// but that's not true of other things"). Newer iPhones are told so; older ones are kept as music by a silent recording playing alongside
+function musicAsMedia() {
+  try { if (navigator.audioSession) { navigator.audioSession.type = 'playback'; return; } } catch (e) {}
+  if (TMUS.keep || !/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) || !('ontouchend' in document)) return;
+  try {
+    var sr = 8000, n = sr / 2, b = new ArrayBuffer(44 + n), v = new DataView(b), w = function (o, t) { for (var i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+    w(0, 'RIFF'); v.setUint32(4, 36 + n, true); w(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, sr, true); v.setUint32(28, sr, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true); w(36, 'data'); v.setUint32(40, n, true);
+    for (var i = 0; i < n; i++) v.setUint8(44 + i, 128);
+    var a = new Audio(URL.createObjectURL(new Blob([b], { type: 'audio/wav' }))); a.loop = true; a.setAttribute('playsinline', ''); TMUS.keep = a;
+    var p = a.play(); if (p && p.catch) p.catch(function () { TMUS.keep = null; });
+  } catch (e) {}
+}
+function musicCtx() { var A = window.AudioContext || window.webkitAudioContext; if (!A) return null; musicAsMedia(); if (!TMUS.ctx) TMUS.ctx = new A(); if (TMUS.ctx.state === 'suspended') TMUS.ctx.resume(); return TMUS.ctx; }
 function themeMusic(k) {   // the theme on the page now (null: none)
   if (k === TMUS.k && (TMUS.a || TMUS.pj || !TMUS.ok)) return;
   musicHush(); TMUS.k = k;
@@ -5700,7 +5733,7 @@ function cardHTML(it, land, spine) {   // (spine: a collection's page, a Criteri
 }
 function gcCover(c, n) {   // (Grifflix at Criterion's cover: John, 17 Nov 2026)
   var sub = (c.name || '').replace(/^the\s+/i, '').replace(/criterion( collection)?/i, '').trim();
-  return '<div class="pic ccov gcc">' + gcMark('gcm') + '<em>The Criterion<br>Collection</em><i>at</i><b class="gcx">Grifflix</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '<small>' + esc(n) + '</small>') + '</div>';
+  return '<div class="pic ccov gcc">' + gcMark('gcm') + '<em>The Criterion<br>Collection</em><i>at</i><b class="gcx" aria-label="Grifflix">' + gxSvg(.5) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '<small>' + esc(n) + '</small>') + '</div>';
 }
 function collCard(c) {   // a collection's cover, drawn rather than a picture: a title poster in the month's theme - its colour,
   // its type, and a graphic of its own for each collection (John, 8 Nov 2026: "replace the images with a creatively styled
@@ -5710,7 +5743,7 @@ function collCard(c) {   // a collection's cover, drawn rather than a picture: a
   var h = 0; for (var i = 0; i < (c.id || nm).length; i++) h = (h * 31 + (c.id || nm).charCodeAt(i)) >>> 0;
   var long = nm.length > 26 ? ' xl' : (nm.length > 13 ? ' l' : ''), n = c.children ? c.children + (c.children === 1 ? ' title' : ' titles') : 'Collection';
   if (/criterion/i.test(c.name)) return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '">' + gcCover(c, n) + '<div class="t">' + esc(c.name) + '</div><div class="s">' + n + '</div></a>';
-  if (/^a24$/i.test(c.name)) { a24Fonts(); return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '"><div class="pic ccov a24c">' + a24Mark() + '<i>at</i><b class="gcx">Grifflix</b><small>' + esc(n) + '</small></div><div class="t">' + esc(c.name) + '</div><div class="s">' + n + '</div></a>'; }
+  if (/^a24$/i.test(c.name)) { a24Fonts(); return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '"><div class="pic ccov a24c">' + a24Mark() + '<i>at</i><b class="gcx" aria-label="Grifflix">' + gxSvg(.5) + '</b><small>' + esc(n) + '</small></div><div class="t">' + esc(c.name) + '</div><div class="s">' + n + '</div></a>'; }
   return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '"><div class="pic ccov" data-cn="' + esc(c.name) + '" data-nm="' + esc(nm) + '" data-ch="' + h + '">' + collArt(h, nm, c.name) +
     '<div class="cc">' + (k ? '<small>' + esc(k) + '</small>' : '') + '<b class="' + long + '">' + esc(nm) + '</b><i></i><span>' + n + '</span></div></div><div class="t">' + esc(c.name) + '</div><div class="s">' + n + '</div></a>';   // (its name under it too, as a film's: John, 8 Nov 2026)
 }
@@ -5729,14 +5762,14 @@ function collArt(h, nm, full) {
 }
 function collectionView(id, into) {
   var main = into || $('#main');
-  main.innerHTML = '<div class="tabs" style="margin-top:22px"><a class="pill" href="#browse/collections">‹ Collections</a></div><div id="cbody"><div class="empty">Looking on the shelves…</div></div>';
+  main.innerHTML = '<div class="tabs" style="margin-top:22px">' + (ME && ME.owner ? '<a class="pill" href="#browse/collections">‹ Collections</a>' : '<a class="pill" href="#browse/movies">‹ Films</a>') + '</div><div id="cbody"><div class="empty">Looking on the shelves…</div></div>';
   apiMemo('collection?id=' + encodeURIComponent(id), function (c) {
     if (!$('#cbody')) return;
     sfMode(/criterion/i.test(c.name));   // (before its bar is drawn: the bar shows Criterion's sort)
     document.documentElement.classList.toggle('gcrit', /criterion/i.test(c.name));   // (The Criterion Collection at Grifflix: its own look)
     var A24 = /^a24$/i.test(c.name); document.documentElement.classList.toggle('ga24', A24); if (A24) a24Fonts();   // (A24 at Grifflix: A24's own list: John, 19 Nov 2026)
     var cov = collCard({ id: c.id, name: c.name, children: c.items.length }).replace(/^<a [^>]*>|<\/a>$/g, '');   // (its drawn cover, as on the shelf)
-    $('#cbody').innerHTML = (A24 ? '<div class="collhead a24head"><div><div class="a24top"><span class="a24lock">' + a24Mark() + '<small>at</small><b class="gcx">Grifflix</b></span><span class="hsub"><i>' + c.items.length + ' films</i></span></div>' +
+    $('#cbody').innerHTML = (A24 ? '<div class="collhead a24head"><div><div class="a24top"><span class="a24lock">' + a24Mark() + '<small>at</small><b class="gcx" aria-label="Grifflix">' + gxSvg(.5) + '</b></span><span class="hsub"><i>' + c.items.length + ' films</i></span></div>' +
       '<h1 class="colltitle">All films</h1>' + (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
       '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find an A24 film" aria-label="Find in A24" autocomplete="off"><span class="sp"></span></div>' +
       '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>' : '<div class="collhead"><div class="card coll collpic">' + cov + '</div>' +
@@ -5930,7 +5963,9 @@ function browse(into) {
   var main = into || $('#main');
   if (!into) try { navBar(); } catch (e) {}   // (Film or TV marked in the bar as the page you're on)
   S.sheetInto = into || null;
-  var tabs = [['now', 'Now showing'], ['collections', 'Collections'], ['movies', 'Films'], ['tv', 'TV']];   // (Now showing: Carry on watching, New films, New on TV - John, 8 Nov 2026: "it should be a tab like collections")   // (no Home videos tab: John, 7 Nov 2026; the gateway still serves a home videos library if one is added)
+  // (Collections not among them, but for the one who opened it (from the admin page's link): John, 19 Nov 2026, "Can collections link be removed
+  // from film and tv, with just a private link to my collections from admin")
+  var tabs = [['now', 'Now showing'], ['collections', 'Collections'], ['movies', 'Films'], ['tv', 'TV']].filter(function (t) { return t[0] !== 'collections' || S.browse === 'collections'; });   // (Now showing: Carry on watching, New films, New on TV - John, 8 Nov 2026: "it should be a tab like collections")   // (no Home videos tab: John, 7 Nov 2026; the gateway still serves a home videos library if one is added)
   if (S.browse === 'home') S.browse = 'movies';
   main.innerHTML = '<div class="hero"><h1>' + { now: 'Now showing', movies: 'Films', tv: 'TV', collections: 'Collections' }[S.browse] + '</h1><div class="hsub" id="bcount"></div></div>' +
     '<div class="tabs">' + tabs.map(function (t) { return '<button class="pill' + (t[0] === S.browse ? ' on' : '') + '" data-b="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
@@ -6106,18 +6141,25 @@ function gcMark(cls) { return '<svg class="' + (cls || '') + '" viewBox="-2 -2 6
 function gcFind() {   // The Criterion Collection itself (else the first collection called Criterion anything)
   return api('collections').then(function (r) { var L = r.collections || []; return L.filter(function (c) { return /^the criterion collection$/i.test(c.name); })[0] || L.filter(function (c) { return /criterion/i.test(c.name); })[0]; });
 }
+// (while an intro is on, the phone's strip at the top (the time, the battery) in the intro's colour, not the page's behind it: John, 19 Nov
+// 2026, a photo of the A24 intro: "White bar at the top doesn't look good")
+function introTop(col) {
+  var R = document.documentElement, tc = document.querySelector('meta[name="theme-color"]'), was = tc ? tc.content : '';
+  R.style.setProperty('--introtop', col); R.classList.add('introtop'); if (tc) tc.content = col;
+  return function () { R.classList.remove('introtop'); R.style.removeProperty('--introtop'); var t = document.querySelector('meta[name="theme-color"]'), bg = getComputedStyle(R).getPropertyValue('--bg').trim(); if (t) t.content = bg || was; };
+}
 function critIntro() {
   if ($('.gcin')) return;
   var el = document.createElement('div'); el.className = 'gcin'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'The Criterion Collection at Grifflix');
   var sp = []; for (var i = 1; i <= 90; i++) sp.push('<i><b>' + ((i * 13 + 7) % 1400) + '</b></i>');
   el.innerHTML = '<div class="shelf" aria-hidden="true">' + sp.join('') + '</div><div class="core"><span class="lockup">' + gcMark('mark') +
     '<span class="cc">The Criterion<br>Collection</span></span><span class="at">at</span><span class="g gcx">Grifflix</span><span class="n" aria-live="polite">&nbsp;</span></div>';
-  document.body.appendChild(el);
+  document.body.appendChild(el); var unTop = introTop(getComputedStyle(el).backgroundColor);
   var coll = null, done = false, t0 = Date.now(), auto = 0, snd = critSound();   // (its own sound: John, 19 Nov 2026, "Can the criterion intro have sound too")
   var key = function (e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
   var go = function (byItself) {
     if (done) return; done = true; clearTimeout(auto); if (snd && byItself !== true) snd.stop();   // (by itself: its chord left to ring out)
-    if (coll) location.hash = '#collection/' + coll.id;
+    if (coll) location.hash = '#collection/' + coll.id; setTimeout(unTop, 650);
     el.classList.add('out'); setTimeout(function () { el.remove(); }, 700);
     document.removeEventListener('keydown', key, true);
   };
@@ -6191,14 +6233,14 @@ function a24Intro() {
   if ($('.a24in')) return; a24Fonts();
   var el = document.createElement('div'); el.className = 'a24in'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'A24 at Grifflix');
   el.innerHTML = '<div class="cut" aria-hidden="true"></div><div class="core">' + a24Mark('big') + '<span class="at">at</span><span class="g gcx">Grifflix</span><span class="n" aria-live="polite">&nbsp;</span></div>';
-  document.body.appendChild(el);
+  document.body.appendChild(el); var unTop = introTop('#000');
   var coll = null, done = false, auto = 0, timers = [], ended = false;
   var later = function (f, ms) { timers.push(setTimeout(f, ms)); };
   var key = function (e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
   var go = function (byItself) {
     if (done) return; done = true; clearTimeout(auto); timers.forEach(clearTimeout); if (snd && byItself !== true) snd.stop();   // (by itself: the chord left to ring out over the A24 page)
     if (coll) location.hash = '#collection/' + coll.id;
-    el.classList.add('out'); setTimeout(function () { el.remove(); }, 600);
+    el.classList.add('out'); setTimeout(function () { el.remove(); unTop(); }, 600);
     document.removeEventListener('keydown', key, true);
   };
   document.addEventListener('keydown', key, true);
@@ -6350,9 +6392,18 @@ function a24Draw(g, items, fq) {
   // put it under the bar going up: John, 19 Nov 2026, "scrolling back up moves the choice over the header")
   var clear = function (r) {
     if (!TV) return; var bt = $('.bar-top'), bb = bt && getComputedStyle(bt).position === 'fixed' ? bt.getBoundingClientRect().bottom : 0, x = r.getBoundingClientRect();
+    // (the first film: the page back to its top, ALL FILMS and all, if the film still shows there: John, 19 Nov 2026, "The fire tv doesn't
+    // scroll back up to ALL FILMS on A24")
+    if (r === rows[0] && x.bottom - x.top + (x.top + scrollY) < innerHeight - 24) { window.scrollTo(0, 0); return; }
     if (x.top < bb + 24) window.scrollBy(0, x.top - bb - 24); else if (x.bottom > innerHeight - 24) window.scrollBy(0, x.bottom - innerHeight + 24);
   };
-  $$('.a24r[data-item]', g).forEach(function (r) { r.onmouseenter = function () { show(r); }; r.onfocus = function () { clear(r); show(r); }; });
+  var rows = $$('.a24r[data-item]', g);
+  rows.forEach(function (r) { r.onmouseenter = function () { show(r); }; r.onfocus = function () { clear(r); show(r); }; });
+  // (and up past it, to the heading's buttons or the bar: the top of the page)
+  if (TV && !document._a24up) { document._a24up = 1; document.addEventListener('focusin', function (e) {
+    var t = e.target; if (!document.documentElement.classList.contains('ga24') || !t || !t.closest) return;
+    if (t.closest('.a24head, .bar-top')) window.scrollTo(0, 0);
+  }); }
   g.onmouseleave = function () { show(null); }; g.onfocusout = function (e) { if (!g.contains(e.relatedTarget)) show(null); };
 }
 // (the admin page's Intros preview: ?intro=criterion or ?intro=a24 plays that one as the page opens: John, 19 Nov 2026, "Can we add the
@@ -6380,7 +6431,32 @@ function navGo(w) {
     if (TV) setTimeout(function () { var f = (d && $('#cal [data-day="' + d + '"]')) || $('#cal button.front') || $('#cal button[data-day]'); if (f) f.focus({ preventScroll: true }); }, 400);
   }
 }
+// GRIFFLIX in the bar drawn as a picture (SVG), not lettering: Futura Bold's own outlines with a line round each letter that stays a clean,
+// whole pixel or more however small it is drawn, where the lettering's fine line went grey and ragged at the bar's size (John, 19 Nov 2026:
+// "The GRIFFLIX logo should probably be an svg image as it still looks untidy when small"). Its spacing and size the bar's own, as before
+var GXP = {"G":[1724,"M53 -764Q53 -952 114 -1106Q174 -1260 284 -1368Q395 -1477 550 -1536Q705 -1595 891 -1595Q1131 -1595 1309 -1488Q1487 -1380 1587 -1163L1206 -1004Q1165 -1115 1080 -1182Q995 -1249 872 -1249Q774 -1249 698 -1206Q623 -1163 572 -1094Q522 -1024 496 -937Q471 -850 471 -762Q471 -672 498 -585Q524 -498 576 -430Q627 -362 704 -320Q780 -279 879 -279Q1010 -279 1100 -346Q1190 -412 1202 -547H874V-862H1671Q1669 -778 1664 -700Q1659 -621 1642 -545Q1626 -469 1596 -396Q1565 -324 1513 -252Q1398 -92 1234 -20Q1071 51 877 51Q695 51 543 -8Q391 -68 282 -176Q174 -283 114 -432Q53 -582 53 -764Z",53,1671],"R":[1392,"M131 0V-1544H731Q846 -1544 944 -1516Q1042 -1489 1114 -1430Q1186 -1372 1227 -1282Q1268 -1192 1268 -1069Q1268 -989 1246 -916Q1225 -844 1182 -786Q1139 -727 1076 -687Q1012 -647 930 -633L1415 0H915L537 -594H532V0ZM532 -852H571Q620 -852 670 -858Q721 -864 761 -884Q801 -905 826 -943Q850 -981 850 -1044Q850 -1107 826 -1146Q801 -1184 761 -1204Q721 -1225 671 -1231Q621 -1237 571 -1237H532Z",131,1415],"I":[663,"M131 0V-1544H532V0Z",131,532],"F":[1110,"M131 0V-1544H1018V-1204H532V-946H973V-606H532V0Z",131,1018],"L":[1013,"M131 0V-1544H532V-340H1014V0Z",131,1014],"X":[1615,"M-16 0 588 -825 94 -1544H588L823 -1145L1059 -1544H1552L1059 -825L1630 0H1147L823 -504L469 0Z",-16,1630]};
+// (spaced by eye, not by Futura's own spacing: each letter's visible edge the same distance from the next, where Futura's, set for words,
+// left I far from F but close to R and X once spread wide: John, 19 Nov 2026, "the letter spacing doesn't look the same either way")
+function gxSvg(ls) {   // ls: the space between letters, in em (as letter-spacing): GRIFFLIX as a picture, that wide
+  var w = 'GRIFFLIX', gap = ls * 2048 + 178, x = 0, d = '';
+  for (var i = 0; i < w.length; i++) {
+    var g = GXP[w[i]], tx = i ? x - g[2] : 0;
+    d += '<path transform="translate(' + Math.round(tx) + ' 0)" d="' + g[1] + '"/>';
+    x = tx + g[3] + gap;
+  }
+  var W = x - gap + (GXP.X[0] - GXP.X[3]) + ls * 2048;   // (after the X, its own room and the spacing, as lettering has)
+  return '<svg class="gxs" viewBox="0 -1796 ' + Math.round(W) + ' 2048" style="width:' + (W / 2048).toFixed(3) + 'em" aria-hidden="true" focusable="false">' + d + '</svg>';
+}
+function gxMark(el) {
+  if (!el) return;
+  var cs = getComputedStyle(el), fs = parseFloat(cs.fontSize) || 15, ls = (parseFloat(cs.letterSpacing) || 0) / fs, key = ls.toFixed(3);
+  if (el._gx === key && el.querySelector('.gxs')) return; el._gx = key;
+  el.innerHTML = gxSvg(ls);
+}
+function gxMarks() { $$('.bar-top .brand, #shbrand').forEach(gxMark); }
+addEventListener('resize', function () { clearTimeout(gxMarks._t); gxMarks._t = setTimeout(gxMarks, 120); });
 function navBar() {
+  try { gxMarks(); } catch (e) {}
   var n = $('#barnav'); if (!n) { ($('.bar-top .homeic') || $('.bar-top .brand')).insertAdjacentHTML('afterend', '<nav id="barnav" aria-label="Grifflix"></nav>'); n = $('#barnav'); }
   n.innerHTML = navWords(VIEW() === 'themes' && !S.mcal ? 'theme' : 'calendar');
   $$('#barnav [data-nv]').forEach(function (b) { b.onclick = function () { navGo(b.dataset.nv); }; });
@@ -6402,7 +6478,7 @@ function shBrand() {   // GRIFFLIX over a pop-up, just where the bar's is (the b
   $$('#shnav [data-nv]').forEach(function (x) { x.onclick = function () { navGo(x.dataset.nv); }; });
   var bn = $('#barnav'), br = bn && bn.offsetParent ? bn.getBoundingClientRect() : null;
   nav.style.top = Math.round(br ? br.top : r.top) + 'px'; nav.style.left = Math.round(br ? br.left : (hi ? hi.getBoundingClientRect().right : r.right) + 28) + 'px';   // (after the home icon, not on it: John, 18 Nov 2026, "calendar is pressed against home") nav.style.height = Math.round(br ? br.height : r.height) + 'px';
-  b.hidden = false; b.style.left = Math.round(r.left) + 'px'; b.style.top = Math.round(r.top) + 'px'; b.style.width = Math.round(r.width) + 'px'; b.style.height = Math.round(r.height) + 'px'; ['fontFamily', 'fontWeight', 'fontSize', 'lineHeight', 'letterSpacing', 'color', 'textTransform'].forEach(function (k) { b.style[k] = cs[k]; });
+  b.hidden = false; b.style.left = Math.round(r.left) + 'px'; b.style.top = Math.round(r.top) + 'px'; b.style.width = Math.round(r.width) + 'px'; b.style.height = Math.round(r.height) + 'px'; ['fontFamily', 'fontWeight', 'fontSize', 'lineHeight', 'letterSpacing', 'color', 'textTransform'].forEach(function (k) { b.style[k] = cs[k]; }); gxMark(b);
   // (the pop-up's own words start below the logo and its words, never under them: John, 9 Nov 2026: "profile pop up on computer
   // causes words to be on top of each other - be careful of clashes"); what scrolls up passes under a strip, not through them
   var nr = nav.getBoundingClientRect(), barB = Math.max(r.bottom, nr.bottom, br ? br.bottom : 0), barR = Math.max(r.right, nr.right), f = $('#sheetIn > .form');
