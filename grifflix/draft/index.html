@@ -2453,7 +2453,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '386abfd3ade6' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '54fb6149842c' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -3788,7 +3788,8 @@ function themeMusic(k) {   // the theme on the page now (null: none)
   if (k === 'picture') {   // (Grifflix's own: the drum's sound as it turns, and its music after the leader: Emotional Blockbuster 2, film music, public domain
     // (FreePD), John's choice of three, 9 Nov 2026: "something more cinematic", "a bit less recognisable")
     TMUS.pj = projector(); setTimeout(function () { if (TMUS.pj && TMUS.ctx && TMUS.ctx.state !== 'running') { TMUS.pj.stop(); TMUS.pj = null; TMUS.ok = false; } }, 400);
-    src = '/grifflix/audio/grifflix-theme.m4a'; vol = .34;
+    return;   // (the drum's sound only, no music: John, 19 Nov 2026, "Can we remove the theme music from the grifflix theme and just have the
+    // sound effects")
   } else {
     var t = TMUS.list && TMUS.list[k]; if (!t) return;
     src = 'https://sotd-playlists.cooperking.workers.dev/gm/' + k + '-' + t.h + '.m4a?src=' + encodeURIComponent(t.src);
