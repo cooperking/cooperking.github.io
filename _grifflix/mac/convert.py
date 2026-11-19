@@ -199,8 +199,11 @@ def why(ms):
         la = (g(a, 'Language') or '').lower() if a else ''
         extra = [x for x in auds if x is not a and not ((g(x, 'Language') or '').lower() in (la, '', 'und') and keep_beside(None, None, g(x, 'Title') or '', g(x, 'Channels') or 2))]
         secs = (g(ms, 'RunTimeTicks') or 0) / 1e7
-        if extra and sum((g(x, 'BitRate') or 640000) for x in extra) * secs / 8 / 1e9 >= 1.0:
-            return REPACK + ' (%d soundtracks: one kept)' % (len(extra) + 1)
+        # (a dub, in another language, always: John's rule since 15 Nov 2026, "I always want the original language - never the dub", which
+        # the converter had read as which soundtrack plays first only, keeping the dubs: John, 19 Nov 2026, "My no dubs rule was a while ago")
+        dubs = [x for x in extra if (g(x, 'Language') or '').lower() not in (la, '', 'und')]
+        if dubs or (extra and sum((g(x, 'BitRate') or 640000) for x in extra) * secs / 8 / 1e9 >= 1.0):
+            return REPACK + (' (%d dub%s dropped)' % (len(dubs), '' if len(dubs) == 1 else 's') if dubs else ' (%d soundtracks: one kept)' % (len(extra) + 1))
         # (a file much bigger than its picture needs: made smaller, once, at the careful setting, last of all (John, 12 Nov 2026:
         # "converted to a smaller size without losing noticeable quality", "I don't want to convert films twice"). Grifflix's own
         # conversions are all under 8 Mbps, so never made again; HEVC is already efficient, so only far bigger ones)
