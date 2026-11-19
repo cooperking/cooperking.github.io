@@ -183,9 +183,17 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .mrow { display: grid; grid-template-columns: 56px minmax(0, 1fr) minmax(0, .8fr) auto; gap: 4px 14px; align-items: baseline; padding: 7px 0; border-top: 1px solid var(--line, rgba(255,255,255,.12)); font-size: 14px; }
 .mrow .y { font-variant-numeric: tabular-nums; opacity: .75; } .mrow b { font-weight: 600; } .mrow .d { opacity: .75; } .mrow .s { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; opacity: .8; white-space: nowrap; }
 .mrow.cb { grid-template-columns: 56px minmax(0, 1fr) 56px; }
-.mlist .mhead { margin-top: 30px; padding-top: 14px; border-top: 2px solid currentColor; }
+.mlist .mhead.first { margin-top: 18px; } .mlist .mhead { margin-top: 30px; padding-top: 14px; border-top: 2px solid currentColor; }
 .mset summary { cursor: pointer; padding: 8px 0; border-top: 1px solid var(--line, rgba(255,255,255,.12)); font-size: 14px; font-weight: 600; } .mset summary small { font-weight: 400; opacity: .7; margin-left: 8px; }
 .mset[open] summary { padding-bottom: 4px; } .mset .mrow { padding-left: 14px; }
+.csteps { margin: 12px 0 10px; padding: 0; list-style: none; counter-reset: st; display: grid; gap: 12px; }
+.csteps li { counter-increment: st; position: relative; padding-left: 34px; font: 15px/1.45 var(--serif, inherit); }
+.csteps li::before { content: counter(st); position: absolute; left: 0; top: 0; width: 22px; height: 22px; border: 1px solid currentColor; display: grid; place-items: center; font: 600 11px/1 var(--sans); opacity: .8; }
+.csteps li .btn, .csteps li label.btn { margin: 2px 6px 0 0; }
+.cbexp { margin: 10px 0 2px; flex-wrap: wrap; }
+.mset summary .cbbar { display: inline-block; vertical-align: middle; width: 54px; height: 4px !important; min-height: 0; padding: 0; border: 0; margin-left: 10px; background: rgba(255,255,255,.18); }
+.mset summary .cbbar i { display: block; height: 100%; background: currentColor; }
+.mset summary .cbto { float: right; line-height: 1.6; font-weight: 400; opacity: .7; font-size: 12px; letter-spacing: .06em; }
 @media (max-width: 600px) { .mrow { grid-template-columns: 44px minmax(0, 1fr); } .mrow .d, .mrow .s { grid-column: 2; } }
 /* the intros, each with where and when it plays, and a preview (John, 19 Nov 2026) */
 .inxlist { display: grid; gap: 10px; margin: 12px 0 16px; }
@@ -565,41 +573,51 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="state"><button class="btn" id="binsee" type="button" hidden>What’s in it</button><button class="btn" id="bingo" type="button" hidden>Empty the Bin</button></div>
         <ul class="changes" id="binlist" hidden></ul>
       </section>
+      <!-- (the Criterion tab tidied, a part each: the box sets, each folded to a line; the covers, the synopses and the genres as short
+           steps of their own: John, 19 Nov 2026, "Criterion tab in admin needs tidying") -->
       <section class="card" data-tab="criterion">
         <div class="kicker">Box sets</div>
-        <h2>Box sets <em>not complete</em></h2>
-        <p class="stat" id="cbnote">Each Criterion box set with some of its films in Grifflix but not all, and the films still to get, from Criterion’s own list of each set.</p>
+        <h2>Box sets <em>to finish</em></h2>
+        <p class="stat" id="cbnote">From Criterion’s own list of each set; it keeps up as films come in.</p>
+        <div class="state cbexp"><button class="btn" id="cmsheet" type="button">Make the Google Sheet</button><a class="btn" id="cmopen" href="#" target="_blank" rel="noopener" hidden>Open it</a><button class="btn" id="cmcsv" type="button">Download (CSV)</button></div>
+        <p class="stat" id="cmsay"></p>
         <div class="mlist" id="cbmiss"><p class="stat">Looking…</p></div>
       </section>
       <section class="card" data-tab="criterion">
-        <div class="kicker">Criterion</div>
-        <h2>Criterion’s covers</h2>
-        <div class="state" id="csheets" hidden><a class="btn primary" id="csheet" href="#" target="_blank" rel="noopener">Open the Criterion Google Sheet</a></div>
-        <p class="stat">Every Criterion cover, as Criterion makes it, on each Criterion film in Grifflix (and in your Google Drive’s “Criterion images”, and new films added to the Criterion sheet). Criterion’s site only lets a person’s own browser see its list, so: open <a href="https://www.criterion.com/shop/browse/list?sort=spine_number" target="_blank" rel="noopener">Criterion’s list</a>, let it load, then <b>File → Save Page As…</b> (<b>Web Page, HTML Only</b>, or in Safari <b>Page Source</b>; not “Complete”), and choose that file here. Only when Criterion has added films to its list since you last did: every Criterion film you bring in is checked against the list you last gave, by itself, and gets its cover, spine number and place in The Criterion Collection.</p>
-        <div class="state"><label class="btn primary" for="critfile">Choose the saved page</label><input type="file" id="critfile" accept=".html,.htm,text/html" hidden></div>
+        <div class="kicker">Covers</div>
+        <h2>Criterion’s <em>covers</em></h2>
+        <div class="state" id="csheets" hidden><a class="btn" id="csheet" href="#" target="_blank" rel="noopener">Open the Criterion Google Sheet</a></div>
+        <p class="stat">Each Criterion film brought in gets its cover, spine number and place in The Criterion Collection by itself, from the list you last gave. Only when Criterion adds films to its list:</p>
+        <ol class="csteps">
+          <li>Open <a href="https://www.criterion.com/shop/browse/list?sort=spine_number" target="_blank" rel="noopener">Criterion’s list</a> and let it load.</li>
+          <li><b>File → Save Page As…</b>, as <b>Web Page, HTML Only</b> (Safari: <b>Page Source</b>).</li>
+          <li><label class="btn primary" for="critfile">Choose the saved page</label><input type="file" id="critfile" accept=".html,.htm,text/html" hidden></li>
+        </ol>
         <p class="stat" id="critsay"></p>
         <pre id="critlog" hidden style="white-space:pre-wrap;max-height:260px;overflow:auto;font-size:12px;opacity:.85"></pre>
-        <h3 style="margin:22px 0 6px;font-size:17px">Criterion’s own synopses</h3>
-        <p class="stat" id="synsay">Criterion’s site won’t let the Mac mini read its film pages, but your browser can. Once:</p>
-        <ol class="stat" style="margin:6px 0 10px 20px;padding:0">
-          <li>Drag this to your bookmarks bar: <a class="btn" id="synbm" href="#" style="cursor:grab">Grifflix: Criterion synopses</a></li>
+      </section>
+      <section class="card" data-tab="criterion">
+        <div class="kicker">Synopses</div>
+        <h2>Criterion’s <em>synopses</em></h2>
+        <p class="stat" id="synsay">Criterion won’t let the Mac mini read its film pages, but your browser can.</p>
+        <ol class="csteps">
+          <li>Drag to your bookmarks bar: <a class="btn" id="synbm" href="#" style="cursor:grab">Grifflix: Criterion synopses</a></li>
           <li><button class="btn" id="syncopy" type="button">Copy your list</button> <span id="syncount"></span></li>
-          <li>Open <a href="https://www.criterion.com" target="_blank" rel="noopener">criterion.com</a>, click the bookmark, paste the list (⌘V) and press OK. Keep that tab open while it reads, a film every few seconds (if Criterion asks you to prove you’re a person, reload the page, then click the bookmark again: it carries on where it stopped); it saves <b>criterion-synopses.json</b> to your Downloads.</li>
-          <li><label class="btn primary" for="synfile">Choose criterion-synopses.json</label><input type="file" id="synfile" accept=".json,application/json" hidden> and each film gets Criterion’s synopsis.</li>
+          <li>Open <a href="https://www.criterion.com" target="_blank" rel="noopener">criterion.com</a>, click the bookmark, paste (⌘V) and press OK. Leave the tab open: it reads a film every few seconds, then saves <b>criterion-synopses.json</b> to Downloads. (If Criterion asks if you’re a person: reload, click the bookmark again; it carries on.)</li>
+          <li><label class="btn primary" for="synfile">Choose criterion-synopses.json</label><input type="file" id="synfile" accept=".json,application/json" hidden></li>
         </ol>
         <p class="stat" id="synstate" style="font-weight:600"></p>
-        <h3 style="margin:22px 0 6px;font-size:17px">Criterion’s genres and categories</h3>
-        <p class="stat">For the Criterion pages’ filters (Action/Adventure to Western; Director Approved, Criterion Premieres, Eclipse, Collector’s Sets, English Language). Once, and again when Criterion adds films:</p>
-        <ol class="stat" style="margin:6px 0 10px 20px;padding:0">
-          <li>Drag this to your bookmarks bar: <a class="btn" id="tagbm" href="#" style="cursor:grab">Grifflix: Criterion genres</a></li>
-          <li>Open <a href="https://www.criterion.com/shop/browse/list?sort=spine_number" target="_blank" rel="noopener">Criterion’s list</a>, let it load, and click the bookmark there. It reads the list once for each genre and category (about two minutes) and saves <b>criterion-tags.json</b> in your Downloads.</li>
+      </section>
+      <section class="card" data-tab="criterion">
+        <div class="kicker">Genres</div>
+        <h2>Criterion’s <em>genres</em></h2>
+        <p class="stat">The Criterion pages’ filters (Action/Adventure to Western; Director Approved, Criterion Premieres, Eclipse, Collector’s Sets, English Language). Again when Criterion adds films:</p>
+        <ol class="csteps">
+          <li>Drag to your bookmarks bar: <a class="btn" id="tagbm" href="#" style="cursor:grab">Grifflix: Criterion genres</a></li>
+          <li>Open <a href="https://www.criterion.com/shop/browse/list?sort=spine_number" target="_blank" rel="noopener">Criterion’s list</a>, let it load, click the bookmark. About two minutes; it saves <b>criterion-tags.json</b> to Downloads.</li>
           <li><label class="btn primary" for="tagfile">Choose criterion-tags.json</label><input type="file" id="tagfile" accept=".json,application/json" hidden></li>
         </ol>
         <p class="stat" id="tagstate" style="font-weight:600"></p>
-        <h3 style="margin:22px 0 6px;font-size:17px">Box set films you don’t have</h3>
-        <p class="stat">Every Criterion box set’s films not in Grifflix, one list, for a spreadsheet: the set, its spine, the film, its year and spine, and its page on Criterion.</p>
-        <div class="state"><button class="btn primary" id="cmsheet" type="button">Make the Google Sheet</button><a class="btn" id="cmopen" href="#" target="_blank" rel="noopener" hidden>Open it</a><button class="btn" id="cmcsv" type="button">Download (CSV)</button></div>
-        <p class="stat" id="cmsay"></p>
       </section>
       <section class="card" data-tab="a24">
         <div class="kicker">A24</div>
@@ -1054,17 +1072,18 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       Object.keys(I).forEach(function (k) { var i = I[k];
         (i.cset || []).forEach(function (b, n) { have[b] = (have[b] || 0) + 1; if ((i.csetsp || [])[n]) sp[b] = +i.csetsp[n]; });
         Object.keys(i.csetmiss || {}).forEach(function (b) { gone[b] = i.csetmiss[b]; }); });
-      var sets = Object.keys(gone).filter(function (b) { return gone[b].length && have[b]; }).sort(function (a, b) { return (sp[a] || 1e9) - (sp[b] || 1e9) || a.localeCompare(b); });
+      var sets = Object.keys(gone).filter(function (b) { return gone[b].length && have[b]; }).sort(function (a, b) { return (sp[a] || 1e9) - (sp[b] || 1e9) || a.localeCompare(b, 'en', { numeric: true }); });
       var nfilms = sets.reduce(function (n, b) { return n + gone[b].length; }, 0);
-      $('#cbnote').textContent = sets.length + ' box sets begun but not complete, ' + nfilms + ' films still to get. From Criterion’s own list of each set; it keeps up as films come in.';
-      $('#cbmiss').innerHTML = sets.length ? sets.map(function (b) {
-        return '<h3>' + (sp[b] ? 'No. ' + sp[b] + ' · ' : '') + esc(b) + '<small>' + have[b] + ' of ' + (have[b] + gone[b].length) + ' here</small></h3>' +
-          gone[b].map(function (m) { return '<div class="mrow cb"><span class="y">' + esc(m[1] || '') + '</span><b>' + esc(m[0]) + '</b><span class="s">' + (m[2] ? 'No. ' + esc(m[2]) : '') + '</span></div>'; }).join('');
+      $('#cbnote').textContent = 'From Criterion’s own list of each set; it keeps up as films come in. Open a set to see its films still to get.';
+      var cbrow = function (m) { return '<div class="mrow cb"><span class="y">' + esc(m[1] || '') + '</span><b>' + esc(m[0]) + '</b><span class="s">' + (m[2] ? 'No. ' + esc(m[2]) : '') + '</span></div>'; };
+      $('#cbmiss').innerHTML = sets.length ? '<h3 class="mhead first">Begun<small>' + sets.length + ' box sets, ' + nfilms + ' films to get</small></h3>' + sets.map(function (b) {
+        var all = have[b] + gone[b].length;
+        return '<details class="mset"><summary>' + (sp[b] ? 'No. ' + sp[b] + ' · ' : '') + esc(b) + '<small>' + have[b] + ' of ' + all + '</small><span class="cbbar"><i style="width:' + Math.round(100 * have[b] / all) + '%"></i></span><span class="cbto">' + gone[b].length + ' to get</span></summary>' +
+          gone[b].map(cbrow).join('') + '</details>';
       }).join('') : '<p class="stat">Every box set begun is complete.</p>';
       // (and those not begun: none of their films here yet, each opened to its films: John, 19 Nov 2026, "Can it also list box sets not started")
-      var none = (L.csetsnone || []).slice().sort(function (a, b) { return (+a.sp || 1e9) - (+b.sp || 1e9) || a.n.localeCompare(b.n); });
+      var none = (L.csetsnone || []).slice().sort(function (a, b) { return (+a.sp || 1e9) - (+b.sp || 1e9) || a.n.localeCompare(b.n, 'en', { numeric: true }); });   // (Eclipse Series 3 before 30)
       if (none.length) {
-        $('#cbnote').textContent += ' ' + none.length + ' more not begun, below.';
         $('#cbmiss').insertAdjacentHTML('beforeend', '<h3 class="mhead">Not begun<small>' + none.length + ' box sets, ' + none.reduce(function (n, b) { return n + b.f.length; }, 0) + ' films</small></h3>' + none.map(function (b) {
           return '<details class="mset"><summary>' + (b.sp ? 'No. ' + esc(b.sp) + ' · ' : '') + esc(b.n) + '<small>' + b.f.length + (b.f.length === 1 ? ' film' : ' films') + '</small></summary>' +
             b.f.map(function (m) { return '<div class="mrow cb"><span class="y">' + esc(m[1] || '') + '</span><b>' + esc(m[0]) + '</b><span class="s">' + (m[2] ? 'No. ' + esc(m[2]) : '') + '</span></div>'; }).join('') + '</details>';
