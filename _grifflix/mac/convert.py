@@ -892,6 +892,31 @@ if CMD in ('plan', 'finish'):   # (John's "Convert on this Mac", 16 Nov 2026: th
 merge_ext()
 
 
+def tag_lang(path, code):
+    """The film's first soundtrack named as being in this language (code: ISO 639-2), in place: copied, nothing re-encoded, the copy
+    checked, then put where the film was; the media server told."""
+    tmp = path + '.grifflix-tagging.mp4'
+    try:
+        r = subprocess.run([ffmpeg, '-v', 'error', '-y', '-i', path, '-map', '0', '-c', 'copy', '-map_metadata', '0',
+                            '-metadata:s:a:0', 'language=' + code, '-movflags', '+faststart', tmp], capture_output=True, timeout=3600)
+        if r.returncode or not os.path.exists(tmp) or os.path.getsize(tmp) < os.path.getsize(path) * .98:
+            raise RuntimeError((r.stderr or b'').decode('utf-8', 'replace')[-200:] or 'the copy came out short')
+        os.replace(tmp, path)
+        try:
+            call('POST', '/Library/Media/Updated', {'Updates': [{'Path': path, 'UpdateType': 'Modified'}]})
+        except Exception:
+            pass
+        log('Language: %s marked as %s, on John’s word' % (os.path.basename(path), NAMES.get(code, code)))
+        return True
+    except Exception as e:
+        log('Language: couldn’t mark %s as %s: %s' % (os.path.basename(path), code, e))
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+        return False
+
+
 def redos():
     """Films John said are in another language: made again from the new file (every soundtrack is in it), that language first; quick,
     a repackaging. "ok": it was right, the flag taken down."""
@@ -900,6 +925,11 @@ def redos():
         c = L.get(k)
         if c == 'ok':
             st['ask'].pop(k, None)
+        elif c and c.startswith('is:'):   # (John: the soundtrack it has is in this language, its name only missing: the name written on it,
+            # the flag down; nothing made again: John, 19 Nov 2026, Donnie Darko "The language is English ... I should be able to say it's English")
+            code = next((cd for cd, nm in NAMES.items() if nm == c[3:]), '')
+            if code and os.path.exists(x.get('to') or '') and not watching() and tag_lang(x['to'], code):
+                st['ask'].pop(k, None)
         elif c and c != x.get('chose') and os.path.exists(x.get('to') or ''):
             out.append({'id': k, 'name': x['name'], 'year': x.get('year'), 'path': x['to'], 'mode': 'remux', 'redo': True, 'urgent': True,
                         'why': 'your language: ' + c, 'mins': 0, 'gb': round(os.path.getsize(x['to']) / 1e9, 1)})
