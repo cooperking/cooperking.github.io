@@ -1981,6 +1981,7 @@ body { font-size: 14px; } .film h2 { font-size: clamp(34px, 4.1vw, 68px) !import
 .zlead .gx { color: #fff !important; }
 .gxs { display: inline-block; vertical-align: -.12em; } .brand .gxs { display: block; } .gxs { height: 1em; overflow: visible; fill: none; stroke: currentColor; stroke-width: 1.2px; stroke-width: max(1.15px, .075em); stroke-linejoin: miter; stroke-miterlimit: 3; shape-rendering: geometricPrecision; }
 .gxs path { vector-effect: non-scaling-stroke; }
+.gcin .g .gxs, .a24in .g .gxs { stroke-width: 1.2px; stroke-width: max(1.15px, .034em); }   /* (the intros' GRIFFLIX the same picture, its finer line, large: John, 19 Nov 2026, "The criterion picture for the collection doesn't look like it's using the svg") */
 .zlt { font-family: "Grifflix Display", "Federo", Georgia, serif !important; font-weight: 400 !important; font-size: 1.15em; }
 /* Grifflix's own look (its palette: Orange, Vista Bleu, Amande, Bleu Oxford): the room flat in its colour, the type in its ink,
    the zoetrope and the cinema in the palette, no red velvet (John, 10 Nov 2026) */
@@ -2510,7 +2511,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '69a9c9e57628' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '0ee810c5c0d0' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6153,7 +6154,7 @@ function critIntro() {
   var el = document.createElement('div'); el.className = 'gcin'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'The Criterion Collection at Grifflix');
   var sp = []; for (var i = 1; i <= 90; i++) sp.push('<i><b>' + ((i * 13 + 7) % 1400) + '</b></i>');
   el.innerHTML = '<div class="shelf" aria-hidden="true">' + sp.join('') + '</div><div class="core"><span class="lockup">' + gcMark('mark') +
-    '<span class="cc">The Criterion<br>Collection</span></span><span class="at">at</span><span class="g gcx">Grifflix</span><span class="n" aria-live="polite">&nbsp;</span></div>';
+    '<span class="cc">The Criterion<br>Collection</span></span><span class="at">at</span><span class="g gcx" aria-label="Grifflix">' + gxSvg(.5) + '</span><span class="n" aria-live="polite">&nbsp;</span></div>';
   document.body.appendChild(el); var unTop = introTop(getComputedStyle(el).backgroundColor);
   var coll = null, done = false, t0 = Date.now(), auto = 0, snd = critSound();   // (its own sound: John, 19 Nov 2026, "Can the criterion intro have sound too")
   var key = function (e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
@@ -6200,15 +6201,19 @@ function critSound() {
   am.gain.value = .6; depth.gain.value = .4; lfo.connect(depth); depth.connect(am.gain);
   env.gain.setValueAtTime(.0001, t0); env.gain.exponentialRampToValueAtTime(.05, t0 + .35); env.gain.setValueAtTime(.05, t0 + 1.1); env.gain.exponentialRampToValueAtTime(.0001, t0 + 1.8);
   n.connect(bp); bp.connect(lp); lp.connect(am); am.connect(env); env.connect(out); n.start(t0); lfo.start(t0); n.stop(t0 + 2.3); lfo.stop(t0 + 2.3);
-  // the bell: C, struck once, its own overtones (a bell's, not an instrument's), ringing out; a low C beneath it, barely there
-  var h = t0 + 1.6, C5 = 523.25;
-  [[1, .05, 4.2], [2, .025, 2.8], [2.76, .018, 2], [5.4, .009, 1.2], [8.93, .005, .8]].forEach(function (p) {
-    var o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = C5 * p[0];
-    g.gain.setValueAtTime(.0001, h); g.gain.exponentialRampToValueAtTime(p[1], h + .006); g.gain.exponentialRampToValueAtTime(.0001, h + p[2]);
-    o.connect(g); g.connect(out); g.connect(verb); o.start(h); o.stop(h + p[2] + .1);
-  });
-  var lo = c.createOscillator(), lg = c.createGain(); lo.type = 'sine'; lo.frequency.value = 130.81;
-  lg.gain.setValueAtTime(.0001, h); lg.gain.exponentialRampToValueAtTime(.035, h + .4); lg.gain.exponentialRampToValueAtTime(.0001, h + 4); lo.connect(lg); lg.connect(out); lg.connect(verb); lo.start(h); lo.stop(h + 4.1);
+  // the close: one soft, low piano chord, C major spread wide, as a film's last chord (John, 19 Nov 2026, of four tried: "Piano chord is nice
+  // but can be louder"; a bell "isn't the right sound"). Each note a piano's: its partials a little stretched, a quick strike, a two-stage
+  // fall, darkening as it rings
+  var h = t0 + 1.6, piano = function (at, f, amp, len) {
+    var g0 = c.createGain(), lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(Math.min(9000, f * 9), at); lp.frequency.exponentialRampToValueAtTime(Math.max(500, f * 2.5), at + len * .6);
+    g0.connect(lp); lp.connect(out); lp.connect(verb);
+    [1, 2, 3, 4, 5, 6].forEach(function (k, i) {
+      var o = c.createOscillator(), g = c.createGain(), a = amp / Math.pow(k, 1.3); o.frequency.value = f * k * Math.sqrt(1 + .0004 * k * k);
+      g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(a, at + .006); g.gain.exponentialRampToValueAtTime(a * .35, at + .25); g.gain.exponentialRampToValueAtTime(.0001, at + len / (1 + i * .35));
+      o.connect(g); g.connect(g0); o.start(at); o.stop(at + len + .1);
+    });
+  };
+  [[65.41, .05], [98, .04], [130.81, .045], [164.81, .035], [196, .03]].forEach(function (x, i) { piano(h + i * .012, x[0], x[1] * 2, 5); });   // (twice as loud as tried)
   return {
     count: function () {},
     stop: function () {
@@ -6232,7 +6237,7 @@ function a24Find() { return api('collections').then(function (r) { return (r.col
 function a24Intro() {
   if ($('.a24in')) return; a24Fonts();
   var el = document.createElement('div'); el.className = 'a24in'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'A24 at Grifflix');
-  el.innerHTML = '<div class="cut" aria-hidden="true"></div><div class="core">' + a24Mark('big') + '<span class="at">at</span><span class="g gcx">Grifflix</span><span class="n" aria-live="polite">&nbsp;</span></div>';
+  el.innerHTML = '<div class="cut" aria-hidden="true"></div><div class="core">' + a24Mark('big') + '<span class="at">at</span><span class="g gcx" aria-label="Grifflix">' + gxSvg(.5) + '</span><span class="n" aria-live="polite">&nbsp;</span></div>';
   document.body.appendChild(el); var unTop = introTop('#000');
   var coll = null, done = false, auto = 0, timers = [], ended = false;
   var later = function (f, ms) { timers.push(setTimeout(f, ms)); };
