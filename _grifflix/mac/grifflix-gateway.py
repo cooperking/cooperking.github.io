@@ -839,7 +839,7 @@ def make_handler(g):
                         return self.send_json(403, {'error': 'Not allowed.'})
                     if method != 'POST':
                         return self.send_json(200, {'can': {k: v[0] for k, v in ACTIONS.items()}, 'asked': [{k: v for k, v in x.items() if k != 'files'} for x in (load(ACTIONS_AT, []) or [])[-20:]]})
-                    code, j = claude_ask(str(self._b.get('action') or ''), self._b.get('why'))
+                    code, j = claude_ask(str(self._b.get('action') or ''), self._b.get('why'), self._b.get('args'))
                     return self.send_json(code, j)
                 if u.path.startswith('/look/'):   # (Claude, looking on John's behalf with the key John made for it: reading only)
                     tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
@@ -4526,6 +4526,37 @@ def act_crit_flatten(g, req):
     return '%d collections taken apart (%s): %d films now in The Criterion Collection itself, each keeping its box set. Backdrops are being fetched for Criterion films without one; the site follows in a few minutes.' % (len(gone), ', '.join(gone), put)
 
 
+def ask_collection_add(req):
+    """Films put in one of the collections, on John's Allow: which films, by name, shown on the request (John, 19 Nov 2026: "use tmdb to
+    find what films are by A24 - there's already a collection, and add any missing")."""
+    g = G_REF[0] if G_REF else None
+    a = req.get('args') or {}
+    cid, ids = str(a.get('collection') or ''), [str(x) for x in (a.get('ids') or []) if re.match(r'^[0-9a-f]{32}$', str(x))][:200]
+    if not g or not re.match(r'^[0-9a-f]{32}$', cid) or not ids:
+        raise RuntimeError('which collection, and which films?')
+    c = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, cid)) or {}
+    if c.get('Type') != 'BoxSet':
+        raise RuntimeError('no such collection')
+    names = []
+    for i in ids:
+        it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, i)) or {}
+        if it.get('Type') not in ('Movie', 'Series'):
+            raise RuntimeError('not a film or series: %s' % i)
+        names.append('%s (%s)' % (it.get('Name'), it.get('ProductionYear') or '?'))
+    req['title'] = 'Put %d film%s in the %s collection' % (len(ids), '' if len(ids) == 1 else 's', c.get('Name'))
+    req['detail'] = ', '.join(names)
+    req['args'] = {'collection': cid, 'ids': ids, 'name': c.get('Name')}
+
+
+def act_collection_add(g, req):
+    a = req.get('args') or {}
+    g.jf.call('POST', '/Collections/%s/Items' % a['collection'], query={'Ids': ','.join(a['ids'])})
+    g.forget()
+    g.publish_soon = time.time() + 120
+    log('Put in %s, on John’s Allow: %s' % (a.get('name'), req.get('detail', '')[:300]))
+    return '%d films are in %s now; the site follows in a few minutes.' % (len(a['ids']), a.get('name'))
+
+
 ACTIONS = {
     'plex-off': ('Quit Plex and keep it off', act_plex_off, None),
     'plex-on': ('Start Plex again and let it be', act_plex_on, None),
@@ -4534,11 +4565,12 @@ ACTIONS = {
     'setaside-empty': ('Empty “Set aside” on the G-Drive (deleted for good)', act_setaside_empty, ask_setaside),
     'extras-rename': ('Rename each film’s “Other” folder to “Extras”, so the media server shows its extras', act_extras_rename, ask_extras_rename),
     'criterion-sets-flatten': ('Take apart the box sets kept as collections inside The Criterion Collection, so they’re like its other box sets (the films stay)', act_crit_flatten, ask_crit_flatten),
+    'collection-add': ('Put films in a collection', act_collection_add, ask_collection_add),
     'brakhage-split': ('Give each By Brakhage film its own folder (Volume One, Volume Two and the seven films from Volume One)', act_brakhage_split, ask_brakhage_split),
 }
 
 
-def claude_ask(action, why):
+def claude_ask(action, why, args=None):
     if action not in ACTIONS:
         return 400, {'error': 'Not something that can be asked for.', 'can': sorted(ACTIONS)}
     with ACT_LOCK:
@@ -4548,6 +4580,8 @@ def claude_ask(action, why):
         if any(x.get('state') == 'asked' and x.get('action') == action for x in L):
             return 409, {'error': 'Already asked, waiting for John.'}
         req = {'id': secrets.token_hex(6), 'action': action, 'title': ACTIONS[action][0], 'why': str(why or '')[:500], 'at': int(time.time()), 'state': 'asked'}
+        if isinstance(args, dict):   # (what it's for, checked by its own ask step: a collection and its films, say)
+            req['args'] = {str(k)[:40]: v for k, v in list(args.items())[:10]}
         if ACTIONS[action][2]:
             try:
                 ACTIONS[action][2](req)
