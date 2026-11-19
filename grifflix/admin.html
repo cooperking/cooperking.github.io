@@ -1429,18 +1429,28 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       cvMac.done = (j.jobs || []).filter(function (x) { return x.state === 'done' || x.state === 'checking'; }).map(function (x) { return x.id; });
       var J = (j.jobs || []).filter(function (x) { return x.state !== 'done' || Date.now() / 1000 - (x.ended || x.at) < 1800; }), live = J.some(function (x) { return ['waiting', 'started', 'converting', 'copying', 'checking'].indexOf(x.state) >= 0; });
       var mm = function (s) { s = Math.max(0, Math.round(s)); return s >= 3600 ? Math.floor(s / 3600) + ' h ' + Math.round(s % 3600 / 60) + ' min' : Math.round(s / 60) + ' min'; };
-      $('#cvmac').innerHTML = J.length ? '<p class="stat" style="margin:14px 0 6px"><b>On your Mac</b></p>' + J.map(function (x) {
-        var pc = x.dur ? Math.min(100, x.t / x.dur * 100) : 0, sp = parseFloat(x.speed) || 0;
+      // (the copies back to the Mac mini as plainly as the conversions: each one's progress, what's waiting, in the order they go: John, 19 Nov
+      // 2026, "I need to see progress of the transfers back to my Mac mini as well as the conversions")
+      var cpm = function (x) { return x.state === 'copying' && /(\d+)% of ([\d.]+) GB/.exec(x.stage || ''); }, cpw = function (x) { return x.state === 'copying' && /^waiting/.test(x.stage || ''); };
+      var rank = function (x) { return x.state === 'converting' || x.state === 'started' ? 0 : cpm(x) ? 1 : x.state === 'checking' ? 2 : x.state === 'copying' && !cpw(x) ? 3 : cpw(x) ? 4 : 5; };
+      J.sort(function (a, b) { return rank(a) - rank(b) || (rank(a) === 4 ? a.at - b.at : b.at - a.at); });
+      var nConv = J.filter(function (x) { return rank(x) === 0; }).length, nCopy = J.filter(function (x) { return rank(x) === 1 || rank(x) === 3; }).length, nWait = J.filter(cpw).length, nChk = J.filter(function (x) { return x.state === 'checking'; }).length;
+      var sum = [nConv ? 'converting ' + nConv : '', nCopy ? 'copying ' + nCopy + ' to the Mac mini' : '', nWait ? nWait + ' waiting to copy' : '', nChk ? nChk + ' being put in place' : ''].filter(Boolean).join(' · ');
+      $('#cvmac').innerHTML = J.length ? '<p class="stat" style="margin:14px 0 6px"><b>On your Mac</b>' + (sum ? ' <span class="when" style="display:inline">· ' + esc(sum) + '</span>' : '') + '</p>' + J.map(function (x) {
+        var pc = x.dur ? Math.min(100, x.t / x.dur * 100) : 0, sp = parseFloat(x.speed) || 0, cm = cpm(x);
         var say = x.state === 'converting' && (pc >= 99.5 || /^finishing/.test(x.stage || '')) ? 'converted: now putting the file together, which copies it over the network once more (a few minutes; nothing moves on your Mac’s screen meanwhile)'
           : x.state === 'converting' ? pc.toFixed(0) + '%' + (sp ? ' · ' + x.speed + (x.dur && sp ? ' · about ' + mm((x.dur - x.t) / sp) + ' to go' : '') : '')
           : x.state === 'waiting' ? 'waiting for your Mac to take it up' : x.state === 'started' ? (x.stage || 'starting') + '…'
-          : x.state === 'copying' ? (/^waiting/.test(x.stage || '') ? 'made: ' + x.stage : 'made: copying itself to the G-Drive (your Mac has moved on to the next film)')
+          : cm ? 'copying to the Mac mini: ' + cm[1] + '% of ' + cm[2] + ' GB'
+          : x.state === 'copying' && /^couldn/.test(x.stage || '') ? 'made, but ' + x.stage
+          : x.state === 'copying' ? (cpw(x) ? 'made: ' + x.stage : 'made: copying to the Mac mini')
           : x.state === 'checking' ? 'made: the Mac mini is checking it and putting it in place' : x.state === 'done' ? 'converted on your Mac' + (x.ended ? ' at ' + new Date(x.ended * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '') + ', and in Grifflix now'
           : x.state === 'again' ? 'back at the front of your Mac’s queue, to start again when it’s home' + (x.error ? ' (' + x.error + ')' : '')
           : x.state === 'quiet' ? 'no word from your Mac since ' + new Date((x.seen || x.at) * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ' (asleep, or its window closed?)'
           : 'didn’t convert' + (x.error ? ': ' + x.error : '');
         return '<div style="margin:0 0 10px">' + FL(x.name, null, x.id) + ' <span class="when" style="display:inline">· ' + esc(say) + '</span>' +
-          (x.state === 'converting' ? '<div class="cvbar" style="margin-top:6px"><span style="width:' + pc.toFixed(1) + '%"></span></div>' : '') + '</div>';
+          (x.state === 'converting' ? '<div class="cvbar" style="margin-top:6px"><span style="width:' + pc.toFixed(1) + '%"></span></div>' : '') +
+          (cm ? '<div class="cvbar" style="margin-top:6px"><span style="width:' + Math.min(100, +cm[1]) + '%;background:#3c9a5f"></span></div>' : '') + '</div>';
       }).join('') : '';
       cmT = setTimeout(cvMac, live ? 5000 : 60000);
     }).catch(function () { cmT = setTimeout(cvMac, 60000); });
