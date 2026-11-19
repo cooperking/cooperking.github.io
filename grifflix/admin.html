@@ -177,6 +177,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .tmonths li.near select { outline: 2px solid #e0a000; }
 .tmonths .warn { grid-column: 3 / -1; font-size: 12px; color: #a06000; margin-top: -2px; }
 @media (max-width: 480px) { .tmonths li { grid-template-columns: 2.6em 16px minmax(0, 1fr); } .tmonths .mv { grid-column: 3; justify-self: end; } .tmonths .fsw, .tmonths .warn { grid-column: 1 / -1; } }   /* (Try there on a phone too: John, 9 Nov 2026) */
+/* the lists of films still to get: A24's, and each Criterion box set's (John, 19 Nov 2026) */
+.mlist { margin-top: 12px; }
+.mlist h3 { margin: 18px 0 6px; font-size: 15px; letter-spacing: .04em; } .mlist h3 small { font-weight: 400; opacity: .7; margin-left: 8px; }
+.mrow { display: grid; grid-template-columns: 56px minmax(0, 1fr) minmax(0, .8fr) auto; gap: 4px 14px; align-items: baseline; padding: 7px 0; border-top: 1px solid var(--line, rgba(255,255,255,.12)); font-size: 14px; }
+.mrow .y { font-variant-numeric: tabular-nums; opacity: .75; } .mrow b { font-weight: 600; } .mrow .d { opacity: .75; } .mrow .s { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; opacity: .8; white-space: nowrap; }
+.mrow.cb { grid-template-columns: 56px minmax(0, 1fr) 56px; }
+@media (max-width: 600px) { .mrow { grid-template-columns: 44px minmax(0, 1fr); } .mrow .d, .mrow .s { grid-column: 2; } }
 /* the intros, each with where and when it plays, and a preview (John, 19 Nov 2026) */
 .inxlist { display: grid; gap: 10px; margin: 12px 0 16px; }
 .inx { display: flex; gap: 14px; align-items: flex-start; justify-content: space-between; padding: 12px 14px; border: 1px solid var(--line, rgba(255,255,255,.15)); }
@@ -556,6 +563,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <ul class="changes" id="binlist" hidden></ul>
       </section>
       <section class="card" data-tab="criterion">
+        <div class="kicker">Box sets</div>
+        <h2>Box sets <em>not complete</em></h2>
+        <p class="stat" id="cbnote">Each Criterion box set with some of its films in Grifflix but not all, and the films still to get, from Criterion’s own list of each set.</p>
+        <div class="mlist" id="cbmiss"><p class="stat">Looking…</p></div>
+      </section>
+      <section class="card" data-tab="criterion">
         <div class="kicker">Criterion</div>
         <h2>Criterion’s covers</h2>
         <div class="state" id="csheets" hidden><a class="btn primary" id="csheet" href="#" target="_blank" rel="noopener">Open the Criterion Google Sheet</a></div>
@@ -591,6 +604,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat">The films from the A24 collection that aren’t in A24’s own list of its films (a24films.com/films), kept apart to check. Only you see this collection: it isn’t on the site for anyone else, and the A24 page shows only the films A24 lists.</p>
         <div class="state"><a class="btn primary" id="a24open" href="#" target="_blank" rel="noopener" hidden>Open A24 CHECKS</a><a class="btn" id="a24draft" href="#" target="_blank" rel="noopener" hidden>On the draft</a></div>
         <p class="stat" id="a24say">Looking on the Mac mini…</p>
+      </section>
+      <section class="card" data-tab="a24">
+        <div class="kicker">Missing</div>
+        <h2>A24’s films you <em>haven’t got</em></h2>
+        <p class="stat" id="a24mnote">Every film in A24’s own list (a24films.com/films), checked against Grifflix each time this is opened.</p>
+        <div class="mlist" id="a24miss"><p class="stat">Looking…</p></div>
       </section>
       <section class="card" data-tab="mac">
         <div class="kicker">Claude</div>
@@ -1006,6 +1025,41 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 
   // ---- Update from the Mac: the Mac's films, TV, collections and Movie of the Day, kept by the site as its own
   var GW = '';
+  // (what's still to get: A24's films not in Grifflix, from a copy of A24's own list kept with the site, and each Criterion box set begun
+  // but not finished, from the site's own list of the films; worked out each time, so it keeps up as films come in: John, 19 Nov 2026,
+  // "Can you give me a list of films I'm missing and put it in Admin for A24. For criterion the incomplete box sets")
+  (function () {
+    var fold = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['’‘`´"“”]/g, '').replace(/&/g, ' and ').replace(/^(the|a|an) /, '').replace(/[^a-z0-9]+/g, ' ').trim(); };
+    Promise.all([fetch('/grifflix/data/library.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }), fetch('/grifflix/a24-list.json', { cache: 'no-cache' }).then(function (r) { return r.json(); })]).then(function (r) {
+      var L = r[0], A = r[1], I = L.items || {}, mine = {}, inA24 = {};
+      Object.keys(I).forEach(function (k) { var i = I[k]; if (i.type === 'movie' && !i.extra) (mine[fold(i.name)] = mine[fold(i.name)] || []).push(i); });
+      var a24 = Object.keys(I).filter(function (k) { return I[k].type === 'collection' && /^a24$/i.test(I[k].name); })[0];
+      ((L.sets || {})[a24] || []).forEach(function (id) { inA24[id] = 1; });
+      var got = function (f) { return (mine[fold(f.t)] || []).filter(function (i) { return !i.year || Math.abs(i.year - f.y) <= 1; })[0]; };
+      var miss = [], loose = [];
+      (A.films || []).forEach(function (f) { var i = got(f); if (!i) miss.push(f); else if (!inA24[i.id]) loose.push(f); });
+      var row = function (f) { return '<div class="mrow"><span class="y">' + f.y + '</span><b>' + esc(f.t) + '</b><span class="d">' + esc((f.d || []).join(', ')) + '</span><span class="s">' + esc(f.s || '') + '</span></div>'; };
+      var out = !miss.length ? '<p class="stat">Every film in A24’s list is in Grifflix.</p>' : '';
+      var soon = miss.filter(function (f) { return /coming/i.test(f.s); }), now = miss.filter(function (f) { return !/coming/i.test(f.s); });
+      if (now.length) out += '<h3>Out now<small>' + now.length + '</small></h3>' + now.map(row).join('');
+      if (soon.length) out += '<h3>Coming<small>' + soon.length + '</small></h3>' + soon.map(row).join('');
+      if (loose.length) out += '<h3>In Grifflix, not in the A24 collection<small>' + loose.length + '</small></h3>' + loose.map(row).join('');
+      $('#a24miss').innerHTML = out;
+      $('#a24mnote').textContent = (A.films || []).length + ' films in A24’s own list (a24films.com/films, as it was on ' + new Date(A.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + '): ' + miss.length + ' not in Grifflix. Checked against Grifflix each time this is opened.';
+      // Criterion: each box set's films here, and those still to get
+      var have = {}, sp = {}, gone = {};
+      Object.keys(I).forEach(function (k) { var i = I[k];
+        (i.cset || []).forEach(function (b, n) { have[b] = (have[b] || 0) + 1; if ((i.csetsp || [])[n]) sp[b] = +i.csetsp[n]; });
+        Object.keys(i.csetmiss || {}).forEach(function (b) { gone[b] = i.csetmiss[b]; }); });
+      var sets = Object.keys(gone).filter(function (b) { return gone[b].length && have[b]; }).sort(function (a, b) { return (sp[a] || 1e9) - (sp[b] || 1e9) || a.localeCompare(b); });
+      var nfilms = sets.reduce(function (n, b) { return n + gone[b].length; }, 0);
+      $('#cbnote').textContent = sets.length + ' box sets begun but not complete, ' + nfilms + ' films still to get. From Criterion’s own list of each set; it keeps up as films come in.';
+      $('#cbmiss').innerHTML = sets.length ? sets.map(function (b) {
+        return '<h3>' + (sp[b] ? 'No. ' + sp[b] + ' · ' : '') + esc(b) + '<small>' + have[b] + ' of ' + (have[b] + gone[b].length) + ' here</small></h3>' +
+          gone[b].map(function (m) { return '<div class="mrow cb"><span class="y">' + esc(m[1] || '') + '</span><b>' + esc(m[0]) + '</b><span class="s">' + (m[2] ? 'No. ' + esc(m[2]) : '') + '</span></div>'; }).join('');
+      }).join('') : '<p class="stat">Every box set begun is complete.</p>';
+    }).catch(function (e) { $('#a24miss').innerHTML = $('#cbmiss').innerHTML = '<p class="stat">Couldn’t read the lists: ' + esc(e.message) + '</p>'; });
+  })();
   function a24Look() {   // (A24 CHECKS: John's own collection, from the Mac, linked from here: John, 19 Nov 2026)
     fetch(GW + '/api/collections', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('The Mac mini didn’t answer.')); }).then(function (j) {
       var c = (j.collections || []).filter(function (x) { return /^a24 checks$/i.test(x.name || ''); })[0];
