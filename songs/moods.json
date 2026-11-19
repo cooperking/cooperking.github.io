@@ -7908,7 +7908,7 @@
    "sound": [
     "Romantic",
     "Playful",
-    "Energetic"
+    "Mellow"
    ],
    "claude": [
     "Melancholy",
@@ -9861,7 +9861,7 @@
    "sound": [
     "Uplifting",
     "Bittersweet",
-    "Joyful"
+    "Melancholy"
    ],
    "claude": [
     "Dreamy",
@@ -14157,8 +14157,8 @@
    "moodFrom": "Claude",
    "sound": [
     "Dark",
-    "Energetic",
-    "Melancholy"
+    "Melancholy",
+    "Energetic"
    ],
    "claude": [
     "Uplifting",
@@ -17834,7 +17834,7 @@
    "sound": [
     "Energetic",
     "Joyful",
-    "Playful"
+    "Romantic"
    ],
    "claude": [
     "Romantic",
@@ -22833,7 +22833,7 @@
    "sound": [
     "Dreamy",
     "Uplifting",
-    "Joyful"
+    "Playful"
    ],
    "claude": [
     "Joyful",
@@ -26281,11 +26281,11 @@
      45
     ],
     [
-     "Playful",
+     "Dreamy",
      13
     ],
     [
-     "Dreamy",
+     "Playful",
      13
     ]
    ],
@@ -26299,11 +26299,11 @@
        45
       ],
       [
-       "Playful",
+       "Dreamy",
        13
       ],
       [
-       "Dreamy",
+       "Playful",
        13
       ]
      ]
@@ -26312,8 +26312,8 @@
    "moodFrom": "Weighed up",
    "sound": [
     "Joyful",
-    "Playful",
-    "Dreamy"
+    "Dreamy",
+    "Playful"
    ],
    "listeners": "none",
    "styles": [
@@ -26390,7 +26390,7 @@
    "moodMix": [
     [
      "Romantic",
-     23
+     24
     ],
     [
      "Energetic",
@@ -26408,7 +26408,7 @@
      [
       [
        "Romantic",
-       23
+       24
       ],
       [
        "Energetic",
@@ -26872,7 +26872,7 @@
    "moodMix": [
     [
      "Energetic",
-     53
+     52
     ],
     [
      "Joyful",
@@ -26890,7 +26890,7 @@
      [
       [
        "Energetic",
-       53
+       52
       ],
       [
        "Joyful",
@@ -26998,7 +26998,7 @@
    "moodMix": [
     [
      "Uplifting",
-     27
+     26
     ],
     [
      "Melancholy",
@@ -27016,7 +27016,7 @@
      [
       [
        "Uplifting",
-       27
+       26
       ],
       [
        "Melancholy",
@@ -27123,7 +27123,7 @@
    "moodMix": [
     [
      "Energetic",
-     38
+     37
     ],
     [
      "Joyful",
@@ -27141,7 +27141,7 @@
      [
       [
        "Energetic",
-       38
+       37
       ],
       [
        "Joyful",
@@ -28327,7 +28327,7 @@
     ],
     [
      "Joyful",
-     17
+     16
     ]
    ],
    "moodEvidence": [
@@ -28345,7 +28345,7 @@
       ],
       [
        "Joyful",
-       17
+       16
       ]
      ]
     ]
@@ -28728,11 +28728,11 @@
    "moodMix": [
     [
      "Dark",
-     85
+     86
     ],
     [
      "Energetic",
-     12
+     11
     ],
     [
      "Joyful",
@@ -28746,11 +28746,11 @@
      [
       [
        "Dark",
-       85
+       86
       ],
       [
        "Energetic",
-       12
+       11
       ],
       [
        "Joyful",
@@ -29139,7 +29139,7 @@
     ],
     [
      "Energetic",
-     13
+     12
     ]
    ],
    "moodEvidence": [
@@ -29157,7 +29157,7 @@
       ],
       [
        "Energetic",
-       13
+       12
       ]
      ]
     ]
@@ -29339,6 +29339,130 @@
    ],
    "musicbrainz": [
     "vocal jazz"
+   ],
+   "check": true
+  },
+  "7tvoE5jBSPdtym9bWzMc29": {
+   "n": 283,
+   "title": "White Mice",
+   "artist": "Mo-Dettes",
+   "moods": [
+    "Energetic"
+   ],
+   "moodMix": [
+    [
+     "Energetic",
+     52
+    ],
+    [
+     "Joyful",
+     21
+    ],
+    [
+     "Playful",
+     14
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Energetic",
+       52
+      ],
+      [
+       "Joyful",
+       21
+      ],
+      [
+       "Playful",
+       14
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Energetic",
+    "Joyful",
+    "Playful"
+   ],
+   "listeners": "none",
+   "styles": [
+    "New Wave",
+    "Synth-pop",
+    "New Wave"
+   ],
+   "genres": [
+    "Rock"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Rock",
+     91
+    ],
+    [
+     "Pop",
+     5
+    ],
+    [
+     "Electronic",
+     4
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Rock",
+       92
+      ],
+      [
+       "Electronic",
+       8
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Rock",
+       99
+      ],
+      [
+       "Indie",
+       1
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Rock",
+       76
+      ],
+      [
+       "Pop",
+       24
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "dance",
+    "new wave",
+    "post-punk",
+    "punk",
+    "rock"
    ],
    "check": true
   }
