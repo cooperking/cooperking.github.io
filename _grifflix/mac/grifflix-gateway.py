@@ -4733,6 +4733,30 @@ ACTIONS = {
 }
 
 
+ACT_RUNNING = set()   # (what John allowed, being done now: the gateway doesn't restart for an update until it's finished)
+
+
+def acts_interrupted():
+    """At the start: anything left 'doing' was stopped by the gateway stopping, so it goes back to waiting on John's Allow (each action is
+    safe to do again: what's already done is passed over)."""
+    with ACT_LOCK:
+        L = load(ACTIONS_AT, []) or []
+        back = [x for x in L if x.get('state') == 'doing']
+        for x in back:
+            x['state'] = 'asked'
+            x['why'] = ('Stopped partway when the gateway restarted; asked again. ' + (x.get('why') or ''))[:500]
+            x.pop('answered', None)
+            if ACTIONS.get(x.get('action'), (0, 0, None))[2]:
+                try:
+                    ACTIONS[x['action']][2](x)   # (what's left, measured afresh)
+                except Exception:
+                    pass
+        if back:
+            save(ACTIONS_AT, L)
+    for x in back:
+        log('Claude asks again (stopped partway by a restart): %s' % x.get('title'))
+
+
 def claude_ask(action, why, args=None):
     if action not in ACTIONS:
         return 400, {'error': 'Not something that can be asked for.', 'can': sorted(ACTIONS)}
@@ -4770,10 +4794,13 @@ def claude_answer(g, rid, allow):
         return 200, {'ok': True}
 
     def run():
+        ACT_RUNNING.add(rid)
         try:
             res, st = ACTIONS[req['action']][1](g, req), 'done'
         except Exception as e:
             res, st = str(e)[:300], 'failed'
+        finally:
+            ACT_RUNNING.discard(rid)
         with ACT_LOCK:
             L2 = load(ACTIONS_AT, []) or []
             for x in L2:
@@ -5970,8 +5997,8 @@ def keep_updating(g):
                 r = mac_update(quiet=True)
                 save(os.path.join(APP_DIR, 'update-result.json'), dict(r, auto=True))
                 if r.get('restarting'):
-                    while someone_watching(g):
-                        time.sleep(60)
+                    while someone_watching(g) or ACT_RUNNING:   # (nor while something John allowed is being done: a restart 19 s after
+                        time.sleep(60)                             # his Allow stopped the disk tidy halfway, 19 Nov 2026)
                     log('Update the Mac (by itself): the gateway restarting for its new version')
                     time.sleep(1.5)
                     os._exit(0)   # (launchd starts the new gateway)
@@ -6107,6 +6134,10 @@ def serve():
     G_REF.append(g)   # (for what runs on its own: covers_now's synopses)
     port = int(g.st.get('port', 8097))
     srv = ThreadingHTTPServer(('127.0.0.1', port), make_handler(g))
+    try:   # (only once the port is this gateway's: an old one still running may be doing what John allowed)
+        acts_interrupted()
+    except Exception as e:
+        log('Interrupted asks:', str(e)[:200])
     try:   # (the home network's door, one port up: only John's Mac's films, with its key; a film over the home network, not out and back)
         lan = ThreadingHTTPServer(('0.0.0.0', port + 1), make_handler(g))
         lan.lan = True

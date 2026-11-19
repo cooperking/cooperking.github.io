@@ -1326,6 +1326,13 @@ html:not(.phone) .film > .in { align-self: start; }
 html:not(.tv) .film .tag, html:not(.tv) .film .ov, html:not(.tv) .film .cred, html:not(.tv) .film .credits { max-width: 1040px !important; }
 html:not(.phone) .film .ipost img { display: block; width: 100%; height: auto; max-height: calc(100vh - 170px); object-fit: contain; object-position: center; box-shadow: 0 24px 60px rgba(0, 0, 0, .35); }
 html:not(.phone) .film .in { padding: 0 !important; min-height: 0 !important; display: block !important; }
+/* (the picture as big as the screen's height lets it be, the words beside it taking what's left: John, 19 Nov 2026, "the right hand side should be
+   shrunk in desktop/ fire tv more rather than the left, so the picture can fill the screen better") */
+html:not(.phone) .film { grid-template-columns: minmax(220px, max(30vw, min(50vw, calc((100vh - 150px) * .667)))) minmax(0, 1fr); gap: clamp(28px, 3vw, 56px); padding-left: clamp(28px, 4vw, 80px); }
+html:not(.phone) .film:not(.hasposter) { grid-template-columns: minmax(300px, 52vw) minmax(0, 1fr); }
+html:not(.phone) .film .ipost img { max-height: calc(100vh - 150px); }
+html.tv .film { grid-template-columns: calc((100vh - 116px) * .667) minmax(0, 1fr); }   /* (the TV: the picture its full height, no gap beside it) */
+html.tv .film .ipost img { max-height: calc(100vh - 116px); }
 html.tv .film .ov { font-size: var(--ovfs, 21px) !important; max-width: none !important; display: block !important; -webkit-line-clamp: unset !important; overflow: visible !important; }   /* (all of it, made smaller to fit: tvFit) */
 html.tv .film .tag { font-size: 24px !important; }
 html.tv .film .meta { font-size: 17px !important; }
@@ -1972,6 +1979,8 @@ body { font-size: 14px; } .film h2 { font-size: clamp(34px, 4.1vw, 68px) !import
 .zlead .gx, .welcome h1, .gcin .g, .a24in .g { font-family: "Grifflix Logo Fine", var(--kfont) !important; }
 .bar-top .brand, #shbrand, .zlead .gx, .welcome h1 { font-family: "Grifflix Logo", var(--kfont) !important; font-weight: 700 !important; color: var(--fg) !important; -webkit-text-stroke: 0 !important; }
 .zlead .gx { color: #fff !important; }
+.brand .gxs { display: block; height: 1em; overflow: visible; fill: none; stroke: currentColor; stroke-width: 1.2px; stroke-width: max(1.15px, .075em); stroke-linejoin: miter; stroke-miterlimit: 3; shape-rendering: geometricPrecision; }
+.brand .gxs path { vector-effect: non-scaling-stroke; }
 .zlt { font-family: "Grifflix Display", "Federo", Georgia, serif !important; font-weight: 400 !important; font-size: 1.15em; }
 /* Grifflix's own look (its palette: Orange, Vista Bleu, Amande, Bleu Oxford): the room flat in its colour, the type in its ink,
    the zoetrope and the cinema in the palette, no red velvet (John, 10 Nov 2026) */
@@ -2492,7 +2501,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '2a460a7c9cb2' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '4541802bbd38' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6380,7 +6389,22 @@ function navGo(w) {
     if (TV) setTimeout(function () { var f = (d && $('#cal [data-day="' + d + '"]')) || $('#cal button.front') || $('#cal button[data-day]'); if (f) f.focus({ preventScroll: true }); }, 400);
   }
 }
+// GRIFFLIX in the bar drawn as a picture (SVG), not lettering: Futura Bold's own outlines with a line round each letter that stays a clean,
+// whole pixel or more however small it is drawn, where the lettering's fine line went grey and ragged at the bar's size (John, 19 Nov 2026:
+// "The GRIFFLIX logo should probably be an svg image as it still looks untidy when small"). Its spacing and size the bar's own, as before
+var GXP = {"G":[1724,"M53 -764Q53 -952 114 -1106Q174 -1260 284 -1368Q395 -1477 550 -1536Q705 -1595 891 -1595Q1131 -1595 1309 -1488Q1487 -1380 1587 -1163L1206 -1004Q1165 -1115 1080 -1182Q995 -1249 872 -1249Q774 -1249 698 -1206Q623 -1163 572 -1094Q522 -1024 496 -937Q471 -850 471 -762Q471 -672 498 -585Q524 -498 576 -430Q627 -362 704 -320Q780 -279 879 -279Q1010 -279 1100 -346Q1190 -412 1202 -547H874V-862H1671Q1669 -778 1664 -700Q1659 -621 1642 -545Q1626 -469 1596 -396Q1565 -324 1513 -252Q1398 -92 1234 -20Q1071 51 877 51Q695 51 543 -8Q391 -68 282 -176Q174 -283 114 -432Q53 -582 53 -764Z"],"R":[1392,"M131 0V-1544H731Q846 -1544 944 -1516Q1042 -1489 1114 -1430Q1186 -1372 1227 -1282Q1268 -1192 1268 -1069Q1268 -989 1246 -916Q1225 -844 1182 -786Q1139 -727 1076 -687Q1012 -647 930 -633L1415 0H915L537 -594H532V0ZM532 -852H571Q620 -852 670 -858Q721 -864 761 -884Q801 -905 826 -943Q850 -981 850 -1044Q850 -1107 826 -1146Q801 -1184 761 -1204Q721 -1225 671 -1231Q621 -1237 571 -1237H532Z"],"I":[663,"M131 0V-1544H532V0Z"],"F":[1110,"M131 0V-1544H1018V-1204H532V-946H973V-606H532V0Z"],"L":[1013,"M131 0V-1544H532V-340H1014V0Z"],"X":[1615,"M-16 0 588 -825 94 -1544H588L823 -1145L1059 -1544H1552L1059 -825L1630 0H1147L823 -504L469 0Z"]};
+function gxMark(el) {
+  if (!el) return;
+  var cs = getComputedStyle(el), fs = parseFloat(cs.fontSize) || 15, ls = (parseFloat(cs.letterSpacing) || 0) / fs, key = ls.toFixed(3);
+  if (el._gx === key && el.querySelector('.gxs')) return; el._gx = key;
+  var x = 0, d = '';
+  'GRIFFLIX'.split('').forEach(function (c) { d += '<path transform="translate(' + Math.round(x) + ' 0)" d="' + GXP[c][1] + '"/>'; x += GXP[c][0] + ls * 2048; });
+  el.innerHTML = '<svg class="gxs" viewBox="0 -1796 ' + Math.round(x) + ' 2048" style="width:' + (x / 2048).toFixed(3) + 'em" aria-hidden="true" focusable="false">' + d + '</svg>';
+}
+function gxMarks() { $$('.bar-top .brand, #shbrand').forEach(gxMark); }
+addEventListener('resize', function () { clearTimeout(gxMarks._t); gxMarks._t = setTimeout(gxMarks, 120); });
 function navBar() {
+  try { gxMarks(); } catch (e) {}
   var n = $('#barnav'); if (!n) { ($('.bar-top .homeic') || $('.bar-top .brand')).insertAdjacentHTML('afterend', '<nav id="barnav" aria-label="Grifflix"></nav>'); n = $('#barnav'); }
   n.innerHTML = navWords(VIEW() === 'themes' && !S.mcal ? 'theme' : 'calendar');
   $$('#barnav [data-nv]').forEach(function (b) { b.onclick = function () { navGo(b.dataset.nv); }; });
@@ -6402,7 +6426,7 @@ function shBrand() {   // GRIFFLIX over a pop-up, just where the bar's is (the b
   $$('#shnav [data-nv]').forEach(function (x) { x.onclick = function () { navGo(x.dataset.nv); }; });
   var bn = $('#barnav'), br = bn && bn.offsetParent ? bn.getBoundingClientRect() : null;
   nav.style.top = Math.round(br ? br.top : r.top) + 'px'; nav.style.left = Math.round(br ? br.left : (hi ? hi.getBoundingClientRect().right : r.right) + 28) + 'px';   // (after the home icon, not on it: John, 18 Nov 2026, "calendar is pressed against home") nav.style.height = Math.round(br ? br.height : r.height) + 'px';
-  b.hidden = false; b.style.left = Math.round(r.left) + 'px'; b.style.top = Math.round(r.top) + 'px'; b.style.width = Math.round(r.width) + 'px'; b.style.height = Math.round(r.height) + 'px'; ['fontFamily', 'fontWeight', 'fontSize', 'lineHeight', 'letterSpacing', 'color', 'textTransform'].forEach(function (k) { b.style[k] = cs[k]; });
+  b.hidden = false; b.style.left = Math.round(r.left) + 'px'; b.style.top = Math.round(r.top) + 'px'; b.style.width = Math.round(r.width) + 'px'; b.style.height = Math.round(r.height) + 'px'; ['fontFamily', 'fontWeight', 'fontSize', 'lineHeight', 'letterSpacing', 'color', 'textTransform'].forEach(function (k) { b.style[k] = cs[k]; }); gxMark(b);
   // (the pop-up's own words start below the logo and its words, never under them: John, 9 Nov 2026: "profile pop up on computer
   // causes words to be on top of each other - be careful of clashes"); what scrolls up passes under a strip, not through them
   var nr = nav.getBoundingClientRect(), barB = Math.max(r.bottom, nr.bottom, br ? br.bottom : 0), barR = Math.max(r.right, nr.right), f = $('#sheetIn > .form');
