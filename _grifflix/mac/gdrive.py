@@ -617,6 +617,13 @@ def conv_running():
         return False
 
 
+def conv_state():
+    try:
+        return json.load(open(os.path.join(HOME, 'convert-now.json'))).get('state') or ''
+    except (OSError, ValueError):
+        return ''
+
+
 PENDING = {}   # (the film just brought in, still being repackaged: the next download's copy onto the G-Drive waits for it)
 
 
@@ -630,6 +637,10 @@ def wait_repack(dest, title):
     try:
         while os.path.exists(dest) and time.time() - t0 < 2700:
             if time.time() - t0 > 360 and not conv_running():
+                break
+            # (the converter paused (John's Mac converting, or someone watching): nothing is being repackaged, so no waiting for it; the
+            # next copy goes onto the G-Drive now: John, 20 Nov 2026, A Journey to the Beginning of Time "99%... nothing has come for 41 min")
+            if time.time() - t0 > 60 and conv_state() == 'waiting':
                 break
             time.sleep(15)
         log('  %s: %s; on to the next' % (title, 'repackaged' if not os.path.exists(dest) else 'not repackaged yet (it will be)'))
