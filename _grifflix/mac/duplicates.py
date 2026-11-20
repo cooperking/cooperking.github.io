@@ -155,6 +155,18 @@ def main():
         return
     if not GO:
         return print('\nRun with go to set them aside (in "%s").' % ASIDE)
+    # (the kept copy in every collection a copy set aside was in: The Criterion Collection, A24 and John's own, before the media server forgets
+    # the one set aside: John, 20 Nov 2026, No Regret and Anthem better copies come in, the old ones in Criterion)
+    try:
+        boxes = jf('GET', '/Users/%s/Items' % S['jf_user_id'], Recursive='true', IncludeItemTypes='BoxSet', Fields='')
+        for b in g(boxes, 'Items') or []:
+            kids = set(g(x, 'Id') for x in g(jf('GET', '/Users/%s/Items' % S['jf_user_id'], ParentId=g(b, 'Id'), Fields=''), 'Items') or [])
+            add = sorted(set(v[0]['id'] for v in same if v[0]['id'] not in kids and any(d['id'] in kids for d in v[1:])))
+            if add:
+                jf('POST', '/Collections/%s/Items' % g(b, 'Id'), Ids=','.join(add))
+                print('In %s too: %d kept cop%s' % (g(b, 'Name'), len(add), 'y' if len(add) == 1 else 'ies'))
+    except Exception as e:
+        print('(Collections not followed: %s)' % e)
     for v in same:
         keep = v[0]
         for d in v[1:]:
