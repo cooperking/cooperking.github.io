@@ -253,6 +253,15 @@ export default {
       const recent = (data.songs || []).filter(x => Date.parse(x.a) > Date.now() - 10 * 864e5).map(x => ({ t: x.title, a: x.a, ab: x.ab || '', who: ids[x.ab] ? all[ids[x.ab]].name : null, whoId: ids[x.ab] || null, chosen: snd.who ? snd.who.includes(ids[x.ab]) : null, dated: uplDated(x), afterSince: Date.parse(x.a) > since, ann: (data.ann || {})[x.id] || 0, rel: (data.rel || {})[x.id] || 0, waiting: uplWaiting(rec, data, x), gone: uplGone(data, x) }));
       await env.MEDIA.put('diag/round2.json', JSON.stringify({ at: new Date().toISOString(), send: snd, whoNames: (snd.who || []).map(k => all[k] ? all[k].name : k), roundAt: data.roundAt || 0, since, st: rec.st, recent }, null, 1), { httpMetadata: { contentType: 'application/json' } });
     })().catch(async e => { if (env.MEDIA) await env.MEDIA.put('diag/round2.json', JSON.stringify({ error: String(e && (e.stack || e.message) || e) }), { httpMetadata: { contentType: 'application/json' } }).catch(() => {}); }));
+    ctx.waitUntil((async () => {   // once: Collaborations' songs signed off all at once on 20 Nov 2026 put back in its round (they'd been marked sent with no message)
+      if (await env.SOTD.get('roundBack1')) return;
+      await env.SOTD.put('roundBack1', String(Date.now()));
+      const pid = 'hXXaGojDDcooDA', U = await uplAll(env), rec = U[pid]; if (!rec || uplSendOf(rec).how !== 'all') return;
+      const data = await uplSongs(env, pid), since = Math.max(data.roundAt || 0, uplSendOf(rec).since || 0), back = [];
+      for (const x of data.songs || []) { const an = (data.ann || {})[x.id]; if (an && an === (data.rel || {})[x.id] && Date.parse(x.a) > since) { delete data.ann[x.id]; back.push(x.title); } }
+      if (back.length) await env.SOTD.put('upl:' + pid, JSON.stringify(data));
+      if (env.MEDIA) await env.MEDIA.put('diag/round-back.json', JSON.stringify({ at: new Date().toISOString(), back }, null, 1), { httpMetadata: { contentType: 'application/json' } });
+    })().catch(e => console.log('roundBack: ' + (e && e.message))));
     ctx.waitUntil((async () => {   // once: Collaborations' songs, their added dates, days and captions, for checking
       if (await env.SOTD.get('diagCollab4')) return;
       await env.SOTD.put('diagCollab4', String(Date.now()));
@@ -6677,7 +6686,8 @@ async function memberUpl(request, url, env, answer) {
     const last = wait[wait.length - 1];
     data.rel = data.rel || {}; data.reld = data.reld || {}; data.ann = data.ann || {};
     const now = Date.now(), today = londonDay();
-    for (const y of wait) if (y !== last) { data.rel[y.id] = now; data.reld[y.id] = today; data.ann[y.id] = now; }   // (out, with no message of their own)
+    const batched = ['week', 'all'].includes(uplSendOf(rec).how);   // (once a week, or when everyone chosen has added one: each goes in that message, none marked sent now: John, 20 Nov 2026, "it's set to send an announcement, but hasn't")
+    for (const y of wait) if (y !== last) { data.rel[y.id] = now; data.reld[y.id] = today; if (!batched) data.ann[y.id] = now; }   // (out, with no message of their own)
     const r = await uplSignoffDo(env, all, pid, rec, data, last);   // (the newest: as one sign-off, its message as its owner chose)
     return answer(200, Object.assign({ ok: true, n: wait.length, sent: r.sent, view: await uplView(env, all, me, pid, rec), pls: await uplMine(env, uplList(all, me, U, BOSS), U) }, r.on ? { on: r.on, at: r.at } : {}));
   }
