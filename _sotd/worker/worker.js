@@ -2463,8 +2463,12 @@ async function gMusicGet(request, url, env) {
 }
 async function gFontGet(request, url, env) {   // /gf/<name>: only for Grifflix's own pages (and its apps, which show them)
   const name = url.pathname.slice(4).toLowerCase(), from = request.headers.get('Origin') || request.headers.get('Referer') || '';
-  if (!/^[a-z0-9-]{1,60}\.(woff2|woff)$/.test(name)) return new Response('Not here.', { status: 404 });
   if (from && !G_FROM.test(from)) return new Response('Not here.', { status: 403 });
+  if (name === 'list') {   // (the names of the fonts kept, so a page uses whichever were sent, however they're named: A24's, John, 20 Nov 2026)
+    const list = await env.MEDIA.list({ prefix: 'grifflix/fonts/' }).catch(() => ({ objects: [] }));
+    return new Response(JSON.stringify({ fonts: (list.objects || []).map(o => o.key.slice(15)) }), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300', 'Access-Control-Allow-Origin': gOrigin(request), Vary: 'Origin' } });
+  }
+  if (!/^[a-z0-9-]{1,60}\.(woff2|woff)$/.test(name)) return new Response('Not here.', { status: 404 });
   const o = await env.MEDIA.get('grifflix/fonts/' + name).catch(() => null);
   if (!o) return new Response('Not here.', { status: 404, headers: { 'Access-Control-Allow-Origin': gOrigin(request), Vary: 'Origin' } });
   return new Response(o.body, { headers: { 'Content-Type': name.endsWith('2') ? 'font/woff2' : 'font/woff', 'Cache-Control': 'public, max-age=2592000', 'Access-Control-Allow-Origin': gOrigin(request), Vary: 'Origin' } });
