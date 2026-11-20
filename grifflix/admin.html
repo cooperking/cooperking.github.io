@@ -1933,8 +1933,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         $('#cvfill').style.width = (n.pct || 0) + '%';
         $('#cvsay').innerHTML = '<b>' + Math.floor(n.pct || 0) + '%</b> through' + (n.state === 'paused' ? ' (' + esc(n.why) + ')' : ', started ' + esc(when(n.since * 1000))) + '. Film ' + ((n.n || 0) + 1) + ' of ' + (n.total || '?') + ' this run; ' + c.done + ' converted so far' + (c.failed.length ? ', ' + c.failed.length + ' couldn’t be' : '') + '.';
       } else if (n && c.alive && n.state === 'waiting') {
-        $('#cvhead').innerHTML = 'Waiting <em>for the night</em>';
-        $('#cvsay').textContent = n.why + '. ' + (n.n || 0) + ' of ' + (n.total || '?') + ' done this run; ' + c.done + ' converted so far.';
+        // (the heading as the reason it waits, not always "for the night": John, 20 Nov 2026, "Waiting for the night is a strange message")
+        var wy = String(n.why || ''), hm = wy.match(/waiting for (\d+) am/);
+        $('#cvhead').innerHTML = hm ? 'Waiting <em>till ' + hm[1] + ' am</em>' : /your Mac is converting/.test(wy) ? 'Paused <em>while your Mac converts</em>' : /watching/.test(wy) ? 'Paused <em>while someone watches</em>' : /John’s Mac/.test(wy) ? 'Waiting <em>for your Mac</em>' : 'Waiting';
+        $('#cvsay').textContent = (hm ? 'It converts overnight, from ' + hm[1] + ' am, so the Mac mini is free in the day' : /your Mac is converting/.test(wy) ? 'Your Mac is converting, so the Mac mini waits and carries on once it’s done' : /watching/.test(wy) ? 'Someone is watching, so it carries on once they stop' : /John’s Mac/.test(wy) ? 'The rest are being converted on your Mac' : wy) + '. ' + (n.n || 0) + ' of ' + (n.total || '?') + ' done this run; ' + c.done + ' converted so far.';
       } else if (c.alive) {
         $('#cvhead').innerHTML = 'Converting <em>(running)</em>';
         $('#cvsay').textContent = c.done + ' converted so far. Restart the converter with its update to see how far each film is.';
