@@ -1972,13 +1972,6 @@ html:not(.phone) .film .meta { font-size: 14.5px !important; }
 .tinspo { font-size: 15px !important; } .tcap .tctx { font-size: 14px !important; }
 /* (all a touch smaller: John, 10 Nov 2026: "can the fonts default be slightly smaller across the site") */
 /* (a Criterion film's page in Criterion's lettering, Futura in spaced capitals; an A24 film's in A24's grotesk and typewriter: John, 20 Nov 2026) */
-#sheetIn .film.fcrit h2 { font: 500 clamp(26px, 3.1vw, 48px)/1.12 var(--kfont) !important; letter-spacing: .12em !important; text-transform: uppercase !important; }
-html.phone #sheetIn .film.fcrit h2 { font-size: clamp(21px, 6.6vw, 28px) !important; letter-spacing: .1em !important; }
-#sheetIn .film.fcrit h2 i { font: 400 .62em/1.3 var(--kfont) !important; letter-spacing: .14em !important; font-style: normal !important; }
-#sheetIn .film.fcrit .tag { font: 500 17px/1.45 var(--kfont) !important; letter-spacing: .02em !important; font-style: normal !important; }
-#sheetIn .film.fcrit .ov, #sheetIn .film.fcrit .people, #sheetIn .film.fcrit .cred, #sheetIn .film.fcrit .credits, #sheetIn .film.fcrit .incoll, #sheetIn .film.fcrit .eps .t, #sheetIn .film.fcrit .eps .s { font-family: var(--kfont) !important; font-style: normal !important; letter-spacing: .01em !important; }
-#sheetIn .film.fcrit .ov { font-size: 15.5px !important; line-height: 1.7 !important; }
-#sheetIn .film.fcrit h3, #sheetIn .film.fcrit .xh, #sheetIn .film.fcrit .incoll span, #sheetIn .film.fcrit .meta, #sheetIn .film.fcrit .date { font-family: var(--kfont) !important; font-style: normal !important; text-transform: uppercase !important; letter-spacing: .14em !important; }
 #sheetIn .film.fa24 h2 { font: 500 clamp(36px, 4.6vw, 76px)/.95 var(--a24-sans) !important; letter-spacing: -.04em !important; text-transform: none !important; }
 html.phone #sheetIn .film.fa24 h2 { font-size: clamp(30px, 10vw, 42px) !important; }
 #sheetIn .film.fa24 h2 i { font: 400 .5em/1.2 var(--a24-sans) !important; letter-spacing: -.01em !important; font-style: normal !important; }
@@ -1986,6 +1979,7 @@ html.phone #sheetIn .film.fa24 h2 { font-size: clamp(30px, 10vw, 42px) !importan
 #sheetIn .film.fa24 .ov, #sheetIn .film.fa24 .people, #sheetIn .film.fa24 .cred, #sheetIn .film.fa24 .credits, #sheetIn .film.fa24 .incoll, #sheetIn .film.fa24 .eps .t, #sheetIn .film.fa24 .eps .s, #sheetIn .film.fa24 h3, #sheetIn .film.fa24 .xh { font-family: var(--a24-sans) !important; font-style: normal !important; letter-spacing: -.005em !important; text-transform: none !important; }
 #sheetIn .film.fa24 .ov { font-size: 16px !important; line-height: 1.55 !important; }
 #sheetIn .film.fa24 .meta, #sheetIn .film.fa24 .date, #sheetIn .film.fa24 .incoll span, #sheetIn .film.fa24 .pill { font-family: var(--a24-mono) !important; font-weight: 400 !important; text-transform: uppercase !important; letter-spacing: .04em !important; }
+#editbadge { position: fixed; z-index: 95; left: 50%; transform: translateX(-50%); bottom: max(16px, env(safe-area-inset-bottom)); background: var(--bg) !important; box-shadow: 0 4px 18px rgba(0,0,0,.25); }
 body { font-size: 14px; } .film h2 { font-size: clamp(34px, 4.1vw, 68px) !important; } html.phone .film h2 { font-size: clamp(27px, 9vw, 36px) !important; }
 .card .t, .tracks .tt, .day .cap .t { font-size: .92em; } .film .people, .profp { font-size: 13.5px !important; }
 /* the logo: GRIFFLIX drawn from Grifflix Display, heavier, each letter a solid cut-out with a fine line inside its edge, as Saul
@@ -2056,7 +2050,7 @@ html.phone .vtog span { padding: 6px 8px 5px; letter-spacing: .13em; text-indent
    too ... an intro screen"; then, from Criterion's own list page: "can the criterion C not have the circle in the middle - could GRIFFLIX look like
    the white outlined logo ... Could the colours of the collection be more like the website - and the little icon match the colour of the page it's
    on ... It should be The Criterion Collection at GRIFFLIX"). Criterion's site: a pale grey page, white panels, near-black type, grey details */
-:root { --gc-page: #f4f4f4; --gc-panel: #fff; --gc-ink: #1e1e1e; --gc-grey: #8c8c8c; --gc-line: #e2e2e2; }
+:root { --gc-page: #f6f6f6; --gc-panel: #fff; --gc-ink: #252525; --gc-grey: #8e8e8e; --gc-line: #ececec; --gc-gold: #b4841e; --gc-pale: #cdcdcb; --gc-logo: #231f20; }   /* (criterion.com's own: John, 20 Nov 2026) */
 /* the switch: only the side you're on, in words (John: "only needs to show which toggle is on, rather than both words") */
 #barnav button.vtog, #shnav button.vtog { grid-template-columns: 1fr; }
 .vtog::before { width: calc(100% - 6px) !important; transform: none !important; }
@@ -2177,6 +2171,99 @@ html.gcrit #cbody .clrow { grid-template-columns: 84px 48px minmax(0, 2.4fr) min
 html.gcrit #cbody .clrow img { width: 48px; height: 60px; }
 @media (max-width: 760px) { html.gcrit #cbody .clrow { grid-template-columns: 58px 40px minmax(0, 1fr) 44px; } html.gcrit #cbody .clrow img { width: 40px; height: 50px; } }
 html.gcrit #cbody .cfind::placeholder { color: var(--gc-grey); opacity: 1; }
+/* ---- Criterion's own lettering, as criterion.com sets it (John, 20 Nov 2026, from Criterion's own pages, "you didn't change the criterion
+   collection to its font, you just changed the font"): Mercury (Hoefler & Co) for titles and reading, Mercury Display for the big titles;
+   Gotham for details, Gotham Narrow Bold in spaced capitals for labels and buttons. Their own files once John keeps them in admin, Fonts
+   (critFonts); Montserrat and Source Serif 4 stand in till then ---- */
+:root { --cg: "CritSans", "Montserrat", "Helvetica Neue", Arial, sans-serif; --cgn: "CritNarrow", "CritSans", "Montserrat", "Helvetica Neue", Arial, sans-serif;
+  --cmt: "CritText", "Source Serif 4", Georgia, serif; --cmd: "CritDisplay", "CritText", "Source Serif 4", Georgia, serif; }
+html.gcrit #cbody .colltitle, html.gcrit #cbody .colltitle.gctitle { font: 700 clamp(22px, 3vw, 40px)/1.25 var(--cgn) !important; letter-spacing: .033em !important; text-transform: uppercase !important; }
+html.gcrit.tv #cbody .colltitle { font-size: 30px !important; }
+@media (max-width: 600px) { html.gcrit #cbody .colltitle.gctitle { font-size: 18px !important; } }
+html.gcrit #cbody .gctitle i { font: italic 400 .62em/1 var(--cmt) !important; letter-spacing: -.01em; }
+html.gcrit #cbody .cstats { font: 700 13px/1.23 var(--cgn); letter-spacing: 1px; text-transform: uppercase; }
+html.gcrit #cbody .cstats b { letter-spacing: 1px; }
+html.gcrit #cbody .collhead .ov, html.gcrit #cbody .ov { font: 400 18px/1.6 var(--cmt) !important; letter-spacing: -.3px !important; }
+html.gcrit #cbody .pill, html.gcrit #cbody .sfb, html.gcrit #cbody .cfind { font: 700 13px/1.2 var(--cgn) !important; letter-spacing: .5px !important; text-transform: uppercase !important; }
+html.gcrit #cbody .cfind { text-transform: none !important; font-family: var(--cg) !important; font-weight: 500 !important; letter-spacing: 0 !important; }
+html.gcrit #cbody .clh { font: 400 16px/1.6 var(--cmd) !important; letter-spacing: 0 !important; text-transform: none !important; }
+html.gcrit #cbody .clrow .cls { font: 400 13px/1.15 var(--cg) !important; letter-spacing: -.3px; }
+html.gcrit #cbody .clrow .clt { font: 700 13px/1.23 var(--cg) !important; letter-spacing: -.3px; }
+html.gcrit #cbody .clrow .cld { font: italic 400 13px/1.23 var(--cg) !important; letter-spacing: -.3px; }
+html.gcrit #cbody .clrow .clc, html.gcrit #cbody .clrow .cly { font: 400 13px/1.15 var(--cg) !important; letter-spacing: -.3px; }
+html.gcrit #cbody .card .t { font: 700 13px/1.2 var(--cg) !important; letter-spacing: 0 !important; text-transform: none !important; }
+html.gcrit #cbody .card .s { font: italic 400 13px/1.2 var(--cmd) !important; letter-spacing: 0 !important; text-transform: none !important; }
+html.gcrit #cbody .cset h3, html.gcrit #cbody .csettxt .cssp, html.gcrit #cbody .csettxt .csn { font-family: var(--cgn) !important; font-weight: 700 !important; letter-spacing: 1px !important; text-transform: uppercase !important; }
+html.gcrit #cbody .csettxt h2 { font: 400 clamp(28px, 3.4vw, 44px)/1.1 var(--cmd) !important; letter-spacing: -.4px !important; text-transform: none !important; }
+html.gcrit .sfpop .sfh, html.gcrit .sfpop .sfl, html.gcrit #cbody .sfpop .sfh, html.gcrit #cbody .sfpop .sfl { font: 700 13px/1.23 var(--cgn) !important; letter-spacing: 1px !important; text-transform: uppercase !important; }
+html.gcrit .sfpop .sfg .pill, html.gcrit #cbody .sfpop .sfg .pill { font: 500 13px/1.6 var(--cg) !important; letter-spacing: 0 !important; text-transform: none !important; }
+html.gcrit .sfpop .sfo, html.gcrit #cbody .sfpop .sfo { font: 400 20px/1.6 var(--cmt) !important; letter-spacing: -.4px !important; text-transform: none !important; }
+html.gcrit .sfpop .sfclear, html.gcrit .sfpop #sfdone, html.gcrit #cbody .sfpop #sfdone { font: 700 11px/1.25 var(--cgn) !important; letter-spacing: .7px !important; text-transform: uppercase !important; }
+/* (a Criterion film's own page, as criterion.com's film page: the title in Mercury Display, the summary in Mercury, the details in Gotham, the
+   headings and buttons in Gotham Narrow Bold capitals) */
+#sheetIn .film.fcrit .date { font: 700 13px/1.15 var(--cgn) !important; letter-spacing: 1px !important; text-transform: uppercase !important; }
+#sheetIn .film.fcrit h2 { font: 400 clamp(32px, 3.4vw, 44px)/1.1 var(--cmd) !important; letter-spacing: -.4px !important; text-transform: none !important; }
+html.phone #sheetIn .film.fcrit h2 { font-size: clamp(28px, 8.4vw, 36px) !important; }
+#sheetIn .film.fcrit h2 i { font: italic 400 .6em/1.2 var(--cmt) !important; letter-spacing: 0 !important; }
+#sheetIn .film.fcrit .tag { font: italic 400 18px/1.6 var(--cmt) !important; letter-spacing: -.1px !important; }
+#sheetIn .film.fcrit .ov { font: 400 18px/1.6 var(--cmt) !important; letter-spacing: -.1px !important; }
+html.phone #sheetIn .film.fcrit .ov, html.phone #sheetIn .film.fcrit .tag { font-size: 16.5px !important; }
+#sheetIn .film.fcrit .meta { font: 400 12px/1.6 var(--cg) !important; letter-spacing: 0 !important; text-transform: none !important; }
+#sheetIn .film.fcrit .meta .c { font: 700 11px/1.6 var(--cg) !important; }
+#sheetIn .film.fcrit .people, #sheetIn .film.fcrit .cred, #sheetIn .film.fcrit .credits { font: 400 13px/1.7 var(--cg) !important; letter-spacing: -.3px !important; }
+#sheetIn .film.fcrit .people b, #sheetIn .film.fcrit .cred b { font: 700 12px/1.7 var(--cgn) !important; letter-spacing: 1px !important; text-transform: uppercase !important; }
+#sheetIn .film.fcrit h3, #sheetIn .film.fcrit .xh, #sheetIn .film.fcrit .incoll span, #sheetIn .film.fcrit .chips, #sheetIn .film.fcrit .chips * { font: 700 13px/1.15 var(--cgn) !important; letter-spacing: 1px !important; text-transform: uppercase !important; font-style: normal !important; }
+#sheetIn .film.fcrit .eps .t, #sheetIn .film.fcrit .xrow { font: 400 13px/1.55 var(--cg) !important; letter-spacing: -.1px !important; text-transform: none !important; }
+#sheetIn .film.fcrit .eps .s { font: italic 400 13px/1.4 var(--cmd) !important; }
+#sheetIn .film.fcrit .incoll a { font: 700 13px/1.2 var(--cg) !important; letter-spacing: 0 !important; }
+#sheetIn .film.fcrit .pill { font: 700 13px/1.25 var(--cgn) !important; letter-spacing: .6px !important; text-transform: uppercase !important; }
+/* ---- Criterion's own colours, as criterion.com has them (John, 20 Nov 2026, "can we make sure colours are correct on criterion collection
+   too"): ink #252525, gold #B4841E for links and the main button, grey #8E8E8E for details, pale #CDCDCB for small labels, #F6F6F6 behind,
+   white surfaces, #ECECEC between rows; buttons white with a 2px #F6F6F6 edge, filled #252525 when pointed at ---- */
+html.gcrit #cbody .gctitle .gcws { display: inline-flex; align-items: center; }
+html.gcrit #cbody .gctitle .gcws svg { width: 6.2em; height: auto; display: block; fill: var(--gc-logo); }
+html.gcrit #cbody .gctitle .gctm path { fill: var(--gc-logo); }
+@media (max-width: 600px) { html.gcrit #cbody .colltitle.gctitle { font-size: 26px !important; } html.gcrit #cbody .gctitle .gcws svg { width: 6.6em; } }
+html.gcrit #cbody .collhead { background: var(--gc-page) !important; }
+html.gcrit #cbody .cstats { color: var(--gc-pale) !important; } html.gcrit #cbody .cstats b { color: var(--gc-ink) !important; }
+html.gcrit #cbody .collhead + .tabs, html.gcrit #cbody #cgrid { background: #fff !important; }
+html.gcrit #cbody .collhead + .tabs { border-top: 2px solid var(--gc-line) !important; }
+html.gcrit #cbody .pill, html.gcrit #cbody .sfb { background: #fff !important; color: var(--gc-ink) !important; border: 2px solid var(--gc-page) !important; border-radius: 0 !important; box-shadow: none !important; }
+html.gcrit #cbody .pill.on, html.gcrit #cbody .sfb.on { background: var(--gc-page) !important; }
+html.gcrit #cbody .pill:hover, html.gcrit #cbody .sfb:hover, html.gcrit #cbody .pill:focus-visible, html.gcrit #cbody .sfb:focus-visible { background: var(--gc-ink) !important; border-color: var(--gc-ink) !important; color: #fff !important; }
+html.gcrit #cbody .cfind { background: var(--gc-page) !important; border: 2px solid var(--gc-page) !important; color: var(--gc-ink) !important; border-radius: 0 !important; }
+html.gcrit #cbody .clhead { border-bottom: 2px solid var(--gc-ink) !important; } html.gcrit #cbody .clh { color: var(--gc-ink) !important; }
+html.gcrit #cbody .clrow { border-bottom: 2px solid var(--gc-line) !important; color: var(--gc-ink) !important; } html.gcrit #cbody .clrow:hover { background: #fff !important; }
+html.gcrit #cbody .clrow:not(.clhead):hover .clt { color: var(--gc-gold) !important; }
+html.gcrit #cbody .clrow .cls, html.gcrit #cbody .clrow .clt { color: var(--gc-ink) !important; }
+html.gcrit #cbody .clrow .cld, html.gcrit #cbody .clrow .clc, html.gcrit #cbody .clrow .cly { color: var(--gc-grey) !important; opacity: 1 !important; }
+html.gcrit #cbody .card .t { color: var(--gc-ink) !important; } html.gcrit #cbody .card .s { color: var(--gc-grey) !important; } html.gcrit #cbody .card:hover .t { color: var(--gc-gold) !important; }
+html.gcrit .sfpop { background: #fff !important; color: var(--gc-ink) !important; border: 2px solid var(--gc-page) !important; border-radius: 0 !important; }
+html.gcrit .sfpop .sfh, html.gcrit #cbody .sfpop .sfh { color: var(--gc-pale) !important; } html.gcrit .sfpop .sfl, html.gcrit #cbody .sfpop .sfl { color: var(--gc-ink) !important; opacity: 1 !important; }
+html.gcrit .sfpop .sfg .pill small, html.gcrit #cbody .sfpop .sfg .pill small { color: var(--gc-pale) !important; opacity: 1 !important; }
+html.gcrit .sfpop .sfg .pill.on, html.gcrit #cbody .sfpop .sfg .pill.on { background: var(--gc-ink) !important; border-color: var(--gc-ink) !important; color: #fff !important; }
+html.gcrit .sfpop #sfdone, html.gcrit #cbody .sfpop #sfdone { background: var(--gc-gold) !important; border: 2px solid var(--gc-gold) !important; color: #fff !important; }
+html.gcrit .sfpop #sfdone:hover, html.gcrit #cbody .sfpop #sfdone:hover { background: var(--gc-ink) !important; border-color: var(--gc-ink) !important; }
+html.gcrit .sfpop .sfclear, html.gcrit #cbody .sfpop .sfclear { color: var(--gc-grey) !important; background: var(--gc-page) !important; padding: 6px 10px !important; text-decoration: none !important; }
+html.gcrit .sfpop .sfclear:hover, html.gcrit #cbody .sfpop .sfclear:hover { background: var(--gc-ink) !important; color: #fff !important; }
+html.gcrit .sfpop .sfo { border-top-color: var(--gc-line) !important; } html.gcrit .sfpop .sfo.on { color: var(--gc-gold) !important; }
+html.gcrit .sfpop input { background: var(--gc-page); border: 2px solid var(--gc-page); color: var(--gc-ink); }
+/* (a Criterion film's page: white, ink text, the kicker and links gold, details grey, small labels pale; Play gold as Add to Cart, the rest
+   white with a pale edge, ink when pointed at) */
+#sheet .sheet:has(.film.fcrit) { background: #fff !important; }
+#sheetIn .film.fcrit { background: #fff; color: var(--gc-ink); --fg: #252525; --fg-2: #8e8e8e; --line: #ececec; --bg: #fff; --kink: 37, 37, 37; }
+#sheetIn .film.fcrit h2, #sheetIn .film.fcrit .tag, #sheetIn .film.fcrit .ov, #sheetIn .film.fcrit h3, #sheetIn .film.fcrit .xh, #sheetIn .film.fcrit .eps .t { color: var(--gc-ink) !important; }
+#sheetIn .film.fcrit .date { color: var(--gc-gold) !important; }
+#sheetIn .film.fcrit .meta, #sheetIn .film.fcrit .chips, #sheetIn .film.fcrit .chips *, #sheetIn .film.fcrit .eps .s { color: var(--gc-grey) !important; }
+#sheetIn .film.fcrit .meta .c { border-color: var(--gc-pale) !important; color: var(--gc-grey) !important; }
+#sheetIn .film.fcrit .people, #sheetIn .film.fcrit .cred { color: var(--gc-ink) !important; }
+#sheetIn .film.fcrit .people b, #sheetIn .film.fcrit .cred b, #sheetIn .film.fcrit .incoll span { color: var(--gc-pale) !important; opacity: 1 !important; }
+#sheetIn .film.fcrit .incoll a { color: var(--gc-gold) !important; text-decoration-color: rgba(180, 132, 30, .4) !important; } #sheetIn .film.fcrit .incoll a:hover { color: var(--gc-ink) !important; }
+#sheetIn .film.fcrit .pill, #sheetIn .film.fcrit .ico, #sheetIn .film.fcrit .fback { background: #fff !important; color: var(--gc-ink) !important; border: 2px solid var(--gc-page) !important; border-radius: 0 !important; box-shadow: none !important; }
+#sheetIn .film.fcrit .pill:hover, #sheetIn .film.fcrit .ico:hover, #sheetIn .film.fcrit .fback:hover { background: var(--gc-ink) !important; border-color: var(--gc-ink) !important; color: #fff !important; }
+#sheetIn .film.fcrit .pill.go#aplay { background: var(--gc-gold) !important; border-color: var(--gc-gold) !important; color: #fff !important; }
+#sheetIn .film.fcrit .pill.go#aplay:hover { background: var(--gc-ink) !important; border-color: var(--gc-ink) !important; }
+#sheetIn .film.fcrit .pill.danger { color: #b3261e !important; }
 /* the collection's cover, in the same design (John: "could we also change the Collection picture to the Criterion at Grifflix design") */
 .card.coll .ccov.gcc { background: var(--gc-page); color: var(--gc-ink); border-color: var(--gc-line); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 8% 7%; }
 .gcc .gcm { width: 34%; height: auto; fill: var(--gc-ink); }
@@ -2186,7 +2273,9 @@ html.gcrit #cbody .cfind::placeholder { color: var(--gc-grey); opacity: 1; }
 .gcc small { display: block; margin-top: 10%; font: 600 5.4cqw/1 var(--kfont); letter-spacing: .18em; text-transform: uppercase; color: #555; }
 /* ---- A24 at Grifflix: A24's own list of its films (its grotesk, its typewriter, black on white), with Grifflix's lettering (John, 19 Nov 2026,
    "I want an A24 page in the same way we have a criterion one ... blend Grifflix style with A24's ... use the way they list their films") */
-:root { --a24-page: #fff; --a24-ink: #000; --a24-grey: #8f8f8f; --a24-dim: #a39e96; --a24-line: #e3e3e3; --a24-sans: "Inter Tight", "Helvetica Neue", Helvetica, Arial, sans-serif; --a24-mono: "DM Mono", ui-monospace, "SF Mono", Menlo, monospace; }
+/* (A24's own fonts, as its site has them: PP Neue Montreal and PP Neue Montreal Mono (Pangram Pangram): whichever John keeps in admin, Fonts,
+   however named, made A24Sans and A24Mono by a24Fonts(); Inter Tight and DM Mono stand in till then: John, 20 Nov 2026, "what about a24?") */
+:root { --a24-page: #fff; --a24-ink: #000; --a24-grey: #8f8f8f; --a24-dim: #a39e96; --a24-line: #e3e3e3; --a24-sans: "A24Sans", "Inter Tight", "Helvetica Neue", Helvetica, Arial, sans-serif; --a24-mono: "A24Mono", "DM Mono", ui-monospace, "SF Mono", Menlo, monospace; }
 /* (A24's own wordmark, as on its site, drawn from its own outline: John, 19 Nov 2026, "use the actual A24 logo rather than the made up one") */
 .a24m { display: inline-block; line-height: 0; vertical-align: middle; } .a24m svg { display: block; height: .78em; width: auto; fill: currentColor; }
 html.public .a24btn { display: none !important; }
@@ -2549,15 +2638,28 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '196139cae7e5' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '325020fffd76' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
 var $ = function (s, el) { return (el || document).querySelector(s); };
 var $$ = function (s, el) { return [].slice.call((el || document).querySelectorAll(s)); };
 var Q = new URLSearchParams(location.search);
+// (John's editing (Edit, Delete, Edit collections, Convert, a collection's pencil) hidden till he turns on edit mode, from the admin page's
+// link (?edit=1); Done turns it off: John, 20 Nov 2026, "I also don't need the edit button on the screen at all anywhere, keep them hidden
+// except in an edit mode, which will be linked from admin")
+function editMode() { return !!(ME && ME.owner && store.get('grifflix-edit') === '1'); }
+function editBadge() {
+  var b = document.getElementById('editbadge');
+  if (!editMode() || TV) { if (b) b.remove(); return; }
+  if (b) return;
+  b = document.createElement('button'); b.type = 'button'; b.id = 'editbadge'; b.className = 'pill'; b.innerHTML = 'Edit mode · <b>Done</b>';
+  b.onclick = function () { store.set('grifflix-edit', ''); b.remove(); if (typeof route === 'function') route(); };
+  document.body.appendChild(b);
+}
 var store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
               set: function (k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} } };
+try { if (/[?&]edit=1\b/.test(location.search)) { store.set('grifflix-edit', '1'); history.replaceState(null, '', location.pathname + location.hash); } } catch (e) {}
 if (Q.has('gateway')) store.set('grifflix-gateway', Q.get('gateway') || null);
 store.set('grifflix-demo', null);   // (no demo any more, and none left switched on from before: John, 9 Nov 2026: "grifflix seems to be redirecting me to a demo")
 var DEMO = false;
@@ -3297,7 +3399,7 @@ function start() {
     }
     macWake();
     api('me').then(function (me) {
-      ME = me; window.MACOK = true;
+      ME = me; window.MACOK = true; try { editBadge(); } catch (e) {}
       $('#who').textContent = me.name ? me.name.split(' ')[0] : 'Profile';
       if (TV) { $('#who').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>'; $('#who').setAttribute('aria-label', 'Profile'); $('#who').classList.add('whoico'); }   // (the TV: an icon, not the name: John, 8 Nov 2026)
       if (DEMO) $('#note').innerHTML = '<div class="notice"><b>Demo.</b> Made-up films, so you can see how Grifflix works before the Mac mini is connected. Changes stay on this device. <a href="?demo=0">Leave the demo</a></div>';
@@ -3410,6 +3512,7 @@ window.grifflixJoin = join;   // (the Fire TV app's menu: Sign in with a code)
 
 /* ------------------------------------------------------------------ pages */
 function route() {
+  try { editBadge(); } catch (e) {}
   if (PUBLIC && !DEMO) {   // (signed out: the calendar, the themes and the films on it; the library's pages want a sign-in)
     var ph = (location.hash || '#home').slice(1).split('/')[0];
     if (ph === 'profile') { location.hash = '#home'; return signInSheet(); }
@@ -5866,14 +5969,14 @@ function collectionView(id, into) {
   apiMemo('collection?id=' + encodeURIComponent(id), function (c) {
     if (!$('#cbody')) return;
     sfMode(/criterion/i.test(c.name));   // (before its bar is drawn: the bar shows Criterion's sort)
-    document.documentElement.classList.toggle('gcrit', /criterion/i.test(c.name));   // (The Criterion Collection at Grifflix: its own look)
+    document.documentElement.classList.toggle('gcrit', /criterion/i.test(c.name)); if (/criterion/i.test(c.name)) critFonts();   // (The Criterion Collection at Grifflix: its own look)
     var A24 = /^a24$/i.test(c.name); document.documentElement.classList.toggle('ga24', A24); if (A24) a24Fonts();   // (A24 at Grifflix: A24's own list: John, 19 Nov 2026)
     var cov = collCard({ id: c.id, name: c.name, children: c.items.length }).replace(/^<a [^>]*>|<\/a>$/g, '');   // (its drawn cover, as on the shelf)
-    $('#cbody').innerHTML = (A24 ? '<div class="collhead a24head"><div><div class="a24top"><span class="a24lock">' + a24Mark() + '<small>at</small><b class="gcx" aria-label="Grifflix">' + gxSvg(.5) + '</b></span><span class="hsub"><i>' + c.items.length + ' films</i></span></div>' +
+    $('#cbody').innerHTML = (A24 ? '<div class="collhead a24head"><div><div class="a24top"><span class="a24lock">' + a24Mark() + '</span><span class="hsub"><i>' + c.items.length + ' films</i></span></div>' +
       '<h1 class="colltitle">All films</h1>' + (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
       '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find an A24 film" aria-label="Find in A24" autocomplete="off"><span class="sp"></span></div>' +
       '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>' : '<div class="collhead"><div class="card coll collpic">' + cov + '</div>' +
-      '<div><div class="kick">Collection</div><h1 class="colltitle' + (/criterion/i.test(c.name) ? ' gctitle"><span class="gclk">' + gcMark('gctm') + '<span class="gcw">' + esc(c.name) + '</span></span>'   /* (no "at GRIFFLIX": John, 20 Nov 2026) */ : '">' + esc(c.name)) + '</h1><div class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' title' : ' titles') + '</i></div>' +
+      '<div><div class="kick">Collection</div><h1 class="colltitle' + (/criterion/i.test(c.name) ? ' gctitle"><span class="gclk">' + gcMark('gctm') + (/^the criterion collection$/i.test(c.name) ? '<span class="gcw gcws" role="img" aria-label="' + esc(c.name) + '">' + gcWord() + '</span>' : '<span class="gcw">' + esc(c.name) + '</span>') + '</span>'   /* (no "at GRIFFLIX": John, 20 Nov 2026) */ : '">' + esc(c.name)) + '</h1><div class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' title' : ' titles') + '</i></div>' +
       // (Criterion's: what's in it at a glance, in the room the big cover took)
       (/criterion/i.test(c.name) ? '<div class="cstats">' + cStatsOf(c.items) + '</div>' : '') +
       (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
@@ -5986,7 +6089,7 @@ function collectionView(id, into) {
       $('#cvsets').onclick = function () { csets = !csets; openSet = null; store.set('grifflix-csets', csets ? '1' : ''); this.classList.toggle('on', csets); this.setAttribute('aria-pressed', csets); draw(); };
     }
     draw();
-    if (ME && ME.owner && !TV) {
+    if (editMode() && !TV) {
       // (John's tools behind one small pencil, so his page is spaced as everyone's: John, 18 Nov 2026, "Can there just be a small edit icon for me")
       $('#cbody .collhead > div:last-child').insertAdjacentHTML('beforeend', '<button type="button" class="ctoolic" id="ctools" aria-label="Edit this collection" title="Edit this collection" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg></button>');
       $('#cbody .collhead > div:last-child').insertAdjacentHTML('beforeend', '<div class="tabs" id="ctoolrow" hidden style="margin:16px 0 0"><button class="pill" id="cedit">Edit the films</button><button class="pill" id="cdesc">' + (c.overview ? 'Change the description' : 'Add a description') + '</button><button class="pill" id="crename">Rename</button><button class="pill" id="cdelete">Delete the collection</button></div>');
@@ -6243,6 +6346,9 @@ function navWords(on) {
 
 // ---- Grifflix at Criterion: the C beside the switch, its intro, its page and its cover (John, 17 Nov 2026)
 var GCPATH = 'M31.5,48C22.3,48,15,40.6,15,31.5C15,22.3,22.3,15,31.5,15c7.4,0,13.6,4.8,15.7,11.6l14.3-4.2C57.7,9.4,45.7,0,31.5,0C14.1,0,0,14.1,0,31.5C0,48.8,14.1,63,31.5,63c2.1,0,4.2-0.2,6.3-0.6l-3.4-14.6C33.4,47.8,32.4,48,31.5,48z';
+// (Criterion's own wordmark, THE CRITERION COLLECTION, as its site draws it: John, 20 Nov 2026, "the word title is actually an svg")
+var GCWORD = 'M12.22 17.414H10.8v-6.716H8.25v-1.31h6.512v1.31H12.22zm9.45-3.383v3.383h1.41V9.387h-1.41v3.337h-3.832V9.387h-1.405v8.026h1.405V14.03zm9.175-4.643h-5.948v8.027h6.006v-1.26h-4.595v-2.155h4.022v-1.264h-4.022v-2.088h4.537zm12.128 8.163a4.146 4.146 0 0 0 3.257-1.42l-.906-.92a3.13 3.13 0 0 1-2.303 1.045 2.714 2.714 0 0 1-2.648-2.863 2.695 2.695 0 0 1 2.65-2.845 3.194 3.194 0 0 1 2.244.998l.91-1.043a4.19 4.19 0 0 0-3.147-1.252 4.065 4.065 0 0 0-4.138 4.164 4.035 4.035 0 0 0 4.08 4.136m8.3-6.876c1.044 0 1.666.458 1.666 1.343 0 .824-.644 1.348-1.652 1.348h-2.063v-2.69h2.05m3.353 6.74l-2.172-3.038a2.404 2.404 0 0 0 1.917-2.44c0-1.573-1.134-2.55-2.98-2.55h-3.58v8.027h1.413v-2.797h1.766l1.97 2.797zm3.056 0V9.386h-1.41v8.027zm5.527-6.717h2.543v-1.31H59.24v1.31h2.55v6.716h1.42zm10.018-1.31h-5.954v8.026h6.012v-1.26h-4.6v-2.155h4.023v-1.264h-4.024v-2.088h4.542zm5.32 1.286c1.04 0 1.662.458 1.662 1.343 0 .824-.643 1.348-1.652 1.348h-2.063v-2.69h2.052m3.347 6.74l-2.167-3.038a2.404 2.404 0 0 0 1.91-2.44c0-1.573-1.13-2.55-2.975-2.55h-3.58v8.027h1.413v-2.797h1.762l1.975 2.797zm3.115 0V9.386H83.6v8.027zm5.8-6.868a2.754 2.754 0 0 1 2.73 2.867 2.715 2.715 0 0 1-2.71 2.84 2.752 2.752 0 0 1-2.724-2.862 2.715 2.715 0 0 1 2.705-2.845m0 7.003a4.15 4.15 0 1 0-4.18-4.136 4.11 4.11 0 0 0 4.18 4.136m11.112-2.612l-4.3-5.55h-1.308v8.025h1.39v-5.71l4.425 5.71h1.182V9.387h-1.39zm14.586 2.612a4.14 4.14 0 0 0 3.254-1.42l-.905-.92a3.137 3.137 0 0 1-2.306 1.045 2.718 2.718 0 0 1-2.65-2.863 2.7 2.7 0 0 1 2.65-2.845 3.184 3.184 0 0 1 2.25.998l.904-1.043a4.173 4.173 0 0 0-3.138-1.252 4.066 4.066 0 0 0-4.143 4.164 4.04 4.04 0 0 0 4.085 4.136m8.423-7.003a2.75 2.75 0 0 1 2.73 2.867 2.712 2.712 0 0 1-2.705 2.84 2.752 2.752 0 0 1-2.728-2.862 2.716 2.716 0 0 1 2.704-2.845m0 7.003a4.15 4.15 0 1 0-4.183-4.136 4.11 4.11 0 0 0 4.184 4.136m5.582-.137h5.632V16.13h-4.22V9.387h-1.412zm7.144 0h5.627V16.13h-4.222V9.387h-1.404zm13.085-8.026h-5.948v8.027h6.007v-1.26h-4.597v-2.155h4.022v-1.264h-4.022v-2.088h4.538zm5.468 8.163a4.145 4.145 0 0 0 3.255-1.42l-.906-.92a3.133 3.133 0 0 1-2.303 1.045 2.715 2.715 0 0 1-2.645-2.863 2.695 2.695 0 0 1 2.644-2.845 3.177 3.177 0 0 1 2.245.998l.91-1.043a4.187 4.187 0 0 0-3.142-1.252 4.066 4.066 0 0 0-4.142 4.164 4.037 4.037 0 0 0 4.082 4.136m8.434-6.852h2.55v-1.31h-6.512v1.31h2.544v6.716h1.418zm5.52 6.716V9.387h-1.413v8.027zm5.854-6.867a2.754 2.754 0 0 1 2.73 2.867 2.71 2.71 0 0 1-2.705 2.84 2.755 2.755 0 0 1-2.73-2.862 2.716 2.716 0 0 1 2.706-2.845m0 7.003a4.15 4.15 0 1 0-4.18-4.136 4.11 4.11 0 0 0 4.18 4.136m11.307-2.612l-4.298-5.55h-1.31v8.025h1.39v-5.71l4.425 5.71h1.183V9.387h-1.39z';
+function gcWord(cls) { return '<svg class="' + (cls || '') + '" viewBox="8.25 9.25 180.47 8.31" aria-hidden="true"><path d="' + GCWORD + '"/></svg>'; }
 function gcMark(cls) { return '<svg class="' + (cls || '') + '" viewBox="-2 -2 67 67" aria-hidden="true"><path class="c" d="' + GCPATH + '"/></svg>'; }
 function gcFind() {   // The Criterion Collection itself (else the first collection called Criterion anything)
   return api('collections').then(function (r) { var L = r.collections || []; return L.filter(function (c) { return /^the criterion collection$/i.test(c.name); })[0] || L.filter(function (c) { return /criterion/i.test(c.name); })[0]; });
@@ -6345,8 +6451,33 @@ function critSound() {
 // directed it, who's in it, a still over the right half as you point at one (John, 19 Nov 2026, "I want an A24 page in the same way we
 // have a criterion one, with a nice intro screen. This time it will blend Grifflix style with A24's ... use the way they list their films
 // in the all films section")
+// (fonts John keeps in admin, Fonts, used by name: each file whose name a rule matches made that family, its weight and slant read from its
+// name (A24's and Criterion's own, however the files are named): John, 20 Nov 2026)
+var KEPTF = null;
+function keptFonts(rules) {
+  var GF = 'https://sotd-playlists.cooperking.workers.dev/gf/';
+  KEPTF = KEPTF || fetch(GF + 'list').then(function (r) { return r.ok ? r.json() : { fonts: [] }; }).catch(function () { return { fonts: [] }; });
+  KEPTF.then(function (j) {
+    var W = [['hairline', 100], ['thin', 100], ['xlight', 200], ['extralight', 200], ['ultralight', 200], ['light', 300], ['book', 400], ['roman', 400], ['regular', 400], ['normal', 400], ['medium', 500], ['semibold', 600], ['demibold', 600], ['extrabold', 800], ['ultrabold', 800], ['bold', 700], ['black', 900], ['heavy', 900], ['ultra', 900]];
+    var css = (j.fonts || []).map(function (n) {
+      var r = rules.filter(function (x) { return x[0].test(n); })[0]; if (!r) return '';
+      var base = n.replace(/\.woff2?$/, ''), rest = base.indexOf('-') >= 0 ? base.slice(base.indexOf('-')) : base;   // (the family's part of the name off, where a hyphen shows it)
+      var w = /variable/.test(rest) ? '100 900' : ((W.filter(function (x) { return rest.indexOf(x[0]) >= 0; })[0] || [0, 400])[1]);
+      return '@font-face { font-family: "' + r[1] + '"; font-weight: ' + w + '; font-style: ' + (/italic/.test(rest) ? 'italic' : 'normal') + '; font-display: swap; src: url("' + GF + n + '") format("' + (/2$/.test(n) ? 'woff2' : 'woff') + '"); }';
+    }).filter(Boolean).join('\n');
+    if (css) { var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st); }
+  });
+}
+function critFonts() {   // (Criterion's Mercury and Gotham, if kept; Source Serif 4 and Montserrat stand in)
+  if (critFonts.d) return; critFonts.d = 1;
+  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,700;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap'; document.head.appendChild(l);
+  keptFonts([[/^gotham-?narrow(ssm)?-/, 'CritNarrow'], [/^gotham(ssm)?-/, 'CritSans'], [/^mercury-?display/, 'CritDisplay'], [/^mercury-?(text|ssm|g1)|^mercury-/, 'CritText']]);
+}
 function a24Fonts() {   // (A24's grotesk and typewriter, fetched only when A24 is shown)
   if (a24Fonts.d) return; a24Fonts.d = 1;
+  // (A24's real ones, PP Neue Montreal (its Arabic edition too, which carries the same Latin letters) and its Mono, if John has kept them;
+  // not its Text cut, made for small print, which A24's site doesn't use: John, 20 Nov 2026)
+  keptFonts([[/^ppneuemontreal-?mono/, 'A24Mono'], [/^ppneuemontreal(?!-?(text|condensed|semimono))/, 'A24Sans']]);
   var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;800&family=DM+Mono:wght@400;500&display=swap'; document.head.appendChild(l);
 }
 var A24PATH = 'M379.85,111.86h-.1v-.04h-10.9V.2l-105.9,117.6h-81.3c-3.5,0-6.3-1.28-6.3-4.78,0-2.4,1.3-4.4,3.2-5.5.1-.05.1-.07.2-.1,8.2-4.2,16.1-6.4,20.6-7.7l1.4-.4c2.7-.8,6.1-1.5,9.6-2.3,1.2-.3,2.5-.6,3.8-.8,21.5-4.9,50.6-14.82,50.6-49.12,0-7.6-1.9-15.3-6.3-22.2-7-11-20.2-19.9-41.8-22.5-4.2-.5-8.8-.8-13.7-.8-33.5,0-56.1,17.6-56.9,44v1.4c0,14.6,11.8,26.4,26.4,26.4s26.4-11.9,26.4-26.4-11.8-26.4-26.4-26.4c-.8,0-1.6,0-2.4.1h-.1c-5.4.5-6.16.81-10.12,2.36,2.79-3.66,3.49-4.13,8.22-7.57.1,0,.1-.1.2-.1,9-5.8,21-9,35.1-9,1.5,0,3,0,4.4.1h.9c3.1.4,5.2,2.35,5.2,5.55v72.95c0,3.4-2.4,6.3-5.5,7.1-.2,0-.3.1-.5.1-3,.6-5.7,1.3-8.1,2l-1.3.4c-6.5,1.8-20,5.6-31.9,14.7-4.2,3.2-7.8,6.7-10.9,10.6-7.8,9.9-11.7,22-11.7,36.1h84.9l34.3-38.1h62.3v38.1h43.5v-38.07h10.8v-.03h.1v-6.04.01h0ZM325.35,111.8l-48.19-.06,48.19-54.62v54.68ZM57.85,32.4c-5.4,11.3-16.6,12.5-16.6,12.5l5.4,11.5v.1L.15,155.9h6.58l15.62-33.3h55.23l15.5,33.3h47.96L70.75,4.9l-12.9,27.5ZM25.27,116.5l24.75-52.86,24.69,52.86H25.27Z';
@@ -6880,7 +7011,7 @@ function itemSheet(it, ctx) {
   var pst = ctx.cover || (it.poster && it.type !== 'episode' ? img(it.poster, 'Primary', 400) : '');   // (ctx.cover: as it was in the box set it was opened from)   // (the poster, whole, beside the words on a big screen)
   S.sheetIt = it; S.sheetCtx = ctx;
   var kept = sheetKeep() || (($('#sheetIn > .film') || S.backItem) && SHEETBACK.length) || ctx.kept;   // (from a page of films: that page kept, and a way back to it)
-  var hse = filmHouse(it); if (hse === 'a24') a24Fonts();
+  var hse = filmHouse(it); if (hse === 'a24') a24Fonts(); if (hse === 'crit') critFonts();
   openSheet('<div class="film' + (hse ? ' f' + hse : '') + (pst ? ' hasposter' : '') + (it.type === 'series' ? ' series' : '') + '">' + (!TV ? '<button type="button" class="fback" id="fback" aria-label="Back">‹ Back</button>' : '') + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it)) + (it.spine ? ' · Criterion no. ' + esc(String(it.spine)) : '')) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');
   $$('#sheetIn [data-dstep]').forEach(function (b) { b.onclick = function () { dayStep(+b.dataset.dstep); }; });
   // (a Back on every film: to the page of films it came from, else closed, back where you were: John, 18 Nov 2026, "Films should have a back
@@ -6935,17 +7066,17 @@ function bodyHTML(it, ctx) {
   if (!PUBLIC && !it.ext) {   // (none of these for a film Grifflix hasn't)
     h += '<button class="ico" id="aheart" aria-label="Save for later">' + HEART(it.hearted) + '</button>';
     if (NOTES) h += '<button class="pill" id="aaddpl">+ Playlist</button><button class="pill" id="aaddcal">+ My calendar</button>';
-    if (ME && ME.owner && it.type !== 'video') h += '<button class="pill" id="acoll">Edit collections</button>';
+    if (editMode() && it.type !== 'video') h += '<button class="pill" id="acoll">Edit collections</button>';
     // (John's: the Mac mini to do this one next, when it needs anything: John, 13 Nov 2026, "a convert now option to films if I need them sooner")
-    if (ME && ME.owner && it.conv) h += '<button class="pill" id="aconv" title="' + esc('The Mac mini will ' + it.conv.replace(/^to /, '')) + '"' + (it.convNow || it.convNext ? ' disabled' : '') + '>' +
+    if (editMode() && it.conv) h += '<button class="pill" id="aconv" title="' + esc('The Mac mini will ' + it.conv.replace(/^to /, '')) + '"' + (it.convNow || it.convNext ? ' disabled' : '') + '>' +
       (it.convNow ? 'Converting now' : it.convNext ? 'Next for the Mac mini ✓' : /^to make smaller/.test(it.conv) ? 'Make smaller next' : 'Convert next') + '</button>';
     if (ME && ME.downloads && !TV && !isSeries) h += '<button class="pill" id="adown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5M5 21h14"/></svg>Download</button>';
   }
   if (!it.ext && shareDayOf(it)) h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button>';
   // (John's Fix match: the film or series chosen from TMDB when the media server named it wrong, or didn't know it: John, 15 Nov 2026)
-  if (!PUBLIC && !it.ext && ME && ME.owner && !TV && (it.type === 'movie' || it.type === 'series')) h += '<button class="pill" id="aident">Edit</button>';
+  if (!PUBLIC && !it.ext && editMode() && !TV && (it.type === 'movie' || it.type === 'series')) h += '<button class="pill" id="aident">Edit</button>';
   // (John's Delete: last in the row, apart from the rest)
-  if (!PUBLIC && !it.ext && ME && ME.owner && !TV && (it.type === 'movie' || it.type === 'series')) h += '<button class="pill danger" id="adel">' + (it.type === 'series' ? 'Delete the series' : 'Delete') + '</button>';
+  if (!PUBLIC && !it.ext && editMode() && !TV && (it.type === 'movie' || it.type === 'series')) h += '<button class="pill danger" id="adel">' + (it.type === 'series' ? 'Delete the series' : 'Delete') + '</button>';
   h += '</div>';   // (the row closed whatever's in it: with no Share button it was left open and a series' episodes went inside it, Play and the heart floating beside them)
   // (the collections it's in, listed on its page, each opening that collection: John, 18 Nov 2026, "It should just list the collections it's in
   // on the film's page")
