@@ -2971,12 +2971,42 @@ def make_handler(g):
             it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid)) or {}
             kind = 'Series' if it.get('Type') == 'Series' else 'Movie'
             if not b:
-                name = str(q.get('q') or it.get('Name') or '').strip()[:120]
+                name = str(q.get('q') or it.get('Name') or '').strip()[:300]
                 year = int(q['year']) if str(q.get('year') or '').isdigit() else None
-                info = {'Name': name}
-                if year:
-                    info['Year'] = year
-                res = g.jf.call('POST', '/Items/RemoteSearch/' + kind, {'SearchInfo': info, 'ItemId': iid, 'IncludeDisabledProviders': False}) or []
+                # (a TMDB or IMDb link, or just its number, pasted in: that film itself (John, 20 Nov 2026: "if I could paste that in it
+                # would be fine"))
+                mt = re.search(r'themoviedb\.org/(?:movie|tv)/(\d+)', name) or re.match(r'^\s*(\d{1,8})\s*$', name)
+                mi = re.search(r'\b(tt\d{6,10})\b', name)
+                if mt or mi:
+                    info = {'Name': '', 'ProviderIds': {'Tmdb': mt.group(1)} if mt else {'Imdb': mi.group(1)}}
+                else:
+                    info = {'Name': name}
+                    if year:
+                        info['Year'] = year
+                res = g.jf.call('POST', '/Items/RemoteSearch/' + kind, {'SearchInfo': info, 'ItemId': iid, 'IncludeDisabledProviders': False}, timeout=60) or []
+                # (and TMDB searched more loosely where that finds little: its words one at a time, the closest titles first, so one
+                # letter out still finds it: TMDB spells it "The File on Thelma Jordon", the folder "Jordan": John, 20 Nov 2026)
+                if not (mt or mi) and len(res) < 3 and kind == 'Movie' and g.st.get('tmdb_key'):
+                    import difflib
+                    have = set(str((r.get('ProviderIds') or {}).get('Tmdb') or '') for r in res)
+                    words = sorted(set(w for w in re.findall(r'[^\W\d_]{4,}', name) if fold(w) not in ('with', 'from', 'that', 'this', 'what', 'when')), key=len, reverse=True)[:3]
+                    found = {}
+                    for w in words:
+                        for y in ([year, None] if year else [None]):
+                            q_ = {'query': w}
+                            if y:
+                                q_['year'] = y
+                            for x in (tmdb(g, '/search/movie', **q_) or {}).get('results') or []:
+                                found.setdefault(x['id'], x)
+                    sc = sorted(found.values(), key=lambda x: -max(difflib.SequenceMatcher(None, fold(name), fold(x.get(k))).ratio() for k in ('title', 'original_title')))
+                    for x in sc[:12]:
+                        if str(x['id']) in have:
+                            continue
+                        if max(difflib.SequenceMatcher(None, fold(name), fold(x.get(k))).ratio() for k in ('title', 'original_title')) < .6:
+                            break
+                        res.append({'Name': x.get('title'), 'ProductionYear': int((x.get('release_date') or '0')[:4] or 0) or None, 'Overview': x.get('overview'),
+                                    'ImageUrl': ('https://image.tmdb.org/t/p/w185' + x['poster_path']) if x.get('poster_path') else None,
+                                    'ProviderIds': {'Tmdb': str(x['id'])}, 'SearchProviderName': 'TheMovieDb'})
                 out = []
                 for r in res[:20]:
                     pid = r.get('ProviderIds') or {}

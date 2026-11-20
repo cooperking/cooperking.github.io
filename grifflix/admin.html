@@ -217,6 +217,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .thxfmt button.on { background: var(--fg); color: #fff; border-color: var(--fg); }
 #thxopen { display: inline-flex; align-items: center; min-height: 38px; padding: 0 14px; border: 1px solid var(--fg); color: var(--fg); text-decoration: none; font: 600 12px/1 "Hanken Grotesk", sans-serif; letter-spacing: .14em; text-transform: uppercase; }
 .thxview .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; font-size: 14px; }
+.umres { list-style: none; margin: 8px 0 0; padding: 0; }   /* (the admin Unmatched card's TMDB results: picture, words, button, side by side) */
+.umres li { display: grid !important; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 8px 0 !important; border-top: 1px solid var(--line) !important; }
+.umres li.umsay { display: block !important; color: var(--muted); }
+.umres img, .umres li > i { width: 46px; height: 69px; object-fit: cover; background: var(--tile); display: block; }
+.umres li .when { display: block; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+.umres .btn { white-space: nowrap; }
 .dres { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
 .dres button { width: 100%; text-align: left; padding: 9px 12px; border: 1px solid var(--line); background: var(--field); color: var(--fg); font: 14px var(--sans); cursor: pointer; border-radius: 10px; }
 .dres button small { color: var(--muted); }
@@ -907,23 +913,23 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var why = x.tmdb ? 'On TMDB (' + esc(x.tmdb) + '), but TMDB has no IMDb number for it' : x.note ? esc(x.note) : 'Not tried yet';
       return '<li data-um="' + x.id + '">' + FL(x.name, x.year, x.id) + '<span class="when">' + esc(x.folder) + (x.mins ? ' · ' + x.mins + ' min' : '') + ' · ' + why +
         (x.saw && x.saw.length ? ' · TMDB had: ' + x.saw.map(esc).join('; ') : '') + '</span>' +
-        '<span class="state" style="margin-top:6px;gap:6px;flex-wrap:wrap"><input type="search" class="name" data-umq placeholder="Title on TMDB" value="' + esc(String(x.name || '').replace(/\s*\((19|20)\d\d\)\s*$/, '')) + '" style="flex:1;min-width:160px">' +
+        '<span class="state" style="margin-top:6px;gap:6px;flex-wrap:wrap"><input type="search" class="name" data-umq placeholder="A title, or paste a TMDB or IMDb link" value="' + esc(String(x.name || '').replace(/\s*\((19|20)\d\d\)\s*$/, '')) + '" style="flex:1;min-width:160px">' +
         '<input type="text" class="name" data-umy inputmode="numeric" placeholder="Year" value="' + esc(x.year || '') + '" style="width:70px">' +
-        '<button class="btn" type="button" data-umgo>Search TMDB</button></span><ul class="dres" data-umres style="margin-top:6px"></ul></li>';
+        '<button class="btn" type="button" data-umgo>Search TMDB</button></span><ul class="umres" data-umres></ul></li>';
     }).join('');
     Array.prototype.forEach.call(document.querySelectorAll('#umlist [data-umgo]'), function (bt) {
       var li = bt.closest('li'), id = li.dataset.um, res = li.querySelector('[data-umres]');
       var go = function () {
         var qq = li.querySelector('[data-umq]').value.trim(), yy = li.querySelector('[data-umy]').value.trim();
-        res.innerHTML = '<li class="stat">Searching…</li>';
+        res.innerHTML = '<li class="umsay">Searching…</li>';
         fetch(GW + '/api/identify?id=' + id + '&q=' + encodeURIComponent(qq) + (/^\d{4}$/.test(yy) ? '&year=' + yy : ''), { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' })
           .then(function (r) { if (!r.ok) throw new Error('the Mac mini said ' + r.status); return r.json(); }).then(function (j) {
             var R = j.results || [];
             res.innerHTML = R.length ? R.map(function (r, k) {
-              return '<li style="display:flex;gap:10px;align-items:flex-start;margin:6px 0">' + (r.image ? '<img src="' + esc(r.image) + '" alt="" style="width:46px;height:69px;object-fit:cover;flex:none">' : '') +
-                '<span style="flex:1"><b>' + esc(r.name) + '</b> (' + esc(r.year || '?') + ')' + (r.imdb ? '' : ' · <i>no IMDb number</i>') + '<br><span class="when">' + esc(r.overview || '') + '</span></span>' +
+              return '<li>' + (r.image ? '<img src="' + esc(r.image) + '" alt="">' : '<i></i>') +
+                '<span><b>' + esc(r.name) + '</b> (' + esc(r.year || '?') + ')' + (r.imdb ? '' : ' · <i>no IMDb number</i>') + (r.tmdb ? ' · <a href="https://www.themoviedb.org/movie/' + esc(r.tmdb) + '" target="_blank" rel="noopener">TMDB</a>' : '') + '<span class="when">' + esc(r.overview || '') + '</span></span>' +
                 '<button class="btn" type="button" data-umpick="' + k + '">This one</button></li>';
-            }).join('') : '<li class="stat">Nothing on TMDB for that: try another title, or no year.</li>';
+            }).join('') : '<li class="umsay">Nothing on TMDB for that. Try fewer words, no year, or paste its TMDB link.</li>';
             Array.prototype.forEach.call(res.querySelectorAll('[data-umpick]'), function (pb) {
               pb.onclick = function () {
                 var r = R[+pb.dataset.umpick]; pb.disabled = true; pb.textContent = 'Fixing…';
@@ -935,7 +941,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
                   }).catch(function (e) { pb.disabled = false; pb.textContent = 'This one'; toast('Couldn’t fix it: ' + (e.message || e)); });
               };
             });
-          }).catch(function (e) { res.innerHTML = '<li class="stat">Couldn’t search: ' + esc(e.message || e) + '</li>'; });
+          }).catch(function (e) { res.innerHTML = '<li class="umsay">Couldn’t search: ' + esc(e.message || e) + '</li>'; });
       };
       bt.onclick = go;
       li.querySelector('[data-umq]').onkeydown = li.querySelector('[data-umy]').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); go(); } };
