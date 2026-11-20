@@ -1979,6 +1979,7 @@ html.phone #sheetIn .film.fa24 h2 { font-size: clamp(30px, 10vw, 42px) !importan
 #sheetIn .film.fa24 .ov, #sheetIn .film.fa24 .people, #sheetIn .film.fa24 .cred, #sheetIn .film.fa24 .credits, #sheetIn .film.fa24 .incoll, #sheetIn .film.fa24 .eps .t, #sheetIn .film.fa24 .eps .s, #sheetIn .film.fa24 h3, #sheetIn .film.fa24 .xh { font-family: var(--a24-sans) !important; font-style: normal !important; letter-spacing: -.005em !important; text-transform: none !important; }
 #sheetIn .film.fa24 .ov { font-size: 16px !important; line-height: 1.55 !important; }
 #sheetIn .film.fa24 .meta, #sheetIn .film.fa24 .date, #sheetIn .film.fa24 .incoll span, #sheetIn .film.fa24 .pill { font-family: var(--a24-mono) !important; font-weight: 400 !important; text-transform: uppercase !important; letter-spacing: .04em !important; }
+#editbadge { position: fixed; z-index: 95; left: 50%; transform: translateX(-50%); bottom: max(16px, env(safe-area-inset-bottom)); background: var(--bg) !important; box-shadow: 0 4px 18px rgba(0,0,0,.25); }
 body { font-size: 14px; } .film h2 { font-size: clamp(34px, 4.1vw, 68px) !important; } html.phone .film h2 { font-size: clamp(27px, 9vw, 36px) !important; }
 .card .t, .tracks .tt, .day .cap .t { font-size: .92em; } .film .people, .profp { font-size: 13.5px !important; }
 /* the logo: GRIFFLIX drawn from Grifflix Display, heavier, each letter a solid cut-out with a fine line inside its edge, as Saul
@@ -2597,8 +2598,21 @@ var BUILD = /*BUILD*/{ draft: false, at: '' };   // (page.py: which copy this is
 var $ = function (s, el) { return (el || document).querySelector(s); };
 var $$ = function (s, el) { return [].slice.call((el || document).querySelectorAll(s)); };
 var Q = new URLSearchParams(location.search);
+// (John's editing (Edit, Delete, Edit collections, Convert, a collection's pencil) hidden till he turns on edit mode, from the admin page's
+// link (?edit=1); Done turns it off: John, 20 Nov 2026, "I also don't need the edit button on the screen at all anywhere, keep them hidden
+// except in an edit mode, which will be linked from admin")
+function editMode() { return !!(ME && ME.owner && store.get('grifflix-edit') === '1'); }
+function editBadge() {
+  var b = document.getElementById('editbadge');
+  if (!editMode() || TV) { if (b) b.remove(); return; }
+  if (b) return;
+  b = document.createElement('button'); b.type = 'button'; b.id = 'editbadge'; b.className = 'pill'; b.innerHTML = 'Edit mode · <b>Done</b>';
+  b.onclick = function () { store.set('grifflix-edit', ''); b.remove(); if (typeof route === 'function') route(); };
+  document.body.appendChild(b);
+}
 var store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
               set: function (k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} } };
+try { if (/[?&]edit=1\b/.test(location.search)) { store.set('grifflix-edit', '1'); history.replaceState(null, '', location.pathname + location.hash); } } catch (e) {}
 if (Q.has('gateway')) store.set('grifflix-gateway', Q.get('gateway') || null);
 store.set('grifflix-demo', null);   // (no demo any more, and none left switched on from before: John, 9 Nov 2026: "grifflix seems to be redirecting me to a demo")
 var DEMO = false;
@@ -3338,7 +3352,7 @@ function start() {
     }
     macWake();
     api('me').then(function (me) {
-      ME = me; window.MACOK = true;
+      ME = me; window.MACOK = true; try { editBadge(); } catch (e) {}
       $('#who').textContent = me.name ? me.name.split(' ')[0] : 'Profile';
       if (TV) { $('#who').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>'; $('#who').setAttribute('aria-label', 'Profile'); $('#who').classList.add('whoico'); }   // (the TV: an icon, not the name: John, 8 Nov 2026)
       if (DEMO) $('#note').innerHTML = '<div class="notice"><b>Demo.</b> Made-up films, so you can see how Grifflix works before the Mac mini is connected. Changes stay on this device. <a href="?demo=0">Leave the demo</a></div>';
@@ -3451,6 +3465,7 @@ window.grifflixJoin = join;   // (the Fire TV app's menu: Sign in with a code)
 
 /* ------------------------------------------------------------------ pages */
 function route() {
+  try { editBadge(); } catch (e) {}
   if (PUBLIC && !DEMO) {   // (signed out: the calendar, the themes and the films on it; the library's pages want a sign-in)
     var ph = (location.hash || '#home').slice(1).split('/')[0];
     if (ph === 'profile') { location.hash = '#home'; return signInSheet(); }
@@ -5910,7 +5925,7 @@ function collectionView(id, into) {
     document.documentElement.classList.toggle('gcrit', /criterion/i.test(c.name)); if (/criterion/i.test(c.name)) critFonts();   // (The Criterion Collection at Grifflix: its own look)
     var A24 = /^a24$/i.test(c.name); document.documentElement.classList.toggle('ga24', A24); if (A24) a24Fonts();   // (A24 at Grifflix: A24's own list: John, 19 Nov 2026)
     var cov = collCard({ id: c.id, name: c.name, children: c.items.length }).replace(/^<a [^>]*>|<\/a>$/g, '');   // (its drawn cover, as on the shelf)
-    $('#cbody').innerHTML = (A24 ? '<div class="collhead a24head"><div><div class="a24top"><span class="a24lock">' + a24Mark() + '<small>at</small><b class="gcx" aria-label="Grifflix">' + gxSvg(.5) + '</b></span><span class="hsub"><i>' + c.items.length + ' films</i></span></div>' +
+    $('#cbody').innerHTML = (A24 ? '<div class="collhead a24head"><div><div class="a24top"><span class="a24lock">' + a24Mark() + '</span><span class="hsub"><i>' + c.items.length + ' films</i></span></div>' +
       '<h1 class="colltitle">All films</h1>' + (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
       '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find an A24 film" aria-label="Find in A24" autocomplete="off"><span class="sp"></span></div>' +
       '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>' : '<div class="collhead"><div class="card coll collpic">' + cov + '</div>' +
@@ -6027,7 +6042,7 @@ function collectionView(id, into) {
       $('#cvsets').onclick = function () { csets = !csets; openSet = null; store.set('grifflix-csets', csets ? '1' : ''); this.classList.toggle('on', csets); this.setAttribute('aria-pressed', csets); draw(); };
     }
     draw();
-    if (ME && ME.owner && !TV) {
+    if (editMode() && !TV) {
       // (John's tools behind one small pencil, so his page is spaced as everyone's: John, 18 Nov 2026, "Can there just be a small edit icon for me")
       $('#cbody .collhead > div:last-child').insertAdjacentHTML('beforeend', '<button type="button" class="ctoolic" id="ctools" aria-label="Edit this collection" title="Edit this collection" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg></button>');
       $('#cbody .collhead > div:last-child').insertAdjacentHTML('beforeend', '<div class="tabs" id="ctoolrow" hidden style="margin:16px 0 0"><button class="pill" id="cedit">Edit the films</button><button class="pill" id="cdesc">' + (c.overview ? 'Change the description' : 'Add a description') + '</button><button class="pill" id="crename">Rename</button><button class="pill" id="cdelete">Delete the collection</button></div>');
@@ -7001,17 +7016,17 @@ function bodyHTML(it, ctx) {
   if (!PUBLIC && !it.ext) {   // (none of these for a film Grifflix hasn't)
     h += '<button class="ico" id="aheart" aria-label="Save for later">' + HEART(it.hearted) + '</button>';
     if (NOTES) h += '<button class="pill" id="aaddpl">+ Playlist</button><button class="pill" id="aaddcal">+ My calendar</button>';
-    if (ME && ME.owner && it.type !== 'video') h += '<button class="pill" id="acoll">Edit collections</button>';
+    if (editMode() && it.type !== 'video') h += '<button class="pill" id="acoll">Edit collections</button>';
     // (John's: the Mac mini to do this one next, when it needs anything: John, 13 Nov 2026, "a convert now option to films if I need them sooner")
-    if (ME && ME.owner && it.conv) h += '<button class="pill" id="aconv" title="' + esc('The Mac mini will ' + it.conv.replace(/^to /, '')) + '"' + (it.convNow || it.convNext ? ' disabled' : '') + '>' +
+    if (editMode() && it.conv) h += '<button class="pill" id="aconv" title="' + esc('The Mac mini will ' + it.conv.replace(/^to /, '')) + '"' + (it.convNow || it.convNext ? ' disabled' : '') + '>' +
       (it.convNow ? 'Converting now' : it.convNext ? 'Next for the Mac mini ✓' : /^to make smaller/.test(it.conv) ? 'Make smaller next' : 'Convert next') + '</button>';
     if (ME && ME.downloads && !TV && !isSeries) h += '<button class="pill" id="adown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5M5 21h14"/></svg>Download</button>';
   }
   if (!it.ext && shareDayOf(it)) h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button>';
   // (John's Fix match: the film or series chosen from TMDB when the media server named it wrong, or didn't know it: John, 15 Nov 2026)
-  if (!PUBLIC && !it.ext && ME && ME.owner && !TV && (it.type === 'movie' || it.type === 'series')) h += '<button class="pill" id="aident">Edit</button>';
+  if (!PUBLIC && !it.ext && editMode() && !TV && (it.type === 'movie' || it.type === 'series')) h += '<button class="pill" id="aident">Edit</button>';
   // (John's Delete: last in the row, apart from the rest)
-  if (!PUBLIC && !it.ext && ME && ME.owner && !TV && (it.type === 'movie' || it.type === 'series')) h += '<button class="pill danger" id="adel">' + (it.type === 'series' ? 'Delete the series' : 'Delete') + '</button>';
+  if (!PUBLIC && !it.ext && editMode() && !TV && (it.type === 'movie' || it.type === 'series')) h += '<button class="pill danger" id="adel">' + (it.type === 'series' ? 'Delete the series' : 'Delete') + '</button>';
   h += '</div>';   // (the row closed whatever's in it: with no Share button it was left open and a series' episodes went inside it, Play and the heart floating beside them)
   // (the collections it's in, listed on its page, each opening that collection: John, 18 Nov 2026, "It should just list the collections it's in
   // on the film's page")
