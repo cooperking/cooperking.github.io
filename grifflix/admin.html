@@ -1444,7 +1444,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
             '<button class="btn" type="button" data-fname="' + esc(x.k) + '" data-q="' + esc(to.replace(/\s*\(\d{4}\)$/, '')) + '" data-y="' + esc((to.match(/\((\d{4})\)$/) || [])[1] || '') + '" data-s="' + (ser ? 1 : '') + '">Name it</button>' +
             (nm ? '<button class="btn" type="button" data-funname="' + esc(x.k) + '">Its own name</button>' : '') + '</span><div class="fnm" data-for="' + esc(x.k) + '"></div>') + '</li>'; };
       var CXL = f.cancelled || [], UPL = f.upgrades || [];
-      $('#ftabs').innerHTML = [['next', 'Next', G.length + (n ? 1 : 0)]].concat(UPL.length ? [['up', 'Already here', UPL.length]] : []).concat([['came', 'Came', rc.length]]).concat(CXL.length ? [['cx', 'Cancelled', CXL.length]] : [])
+      $('#ftabs').innerHTML = [['next', 'Next', G.length + (n ? 1 : 0)]].concat(UPL.length ? [['up', 'Already here', UPL.length]] : []).concat([['came', 'Done', rc.length]]).concat(CXL.length ? [['cx', 'Cancelled', CXL.length]] : [])
         .map(function (t) { return '<button type="button" data-ft="' + t[0] + '" aria-pressed="' + (tab === t[0]) + '">' + t[1] + ' ' + t[2] + '</button>'; }).join('');
       Array.prototype.forEach.call(document.querySelectorAll('[data-ft]'), function (b) { b.onclick = function () { fetching.naming = 0; fetching.tab = b.dataset.ft; fetching.last && fetching.draw(fetching.last); }; });
       if (fetching.naming && tab === 'next') { clearTimeout(fetching.t); fetching.t = setTimeout(fetching, 30000); return; }   // (not redrawn while a name is being found)
