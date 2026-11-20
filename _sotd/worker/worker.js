@@ -312,6 +312,16 @@ export default {
       } else out.skip = true;
       if (env.MEDIA) await env.MEDIA.put('diag/kath2.json', JSON.stringify(out, null, 1), { httpMetadata: { contentType: 'application/json' } });
     })().catch(async e => { if (env.MEDIA) await env.MEDIA.put('diag/kath2.json', JSON.stringify({ error: String(e && (e.stack || e.message) || e) }), { httpMetadata: { contentType: 'application/json' } }).catch(() => {}); }));
+    ctx.waitUntil((async () => {   // once: whether John got today's Collaborations round (John, 20 Nov 2026: "I should be getting the announcement too")
+      if (!env.MEDIA || await env.SOTD.get('diagJohnRound1')) return;
+      await env.SOTD.put('diagJohnRound1', String(Date.now()));
+      const owner = await env.SOTD.get('owner'), all = (await env.SOTD.get('members', 'json')) || {}, m = all[owner] || {}, subs = (await env.SOTD.get('pushSubs', 'json')) || {};
+      const inbox = ((await env.SOTD.get('inbox:' + owner, 'json')) || []).slice(0, 6).map(x => ({ t: x.t, at: new Date(x.at).toISOString(), f: x.f, fi: x.fi, r: !!x.r, g: (x.g || []).length }));
+      const mine = Object.entries(subs).filter(([, x]) => x.m === owner).map(([id, x]) => ({ id: id.slice(0, 6), host: subHost(x), ua: (x.ua || '').slice(0, 60), at: x.at || 0 }));
+      const bySub = {}; Object.values(subs).forEach(x => { const n = (all[x.m] || {}).name || x.m; bySub[n] = (bySub[n] || 0) + 1; });
+      const U = await uplAll(env), rec = U['hXXaGojDDcooDA'];
+      await env.MEDIA.put('diag/john-round.json', JSON.stringify({ owner, ownerIsPlaylistOwner: rec && rec.o === owner, push: pushMode(m), mail: mailMode(m), email: !!m.email, quiet: m.quiet || null, inbox, mine, bySub, pdig: await env.SOTD.get('pdig:' + owner, 'json'), mdig: ((await env.SOTD.get('mdig:' + owner, 'json')) || []).map(x => x.t) }, null, 1), { httpMetadata: { contentType: 'application/json' } });
+    })().catch(async e => { if (env.MEDIA) await env.MEDIA.put('diag/john-round.json', JSON.stringify({ error: String(e && (e.stack || e.message) || e) }), { httpMetadata: { contentType: 'application/json' } }).catch(() => {}); }));
     ctx.waitUntil((async () => {   // once: Collaborations' songs, their added dates, days and captions, for checking
       if (await env.SOTD.get('diagCollab4')) return;
       await env.SOTD.put('diagCollab4', String(Date.now()));
