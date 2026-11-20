@@ -2424,11 +2424,15 @@ html.tv .a24list { --ayw: 150px; } html.tv .a24r .af { font-size: 34px; } html.t
 /* (narrower still: a phone set to show pages larger (Safari's text size, a phone's larger display), or the very smallest: the switch two
    small pictures, a calendar and a strip of film, so the profile is never pushed off the edge: John, 11 Nov 2026: "A user with a smaller
    phone can't see their profile because the mute button covers it") */
-@media (max-width: 389px) {
-  html .bar-top #barnav { flex: 0 1 auto; min-width: 0; }
+/* (the Calendar and Theme switch as two small pictures on every phone, a calendar and a strip of film, not words: John, 20 Nov 2026, "Make
+   calendar and themes icons for mobile") */
+@media (max-width: 600px) {
   html .bar-top .vtog span, html #shnav .vtog span { width: 30px; height: 24px; padding: 0 !important; font-size: 0 !important; letter-spacing: 0 !important; text-indent: 0 !important; }
   html .bar-top .vtog span::after, html #shnav .vtog span::after { content: ""; position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='5' width='18' height='16'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='5' width='18' height='16'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat; }
   html .bar-top .vtog span:last-child::after, html #shnav .vtog span:last-child::after { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='4' width='18' height='16'/%3E%3Cpath d='M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='4' width='18' height='16'/%3E%3Cpath d='M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4'/%3E%3C/svg%3E"); }
+}
+@media (max-width: 389px) {
+  html .bar-top #barnav { flex: 0 1 auto; min-width: 0; }
   html .bar-top .ico[data-go="profile"], html .bar-top #who, html .bar-top .tmute { flex: none; }
   html .bar-top .brand, html.phone .bar-top .brand { font-size: 10px !important; letter-spacing: .1em !important; }
 }
