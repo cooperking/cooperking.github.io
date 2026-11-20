@@ -5589,10 +5589,12 @@ def tmdb_runtime(g, tid):   # a film's running time on TMDB (kept: ~/Grifflix/tm
         TMDBC.update(load(f, {}))
     tid = str(tid)
     if tid not in TMDBC:
-        d = tmdb(g, '/movie/%s' % tid) or {}
+        d = tmdb(g, '/movie/%s' % tid)
+        if d is None:   # (no answer: not kept, so asked again another time)
+            return {'rt': 0, 'title': None, 'year': ''}
         TMDBC[tid] = {'rt': d.get('runtime') or 0, 'title': d.get('title'), 'year': (d.get('release_date') or '')[:4]}
         TMDBC['_dirty'] = 1
-        time.sleep(.05)
+        time.sleep(.25)
     return TMDBC[tid]
 
 
@@ -5977,6 +5979,9 @@ def match_unmatched(g):
         return
     tried_at = os.path.expanduser('~/Grifflix/match-unmatched.json')
     T = load(tried_at, {}) or {}
+    if T.get('_v') != 2:   # (the first run's "not found"s were TMDB asking it to slow down, not TMDB not having them: tried again)
+        T = {k: v for k, v in T.items() if isinstance(v, dict) and v.get('done')}
+        T['_v'] = 2
     items = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie',
                                                                'Fields': 'Path,ProductionYear,ProviderIds,LockedFields,MediaSources'}).get('Items') or []
     VID = ('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')
@@ -6015,14 +6020,19 @@ def match_unmatched(g):
         names = list(dict.fromkeys(n for n in names if n))
         ms = (it.get('MediaSources') or [{}])[0]
         mins = round((ms.get('RunTimeTicks') or it.get('RunTimeTicks') or 0) / 6e8)
-        cands = {}
+        cands, failed = {}, False
         try:
             for n in names:
                 for y in ([year, year - 1, year + 1] if year else [None]):
                     q_ = {'query': n}
                     if y:
                         q_['year'] = y
-                    for x in (tmdb(g, '/search/movie', **q_) or {}).get('results') or []:
+                    time.sleep(.4)   # (gently: TMDB turned away the first run's quick searches, and they read as not found)
+                    r_ = tmdb(g, '/search/movie', **q_)
+                    if r_ is None:
+                        failed = True
+                        continue
+                    for x in r_.get('results') or []:
                         cands[x['id']] = x
             scored = []
             for tid, x in cands.items():
@@ -6037,6 +6047,8 @@ def match_unmatched(g):
             scored.sort(key=lambda c: -c[0])
         except Exception as e:
             log('Matching %s: %s' % (raw, e))
+            continue
+        if failed and not scored:   # (TMDB didn't answer: tried again next time, not marked as not found)
             continue
         T[iid] = {'at': int(time.time()), 'name': raw}
         if scored and (len(scored) == 1 or scored[0][0] - scored[1][0] >= .08):
