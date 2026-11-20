@@ -459,6 +459,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div id="cvask"></div>
         <div class="lbchips" id="cvtabs" style="margin:14px 0 4px"></div>
         <ul class="changes cvl" id="cvlist"></ul>
+        <div id="pslist"></div>
         <p class="stat" id="orsay" style="margin-top:14px"></p>
         <div class="state"><button class="btn" id="orsee" type="button" hidden>The originals</button></div>
       </section>
@@ -836,6 +837,18 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var csv = rows.map(function (r) { return r.map(function (c) { c = String(c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\r\n');
     var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })); a.download = 'Grifflix distributors.csv'; document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 1500); };
 })();
+  // ---- picture subtitles saved beside converted films, waiting to be turned into text later (John, 20 Nov 2026, "they should be saved and then
+  // converted as a separate job later")
+  function picSubs() {
+    if (!TOKEN || !GW) return setTimeout(picSubs, 5000);
+    fetch(GW + '/api/picsubs', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+      var el = $('#pslist'); if (!el) return;
+      el.innerHTML = j.films.length ? '<p class="stat" style="margin:16px 0 6px"><b>Picture subtitles saved</b> (' + j.films.length + ' film' + (j.films.length === 1 ? '' : 's') + (j.waiting ? ', ' + j.waiting + ' waiting to be turned into text' : '') + ') · Blu-ray and DVD subtitles an MP4 can’t hold, kept beside each film when it was converted; the media server offers them as they are.</p><ul class="changes">' +
+        j.films.map(function (x) { return '<li>' + FL(x.name, x.year, x.id) + '<span class="when">' + x.subs.map(function (y) { return esc(y.name) + (y.forced ? ' (forced)' : y.sdh ? ' (SDH)' : '') + ' · ' + esc(y.kind); }).join(', ') + (x.text ? ' · turned into text ✓' : '') + '</span></li>'; }).join('') + '</ul>' : '';
+    }).catch(function () {});
+    setTimeout(picSubs, 300000);
+  }
+  picSubs();
   function gate(why, seed) { $('#gate').hidden = false; if (why && !(location.hostname === 'admin.grifflix.co.uk' && !TOKEN)) $('#gatewhy').textContent = why; $('#seed').hidden = !seed; }
 
   // signed in to Grifflix as John? The first time, before Grifflix has members, his other sign-in on this site starts them
@@ -2149,7 +2162,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       return '<li>' + FL(x.n, x.y, x.id) + (x.y ? ' <span class="when" style="display:inline">(' + x.y + ')</span>' : '') + '<span class="q ' + x.g.q + '">' + LBQ[x.g.q] + '</span>' +
         '<span class="spec">' + x.g.res + (x.w ? ' · ' + x.w + '×' + x.h : '') + ' · ' + vn(x.v) + (x.b > 8 ? ' 10-bit' : '') + (x.mbps ? ' · ' + x.mbps + ' Mbps' : '') + (x.gb ? ' · ' + x.gb + ' GB' : '') + (x.mins ? ' · ' + x.mins + ' min' : '') + (x.a ? ' · ' + esc(x.a) : '') + '</span>' +
         '<span class="why2">' + [x.g.why ? esc(x.g.why) : '', x.conv ? (x.rp ? 'repackaged' : 'converted') + (x.was ? ' (was ' + fl(x.was) + ')' : '') : '', x.why ? (/^to (repackage|make smaller)/.test(x.why) ? esc(x.why) : 'waiting to convert: ' + esc(x.why)) : ''].filter(Boolean).join(' · ') +
-        (x.ps ? '<span class="why2">Picture subtitles (' + esc(x.ps) + '): ' + (/^to repackage/.test(x.why || '') ? 'repackaging leaves them in the original, kept in Grifflix Originals' : 'in this file') + '</span>' : '') +
+        (x.ps ? '<span class="why2">Picture subtitles (' + esc(x.ps) + '): ' + (x.why ? 'saved beside the film when it’s converted (an MP4 can’t hold them), to be turned into text later' : 'in this file') + '</span>' : '') +
         // (the largest: any of them made smaller next, whatever the converter would have said: John, 16 Nov 2026, "I need a tab for the largest
         // files, so that I can convert them")
         (x.hdrt ? (/only/.test(x.hdrt) ? '' : '<button type="button" class="lbnext" data-lbmac="' + x.id + '" data-force="1" data-n="' + esc(x.n) + '">' + (LB.MQ[x.id] ? 'Queued for your Mac ✓' : 'Queue for my Mac') + '</button>') : (LB.f === 'big' ? '<button type="button" class="lbnext" data-lbnext="' + x.id + '" data-force="1" data-n="' + esc(x.n) + '">Make smaller next</button>' :

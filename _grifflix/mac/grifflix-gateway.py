@@ -2581,6 +2581,17 @@ def make_handler(g):
             return self.send_json(200, {'ids': sorted(by), 'checked': sum(1 for t in by if t in D), 'found': sum(1 for t in by if D.get(t)),
                                         'total': len(by), 'noimdb': len(films) - sum(len(v) for v in by.values()), 'dist': out})
 
+        def api_picsubs(self, me, user, q, b):
+            """John's only: films whose picture subtitles were saved beside them when converted (convert.py, picture-subs.json), waiting to be
+            turned into text as a job of their own (John, 20 Nov 2026)."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            P = load(os.path.expanduser('~/Grifflix/picture-subs.json'), {}) or {}
+            L = sorted(({'id': k, 'name': v.get('name'), 'year': v.get('year'), 'text': bool(v.get('text')), 'at': v.get('at'),
+                         'subs': [{'name': x.get('name'), 'kind': x.get('kind'), 'forced': x.get('forced'), 'sdh': x.get('sdh')} for x in v.get('subs') or []]}
+                        for k, v in P.items()), key=lambda x: -(x.get('at') or 0))
+            return self.send_json(200, {'films': L, 'waiting': sum(1 for x in L if not x['text'])})
+
         def api_waiting(self, me, user, q, b):
             """John's only: what he's ticked off on the admin page's Waiting on you (John, 18 Nov 2026: "I could do with a waiting on you
             section in my admin, so I know what has and hasn't been done"). The list itself is grifflix/waiting.json on the site."""

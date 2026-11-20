@@ -709,7 +709,50 @@ def convert(item, ffmpeg, ffprobe, st):
     # (John, 12 Nov 2026: "delete all originals automatically - I have backups so it's fine"); kept in Grifflix Originals only if
     # the setting keep_originals is on
     before = brief(info, src)
-    if (s.get('keep_originals') or unsure) and not item.get('redo'):   # (unsure of the language: the original kept, whatever the setting)
+    # (picture subtitles (Blu-ray PGS, DVD VobSub), which an MP4 can't hold: each saved beside the new film as it is, a .sup or .mks named for
+    # the film and its language, so the media server offers them and none is lost when the original goes; listed in picture-subs.json to be
+    # turned into text as a job of its own later. One that can't be saved: the original kept, whatever the setting. John, 20 Nov 2026, "they
+    # should be saved and then converted as a separate job later")
+    pics = [x for x in subs if x.get('codec_name') in ('hdmv_pgs_subtitle', 'pgssub', 'dvd_subtitle', 'dvdsub', 'dvb_subtitle')]
+    saved, keep_pics = [], False
+    if pics and not item.get('plan_only'):
+        bdst = os.path.splitext(dst)[0]
+        for n, x in enumerate(pics):
+            l_ = lang(x) or 'und'
+            dp = x.get('disposition') or {}
+            tag = '.forced' if dp.get('forced') else '.sdh' if dp.get('hearing_impaired') else ''
+            ext_ = '.sup' if 'pgs' in x.get('codec_name', '') else '.mks'
+            out = '%s.%s%s%s' % (bdst, l_, tag, ext_)
+            if os.path.exists(out) or out in [y['file'] for y in saved]:
+                out = '%s.%s%s.%d%s' % (bdst, l_, tag, n + 1, ext_)
+            try:
+                r_ = subprocess.run([ffmpeg, '-hide_banner', '-nostdin', '-y', '-v', 'error', '-i', src, '-map', '0:%d' % x['index'], '-c:s', 'copy', out],
+                                    capture_output=True, text=True, timeout=1800)
+                ok_ = r_.returncode == 0 and os.path.exists(out) and os.path.getsize(out) > 100
+            except Exception:
+                ok_ = False
+            if ok_:
+                saved.append({'file': out, 'lang': l_, 'name': lang_name(x), 'kind': 'PGS' if ext_ == '.sup' else 'VobSub', 'forced': bool(dp.get('forced')),
+                              'sdh': bool(dp.get('hearing_impaired')), 'title': ((x.get('tags') or {}).get('title') or '')[:80]})
+            else:
+                keep_pics = True
+                try:
+                    os.remove(out)
+                except OSError:
+                    pass
+        if saved:
+            log('  picture subtitles saved beside it: %s' % ', '.join('%s (%s)' % (y['name'], y['kind']) for y in saved))
+            try:
+                pf = os.path.join(HOME, 'picture-subs.json')
+                P = json.load(open(pf)) if os.path.exists(pf) else {}
+                P[item['id']] = {'name': item['name'], 'year': item.get('year'), 'film': dst, 'subs': saved, 'at': int(time.time()), 'text': False}
+                json.dump(P, open(pf + '.tmp', 'w'), indent=1)
+                os.replace(pf + '.tmp', pf)
+            except Exception as e:
+                log('  (picture subtitles list: %s)' % e)
+        if keep_pics:
+            log('  a picture subtitle couldn’t be saved on its own: the original kept, so it isn’t lost')
+    if (s.get('keep_originals') or unsure or keep_pics) and not item.get('redo'):   # (unsure of the language, or a picture subtitle not saved: the original kept, whatever the setting)
         keep_at = os.path.join(os.path.dirname(root.rstrip('/')), 'Grifflix Originals', os.path.basename(root.rstrip('/')), os.path.relpath(src, root))
         os.makedirs(os.path.dirname(keep_at), exist_ok=True)
         shutil.move(src, keep_at)
