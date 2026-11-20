@@ -742,7 +742,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var base = function (n) { return n.toLowerCase().replace(/\.(woff2?|ttf|otf)$/, ''); };
       $('#fonthead').innerHTML = L.length ? L.length + ' font' + (L.length === 1 ? '' : 's') + ' <em>kept</em>' : 'Fonts';
       $('#fontlist').innerHTML = L.length ? L.map(function (n) { var w = FONTWANT.filter(function (x) { return base(n) === x[0] || base(n).indexOf(x[0]) === 0; })[0]; return '<li>' + esc(n) + (w ? '<span class="when">' + esc(w[1]) + '</span>' : '') + '</li>'; }).join('') : '<li>None kept yet: Grifflix uses its stand-ins.</li>';
-      $('#fontwant').innerHTML = FONTWANT.slice(4).map(function (x) { var have = L.some(function (n) { return base(n).indexOf(x[0]) === 0; }); return '<b>' + x[0] + '</b> (' + esc(x[1]) + ')' + (have ? ' ✓' : ''); }).join(', ') + ', each .woff2 or .woff.';
+      $('#fontwant').innerHTML = FONTWANT.slice(4).map(function (x) { var have = L.some(function (n) { return base(n).indexOf(x[0]) === 0; }); return '<b>' + x[0] + '</b> (' + esc(x[1]) + ')' + (have ? ' ✓' : ''); }).join(', ') + ', each .woff2, .woff or .otf (an .otf is made a .woff as it’s sent).';
     }).catch(function (e) { $('#fontlist').innerHTML = '<li>Couldn’t list them: ' + esc(e.message || 'no answer') + '</li>'; });
   }
   function gate(why, seed) { $('#gate').hidden = false; if (why && !(location.hostname === 'admin.grifflix.co.uk' && !TOKEN)) $('#gatewhy').textContent = why; $('#seed').hidden = !seed; }
@@ -1415,6 +1415,21 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     // (a .ttf or .otf, as Office's MAGNETOB.TTF, kept under a .woff name: browsers read a font by what's in it)
     return t === 'wOF2' ? 'woff2' : t === 'wOFF' ? 'woff' : (b[0] === 0x50 && b[1] === 0x4b) ? 'zip' : (t === 'OTTO' || t === 'true' || (b[0] === 0 && b[1] === 1 && b[2] === 0 && b[3] === 0)) ? 'woff' : '';
   }
+  // (an .otf or .ttf made a real WOFF here, before it's sent: each table squeezed (zlib), a third to half the size, as the fonts' own makers'
+  // web files are: John, 20 Nov 2026, "Can you convert them from otf?")
+  function toWoff(buf) {
+    var v = new DataView(buf), n = v.getUint16(4), recs = [];
+    for (var i = 0; i < n; i++) { var o = 12 + i * 16; recs.push({ tag: v.getUint32(o), sum: v.getUint32(o + 4), off: v.getUint32(o + 8), len: v.getUint32(o + 12) }); }
+    var squeeze = function (u8) { return typeof CompressionStream === 'undefined' ? Promise.resolve(u8) : new Response(new Blob([u8]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer().then(function (c) { c = new Uint8Array(c); return c.length < u8.length ? c : u8; }); };
+    return Promise.all(recs.map(function (r) { return squeeze(new Uint8Array(buf, r.off, r.len)); })).then(function (data) {
+      var a4 = function (x) { return (x + 3) & ~3; }, head = 44 + 20 * n, total = head, sfnt = 12 + 16 * n;
+      data.forEach(function (d, k) { total += a4(d.length); sfnt += a4(recs[k].len); });
+      var out = new Uint8Array(total), w = new DataView(out.buffer), at = head;
+      w.setUint32(0, 0x774F4646); w.setUint32(4, v.getUint32(0)); w.setUint32(8, total); w.setUint16(12, n); w.setUint32(16, sfnt); w.setUint16(20, 1);
+      recs.forEach(function (r, k) { var e = 44 + 20 * k; w.setUint32(e, r.tag); w.setUint32(e + 4, at); w.setUint32(e + 8, data[k].length); w.setUint32(e + 12, r.len); w.setUint32(e + 16, r.sum); out.set(data[k], at); at += a4(data[k].length); });
+      return out.buffer;
+    });
+  }
   function unzip(file, buf0) {   // a .zip of fonts, opened here (the phone can't open .woff2 files itself): its .woff2 and .woff files
     return (buf0 ? Promise.resolve(buf0) : bytes(file)).then(function (buf) {
       var v = new DataView(buf), out = [], i = buf.byteLength - 22;
@@ -1428,7 +1443,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         if (!/\.(woff2?|ttf|otf)$/i.test(base) || name.indexOf('__MACOSX') >= 0 || base.charAt(0) === '.') continue;
         var start = loc + 30 + v.getUint16(loc + 26, true) + v.getUint16(loc + 28, true), raw = new Uint8Array(buf, start, csize);
         jobs.push((method === 0 ? Promise.resolve(raw) : new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer())
-          .then((function (b) { return function (data) { return new File([data], b.replace(/\.(ttf|otf)$/i, '.woff')); }; })(base)));
+          .then((function (b) { return function (data) { return (/\.(ttf|otf)$/i.test(b) ? toWoff(data instanceof ArrayBuffer ? data : data.slice().buffer) : Promise.resolve(data)).then(function (d) { return new File([d], b.replace(/\.(ttf|otf)$/i, '.woff')); }); }; })(base)));
       }
       return Promise.all(jobs);
     });
@@ -1440,7 +1455,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     Promise.all(picked.map(function (f) { return bytes(f).then(function (buf) {
       var k = kindOf(buf);
       if (k === 'zip') return unzip(f, buf);
-      if (k) { var nm = f.name.replace(/\.(woff2?|zip|bin|octet-stream)$/i, '').replace(/\.[^.]*$/, ''); return [new File([buf], (nm || 'font') + '.' + k)]; }
+      if (k) { var nm = f.name.replace(/\.(woff2?|zip|bin|octet-stream)$/i, '').replace(/\.[^.]*$/, ''), raw = !/^wOF/.test(String.fromCharCode.apply(null, new Uint8Array(buf, 0, 4)));
+        return (raw ? toWoff(buf) : Promise.resolve(buf)).then(function (b2) { return [new File([b2], (nm || 'font') + '.' + k)]; }); }   // (an .otf or .ttf: made a WOFF first)
       throw new Error(f.name + ' (' + Math.round(f.size / 1024) + ' KB) isn’t a font or a .zip of fonts.');
     }); })).then(function (lists) {
     var files = [].concat.apply([], lists).filter(function (f) { return /\.woff2?$/i.test(f.name); });
