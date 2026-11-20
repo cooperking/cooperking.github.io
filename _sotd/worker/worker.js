@@ -245,6 +245,14 @@ export default {
       const raw = (data.songs || []).filter(x => /wild wild west/i.test(x.title || '')).map(x => ({ id: x.id, a: x.a, title: x.title, artists: x.artists, key: songTitleKey(x), names: songNames(x), cat: cat[x.id] || null, files: (data.files || {})[x.id] || null, waiting: uplWaiting(rec, data, x), twin: twinOf(TW, x, pid), twEntries: TW[songTitleKey(x)] || null }));
       await env.MEDIA.put('diag/www.json', JSON.stringify({ view: ws, raw }, null, 1), { httpMetadata: { contentType: 'application/json' } });
     })().catch(async e => { if (env.MEDIA) await env.MEDIA.put('diag/www.json', JSON.stringify({ error: String(e && (e.stack || e.message) || e) }), { httpMetadata: { contentType: 'application/json' } }).catch(() => {}); }));
+    ctx.waitUntil((async () => {   // once: why Collaborations' signed-off songs haven't gone out as a round (John, 20 Nov 2026: "it's set to send an announcement, but hasn't")
+      if (!env.MEDIA || await env.SOTD.get('diagRound2')) return;
+      await env.SOTD.put('diagRound2', String(Date.now()));
+      const pid = 'hXXaGojDDcooDA', U = await uplAll(env), rec = U[pid], all = (await env.SOTD.get('members', 'json')) || {}; if (!rec) return;
+      const data = await uplSongs(env, pid), snd = uplSendOf(rec), ids = await spWhoIds(env, all), since = Math.max(data.roundAt || 0, snd.since || 0);
+      const recent = (data.songs || []).filter(x => Date.parse(x.a) > Date.now() - 10 * 864e5).map(x => ({ t: x.title, a: x.a, ab: x.ab || '', who: ids[x.ab] ? all[ids[x.ab]].name : null, whoId: ids[x.ab] || null, chosen: snd.who ? snd.who.includes(ids[x.ab]) : null, dated: uplDated(x), afterSince: Date.parse(x.a) > since, ann: (data.ann || {})[x.id] || 0, rel: (data.rel || {})[x.id] || 0, waiting: uplWaiting(rec, data, x), gone: uplGone(data, x) }));
+      await env.MEDIA.put('diag/round2.json', JSON.stringify({ at: new Date().toISOString(), send: snd, whoNames: (snd.who || []).map(k => all[k] ? all[k].name : k), roundAt: data.roundAt || 0, since, st: rec.st, recent }, null, 1), { httpMetadata: { contentType: 'application/json' } });
+    })().catch(async e => { if (env.MEDIA) await env.MEDIA.put('diag/round2.json', JSON.stringify({ error: String(e && (e.stack || e.message) || e) }), { httpMetadata: { contentType: 'application/json' } }).catch(() => {}); }));
     ctx.waitUntil((async () => {   // once: Collaborations' songs, their added dates, days and captions, for checking
       if (await env.SOTD.get('diagCollab4')) return;
       await env.SOTD.put('diagCollab4', String(Date.now()));
