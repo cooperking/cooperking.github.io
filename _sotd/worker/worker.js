@@ -2496,7 +2496,10 @@ async function catalog(env) { return (await env.SOTD.get('mediaCatalog', 'json')
 // Fucking Asshole on one playlist with files, Bloody Motherfucking Asshole on another searched and downloaded again)
 function songKey(x) {
   const f = t => String(t || '').replace(/['’`]/g, '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '');
-  const t = f(String(x.title || '').replace(/\s+-\s+.*$/, '').replace(/\s*[(\[][^)\]]*[)\]]/g, '')), a = f(((x.artists && x.artists[0]) || String(x.artist || '')).split(/,\s*/)[0]);
+  // a title spelled out letter by letter keeps that (John, 20 Nov 2026: Elvis's "Trouble" was taken for his "T-R-O-U-B-L-E",
+  // marked not to download and played with the other song's files)
+  const spelt = s => s.replace(/(^|[^a-z0-9])((?:[a-z0-9][-.]\s?){2,}[a-z0-9])(?![a-z0-9])/gi, (m, p, w) => p + ' spelt0 ' + w);
+  const t = f(spelt(String(x.title || '').replace(/\s+-\s+.*$/, '').replace(/\s*[(\[][^)\]]*[)\]]/g, ''))), a =f(((x.artists && x.artists[0]) || String(x.artist || '')).split(/,\s*/)[0]);
   return t && a ? t + '|' + a : '';
 }
 function songTitleKey(x) { return songKey({ title: x.title, artist: 'x' }).replace(/\|x$/, ''); }
