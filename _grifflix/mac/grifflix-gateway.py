@@ -1353,7 +1353,7 @@ def make_handler(g):
                             if i['Id'] in items:
                                 sp = spine_of(i.get('Path'), key == 'tv')
                                 o_ = items[i['Id']]
-                                for k_ in ('spine', 'cdir', 'ccty', 'ctags', 'cset', 'csetsp', 'csetimg', 'csetdesc', 'csetmiss', 'csetfeat'):
+                                for k_ in ('spine', 'cdir', 'ccty', 'ctags', 'cset', 'csetsp', 'csetimg', 'csetfimg', 'csetdesc', 'csetmiss', 'csetfeat'):
                                     o_.pop(k_, None)
                                 if sp:
                                     o_['spine'] = sp
@@ -1404,6 +1404,8 @@ def make_handler(g):
                                         o_['cset'] = [snm(x_) for x_ in s_]
                                         o_['csetsp'] = [str((ctj_.get('setspine') or {}).get(x_) or SMETA.get(fold(x_), ('', ''))[0] or '') for x_ in s_]   # (each box set's spine, beside its name)
                                         o_['csetimg'] = [str(SMETA.get(fold(x_), ('', ''))[1] or (ctj_.get('setimg') or {}).get(x_) or '') for x_ in s_]   # (and its cover)
+                                        if any(((ctj_.get('setfimg') or {}).get(x_) or {}).get(sl0_) for x_ in s_):   # (and its own cover as it is in each set: John, 20 Nov 2026)
+                                            o_['csetfimg'] = [str(((ctj_.get('setfimg') or {}).get(x_) or {}).get(sl0_) or '') for x_ in s_]
                                         dsc_ = {x_: (ctj_.get('setdesc') or {}).get(x_) for x_ in s_ if x_ not in SDONE and (ctj_.get('setdesc') or {}).get(x_)}
                                         if dsc_:   # (its description, carried by one of its films only, not repeated on each)
                                             o_['csetdesc'] = {snm(k__): v__ for k__, v__ in dsc_.items()}
@@ -2902,7 +2904,8 @@ def make_handler(g):
                 SIM = {str(k)[:160]: str(v)[:400] for k, v in (b['tags'].get('setimg') or {}).items() if re.match(r'^https://[\w.-]+/', str(v))}   # (each box set's own cover)
                 SDE = {str(k)[:160]: str(v)[:2000] for k, v in (b['tags'].get('setdesc') or {}).items() if len(str(v or '')) > 40}   # (each box set's description: John, 18 Nov 2026)
                 SFE = {str(k)[:160]: [re.sub(r'\s+', ' ', str(x)).strip()[:4000] for x in v if str(x).strip()][:200] for k, v in (b['tags'].get('setfeat') or {}).items() if isinstance(v, list) and v}   # (and its special features)
-                save(os.path.join(home, 'criterion-tags.json'), {'tags': T, 'sets': SE, 'setspine': SSP, 'setimg': SIM, 'setdesc': SDE, 'setfeat': SFE, 'missing': [str(x)[:120] for x in (b['tags'].get('missing') or [])][:40],
+                SFI = {str(k)[:160]: {str(a)[:120]: str(u)[:400] for a, u in v.items() if re.match(r'^https?://', str(u))} for k, v in (b['tags'].get('setfimg') or {}).items() if isinstance(v, dict)}   # (each film's cover as it is in the set: 20 Nov 2026)
+                save(os.path.join(home, 'criterion-tags.json'), {'tags': T, 'sets': SE, 'setspine': SSP, 'setimg': SIM, 'setfimg': SFI, 'setdesc': SDE, 'setfeat': SFE, 'missing': [str(x)[:120] for x in (b['tags'].get('missing') or [])][:40],
                                                                  'debug': {str(k)[:60]: str(v)[:300] for k, v in (b['tags'].get('debug') or {}).items()}, 'at': int(time.time())})
                 n = sum(len(v) for v in T.values())
                 log('Criterion genres: %d kinds, %d films in them, %d box sets, from John’s browser' % (len(T), n, len(SE)))
