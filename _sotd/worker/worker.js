@@ -269,6 +269,29 @@ export default {
       const log = ((await env.SOTD.get('pushLog', 'json')) || []).slice(0, 3);
       await env.MEDIA.put('diag/round3.json', JSON.stringify({ roundAt: data.roundAt ? new Date(data.roundAt).toISOString() : 0, sent, log }, null, 1), { httpMetadata: { contentType: 'application/json' } });
     })().catch(e => console.log('diagRound3: ' + (e && e.message))));
+    ctx.waitUntil((async () => {   // once: Kathryn added to Collaborations' sharing and sent today's round (John, 20 Nov 2026: "she should get it")
+      if (await env.SOTD.get('kathRound1')) return;
+      await env.SOTD.put('kathRound1', String(Date.now()));
+      const pid = 'hXXaGojDDcooDA', k = 'OvdwnE7k', U = await uplAll(env), rec = U[pid], all = (await env.SOTD.get('members', 'json')) || {}, owner = await env.SOTD.get('owner');
+      const out = { at: new Date().toISOString() }; if (!rec || !all[k]) { out.none = true; } else {
+        const m = all[k]; out.before = { share: uplShareOf(rec), inTo: (rec.to || []).includes(k), joined: hasJoined(m), takes: takesFrom(all, k, rec.o, owner), can: uplCan(all, k, rec), apart: apart(all, k, rec.o), nomsg: !!m.nomsg, mute: m.mute || [], push: pushMode(m), mail: mailMode(m), devices: Object.keys(m.devices || {}).length };
+        if (uplShareOf(rec) === 'some' && !(rec.to || []).includes(k)) { rec.to = (rec.to || []).concat(k); await uplPut(env, U); out.added = true; }
+        out.after = { can: uplCan(all, k, rec) };
+        if (hasJoined(m) && uplCan(all, k, rec)) {
+          const data = await uplSongs(env, pid), at = data.roundAt || 0, ids = await spWhoIds(env, all), fresh = (data.songs || []).filter(x => (data.ann || {})[x.id] === at);
+          if (fresh.length) {
+            const snd = uplSendOf(rec), me = rec.o, name = all[me].name, pl = rec.cvt || uplName(all, rec), who = (snd.who || []).filter(i => all[i]).map(i => all[i].name);
+            const whoW = who.length > 1 ? who.slice(0, -1).join(', ') + ' and ' + who[who.length - 1] : who[0] || '';
+            const list = fresh.slice(0, 10).map(x => x.title + ' – ' + x.artist + (all[ids[x.ab]] ? ' (' + all[ids[x.ab]].name + ')' : '')).join('\n');
+            const msg = { title: pl + ': new songs from ' + whoW, subject: pl + ': new songs', body: list, from: name, url: SITE_SONGS + '#u=' + pid, tag: 'sotd-uplround-' + pid + '-' + at + '-k' };
+            if (fresh[fresh.length - 1].img) msg.icon = fresh[fresh.length - 1].img;
+            uplRoundPics(msg, all, ids, pid, rec, data, fresh, whoW, pl);
+            out.r = await pushAll(env, msg, [k], { kind: 'member', via: { t: 'member', id: me, name }, toNames: [m.name], fromId: me, toIds: [k] });
+          }
+        }
+      }
+      if (env.MEDIA) await env.MEDIA.put('diag/kath.json', JSON.stringify(out, null, 1), { httpMetadata: { contentType: 'application/json' } });
+    })().catch(async e => { if (env.MEDIA) await env.MEDIA.put('diag/kath.json', JSON.stringify({ error: String(e && (e.stack || e.message) || e) }), { httpMetadata: { contentType: 'application/json' } }).catch(() => {}); }));
     ctx.waitUntil((async () => {   // once: Collaborations' songs, their added dates, days and captions, for checking
       if (await env.SOTD.get('diagCollab4')) return;
       await env.SOTD.put('diagCollab4', String(Date.now()));
