@@ -951,9 +951,18 @@ def make_handler(g):
                             return self.send_json(200, {'wait': 'empty'})
                         x = Q.pop(0)
                         save(MACQ, Q)
+                        save(MACQ + '.planning', x)   # (kept till it's a job: a restart meanwhile puts it back, not loses it: John, 20 Nov 2026,
+                        # "I queued films for my mac but nothing happened": Wild at Heart and News from Home taken off the queue and gone)
 
                         def plan_it(x=x):
-                            code, j = mac_job(x['id'], True)   # (always made smaller on John's Mac: see convert.py plan)
+                            try:
+                                code, j = mac_job(x['id'], True)   # (always made smaller on John's Mac: see convert.py plan)
+                            except Exception as e:
+                                code, j = 0, {'error': 'it couldn’t be planned: %s' % str(e)[:200]}
+                            try:
+                                os.remove(MACQ + '.planning')
+                            except OSError:
+                                pass
                             if code == 200:
                                 CONVJOBS[j['token']].update(mac=True, force=True)
                                 convjobs_save()
@@ -6083,7 +6092,7 @@ def keep_updating(g):
                 r = mac_update(quiet=True)
                 save(os.path.join(APP_DIR, 'update-result.json'), dict(r, auto=True))
                 if r.get('restarting'):
-                    while someone_watching(g) or ACT_RUNNING:   # (nor while something John allowed is being done: a restart 19 s after
+                    while someone_watching(g) or ACT_RUNNING or (MACPLAN.get('t') and MACPLAN['t'].is_alive()):   # (nor while a film's being planned for John's Mac)   # (nor while something John allowed is being done: a restart 19 s after
                         time.sleep(60)                             # his Allow stopped the disk tidy halfway, 19 Nov 2026)
                     log('Update the Mac (by itself): the gateway restarting for its new version')
                     time.sleep(1.5)
@@ -6220,6 +6229,16 @@ def serve():
     G_REF.append(g)   # (for what runs on its own: covers_now's synopses)
     port = int(g.st.get('port', 8097))
     srv = ThreadingHTTPServer(('127.0.0.1', port), make_handler(g))
+    try:   # (a film being planned for John's Mac when the gateway stopped: back at the front of its queue)
+        px_ = load(MACQ + '.planning', None)
+        if px_ and px_.get('id'):
+            Q_ = load(MACQ, []) or []
+            if not any(x_.get('id') == px_['id'] for x_ in Q_):
+                save(MACQ, [px_] + Q_)
+                log('Queue for John’s Mac: %s back at the front (the gateway stopped while it was being planned)' % (px_.get('name') or px_['id']))
+            os.remove(MACQ + '.planning')
+    except Exception as e:
+        log('Queue for John’s Mac:', str(e)[:200])
     try:   # (only once the port is this gateway's: an old one still running may be doing what John allowed)
         acts_interrupted()
     except Exception as e:
