@@ -2526,7 +2526,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'fbe9db31628c' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'a85db4d93101' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2631,8 +2631,17 @@ function isExtra(i) { return !!i && (!!i.extra || (!i.year && i.type === 'movie'
 // "I need this for all criterion films too. I have extras for some")
 function featWords(t) { return String(t || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(function (x) { return x.length > 2 && !/^(the|and|with|new|from|for|film|films|its|his|her|this|that|about|edition|version|part)$/.test(x); }); }
 function featHas(f, names) { var fw = featWords(f); return names.some(function (n) { var nw = featWords(n); if (!nw.length) return false; var hit = nw.filter(function (x) { return fw.indexOf(x) >= 0; }).length; return hit >= Math.max(1, Math.ceil(nw.length * .6)); }); }
-function featHTML(list, names, title) {
+function featHTML(list, names, title, mine) {
   if (!list || !list.length) return '';
+  // (mine: only those here, a section's heading only over one of them, nothing at all if none: John, 20 Nov 2026, of a box set's special
+  // features, "Only show any extras I do have")
+  if (mine) {
+    var keep = list.filter(function (f) { return !/^§ /.test(f) && names.length && featHas(f, names); });
+    if (!keep.length) return '';
+    var L2 = [], head = null; list.forEach(function (f) { if (/^§ /.test(f)) head = f; else if (keep.indexOf(f) >= 0) { if (head) { L2.push(head); head = null; } L2.push(f); } });
+    var h2 = featHTML(L2, names, title);
+    return h2.replace(/<small>[^<]*<\/small>/, '<small>' + keep.length + ' here</small>');
+  }
   // (a section's own heading, "VOLUME ONE (ONE DISC)", marked § by the bookmark: shown as a heading, not counted: John, 18 Nov 2026)
   var had = 0, n = 0, li = list.map(function (f) { if (/^§ /.test(f)) return '<li class="fh"><span>' + esc(f.slice(2)) + '</span></li>'; n++; var h = names.length && featHas(f, names); if (h) had++; return '<li' + (h ? ' class="have"' : '') + (TV ? ' tabindex="0"' : '') + '><i>' + (h ? '✓' : '·') + '</i><span>' + esc(f) + '</span></li>'; }).join('');
   return '<div class="cfeat"><h3>' + esc(title || 'Criterion’s special features') + ' <small>' + (names.length ? had + ' of ' + n + ' here' : n) + '</small></h3><ul>' + li + '</ul></div>';
@@ -5865,7 +5874,7 @@ function collectionView(id, into) {
             // big, sized to the size of the tv in the left. Caption on the right. Films in the bottom, scrolling left or right")
             (TV ? '<div class="gridcards csetrow">' + L.map(function (i) { return cardHTML(i, false, true); }).join('') + '</div>' : '') +
             '</div></div></div>' + (TV ? '' : '<div class="gridcards">' + L.map(function (i) { return cardHTML(i, false, true); }).join('') + '</div>') +
-            featHTML(BSF[openSet], [].concat.apply([], L.map(function (i) { return LIB && i.extras ? i.extras.map(function (id) { return LIB.items[id]; }).filter(Boolean).map(extraName) : []; })), 'The set’s special features') +
+            featHTML(BSF[openSet], [].concat.apply([], L.map(function (i) { return LIB && i.extras ? i.extras.map(function (id) { return LIB.items[id]; }).filter(Boolean).map(extraName) : []; })), 'The set’s special features', true) +
             (BSM[openSet] && BSM[openSet].length ? '<div class="csmiss"><h3>Not in Grifflix yet <small>' + BSM[openSet].length + '</small></h3><ul>' + BSM[openSet].map(function (m) { return '<li' + (TV ? ' tabindex="0"' : '') + '><span class="cls">' + esc(m[2] || '') + '</span><b>' + esc(m[0]) + '</b><span>' + esc(m[1] || '') + '</span></li>'; }).join('') + '</ul></div>' : '');
           var was_ = openSet;
           $('#csetback').onclick = function () { openSet = null; draw(); if (TV) { var c_ = $$('[data-cset]', g).filter(function (x) { return x.dataset.cset === was_; })[0]; if (c_) { c_.focus({ preventScroll: true }); c_.scrollIntoView({ block: 'center' }); } } };
