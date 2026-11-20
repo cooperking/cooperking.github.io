@@ -2677,6 +2677,34 @@ def make_handler(g):
                         for k, v in P.items()), key=lambda x: -(x.get('at') or 0))
             return self.send_json(200, {'films': L, 'waiting': sum(1 for x in L if not x['text'])})
 
+        def api_unmatched(self, me, user, q, b):
+            """John's only: the films with no IMDb number (never matched on TMDB, or matched to a TMDB film without one), with what the
+            automatic matching found for each (match-unmatched.json), for the admin page's list to search and fix by hand (John, 20 Nov
+            2026, "I need an unmatched list in admin where I can search and fix")."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            lid = (g.st.get('libraries') or {}).get('movies')
+            if not lid:
+                return self.send_json(200, {'films': []})
+            T = load(os.path.expanduser('~/Grifflix/match-unmatched.json'), {}) or {}
+            out, start = [], 0
+            while True:
+                r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path,ProviderIds,ProductionYear',
+                                                                       'StartIndex': start, 'Limit': 500, 'SortBy': 'SortName', 'EnableImages': 'false'}, timeout=120) or {}
+                for it in r.get('Items') or []:
+                    pid = it.get('ProviderIds') or {}
+                    if pid.get('Imdb'):
+                        continue
+                    t = T.get(it['Id']) if isinstance(T.get(it['Id']), dict) else {}
+                    p_ = it.get('Path') or ''
+                    out.append({'id': it['Id'], 'name': it.get('Name'), 'year': it.get('ProductionYear') or '', 'tmdb': pid.get('Tmdb') or '',
+                                'folder': os.path.basename(os.path.dirname(p_)), 'file': os.path.basename(p_), 'mins': round((it.get('RunTimeTicks') or 0) / 6e8),
+                                'note': t.get('note') or '', 'saw': t.get('saw') or [], 'tried': t.get('at') or 0})
+                start += 500
+                if start >= (r.get('TotalRecordCount') or 0):
+                    break
+            return self.send_json(200, {'films': out})
+
         def api_subprep(self, me, user, q, b):
             """John's only: the English subtitles being made ready on his Mac: how many, those to check, those none could be found for;
             POST op pause, resume, look (the list looked over now) or again (one film tried again)."""

@@ -505,6 +505,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="state"><button class="btn" type="button" id="sppause">Pause</button><button class="btn" type="button" id="splook">Look for films now</button></div>
         <div id="splists"></div>
       </section>
+      <section class="card" data-tab="library" id="umcard">
+        <div class="kicker">Unmatched</div>
+        <h2>Films <em>with no match</em></h2>
+        <p class="stat">Films with no IMDb number: the media server couldn’t find them on TMDB, or found a TMDB film without one. Each hour the Mac mini tries them itself; what TMDB had is shown under each. Search TMDB for one and choose it to fix it (its folder renamed too, and its collections looked at again).</p>
+        <p class="stat" id="umsay">Looking…</p>
+        <input type="search" id="umq" class="name" placeholder="Filter this list" autocomplete="off" style="width:100%;margin:8px 0">
+        <ul class="changes" id="umlist"></ul>
+      </section>
       <section class="card" data-tab="library" id="distcard">
         <div class="kicker">Distributors</div>
         <h2>Who <em>released</em> each film</h2>
@@ -882,6 +890,59 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   subPrep();
   (function () { var b = document.getElementById('splook'); if (b) b.onclick = function () { subPrep({ op: 'look' }); toast('Looking over the films: a minute or two'); setTimeout(function () { subPrep(); }, 90000); };
     var c = document.getElementById('spcopy'); if (c) c.onclick = function () { navigator.clipboard.writeText('curl -fsSL https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/convert-here.sh -o ~/Grifflix/convert-here.sh && zsh ~/Grifflix/convert-here.sh subs-setup').then(function () { toast('Copied: paste it into Terminal on your Mac'); }); }; })();
+  // ---- films with no match (no IMDb number), searched on TMDB and fixed here: John, 20 Nov 2026, "I need an unmatched list in admin where I can search and fix"
+  var UM = [];
+  function umLoad() {
+    if (!TOKEN || !GW) return setTimeout(umLoad, 5000);
+    fetch(GW + '/api/unmatched', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error(r.status === 404 ? 'the Mac mini takes its update within a few minutes' : 'the Mac mini said ' + r.status); return r.json(); })
+      .then(function (j) { UM = j.films || []; umDraw(); })
+      .catch(function (e) { $('#umsay').textContent = 'Couldn’t ask just now: ' + (e.message || e) + '.'; setTimeout(umLoad, 120000); });
+  }
+  function umFold(t) { return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  function umDraw() {
+    var q = umFold($('#umq').value).trim(), L = UM.filter(function (x) { return !q || umFold(x.name + ' ' + x.folder + ' ' + x.file).indexOf(q) >= 0; });
+    $('#umsay').innerHTML = UM.length ? '<b>' + UM.length + '</b> film' + (UM.length === 1 ? '' : 's') + ' with no match' + (q ? ' · ' + L.length + ' shown' : '') + '.' : 'Every film is matched.';
+    $('#umlist').innerHTML = L.map(function (x) {
+      var why = x.tmdb ? 'On TMDB (' + esc(x.tmdb) + '), but TMDB has no IMDb number for it' : x.note ? esc(x.note) : 'Not tried yet';
+      return '<li data-um="' + x.id + '">' + FL(x.name, x.year, x.id) + '<span class="when">' + esc(x.folder) + (x.mins ? ' · ' + x.mins + ' min' : '') + ' · ' + why +
+        (x.saw && x.saw.length ? ' · TMDB had: ' + x.saw.map(esc).join('; ') : '') + '</span>' +
+        '<span class="state" style="margin-top:6px;gap:6px;flex-wrap:wrap"><input type="search" class="name" data-umq placeholder="Title on TMDB" value="' + esc(String(x.name || '').replace(/\s*\((19|20)\d\d\)\s*$/, '')) + '" style="flex:1;min-width:160px">' +
+        '<input type="text" class="name" data-umy inputmode="numeric" placeholder="Year" value="' + esc(x.year || '') + '" style="width:70px">' +
+        '<button class="btn" type="button" data-umgo>Search TMDB</button></span><ul class="dres" data-umres style="margin-top:6px"></ul></li>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('#umlist [data-umgo]'), function (bt) {
+      var li = bt.closest('li'), id = li.dataset.um, res = li.querySelector('[data-umres]');
+      var go = function () {
+        var qq = li.querySelector('[data-umq]').value.trim(), yy = li.querySelector('[data-umy]').value.trim();
+        res.innerHTML = '<li class="stat">Searching…</li>';
+        fetch(GW + '/api/identify?id=' + id + '&q=' + encodeURIComponent(qq) + (/^\d{4}$/.test(yy) ? '&year=' + yy : ''), { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' })
+          .then(function (r) { if (!r.ok) throw new Error('the Mac mini said ' + r.status); return r.json(); }).then(function (j) {
+            var R = j.results || [];
+            res.innerHTML = R.length ? R.map(function (r, k) {
+              return '<li style="display:flex;gap:10px;align-items:flex-start;margin:6px 0">' + (r.image ? '<img src="' + esc(r.image) + '" alt="" style="width:46px;height:69px;object-fit:cover;flex:none">' : '') +
+                '<span style="flex:1"><b>' + esc(r.name) + '</b> (' + esc(r.year || '?') + ')' + (r.imdb ? '' : ' · <i>no IMDb number</i>') + '<br><span class="when">' + esc(r.overview || '') + '</span></span>' +
+                '<button class="btn" type="button" data-umpick="' + k + '">This one</button></li>';
+            }).join('') : '<li class="stat">Nothing on TMDB for that: try another title, or no year.</li>';
+            Array.prototype.forEach.call(res.querySelectorAll('[data-umpick]'), function (pb) {
+              pb.onclick = function () {
+                var r = R[+pb.dataset.umpick]; pb.disabled = true; pb.textContent = 'Fixing…';
+                fetch(GW + '/api/identify', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id, pick: r.raw }) })
+                  .then(function (x) { return x.json().then(function (j2) { if (!x.ok) throw new Error(j2.error || 'the Mac mini said ' + x.status); return j2; }); })
+                  .then(function (j2) {
+                    toast('Now “' + j2.name + '” (' + (j2.year || '?') + '): on the site within a few minutes');
+                    UM = UM.filter(function (y) { return y.id !== id; }); umDraw();
+                  }).catch(function (e) { pb.disabled = false; pb.textContent = 'This one'; toast('Couldn’t fix it: ' + (e.message || e)); });
+              };
+            });
+          }).catch(function (e) { res.innerHTML = '<li class="stat">Couldn’t search: ' + esc(e.message || e) + '</li>'; });
+      };
+      bt.onclick = go;
+      li.querySelector('[data-umq]').onkeydown = li.querySelector('[data-umy]').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); go(); } };
+    });
+  }
+  (function () { var q = document.getElementById('umq'); if (q) q.oninput = umDraw; })();
+  umLoad();
   function gate(why, seed) { $('#gate').hidden = false; if (why && !(location.hostname === 'admin.grifflix.co.uk' && !TOKEN)) $('#gatewhy').textContent = why; $('#seed').hidden = !seed; }
 
   // signed in to Grifflix as John? The first time, before Grifflix has members, his other sign-in on this site starts them
