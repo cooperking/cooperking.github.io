@@ -6154,6 +6154,41 @@ def bom_read(page):
 
 
 BOM_LOCK = threading.Lock()
+# (a film with no cinema distributor that went straight to a streaming service: that service is its distributor, as Wikidata gives it, and
+# only from when the service made its own films (Netflix's 1940s films are its licences, not its own): John, 20 Nov 2026, "if a film has
+# no distributor and is streaming only, then the streaming platform counts as the distributor")
+STREAMERS = [(r'^netflix$', 'Netflix', 2015), (r'^apple tv\+?$|^apple tv plus$|^apple original films$', 'Apple TV+', 2019),
+             (r'^amazon prime video$|^prime video$|^amazon studios$|^amazon mgm studios$', 'Prime Video', 2015), (r'^hulu$', 'Hulu', 2017),
+             (r'^disney\+$', 'Disney+', 2019), (r'^hbo max$|^max$|^hbo$|^hbo films$', 'HBO Max', 2019), (r'^paramount\+$', 'Paramount+', 2020),
+             (r'^peacock$', 'Peacock', 2020)]
+
+
+def streamers_of(ids):
+    """Each film's streaming service, from Wikidata's "distributed by": {imdb: service}, for those with exactly one, or Hulu over Disney+."""
+    out = {}
+    for n in range(0, len(ids), 200):
+        q = ('SELECT ?imdb ?distLabel WHERE { VALUES ?imdb { %s } ?film wdt:P345 ?imdb . ?film wdt:P750 ?dist . '
+             'SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } }') % ' '.join('"%s"' % x for x in ids[n:n + 200])
+        try:
+            req = urllib.request.Request('https://query.wikidata.org/sparql?' + urllib.parse.urlencode({'query': q}),
+                                         headers={'Accept': 'application/sparql-results+json', 'User-Agent': 'Grifflix/1.0 (family film library)'})
+            with urllib.request.urlopen(req, timeout=120, context=tls()) as r_:
+                rows = json.loads(r_.read()).get('results', {}).get('bindings', [])
+        except Exception:
+            continue
+        got = {}
+        for b in rows:
+            d = b['distLabel']['value'].strip().lower()
+            for pat, name, since in STREAMERS:
+                if re.search(pat, d):
+                    got.setdefault(b['imdb']['value'], set()).add(name)
+        for t, names in got.items():
+            if len(names) == 1:
+                out[t] = names.pop()
+            elif names == {'Hulu', 'Disney+'}:
+                out[t] = 'Hulu'
+        time.sleep(1)
+    return out
 
 
 def bom_now():
@@ -6176,8 +6211,6 @@ def bom_now():
             t = str((f.get('ProviderIds') or {}).get('Imdb') or '')
             if re.match(r'^tt\d{6,10}$', t) and t not in D and t not in todo:
                 todo.append((t, f.get('Name')))
-        if not todo:
-            return
         F = load(fa, {}) or {}
         got = []
         for t, name in todo[:150]:
@@ -6195,10 +6228,26 @@ def bom_now():
             D[t] = re.sub(r'\s+', ' ', (v.get('f') or {}).get('Domestic Distributor') or '').strip()[:120]
             got.append('%s: %s' % (name, D[t] or 'none'))
             time.sleep(2)
+        # (no cinema distributor: its streaming service, if it went straight to one, from Wikidata; each film asked once)
+        years = {str((f.get('ProviderIds') or {}).get('Imdb') or ''): int(f.get('ProductionYear') or 0) for f in films}
+        ask = [t for t, v in D.items() if not v and t in years and not (F.get(t) or {}).get('ws')]
+        streamed = []
+        if ask:
+            S_ = streamers_of(ask)
+            for t in ask:
+                F.setdefault(t, {'t': '', 'f': {}, 'tb': []})['ws'] = 1
+                svc = S_.get(t)
+                since = next((x[2] for x in STREAMERS if x[1] == svc), 9999)
+                if svc and years.get(t, 0) >= since:
+                    D[t] = svc
+                    F[t].setdefault('f', {})['Streaming only'] = svc
+                    streamed.append(svc)
         save(at, D)
         save(fa, F)
         if got:
             log('Box Office Mojo, for what came in (%d): %s' % (len(got), '; '.join(got)[:1200]))
+        if streamed:
+            log('Streaming only, the service as its distributor (%d): %s' % (len(streamed), ', '.join('%s %d' % (k, streamed.count(k)) for k in sorted(set(streamed)))))
     except Exception as e:
         log('Box Office Mojo, for what came in: %s' % str(e)[:200])
     finally:
@@ -6782,6 +6831,7 @@ def serve():
         covers_now()
         open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
     threading.Thread(target=covers_once, daemon=True).start()
+    threading.Timer(420, bom_now).start()   # (any film come in while it was off: its distributor, or streaming service: 20 Nov 2026)
     threading.Timer(200, a24_now).start()   # (and once each start: any A24 film come in before this, Tony and Misty Green, put in)   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
     threading.Thread(target=fanny_series, args=(g,), daemon=True).start()
     threading.Thread(target=keep_disk_health, daemon=True).start()
