@@ -5010,8 +5010,8 @@ def act_disk_tidy(g, req):
 # are kept (A Hollis Frampton Odyssey): John, 20 Nov 2026, "needs adding correctly to the criterion collection with box sets". The
 # order is the disc's, as John gave it; the lengths the films' own, to find each gap near where it should be.)
 FIELDS_DIR = '/Volumes/G-Drive/Grifflix/Movies/W. C. Fields—Six Short Films (1933)'
-FIELDS_SHORTS = [('The Golf Specialist', 1930, 21), ('Pool Sharks', 1915, 10), ('The Pharmacist', 1933, 19), ('The Fatal Glass of Beer', 1933, 19),
-                 ('The Barber Shop', 1933, 21), ('The Dentist', 1932, 21)]
+FIELDS_SHORTS = [('Pool Sharks', 1915, 11), ('The Golf Specialist', 1930, 21), ('The Dentist', 1932, 21), ('The Fatal Glass of Beer', 1933, 20),
+                 ('The Pharmacist', 1933, 19), ('The Barber Shop', 1933, 21)]   # (the disc's order, from DVD Movie Guide's review, which John found: 11 min, the rest 19-22)
 FIELDS_CUTS = os.path.expanduser('~/Grifflix/fields-cuts.json')
 FIELDS_BUSY = []
 
