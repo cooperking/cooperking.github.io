@@ -2638,7 +2638,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '325020fffd76' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'f8f2637925ce' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6471,7 +6471,7 @@ function keptFonts(rules) {
 function critFonts() {   // (Criterion's Mercury and Gotham, if kept; Source Serif 4 and Montserrat stand in)
   if (critFonts.d) return; critFonts.d = 1;
   var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,700;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap'; document.head.appendChild(l);
-  keptFonts([[/^gotham-?narrow(ssm)?-/, 'CritNarrow'], [/^gotham(ssm)?-/, 'CritSans'], [/^mercury-?display/, 'CritDisplay'], [/^mercury-?(text|ssm|g1)|^mercury-/, 'CritText']]);
+  keptFonts([[/^gotham-?narrow(ssm)?-/, 'CritNarrow'], [/^gotham(ssm)?-/, 'CritSans'], [/^mercury-?display(?!.*sc\.woff)/, 'CritDisplay'], [/^mercury-?text-?g1(?!.*sc\.woff)/, 'CritText']]);
 }
 function a24Fonts() {   // (A24's grotesk and typewriter, fetched only when A24 is shown)
   if (a24Fonts.d) return; a24Fonts.d = 1;
