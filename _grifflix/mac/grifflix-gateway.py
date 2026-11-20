@@ -2551,10 +2551,19 @@ def make_handler(g):
             at = os.path.expanduser('~/Grifflix/distributors.json')
             D = load(at, {}) or {}
             if b and isinstance(b.get('dist'), dict):
+                # (everything the bookmark read from each film's page kept beside it, in distributors-full.json: its summary, takings and
+                # tables, so it needn't be read again: John, 20 Nov 2026)
+                fa = os.path.expanduser('~/Grifflix/distributors-full.json')
+                F = load(fa, {}) or {}
                 for k, v in b['dist'].items():
-                    if re.match(r'^tt\d{6,10}$', str(k)):
-                        D[str(k)] = re.sub(r'\s+', ' ', str(v or '')).strip()[:120]
+                    if not re.match(r'^tt\d{6,10}$', str(k)):
+                        continue
+                    if isinstance(v, dict):
+                        F[str(k)] = v
+                        v = ((v.get('f') or {}).get('Domestic Distributor') or '')
+                    D[str(k)] = re.sub(r'\s+', ' ', str(v or '')).strip()[:120]
                 save(at, D)
+                save(fa, F)
                 log('Distributors: %d films from Box Office Mojo, by John’s browser' % len(b['dist']))
             libs = g.st.get('libraries', {})
             films = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': libs.get('movies'), 'Recursive': 'true', 'IncludeItemTypes': 'Movie',

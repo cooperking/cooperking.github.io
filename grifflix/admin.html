@@ -766,26 +766,42 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 (function () {
   var DBM = function (IDS) {
     if (!/(^|\.)boxofficemojo\.com$/.test(location.hostname)) { alert('Grifflix: open www.boxofficemojo.com first, then click this again.'); return; }
-    var KEY = 'grifflix-dist', D = {}; try { D = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { D = {}; }
+    /* (everything the film's page shows, so it needn't be read again: its title, every line of its summary (distributor, opening, budget,
+       earliest release, rating, running time, genres), its takings, and its tables (each release and re-release; each country): John, 20 Nov
+       2026, "it would be good to get as much information from the page as we can". Kept in this site's own database as it goes, so a stop
+       carries on where it was) */
+    var D = {}, db = null;
+    var idb = function () { return new Promise(function (ok, no) { var r = indexedDB.open('grifflix-dist', 1); r.onupgradeneeded = function () { r.result.createObjectStore('f'); }; r.onsuccess = function () { ok(r.result); }; r.onerror = function () { no(r.error); }; }); };
+    var put = function (k, v) { return new Promise(function (ok) { try { var tx = db.transaction('f', 'readwrite'); tx.objectStore('f').put(v, k); tx.oncomplete = ok; tx.onerror = ok; } catch (e) { ok(); } }); };
+    var all = function () { return new Promise(function (ok) { try { var out = {}, st = db.transaction('f').objectStore('f'), c = st.openCursor(); c.onsuccess = function () { var x = c.result; if (x) { out[x.key] = x.value; x.continue(); } else ok(out); }; c.onerror = function () { ok(out); }; } catch (e) { ok({}); } }); };
     var d = document.createElement('div'); d.style.cssText = 'position:fixed;z-index:2147483647;top:12px;right:12px;max-width:340px;background:rgb(17,17,17);color:white;padding:14px 18px;font:14px/1.45 sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.4)';
     document.body.appendChild(d);
-    var save = function (done) { var b = new Blob([JSON.stringify({ dist: D, at: Date.now() })], { type: 'application/json' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'grifflix-distributors.json'; document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 1000);
-      if (done) d.innerHTML = 'Grifflix: done. ' + Object.keys(D).filter(function (k) { return D[k]; }).length + ' of ' + IDS.length + ' films have a distributor. Saved <b>grifflix-distributors.json</b>: choose it in the admin page, Library, Distributors.'; };
+    var has = function (t) { return D[t] && D[t].f && D[t].f['Domestic Distributor']; };
+    var save = function (done) { var b = new Blob([JSON.stringify({ v: 2, dist: D, at: Date.now() })], { type: 'application/json' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'grifflix-distributors.json'; document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 1000);
+      if (done) d.innerHTML = 'Grifflix: done. ' + IDS.filter(has).length + ' of ' + IDS.length + ' films have a distributor. Saved <b>grifflix-distributors.json</b>: choose it in the admin page, Library, Distributors.'; };
     var stop = false, wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
-    var paint = function (msg) { var n = IDS.filter(function (t) { return t in D; }).length, f = IDS.filter(function (t) { return D[t]; }).length;
-      d.innerHTML = 'Grifflix: ' + (msg || 'reading') + '<br>' + n + ' of ' + IDS.length + ' looked at, ' + f + ' with a distributor. Keep this tab open.<br><button id="gxdsave" style="margin-top:8px">Save what’s done</button> <button id="gxdstop" style="margin-top:8px">Stop</button>';
+    var paint = function (msg) { var n = IDS.filter(function (t) { return t in D; }).length;
+      d.innerHTML = 'Grifflix: ' + (msg || 'reading') + '<br>' + n + ' of ' + IDS.length + ' looked at, ' + IDS.filter(has).length + ' with a distributor. Keep this tab open.<br><button id="gxdsave" style="margin-top:8px">Save what’s done</button> <button id="gxdstop" style="margin-top:8px">Stop</button>';
       d.querySelector('#gxdsave').onclick = function () { save(false); }; d.querySelector('#gxdstop').onclick = function () { stop = true; }; };
+    var clean = function (x) { return (x || '').replace(/See full company information/i, '').replace(/See more details at IMDbPro/i, '').replace(/\s+/g, ' ').trim(); };
+    var read = function (h, t) {
+      var doc = new DOMParser().parseFromString(h, 'text/html'), f = {}, tabs = [];
+      [].forEach.call(doc.querySelectorAll('div'), function (x) { var sp = [].filter.call(x.children, function (c) { return c.tagName === 'SPAN'; });
+        if (sp.length >= 2 && x.children.length <= 3) { var k = clean(sp[0].textContent), v = clean(sp[1].textContent); if (k && v && k.length < 60 && !(k in f) && k !== 'IMDbPro') f[k] = v.slice(0, 400); } });
+      [].forEach.call(doc.querySelectorAll('table'), function (tb) { var rows = [].map.call(tb.querySelectorAll('tr'), function (tr) { return [].map.call(tr.querySelectorAll('th, td'), function (c) { var a = c.querySelector('a[href]'), v = clean(c.textContent).slice(0, 160); return a && /\/(release|releasegroup)\//.test(a.getAttribute('href')) ? v + ' <' + a.getAttribute('href').replace(/[?].*$/, '') + '>' : v; }); }).filter(function (r) { return r.length; });
+        if (rows.length) tabs.push(rows.slice(0, 80)); });
+      return { t: clean((doc.querySelector('h1') || {}).textContent).slice(0, 200), f: f, tb: tabs.slice(0, 6) };
+    };
     (async function () {
+      try { db = await idb(); D = await all(); } catch (e) { D = {}; }
       var left = IDS.filter(function (t) { return !(t in D); });
       for (var i = 0; i < left.length && !stop; i++) {
         var t = left[i]; paint();
         try {
           var r = await fetch('/title/' + t + '/', { credentials: 'include' });
           if (r.status === 429 || r.status === 503) { paint('Box Office Mojo asked to slow down: waiting a minute…'); await wait(60000); i--; continue; }
-          var h = r.ok ? await r.text() : '', name = '';
-          if (h) { var doc = new DOMParser().parseFromString(h, 'text/html'), lab = [].filter.call(doc.querySelectorAll('span'), function (x) { return x.textContent.trim() === 'Domestic Distributor'; })[0];
-            var val = lab && lab.nextElementSibling; name = val ? val.textContent.replace(/See full company information/i, '').replace(/\s+/g, ' ').trim() : ''; }
-          D[t] = name; try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) {}
+          var v = r.ok ? read(await r.text(), t) : { t: '', f: {}, tb: [], none: r.status };
+          D[t] = v; await put(t, v);
         } catch (e) { paint('a page didn’t answer: going on in a moment'); await wait(10000); }
         await wait(1100 + Math.random() * 900);
       }
@@ -808,7 +824,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       .catch(function (e) { say.textContent = 'Couldn’t get your films just now: ' + e.message + '.'; setTimeout(go, 60000); }); };
   go();
   document.getElementById('distfile').onchange = function () { var f = this.files && this.files[0]; if (!f) return; say.textContent = 'Sending…';
-    f.text().then(function (t) { var j = JSON.parse(t); if (!j || typeof j.dist !== 'object') throw new Error('that isn’t the distributors file'); return load({ dist: j.dist }); })
+    // (sent in parts: the Mac mini takes at most 1 MB at once, and everything on each film's page makes several)
+    f.text().then(function (t) { var j = JSON.parse(t); if (!j || typeof j.dist !== 'object') throw new Error('that isn’t the distributors file');
+      var keys = Object.keys(j.dist), parts = [], cur = {}, size = 0;
+      keys.forEach(function (k) { var n = JSON.stringify(j.dist[k]).length; if (size + n > 600000 && size) { parts.push(cur); cur = {}; size = 0; } cur[k] = j.dist[k]; size += n; });
+      if (size) parts.push(cur);
+      return parts.reduce(function (p, part, n) { return p.then(function () { say.textContent = 'Sending part ' + (n + 1) + ' of ' + parts.length + '…'; return load({ dist: part }); }); }, Promise.resolve()); })
       .then(function (j) { show(j); toast('Kept: ' + j.found + ' films with a distributor'); }).catch(function (e) { say.textContent = 'That didn’t work: ' + (e.message || e); }); };
   document.getElementById('distcsv').onclick = function () { if (!last) return;
     var rows = [['Distributor', 'Films', 'Film', 'Year']]; last.dist.forEach(function (x) { x[2].forEach(function (f) { rows.push([x[0], x[1], f[0], f[1]]); }); });
