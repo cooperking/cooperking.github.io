@@ -133,10 +133,10 @@ class Jellyfin:
     def conn(self, timeout=30):
         return http.client.HTTPConnection(self.host, self.port, timeout=timeout)
 
-    def call(self, method, path, body=None, query=None):
+    def call(self, method, path, body=None, query=None, timeout=30):
         if query:
             path += ('&' if '?' in path else '?') + urllib.parse.urlencode({k: v for k, v in query.items() if v is not None})
-        c = self.conn()
+        c = self.conn(timeout)
         data = json.dumps(body).encode() if body is not None else None
         c.request(method, path, body=data, headers={'Authorization': self.auth_header(), 'Content-Type': 'application/json'})
         r = c.getresponse()
@@ -6123,7 +6123,7 @@ def match_unmatched(g):
         T = {k: v for k, v in T.items() if isinstance(v, dict) and v.get('done')}
         T['_v'] = 3
     items = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie',
-                                                               'Fields': 'Path,ProductionYear,ProviderIds,LockedFields,MediaSources'}).get('Items') or []
+                                                               'Fields': 'Path,ProductionYear,ProviderIds,LockedFields'}, timeout=180).get('Items') or []   # (no file details, and longer: it timed out on the busy Mac)
     VID = ('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')
     fixed, unsure = [], []
     for it in items:
