@@ -4969,6 +4969,19 @@ def keep_extras(g):
         time.sleep(1800 if n_ else 6 * 3600)
 
 
+def keep_covers():
+    """Every Criterion film's cover put on without waiting for a download to set it off: 3 minutes after the gateway starts, then every
+    hour (John, 20 Nov 2026: "we should have the posters for all the films ready to go"; The Beloved Child, fixed to its English title, waited
+    for the next film to come in). Criterion's covers are all here already, so it's quick; one at a time, as ever (covers_now)."""
+    time.sleep(180)
+    while True:
+        try:
+            covers_now()
+        except Exception as e:
+            log('Criterion covers (on the hour):', str(e)[:200])
+        time.sleep(3600)
+
+
 def keep_plex_off(g):
     """While John has had Plex kept off: quit again if it starts (at login, or by itself), every 5 minutes."""
     time.sleep(120)
@@ -6270,6 +6283,7 @@ def serve():
     threading.Thread(target=keep_backup, args=(g,), daemon=True).start()
     threading.Thread(target=keep_plex_off, args=(g,), daemon=True).start()
     threading.Thread(target=keep_extras, args=(g,), daemon=True).start()
+    threading.Thread(target=keep_covers, daemon=True).start()   # (every Criterion film its cover, hourly)
     try:   # (the spines set by hand, where criterion.py, for the Google sheet, reads them too)
         f_ = os.path.expanduser('~/Grifflix/criterion-spines-own.json')
         own_ = load(f_, {}) or {}
