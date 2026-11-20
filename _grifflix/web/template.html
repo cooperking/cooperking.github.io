@@ -867,7 +867,9 @@ html.tv .th-picture .zamb { filter: blur(18px) saturate(1.4) brightness(.42); }
 .shcard img { display: block; width: 100%; height: auto; margin-top: 16px; border-radius: 0 !important; }   /* (square edges, as the brand) */
 .tshare { position: fixed; z-index: 27; right: 52px; bottom: 104px; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(var(--kink), .35); background: color-mix(in srgb, var(--bg) 72%, #000); color: var(--fg); padding: 0; cursor: pointer; }
 .tshare svg { width: 15px; height: 15px; }
-html.mob .tshare { right: 16px; bottom: auto; top: max(66px, calc(env(safe-area-inset-top) + 64px)); border: 0; background: none; } html.mob .tinspo { right: 52px !important; }
+html.mob .tshare { right: 10px; bottom: auto; top: calc(max(66px, calc(env(safe-area-inset-top) + 64px)) + 8px); border: 0; background: none; } html.mob .tinspo { right: 0 !important; padding-right: 52px !important; }
+/* (on a phone the share button in the theme's strip, at its end, the strip running to the edge: it sat in a gap beside the strip, over the theme,
+   the strip's words cut off by it: John, 20 Nov 2026, "Share button goes over themes") */
 .bar-top .tmute { display: none !important; }   /* (the music on and off, in the bar, on the theme's page only: John, 11 Nov 2026: "move up to the top bar") */
 html.tv .tshare, html.tv #sharecal, html.tv #ashare, html.tv #shnative { display: none !important; }   /* (no sharing on the TV: John, 10 Nov 2026) */
 .zlt { position: absolute; left: 0; top: 0; z-index: 105; font-family: var(--kfont); font-weight: 700; line-height: 1; color: #ece7dd; text-transform: uppercase; pointer-events: none; will-change: transform; backface-visibility: hidden; -webkit-backface-visibility: hidden; text-shadow: 0 0 1px rgba(0, 0, 0, .5); }   /* (the logo's own Futura, bold, as the bar's GRIFFLIX: John, 10 Nov 2026) */
