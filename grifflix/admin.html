@@ -2451,7 +2451,7 @@ var feats = function (doc) {
       });
       var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
       (async function () {
-        var out = { tags: {}, sets: {}, urls: urls, missing: [], debug: dbg }, keys = Object.keys(urls), i = 0;
+        var out = { tags: {}, ftags: {}, sets: {}, urls: urls, missing: [], debug: dbg }, keys = Object.keys(urls), i = 0;
         for (i = 0; i < keys.length; i++) {
           var w = keys[i]; d.textContent = 'Grifflix: reading ' + w + ' (' + (i + 1) + ' of ' + keys.length + ')… keep this tab open.';
           try {
@@ -2460,10 +2460,10 @@ var feats = function (doc) {
             var doc = new DOMParser().parseFromString(h, 'text/html');
             var rws = [].map.call(doc.querySelectorAll('tr.gridFilm, tr[data-href], [data-href*="/films/"], [data-href*="/boxsets/"], td a[href*="/boxsets/"], .gridFilm a[href*="/boxsets/"]'), function (el) { var tr = (el.closest && el.closest('tr')) || el, td = tr.querySelector ? tr.querySelector('td') : null; var im = tr.querySelector ? tr.querySelector('img') : null; return { h: el.getAttribute('data-href') || el.getAttribute('href') || '', sp: ((td ? td.textContent : '').trim().match(/^\d+$/) || [''])[0], im: im ? (im.getAttribute('data-src') || im.getAttribute('src') || '') : '' }; }).filter(function (x) { return x.h; });
             var hrefs = rws.map(function (x) { return x.h; });
-            var slugs = [], seenH = {};
+            var slugs = [], direct = [], seenH = {};   // (direct: the films the list shows themselves, not through a box set: a set's genres aren't each film's)
             for (var k = 0; k < hrefs.length; k++) {
               var hr = hrefs[k].replace(/[?\u0023].*$/, ''); if (seenH[hr]) continue; seenH[hr] = 1;
-              if (/\/films\//.test(hr)) { slugs.push(hr.replace(/^.*\/films\//, '')); continue; }
+              if (/\/films\//.test(hr)) { slugs.push(hr.replace(/^.*\/films\//, '')); direct.push(hr.replace(/^.*\/films\//, '')); continue; }
               if (!/\/boxsets\//.test(hr)) continue;
               d.textContent = 'Grifflix: reading ' + w + ' (' + (i + 1) + ' of ' + keys.length + '): the box set ' + (k + 1) + ' of ' + hrefs.length + '… keep this tab open.';
               await wait(1500 + Math.random() * 1000);
@@ -2490,6 +2490,7 @@ var feats = function (doc) {
               } catch (e2) {}
             }
             out.tags[w] = slugs.filter(function (x, n) { return x && slugs.indexOf(x) === n; });
+            out.ftags[w] = direct.filter(function (x, n) { return x && direct.indexOf(x) === n; });
           } catch (e) { out.missing.push(w + ' (' + e.message + ')'); }
           await wait(2500 + Math.random() * 1500);
         }
