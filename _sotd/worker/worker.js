@@ -262,6 +262,13 @@ export default {
       if (back.length) await env.SOTD.put('upl:' + pid, JSON.stringify(data));
       if (env.MEDIA) await env.MEDIA.put('diag/round-back.json', JSON.stringify({ at: new Date().toISOString(), back }, null, 1), { httpMetadata: { contentType: 'application/json' } });
     })().catch(e => console.log('roundBack: ' + (e && e.message))));
+    ctx.waitUntil((async () => {   // once, after 12:20 UTC on 20 Nov 2026: whether Collaborations' round went out, for checking
+      if (!env.MEDIA || Date.now() < Date.parse('2026-11-20T12:20:00Z') || await env.SOTD.get('diagRound3')) return;
+      await env.SOTD.put('diagRound3', String(Date.now()));
+      const pid = 'hXXaGojDDcooDA', data = await uplSongs(env, pid), owner = await env.SOTD.get('owner'), sent = ((await env.SOTD.get('outbox:' + owner, 'json')) || []).slice(0, 3).map(x => ({ t: x.t, at: new Date(x.at).toISOString(), to: x.to, b: x.b, g: (x.g || []).length }));
+      const log = ((await env.SOTD.get('pushLog', 'json')) || []).slice(0, 3);
+      await env.MEDIA.put('diag/round3.json', JSON.stringify({ roundAt: data.roundAt ? new Date(data.roundAt).toISOString() : 0, sent, log }, null, 1), { httpMetadata: { contentType: 'application/json' } });
+    })().catch(e => console.log('diagRound3: ' + (e && e.message))));
     ctx.waitUntil((async () => {   // once: Collaborations' songs, their added dates, days and captions, for checking
       if (await env.SOTD.get('diagCollab4')) return;
       await env.SOTD.put('diagCollab4', String(Date.now()));
