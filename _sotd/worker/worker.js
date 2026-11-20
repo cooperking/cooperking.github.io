@@ -235,6 +235,16 @@ export default {
       const owned = Object.keys(U).filter(k => rec && U[k].o === rec.o);
       await env.MEDIA.put('diag/trouble.json', JSON.stringify({ owner: rec && rec.o, ownerName: rec && all[rec.o] && all[rec.o].name, fmax: rec && all[rec.o] && all[rec.o].fmax, max: rec ? filesMax(all[rec.o]) : null, owned, song: x, cat: cat[t] || null, plan: plan && { u: plan.u, allowed: plan.allowed.size, has: plan.allowed.has(t), john: plan.john.has(t) }, tw, twCat: tw && tw.id ? cat[tw.id] || null : null, files: (data.files || {})[t] || null }, null, 1), { httpMetadata: { contentType: 'application/json' } });
     })().catch(async e => { if (env.MEDIA) await env.MEDIA.put('diag/trouble.json', JSON.stringify({ error: String(e && (e.stack || e.message) || e) }), { httpMetadata: { contentType: 'application/json' } }).catch(() => {}); }));
+    ctx.waitUntil((async () => {   // once: how Wild Wild West's two copies on Collaborations show to John (John, 20 Nov 2026: "the song to publish for wild wild west didn't show that we had the files already")
+      if (!env.MEDIA || await env.SOTD.get('diagWWW1')) return;
+      await env.SOTD.put('diagWWW1', String(Date.now()));
+      const pid = 'hXXaGojDDcooDA', U = await uplAll(env), rec = U[pid], all = (await env.SOTD.get('members', 'json')) || {}, owner = await env.SOTD.get('owner'), cat = await catalog(env), TW = await twinFiles(env);
+      const view = await uplView(env, all, owner, pid, rec), data = await uplSongs(env, pid);
+      const pick = x => { const o = {}; for (const k of ['id', 'title', 'artist', 'd', 'w', 'f', 'jf', 'own', 'vid', 'ov', 'dlx', 'osrc']) if (k in x) o[k] = x[k]; o.ma = !!x.ma; o.mv = !!x.mv; return o; };
+      const ws = view.songs.filter(x => /wild wild west/i.test(x.title || '')).map(pick);
+      const raw = (data.songs || []).filter(x => /wild wild west/i.test(x.title || '')).map(x => ({ id: x.id, a: x.a, title: x.title, artists: x.artists, key: songTitleKey(x), names: songNames(x), cat: cat[x.id] || null, files: (data.files || {})[x.id] || null, waiting: uplWaiting(rec, data, x), twin: twinOf(TW, x, pid), twEntries: TW[songTitleKey(x)] || null }));
+      await env.MEDIA.put('diag/www.json', JSON.stringify({ view: ws, raw }, null, 1), { httpMetadata: { contentType: 'application/json' } });
+    })().catch(async e => { if (env.MEDIA) await env.MEDIA.put('diag/www.json', JSON.stringify({ error: String(e && (e.stack || e.message) || e) }), { httpMetadata: { contentType: 'application/json' } }).catch(() => {}); }));
     ctx.waitUntil((async () => {   // once: Collaborations' songs, their added dates, days and captions, for checking
       if (await env.SOTD.get('diagCollab4')) return;
       await env.SOTD.put('diagCollab4', String(Date.now()));
