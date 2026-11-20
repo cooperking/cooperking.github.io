@@ -907,7 +907,16 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 
   // ---- draft and live
   var page = function (u) { return fetch(u + '?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) { return t.replace(/\/\*BUILD\*\/\{[^}]*\}/, ''); }); };
-  var gh = function (p) { return fetch('https://api.github.com/repos/' + REPO + p, { headers: { Accept: 'application/vnd.github+json' } }).then(function (r) { return r.ok ? r.json() : []; }); };
+  // (GitHub's answers kept 5 minutes, and the last good one used when it won't answer: asked every minute it stopped answering within the
+  // hour (60 an hour without signing in), and what was waiting went blank, "1 thing waiting" and nothing said: John, 20 Nov 2026)
+  var GHC = {};
+  try { GHC = JSON.parse(store.get('grifflix-ghc') || '{}') || {}; } catch (e) { GHC = {}; }
+  var gh = function (p) {
+    var c = GHC[p]; if (c && Date.now() - c.t < 300000) return Promise.resolve(c.j);
+    return fetch('https://api.github.com/repos/' + REPO + p, { headers: { Accept: 'application/vnd.github+json' } }).then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function (j) { GHC[p] = { t: Date.now(), j: j }; try { store.set('grifflix-ghc', JSON.stringify(GHC).slice(0, 400000)); } catch (e) {} return j; })
+      .catch(function () { return c ? c.j : []; });
+  };
   var watching = null;
   function draftLive() {
     return Promise.all([page('/grifflix/draft/index.html'), page('/grifflix/index.html'), gh('/commits?path=grifflix/index.html&per_page=1'), gh('/commits?path=_grifflix/web/template.html&per_page=30')]).then(function (r) {
@@ -916,6 +925,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       $('#dlsay').textContent = same ? 'Nothing waiting to go live. Last put live ' + (r[2][0] ? when(lastLive) : '—') + '.' : 'On the preview, not yet live. Look at the Preview, then Update everything puts all of it live together.';
       $('#changes').innerHTML = same ? '' : waiting.map(function (c) { return '<li>' + esc(c.commit.message.split('\n')[0].replace(/^Grifflix(\s+page)?:\s*/i, '')) + '<span class="when">' + when(c.commit.committer.date) + '</span></li>'; }).join('');
       WAIT.page = same ? null : (waiting.length || 1) + ' change' + (waiting.length === 1 ? '' : 's') + ' to the page'; summary();
+      // (no change to the page's own source since it went live, yet the draft differs: what changed the draft said, not left blank: John,
+      // 20 Nov 2026, "1 thing waiting - I should always see what the "1 thing" is")
+      if (!same && !waiting.length) gh('/commits?path=grifflix/draft/index.html&per_page=30').then(function (dc) {
+        var d2 = (Array.isArray(dc) ? dc : []).filter(function (c) { return c.commit.committer.date > lastLive; });
+        $('#changes').innerHTML = d2.length ? d2.map(function (c) { return '<li>' + esc(c.commit.message.split('\n')[0].replace(/^Grifflix(\s+page)?:\s*/i, '')) + '<span class="when">' + when(c.commit.committer.date) + '</span></li>'; }).join('')
+          : '<li>The draft differs from the live page, though nothing new has been made since it was last put live (the draft rebuilt). Putting it live changes nothing you’d notice.</li>';
+        summary();
+      });
       if (same) WAIT.going = false;
       if (watching && same) { clearInterval(watching); watching = null; toast('Live now'); }
       summary();
@@ -933,6 +950,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     $('#allhead').innerHTML = w.length ? w.length + ' thing' + (w.length === 1 ? '' : 's') + ' <em>waiting</em>' : 'All <em>up to date</em>';
     var pageItems = WAIT.page ? [].map.call(document.querySelectorAll('#changes li'), function (li) { var t = li.firstChild.textContent; return /kubrick|to try|trial|\?look=|\?tvhero=/i.test(t) ? t + ' (a trial look: only on a device that asks for it)' : t; }) : [];
     $('#alllist').innerHTML = (WAIT.fail || []).map(function (f) { return '<li style="color:#f08a4b"><b>Didn’t work: ' + esc(f[0]) + '</b><span class="when">' + esc(f[1]) + '</span></li>'; }).join('') + (WAIT.mac ? '<li>' + esc(WAIT.mac) + ((WAIT.macList || []).length ? '<ul style="margin:6px 0 0 18px;padding:0">' + WAIT.macList.map(function (t) { return '<li style="background:none;padding:2px 0">' + esc(t) + '</li>'; }).join('') + '</ul>' : '') + '</li>' : '') + (WAIT.themes ? '<li><b>Goes live for everyone:</b> ' + esc(WAIT.themes) + '</li>' : '') +
+      (WAIT.page && !pageItems.length ? '<li><b>Goes live for everyone:</b> ' + esc(WAIT.page) + ' (looking at what…)</li>' : '') +
       (pageItems.length ? '<li><b>Goes live for everyone:</b><ul style="margin:6px 0 0 18px;padding:0">' + pageItems.map(function (t) { return '<li style="background:none;padding:2px 0">' + esc(t) + '</li>'; }).join('') + '</ul></li>' : '');
     $('#allgo').textContent = WAIT.page || WAIT.themes ? 'Update everything and put the draft live' : 'Update everything';
     if (typeof wtDraw === 'function') wtDraw();
