@@ -968,6 +968,10 @@ def make_handler(g):
                                 convjobs_save()
                             else:
                                 log('Queue for John’s Mac: %s passed over (%s)' % (x.get('name') or x['id'], j.get('error')))
+                                # (kept, with why, for the queue's card: it went from the queue with nothing said there: John, 20 Nov 2026,
+                                # "Looks like Wild at Heart failed, but I don't see any message")
+                                P_ = [y for y in (load(MACQ + '.passed', []) or []) if y.get('id') != x['id'] and time.time() - y.get('at', 0) < 3 * 86400]
+                                save(MACQ + '.passed', ([{'id': x['id'], 'name': x.get('name') or '', 'why': str(j.get('error') or 'it couldn’t be planned')[:300], 'at': int(time.time())}] + P_)[:20])
                         MACPLAN.update(t=threading.Thread(target=plan_it, daemon=True), name=x.get('name'))
                         MACPLAN['t'].start()
                     return self.send_json(200, {'wait': 'planning', 'name': x.get('name')})
@@ -2550,7 +2554,12 @@ def make_handler(g):
                     return self.send_json(200, {'key': k})
                 if not re.match(r'^[0-9a-f]{32}$', iid):
                     return self.send_json(400, {'error': 'Which film?'})
+                if op == 'clearpassed':   # (the passed-over list, seen and put away)
+                    save(MACQ + '.passed', [])
+                    return self.send_json(200, {'queue': Q, 'passed': []})
                 Q = [x for x in Q if x.get('id') != iid]
+                if op in ('add', 'first'):   # (queued again: off the passed-over list)
+                    save(MACQ + '.passed', [y for y in (load(MACQ + '.passed', []) or []) if y.get('id') != iid])
                 old = next((x for x in (load(MACQ, []) or []) if x.get('id') == iid), {})
                 ent = dict({'id': iid, 'name': str(b.get('name') or old.get('name') or '')[:200], 'at': int(time.time())},
                            **({'force': True} if b.get('force') or old.get('force') else {}))   # (one of the largest, to make smaller: John, 18 Nov 2026)
@@ -2561,7 +2570,8 @@ def make_handler(g):
                 save(MACQ, Q)
                 log('Queue for John’s Mac: %s %s' % ({'add': 'added', 'first': 'put first', 'remove': 'taken off'}.get(op, op), b.get('name') or iid))
             a = g.st.get('macagent') or {}
-            return self.send_json(200, {'queue': Q, 'setup': bool(a.get('key')), 'seen': MACAGENT.get('seen'), 'home': MACAGENT.get('home')})
+            P_ = [y for y in (load(MACQ + '.passed', []) or []) if time.time() - y.get('at', 0) < 3 * 86400]
+            return self.send_json(200, {'queue': Q, 'passed': P_, 'setup': bool(a.get('key')), 'seen': MACAGENT.get('seen'), 'home': MACAGENT.get('home')})
 
         def api_fileinfo(self, me, user, q, b):
             """John's only: a film's file as it is, for its Edit panel (John, 16 Nov 2026: "I need to see file format details in the edit

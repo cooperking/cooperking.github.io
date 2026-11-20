@@ -1472,13 +1472,17 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var mins = function (t) { var m = Math.max(0, Math.round((t * 1000 - Date.now()) / 60000)); return m < 1 ? 'any moment' : 'in ' + m + ' min'; };
       if (!f.setup) {
         $('#fhead').innerHTML = 'Not <em>set up</em>'; $('#fsay').innerHTML = 'On the Mac mini: <b>python3 ~/Grifflix/gdrive.py setup</b>';
+      } else if (n && (f.hold || n.moving)) {   // (downloaded whole on the Mac's own disk: waiting for the film before to be repackaged, then moved onto
+        // the G-Drive; not stuck and not downloaded again: John, 20 Nov 2026, Days of Being Wild "99%… nothing has come for 6 min")
+        $('#fhead').innerHTML = (n.moving ? 'Moving <em>' : 'Downloaded <em>') + esc(n.to) + '</em>'; $('#ffill').style.width = '100%';
+        $('#fsay').innerHTML = 'All ' + (n.size / 1e9).toFixed(1) + ' GB is on the Mac mini. ' + (n.moving ? 'Going onto the G-Drive now.' : 'It goes onto the G-Drive once <b>' + esc(f.hold) + '</b> is repackaged (up to 45 min), so the drive does one big thing at a time.') + (w.length ? ' Then ' + w.length + ' more.' : '');
       } else if (n) {
         $('#fhead').innerHTML = 'Downloading <em>' + esc(n.to) + '</em>';
         $('#ffill').style.width = (n.pct || 0) + '%';
         var left = n.mbps && n.size && !(n.still >= 120) ? Math.round((n.size - n.got) * 8 / (n.mbps * 1e6) / 60) : 0;
         $('#fsay').innerHTML = '<b>' + Math.floor(n.pct || 0) + '%</b> of ' + (n.size / 1e9).toFixed(1) + ' GB from ' + esc(n.from) + (n.still >= 120 ? ': <b style="color:#f08a4b">nothing has come for ' + Math.round(n.still / 60) + ' min</b> (it’s started again after 10)' : n.mbps ? ', ' + n.mbps + ' Mbps' + (left ? ', about ' + (left >= 90 ? Math.round(left / 6) / 10 + ' hours' : left + ' min') + ' to go' : '') : '') + '.' + (w.length ? ' Then ' + w.length + ' more.' : '');
       } else if (f.running && f.hold) {   // (waiting while the film it brought in is repackaged: the drive does one at a time well)
-        $('#fhead').innerHTML = 'Waiting <em>while ' + esc(f.hold) + ' is repackaged</em>'; $('#fsay').textContent = 'Downloads carry on once it’s done (a few minutes).';
+        $('#fhead').innerHTML = 'Waiting <em>while ' + esc(f.hold) + ' is repackaged</em>'; $('#fsay').textContent = 'Downloads carry on once it’s done (up to 45 min).';
       } else if (f.running || (fetching.asked && Date.now() - fetching.asked < 60000)) {
         $('#fhead').innerHTML = 'Looking <em>now</em>'; $('#fsay').textContent = 'Seeing what’s in TorBox and Google Drive…';
       } else if ((f.trouble || []).length && !w.length) {   // (TorBox or Google Drive couldn't be read: said, not "nothing waiting")
@@ -1664,10 +1668,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var st = !j.setup ? 'Your Mac isn’t set up to take films yet.' : ago == null ? 'Your Mac hasn’t checked in since the Mac mini last restarted.' : ago <= 3 ? 'Your Mac is on' + (j.home ? ' and at home: it takes the next film within a minute.' : ', but not at home: films wait until it is.') : 'Your Mac last checked in ' + (ago < 120 ? ago + ' min' : Math.round(ago / 60) + ' hours') + ' ago (off or asleep): films wait until it’s on.';
       $('#cvq').innerHTML = '<p class="stat" style="margin:14px 0 6px"><b>Queued for your Mac</b> (' + Q.length + ') · ' + esc(st) + '</p>' +
         (Q.length ? '<ul class="changes">' + Q.map(function (x, i) { return '<li>' + FL(x.name, null, x.id) + '<span class="state" style="margin-top:4px">' + (i ? '<button class="btn" type="button" data-cqf="' + x.id + '" data-n="' + esc(x.name) + '">First</button>' : '') + '<button class="btn" type="button" data-cqr="' + x.id + '" data-n="' + esc(x.name) + '">Take off</button></span></li>'; }).join('') + '</ul>' : '<p class="stat" style="margin:0 0 6px">Queue films from their Edit panel (Queue for my Mac), from any device.</p>') +
+        // (those passed over, with why: they left the queue with nothing said: John, 20 Nov 2026, Wild at Heart "failed, but I don't see any message")
+        ((j.passed || []).length ? '<p class="stat" style="margin:14px 0 6px"><b>Passed over</b> (' + j.passed.length + ') · <button class="sfx" type="button" id="cqpclr" style="background:none;border:0;color:inherit;text-decoration:underline;cursor:pointer;padding:0;font:inherit">Clear</button></p><ul class="changes">' +
+          j.passed.map(function (x) { return '<li>' + FL(x.name, null, x.id) + '<span class="stat" style="display:block;margin-top:2px">' + esc(when(x.at * 1000)) + ': ' + esc(x.why) + '</span></li>'; }).join('') + '</ul>' : '') +
         '<div class="state"><button class="btn" type="button" id="cqset">' + (j.setup ? 'Set up your Mac again' : 'Set up your Mac to take queued films') + '</button></div><div id="cqcmd"></div>';
       Array.prototype.forEach.call(document.querySelectorAll('[data-cqr],[data-cqf]'), function (b) { b.onclick = function () {
         b.disabled = true; call({ op: b.dataset.cqr ? 'remove' : 'first', id: b.dataset.cqr || b.dataset.cqf, name: b.dataset.n }).then(cvQueue).catch(function () { b.disabled = false; toast('The Mac mini didn’t answer.'); });
       }; });
+      if ($('#cqpclr')) $('#cqpclr').onclick = function () { call({ op: 'clearpassed' }).then(cvQueue).catch(function () { toast('The Mac mini didn’t answer.'); }); };
       $('#cqset').onclick = function () {
         if (j.setup && !confirm('A new key for your Mac: the old one stops working. Go on?')) return;
         call({ op: 'key' }).then(function (k) {
