@@ -593,6 +593,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="mlist" id="cbmiss"><p class="stat">Looking…</p></div>
       </section>
       <section class="card" data-tab="criterion">
+        <div class="kicker">Special features</div>
+        <h2>Special features <em>to get</em></h2>
+        <p class="stat" id="cfnote">Each box set’s special features, as Criterion lists them, that aren’t among the extras of its films here.</p>
+        <div class="mlist" id="cfmiss"><p class="stat">Looking…</p></div>
+      </section>
+      <section class="card" data-tab="criterion">
         <div class="kicker">Covers</div>
         <h2>Criterion’s <em>covers</em></h2>
         <div class="state" id="csheets" hidden><a class="btn" id="csheet" href="#" target="_blank" rel="noopener">Open the Criterion Google Sheet</a></div>
@@ -1099,6 +1105,24 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
             b.f.map(function (m) { return '<div class="mrow cb"><span class="y">' + esc(m[1] || '') + '</span><b>' + esc(m[0]) + '</b><span class="s">' + (m[2] ? 'No. ' + esc(m[2]) : '') + '</span></div>'; }).join('') + '</details>';
         }).join(''));
       } else if (!('csetsnone' in L)) $('#cbmiss').insertAdjacentHTML('beforeend', '<p class="stat">The box sets not begun come with the next Update from the Mac.</p>');
+      // (each begun box set's special features not here yet, matched to its films' extras as the site's box set page matches them: John, 20 Nov
+      // 2026, "Special features to get can be listed in admin")
+      var fW = function (t) { return String(t || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(function (x) { return x.length > 2 && !/^(the|and|with|new|from|for|film|films|its|his|her|this|that|about|edition|version|part)$/.test(x); }); };
+      var fHas = function (f, names) { var fw = fW(f); return names.some(function (n) { var nw = fW(n); if (!nw.length) return false; var hit = nw.filter(function (x) { return fw.indexOf(x) >= 0; }).length; return hit >= Math.max(1, Math.ceil(nw.length * .6)); }); };
+      var xName = function (i) { return String(i.name || '').replace(/-[A-Za-z0-9]+$/, '').replace(/[._]+/g, ' ').trim(); };
+      var BF = {}, BX = {}; Object.keys(I).forEach(function (k) { var i = I[k];
+        Object.keys(i.csetfeat || {}).forEach(function (b) { BF[b] = i.csetfeat[b]; });
+        (i.cset || []).forEach(function (b) { BX[b] = (BX[b] || []).concat((i.extras || []).map(function (id) { return I[id]; }).filter(Boolean).map(xName)); }); });
+      var fsets = Object.keys(BF).filter(function (b) { return BX[b]; }).map(function (b) {
+        var all = BF[b].filter(function (f) { return !/^§ /.test(f) && !/restor|remaster|transfer|uncompressed|soundtrack|subtitle|dts-hd|monaural|mono |stereo|surround|essay|booklet|liner|cover|packag|illustrat|blu-ray|dvd|4k|disc|alternate.*(audio|track)|english (dub|subtitles)/i.test(f); }), miss = all.filter(function (f) { return !fHas(f, BX[b]); });
+        return { b: b, all: all, miss: miss };
+      }).filter(function (x) { return x.miss.length; }).sort(function (a, c) { return (sp[a.b] || 1e9) - (sp[c.b] || 1e9) || a.b.localeCompare(c.b, 'en', { numeric: true }); });
+      var fn = fsets.reduce(function (n, x) { return n + x.miss.length; }, 0);
+      $('#cfnote').textContent = fsets.length ? fsets.length + ' box sets with special features still to get, ' + fn + ' in all: Criterion’s list of each set’s features, less the extras of its films here. Open a set to see them.' : 'Every begun box set’s special features are here.';
+      $('#cfmiss').innerHTML = fsets.map(function (x) {
+        return '<details class="mset"><summary>' + (sp[x.b] ? 'No. ' + sp[x.b] + ' · ' : '') + esc(x.b) + '<small>' + (x.all.length - x.miss.length) + ' of ' + x.all.length + '</small><span class="cbto">' + x.miss.length + ' to get</span></summary>' +
+          x.miss.map(function (f) { return '<div class="mrow cb"><span class="y">·</span><b style="font-weight:400">' + esc(f) + '</b></div>'; }).join('') + '</details>';
+      }).join('');
     }).catch(function (e) { $('#a24miss').innerHTML = $('#cbmiss').innerHTML = '<p class="stat">Couldn’t read the lists: ' + esc(e.message) + '</p>'; });
   })();
   function a24Look() {   // (A24 CHECKS: John's own collection, from the Mac, linked from here: John, 19 Nov 2026)
