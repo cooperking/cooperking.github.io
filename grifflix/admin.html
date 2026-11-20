@@ -1641,6 +1641,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     call().then(function (j) {
       if ($('#cqcmd') && $('#cqcmd').innerHTML) { cqT = setTimeout(cvQueue, 30000); return; }   // (the setup command left showing while it's copied)
       var Q = j.queue || [], ago = j.seen ? Math.round((Date.now() / 1000 - j.seen) / 60) : null;
+      // (Library's "Queued for your Mac ✓" as the Mac's own queue says, not as this page last pressed: a film that dropped out could never be
+      // queued again: John, 20 Nov 2026, "I can't queue again, as it won't let me as it says it's in the queue")
+      var mq_ = {}; Q.forEach(function (x) { mq_[x.id] = 1; });
+      if (Object.keys(mq_).sort().join() !== Object.keys(LB.MQ).sort().join()) { LB.MQ = mq_; if (LB.all && typeof lbDraw === 'function') try { lbDraw(); } catch (e) {} }
       var st = !j.setup ? 'Your Mac isn’t set up to take films yet.' : ago == null ? 'Your Mac hasn’t checked in since the Mac mini last restarted.' : ago <= 3 ? 'Your Mac is on' + (j.home ? ' and at home: it takes the next film within a minute.' : ', but not at home: films wait until it is.') : 'Your Mac last checked in ' + (ago < 120 ? ago + ' min' : Math.round(ago / 60) + ' hours') + ' ago (off or asleep): films wait until it’s on.';
       $('#cvq').innerHTML = '<p class="stat" style="margin:14px 0 6px"><b>Queued for your Mac</b> (' + Q.length + ') · ' + esc(st) + '</p>' +
         (Q.length ? '<ul class="changes">' + Q.map(function (x, i) { return '<li>' + FL(x.name, null, x.id) + '<span class="state" style="margin-top:4px">' + (i ? '<button class="btn" type="button" data-cqf="' + x.id + '" data-n="' + esc(x.name) + '">First</button>' : '') + '<button class="btn" type="button" data-cqr="' + x.id + '" data-n="' + esc(x.name) + '">Take off</button></span></li>'; }).join('') + '</ul>' : '<p class="stat" style="margin:0 0 6px">Queue films from their Edit panel (Queue for my Mac), from any device.</p>') +
