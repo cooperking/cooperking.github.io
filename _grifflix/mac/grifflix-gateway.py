@@ -5005,6 +5005,145 @@ def act_disk_tidy(g, req):
     return '%.1f GB made on the Mac mini’s own disk (%.0f GB free now). Gone: %s.%s' % (freed, shutil.disk_usage('/').free / 1e9, ', '.join(done), (' Couldn’t remove: ' + ', '.join(kept) + '.') if kept else '')
 
 
+# (W. C. Fields—Six Short Films: Criterion's release came as one file of all six shorts, so it read as one film, unmatched, and not as
+# its box set. Cut at the black gaps between them, each short its own file in the release's folder, as Criterion's other anthologies
+# are kept (A Hollis Frampton Odyssey): John, 20 Nov 2026, "needs adding correctly to the criterion collection with box sets". The
+# order is the disc's, as John gave it; the lengths the films' own, to find each gap near where it should be.)
+FIELDS_DIR = '/Volumes/G-Drive/Grifflix/Movies/W. C. Fields—Six Short Films (1933)'
+FIELDS_SHORTS = [('The Golf Specialist', 1930, 21), ('Pool Sharks', 1915, 10), ('The Pharmacist', 1933, 19), ('The Fatal Glass of Beer', 1933, 19),
+                 ('The Barber Shop', 1933, 21), ('The Dentist', 1932, 21)]
+FIELDS_CUTS = os.path.expanduser('~/Grifflix/fields-cuts.json')
+FIELDS_BUSY = []
+
+
+def _ffbin(name='ffmpeg'):
+    for c in ('/Applications/Jellyfin.app/Contents/MacOS/' + name, '/opt/homebrew/bin/' + name, '/usr/local/bin/' + name):
+        if os.path.exists(c):
+            return c
+    return name
+
+
+def _fields_src():
+    if not os.path.isdir(FIELDS_DIR):
+        return None
+    v = [n for n in os.listdir(FIELDS_DIR) if n.lower().endswith(('.avi', '.mkv', '.mp4', '.m4v')) and not n.startswith('.')]
+    return os.path.join(FIELDS_DIR, v[0]) if len(v) == 1 else None
+
+
+def _fields_measure(src):
+    """The file's black stretches and silences (ffmpeg's blackdetect and silencedetect), kept in fields-cuts.json."""
+    try:
+        rc, out = _run([_ffbin(), '-hide_banner', '-nostats', '-i', src, '-vf', 'blackdetect=d=0.3:pix_th=0.12', '-af', 'silencedetect=n=-42dB:d=0.6',
+                        '-f', 'null', '-'], t=3600)
+        dm = re.search(r'Duration:\s*(\d+):(\d+):([\d.]+)', out)
+        dur = int(dm.group(1)) * 3600 + int(dm.group(2)) * 60 + float(dm.group(3)) if dm else 0
+        black = [[float(a), float(b)] for a, b in re.findall(r'black_start:([\d.]+)\s+black_end:([\d.]+)', out)]
+        sil, st = [], None
+        for k, v in re.findall(r'silence_(start|end):\s*([\d.]+)', out):
+            if k == 'start':
+                st = float(v)
+            elif st is not None:
+                sil.append([st, float(v)])
+                st = None
+        save(FIELDS_CUTS, {'src': src, 'size': os.path.getsize(src), 'dur': dur, 'black': black, 'silence': sil, 'at': int(time.time())})
+        log('W. C. Fields: measured, %d black stretches, %d silences, %.0f min' % (len(black), len(sil), dur / 60))
+    except Exception as e:
+        log('W. C. Fields: couldn’t measure: %s' % e)
+    finally:
+        FIELDS_BUSY.clear()
+
+
+def _fields_plan():
+    """[(name, year, start, end)] from the measured gaps: for each join, the longest black stretch (longer still where it's silent too)
+    within four minutes of where the films' lengths put it."""
+    src = _fields_src()
+    if not src:
+        raise RuntimeError('the W. C. Fields folder doesn’t hold one film file now (done already?)')
+    m = load(FIELDS_CUTS, {}) or {}
+    if m.get('src') != src or m.get('size') != os.path.getsize(src):
+        if not FIELDS_BUSY:
+            FIELDS_BUSY.append(1)
+            threading.Thread(target=_fields_measure, args=(src,), daemon=True).start()
+        raise RuntimeError('measuring the file’s black gaps now (a few minutes): ask again then')
+    dur, black, sil = m['dur'], m['black'], m['silence']
+    if not dur:
+        raise RuntimeError('couldn’t read the file’s length')
+    scale = dur / (sum(x[2] for x in FIELDS_SHORTS) * 60.0)
+    cuts, at, prev = [], 0.0, 0.0
+    for name, y, mins in FIELDS_SHORTS[:-1]:
+        at += mins * 60 * scale
+        best = None
+        for a, b in black:
+            mid = (a + b) / 2
+            if mid <= prev + 300 or abs(mid - at) > 240:
+                continue
+            quiet = sum(max(0, min(b, s2) - max(a, s1)) for s1, s2 in sil)
+            sc = (b - a) + quiet - abs(mid - at) / 120.0
+            if not best or sc > best[0]:
+                best = (sc, mid, b - a, quiet)
+        if not best:
+            raise RuntimeError('no gap found after %s, near %d:%02d' % (name, at // 60, at % 60))
+        cuts.append(best[1])
+        prev = best[1]
+        at = best[1]
+    edges = [0.0] + cuts + [dur]
+    return src, [(n, y, edges[k], edges[k + 1]) for k, (n, y, _m) in enumerate(FIELDS_SHORTS)]
+
+
+def ask_fields_split(req):
+    src, plan = _fields_plan()
+    mmss = lambda t: '%d:%02d' % (t // 60, t % 60)
+    req['detail'] = 'Cut at the black gaps into six films in its own folder, the picture and sound copied as they are: ' + '; '.join(
+        '%s (%s) %s–%s, %d min' % (n, y, mmss(a), mmss(b), round((b - a) / 60)) for n, y, a, b in plan) + \
+        '. The whole file and its poster go to Set aside (nothing deleted). It then shows as Criterion’s box set, spine 79.'
+
+
+def act_fields_split(g, req):
+    import shutil
+    src, plan = _fields_plan()
+    old = next((it['Id'] for it in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path'}) or {}).get('Items', [])
+                if it.get('Path') == src), None)
+    made = []
+    for n, y, a, b in plan:
+        out = os.path.join(FIELDS_DIR, '%s (%d).mkv' % (n, y))
+        tmp = out + '.part.mkv'
+        rc, msg = _run([_ffbin(), '-hide_banner', '-nostats', '-y', '-ss', '%.3f' % a, '-i', src, '-t', '%.3f' % (b - a), '-map', '0:v:0', '-map', '0:a?',
+                        '-c', 'copy', '-fflags', '+genpts', tmp], t=1800)
+        if rc != 0 or not os.path.exists(tmp) or os.path.getsize(tmp) < 1e6:
+            for f in made + [tmp]:
+                if os.path.exists(f):
+                    os.remove(f)
+            raise RuntimeError('cutting %s failed: %s' % (n, msg[-200:]))
+        os.rename(tmp, out)
+        made.append(out)
+    os.makedirs(SETASIDE, exist_ok=True)
+    keep = os.path.join(SETASIDE, 'W. C. Fields (whole file)')
+    os.makedirs(keep, exist_ok=True)
+    shutil.move(src, os.path.join(keep, os.path.basename(src)))
+    for x in ('poster.jpg', 'fanart.jpg', 'folder.jpg'):
+        if os.path.exists(os.path.join(FIELDS_DIR, x)):
+            shutil.move(os.path.join(FIELDS_DIR, x), os.path.join(keep, x))
+    try:
+        g.jf.call('POST', '/Library/Media/Updated', {'Updates': [{'Path': src, 'UpdateType': 'Deleted'}] + [{'Path': f, 'UpdateType': 'Created'} for f in made]})
+    except Exception:
+        g.jf.call('POST', '/Library/Refresh')
+
+    def follow():   # (once the media server has them: a calendar day of the whole file goes to the first short)
+        for _ in range(40):
+            time.sleep(30)
+            by = {it.get('Path'): it['Id'] for it in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path'}) or {}).get('Items', [])
+                  if (it.get('Path') or '').startswith(FIELDS_DIR + '/')}
+            if len(by) >= len(made):
+                break
+        if old and by.get(made[0]):
+            g.remap({old: by[made[0]]})
+        g.forget()
+        g.publish_soon = time.time() + 120
+        log('W. C. Fields: %d of %d shorts read by the media server' % (len(by), len(made)))
+    threading.Thread(target=follow, daemon=True).start()
+    return 'Six films made: %s. The whole file and its poster are in Set aside.' % ', '.join(os.path.basename(f) for f in made)
+
+
 ACTIONS = {
     'plex-off': ('Quit Plex and keep it off', act_plex_off, None),
     'plex-on': ('Start Plex again and let it be', act_plex_on, None),
@@ -5016,6 +5155,7 @@ ACTIONS = {
     'collection-add': ('Put films in a collection', act_collection_add, ask_collection_add),
     'collection-move': ('Move films from one collection to another', act_collection_move, ask_collection_move),
     'disk-tidy': ('Make room on the Mac mini’s own disk (old backups, Plex, old apps, caches)', act_disk_tidy, ask_disk_tidy),
+    'fields-split': ('Cut W. C. Fields—Six Short Films into its six shorts, so it shows as its Criterion box set', act_fields_split, ask_fields_split),
     'brakhage-split': ('Give each By Brakhage film its own folder (Volume One, Volume Two and the seven films from Volume One)', act_brakhage_split, ask_brakhage_split),
 }
 
