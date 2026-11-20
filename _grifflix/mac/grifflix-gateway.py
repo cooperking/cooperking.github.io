@@ -1653,7 +1653,8 @@ def make_handler(g):
                 start += 500
                 if start >= (r.get('TotalRecordCount') or 0):
                     break
-            need = [it['Id'] for it in quick if not it.get('Etag') or (cache.get(it['Id']) or {}).get('e') != it.get('Etag') or (cache.get(it['Id']) or {}).get('p') != it.get('Path')]
+            need = [it['Id'] for it in quick if not it.get('Etag') or (cache.get(it['Id']) or {}).get('e') != it.get('Etag') or (cache.get(it['Id']) or {}).get('p') != it.get('Path')
+                    or 'hdr' not in ((cache.get(it['Id']) or {}).get('r') or {})]   # (read once more for whether it's HDR)
             for n in range(0, len(need), 100):
                 r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Ids': ','.join(need[n:n + 100]), 'Fields': 'MediaSources,Path,ProductionYear,Etag'}) or {}
                 for it in r.get('Items') or []:
@@ -1667,6 +1668,12 @@ def make_handler(g):
                         'id': it.get('Id'), 'n': it.get('Name'), 'y': it.get('ProductionYear') or '', 'w': v.get('Width') or 0, 'h': v.get('Height') or 0,
                         'v': (v.get('Codec') or '').lower(), 'b': v.get('BitDepth') or 8, 'mbps': round((ms.get('Bitrate') or v.get('BitRate') or 0) / 1e6, 1),
                         'c': (ms.get('Container') or '').lower().split(',')[0],
+                        # (HDR, as the converter judges it (convert.py is_hdr): it can't be made smaller here without spoiling its colours, so it's
+                        # one to replace: John, 20 Nov 2026, Wild at Heart, 4K HDR10, passed over: "any like that, that the server won't be able to
+                        # handle should be immediately flagged to replace with the reason, as they have been added in error")
+                        'hdr': ('Dolby Vision' if 'dovi' in (v.get('VideoRangeType') or '').lower() else (v.get('VideoRangeType') or 'HDR'))
+                               if ((v.get('VideoRange') or '').upper() == 'HDR' or (v.get('ColorTransfer') or '').lower() in ('smpte2084', 'arib-std-b67')
+                                   or 'dovi' in (v.get('VideoRangeType') or '').lower()) else '',
                         'ps': ', '.join(sorted(set((x.get('DisplayTitle') or x.get('Language') or '?').split(' - ')[0] for x in pics)))[:120],
                         'gb': round((ms.get('Size') or 0) / 1e9, 1), 'mins': round((it.get('RunTimeTicks') or 0) / 6e8),
                         'a': ', '.join(sorted(set('%s %s' % ((x.get('Codec') or '?').upper(), {1: 'mono', 2: 'stereo', 6: '5.1', 8: '7.1'}.get(x.get('Channels') or 0, '%sch' % (x.get('Channels') or '?'))) for x in au[:4])))}}
