@@ -1659,7 +1659,7 @@ def make_handler(g):
                 if start >= (r.get('TotalRecordCount') or 0):
                     break
             need = [it['Id'] for it in quick if not it.get('Etag') or (cache.get(it['Id']) or {}).get('e') != it.get('Etag') or (cache.get(it['Id']) or {}).get('p') != it.get('Path')
-                    or 'hdr' not in ((cache.get(it['Id']) or {}).get('r') or {})]   # (read once more for whether it's HDR)
+                    or 'hdrt' not in ((cache.get(it['Id']) or {}).get('r') or {})]   # (read once more for which HDR it is)
             for n in range(0, len(need), 100):
                 r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Ids': ','.join(need[n:n + 100]), 'Fields': 'MediaSources,Path,ProductionYear,Etag'}) or {}
                 for it in r.get('Items') or []:
@@ -1676,7 +1676,8 @@ def make_handler(g):
                         # (HDR, as the converter judges it (convert.py is_hdr): it can't be made smaller here without spoiling its colours, so it's
                         # one to replace: John, 20 Nov 2026, Wild at Heart, 4K HDR10, passed over: "any like that, that the server won't be able to
                         # handle should be immediately flagged to replace with the reason, as they have been added in error")
-                        'hdr': ('Dolby Vision' if 'dovi' in (v.get('VideoRangeType') or '').lower() else (v.get('VideoRangeType') or 'HDR'))
+                        # (Dolby Vision alone, no HDR10 beneath ("DOVI"), told apart: that one can't be converted, the rest can on John's Mac)
+                        'hdrt': ('Dolby Vision only' if (v.get('VideoRangeType') or '').upper() == 'DOVI' else 'Dolby Vision' if 'dovi' in (v.get('VideoRangeType') or '').lower() else (v.get('VideoRangeType') or 'HDR'))
                                if ((v.get('VideoRange') or '').upper() == 'HDR' or (v.get('ColorTransfer') or '').lower() in ('smpte2084', 'arib-std-b67')
                                    or 'dovi' in (v.get('VideoRangeType') or '').lower()) else '',
                         'ps': ', '.join(sorted(set((x.get('DisplayTitle') or x.get('Language') or '?').split(' - ')[0] for x in pics)))[:120],
