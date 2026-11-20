@@ -3030,10 +3030,7 @@ def make_handler(g):
                 log('  rename:', e)
             # (and its collections looked at again under its right name: A24, The Criterion Collection and its box set, its cover: John,
             # 20 Nov 2026, "If I correct a film through tmdb, does it then automatically correct folder structure and collections it should be in?")
-            SCAN_NOW.set()
-            threading.Timer(150, covers_now).start()
-            threading.Timer(180, a24_now).start()
-            threading.Timer(240, bom_now).start()
+            after_fixes()
             return self.send_json(200, {'ok': True, 'name': pick.get('Name'), 'year': pick.get('ProductionYear'), 'renamed': did})
 
         def api_delete(self, me, user, q, b):
@@ -6110,6 +6107,30 @@ def crit_pairs(g):
         if sl:
             out.append((it['Id'], sl))
     return out
+
+
+AFTER_FIX = [None]
+
+
+def after_fixes():
+    """What follows John fixing a film (the library looked over, its covers, A24, distributors) done once, five minutes after his last fix,
+    not after each: one fix after another set the media server reading the whole drive again and again, and the Mac crawled (John, 20 Nov
+    2026, "it's running incredibly slowly again", fixing the unmatched list)."""
+    if AFTER_FIX[0]:
+        AFTER_FIX[0].cancel()
+
+    def run():
+        AFTER_FIX[0] = None
+        SCAN_NOW.set()
+        for f in (covers_now, a24_now, bom_now):
+            try:
+                time.sleep(60)
+                f()
+            except Exception as e:
+                log('After the fixes: %s' % e)
+    AFTER_FIX[0] = threading.Timer(300, run)
+    AFTER_FIX[0].daemon = True
+    AFTER_FIX[0].start()
 
 
 def apply_match(g, iid, pick):
