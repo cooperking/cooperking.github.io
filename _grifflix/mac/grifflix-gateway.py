@@ -3012,7 +3012,28 @@ def make_handler(g):
                     pid = r.get('ProviderIds') or {}
                     out.append({'name': r.get('Name'), 'year': r.get('ProductionYear'), 'overview': (r.get('Overview') or '')[:300],
                                 'image': r.get('ImageUrl'), 'tmdb': pid.get('Tmdb'), 'imdb': pid.get('Imdb'), 'raw': r})
-                return self.send_json(200, {'kind': kind, 'name': it.get('Name'), 'year': it.get('ProductionYear'), 'results': out})
+                # (an IMDb number TMDB has no film for (World on a Wire, a TV mini-series there): offered to be kept on it as it is)
+                return self.send_json(200, {'kind': kind, 'name': it.get('Name'), 'year': it.get('ProductionYear'), 'results': out,
+                                            'imdbOnly': mi.group(1) if mi and not out else None})
+            if re.match(r'^tt\d{6,10}$', str((b or {}).get('imdb') or '')):
+                # (John's own IMDb number put on a film TMDB has no film for, its name and year as he gives them, kept: John, 20 Nov 2026,
+                # World on a Wire, "https://www.imdb.com/title/tt0070904/ world on a wire is this")
+                full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid)) or {}
+                pid = dict(full.get('ProviderIds') or {})
+                pid['Imdb'] = b['imdb']
+                full['ProviderIds'] = pid
+                nm = re.sub(r'\s+', ' ', str(b.get('name') or '')).strip()[:200]
+                if nm:
+                    full['Name'] = nm
+                if str(b.get('year') or '').isdigit():
+                    full['ProductionYear'] = int(b['year'])
+                full['LockedFields'] = sorted(set((full.get('LockedFields') or []) + ['Name']))
+                g.jf.call('POST', '/Items/%s' % iid, full)
+                g.forget()
+                g.publish_soon = time.time() + 180
+                after_fixes()
+                log('IMDb number given by John: %s → %s' % (full.get('Name'), b['imdb']))
+                return self.send_json(200, {'ok': True, 'name': full.get('Name'), 'year': full.get('ProductionYear'), 'imdb': b['imdb']})
             pick = (b or {}).get('pick') or {}
             if not isinstance(pick, dict) or not (pick.get('ProviderIds') or {}):
                 return self.send_json(400, {'error': 'Which one?'})
