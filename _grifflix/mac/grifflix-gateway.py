@@ -5001,11 +5001,43 @@ def keep_extras(g):
         time.sleep(1800 if n_ else 6 * 3600)
 
 
+def finish_again():
+    """A film made on John's Mac whose putting-in-place here was stopped by the rule kept for the Mac mini's own converting ("it's HDR:
+    converted on John's Mac only"), its made file still waiting: put in place now (WALL·E, 20 Nov 2026, "it was converted on my mac")."""
+    import subprocess
+    home = os.path.expanduser('~/Grifflix')
+    for t_, job in list(CONVJOBS.items()):
+        try:
+            tmp = (job.get('plan') or {}).get('tmp') or ''
+            if job.get('state') != 'failed' or 'Mac only' not in str(job.get('error') or '') or not tmp or not os.path.exists(tmp):
+                continue
+            job['state'], job['error'] = 'checking', ''
+            convjobs_save()
+            r = subprocess.run([sys.executable, os.path.join(home, 'convert.py'), 'finish', job['id']], input=json.dumps(job['plan']['item']),
+                               capture_output=True, text=True, timeout=3600, cwd=home)
+            res = ([l for l in (r.stdout or '').splitlines() if l.startswith('{')] or ['{}'])[-1]
+            try:
+                rj = json.loads(res)
+            except ValueError:
+                rj = {}
+            job['state'] = 'failed' if rj.get('error') else 'done'
+            job['error'] = str(rj.get('error') or '')[:200]
+            convjobs_save()
+            log('Converted on John’s Mac, put in place now: %s: %s' % (job['plan']['item'].get('name'), res))
+            CONV_NOW.set()
+        except Exception as e:
+            log('Converted on John’s Mac, putting in place: %s' % str(e)[:200])
+
+
 def keep_covers():
     """Every Criterion film's cover put on without waiting for a download to set it off: 3 minutes after the gateway starts, then every
     hour (John, 20 Nov 2026: "we should have the posters for all the films ready to go"; The Beloved Child, fixed to its English title, waited
     for the next film to come in). Criterion's covers are all here already, so it's quick; one at a time, as ever (covers_now)."""
     time.sleep(180)
+    try:
+        finish_again()
+    except Exception as e:
+        log('Converted on John’s Mac, putting in place:', str(e)[:200])
     while True:
         try:
             covers_now()
