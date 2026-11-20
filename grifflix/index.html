@@ -2526,7 +2526,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '0a1f55f1db62' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: 'fbe9db31628c' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2921,13 +2921,46 @@ function fromSite(path) {   // what the site's own files answer (null: a thing o
     if (name === 'search') {
       // (apostrophes, quotes and accents don't matter: a phone types ’ where the title has ', so "it’s" never found It's a Wonderful
       // Life: John, 16 Nov 2026; "&" and "and" alike)
-      var fold = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['’‘`´"“”]/g, '').replace(/&/g, ' and ').replace(/\b(xviii|viii|xiii|xvii|iii|vii|xii|xiv|xvi|xix|ii|iv|vi|ix|xi|xv|xx)\b/g, function (m) { return String({ii: 2, iii: 3, iv: 4, vi: 6, vii: 7, viii: 8, ix: 9, xi: 11, xii: 12, xiii: 13, xiv: 14, xv: 15, xvi: 16, xvii: 17, xviii: 18, xix: 19, xx: 20}[m]); }).replace(/[^a-z0-9]+/g, ' ').trim(); };
-      var t = fold(q.get('q')), words = t.split(' ').filter(Boolean);
-      var hits = Object.keys(I).map(function (k) { return I[k]; }).filter(function (i) { if ((i.type !== 'movie' && i.type !== 'series') || isExtra(i)) return false; var n = fold(i.name); return words.every(function (w) { return n.indexOf(w) >= 0; }); });
-      hits.sort(function (a, b) { var an = fold(a.name), bn = fold(b.name); return (bn.indexOf(t) === 0) - (an.indexOf(t) === 0) || SORTS.name(a, b); });
+      var q0 = q.get('q'), hits = Object.keys(I).map(function (k) { return I[k]; }).filter(function (i) { if ((i.type !== 'movie' && i.type !== 'series') || isExtra(i)) return false; i._ss = sScore(i, q0); return i._ss > 0; });
+      hits.sort(function (a, b) { return (b._ss - a._ss) || SORTS.name(a, b); });
       return { items: hits.slice(0, 40) };
     }
   });
+}
+// ---- search, one way everywhere (the Search box, a collection's Find): John, 20 Nov 2026, "Search is being strange in criterion. Search should
+// work better generally". Words matched as written however they're typed: accents, apostrophes and other marks aside ("aint" finds Ain’t,
+// "spiderman" Spider-Man), Roman numerals as numbers, "&" as "and"; each word found in the title, else in its year, director, country, box
+// set or spine number, else one letter out (a typo); the title's own matches first, whole title, then its start, then the rest
+var SROM = { ii: 2, iii: 3, iv: 4, vi: 6, vii: 7, viii: 8, ix: 9, xi: 11, xii: 12, xiii: 13, xiv: 14, xv: 15, xvi: 16, xvii: 17, xviii: 18, xix: 19, xx: 20 };
+function sFold(x) {
+  return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['’‘`´"“”]/g, '').replace(/&/g, ' and ')
+    .replace(/\b(xviii|viii|xiii|xvii|iii|vii|xii|xiv|xvi|xix|ii|iv|vi|ix|xi|xv|xx)\b/g, function (m) { return String(SROM[m]); })
+    .replace(/[^a-z0-9]+/g, ' ').trim();
+}
+function sNear(w, t) {   // a word one letter out (two in a long one) from a word of t
+  if (w.length < 4 || /\d/.test(w)) return false; var lim = w.length >= 10 ? 2 : 1;   // (never a number: 2046 isn't 2016)
+  return t.split(' ').some(function (x) {
+    if (Math.abs(x.length - w.length) > lim || x[0] !== w[0]) return false;   // (its first letter right)
+    var p = []; for (var j = 0; j <= x.length; j++) p[j] = j;
+    for (var i = 1; i <= w.length; i++) { var q = [i], lo = i; for (var k = 1; k <= x.length; k++) { q[k] = Math.min(p[k] + 1, q[k - 1] + 1, p[k - 1] + (w[i - 1] === x[k - 1] ? 0 : 1)); lo = Math.min(lo, q[k]); } if (lo > lim) return false; p = q; }
+    return p[x.length] <= lim;
+  });
+}
+function sScore(i, q) {   // how well it matches (0: not at all)
+  q = sFold(q); if (!q) return 1;
+  var t = i._st || (i._st = sFold(i.name)), more = i._sm || (i._sm = sFold([i.year, i.cdir, i.ccty, (i.cset || []).join(' '), (i.csetsp || []).filter(Boolean).map(function (n) { return 'no ' + n; }).join(' '), i.spine ? 'no ' + i.spine + ' spine ' + i.spine : ''].join(' ')));
+  if (t === q) return 1000;
+  if (t.replace(/ /g, '').indexOf(q.replace(/ /g, '')) >= 0) return t.indexOf(q) === 0 || t.replace(/ /g, '').indexOf(q.replace(/ /g, '')) === 0 ? 600 : 400;
+  var sc = 300, ws = q.split(' ');
+  for (var n = 0; n < ws.length; n++) {
+    var w = ws[n];
+    if (t.indexOf(w) >= 0) continue;
+    if (more.indexOf(w) >= 0) { sc = Math.min(sc, 150); continue; }
+    if (sNear(w, t)) { sc = Math.min(sc, 80); continue; }
+    if (sNear(w, more)) { sc = Math.min(sc, 40); continue; }
+    return 0;
+  }
+  return sc;
 }
 function api(path, body) {
   if (DEMO) return Demo.api(path, body);
@@ -5800,7 +5833,7 @@ function collectionView(id, into) {
       '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find in this collection" aria-label="Find in this collection" autocomplete="off"><span class="sp"></span>' + sfBar() + '</div>' +
       '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>');
     var editing = false, fq = '', openSet = null, cv0 = store.get('grifflix-clist'), cmode = cv0 === 'covers' ? 'covers' : 'list', csets = cv0 === 'sets' || store.get('grifflix-csets') === '1', clist = cmode === 'list';   // (List or Covers, for the films and for the box sets alike: John, 18 Nov 2026, "you should be able to see box sets in list or covers, not just list")
-    var fits = function (i) { if (!fq) return true; var t = (showName(i) + ' ' + (i.year || '') + ' ' + (i.spine ? 'no ' + i.spine : '')).toLowerCase(); return fq.split(/\s+/).every(function (w) { return t.indexOf(w) >= 0; }); };
+    var fits = function (i) { return !fq || sScore(i, fq) > 0; };   // (as the Search box finds things: John, 20 Nov 2026)
     var draw = function () {
       if (A24 && !editing) return a24Draw($('#cgrid'), c.items.filter(fits), fq);
       var items = sfSort(c.items.filter(sfFits(SF.f)).filter(fits), sfKey(), sfDirOf());
@@ -5810,7 +5843,7 @@ function collectionView(id, into) {
       if (SPINEOK && (csets || ecl) && !editing) {
         var pool = ecl ? sfSort(c.items.filter(sfFits(Object.assign({}, SF.f, { cats: (SF.f.cats || []).filter(function (x) { return x !== 'Eclipse'; }) }))).filter(fits), sfKey(), sfDirOf()) : items;
         var BSD = {}, BSM = {}, BSF = {}; c.items.forEach(function (i) { if (i.csetfeat) Object.keys(i.csetfeat).forEach(function (k) { BSF[k] = i.csetfeat[k]; }); if (i.csetdesc) Object.keys(i.csetdesc).forEach(function (k) { BSD[k] = i.csetdesc[k]; }); if (i.csetmiss) Object.keys(i.csetmiss).forEach(function (k) { BSM[k] = i.csetmiss[k]; }); });
-        var BS = {}, BSP = {}, BSI = {}; pool.forEach(function (i) { (i.cset || []).forEach(function (b, n) { if (!ecl || /^eclipse/i.test(b)) { (BS[b] = BS[b] || []).push(i); if ((i.csetsp || [])[n]) BSP[b] = +i.csetsp[n]; if ((i.csetimg || [])[n]) BSI[b] = i.csetimg[n]; } }); });
+        var BS = {}, BSP = {}, BSI = {}; pool.forEach(function (i) { (i.cset || []).forEach(function (b, n) { if ((!ecl || /^eclipse/i.test(b)) && (BS[b] || []).indexOf(i) < 0) { (BS[b] = BS[b] || []).push(i); if ((i.csetsp || [])[n]) BSP[b] = +i.csetsp[n]; if ((i.csetimg || [])[n]) BSI[b] = i.csetimg[n]; } }); });
         // (in Criterion's order: by the set's own spine number, those without one (Eclipse, by its series number) after; or by title)
         var ser = function (x) { return +(x.match(/series\s+(\d+)/i) || [])[1] || 0; }, byT = sfKey() === 'name', dd = sfDirOf();
         var bn = Object.keys(BS).sort(function (a, b) {
