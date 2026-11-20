@@ -5250,6 +5250,11 @@ def keep_covers():
             covers_now()
         except Exception as e:
             log('Criterion covers (on the hour):', str(e)[:200])
+        try:   # (films never matched, found on TMDB, each hour (a film at most once a week): John, 20 Nov 2026)
+            if G_REF:
+                match_unmatched(G_REF[0])
+        except Exception as e:
+            log('Matching the never-matched:', str(e)[:200])
         try:   # (the foreign-language films needing English subtitles, looked for each hour: John, 20 Nov 2026)
             subprep_scan()
         except Exception as e:
@@ -5954,6 +5959,109 @@ def auto_match(g):
         g.publish_soon = time.time() + 300
     if unsure:
         log('Not sure which film (left as they are, Fix match on its page): %s' % '; '.join(unsure)[:800])
+
+
+def match_unmatched(g):
+    """Films the media server never matched (no IMDb number: no TMDB match, or a wrong one), found on TMDB by themselves (John, 20 Nov 2026,
+    "yes, do a full automatic match"): its title from its folder, or its file where a folder holds several films (Silent Night, Deadly
+    Night's six), the clutter off (a year, "a.k.a.", "DDC", "01 ", "- Horror"); TMDB searched for it and any other title it gives, its year
+    and a year either side; put on only when one film fits by title and year and, where both are known, by its length (within 10 minutes).
+    The rest listed (match-unmatched.json and the log) for Fix match by hand. Each film tried at most once a week."""
+    import difflib
+    if not g.st.get('tmdb_key'):
+        return
+    lid = (g.st.get('libraries') or {}).get('movies')
+    if not lid:
+        return
+    tried_at = os.path.expanduser('~/Grifflix/match-unmatched.json')
+    T = load(tried_at, {}) or {}
+    items = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie',
+                                                               'Fields': 'Path,ProductionYear,ProviderIds,LockedFields,MediaSources'}).get('Items') or []
+    VID = ('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')
+    fixed, unsure = [], []
+    for it in items:
+        pid = it.get('ProviderIds') or {}
+        if pid.get('Imdb') or it.get('LockData') or 'Name' in (it.get('LockedFields') or []):
+            continue
+        iid, p = it['Id'], it.get('Path') or ''
+        if time.time() - (T.get(iid) or {}).get('at', 0) < 7 * 86400:
+            continue
+        folder = os.path.dirname(p)
+        try:
+            many = sum(1 for n in os.listdir(folder) if n.lower().endswith(VID) and not n.startswith('.')) > 1
+        except OSError:
+            continue
+        raw = os.path.splitext(os.path.basename(p))[0] if many else os.path.basename(folder)
+        ym = re.search(r'\((\d{4})\)', raw) or re.search(r'\b(19\d\d|20\d\d)\b', raw)
+        year = int(ym.group(1)) if ym else int(it.get('ProductionYear') or 0)
+        t = re.sub(r'\((\d{4})\)|\[[^\]]*\]', ' ', raw)
+        t = re.sub(r'^\s*\d{1,2}[\s.\-]+', '', t)                                  # ("01 Silent Night…")
+        t = re.sub(r'\s+-\s+(horror|comedy|drama|thriller)\b.*$', '', t, flags=re.I)      # ("- Horror 1984 Eng Subs 1080p")
+        t = re.sub(r'\b(eng(lish)? subs?|subbed|\d{3,4}p|[hx]\.?26[45]|hevc|web-?dl|webrip|bluray|brrip|dvdrip|mp4|mkv)\b', ' ', t, flags=re.I)
+        if ym:
+            t = re.sub(r'\b%s\b' % ym.group(1), ' ', t)
+        t = re.sub(r'\b(DDC|director.?s cut|extended|remastered|criterion)\b', ' ', t, flags=re.I)
+        t = t.replace('\u2014', ' ').replace('_', ' ')
+        names = []
+        for part in re.split(r'\s*\(?\b(?:a\.?\s?k\.?\s?a\.?)\b\s*', t, flags=re.I):
+            part = re.sub(r'[()]', ' ', part)
+            part = re.sub(r'\s+', ' ', part).strip(' -,.')
+            if len(part) >= 2:
+                names.append(part)
+        if ' - ' in t and not many and not re.match(r'\s*part\b', t.split(' - ', 1)[1], re.I):   # ("Les Blank - Always for Pleasure": its title after a name)
+            names.append(re.sub(r'\s+', ' ', t.split(' - ', 1)[1]).strip(' -,.'))
+        names = list(dict.fromkeys(n for n in names if n))
+        ms = (it.get('MediaSources') or [{}])[0]
+        mins = round((ms.get('RunTimeTicks') or it.get('RunTimeTicks') or 0) / 6e8)
+        cands = {}
+        try:
+            for n in names:
+                for y in ([year, year - 1, year + 1] if year else [None]):
+                    q_ = {'query': n}
+                    if y:
+                        q_['year'] = y
+                    for x in (tmdb(g, '/search/movie', **q_) or {}).get('results') or []:
+                        cands[x['id']] = x
+            scored = []
+            for tid, x in cands.items():
+                sim = max(difflib.SequenceMatcher(None, fold(n), fold(x.get(k))).ratio() for n in names for k in ('title', 'original_title'))
+                xy = int((x.get('release_date') or '0')[:4] or 0)
+                if sim < .85 or (year and xy and abs(xy - year) > 1):
+                    continue
+                rt = tmdb_runtime(g, tid)['rt'] if mins else 0
+                if mins and rt and abs(rt - mins) > 10:
+                    continue
+                scored.append((sim - (abs(xy - year) * .05 if year and xy else 0) - (abs(rt - mins) / 200 if mins and rt else 0), tid, x))
+            scored.sort(key=lambda c: -c[0])
+        except Exception as e:
+            log('Matching %s: %s' % (raw, e))
+            continue
+        T[iid] = {'at': int(time.time()), 'name': raw}
+        if scored and (len(scored) == 1 or scored[0][0] - scored[1][0] >= .08):
+            sc, tid, x = scored[0]
+            pick = {'Name': x.get('title'), 'ProductionYear': int((x.get('release_date') or '0')[:4] or 0) or None,
+                    'ProviderIds': {'Tmdb': str(tid)}, 'SearchProviderName': 'TheMovieDb'}
+            if str(pid.get('Tmdb') or '') == str(tid):
+                T[iid]['note'] = 'already this TMDB film (it has no IMDb number there)'
+                continue
+            try:
+                apply_match(g, iid, pick)
+                T[iid].update(done=True, to='%s (%s)' % (pick['Name'], pick['ProductionYear'] or '?'), tmdb=tid)
+                fixed.append('%s → %s (%s)' % (raw, pick['Name'], pick['ProductionYear'] or '?'))
+            except Exception as e:
+                T[iid]['note'] = 'couldn’t be put on: %s' % str(e)[:120]
+        else:
+            T[iid]['note'] = 'not found on TMDB' if not scored else 'several could be it: ' + '; '.join('%s (%s)' % (c[2].get('title'), (c[2].get('release_date') or '')[:4]) for c in scored[:3])
+            unsure.append('%s (%s)' % (raw, T[iid]['note']))
+    save(tried_at, T)
+    if TMDBC.pop('_dirty', None):
+        save(os.path.expanduser('~/Grifflix/tmdb-runtimes.json'), TMDBC)
+    if fixed:
+        log('Matched on TMDB, never matched before (%d): %s' % (len(fixed), '; '.join(fixed)[:2500]))
+        g.forget()
+        g.publish_soon = time.time() + 300
+    if unsure:
+        log('Never matched, and not sure on TMDB (left for Fix match): %s' % '; '.join(unsure)[:2000])
 
 
 def tmdb_once():
