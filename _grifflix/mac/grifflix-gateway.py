@@ -1315,6 +1315,8 @@ def make_handler(g):
                         for k_, v_ in (ctj_.get('sets') or {}).items():   # (the box set each film is in, Collector's Sets: John, 17 Nov 2026)
                             for sl_ in v_:
                                 TS.setdefault(sl_, []).append(k_)
+                        CTMDB_ = load(os.path.expanduser('~/Grifflix/criterion-tmdb.json'), {}) or {}
+                        CTT = {}
                         CT = {}   # (and by title and year, for the films with no spine number: Criterion Premieres, Eclipse and the rest, which had no
                         # Criterion labels at all: John, 17 Nov 2026, "the filter on criterion is saying there are no criterion premieres or eclipse")
                         for f_ in load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or []:
@@ -1330,6 +1332,12 @@ def make_handler(g):
                                 for alt_ in getattr(re.match(r'^(.*?)\s*\(([^()]{3,})\)\s*$', str(f_.get('title') or '')), 'groups', lambda: ())():
                                     if alt_ and fold(alt_):
                                         CT.setdefault((fold(alt_), int(f_['year'])), v_)
+                            # (and by its TMDB number, for a film named otherwise here: Criterion's L’enfant aimé ou Je joue à être une femme mariée
+                            # is The Beloved Child, or I Play at Being a Married Woman: John, 20 Nov 2026)
+                            pk_ = re.sub(r'[^a-zA-Z0-9]', '', __import__('unicodedata').normalize('NFKD', str(f_.get('title') or '')).encode('ascii', 'ignore').decode()).lower() + '|' + re.sub(r'[^0-9]', '', str(f_.get('year') or ''))
+                            tid_ = str((CTMDB_.get(pk_) or [0])[0] or '')
+                            if tid_:
+                                CTT.setdefault(tid_, v_)
                         # (an anthology: one Criterion release of several films, kept in one folder named after it (A Hollis Frampton Odyssey,
                         # Martha Graham: Dance on Film, Three Documentaries): its films grouped as a box set under the release, with its spine
                         # and cover: John, 18 Nov 2026, "the same may be true of other unusual criterion collection items")
@@ -1353,7 +1361,7 @@ def make_handler(g):
                                 if not (d_ or t_) and key == 'movies':
                                     y_ = i.get('ProductionYear') or 0
                                     fn_ = fold(re.sub(r'\s*\((19|20)\d\d\)\s*$', '', os.path.basename(os.path.dirname(i.get('Path') or '')).strip()))   # (its folder's name too, where the media server named it otherwise: Anthem taken for "Echo Anthem")
-                                    d_, c_, t_, s_, sl0_ = next((CT[(n_, y_ + dy)] for n_ in (fold(i.get('Name')), fn_) for dy in (0, 1, -1) if (n_, y_ + dy) in CT), ('', '', [], [], ''))
+                                    d_, c_, t_, s_, sl0_ = next((CT[(n_, y_ + dy)] for n_ in (fold(i.get('Name')), fn_) for dy in (0, 1, -1) if (n_, y_ + dy) in CT), None) or CTT.get(str((i.get('ProviderIds') or {}).get('Tmdb') or '-')) or ('', '', [], [], '')
                                 fd_ = os.path.dirname(i.get('Path') or '')
                                 af_ = ANTH_.get(fold(re.sub(r'\s*\((19|20)\d\d\)\s*$', '', os.path.basename(fd_)))) if key == 'movies' and FOLDN_.get(fd_, 0) > 1 else None
                                 if af_ and fold(af_.get('title')) != fold(i.get('Name')):

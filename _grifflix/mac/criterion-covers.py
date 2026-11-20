@@ -465,11 +465,31 @@ def spines(films):
         if re.search(r'(part|vol|chapter)', fk):
             y = re.search(r'\((\d{4})\)\s*$', fn)
             parts_index.append((fk, fn, int(y.group(1)) if y else 0))
+    # (and by its TMDB number, where its folder is named otherwise: a film fixed to its English title, The Beloved Child, or I Play at Being a
+    # Married Woman, is Criterion's L’enfant aimé ou Je joue à être une femme mariée: John, 20 Nov 2026)
+    TF = {}
+    try:
+        TC = json.load(open(os.path.expanduser('~/Grifflix/criterion-tmdb.json')))
+        Sx = json.load(open(os.path.join(os.environ.get('GRIFFLIX_DIR') or os.path.expanduser('~/Library/Application Support/Grifflix'), 'settings.json')))
+        lid, start = (Sx.get('libraries') or {}).get('movies'), 0
+        while lid:
+            u = Sx.get('jellyfin', 'http://127.0.0.1:8096') + '/Users/%s/Items?' % Sx['jf_user_id'] + urllib.parse.urlencode({'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path,ProviderIds', 'StartIndex': start, 'Limit': 500})
+            r = json.loads(urllib.request.urlopen(urllib.request.Request(u, headers={'Authorization': 'MediaBrowser Token="%s"' % Sx['jf_token']}), timeout=120).read())
+            for it in r.get('Items') or []:
+                tid, rel = str((it.get('ProviderIds') or {}).get('Tmdb') or ''), os.path.relpath(it.get('Path') or '/', movies).split(os.sep)
+                if tid and len(rel) >= 2 and not rel[0].startswith('..') and rel[0] in folders.values():
+                    TF.setdefault(tid, rel[0])
+            start += 500
+            if start >= (r.get('TotalRecordCount') or 0):
+                break
+    except Exception:
+        TC = {}
+    tmdb_of = lambda f: str((TC.get('%s|%s' % (re.sub(r'[^a-zA-Z0-9]', '', plain(f['title'])).lower(), re.sub(r'[^0-9]', '', f['year'] or ''))) or [0])[0] or '')
     out = {}
     for f in films:
         if not f['title']:
             continue
-        hit = folders.get(k('%s (%s)' % (f['title'], f['year'])))
+        hit = folders.get(k('%s (%s)' % (f['title'], f['year']))) or TF.get(tmdb_of(f))
         if not hit and re.match(r'^\d{4}$', f['year']):
             hit = next((folders[k('%s (%d)' % (f['title'], int(f['year']) + d))] for d in (1, -1) if k('%s (%d)' % (f['title'], int(f['year']) + d)) in folders), None)
         hits = [hit] if hit else []
