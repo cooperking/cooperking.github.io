@@ -732,7 +732,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   // ---- the fonts kept in Grifflix's storage, listed; each theme's own marked here or wanted
   var FONTWANT = [['futura-book', 'Futura Book: the bar, buttons and labels'], ['futura-bold', 'Futura Bold'], ['futura-light', 'Futura Light'], ['magneto', 'Magneto: The Lane'],
     ['helvetica-bold', 'The Shining’s credits'], ['eurostile-extended', 'Cherbourg'], ['clarendon-bold', 'Vertigo’s titles'], ['ocr-a', 'The Matrix'], ['wood-gothic', 'All the President’s Men’s poster'],
-    ['ppneuemontrealmono', 'A24’s small print (PP Neue Montreal Mono)'], ['ppneuemontreal', 'A24’s lettering (PP Neue Montreal)']];
+    ['ppneuemontrealmono', 'A24’s small print (PP Neue Montreal Mono)'], ['ppneuemontreal', 'A24’s lettering (PP Neue Montreal)'],
+    ['gothamnarrow', 'Criterion’s labels and buttons (Gotham Narrow: Medium, Bold)'], ['gotham', 'Criterion’s details (Gotham: Book, Book Italic, Medium, Bold, Bold Italic)'],
+    ['mercurydisplay', 'Criterion’s titles (Mercury Display: Roman, Italic, Semibold, Semibold Italic)'], ['mercurytext', 'Criterion’s text (Mercury Text G1: Roman, Italic)']];
   function fontList(given) {
     (given ? Promise.resolve({ fonts: given }) : g('fonts')).then(function (j) {
       var F_ = j.fonts || j.names || j.items || (Array.isArray(j) ? j : []); if (F_ && !Array.isArray(F_) && typeof F_ === 'object') F_ = Object.keys(F_);

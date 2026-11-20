@@ -1972,13 +1972,6 @@ html:not(.phone) .film .meta { font-size: 14.5px !important; }
 .tinspo { font-size: 15px !important; } .tcap .tctx { font-size: 14px !important; }
 /* (all a touch smaller: John, 10 Nov 2026: "can the fonts default be slightly smaller across the site") */
 /* (a Criterion film's page in Criterion's lettering, Futura in spaced capitals; an A24 film's in A24's grotesk and typewriter: John, 20 Nov 2026) */
-#sheetIn .film.fcrit h2 { font: 500 clamp(26px, 3.1vw, 48px)/1.12 var(--kfont) !important; letter-spacing: .12em !important; text-transform: uppercase !important; }
-html.phone #sheetIn .film.fcrit h2 { font-size: clamp(21px, 6.6vw, 28px) !important; letter-spacing: .1em !important; }
-#sheetIn .film.fcrit h2 i { font: 400 .62em/1.3 var(--kfont) !important; letter-spacing: .14em !important; font-style: normal !important; }
-#sheetIn .film.fcrit .tag { font: 500 17px/1.45 var(--kfont) !important; letter-spacing: .02em !important; font-style: normal !important; }
-#sheetIn .film.fcrit .ov, #sheetIn .film.fcrit .people, #sheetIn .film.fcrit .cred, #sheetIn .film.fcrit .credits, #sheetIn .film.fcrit .incoll, #sheetIn .film.fcrit .eps .t, #sheetIn .film.fcrit .eps .s { font-family: var(--kfont) !important; font-style: normal !important; letter-spacing: .01em !important; }
-#sheetIn .film.fcrit .ov { font-size: 15.5px !important; line-height: 1.7 !important; }
-#sheetIn .film.fcrit h3, #sheetIn .film.fcrit .xh, #sheetIn .film.fcrit .incoll span, #sheetIn .film.fcrit .meta, #sheetIn .film.fcrit .date { font-family: var(--kfont) !important; font-style: normal !important; text-transform: uppercase !important; letter-spacing: .14em !important; }
 #sheetIn .film.fa24 h2 { font: 500 clamp(36px, 4.6vw, 76px)/.95 var(--a24-sans) !important; letter-spacing: -.04em !important; text-transform: none !important; }
 html.phone #sheetIn .film.fa24 h2 { font-size: clamp(30px, 10vw, 42px) !important; }
 #sheetIn .film.fa24 h2 i { font: 400 .5em/1.2 var(--a24-sans) !important; letter-spacing: -.01em !important; font-style: normal !important; }
@@ -2177,6 +2170,52 @@ html.gcrit #cbody .clrow { grid-template-columns: 84px 48px minmax(0, 2.4fr) min
 html.gcrit #cbody .clrow img { width: 48px; height: 60px; }
 @media (max-width: 760px) { html.gcrit #cbody .clrow { grid-template-columns: 58px 40px minmax(0, 1fr) 44px; } html.gcrit #cbody .clrow img { width: 40px; height: 50px; } }
 html.gcrit #cbody .cfind::placeholder { color: var(--gc-grey); opacity: 1; }
+/* ---- Criterion's own lettering, as criterion.com sets it (John, 20 Nov 2026, from Criterion's own pages, "you didn't change the criterion
+   collection to its font, you just changed the font"): Mercury (Hoefler & Co) for titles and reading, Mercury Display for the big titles;
+   Gotham for details, Gotham Narrow Bold in spaced capitals for labels and buttons. Their own files once John keeps them in admin, Fonts
+   (critFonts); Montserrat and Source Serif 4 stand in till then ---- */
+:root { --cg: "CritSans", "Montserrat", "Helvetica Neue", Arial, sans-serif; --cgn: "CritNarrow", "CritSans", "Montserrat", "Helvetica Neue", Arial, sans-serif;
+  --cmt: "CritText", "Source Serif 4", Georgia, serif; --cmd: "CritDisplay", "CritText", "Source Serif 4", Georgia, serif; }
+html.gcrit #cbody .colltitle, html.gcrit #cbody .colltitle.gctitle { font: 700 clamp(22px, 3vw, 40px)/1.25 var(--cgn) !important; letter-spacing: .033em !important; text-transform: uppercase !important; }
+html.gcrit.tv #cbody .colltitle { font-size: 30px !important; }
+@media (max-width: 600px) { html.gcrit #cbody .colltitle.gctitle { font-size: 18px !important; } }
+html.gcrit #cbody .gctitle i { font: italic 400 .62em/1 var(--cmt) !important; letter-spacing: -.01em; }
+html.gcrit #cbody .cstats { font: 700 13px/1.23 var(--cgn); letter-spacing: 1px; text-transform: uppercase; }
+html.gcrit #cbody .cstats b { letter-spacing: 1px; }
+html.gcrit #cbody .collhead .ov, html.gcrit #cbody .ov { font: 400 18px/1.6 var(--cmt) !important; letter-spacing: -.3px !important; }
+html.gcrit #cbody .pill, html.gcrit #cbody .sfb, html.gcrit #cbody .cfind { font: 700 13px/1.2 var(--cgn) !important; letter-spacing: .5px !important; text-transform: uppercase !important; }
+html.gcrit #cbody .cfind { text-transform: none !important; font-family: var(--cg) !important; font-weight: 500 !important; letter-spacing: 0 !important; }
+html.gcrit #cbody .clh { font: 400 16px/1.6 var(--cmd) !important; letter-spacing: 0 !important; text-transform: none !important; }
+html.gcrit #cbody .clrow .cls { font: 400 13px/1.15 var(--cg) !important; letter-spacing: -.3px; }
+html.gcrit #cbody .clrow .clt { font: 700 13px/1.23 var(--cg) !important; letter-spacing: -.3px; }
+html.gcrit #cbody .clrow .cld { font: italic 400 13px/1.23 var(--cg) !important; letter-spacing: -.3px; }
+html.gcrit #cbody .clrow .clc, html.gcrit #cbody .clrow .cly { font: 400 13px/1.15 var(--cg) !important; letter-spacing: -.3px; }
+html.gcrit #cbody .card .t { font: 700 13px/1.2 var(--cg) !important; letter-spacing: 0 !important; text-transform: none !important; }
+html.gcrit #cbody .card .s { font: italic 400 13px/1.2 var(--cmd) !important; letter-spacing: 0 !important; text-transform: none !important; }
+html.gcrit #cbody .cset h3, html.gcrit #cbody .csettxt .cssp, html.gcrit #cbody .csettxt .csn { font-family: var(--cgn) !important; font-weight: 700 !important; letter-spacing: 1px !important; text-transform: uppercase !important; }
+html.gcrit #cbody .csettxt h2 { font: 400 clamp(28px, 3.4vw, 44px)/1.1 var(--cmd) !important; letter-spacing: -.4px !important; text-transform: none !important; }
+html.gcrit .sfpop .sfh, html.gcrit .sfpop .sfl, html.gcrit #cbody .sfpop .sfh, html.gcrit #cbody .sfpop .sfl { font: 700 13px/1.23 var(--cgn) !important; letter-spacing: 1px !important; text-transform: uppercase !important; }
+html.gcrit .sfpop .sfg .pill, html.gcrit #cbody .sfpop .sfg .pill { font: 500 13px/1.6 var(--cg) !important; letter-spacing: 0 !important; text-transform: none !important; }
+html.gcrit .sfpop .sfo, html.gcrit #cbody .sfpop .sfo { font: 400 20px/1.6 var(--cmt) !important; letter-spacing: -.4px !important; text-transform: none !important; }
+html.gcrit .sfpop .sfclear, html.gcrit .sfpop #sfdone, html.gcrit #cbody .sfpop #sfdone { font: 700 11px/1.25 var(--cgn) !important; letter-spacing: .7px !important; text-transform: uppercase !important; }
+/* (a Criterion film's own page, as criterion.com's film page: the title in Mercury Display, the summary in Mercury, the details in Gotham, the
+   headings and buttons in Gotham Narrow Bold capitals) */
+#sheetIn .film.fcrit .date { font: 700 13px/1.15 var(--cgn) !important; letter-spacing: 1px !important; text-transform: uppercase !important; }
+#sheetIn .film.fcrit h2 { font: 400 clamp(32px, 3.4vw, 44px)/1.1 var(--cmd) !important; letter-spacing: -.4px !important; text-transform: none !important; }
+html.phone #sheetIn .film.fcrit h2 { font-size: clamp(28px, 8.4vw, 36px) !important; }
+#sheetIn .film.fcrit h2 i { font: italic 400 .6em/1.2 var(--cmt) !important; letter-spacing: 0 !important; }
+#sheetIn .film.fcrit .tag { font: italic 400 18px/1.6 var(--cmt) !important; letter-spacing: -.1px !important; }
+#sheetIn .film.fcrit .ov { font: 400 18px/1.6 var(--cmt) !important; letter-spacing: -.1px !important; }
+html.phone #sheetIn .film.fcrit .ov, html.phone #sheetIn .film.fcrit .tag { font-size: 16.5px !important; }
+#sheetIn .film.fcrit .meta { font: 400 12px/1.6 var(--cg) !important; letter-spacing: 0 !important; text-transform: none !important; }
+#sheetIn .film.fcrit .meta .c { font: 700 11px/1.6 var(--cg) !important; }
+#sheetIn .film.fcrit .people, #sheetIn .film.fcrit .cred, #sheetIn .film.fcrit .credits { font: 400 13px/1.7 var(--cg) !important; letter-spacing: -.3px !important; }
+#sheetIn .film.fcrit .people b, #sheetIn .film.fcrit .cred b { font: 700 12px/1.7 var(--cgn) !important; letter-spacing: 1px !important; text-transform: uppercase !important; }
+#sheetIn .film.fcrit h3, #sheetIn .film.fcrit .xh, #sheetIn .film.fcrit .incoll span, #sheetIn .film.fcrit .chips, #sheetIn .film.fcrit .chips * { font: 700 13px/1.15 var(--cgn) !important; letter-spacing: 1px !important; text-transform: uppercase !important; font-style: normal !important; }
+#sheetIn .film.fcrit .eps .t, #sheetIn .film.fcrit .xrow { font: 400 13px/1.55 var(--cg) !important; letter-spacing: -.1px !important; text-transform: none !important; }
+#sheetIn .film.fcrit .eps .s { font: italic 400 13px/1.4 var(--cmd) !important; }
+#sheetIn .film.fcrit .incoll a { font: 700 13px/1.2 var(--cg) !important; letter-spacing: 0 !important; }
+#sheetIn .film.fcrit .pill { font: 700 13px/1.25 var(--cgn) !important; letter-spacing: .6px !important; text-transform: uppercase !important; }
 /* the collection's cover, in the same design (John: "could we also change the Collection picture to the Criterion at Grifflix design") */
 .card.coll .ccov.gcc { background: var(--gc-page); color: var(--gc-ink); border-color: var(--gc-line); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 8% 7%; }
 .gcc .gcm { width: 34%; height: auto; fill: var(--gc-ink); }
@@ -2551,7 +2590,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '962c2c6619df' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '31a4c3ce8ca5' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5868,7 +5907,7 @@ function collectionView(id, into) {
   apiMemo('collection?id=' + encodeURIComponent(id), function (c) {
     if (!$('#cbody')) return;
     sfMode(/criterion/i.test(c.name));   // (before its bar is drawn: the bar shows Criterion's sort)
-    document.documentElement.classList.toggle('gcrit', /criterion/i.test(c.name));   // (The Criterion Collection at Grifflix: its own look)
+    document.documentElement.classList.toggle('gcrit', /criterion/i.test(c.name)); if (/criterion/i.test(c.name)) critFonts();   // (The Criterion Collection at Grifflix: its own look)
     var A24 = /^a24$/i.test(c.name); document.documentElement.classList.toggle('ga24', A24); if (A24) a24Fonts();   // (A24 at Grifflix: A24's own list: John, 19 Nov 2026)
     var cov = collCard({ id: c.id, name: c.name, children: c.items.length }).replace(/^<a [^>]*>|<\/a>$/g, '');   // (its drawn cover, as on the shelf)
     $('#cbody').innerHTML = (A24 ? '<div class="collhead a24head"><div><div class="a24top"><span class="a24lock">' + a24Mark() + '<small>at</small><b class="gcx" aria-label="Grifflix">' + gxSvg(.5) + '</b></span><span class="hsub"><i>' + c.items.length + ' films</i></span></div>' +
@@ -6347,20 +6386,33 @@ function critSound() {
 // directed it, who's in it, a still over the right half as you point at one (John, 19 Nov 2026, "I want an A24 page in the same way we
 // have a criterion one, with a nice intro screen. This time it will blend Grifflix style with A24's ... use the way they list their films
 // in the all films section")
+// (fonts John keeps in admin, Fonts, used by name: each file whose name a rule matches made that family, its weight and slant read from its
+// name (A24's and Criterion's own, however the files are named): John, 20 Nov 2026)
+var KEPTF = null;
+function keptFonts(rules) {
+  var GF = 'https://sotd-playlists.cooperking.workers.dev/gf/';
+  KEPTF = KEPTF || fetch(GF + 'list').then(function (r) { return r.ok ? r.json() : { fonts: [] }; }).catch(function () { return { fonts: [] }; });
+  KEPTF.then(function (j) {
+    var W = [['hairline', 100], ['thin', 100], ['xlight', 200], ['extralight', 200], ['ultralight', 200], ['light', 300], ['book', 400], ['roman', 400], ['regular', 400], ['normal', 400], ['medium', 500], ['semibold', 600], ['demibold', 600], ['extrabold', 800], ['ultrabold', 800], ['bold', 700], ['black', 900], ['heavy', 900], ['ultra', 900]];
+    var css = (j.fonts || []).map(function (n) {
+      var r = rules.filter(function (x) { return x[0].test(n); })[0]; if (!r) return '';
+      var base = n.replace(/\.woff2?$/, ''), rest = base.indexOf('-') >= 0 ? base.slice(base.indexOf('-')) : base;   // (the family's part of the name off, where a hyphen shows it)
+      var w = /variable/.test(rest) ? '100 900' : ((W.filter(function (x) { return rest.indexOf(x[0]) >= 0; })[0] || [0, 400])[1]);
+      return '@font-face { font-family: "' + r[1] + '"; font-weight: ' + w + '; font-style: ' + (/italic/.test(rest) ? 'italic' : 'normal') + '; font-display: swap; src: url("' + GF + n + '") format("' + (/2$/.test(n) ? 'woff2' : 'woff') + '"); }';
+    }).filter(Boolean).join('\n');
+    if (css) { var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st); }
+  });
+}
+function critFonts() {   // (Criterion's Mercury and Gotham, if kept; Source Serif 4 and Montserrat stand in)
+  if (critFonts.d) return; critFonts.d = 1;
+  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,700;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap'; document.head.appendChild(l);
+  keptFonts([[/^gotham-?narrow(ssm)?-/, 'CritNarrow'], [/^gotham(ssm)?-/, 'CritSans'], [/^mercury-?display/, 'CritDisplay'], [/^mercury-?(text|ssm|g1)|^mercury-/, 'CritText']]);
+}
 function a24Fonts() {   // (A24's grotesk and typewriter, fetched only when A24 is shown)
   if (a24Fonts.d) return; a24Fonts.d = 1;
-  // (A24's real ones, PP Neue Montreal (its Arabic edition too, which carries the same Latin letters) and its Mono, if John has kept them:
-  // each file's weight and slant read from its name; John, 20 Nov 2026, "mono is there and uploaded ... there is PP Neue Montreal Arabic")
-  var GF = 'https://sotd-playlists.cooperking.workers.dev/gf/';
-  fetch(GF + 'list').then(function (r) { return r.ok ? r.json() : { fonts: [] }; }).then(function (j) {
-    var W = [['hairline', 100], ['thin', 100], ['extralight', 200], ['ultralight', 200], ['light', 300], ['book', 400], ['regular', 400], ['normal', 400], ['medium', 500], ['semibold', 600], ['demibold', 600], ['extrabold', 800], ['ultrabold', 800], ['bold', 700], ['black', 900], ['heavy', 900]];
-    var css = (j.fonts || []).filter(function (n) { return /^ppneuemontreal/.test(n) && !/condensed|semimono|^ppneuemontreal-?text/.test(n);   // (not its Text cut, made for small print, which A24's site doesn't use }).map(function (n) {
-      var fam = /^ppneuemontreal-?mono/.test(n) ? 'A24Mono' : 'A24Sans', rest = n.replace(/^ppneuemontreal-?(mono|arabic)?/, '').replace(/\.woff2?$/, '');
-      var w = /variable/.test(rest) ? '100 900' : ((W.filter(function (x) { return rest.indexOf(x[0]) >= 0; })[0] || [0, 400])[1]);
-      return '@font-face { font-family: "' + fam + '"; font-weight: ' + w + '; font-style: ' + (/italic/.test(rest) ? 'italic' : 'normal') + '; font-display: swap; src: url("' + GF + n + '") format("' + (/2$/.test(n) ? 'woff2' : 'woff') + '"); }';
-    }).join('\n');
-    if (css) { var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st); }
-  }).catch(function () {});
+  // (A24's real ones, PP Neue Montreal (its Arabic edition too, which carries the same Latin letters) and its Mono, if John has kept them;
+  // not its Text cut, made for small print, which A24's site doesn't use: John, 20 Nov 2026)
+  keptFonts([[/^ppneuemontreal-?mono/, 'A24Mono'], [/^ppneuemontreal(?!-?(text|condensed|semimono))/, 'A24Sans']]);
   var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;800&family=DM+Mono:wght@400;500&display=swap'; document.head.appendChild(l);
 }
 var A24PATH = 'M379.85,111.86h-.1v-.04h-10.9V.2l-105.9,117.6h-81.3c-3.5,0-6.3-1.28-6.3-4.78,0-2.4,1.3-4.4,3.2-5.5.1-.05.1-.07.2-.1,8.2-4.2,16.1-6.4,20.6-7.7l1.4-.4c2.7-.8,6.1-1.5,9.6-2.3,1.2-.3,2.5-.6,3.8-.8,21.5-4.9,50.6-14.82,50.6-49.12,0-7.6-1.9-15.3-6.3-22.2-7-11-20.2-19.9-41.8-22.5-4.2-.5-8.8-.8-13.7-.8-33.5,0-56.1,17.6-56.9,44v1.4c0,14.6,11.8,26.4,26.4,26.4s26.4-11.9,26.4-26.4-11.8-26.4-26.4-26.4c-.8,0-1.6,0-2.4.1h-.1c-5.4.5-6.16.81-10.12,2.36,2.79-3.66,3.49-4.13,8.22-7.57.1,0,.1-.1.2-.1,9-5.8,21-9,35.1-9,1.5,0,3,0,4.4.1h.9c3.1.4,5.2,2.35,5.2,5.55v72.95c0,3.4-2.4,6.3-5.5,7.1-.2,0-.3.1-.5.1-3,.6-5.7,1.3-8.1,2l-1.3.4c-6.5,1.8-20,5.6-31.9,14.7-4.2,3.2-7.8,6.7-10.9,10.6-7.8,9.9-11.7,22-11.7,36.1h84.9l34.3-38.1h62.3v38.1h43.5v-38.07h10.8v-.03h.1v-6.04.01h0ZM325.35,111.8l-48.19-.06,48.19-54.62v54.68ZM57.85,32.4c-5.4,11.3-16.6,12.5-16.6,12.5l5.4,11.5v.1L.15,155.9h6.58l15.62-33.3h55.23l15.5,33.3h47.96L70.75,4.9l-12.9,27.5ZM25.27,116.5l24.75-52.86,24.69,52.86H25.27Z';
@@ -6894,7 +6946,7 @@ function itemSheet(it, ctx) {
   var pst = ctx.cover || (it.poster && it.type !== 'episode' ? img(it.poster, 'Primary', 400) : '');   // (ctx.cover: as it was in the box set it was opened from)   // (the poster, whole, beside the words on a big screen)
   S.sheetIt = it; S.sheetCtx = ctx;
   var kept = sheetKeep() || (($('#sheetIn > .film') || S.backItem) && SHEETBACK.length) || ctx.kept;   // (from a page of films: that page kept, and a way back to it)
-  var hse = filmHouse(it); if (hse === 'a24') a24Fonts();
+  var hse = filmHouse(it); if (hse === 'a24') a24Fonts(); if (hse === 'crit') critFonts();
   openSheet('<div class="film' + (hse ? ' f' + hse : '') + (pst ? ' hasposter' : '') + (it.type === 'series' ? ' series' : '') + '">' + (!TV ? '<button type="button" class="fback" id="fback" aria-label="Back">‹ Back</button>' : '') + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it)) + (it.spine ? ' · Criterion no. ' + esc(String(it.spine)) : '')) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');
   $$('#sheetIn [data-dstep]').forEach(function (b) { b.onclick = function () { dayStep(+b.dataset.dstep); }; });
   // (a Back on every film: to the page of films it came from, else closed, back where you were: John, 18 Nov 2026, "Films should have a back
