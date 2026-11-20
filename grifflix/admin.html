@@ -494,6 +494,17 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat" style="margin:14px 0 6px">Edit, Delete, Edit collections and a collection’s pencil are hidden on Grifflix unless edit mode is on (on this device). <b>Done</b> at the foot of the page turns it off.</p>
         <div class="state"><a class="btn" id="editgo" href="/grifflix/?edit=1">Open Grifflix in edit mode</a> <a class="btn" id="editgod" href="/grifflix/draft/?edit=1">The draft in edit mode</a></div>
       </section>
+      <section class="card" data-tab="library" id="spcard">
+        <div class="kicker">Subtitles made ready</div>
+        <h2>English subtitles, <em>timed by what’s said</em></h2>
+        <p class="stat">For each foreign-language film with no English subtitles, your Mac takes the likeliest from OpenSubtitles, listens to four parts of the film with Whisper and moves them to fit what’s actually said. Whenever it has no film to convert.</p>
+        <p class="stat" id="spsay">Looking…</p>
+        <div id="spsetup" hidden><p class="stat" style="margin:10px 0 6px">Once, on your Mac: open Terminal, paste this and press Return (it installs Whisper, about 1.5 GB):</p>
+          <pre style="white-space:pre-wrap;word-break:break-all;font-size:12px;padding:10px;border:1px solid var(--line)">curl -fsSL https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/convert-here.sh -o ~/Grifflix/convert-here.sh && zsh ~/Grifflix/convert-here.sh subs-setup</pre>
+          <div class="state"><button class="btn" type="button" id="spcopy">Copy</button></div></div>
+        <div class="state"><button class="btn" type="button" id="sppause">Pause</button><button class="btn" type="button" id="splook">Look for films now</button></div>
+        <div id="splists"></div>
+      </section>
       <section class="card" data-tab="library" id="distcard">
         <div class="kicker">Distributors</div>
         <h2>Who <em>released</em> each film</h2>
@@ -849,6 +860,28 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     setTimeout(picSubs, 300000);
   }
   picSubs();
+  // ---- English subtitles made ready on John's Mac (subprep.py), timed by Whisper: John, 20 Nov 2026, "pre-prepare"
+  function subPrep(body) {
+    if (!TOKEN || !GW) return setTimeout(function () { subPrep(); }, 5000);
+    fetch(GW + '/api/subprep', { method: body ? 'POST' : 'GET', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error(r.status === 404 ? 'the Mac mini takes its update within a few minutes' : 'the Mac mini said ' + r.status); return r.json(); }).then(function (j) {
+        var c = j.counts || {}, n = function (k) { return c[k] || 0; };
+        $('#spsay').innerHTML = j.total ? '<b>' + (n('done') + n('check')) + '</b> of ' + j.total + ' foreign-language films have English subtitles made ready' + (n('check') ? ' (' + n('check') + ' to check)' : '') +
+          '. ' + (n('waiting') + n('given')) + ' waiting' + (n('given') ? ', 1 being done now' : '') + (n('none') + n('nomatch') + n('failed') ? '; ' + (n('none') + n('nomatch') + n('failed')) + ' couldn’t be' : '') + '.' + (j.paused ? ' <b>Paused.</b>' : '') : 'No foreign-language films found waiting yet (the Mac mini looks every hour).';
+        $('#spsetup').hidden = !j.setup && (n('done') + n('check') + n('nomatch') + n('given')) > 0;   // (shown till the first film has gone through: before that, his Mac doesn't ask)
+        $('#sppause').textContent = j.paused ? 'Carry on' : 'Pause';
+        $('#sppause').onclick = function () { subPrep({ op: j.paused ? 'resume' : 'pause' }); };
+        var li = function (x, again) { return '<li>' + FL(x.name, x.year, x.id) + '<span class="when">' + esc(x.note || '') + (x.chose ? ' · ' + esc(x.chose) : '') + '</span>' + (again ? '<span class="state" style="margin-top:4px"><button class="btn" type="button" data-spagain="' + x.id + '">Try again</button></span>' : '') + '</li>'; };
+        $('#splists').innerHTML = (j.check.length ? '<p class="stat" style="margin:14px 0 6px"><b>To check</b> (' + j.check.length + ') · saved, but the timing couldn’t be confirmed</p><ul class="changes">' + j.check.map(function (x) { return li(x, true); }).join('') + '</ul>' : '') +
+          (j.none.length ? '<p class="stat" style="margin:14px 0 6px"><b>Couldn’t be made ready</b> (' + j.none.length + ')</p><ul class="changes">' + j.none.map(function (x) { return li(x, true); }).join('') + '</ul>' : '') +
+          (j.done.length ? '<p class="stat" style="margin:14px 0 6px"><b>Made ready lately</b></p><ul class="changes">' + j.done.map(function (x) { return li(x, false); }).join('') + '</ul>' : '');
+        Array.prototype.forEach.call(document.querySelectorAll('[data-spagain]'), function (bt) { bt.onclick = function () { bt.disabled = true; subPrep({ op: 'again', id: bt.dataset.spagain }); }; });
+      }).catch(function (e) { $('#spsay').textContent = 'Couldn’t ask just now: ' + (e.message || e) + '.'; });
+    if (!body) { clearTimeout(subPrep.t); subPrep.t = setTimeout(function () { subPrep(); }, 120000); }
+  }
+  subPrep();
+  (function () { var b = document.getElementById('splook'); if (b) b.onclick = function () { subPrep({ op: 'look' }); toast('Looking over the films: a minute or two'); setTimeout(function () { subPrep(); }, 90000); };
+    var c = document.getElementById('spcopy'); if (c) c.onclick = function () { navigator.clipboard.writeText('curl -fsSL https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/convert-here.sh -o ~/Grifflix/convert-here.sh && zsh ~/Grifflix/convert-here.sh subs-setup').then(function () { toast('Copied: paste it into Terminal on your Mac'); }); }; })();
   function gate(why, seed) { $('#gate').hidden = false; if (why && !(location.hostname === 'admin.grifflix.co.uk' && !TOKEN)) $('#gatewhy').textContent = why; $('#seed').hidden = !seed; }
 
   // signed in to Grifflix as John? The first time, before Grifflix has members, his other sign-in on this site starts them

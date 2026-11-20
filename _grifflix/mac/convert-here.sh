@@ -111,6 +111,21 @@ fi
 if [[ "${1:-}" == "agent-off" ]]; then
   launchctl unload -w "$AGENT_PLIST" 2>/dev/null; rm -f "$AGENT_PLIST" "$HERE/agent.conf"; echo "The helper is off."; exit 0
 fi
+if [[ "${1:-}" == "subs-setup" ]]; then   # (once: whisper.cpp and its model, for English subtitles made ready here: John, 20 Nov 2026)
+  mkdir -p "$HERE/whisper"
+  if ! command -v whisper-cli >/dev/null 2>&1 && [[ ! -x /opt/homebrew/bin/whisper-cli && ! -x /usr/local/bin/whisper-cli ]]; then
+    BREW=$(command -v brew || ls /opt/homebrew/bin/brew /usr/local/bin/brew 2>/dev/null | head -1)
+    [[ -n "$BREW" ]] || { echo "Grifflix: Homebrew is needed first (brew.sh: one line to paste in Terminal), then run this again."; exit 1; }
+    echo "Grifflix: installing whisper.cpp (Homebrew)…"; "$BREW" install whisper-cpp || exit 1
+  fi
+  command -v ffmpeg >/dev/null 2>&1 || [[ -x /opt/homebrew/bin/ffmpeg || -x /usr/local/bin/ffmpeg || -x "$HOME/bin/ffmpeg" ]] || { BREW=$(command -v brew || ls /opt/homebrew/bin/brew /usr/local/bin/brew 2>/dev/null | head -1); "$BREW" install ffmpeg || exit 1; }
+  if [[ ! -s "$HERE/whisper/ggml-medium.bin" ]]; then
+    echo "Grifflix: getting Whisper's model (1.5 GB, once)…"
+    curl -fL --progress-bar https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin -o "$HERE/whisper/ggml-medium.bin.part" && mv "$HERE/whisper/ggml-medium.bin.part" "$HERE/whisper/ggml-medium.bin" || exit 1
+  fi
+  echo "Grifflix: ready. This Mac makes English subtitles ready whenever it has no film to convert."
+  exit 0
+fi
 if [[ "${1:-}" == "copyback" ]]; then
   # (a converted film to the G-Drive, kept on this Mac until it's there and the Mac mini has been told: tried again by itself, when this
   # Mac is home, if the network went: John, 18 Nov 2026, "what happens if my mac leaves the network while a conversion is running?")
@@ -200,7 +215,21 @@ if [[ "${1:-}" == "agent" ]]; then
   ans=$(curl -fsS -m 90 -H "Authorization: Bearer $key" "$base/macagent/next?home=$home") || exit 0
   [[ "$home" == 1 ]] || exit 0
   job=$(printf '%s' "$ans" | /usr/bin/sed -n 's/.*"job": *"\([^"]*\)".*/\1/p')
-  [[ -n "$job" ]] || exit 0
+  if [[ -z "$job" ]]; then
+    # (no film to convert: English subtitles made ready for a foreign-language film, timed here by what's said (subprep.py, with
+    # whisper.cpp): John, 20 Nov 2026, "pre-prepare" ... "I prefer to use the whisper option")
+    [[ -f "$HERE/whisper/ggml-medium.bin" ]] || exit 0
+    sj="$HERE/subjob.json"
+    curl -fsS -m 300 -H "Authorization: Bearer $key" "$base/macagent/subnext?home=$home" -o "$sj" || exit 0
+    grep -q '"subjob"' "$sj" || exit 0
+    echo $$ > "$lock"; trap 'rm -f "$lock" "$sj" "$sj.1"' EXIT
+    [[ -d /Volumes/G-Drive ]] || { open "smb://$MINI/G-Drive"; for i in {1..60}; do [[ -d /Volumes/G-Drive ]] && break; sleep 1; done; }
+    curl -fsSL -m 60 https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/subprep.py -o "$HERE/subprep.py.new" && mv "$HERE/subprep.py.new" "$HERE/subprep.py"
+    /usr/bin/python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["subjob"], open(sys.argv[2], "w"))' "$sj" "$sj.1" || exit 0
+    PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/bin:$PATH" /usr/bin/caffeinate -i /usr/bin/python3 "$HERE/subprep.py" "$sj.1" "$base" "$key"
+    echo "$(date '+%Y-%m-%d %H:%M') subtitles made ready ($?)"
+    exit 0
+  fi
   echo $$ > "$lock"; trap 'rm -f "$lock"' EXIT
   echo "$(date '+%Y-%m-%d %H:%M') taking up $job"
   # (its newest self from GitHub first, as the button's app does)
