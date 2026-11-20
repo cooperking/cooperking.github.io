@@ -2264,6 +2264,7 @@ html.ga24 #cbody .card .t, html.ga24 #cbody .card .s, html.ga24 #cbody .empty { 
 .a24r .af { font: 500 clamp(26px, 3vw, 42px)/1.04 var(--a24-sans); letter-spacing: -.03em; transition: color .15s; }
 .a24r .ad, .a24r .ac { padding-top: 4px; font: 400 15px/1.3 var(--a24-sans); letter-spacing: -.005em; }
 .a24r .ad span, .a24r .ac span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.a24r:not(.a24h) .ac { height: 5.2em; }   /* (every row the same height, however many it names, and before they've come: John, 20 Nov 2026, "spacing is different in this one place") */
 .a24r .ac { max-height: 5.2em; overflow: hidden; -webkit-mask-image: linear-gradient(#000 45%, transparent); mask-image: linear-gradient(#000 45%, transparent); }
 .a24r .as { padding-top: 6px; text-align: right; font: 400 10px/1.2 var(--a24-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--a24-ink); }
 .a24r .as b { display: inline-block; padding: 3px 5px 2px; background: var(--a24-ink); color: var(--a24-page); font-weight: 400; }
@@ -2533,7 +2534,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'df659eae4d1f' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'c37e62e0fa65' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
