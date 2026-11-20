@@ -1363,6 +1363,7 @@ def make_handler(g):
                         ANTH_ = {}
                         # (the box sets once kept as collections, by each film's folder, as they were when they were taken apart: John,
                         # 18 Nov 2026, "Remove them from normal collections when they were as the others do")
+                        CGFIX_ = load(os.path.expanduser('~/Grifflix/criterion-genres-fixed.json'), {}) or {}
                         SETF_ = {f__: n__ for n__, fs__ in (load(os.path.expanduser('~/Grifflix/criterion-set-members.json'), {}) or {}).items() for f__ in fs__}
                         for f_ in load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or []:
                             if '/films/' in str(f_.get('link') or ''):
@@ -1414,6 +1415,8 @@ def make_handler(g):
                                         o_['cdir'] = d_
                                     if c_:
                                         o_['ccty'] = c_
+                                    if t_ and sl0_ in CGFIX_:   # (a Collector's Set film: its own genres, not its whole set's (set_genres))
+                                        t_ = [x_ for x_ in t_ if x_ not in CRIT_GENRES] + CGFIX_[sl0_]
                                     if t_:
                                         o_['ctags'] = t_
                                     if s_:   # (each box set once: two spellings of one set's name (its ’ and ') made it twice, each film counted twice in it:
@@ -5003,6 +5006,11 @@ def keep_covers():
             covers_now()
         except Exception as e:
             log('Criterion covers (on the hour):', str(e)[:200])
+        try:   # (Criterion's genres too, each Collector's Set film trimmed to its own: set_genres; John, 20 Nov 2026)
+            if G_REF:
+                give_genres(G_REF[0])
+        except Exception as e:
+            log('Criterion genres (on the hour):', str(e)[:200])
         time.sleep(3600)
 
 
@@ -5336,6 +5344,48 @@ CRIT_GENRES = ('Action/Adventure', 'Animation', 'Avant-garde', 'Comedy', 'Crime'
                'Musical', 'Romance', 'Samurai', 'Science Fiction', 'Shorts', 'Silent', 'Thriller', 'War', 'Western')
 
 
+TMDB_CRIT = {'Action': ['Action/Adventure'], 'Adventure': ['Action/Adventure'], 'Animation': ['Animation'], 'Comedy': ['Comedy'], 'Crime': ['Crime', 'Film Noir'],
+             'Documentary': ['Documentary'], 'Drama': ['Drama'], 'Fantasy': ['Fantasy'], 'Horror': ['Horror'], 'Music': ['Music', 'Musical'],
+             'Romance': ['Romance'], 'Science Fiction': ['Science Fiction'], 'Thriller': ['Thriller'], 'War': ['War'], 'Western': ['Western']}
+
+
+def set_genres(g, iid, gs):
+    """A film in one of Criterion's Collector's Sets: Criterion's genre lists give each film of a set every genre in the set (2001: A Space
+    Odyssey a comedy, from Dr. Strangelove beside it in the Kubrick set: John, 20 Nov 2026, "is 2001 a space odyssey really listed as a
+    comedy?"), so only those its own genres on TMDB bear out are kept; Silent kept for a film before 1930, Samurai for a Japanese action
+    film, Shorts for one under 40 minutes; none borne out: its TMDB genres, as Criterion names them. None known: as it was."""
+    try:
+        it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'ProviderIds,ProductionYear'}) or {}
+        tid = str((it.get('ProviderIds') or {}).get('Tmdb') or '')
+        if not tid:
+            return gs
+        f = os.path.expanduser('~/Grifflix/tmdb-genres.json')
+        C = load(f, {}) or {}
+        if tid not in C:
+            d = tmdb(g, '/movie/%s' % tid) or {}
+            C[tid] = {'g': [x.get('name') for x in d.get('genres') or []], 'c': d.get('origin_country') or [], 'rt': d.get('runtime') or 0}
+            save(f, C)
+            time.sleep(.05)
+        t = C[tid]
+        if not t.get('g'):
+            return gs
+        ok = set(y for x in t['g'] for y in TMDB_CRIT.get(x, []))
+        y = it.get('ProductionYear') or 0
+        if y and y < 1930:
+            ok.add('Silent')
+        if 'JP' in (t.get('c') or []) and ok & {'Action/Adventure', 'Drama'}:
+            ok.add('Samurai')
+        if t.get('rt') and t['rt'] < 40:
+            ok.add('Shorts')
+        if 'Avant-garde' in gs and len(gs) <= 3:
+            ok.add('Avant-garde')
+        keep = [x for x in gs if x in ok]
+        return keep or sorted(x for x in ok if x in CRIT_GENRES and x not in ('Silent', 'Samurai', 'Shorts')) or gs
+    except Exception as e:
+        log('Criterion genres for %s (its set): %s' % (iid, e))
+        return gs
+
+
 def give_genres(g):
     """Each film of The Criterion Collection given Criterion's own genres in place of the ones it had, kept from being changed back; one
     Criterion gives none keeps its own (John, 17 Nov 2026: "Can previous genres for the film be removed and these added instead")."""
@@ -5350,10 +5400,16 @@ def give_genres(g):
         return
     gf = os.path.join(home, 'criterion-genres-given.json')
     given = load(gf, {}) or {}
+    inset = set(T.get('Collector’s Sets') or []) | set(T.get("Collector's Sets") or [])
+    fixf = os.path.join(home, 'criterion-genres-fixed.json')
+    fixed = load(fixf, {}) or {}
     put = 0
     try:
         for iid, sl in crit_pairs(g):
             gs = sorted(by.get(sl) or [])
+            if sl in inset and len(gs) > 2:   # (a set's film: its set's genres trimmed to its own)
+                gs = sorted(set_genres(g, iid, gs))
+                fixed[sl] = gs
             if not gs or given.get(iid) == gs:
                 continue
             try:
@@ -5370,6 +5426,7 @@ def give_genres(g):
         save(gf, given)
     except Exception as e:
         log('Criterion genres:', e)
+    save(fixf, fixed)
     if put:
         log('Criterion genres: %d films given Criterion’s own' % put)
     g.forget()
