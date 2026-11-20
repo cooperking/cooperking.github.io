@@ -115,6 +115,11 @@ def find():
         title = lambda f: key(re.sub(r'\s*\((19|20)\d\d\)\s*$', '', f['folder']))
         lengths = [f['mins'] for f in v if f['mins']]
         odd = [f for f in v if difflib.SequenceMatcher(None, title(f), k[0]).ratio() < .9]   # (its folder names another film)
+        # (but copies whose folders agree with each other, one name within the other (No Regret in "Non Je Ne Regrette Rien (No Regret)") or
+        # the same ("Anthem (1991)" twice, the media server calling both Echo Anthem), are the same film: John, 20 Nov 2026)
+        alike = lambda a, b: a == b or (min(len(a), len(b)) >= 4 and (a in b or b in a)) or difflib.SequenceMatcher(None, a, b).ratio() >= .9
+        if odd and all(alike(title(v[0]), title(f)) for f in v[1:]):
+            odd = []
         if odd or (lengths and max(lengths) - min(lengths) > 8):
             wrong.append(v)
         else:
