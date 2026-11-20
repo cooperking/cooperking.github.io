@@ -5209,6 +5209,77 @@ def act_fields_split(g, req):
     return 'Six films made: %s. The whole file and its poster are in Set aside.' % ', '.join(os.path.basename(f) for f in made)
 
 
+# (Scenes from a Marriage (1973): Bergman's six-part TV series, kept as one film in six parts ("-pt1" to "-pt6") in the films folder, so the
+# media server played only the first and TMDB had no film for it. Moved to the TV folder as a series of six episodes, as Fanny and
+# Alexander is: John, 20 Nov 2026, "scenes from a marriage may be just one part of the tv series" ... "yes move it")
+SFAM_SRC = '/Volumes/G-Drive/Grifflix/Movies/Scenes from a Marriage (1973)'
+SFAM_DST = '/Volumes/G-Drive/Grifflix/TV/Scenes from a Marriage (1973)'
+
+
+def _sfam_moves():
+    if not os.path.isdir(SFAM_SRC):
+        return []
+    mv = []
+    for n in sorted(os.listdir(SFAM_SRC)):
+        if n.startswith('.'):
+            continue
+        m = re.search(r'-pt(\d)\.(\w+)$', n)
+        if m:
+            mv.append((os.path.join(SFAM_SRC, n), os.path.join(SFAM_DST, 'Season 01', 'Scenes from a Marriage (1973) S01E%02d.%s' % (int(m.group(1)), m.group(2)))))
+        else:   # (its poster, background and extras: the series' own)
+            mv.append((os.path.join(SFAM_SRC, n), os.path.join(SFAM_DST, n)))
+    return mv
+
+
+def ask_sfam_move(req):
+    mv = _sfam_moves()
+    eps = [b for a, b in mv if 'Season 01' in b]
+    if len(eps) != 6:
+        raise RuntimeError('expected its six parts in %s, found %d' % (SFAM_SRC, len(eps)))
+    for a, b in mv:
+        if os.path.exists(b):
+            raise RuntimeError('%s is there already' % b)
+    req['detail'] = 'Its six parts moved to TV/Scenes from a Marriage (1973)/Season 01 as episodes 1 to 6 (%s … %s), its poster, background and Extras with them. Nothing deleted; the files are only moved and renamed. The media server then reads it as the 1973 TV series, and it stays in The Criterion Collection.' % (
+        os.path.basename(eps[0]), os.path.basename(eps[-1]))
+
+
+def act_sfam_move(g, req):
+    import shutil
+    mv = _sfam_moves()
+    old = next((it['Id'] for it in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path'}, timeout=120) or {}).get('Items', [])
+                if (it.get('Path') or '').startswith(SFAM_SRC + '/')), None)
+    os.makedirs(os.path.join(SFAM_DST, 'Season 01'), exist_ok=True)
+    for a, b in mv:
+        shutil.move(a, b)
+    try:   # (the old folder gone, only the Finder's hidden files left in it)
+        for n in os.listdir(SFAM_SRC):
+            if n == '.DS_Store' or n.startswith('._'):
+                os.remove(os.path.join(SFAM_SRC, n))
+        os.rmdir(SFAM_SRC)
+    except OSError:
+        pass
+    try:
+        g.jf.call('POST', '/Library/Media/Updated', {'Updates': [{'Path': SFAM_SRC, 'UpdateType': 'Deleted'}, {'Path': SFAM_DST, 'UpdateType': 'Created'}]})
+    except Exception:
+        g.jf.call('POST', '/Library/Refresh')
+
+    def follow():   # (once the media server has the series: a calendar day or list of the old film goes to it)
+        new = None
+        for _ in range(40):
+            time.sleep(30)
+            new = next((it['Id'] for it in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Series', 'Fields': 'Path'}, timeout=120) or {}).get('Items', [])
+                        if (it.get('Path') or '') == SFAM_DST), None)
+            if new:
+                break
+        if old and new:
+            g.remap({old: new})
+        g.forget()
+        g.publish_soon = time.time() + 120
+        log('Scenes from a Marriage: %s' % ('a TV series now' if new else 'moved, the media server hasn’t read it yet'))
+    threading.Thread(target=follow, daemon=True).start()
+    return 'Moved: %d files into TV/Scenes from a Marriage (1973), its six parts as episodes 1 to 6.' % len(mv)
+
+
 ACTIONS = {
     'plex-off': ('Quit Plex and keep it off', act_plex_off, None),
     'plex-on': ('Start Plex again and let it be', act_plex_on, None),
@@ -5220,6 +5291,7 @@ ACTIONS = {
     'collection-add': ('Put films in a collection', act_collection_add, ask_collection_add),
     'collection-move': ('Move films from one collection to another', act_collection_move, ask_collection_move),
     'disk-tidy': ('Make room on the Mac mini’s own disk (old backups, Plex, old apps, caches)', act_disk_tidy, ask_disk_tidy),
+    'sfam-move': ('Move Scenes from a Marriage (1973) to TV, its six parts as the series’ six episodes', act_sfam_move, ask_sfam_move),
     'fields-split': ('Cut W. C. Fields—Six Short Films into its six shorts, so it shows as its Criterion box set', act_fields_split, ask_fields_split),
     'brakhage-split': ('Give each By Brakhage film its own folder (Volume One, Volume Two and the seven films from Volume One)', act_brakhage_split, ask_brakhage_split),
 }
