@@ -1077,7 +1077,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       // Criterion: each box set's films here, and those still to get
       var have = {}, sp = {}, gone = {};
       Object.keys(I).forEach(function (k) { var i = I[k];
-        (i.cset || []).forEach(function (b, n) { have[b] = (have[b] || 0) + 1; if ((i.csetsp || [])[n]) sp[b] = +i.csetsp[n]; });
+        (i.cset || []).forEach(function (b, n) { if ((i.cset || []).indexOf(b) < n) return; have[b] = (have[b] || 0) + 1;   /* (each film once in each set, though a set came twice on it: 20 Nov 2026) */ if ((i.csetsp || [])[n]) sp[b] = +i.csetsp[n]; });
         Object.keys(i.csetmiss || {}).forEach(function (b) { gone[b] = i.csetmiss[b]; }); });
       var sets = Object.keys(gone).filter(function (b) { return gone[b].length && have[b]; }).sort(function (a, b) { return (sp[a] || 1e9) - (sp[b] || 1e9) || a.localeCompare(b, 'en', { numeric: true }); });
       var nfilms = sets.reduce(function (n, b) { return n + gone[b].length; }, 0);
