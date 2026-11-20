@@ -226,6 +226,15 @@ export default {
       const r = await pushAll(env, msg, [me], { kind: 'member', via: { t: 'member', id: me, name }, toNames: [name], fromId: me, toIds: [me] });
       if (env.MEDIA) await env.MEDIA.put('diag/round-pics.json', JSON.stringify({ at: new Date().toISOString(), fixed, n: g.length, nocover: g.filter(x => !x.c).length, r }, null, 1), { httpMetadata: { contentType: 'application/json' } });
     })().catch(async e => { console.log('roundPics: ' + (e && e.message)); if (env.MEDIA) await env.MEDIA.put('diag/round-pics.json', JSON.stringify({ error: String(e && (e.stack || e.message) || e) }), { httpMetadata: { contentType: 'application/json' } }).catch(() => {}); }));
+    ctx.waitUntil((async () => {   // once: why Camilla's Trouble (Elvis Presley) is marked not to download (John, 20 Nov 2026: "They shouldn't be marked that way")
+      if (!env.MEDIA || await env.SOTD.get('diagTrouble1')) return;
+      await env.SOTD.put('diagTrouble1', String(Date.now()));
+      const pid = 'G_N-fUAd7o8VUQ', t = '6VSEAk5nGZe5t9Duf1Fz8v', U = await uplAll(env), rec = U[pid], all = (await env.SOTD.get('members', 'json')) || {}, cat = await catalog(env);
+      const data = await uplSongs(env, pid), x = (data.songs || []).find(y => y.id === t) || null, plan = rec ? await uplDlPlan(env, rec.o, U) : null;
+      let tw = null; try { const TW = await twinFiles(env); tw = x ? twinOf(TW, x, pid) : null; } catch (e) { tw = { err: String(e && e.message) }; }
+      const owned = Object.keys(U).filter(k => rec && U[k].o === rec.o);
+      await env.MEDIA.put('diag/trouble.json', JSON.stringify({ owner: rec && rec.o, ownerName: rec && all[rec.o] && all[rec.o].name, fmax: rec && all[rec.o] && all[rec.o].fmax, max: rec ? filesMax(all[rec.o]) : null, owned, song: x, cat: cat[t] || null, plan: plan && { u: plan.u, allowed: plan.allowed.size, has: plan.allowed.has(t), john: plan.john.has(t) }, tw, twCat: tw && tw.id ? cat[tw.id] || null : null, files: (data.files || {})[t] || null }, null, 1), { httpMetadata: { contentType: 'application/json' } });
+    })().catch(async e => { if (env.MEDIA) await env.MEDIA.put('diag/trouble.json', JSON.stringify({ error: String(e && (e.stack || e.message) || e) }), { httpMetadata: { contentType: 'application/json' } }).catch(() => {}); }));
     ctx.waitUntil((async () => {   // once: Collaborations' songs, their added dates, days and captions, for checking
       if (await env.SOTD.get('diagCollab4')) return;
       await env.SOTD.put('diagCollab4', String(Date.now()));
