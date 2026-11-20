@@ -5032,19 +5032,26 @@ def _fields_src():
 
 def _fields_measure(src):
     """The file's black stretches and silences (ffmpeg's blackdetect and silencedetect), kept in fields-cuts.json."""
-    try:
-        rc, out = _run([_ffbin(), '-hide_banner', '-nostats', '-i', src, '-vf', 'blackdetect=d=0.3:pix_th=0.12', '-af', 'silencedetect=n=-42dB:d=0.6',
-                        '-f', 'null', '-'], t=3600)
+    try:   # (only the minutes round each join, small: the whole film took over 20 minutes on the busy Mac, John, 20 Nov 2026, "this is too slow")
+        rc, out = _run([_ffbin(), '-hide_banner', '-i', src], t=60)
         dm = re.search(r'Duration:\s*(\d+):(\d+):([\d.]+)', out)
         dur = int(dm.group(1)) * 3600 + int(dm.group(2)) * 60 + float(dm.group(3)) if dm else 0
-        black = [[float(a), float(b)] for a, b in re.findall(r'black_start:([\d.]+)\s+black_end:([\d.]+)', out)]
-        sil, st = [], None
-        for k, v in re.findall(r'silence_(start|end):\s*([\d.]+)', out):
-            if k == 'start':
-                st = float(v)
-            elif st is not None:
-                sil.append([st, float(v)])
-                st = None
+        scale = dur / (sum(x[2] for x in FIELDS_SHORTS) * 60.0) if dur else 1
+        black, sil, at = [], [], 0.0
+        for _n, _y, mins in FIELDS_SHORTS[:-1]:
+            at += mins * 60 * scale
+            w0 = max(0.0, at - 330)
+            rc, out = _run([_ffbin(), '-hide_banner', '-nostats', '-ss', '%.1f' % w0, '-t', '660', '-i', src, '-vf', 'scale=160:-2,blackdetect=d=0.3:pix_th=0.12',
+                            '-af', 'silencedetect=n=-42dB:d=0.6', '-f', 'null', '-'], t=900)
+            for a_, b_ in re.findall(r'black_start:([\d.]+)\s+black_end:([\d.]+)', out):
+                black.append([w0 + float(a_), w0 + float(b_)])
+            st = None
+            for k, v in re.findall(r'silence_(start|end):\s*([\d.]+)', out):
+                if k == 'start':
+                    st = float(v)
+                elif st is not None:
+                    sil.append([w0 + st, w0 + float(v)])
+                    st = None
         save(FIELDS_CUTS, {'src': src, 'size': os.path.getsize(src), 'dur': dur, 'black': black, 'silence': sil, 'at': int(time.time())})
         log('W. C. Fields: measured, %d black stretches, %d silences, %.0f min' % (len(black), len(sil), dur / 60))
     except Exception as e:
