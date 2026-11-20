@@ -2534,7 +2534,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'c37e62e0fa65' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'fd73f8dea5e3' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5838,7 +5838,7 @@ function collectionView(id, into) {
       '<h1 class="colltitle">All films</h1>' + (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
       '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find an A24 film" aria-label="Find in A24" autocomplete="off"><span class="sp"></span></div>' +
       '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>' : '<div class="collhead"><div class="card coll collpic">' + cov + '</div>' +
-      '<div><div class="kick">Collection</div><h1 class="colltitle' + (/criterion/i.test(c.name) ? ' gctitle"><span class="gclk">' + gcMark('gctm') + '<span class="gcw">' + (/^the criterion collection$/i.test(c.name) ? 'The Criterion<br>Collection' : esc(c.name)) + '</span></span><span class="gcat"><i>at</i><b class="gcx" aria-label="Grifflix">' + gxSvg(.5) + '</b></span>' : '">' + esc(c.name)) + '</h1><div class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' title' : ' titles') + '</i></div>' +
+      '<div><div class="kick">Collection</div><h1 class="colltitle' + (/criterion/i.test(c.name) ? ' gctitle"><span class="gclk">' + gcMark('gctm') + '<span class="gcw">' + (/^the criterion collection$/i.test(c.name) ? 'The Criterion<br>Collection' : esc(c.name)) + '</span></span>'   /* (no "at GRIFFLIX": John, 20 Nov 2026) */ : '">' + esc(c.name)) + '</h1><div class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' title' : ' titles') + '</i></div>' +
       // (Criterion's: what's in it at a glance, in the room the big cover took)
       (/criterion/i.test(c.name) ? (function () { var sets = {}, sp = 0, dirs = {}, ctys = {}; c.items.forEach(function (i) { (i.cset || []).forEach(function (b) { sets[b] = 1; }); if (i.spine) sp++; if (i.cdir) dirs[i.cdir] = 1; if (i.ccty) ctys[i.ccty] = 1; });
         var ns = Object.keys(sets).length, nd = Object.keys(dirs).length, nc = Object.keys(ctys).length;
@@ -6253,7 +6253,10 @@ function critSound() {
   if (!TMUS.on || CALM) return null;
   var c = musicCtx(); if (!c) return null;
   try { musicHush(); } catch (e) {}
-  var t0 = c.currentTime + .05, out = c.createGain(), stopped = false; out.gain.value = .5; out.connect(c.destination);
+  // (its clock the intro's: started when the intro was, so a phone's sound waking a moment late catches up, and the chord comes as GRIFFLIX
+  // rises, not after it: John, 20 Nov 2026, "soundtrack timing on the criterion intro is a bit off")
+  var T0 = performance.now(), out = c.createGain(), stopped = false; out.gain.value = .5; out.connect(c.destination);
+  var build = function (t0) {
   var verb = c.createConvolver(), vl = c.sampleRate * 3.5, ir = c.createBuffer(2, vl, c.sampleRate);   // (a quiet room's long ring)
   for (var ch = 0; ch < 2; ch++) { var dd = ir.getChannelData(ch); for (var i = 0; i < vl; i++) dd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / vl, 3.2); }
   verb.buffer = ir; var wet = c.createGain(); wet.gain.value = .45; verb.connect(wet); wet.connect(out);
@@ -6268,7 +6271,7 @@ function critSound() {
   // the close: one soft, low piano chord, C major spread wide, as a film's last chord (John, 19 Nov 2026, of four tried: "Piano chord is nice
   // but can be louder"; a bell "isn't the right sound"). Each note a piano's: its partials a little stretched, a quick strike, a two-stage
   // fall, darkening as it rings
-  var h = t0 + 1.6, piano = function (at, f, amp, len) {
+  var h = t0 + 1.8, piano = function (at, f, amp, len) {
     var g0 = c.createGain(), lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(Math.min(9000, f * 9), at); lp.frequency.exponentialRampToValueAtTime(Math.max(500, f * 2.5), at + len * .6);
     g0.connect(lp); lp.connect(out); lp.connect(verb);
     [1, 2, 3, 4, 5, 6].forEach(function (k, i) {
@@ -6278,6 +6281,9 @@ function critSound() {
     });
   };
   [[65.41, .05], [98, .04], [130.81, .045], [164.81, .035], [196, .03]].forEach(function (x, i) { piano(h + i * .012, x[0], x[1] * 2, 5); });   // (twice as loud as tried)
+  };
+  var start = function () { if (!stopped) build(c.currentTime + .02 - Math.min(1.2, (performance.now() - T0) / 1000)); };
+  if (c.state === 'running') start(); else { var pr = c.resume && c.resume(); if (pr && pr.then) pr.then(start, start); else start(); }
   return {
     count: function () {},
     stop: function () {
