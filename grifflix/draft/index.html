@@ -2526,7 +2526,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '55bec1c6eb83' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '0a1f55f1db62' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2921,7 +2921,7 @@ function fromSite(path) {   // what the site's own files answer (null: a thing o
     if (name === 'search') {
       // (apostrophes, quotes and accents don't matter: a phone types ’ where the title has ', so "it’s" never found It's a Wonderful
       // Life: John, 16 Nov 2026; "&" and "and" alike)
-      var fold = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['’‘`´"“”]/g, '').replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim(); };
+      var fold = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['’‘`´"“”]/g, '').replace(/&/g, ' and ').replace(/\b(xviii|viii|xiii|xvii|iii|vii|xii|xiv|xvi|xix|ii|iv|vi|ix|xi|xv|xx)\b/g, function (m) { return String({ii: 2, iii: 3, iv: 4, vi: 6, vii: 7, viii: 8, ix: 9, xi: 11, xii: 12, xiii: 13, xiv: 14, xv: 15, xvi: 16, xvii: 17, xviii: 18, xix: 19, xx: 20}[m]); }).replace(/[^a-z0-9]+/g, ' ').trim(); };
       var t = fold(q.get('q')), words = t.split(' ').filter(Boolean);
       var hits = Object.keys(I).map(function (k) { return I[k]; }).filter(function (i) { if ((i.type !== 'movie' && i.type !== 'series') || isExtra(i)) return false; var n = fold(i.name); return words.every(function (w) { return n.indexOf(w) >= 0; }); });
       hits.sort(function (a, b) { var an = fold(a.name), bn = fold(b.name); return (bn.indexOf(t) === 0) - (an.indexOf(t) === 0) || SORTS.name(a, b); });
