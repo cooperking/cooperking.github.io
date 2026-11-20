@@ -841,15 +841,20 @@ def claimed(iid):
         return False
 
 
+SKIPWHY = {}   # (why one was passed over, said as it is, not "this or that": John, 20 Nov 2026, Wild at Heart "failed, but I don't see any message")
+
+
 def shrink_item(iid, name=None):
     """Any film, to be made smaller at the careful setting, whatever the converter would have said of it (the largest, chosen by John);
     not an HDR one (its colours would be spoilt)."""
     it = call('GET', '/Users/%s/Items/%s' % (s['jf_user_id'], iid), Fields='MediaSources,Path,ProductionYear,CommunityRating,DateCreated') or {}
     path = g(it, 'Path') or ''
     if not path or not os.path.exists(path):
+        SKIPWHY[iid] = 'its file isn’t where the media server says it is' + (' (%s)' % os.path.basename(os.path.dirname(path)) if path else '') + ': nothing to convert.'
         return None
     v = next((x for x in g((g(it, 'MediaSources') or [{}])[0], 'MediaStreams') or [] if g(x, 'Type') == 'Video'), {})
     if is_hdr(v):
+        SKIPWHY[iid] = 'it’s HDR (%s), kept as it is so its colours aren’t spoilt: nothing to convert.' % (g(v, 'VideoRangeType') or g(v, 'VideoRange') or 'HDR')
         return None
     return {'id': iid, 'name': g(it, 'Name') or name or '?', 'year': g(it, 'ProductionYear', ''), 'lib': 'movies' if g(it, 'Type') == 'Movie' else 'tv',
             'why': SHRINK + ' (chosen by you)', 'mode': 'shrink', 'path': path, 'mins': round((g(it, 'RunTimeTicks') or 0) / 6e8),
@@ -866,7 +871,7 @@ if CMD in ('plan', 'finish'):   # (John's "Convert on this Mac", 16 Nov 2026: th
             f = shrink_item(sys.argv[2])
             found = [f] if f else []   # (an HDR one: passed over here; the Mac mini repackages it itself if it needs it)
         if not found:
-            print(json.dumps({'error': 'It plays everywhere as it is, or it’s HDR (kept as it is so its colours aren’t spoilt): nothing to convert.'}))
+            print(json.dumps({'error': (SKIPWHY.get(sys.argv[2]) or 'it plays everywhere as it is: nothing to convert.')}))
             sys.exit()
         try:
             print(json.dumps(dict(convert(dict(found[0], plan_only=True, urgent=True), ffmpeg_, ffprobe_, st), item=found[0])))
