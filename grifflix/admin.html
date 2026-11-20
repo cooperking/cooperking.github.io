@@ -656,9 +656,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       </section>
       <section class="card" data-tab="calendar">
         <div class="kicker">Fonts</div>
-        <h2 id="fonthead">Futura</h2>
-        <p class="stat" id="fontsay">Your own fonts (.woff2, .woff, .ttf or .otf, or a .zip of them), kept in Grifflix’s own storage, not on GitHub: Futura (Book, Bold, Light), and the themes’ own, such as Magneto for The Lane (name it magneto).</p>
-        <p class="stat">The monthly themes’ own fonts, when you have them, named like this (each takes over from the stand-in at once): <b>helvetica-bold</b> (The Shining’s credits), <b>eurostile-extended</b> (Cherbourg), <b>clarendon-bold</b> (Vertigo’s titles), <b>ocr-a</b> (The Matrix), <b>wood-gothic</b> (All the President’s Men’s poster), each .woff2 or .woff.</p>
+        <h2 id="fonthead">Fonts</h2>
+        <!-- (the fonts kept, listed, not just how to add them; the theme fonts each marked here or still wanted: John, 20 Nov 2026, "It should list
+             the fonts I have and not be titled Futura") -->
+        <ul class="changes" id="fontlist"><li>Looking…</li></ul>
+        <p class="stat" id="fontsay">Add your own (.woff2, .woff, .ttf or .otf, or a .zip of them): kept in Grifflix’s own storage, not on GitHub.</p>
+        <p class="stat">The monthly themes’ own fonts, named like this (each takes over from the stand-in at once): <span id="fontwant"></span></p>
         <div class="state"><label class="btn primary" for="fontfile">Choose the fonts (or their .zip)</label><input type="file" id="fontfile" multiple hidden></div>
       </section>
       <section class="card" data-tab="mac">
@@ -725,13 +728,26 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     return fetch(WORKER + '/g/' + op, body ? { method: 'POST', headers: { Authorization: 'Bearer ' + (tok || TOKEN), 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: { Authorization: 'Bearer ' + (tok || TOKEN) } })
       .then(function (r) { return r.json().then(function (j) { if (!r.ok) { var e = new Error(j.error || 'That didn’t work.'); e.status = r.status; throw e; } return j; }); });
   }
+  // ---- the fonts kept in Grifflix's storage, listed; each theme's own marked here or wanted
+  var FONTWANT = [['futura-book', 'Futura Book: the bar, buttons and labels'], ['futura-bold', 'Futura Bold'], ['futura-light', 'Futura Light'], ['magneto', 'Magneto: The Lane'],
+    ['helvetica-bold', 'The Shining’s credits'], ['eurostile-extended', 'Cherbourg'], ['clarendon-bold', 'Vertigo’s titles'], ['ocr-a', 'The Matrix'], ['wood-gothic', 'All the President’s Men’s poster']];
+  function fontList(given) {
+    (given ? Promise.resolve({ fonts: given }) : g('fonts')).then(function (j) {
+      var F_ = j.fonts || j.names || j.items || (Array.isArray(j) ? j : []); if (F_ && !Array.isArray(F_) && typeof F_ === 'object') F_ = Object.keys(F_);
+      var L = (F_ || []).map(function (x) { return typeof x === 'string' ? x : (x.name || x.key || ''); }).filter(Boolean).sort();
+      var base = function (n) { return n.toLowerCase().replace(/\.(woff2?|ttf|otf)$/, ''); };
+      $('#fonthead').innerHTML = L.length ? L.length + ' font' + (L.length === 1 ? '' : 's') + ' <em>kept</em>' : 'Fonts';
+      $('#fontlist').innerHTML = L.length ? L.map(function (n) { var w = FONTWANT.filter(function (x) { return base(n) === x[0] || base(n).indexOf(x[0]) === 0; })[0]; return '<li>' + esc(n) + (w ? '<span class="when">' + esc(w[1]) + '</span>' : '') + '</li>'; }).join('') : '<li>None kept yet: Grifflix uses its stand-ins.</li>';
+      $('#fontwant').innerHTML = FONTWANT.slice(4).map(function (x) { var have = L.some(function (n) { return base(n).indexOf(x[0]) === 0; }); return '<b>' + x[0] + '</b> (' + esc(x[1]) + ')' + (have ? ' ✓' : ''); }).join(', ') + ', each .woff2 or .woff.';
+    }).catch(function (e) { $('#fontlist').innerHTML = '<li>Couldn’t list them: ' + esc(e.message || 'no answer') + '</li>'; });
+  }
   function gate(why, seed) { $('#gate').hidden = false; if (why && !(location.hostname === 'admin.grifflix.co.uk' && !TOKEN)) $('#gatewhy').textContent = why; $('#seed').hidden = !seed; }
 
   // signed in to Grifflix as John? The first time, before Grifflix has members, his other sign-in on this site starts them
   (TOKEN ? g('me') : Promise.reject({ status: 401 })).then(function (me) {
     if (!me.owner) return gate('Signed in as ' + me.name + ': this page is only for John.');
     $('#app').hidden = false; $('#hello').innerHTML = 'Signed in as <b>' + esc(me.name) + '</b>';
-    members(); draftLive(); notes(); mac(); dataStatus(); peek(); siteJob();
+    members(); draftLive(); notes(); mac(); dataStatus(); peek(); siteJob(); fontList();
   }).catch(function () {
     // not signed in to Grifflix here: has Grifflix its members yet? (asked without a sign-in, the Worker says which)
     fetch(WORKER + '/g/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"op":"list"}' }).then(function (r) { return r.json(); }).then(function (j) {
@@ -1434,7 +1450,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(f.name + ': ' + (j.error || r.status)); done++; last = j; }); });
       });
     }, Promise.resolve()).then(function () {
-      $('#fonthead').innerHTML = 'Fonts <em>kept</em>'; $('#fontsay').textContent = done + ' sent. Kept now: ' + ((last && last.fonts) || []).join(', ') + '. Grifflix shows them next time it opens.';
+      $('#fontsay').textContent = done + ' sent. Grifflix shows them next time it opens.'; fontList((last && last.fonts) || null);
     }).catch(function (e) { $('#fontsay').textContent = e.message; });
     }).catch(function (e) { $('#fontsay').textContent = e.message || 'That couldn’t be opened.'; });
   };
