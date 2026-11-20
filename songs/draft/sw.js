@@ -96,7 +96,7 @@ self.addEventListener('push', e => {
   e.waitUntil(Promise.all([typeof m.unread === 'number' ? badge(null, m.unread) : badge(1), self.registration.showNotification(m.title || 'Song of the Day', {
     body: m.body || '', icon: m.icon || scope + 'icon-192.png', image: m.image || undefined,   // image: Android's big picture (an iPhone shows none)
     tag: m.tag || 'sotd', data: { url: m.url || scope, ib: m.ib || '' }
-  })]));
+  }), self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(ws => ws.forEach(w => w.postMessage({ sotdPush: 1 }))).catch(() => {})]));   // (a page open: its inbox fetched again)
 });
 
 // the number on the app's icon (an iPhone's Home Screen app, and installed apps on a computer): the member's unread
