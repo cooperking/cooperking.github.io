@@ -2109,8 +2109,8 @@ html.gcrit #cbody .collpic { display: none !important; }
 html.gcrit #cbody .collhead, html.gcrit.tv #cbody .collhead { grid-template-columns: minmax(0, 1fr) !important; }
 html.gcrit #cbody .gctitle { display: flex; flex-wrap: wrap; align-items: center; gap: .5em 1em; padding-right: 56px; }
 html.gcrit #cbody .gctitle .gclk, html.gcrit #cbody .gctitle .gcat { display: inline-flex; align-items: center; gap: .6em; white-space: nowrap; }
-html.gcrit #cbody .gctitle .gcw { line-height: 1.15; }
-html.gcrit #cbody .gctitle .gctm { flex: none; width: 2.3em; height: 2.3em; }
+html.gcrit #cbody .gctitle .gcw { line-height: 1.15; white-space: normal; }   /* (on one line where it fits: John, 20 Nov 2026) */
+html.gcrit #cbody .gctitle .gctm { flex: none; width: 1.8em; height: 1.8em; }
 html.gcrit #cbody .gctitle .gctm path { fill: currentColor; }
 html.gcrit #cbody .gctitle i { font: italic 400 .8em/1 var(--serif, Georgia, serif); letter-spacing: 0; text-transform: none; color: var(--gc-grey, var(--fg-2)); }
 html.gcrit #cbody .gctitle .gcx { font-size: .78em; color: var(--gc-ink); }
@@ -5828,6 +5828,9 @@ function collArt(h, nm, full) {
 }
 function collectionView(id, into) {
   var main = into || $('#main');
+  // (the bar's words drawn here too: a page opened straight onto a collection (a refresh of it) had GRIFFLIX and the profile only: John,
+  // 20 Nov 2026, of The Criterion Collection after a refresh)
+  if (!into) try { navBar(); } catch (e) {}
   main.innerHTML = '<div class="tabs" style="margin-top:22px">' + (ME && ME.owner ? '<a class="pill" href="#browse/collections">‹ Collections</a>' : '<a class="pill" href="#browse/movies">‹ Films</a>') + '</div><div id="cbody"><div class="empty">Looking on the shelves…</div></div>';
   apiMemo('collection?id=' + encodeURIComponent(id), function (c) {
     if (!$('#cbody')) return;
@@ -5839,7 +5842,7 @@ function collectionView(id, into) {
       '<h1 class="colltitle">All films</h1>' + (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
       '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find an A24 film" aria-label="Find in A24" autocomplete="off"><span class="sp"></span></div>' +
       '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>' : '<div class="collhead"><div class="card coll collpic">' + cov + '</div>' +
-      '<div><div class="kick">Collection</div><h1 class="colltitle' + (/criterion/i.test(c.name) ? ' gctitle"><span class="gclk">' + gcMark('gctm') + '<span class="gcw">' + (/^the criterion collection$/i.test(c.name) ? 'The Criterion<br>Collection' : esc(c.name)) + '</span></span>'   /* (no "at GRIFFLIX": John, 20 Nov 2026) */ : '">' + esc(c.name)) + '</h1><div class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' title' : ' titles') + '</i></div>' +
+      '<div><div class="kick">Collection</div><h1 class="colltitle' + (/criterion/i.test(c.name) ? ' gctitle"><span class="gclk">' + gcMark('gctm') + '<span class="gcw">' + esc(c.name) + '</span></span>'   /* (no "at GRIFFLIX": John, 20 Nov 2026) */ : '">' + esc(c.name)) + '</h1><div class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' title' : ' titles') + '</i></div>' +
       // (Criterion's: what's in it at a glance, in the room the big cover took)
       (/criterion/i.test(c.name) ? (function () { var sets = {}, sp = 0, dirs = {}, ctys = {}; c.items.forEach(function (i) { (i.cset || []).forEach(function (b) { sets[b] = 1; }); if (i.spine) sp++; if (i.cdir) dirs[i.cdir] = 1; if (i.ccty) ctys[i.ccty] = 1; });
         var ns = Object.keys(sets).length, nd = Object.keys(dirs).length, nc = Object.keys(ctys).length;
