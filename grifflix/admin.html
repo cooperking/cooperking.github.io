@@ -907,8 +907,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   }
   function umFold(t) { return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
   function umDraw() {
-    var q = umFold($('#umq').value).trim(), L = UM.filter(function (x) { return !q || umFold(x.name + ' ' + x.folder + ' ' + x.file).indexOf(q) >= 0; });
-    $('#umsay').innerHTML = UM.length ? '<b>' + UM.length + '</b> film' + (UM.length === 1 ? '' : 's') + ' with no match' + (q ? ' · ' + L.length + ' shown' : '') + '.' : 'Every film is matched.';
+    // (a film matched on TMDB that has no IMDb page (a TV documentary: Remarkable Women of the 20th Century) isn't unmatched: listed apart,
+    // nothing to do: John, 20 Nov 2026, "isn't on imdb - may be a tv doc")
+    var q = umFold($('#umq').value).trim(), fit = function (x) { return !q || umFold(x.name + ' ' + x.folder + ' ' + x.file).indexOf(q) >= 0; };
+    var U = UM.filter(function (x) { return !x.tmdb; }), T = UM.filter(function (x) { return x.tmdb; }), L = U.filter(fit);
+    $('#umsay').innerHTML = (U.length ? '<b>' + U.length + '</b> film' + (U.length === 1 ? '' : 's') + ' with no match' + (q ? ' · ' + L.length + ' shown' : '') + '.' : 'Every film is matched.') +
+      (T.length ? ' <span class="when" style="display:block;margin-top:4px">Matched on TMDB, but with no IMDb page there (nothing to do): ' + T.map(function (x) { return FL(x.name, x.year, x.id); }).join(', ') + '.</span>' : '');
     $('#umlist').innerHTML = L.map(function (x) {
       var why = x.tmdb ? 'On TMDB (' + esc(x.tmdb) + '), but TMDB has no IMDb number for it' : x.note ? esc(x.note) : 'Not tried yet';
       return '<li data-um="' + x.id + '">' + FL(x.name, x.year, x.id) + '<span class="when">' + esc(x.folder) + (x.mins ? ' · ' + x.mins + ' min' : '') + ' · ' + why +
