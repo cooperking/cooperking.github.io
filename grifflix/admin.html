@@ -490,6 +490,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <h2>Your <em>collections</em></h2>
         <p class="stat">Every collection in Grifflix, to look through or change. Only from here: Film and TV no longer show a Collections tab (John, 19 Nov 2026).</p>
         <div class="state"><a class="btn primary" id="collgo" href="/grifflix/#browse/collections">Open your collections</a></div>
+        <p class="stat" style="margin:14px 0 6px">Edit, Delete, Edit collections and a collection’s pencil are hidden on Grifflix unless edit mode is on (on this device). <b>Done</b> at the foot of the page turns it off.</p>
+        <div class="state"><a class="btn" id="editgo" href="/grifflix/?edit=1">Open Grifflix in edit mode</a> <a class="btn" id="editgod" href="/grifflix/draft/?edit=1">The draft in edit mode</a></div>
       </section>
       <section class="card" data-tab="library">
         <div class="kicker">Matching</div>
@@ -699,7 +701,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var k = FK(nm); return (y && (LIBIDX[k + '|' + y] || LIBIDX[k + '|' + (+y - 1)] || LIBIDX[k + '|' + (+y + 1)])) || LIBIDX[k] || null;
   }
   var SITE = location.hostname === 'admin.grifflix.co.uk' ? 'https://grifflix.co.uk/grifflix/' : '/grifflix/';
-  (function () { var c = document.getElementById('collgo'); if (c) c.href = SITE + '#browse/collections'; })();   // (on the admin's own address, Grifflix is on its own)
+  (function () { var c = document.getElementById('collgo'); if (c) c.href = SITE + '#browse/collections'; var e = document.getElementById('editgo'); if (e) e.href = SITE + '?edit=1'; var d = document.getElementById('editgod'); if (d) d.href = SITE + 'draft/?edit=1'; })();   // (on the admin's own address, Grifflix is on its own)
   function flA(id, text) { return '<a class="flink" href="' + SITE + '#film/' + id + '" target="grifflix" rel="noopener" title="Open it in Grifflix">' + esc(text) + '</a>'; }
   if (location.hostname === 'admin.grifflix.co.uk') [].forEach.call(document.querySelectorAll('a[href^="/grifflix/"]'), function (a) { a.href = 'https://grifflix.co.uk' + a.getAttribute('href'); a.target = 'grifflix'; });
   // (and from grifflix.co.uk, a way to it, signed in: what this page knows of John's sign-in carried in the link's #, never sent anywhere)
