@@ -525,7 +525,7 @@ def convert(item, ffmpeg, ffprobe, st):
     # so here it's never converted, only planned for his Mac)
     hdr_ = (v.get('color_transfer') or '') in ('smpte2084', 'arib-std-b67')
     if hdr_ and not remux:
-        if not item.get('plan_only'):
+        if not item.get('plan_only') and not item.get('premade'):   # (made on John's Mac already: only put in place here: WALL·E, 20 Nov 2026)
             raise RuntimeError('it’s HDR: converted on John’s Mac only')
         tin = 'arib-std-b67' if v.get('color_transfer') == 'arib-std-b67' else 'smpte2084'
         vf += (',zscale=tin=%s:pin=bt2020:min=bt2020nc:t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,'
