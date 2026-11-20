@@ -83,8 +83,8 @@ NIGHT = (int(os.environ.get('GRIFFLIX_FROM') or 2), int(os.environ.get('GRIFFLIX
 ANYTIME = len(sys.argv) > 2 and sys.argv[2] == 'now'
 
 
-def night():
-    return ANYTIME or NIGHT[0] <= time.localtime().tm_hour < NIGHT[1]
+def night():   # (any hour: no overnight-only rule now; it waits only while something plays or John's Mac converts: John, 20 Nov 2026)
+    return True
 
 
 def _stopped(signum, frame):   # (stopped, as Update everything does: tidied up like Ctrl-C, its ffmpeg ended and the half-made file removed,
@@ -1192,11 +1192,9 @@ while rest:
     RUN['n'] = n
     RUN['next'] = [{'id': x['id'], 'name': x['name'], 'why': x['why'], 'gb': x['gb'], 'mins': x['mins'], 'mode': x.get('mode')} for x in [it] + rest[:11]]   # (what's coming, for the admin page)
     RUN['left'] = {'remux': sum(1 for x in [it] + rest if x.get('mode') == 'remux'), 'convert': sum(1 for x in [it] + rest if x.get('mode') != 'remux')}
-    if not night() and not it.get('urgent'):   # (today's or tomorrow's Movie of the Day doesn't wait for the night: John, 11 Nov 2026, Rushmore on the Fire Stick)
-        log('waiting for %d am' % NIGHT[0])
-        while not night():
-            now('waiting', why='waiting for %d am' % NIGHT[0])
-            time.sleep(60)
+    # (no waiting for the night: it converts whenever nothing is playing and John's Mac isn't converting, below: John, 12 Nov 2026, "That 2am
+    # 8am rule was changed to any time not in use"; the night wait itself taken out: John, 20 Nov 2026, "the mac now just converts whenever
+    # something isn't playing")
     # (only while John's Mac isn't converting and nothing is playing: John, 18 Nov 2026, "only picking up when I'm not and nothing is playing")
     while mac_converting() or watching():
         now('waiting', why='your Mac is converting' if mac_converting() else 'someone is watching')
