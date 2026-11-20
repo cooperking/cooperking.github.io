@@ -5791,8 +5791,9 @@ function subOf(it) {
 }
 function progBar(it) { return it.pos && it.secs ? '<span class="bar" style="width:' + Math.min(100, it.pos / it.secs * 100).toFixed(1) + '%"></span>' : ''; }
 
-function cardHTML(it, land, spine) {   // (spine: a collection's page, a Criterion film's spine number with it: John, 16 Nov 2026)
-  var src = land ? img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480) : img(it.poster, 'Primary', 320);
+function cardHTML(it, land, spine, cover) {   // (spine: a collection's page, a Criterion film's spine number with it: John, 16 Nov 2026)
+  // (cover: a picture of its own here, a box set's cover on a film seen in that set: John, 20 Nov 2026)
+  var src = cover ? cover : land ? img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480) : img(it.poster, 'Primary', 320);
   return '<button class="card' + (land ? ' land' : '') + '" data-item="' + it.id + '"><div class="pic">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '<div class="noimg">' + esc(showName(it)) + '</div>') + progBar(it) + '</div>' +
     '<div class="t">' + esc(showName(it)) + '</div><div class="s">' + (spine && it.spine ? '<b class="spn">No. ' + esc(String(it.spine)) + '</b> · ' : '') + esc(subOf(it)) + '</div></button>';
 }
@@ -5870,6 +5871,11 @@ function collectionView(id, into) {
         var g = $('#cgrid');
         if (openSet && BS[openSet]) {   // one box set, opened: its films
           var L = BS[openSet].slice().sort(function (x, y) { return (+x.spine || 0) - (+y.spine || 0) || nameKey(x).localeCompare(nameKey(y)); });
+          // (a film released on its own as well as in this set: here, the set's cover, and on its page opened from here; its own release's
+          // cover everywhere else: John, 20 Nov 2026, "it should show the box set cover when you click on the box set, and on the film when
+          // you view it from there. When you view the film as its own release you should see the cover it was given as part of that")
+          var setCov = BSI[openSet] ? BSI[openSet].replace(/_(small|thumbnail)\./, '_large.') : '', SC = {};
+          if (setCov) L.forEach(function (i) { if (i.spine && String(i.spine) !== String(BSP[openSet] || '')) SC[i.id] = setCov; });
           g.className = 'csets';
           // (the set opened as Criterion's own page for it: its cover large, its name, its description, then its films: John, 18 Nov 2026, "I'd like
           // to be able to see the picture of the box set cover larger, as it is on criterion")
@@ -5879,8 +5885,8 @@ function collectionView(id, into) {
             (BSD[openSet] ? '<p class="csetdesc">' + esc(BSD[openSet]) + '</p>' : '') +
             // (the TV: the films a row at the foot of the words, beside the cover, along with left and right: John, 18 Nov 2026, "Cover should be
             // big, sized to the size of the tv in the left. Caption on the right. Films in the bottom, scrolling left or right")
-            (TV ? '<div class="gridcards csetrow">' + L.map(function (i) { return cardHTML(i, false, true); }).join('') + '</div>' : '') +
-            '</div></div></div>' + (TV ? '' : '<div class="gridcards">' + L.map(function (i) { return cardHTML(i, false, true); }).join('') + '</div>') +
+            (TV ? '<div class="gridcards csetrow">' + L.map(function (i) { return cardHTML(i, false, true, SC[i.id]); }).join('') + '</div>' : '') +
+            '</div></div></div>' + (TV ? '' : '<div class="gridcards">' + L.map(function (i) { return cardHTML(i, false, true, SC[i.id]); }).join('') + '</div>') +
             featHTML(BSF[openSet], [].concat.apply([], L.map(function (i) { return LIB && i.extras ? i.extras.map(function (id) { return LIB.items[id]; }).filter(Boolean).map(extraName) : []; })), 'The set’s special features', true) +
             (BSM[openSet] && BSM[openSet].length ? '<div class="csmiss"><h3>Not in Grifflix yet <small>' + BSM[openSet].length + '</small></h3><ul>' + BSM[openSet].map(function (m) { return '<li' + (TV ? ' tabindex="0"' : '') + '><span class="cls">' + esc(m[2] || '') + '</span><b>' + esc(m[0]) + '</b><span>' + esc(m[1] || '') + '</span></li>'; }).join('') + '</ul></div>' : '');
           var was_ = openSet;
@@ -5888,7 +5894,7 @@ function collectionView(id, into) {
           // (the TV: a set opened with its first film lit, the set's top under the bar; Back to all the box sets: John, 18 Nov 2026, "Just
           // looked at box sets on fire tv and needs work")
           if (TV) setTimeout(function () { var f_ = $('.csetrow .card', g) || $('.gridcards .card', g) || $('#csetback'); if (f_) f_.focus({ preventScroll: true }); var h_ = $('.csethero', g) || g; window.scrollTo({ top: h_.getBoundingClientRect().top + scrollY - 96 }); if (f_ && f_.getBoundingClientRect().bottom > innerHeight - 4) f_.scrollIntoView({ block: 'end' }); }, 30);
-          wireCards(g, L); return;
+          wireCards(g, L, SC); return;
         }
         openSet = null;
         var hereOf = function (b) { var L = BS[b]; return BSM[b] && BSM[b].length ? L.length + ' of ' + (L.length + BSM[b].length) + ' here' : L.length + (L.length === 1 ? ' film' : ' films'); };
@@ -5992,9 +5998,9 @@ function collectionView(id, into) {
 
   }).catch(oops);
 }
-function wireCards(el, items) {
+function wireCards(el, items, covers) {   // (covers: a picture for each, by id, its film page the same: a box set's films)
   var by = {}; items.forEach(function (i) { by[i.id] = i; SEEN[i.id] = i; });
-  $$('[data-item]', el).forEach(function (b) { b.onclick = function () { var it = by[b.dataset.item]; if (it && it.type === 'collection') { if (S.sheetInto && dlg.open && S.sheetInto.isConnected) { S.sheetInto.dataset.coll = 1; collectionView(it.id, S.sheetInto); } else location.hash = '#collection/' + it.id; } else itemSheet(it); }; });   // (a box set inside a collection opens as a collection)
+  $$('[data-item]', el).forEach(function (b) { b.onclick = function () { var it = by[b.dataset.item]; if (it && it.type === 'collection') { if (S.sheetInto && dlg.open && S.sheetInto.isConnected) { S.sheetInto.dataset.coll = 1; collectionView(it.id, S.sheetInto); } else location.hash = '#collection/' + it.id; } else itemSheet(it, covers && covers[it.id] ? { cover: covers[it.id] } : undefined); }; });   // (a box set inside a collection opens as a collection)
 }
 function drawRows(R, into) {
   var el = into || $('#rows'); if (!el) return;
@@ -6818,7 +6824,7 @@ function itemSheet(it, ctx) {
   S.sheetDate = ctx.date || null;
   var dnav = function (d) { return ctx.date && dayNear(ctx.date, d) ? '<button class="ico dnav" id="dstep' + (d < 0 ? 'p' : 'n') + '" data-dstep="' + d + '" aria-label="' + (d < 0 ? 'The day before' : 'The day after') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="' + (d < 0 ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6') + '"/></svg></button>' : ''; };
   var top = it.backdrop ? '<div class="heroimg"><img alt="" src="' + esc(img(it.backdrop, 'Backdrop', 1100)) + '">' + '</div>' : (it.thumb || (it.type === 'video' && it.poster) ? '<div class="heroimg"><img alt="" src="' + esc(img(it.thumb || it.poster, it.thumb ? 'Thumb' : 'Primary', 1100)) + '">' + '</div>' : '<div class="noimg-top" style="position:relative"></div>');
-  var pst = it.poster && it.type !== 'episode' ? img(it.poster, 'Primary', 400) : '';   // (the poster, whole, beside the words on a big screen)
+  var pst = ctx.cover || (it.poster && it.type !== 'episode' ? img(it.poster, 'Primary', 400) : '');   // (ctx.cover: as it was in the box set it was opened from)   // (the poster, whole, beside the words on a big screen)
   S.sheetIt = it; S.sheetCtx = ctx;
   var kept = sheetKeep() || (($('#sheetIn > .film') || S.backItem) && SHEETBACK.length) || ctx.kept;   // (from a page of films: that page kept, and a way back to it)
   openSheet('<div class="film' + (pst ? ' hasposter' : '') + (it.type === 'series' ? ' series' : '') + '">' + (!TV ? '<button type="button" class="fback" id="fback" aria-label="Back">‹ Back</button>' : '') + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it)) + (it.spine ? ' · Criterion no. ' + esc(String(it.spine)) : '')) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');

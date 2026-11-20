@@ -2756,6 +2756,11 @@ def make_handler(g):
             except Exception as e:
                 did = 'its folder couldn’t be renamed (%s)' % e
                 log('  rename:', e)
+            # (and its collections looked at again under its right name: A24, The Criterion Collection and its box set, its cover: John,
+            # 20 Nov 2026, "If I correct a film through tmdb, does it then automatically correct folder structure and collections it should be in?")
+            SCAN_NOW.set()
+            threading.Timer(150, covers_now).start()
+            threading.Timer(180, a24_now).start()
             return self.send_json(200, {'ok': True, 'name': pick.get('Name'), 'year': pick.get('ProductionYear'), 'renamed': did})
 
         def api_delete(self, me, user, q, b):
