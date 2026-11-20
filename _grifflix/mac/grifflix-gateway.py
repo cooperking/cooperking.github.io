@@ -1146,6 +1146,7 @@ def make_handler(g):
                         threading.Timer(t_, CONV_NOW.set).start()
                     threading.Timer(150, covers_now).start()   # (a Criterion film: its cover, once the media server has it)
                     threading.Timer(180, a24_now).start()   # (an A24 film: in the A24 collection)
+                    threading.Timer(240, bom_now).start()   # (and its distributor, from Box Office Mojo: 20 Nov 2026)
                     log('Just brought in: %s: the media server asked to look' % os.path.basename(str(self.body().get('path') or ''))[:120])
                     return self.send_json(200, {'ok': True})
                 if u.path == '/local/remap' and method == 'POST':   # convert.py on this Mac: a film's new file has a new id; calendars, lists and progress follow it
@@ -2974,6 +2975,7 @@ def make_handler(g):
             SCAN_NOW.set()
             threading.Timer(150, covers_now).start()
             threading.Timer(180, a24_now).start()
+            threading.Timer(240, bom_now).start()
             return self.send_json(200, {'ok': True, 'name': pick.get('Name'), 'year': pick.get('ProductionYear'), 'renamed': did})
 
         def api_delete(self, me, user, q, b):
@@ -6058,6 +6060,7 @@ def match_unmatched(g):
         save(os.path.expanduser('~/Grifflix/tmdb-runtimes.json'), TMDBC)
     if fixed:
         log('Matched on TMDB, never matched before (%d): %s' % (len(fixed), '; '.join(fixed)[:2500]))
+        threading.Timer(600, bom_now).start()   # (now with IMDb numbers: their distributors looked up too, once the media server has them)
         g.forget()
         g.publish_soon = time.time() + 300
     if unsure:
@@ -6103,6 +6106,103 @@ def sheet_now():
             log('Criterion sheet: %s' % ' '.join(l.strip() for l in out.strip().splitlines()[-12:])[:700])
     except Exception as e:
         log('Criterion sheet: %s' % e)
+
+
+def _txt(x):
+    import html as H
+    x = re.sub(r'<[^>]+>', ' ', x)
+    x = H.unescape(x).replace('See full company information', '').replace('See more details at IMDbPro', '')
+    return re.sub(r'\s+', ' ', x).strip()
+
+
+def bom_read(page):
+    import html as H
+    """A Box Office Mojo title page as the bookmark keeps it: {t: title, f: {label: value}, tb: [[row cells]...] per table}."""
+    f = {}
+    for chunk in re.split(r'<div[^>]*class="a-section a-spacing-none[^"]*"[^>]*>', page)[1:]:
+        chunk = re.split(r'<div[\s>]|</div>', chunk)[0]
+        chunk = re.sub(r'<svg.*?</svg>|<script.*?</script>|<style.*?</style>', ' ', chunk, flags=re.S)
+        bits = [b for b in (H.unescape(x).strip() for x in re.split(r'<[^>]+>', chunk)) if b and b not in ('See full company information', 'See more details at IMDbPro')]
+        if len(bits) < 2:
+            continue
+        if bits[-1].startswith('$') and len(bits) <= 5:   # (takings: "Domestic (20.4%)" and its sum)
+            k, v = re.sub(r'\s*\(\s*', ' (', re.sub(r'\s*\)', ')', ' '.join(bits[:-1]))), bits[-1]
+        else:
+            k, v = bits[0], ' · '.join(bits[1:]) if bits[0] == 'Genres' else ' '.join(bits[1:])
+        k, v = re.sub(r'\s+', ' ', k).strip(), re.sub(r'\s+', ' ', v).strip()
+        if k.endswith(':') or '\u00a9' in v or 'Calendar' in v or k == 'IMDbPro':   # (the page's own menus and footer)
+            continue
+        if re.match(r'^\(\d{4}\) ', v):   # (its title, year and description)
+            k, v = 'About', v[7:]
+        if k and v and len(k) < 60 and k not in f:
+            f[k] = v[:600]
+    tabs = []
+    for tm in re.finditer(r'<table[^>]*>(.*?)</table>', page, re.S):
+        rows = []
+        for rm in re.finditer(r'<tr[^>]*>(.*?)</tr>', tm.group(1), re.S):
+            cells = []
+            for cm in re.finditer(r'<t[hd][^>]*>(.*?)</t[hd]>', rm.group(1), re.S):
+                v = _txt(cm.group(1))[:160]
+                a = re.search(r'href="(/(?:release|releasegroup)/[^"?]+)', cm.group(1))
+                cells.append(v + (' <%s>' % a.group(1) if a else ''))
+            if cells:
+                rows.append(cells)
+        if rows:
+            tabs.append(rows[:80])
+    h1 = re.search(r'<h1[^>]*>(.*?)</h1>', page, re.S)
+    return {'t': _txt(h1.group(1))[:200] if h1 else '', 'f': f, 'tb': tabs[:6]}
+
+
+BOM_LOCK = threading.Lock()
+
+
+def bom_now():
+    """Each film come in (or newly matched, so with its IMDb number now) looked up on Box Office Mojo by the Mac mini itself: its US
+    distributor and everything else on its page, kept with what John's bookmark read (distributors.json, distributors-full.json): John, 20
+    Nov 2026, "an automatic box office mojo check for any new films coming in, including the ones not matched" ... "just when films come
+    in". Only films not looked up before; one page every two seconds."""
+    g = G_REF[0] if G_REF else None
+    if not g or not BOM_LOCK.acquire(blocking=False):
+        return
+    try:
+        lid = (g.st.get('libraries') or {}).get('movies')
+        if not lid:
+            return
+        at, fa = os.path.expanduser('~/Grifflix/distributors.json'), os.path.expanduser('~/Grifflix/distributors-full.json')
+        D = load(at, {}) or {}
+        films = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'ProviderIds'}).get('Items') or []
+        todo = []
+        for f in films:
+            t = str((f.get('ProviderIds') or {}).get('Imdb') or '')
+            if re.match(r'^tt\d{6,10}$', t) and t not in D and t not in todo:
+                todo.append((t, f.get('Name')))
+        if not todo:
+            return
+        F = load(fa, {}) or {}
+        got = []
+        for t, name in todo[:150]:
+            try:
+                req = urllib.request.Request('https://www.boxofficemojo.com/title/%s/' % t, headers={'User-Agent': 'Mozilla/5.0 (Macintosh) Grifflix'})
+                with urllib.request.urlopen(req, timeout=40, context=tls()) as r_:
+                    v = bom_read(r_.read().decode('utf-8', 'replace'))
+            except urllib.error.HTTPError as e:
+                v = {'t': '', 'f': {}, 'tb': [], 'none': e.code}
+                if e.code in (429, 503):
+                    break
+            except Exception:
+                continue
+            F[t] = v
+            D[t] = re.sub(r'\s+', ' ', (v.get('f') or {}).get('Domestic Distributor') or '').strip()[:120]
+            got.append('%s: %s' % (name, D[t] or 'none'))
+            time.sleep(2)
+        save(at, D)
+        save(fa, F)
+        if got:
+            log('Box Office Mojo, for what came in (%d): %s' % (len(got), '; '.join(got)[:1200]))
+    except Exception as e:
+        log('Box Office Mojo, for what came in: %s' % str(e)[:200])
+    finally:
+        BOM_LOCK.release()
 
 
 def a24_now():
@@ -6573,6 +6673,7 @@ def keep_scanning(g):
                     # criterion html every time to check if a new film is criterion")
                     threading.Timer(240, covers_now).start()
                     threading.Timer(270, a24_now).start()   # (an A24 film, however it came in: in the A24 collection: John, 19 Nov 2026)
+                    threading.Timer(330, bom_now).start()   # (its distributor too, from Box Office Mojo: 20 Nov 2026)
                     # (an extra put in a film's Other or Extras folder: the Criterion sheet's Extras column marked: John, 17 Nov 2026, "the job
                     # should run when extras are added")
                     XD = ('other', 'others', 'extras', 'extra', 'featurettes', 'behind the scenes', 'deleted scenes', 'interviews', 'trailers', 'shorts', 'scenes', 'bonus')
