@@ -1972,6 +1972,18 @@ html:not(.phone) .film .meta { font-size: 14.5px !important; }
 .tinspo { font-size: 15px !important; } .tcap .tctx { font-size: 14px !important; }
 /* (all a touch smaller: John, 10 Nov 2026: "can the fonts default be slightly smaller across the site") */
 /* (a Criterion film's page in Criterion's lettering, Futura in spaced capitals; an A24 film's in A24's grotesk and typewriter: John, 20 Nov 2026) */
+/* (an A24 film's page in A24's colours too: white, its near-black, its warm greys; buttons outlined in the ink, filled with it when pointed at,
+   as a24films.com's) */
+#sheet .sheet:has(.film.fa24) { background: #fff !important; }
+#sheetIn .film.fa24 { background: #fff; color: var(--a24-ink); --fg: #0e0e0d; --fg-2: #6f6d6a; --line: #d6d4d1; --bg: #fff; --kink: 14, 14, 13; }
+#sheetIn .film.fa24 h2, #sheetIn .film.fa24 .tag, #sheetIn .film.fa24 .ov, #sheetIn .film.fa24 h3, #sheetIn .film.fa24 .xh, #sheetIn .film.fa24 .people, #sheetIn .film.fa24 .eps .t { color: var(--a24-ink) !important; }
+#sheetIn .film.fa24 .meta, #sheetIn .film.fa24 .date, #sheetIn .film.fa24 .chips, #sheetIn .film.fa24 .chips *, #sheetIn .film.fa24 .eps .s, #sheetIn .film.fa24 .people b, #sheetIn .film.fa24 .incoll span { color: var(--a24-subtle) !important; opacity: 1 !important; }
+#sheetIn .film.fa24 .meta .c { border-color: var(--a24-line) !important; }
+#sheetIn .film.fa24 .chips, #sheetIn .film.fa24 .chips * { font-family: var(--a24-mono) !important; font-weight: 400 !important; letter-spacing: .04em !important; }
+#sheetIn .film.fa24 .incoll a { color: var(--a24-ink) !important; text-decoration-color: var(--a24-dim) !important; }
+#sheetIn .film.fa24 .pill, #sheetIn .film.fa24 .ico, #sheetIn .film.fa24 .fback { background: transparent !important; color: var(--a24-ink) !important; border: 1px solid var(--a24-ink) !important; border-radius: 0 !important; box-shadow: none !important; }
+#sheetIn .film.fa24 .pill:hover, #sheetIn .film.fa24 .ico:hover, #sheetIn .film.fa24 .fback:hover, #sheetIn .film.fa24 .pill.go#aplay { background: var(--a24-ink) !important; color: #fff !important; }
+#sheetIn .film.fa24 .pill.go#aplay:hover { background: transparent !important; color: var(--a24-ink) !important; }
 #sheetIn .film.fa24 h2 { font: 500 clamp(36px, 4.6vw, 76px)/.95 var(--a24-sans) !important; letter-spacing: -.04em !important; text-transform: none !important; }
 html.phone #sheetIn .film.fa24 h2 { font-size: clamp(30px, 10vw, 42px) !important; }
 #sheetIn .film.fa24 h2 i { font: 400 .5em/1.2 var(--a24-sans) !important; letter-spacing: -.01em !important; font-style: normal !important; }
@@ -2275,7 +2287,7 @@ html.gcrit .sfpop input { background: var(--gc-page); border: 2px solid var(--gc
    "I want an A24 page in the same way we have a criterion one ... blend Grifflix style with A24's ... use the way they list their films") */
 /* (A24's own fonts, as its site has them: PP Neue Montreal and PP Neue Montreal Mono (Pangram Pangram): whichever John keeps in admin, Fonts,
    however named, made A24Sans and A24Mono by a24Fonts(); Inter Tight and DM Mono stand in till then: John, 20 Nov 2026, "what about a24?") */
-:root { --a24-page: #fff; --a24-ink: #000; --a24-grey: #8f8f8f; --a24-dim: #a39e96; --a24-line: #e3e3e3; --a24-sans: "A24Sans", "Inter Tight", "Helvetica Neue", Helvetica, Arial, sans-serif; --a24-mono: "A24Mono", "DM Mono", ui-monospace, "SF Mono", Menlo, monospace; }
+:root { --a24-page: #fff; --a24-ink: #0e0e0d; --a24-subtle: #6f6d6a; --a24-grey: #9c9791; --a24-dim: #b2ada6; --a24-line: #d6d4d1; --a24-soft: #fcfbfa;   /* (a24films.com's own light theme: John, 20 Nov 2026, "Is a24 correct on all fonts and colours now?") */ --a24-sans: "A24Sans", "Inter Tight", "Helvetica Neue", Helvetica, Arial, sans-serif; --a24-mono: "A24Mono", "DM Mono", ui-monospace, "SF Mono", Menlo, monospace; }
 /* (A24's own wordmark, as on its site, drawn from its own outline: John, 19 Nov 2026, "use the actual A24 logo rather than the made up one") */
 .a24m { display: inline-block; line-height: 0; vertical-align: middle; } .a24m svg { display: block; height: .78em; width: auto; fill: currentColor; }
 html.public .a24btn { display: none !important; }
@@ -2350,7 +2362,7 @@ html.ga24 #cbody { color: var(--a24-ink); font-family: var(--a24-sans); }
 #cbody .a24head .a24top .hsub, #cbody .a24head .a24top .hsub i { margin: 0; color: var(--a24-grey); font-family: var(--a24-mono) !important; font-style: normal !important; font-weight: 400 !important; font-size: inherit; white-space: nowrap; }
 .a24head:has(.ctoolic) .a24top { padding-right: 50px; } #cbody .a24head > div { position: relative; } .a24head .ctoolic { top: 2px; border-radius: 0; }
 #cbody .a24head h1.colltitle { margin: clamp(26px, 5vw, 56px) 0 8px !important; font: 500 clamp(54px, 9.5vw, 136px)/.86 var(--a24-sans) !important; letter-spacing: -.05em !important; text-transform: none !important; color: var(--a24-ink); }
-#cbody .a24head .ov { max-width: 60ch; margin: 18px 0 0; font: 400 16px/1.45 var(--a24-sans); color: #444; }
+#cbody .a24head .ov { max-width: 60ch; margin: 18px 0 0; font: 400 16px/1.45 var(--a24-sans); color: var(--a24-subtle); }
 #cbody .a24head + .tabs { margin: 18px 0 0; }
 html.ga24 #cbody .cfind { border: 0; border-bottom: 1px solid var(--a24-ink); border-radius: 0; background: none; color: var(--a24-ink); font: 400 13px/1 var(--a24-mono); letter-spacing: .04em; padding-left: 0; }
 html.ga24 #cbody .cfind::placeholder { color: var(--a24-grey); opacity: 1; }
@@ -2369,7 +2381,7 @@ html.ga24 #cbody .card .t, html.ga24 #cbody .card .s, html.ga24 #cbody .empty { 
 .a24r .ad, .a24r .ac { padding-top: 4px; font: 400 15px/1.3 var(--a24-sans); letter-spacing: -.005em; }
 .a24r .ad span, .a24r .ac span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .a24r:not(.a24h) .ac { height: 5.2em; }   /* (every row the same height, however many it names, and before they've come: John, 20 Nov 2026, "spacing is different in this one place") */
-.a24r .ac { max-height: 5.2em; overflow: hidden; -webkit-mask-image: linear-gradient(#000 45%, transparent); mask-image: linear-gradient(#000 45%, transparent); }
+.a24r .ac { max-height: 5.2em; overflow: hidden; -webkit-mask-image: linear-gradient(var(--a24-ink) 45%, transparent); mask-image: linear-gradient(#000 45%, transparent); }
 .a24r .as { padding-top: 6px; text-align: right; font: 400 10px/1.2 var(--a24-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--a24-ink); }
 .a24r .as b { display: inline-block; padding: 3px 5px 2px; background: var(--a24-ink); color: var(--a24-page); font-weight: 400; }
 .a24r .ad:empty::before, .a24r .ac:empty::before { content: "\2014"; color: var(--a24-line); }
@@ -2389,7 +2401,7 @@ html.ga24 #cbody .card .t, html.ga24 #cbody .card .s, html.ga24 #cbody .empty { 
 @media (max-width: 1000px) { .a24r { grid-template-columns: var(--ayw) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); } .a24r .as { display: none; } }
 @media (max-width: 760px) {
   .a24list { --ayw: 58px; } .a24r { grid-template-columns: var(--ayw) minmax(0, 1fr); column-gap: 14px; padding: 13px 0 15px; } .a24r::before { left: calc(var(--ayw) + 14px); }
-  .a24r .ay { font-size: 17px; padding-top: 4px; } .a24r .af { font-size: 25px; } .a24r .ad { grid-column: 2; padding-top: 6px; font-size: 13px; color: #555; } .a24r .ad span { display: inline; } .a24r .ad span + span::before { content: ", "; }
+  .a24r .ay { font-size: 17px; padding-top: 4px; } .a24r .af { font-size: 25px; } .a24r .ad { grid-column: 2; padding-top: 6px; font-size: 13px; color: var(--a24-subtle); } .a24r .ad span { display: inline; } .a24r .ad span + span::before { content: ", "; }
   .a24r .ac, .a24h .ad, .a24h .ac { display: none; } .a24still { display: none; }
   .a24head .a24lock { gap: 7px; } .a24head .a24lock .a24m { font-size: 24px; } .a24head .a24lock .gcx { font-size: 11px; }
 }
@@ -2412,11 +2424,15 @@ html.tv .a24list { --ayw: 150px; } html.tv .a24r .af { font-size: 34px; } html.t
 /* (narrower still: a phone set to show pages larger (Safari's text size, a phone's larger display), or the very smallest: the switch two
    small pictures, a calendar and a strip of film, so the profile is never pushed off the edge: John, 11 Nov 2026: "A user with a smaller
    phone can't see their profile because the mute button covers it") */
-@media (max-width: 389px) {
-  html .bar-top #barnav { flex: 0 1 auto; min-width: 0; }
+/* (the Calendar and Theme switch as two small pictures on every phone, a calendar and a strip of film, not words: John, 20 Nov 2026, "Make
+   calendar and themes icons for mobile") */
+@media (max-width: 600px) {
   html .bar-top .vtog span, html #shnav .vtog span { width: 30px; height: 24px; padding: 0 !important; font-size: 0 !important; letter-spacing: 0 !important; text-indent: 0 !important; }
   html .bar-top .vtog span::after, html #shnav .vtog span::after { content: ""; position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='5' width='18' height='16'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='5' width='18' height='16'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat; }
   html .bar-top .vtog span:last-child::after, html #shnav .vtog span:last-child::after { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='4' width='18' height='16'/%3E%3Cpath d='M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Crect x='3' y='4' width='18' height='16'/%3E%3Cpath d='M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4'/%3E%3C/svg%3E"); }
+}
+@media (max-width: 389px) {
+  html .bar-top #barnav { flex: 0 1 auto; min-width: 0; }
   html .bar-top .ico[data-go="profile"], html .bar-top #who, html .bar-top .tmute { flex: none; }
   html .bar-top .brand, html.phone .bar-top .brand { font-size: 10px !important; letter-spacing: .1em !important; }
 }
@@ -2638,7 +2654,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'ec55b80c635d' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: 'c63222f99b8d' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6181,18 +6197,21 @@ function browse(into) {
     '<span class="sp"></span>' + (S.browse === 'collections' || S.browse === 'now' ? '' : sfBar()) + '</div>' +
     // (Films and TV each with its own search bar, finding in what the page shows: John, 19 Nov 2026, "both should show the search bar, so there
     // isn't a need for a separate search box")
-    (!into && !PUBLIC && (S.browse === 'movies' || S.browse === 'tv') ? '<div class="bsbar"><input type="search" class="cfind" id="bsq" placeholder="' + (S.browse === 'tv' ? 'Find on TV' : 'Find a film') + '" aria-label="' + (S.browse === 'tv' ? 'Search TV' : 'Search films') + '" autocomplete="off"' + (TV ? ' readonly' : '') + '></div>' : '') +
+    // (Now showing with one too, for films and TV alike, above Carry on watching and Recently added: the phone's magnifying glass opens it: John,
+    // 20 Nov 2026, "The search icon on mobile should link to the film and tv page where there's a search bar but also recently added, continue
+    // watching etc")
+    (!into && !PUBLIC && (S.browse === 'movies' || S.browse === 'tv' || S.browse === 'now') ? '<div class="bsbar"><input type="search" class="cfind" id="bsq" placeholder="' + (S.browse === 'tv' ? 'Find on TV' : S.browse === 'now' ? 'Find a film or TV' : 'Find a film') + '" aria-label="' + (S.browse === 'tv' ? 'Search TV' : S.browse === 'now' ? 'Search films and TV' : 'Search films') + '" autocomplete="off"' + (TV ? ' readonly' : '') + '></div>' : '') +
     '<div class="moods" id="moods"></div><div id="bsres" class="gridcards" hidden></div><div id="bgrid"></div>';
   var bq = $('#bsq', main);
   if (bq && TV) bq.onclick = bq.onkeydown = function (e) { if (!e.key || e.key === 'Enter') { e.preventDefault && e.preventDefault(); searchSheet(); } };   // (the TV: its own letters, in the search pop-up)
-  else if (bq) { var bqt = 0, kind = S.browse === 'tv' ? 'series' : 'movie';
+  else if (bq) { var bqt = 0, kind = S.browse === 'tv' ? 'series' : S.browse === 'now' ? 'both' : 'movie';
     bq.oninput = function () { var q = bq.value.trim(); clearTimeout(bqt); bqt = setTimeout(function () {
       var res = $('#bsres', main), grid = $('#bgrid', main), mo = $('#moods', main); if (!res) return;
       if (q.length < 2) { res.hidden = true; res.innerHTML = ''; grid.hidden = false; if (mo) mo.hidden = false; return; }
       api('search?q=' + encodeURIComponent(q)).then(function (r) { if (bq.value.trim() !== q) return;
-        var L = (r.items || []).filter(function (i) { return i.type === kind; });
+        var L = (r.items || []).filter(function (i) { return kind === 'both' ? (i.type === 'movie' || i.type === 'series') : i.type === kind; });
         grid.hidden = true; if (mo) mo.hidden = true; res.hidden = false;
-        res.innerHTML = L.length ? L.map(function (i) { return cardHTML(i); }).join('') : '<div class="empty">' + (kind === 'series' ? 'Nothing on TV called that.' : 'No film called that.') + '</div>';
+        res.innerHTML = L.length ? L.map(function (i) { return cardHTML(i); }).join('') : '<div class="empty">' + (kind === 'series' ? 'Nothing on TV called that.' : kind === 'both' ? 'Nothing called that.' : 'No film called that.') + '</div>';
         wireCards(res, L);
       }).catch(function () {});
     }, 160); };
@@ -6341,7 +6360,7 @@ function navWords(on) {
     // should be separate - film showing film, tv showing tv")
     // (on a phone, the magnifying glass to Search instead, as before: John, 19 Nov 2026, "film and tv should just be the search icon for mobile and
     // take you to search instead")
-    (PUBLIC && !DEMO ? '' : !TV && matchMedia('(max-width: 600px)').matches ? '<button type="button" data-nv="search" aria-label="Search films and TV"' + (on === 'search' ? ' class="on" aria-current="page"' : '') + '>Search</button>' : ['movies', 'tv'].map(function (k) { var here = S.view === 'browse' && S.browse === k && !dlg.open; return '<button type="button" data-nv="' + k + '" aria-label="' + (k === 'tv' ? 'TV' : 'Films') + '"' + (here ? ' class="on" aria-current="page"' : '') + '>' + (k === 'tv' ? 'TV' : 'Film') + '</button>'; }).join(''));   // (signed out: no searching the library)
+    (PUBLIC && !DEMO ? '' : !TV && matchMedia('(max-width: 600px)').matches ? '<button type="button" data-nv="search" aria-label="Search films and TV"' + (on === 'search' || (S.view === 'browse' && !dlg.open) ? ' class="on" aria-current="page"' : '') + '>Search</button>' : ['movies', 'tv'].map(function (k) { var here = S.view === 'browse' && S.browse === k && !dlg.open; return '<button type="button" data-nv="' + k + '" aria-label="' + (k === 'tv' ? 'TV' : 'Films') + '"' + (here ? ' class="on" aria-current="page"' : '') + '>' + (k === 'tv' ? 'TV' : 'Film') + '</button>'; }).join(''));   // (signed out: no searching the library)
 }
 
 // ---- Grifflix at Criterion: the C beside the switch, its intro, its page and its cover (John, 17 Nov 2026)
@@ -6668,7 +6687,7 @@ function navGo(w) {
   if (w === 'criterion') { if (dlg.open) closeSheet(); return critIntro(); }
   if (w === 'a24') { if (dlg.open) closeSheet(); return a24Intro(); }
   var oncal = dlg.open && !!$('#sheetIn .tcal'), onsearch = dlg.open && !!$('#sheetIn #sq'), d = dlg.open ? S.sheetDate : null;
-  if (w === 'search') { if (!onsearch) searchSheet(); return; }
+  if (w === 'search') { if (dlg.open) closeSheet(); location.hash = '#browse/now'; window.scrollTo(0, 0); return; }   // (to Now showing, its search bar and its rows: John, 20 Nov 2026)
   if (w === 'movies' || w === 'tv') { if (dlg.open) closeSheet(); location.hash = '#browse/' + w; window.scrollTo(0, 0); return; }
   if (w === 'calendar') {
     if (oncal) return;
@@ -6713,7 +6732,7 @@ addEventListener('resize', function () { clearTimeout(gxMarks._t); gxMarks._t = 
 function navBar() {
   try { gxMarks(); } catch (e) {}
   var n = $('#barnav'); if (!n) { ($('.bar-top .homeic') || $('.bar-top .brand')).insertAdjacentHTML('afterend', '<nav id="barnav" aria-label="Grifflix"></nav>'); n = $('#barnav'); }
-  n.innerHTML = navWords(VIEW() === 'themes' && !S.mcal ? 'theme' : 'calendar');
+  n.innerHTML = navWords(VIEW() === 'themes' && !S.mcal ? 'theme' : S.view === 'browse' ? 'browse' : 'calendar');   // (on Film & TV, not Calendar marked)
   $$('#barnav [data-nv]').forEach(function (b) { b.onclick = function () { navGo(b.dataset.nv); }; });
 }
 function shBrand() {   // GRIFFLIX over a pop-up, just where the bar's is (the bar is behind it): home from there too
