@@ -6354,7 +6354,7 @@ function a24Fonts() {   // (A24's grotesk and typewriter, fetched only when A24 
   var GF = 'https://sotd-playlists.cooperking.workers.dev/gf/';
   fetch(GF + 'list').then(function (r) { return r.ok ? r.json() : { fonts: [] }; }).then(function (j) {
     var W = [['hairline', 100], ['thin', 100], ['extralight', 200], ['ultralight', 200], ['light', 300], ['book', 400], ['regular', 400], ['normal', 400], ['medium', 500], ['semibold', 600], ['demibold', 600], ['extrabold', 800], ['ultrabold', 800], ['bold', 700], ['black', 900], ['heavy', 900]];
-    var css = (j.fonts || []).filter(function (n) { return /^ppneuemontreal/.test(n) && !/condensed|semimono/.test(n); }).map(function (n) {
+    var css = (j.fonts || []).filter(function (n) { return /^ppneuemontreal/.test(n) && !/condensed|semimono|^ppneuemontreal-?text/.test(n);   // (not its Text cut, made for small print, which A24's site doesn't use }).map(function (n) {
       var fam = /^ppneuemontreal-?mono/.test(n) ? 'A24Mono' : 'A24Sans', rest = n.replace(/^ppneuemontreal-?(mono|arabic)?/, '').replace(/\.woff2?$/, '');
       var w = /variable/.test(rest) ? '100 900' : ((W.filter(function (x) { return rest.indexOf(x[0]) >= 0; })[0] || [0, 400])[1]);
       return '@font-face { font-family: "' + fam + '"; font-weight: ' + w + '; font-style: ' + (/italic/.test(rest) ? 'italic' : 'normal') + '; font-display: swap; src: url("' + GF + n + '") format("' + (/2$/.test(n) ? 'woff2' : 'woff') + '"); }';
