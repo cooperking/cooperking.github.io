@@ -1057,7 +1057,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   // but not finished, from the site's own list of the films; worked out each time, so it keeps up as films come in: John, 19 Nov 2026,
   // "Can you give me a list of films I'm missing and put it in Admin for A24. For criterion the incomplete box sets")
   (function () {
-    var fold = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['’‘`´"“”]/g, '').replace(/&/g, ' and ').replace(/^(the|a|an) /, '').replace(/[^a-z0-9]+/g, ' ').trim(); };
+    var fold = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['’‘`´"“”]/g, '').replace(/&/g, ' and ').replace(/\b(xviii|viii|xiii|xvii|iii|vii|xii|xiv|xvi|xix|ii|iv|vi|ix|xi|xv|xx)\b/g, function (m) { return String({ii: 2, iii: 3, iv: 4, vi: 6, vii: 7, viii: 8, ix: 9, xi: 11, xii: 12, xiii: 13, xiv: 14, xv: 15, xvi: 16, xvii: 17, xviii: 18, xix: 19, xx: 20}[m]); }).replace(/^(the|a|an) /, '').replace(/[^a-z0-9]+/g, ' ').trim(); };
     Promise.all([fetch('/grifflix/data/library.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }), fetch('/grifflix/a24-list.json', { cache: 'no-cache' }).then(function (r) { return r.json(); })]).then(function (r) {
       var L = r[0], A = r[1], I = L.items || {}, mine = {}, inA24 = {};
       Object.keys(I).forEach(function (k) { var i = I[k]; if (i.type === 'movie' && !i.extra) (mine[fold(i.name)] = mine[fold(i.name)] || []).push(i); });

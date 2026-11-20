@@ -20,10 +20,14 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'grifflix', 'img', 'a24')
 
 
+ROMAN = {'ii': 2, 'iii': 3, 'iv': 4, 'vi': 6, 'vii': 7, 'viii': 8, 'ix': 9, 'xi': 11, 'xii': 12, 'xiii': 13, 'xiv': 14, 'xv': 15, 'xvi': 16, 'xvii': 17, 'xviii': 18, 'xix': 19, 'xx': 20}
+
+
 def fold(x):
     x = unicodedata.normalize('NFD', str(x or '').lower())
     x = ''.join(c for c in x if not unicodedata.combining(c))
     x = re.sub(r"['’‘`´\"“”]", '', x).replace('&', ' and ')
+    x = re.sub(r'\b(xviii|viii|xiii|xvii|iii|vii|xii|xiv|xvi|xix|ii|iv|vi|ix|xi|xv|xx)\b', lambda m: str(ROMAN[m.group(1)]), x)   # (Ne Zha II = Ne Zha 2)
     x = re.sub(r'^(the|a|an) ', '', x)
     return re.sub(r'[^a-z0-9]+', ' ', x).strip()
 

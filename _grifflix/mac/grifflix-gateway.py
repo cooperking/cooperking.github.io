@@ -5450,10 +5450,14 @@ def apply_match(g, iid, pick):
         log('  (its own pictures couldn’t be put back: %s)' % e)
 
 
+ROMAN = {'ii': '2', 'iii': '3', 'iv': '4', 'vi': '6', 'vii': '7', 'viii': '8', 'ix': '9', 'xi': '11', 'xii': '12', 'xiii': '13', 'xiv': '14', 'xv': '15', 'xvi': '16', 'xvii': '17', 'xviii': '18', 'xix': '19', 'xx': '20'}
+
+
 def fold(t):   # a title compared: letters and numbers only, accents plain, "&" as "and", numbers to twenty as words, no leading "the"
     import unicodedata
     NUM = 'zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty'.split()
     t = unicodedata.normalize('NFKD', (t or '').replace('&', ' and ')).encode('ascii', 'ignore').decode().lower()
+    t = re.sub(r'\b(xviii|viii|xiii|xvii|iii|vii|xii|xiv|xvi|xix|ii|iv|vi|ix|xi|xv|xx)\b', lambda m: ROMAN[m.group(1)], t)   # (Ne Zha II = Ne Zha 2: John, 20 Nov 2026; II to XX, not a lone I, V or X)
     t = re.sub(r'\b(\d{1,2})\b', lambda m: NUM[int(m.group(1))] if int(m.group(1)) <= 20 else m.group(1), t)
     t = re.sub(r'[^a-z0-9]', '', t)
     return t[3:] if t.startswith('the') and len(t) > 6 else t
