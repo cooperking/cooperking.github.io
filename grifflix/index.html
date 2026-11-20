@@ -1971,6 +1971,21 @@ html:not(.phone) .film .meta { font-size: 14.5px !important; }
 .profname { font-size: 41px !important; }
 .tinspo { font-size: 15px !important; } .tcap .tctx { font-size: 14px !important; }
 /* (all a touch smaller: John, 10 Nov 2026: "can the fonts default be slightly smaller across the site") */
+/* (a Criterion film's page in Criterion's lettering, Futura in spaced capitals; an A24 film's in A24's grotesk and typewriter: John, 20 Nov 2026) */
+#sheetIn .film.fcrit h2 { font: 500 clamp(26px, 3.1vw, 48px)/1.12 var(--kfont) !important; letter-spacing: .12em !important; text-transform: uppercase !important; }
+html.phone #sheetIn .film.fcrit h2 { font-size: clamp(21px, 6.6vw, 28px) !important; letter-spacing: .1em !important; }
+#sheetIn .film.fcrit h2 i { font: 400 .62em/1.3 var(--kfont) !important; letter-spacing: .14em !important; font-style: normal !important; }
+#sheetIn .film.fcrit .tag { font: 500 17px/1.45 var(--kfont) !important; letter-spacing: .02em !important; font-style: normal !important; }
+#sheetIn .film.fcrit .ov, #sheetIn .film.fcrit .people, #sheetIn .film.fcrit .cred, #sheetIn .film.fcrit .credits, #sheetIn .film.fcrit .incoll, #sheetIn .film.fcrit .eps .t, #sheetIn .film.fcrit .eps .s { font-family: var(--kfont) !important; font-style: normal !important; letter-spacing: .01em !important; }
+#sheetIn .film.fcrit .ov { font-size: 15.5px !important; line-height: 1.7 !important; }
+#sheetIn .film.fcrit h3, #sheetIn .film.fcrit .xh, #sheetIn .film.fcrit .incoll span, #sheetIn .film.fcrit .meta, #sheetIn .film.fcrit .date { font-family: var(--kfont) !important; font-style: normal !important; text-transform: uppercase !important; letter-spacing: .14em !important; }
+#sheetIn .film.fa24 h2 { font: 500 clamp(36px, 4.6vw, 76px)/.95 var(--a24-sans) !important; letter-spacing: -.04em !important; text-transform: none !important; }
+html.phone #sheetIn .film.fa24 h2 { font-size: clamp(30px, 10vw, 42px) !important; }
+#sheetIn .film.fa24 h2 i { font: 400 .5em/1.2 var(--a24-sans) !important; letter-spacing: -.01em !important; font-style: normal !important; }
+#sheetIn .film.fa24 .tag { font: 500 18px/1.4 var(--a24-sans) !important; letter-spacing: -.01em !important; font-style: normal !important; }
+#sheetIn .film.fa24 .ov, #sheetIn .film.fa24 .people, #sheetIn .film.fa24 .cred, #sheetIn .film.fa24 .credits, #sheetIn .film.fa24 .incoll, #sheetIn .film.fa24 .eps .t, #sheetIn .film.fa24 .eps .s, #sheetIn .film.fa24 h3, #sheetIn .film.fa24 .xh { font-family: var(--a24-sans) !important; font-style: normal !important; letter-spacing: -.005em !important; text-transform: none !important; }
+#sheetIn .film.fa24 .ov { font-size: 16px !important; line-height: 1.55 !important; }
+#sheetIn .film.fa24 .meta, #sheetIn .film.fa24 .date, #sheetIn .film.fa24 .incoll span, #sheetIn .film.fa24 .pill { font-family: var(--a24-mono) !important; font-weight: 400 !important; text-transform: uppercase !important; letter-spacing: .04em !important; }
 body { font-size: 14px; } .film h2 { font-size: clamp(34px, 4.1vw, 68px) !important; } html.phone .film h2 { font-size: clamp(27px, 9vw, 36px) !important; }
 .card .t, .tracks .tt, .day .cap .t { font-size: .92em; } .film .people, .profp { font-size: 13.5px !important; }
 /* the logo: GRIFFLIX drawn from Grifflix Display, heavier, each letter a solid cut-out with a fine line inside its edge, as Saul
@@ -2534,7 +2549,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '40f454972331' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '196139cae7e5' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2823,8 +2838,7 @@ function sfWire(root, items, redraw) {   // the icons' panels: items are what's 
         pop.innerHTML = '<div class="sfh">Filters' + (sfCount(SF.f) ? '<button class="sfclear" id="sfclear">Clear all</button>' : '') + '</div>' +
           '<div class="sfg"><div class="sfl">Popular searches</div>' + chips('cats', CPOP.map(function (c) { return [c, c, tc[c] || 0]; }), true) + '</div>' +
           '<div class="sfg"><div class="sfl">Genres</div>' + chips('cgen', CGEN.map(function (c) { return [c, c, tc[c] || 0]; }), true) + '</div>' +
-          (function () { var bc = cnt(function (i) { return i.cset || []; }), bl = Object.keys(bc).sort(function (a, b) { return a.localeCompare(b); });   // (Collector's Sets: the box set each is in)
-            return bl.length ? '<div class="sfg"><div class="sfl">Box set</div>' + chips('csets', bl.map(function (c) { return [c, c, bc[c]]; }), true) + '</div>' : ''; })() +
+          // (no Box set filter: the Box sets view is for that: John, 20 Nov 2026, "We don't need box set in the filters")
           '<div class="sfg"><div class="sfl">Decade</div>' + chips('decades', DEC.map(function (d) { return [d, d + 's', dc[d] || 0]; }), true) + '</div>' +
           '<div class="sfg"><div class="sfl">Country</div>' + chips('ctys', Object.keys(yc).sort(function (a, b) { return a.localeCompare(b); }).map(function (c) { return [c, c, yc[c]]; }), true) + '</div>' +
           '<div class="sfg"><div class="sfl">Director <input type="search" id="sfdirq" placeholder="Find a director" style="font:inherit;padding:4px 8px;margin-left:6px;max-width:180px"></div><div id="sfdirs" class="sfdirs">' + (on.length ? chips('dirs', on.map(function (d) { return [d, d, dc2[d] || 0]; }), true) : '<span class="sfhint">Type a name: “kuro”, “bunuel”, “varda”…</span>') + '</div></div>' +
@@ -6843,6 +6857,17 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
   $('#idq').onkeydown = $('#idy').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); find(); } };
   find();
 }
+// (a Criterion film's page in Criterion's lettering, an A24 film's in A24's: as the collection it was opened from, else the one it's in:
+// John, 20 Nov 2026, "Could the film's individual pages match the criterion font, not Grifflix - that is true of A24 as well, for their font")
+function filmHouse(it) {
+  var de = document.documentElement;
+  if (S.view === 'collection' && de.classList.contains('gcrit')) return 'crit';
+  if (S.view === 'collection' && de.classList.contains('ga24')) return 'a24';
+  var inC = function (re) { return !!(LIB && LIB.sets && LIB.collections && LIB.collections.some(function (cid) { return LIB.items[cid] && re.test(LIB.items[cid].name || '') && (LIB.sets[cid] || []).indexOf(it.id) >= 0; })); };
+  if (it.spine || inC(/^the criterion collection$/i)) return 'crit';
+  if (inC(/^a24$/i)) return 'a24';
+  return '';
+}
 function itemSheet(it, ctx) {
   S.sheetNow = S.sheetNowNext || { k: 'film', id: it && it.id }; S.sheetNowNext = null;
   if (TMUS.a || TMUS.pj) { musicHush(); TMUS.film = true; }   // (a film chosen: the theme's music stops at once)
@@ -6855,7 +6880,8 @@ function itemSheet(it, ctx) {
   var pst = ctx.cover || (it.poster && it.type !== 'episode' ? img(it.poster, 'Primary', 400) : '');   // (ctx.cover: as it was in the box set it was opened from)   // (the poster, whole, beside the words on a big screen)
   S.sheetIt = it; S.sheetCtx = ctx;
   var kept = sheetKeep() || (($('#sheetIn > .film') || S.backItem) && SHEETBACK.length) || ctx.kept;   // (from a page of films: that page kept, and a way back to it)
-  openSheet('<div class="film' + (pst ? ' hasposter' : '') + (it.type === 'series' ? ' series' : '') + '">' + (!TV ? '<button type="button" class="fback" id="fback" aria-label="Back">‹ Back</button>' : '') + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it)) + (it.spine ? ' · Criterion no. ' + esc(String(it.spine)) : '')) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');
+  var hse = filmHouse(it); if (hse === 'a24') a24Fonts();
+  openSheet('<div class="film' + (hse ? ' f' + hse : '') + (pst ? ' hasposter' : '') + (it.type === 'series' ? ' series' : '') + '">' + (!TV ? '<button type="button" class="fback" id="fback" aria-label="Back">‹ Back</button>' : '') + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it)) + (it.spine ? ' · Criterion no. ' + esc(String(it.spine)) : '')) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');
   $$('#sheetIn [data-dstep]').forEach(function (b) { b.onclick = function () { dayStep(+b.dataset.dstep); }; });
   // (a Back on every film: to the page of films it came from, else closed, back where you were: John, 18 Nov 2026, "Films should have a back
   // on them - there was before, so you're not stuck in a film")
