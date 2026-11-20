@@ -493,6 +493,19 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat" style="margin:14px 0 6px">Edit, Delete, Edit collections and a collection’s pencil are hidden on Grifflix unless edit mode is on (on this device). <b>Done</b> at the foot of the page turns it off.</p>
         <div class="state"><a class="btn" id="editgo" href="/grifflix/?edit=1">Open Grifflix in edit mode</a> <a class="btn" id="editgod" href="/grifflix/draft/?edit=1">The draft in edit mode</a></div>
       </section>
+      <section class="card" data-tab="library" id="distcard">
+        <div class="kicker">Distributors</div>
+        <h2>Who <em>released</em> each film</h2>
+        <p class="stat">Each film’s US distributor (Neon, A24, IFC, Paramount…), as Box Office Mojo lists it: the company that released it, not those that made it. Read by your own browser; nothing changes in Grifflix.</p>
+        <ol class="stat" style="margin:8px 0 0 18px;padding:0">
+          <li>Drag to your bookmarks bar: <a class="btn" id="distbm" href="#" style="cursor:grab">Grifflix: distributors</a> <span id="distbmsay"></span></li>
+          <li>Open <a href="https://www.boxofficemojo.com/" target="_blank" rel="noopener">boxofficemojo.com</a>, click the bookmark and leave the tab open (about an hour, a page every second or two). Stopped, it carries on where it left off.</li>
+          <li>Choose the <b>grifflix-distributors.json</b> it saves: <label class="btn" for="distfile">Choose the file</label><input type="file" id="distfile" accept=".json,application/json" hidden></li>
+        </ol>
+        <p class="stat" id="distsay" style="margin-top:10px"></p>
+        <div class="state" id="distcsvw" hidden><button class="btn" type="button" id="distcsv">Download as a spreadsheet</button></div>
+        <ul class="changes" id="distlist"></ul>
+      </section>
       <section class="card" data-tab="library">
         <div class="kicker">Matching</div>
         <h2>Films matched by <em>TMDB</em></h2>
@@ -748,6 +761,60 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       $('#fontwant').innerHTML = FONTWANT.slice(4).map(function (x) { var have = L.some(function (n) { return base(n).indexOf(x[0]) === 0; }); return '<b>' + x[0] + '</b> (' + esc(x[1]) + ')' + (have ? ' ✓' : ''); }).join(', ') + ', each .woff2, .woff or .otf (an .otf is made a .woff as it’s sent).';
     }).catch(function (e) { $('#fontlist').innerHTML = '<li>Couldn’t list them: ' + esc(e.message || 'no answer') + '</li>'; });
   }
+/* ---- Distributors: each film's US distributor from Box Office Mojo, read by John's browser with the bookmark built here (its films' IMDb
+   numbers inside it), kept on the Mac mini: John, 20 Nov 2026, "can we find a database that has the info?" ... "make a bookmarklet for this" ---- */
+(function () {
+  var DBM = function (IDS) {
+    if (!/(^|\.)boxofficemojo\.com$/.test(location.hostname)) { alert('Grifflix: open www.boxofficemojo.com first, then click this again.'); return; }
+    var KEY = 'grifflix-dist', D = {}; try { D = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { D = {}; }
+    var d = document.createElement('div'); d.style.cssText = 'position:fixed;z-index:2147483647;top:12px;right:12px;max-width:340px;background:rgb(17,17,17);color:white;padding:14px 18px;font:14px/1.45 sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.4)';
+    document.body.appendChild(d);
+    var save = function (done) { var b = new Blob([JSON.stringify({ dist: D, at: Date.now() })], { type: 'application/json' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'grifflix-distributors.json'; document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 1000);
+      if (done) d.innerHTML = 'Grifflix: done. ' + Object.keys(D).filter(function (k) { return D[k]; }).length + ' of ' + IDS.length + ' films have a distributor. Saved <b>grifflix-distributors.json</b>: choose it in the admin page, Library, Distributors.'; };
+    var stop = false, wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+    var paint = function (msg) { var n = IDS.filter(function (t) { return t in D; }).length, f = IDS.filter(function (t) { return D[t]; }).length;
+      d.innerHTML = 'Grifflix: ' + (msg || 'reading') + '<br>' + n + ' of ' + IDS.length + ' looked at, ' + f + ' with a distributor. Keep this tab open.<br><button id="gxdsave" style="margin-top:8px">Save what’s done</button> <button id="gxdstop" style="margin-top:8px">Stop</button>';
+      d.querySelector('#gxdsave').onclick = function () { save(false); }; d.querySelector('#gxdstop').onclick = function () { stop = true; }; };
+    (async function () {
+      var left = IDS.filter(function (t) { return !(t in D); });
+      for (var i = 0; i < left.length && !stop; i++) {
+        var t = left[i]; paint();
+        try {
+          var r = await fetch('/title/' + t + '/', { credentials: 'include' });
+          if (r.status === 429 || r.status === 503) { paint('Box Office Mojo asked to slow down: waiting a minute…'); await wait(60000); i--; continue; }
+          var h = r.ok ? await r.text() : '', name = '';
+          if (h) { var doc = new DOMParser().parseFromString(h, 'text/html'), lab = [].filter.call(doc.querySelectorAll('span'), function (x) { return x.textContent.trim() === 'Domestic Distributor'; })[0];
+            var val = lab && lab.nextElementSibling; name = val ? val.textContent.replace(/See full company information/i, '').replace(/\s+/g, ' ').trim() : ''; }
+          D[t] = name; try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) {}
+        } catch (e) { paint('a page didn’t answer: going on in a moment'); await wait(10000); }
+        await wait(1100 + Math.random() * 900);
+      }
+      if (stop) { paint('stopped. Click the bookmark again to carry on.'); return; }
+      save(true);
+    })();
+  };
+  var bm = document.getElementById('distbm'), say = document.getElementById('distsay'), list = document.getElementById('distlist'), last = null;
+  if (!bm) return;
+  bm.onclick = function (e) { e.preventDefault(); toast(bm.dataset.ready ? 'Drag it to your bookmarks bar, then click it on boxofficemojo.com' : 'Still getting your films’ IMDb numbers…'); };
+  var show = function (j) { last = j;
+    say.textContent = j.checked ? j.found + ' of ' + j.total + ' films have a US distributor on Box Office Mojo (' + j.checked + ' looked at)' + (j.noimdb ? '; ' + j.noimdb + ' have no IMDb number' : '') + '.' : 'Nothing read yet.';
+    document.getElementById('distcsvw').hidden = !(j.dist && j.dist.length);
+    list.innerHTML = (j.dist || []).map(function (x) { return '<li><b>' + esc(x[0]) + '</b> <span class="when" style="display:inline">' + x[1] + ' film' + (x[1] === 1 ? '' : 's') + '</span><span class="stat" style="display:block;margin-top:2px">' + x[2].slice(0, 12).map(function (f) { return esc(f[0]) + (f[1] ? ' (' + f[1] + ')' : ''); }).join(', ') + (x[2].length > 12 ? '…' : '') + '</span></li>'; }).join('');
+  };
+  var load = function (body) { return fetch(GW + '/api/distributors', { method: body ? 'POST' : 'GET', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status === 404 ? 'the Mac mini takes its update within a few minutes' : 'the Mac mini said ' + r.status); return r.json(); }); };
+  var go = function () { if (!TOKEN || !GW) return setTimeout(go, 3000);
+    load().then(function (j) { show(j); bm.dataset.ready = 1; bm.href = 'javascript:' + encodeURIComponent('(' + DBM.toString() + ')(' + JSON.stringify(j.ids) + ');void 0');
+      document.getElementById('distbmsay').textContent = '(' + j.ids.length + ' films in it)'; })
+      .catch(function (e) { say.textContent = 'Couldn’t get your films just now: ' + e.message + '.'; setTimeout(go, 60000); }); };
+  go();
+  document.getElementById('distfile').onchange = function () { var f = this.files && this.files[0]; if (!f) return; say.textContent = 'Sending…';
+    f.text().then(function (t) { var j = JSON.parse(t); if (!j || typeof j.dist !== 'object') throw new Error('that isn’t the distributors file'); return load({ dist: j.dist }); })
+      .then(function (j) { show(j); toast('Kept: ' + j.found + ' films with a distributor'); }).catch(function (e) { say.textContent = 'That didn’t work: ' + (e.message || e); }); };
+  document.getElementById('distcsv').onclick = function () { if (!last) return;
+    var rows = [['Distributor', 'Films', 'Film', 'Year']]; last.dist.forEach(function (x) { x[2].forEach(function (f) { rows.push([x[0], x[1], f[0], f[1]]); }); });
+    var csv = rows.map(function (r) { return r.map(function (c) { c = String(c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\r\n');
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })); a.download = 'Grifflix distributors.csv'; document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 1500); };
+})();
   function gate(why, seed) { $('#gate').hidden = false; if (why && !(location.hostname === 'admin.grifflix.co.uk' && !TOKEN)) $('#gatewhy').textContent = why; $('#seed').hidden = !seed; }
 
   // signed in to Grifflix as John? The first time, before Grifflix has members, his other sign-in on this site starts them

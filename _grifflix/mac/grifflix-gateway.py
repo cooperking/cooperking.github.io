@@ -2542,6 +2542,36 @@ def make_handler(g):
             L = [{k: v for k, v in x.items() if k != 'files'} for x in (load(ACTIONS_AT, []) or [])]
             return self.send_json(200, {'asks': L[-30:], 'plex_off': bool(g.st.get('plex_off'))})
 
+        def api_distributors(self, me, user, q, b):
+            """John's only: each film's US distributor, as Box Office Mojo gives it, read by his own browser (the admin page's bookmark) and
+            kept here (John, 20 Nov 2026, "can we find a database that has the info?" ... "make a bookmarklet for this"): GET, the films' IMDb
+            numbers for the bookmark and what's known so far; POST {dist: {imdb: distributor}}, kept (added to what was kept)."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            at = os.path.expanduser('~/Grifflix/distributors.json')
+            D = load(at, {}) or {}
+            if b and isinstance(b.get('dist'), dict):
+                for k, v in b['dist'].items():
+                    if re.match(r'^tt\d{6,10}$', str(k)):
+                        D[str(k)] = re.sub(r'\s+', ' ', str(v or '')).strip()[:120]
+                save(at, D)
+                log('Distributors: %d films from Box Office Mojo, by John’s browser' % len(b['dist']))
+            libs = g.st.get('libraries', {})
+            films = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': libs.get('movies'), 'Recursive': 'true', 'IncludeItemTypes': 'Movie',
+                                                                    'Fields': 'ProviderIds,ProductionYear'}).get('Items', []) if libs.get('movies') else []
+            by = {}
+            for f in films:
+                t = str((f.get('ProviderIds') or {}).get('Imdb') or '')
+                if re.match(r'^tt\d{6,10}$', t):
+                    by.setdefault(t, []).append([f.get('Name') or '', f.get('ProductionYear') or '', f['Id']])
+            groups = {}
+            for t, fs in by.items():
+                if D.get(t):
+                    groups.setdefault(D[t], []).extend(fs)
+            out = sorted(([k, len(v), sorted(v, key=lambda x: (str(x[0]).lower()))] for k, v in groups.items()), key=lambda x: (-x[1], x[0].lower()))
+            return self.send_json(200, {'ids': sorted(by), 'checked': sum(1 for t in by if t in D), 'found': sum(1 for t in by if D.get(t)),
+                                        'total': len(by), 'noimdb': len(films) - sum(len(v) for v in by.values()), 'dist': out})
+
         def api_waiting(self, me, user, q, b):
             """John's only: what he's ticked off on the admin page's Waiting on you (John, 18 Nov 2026: "I could do with a waiting on you
             section in my admin, so I know what has and hasn't been done"). The list itself is grifflix/waiting.json on the site."""
