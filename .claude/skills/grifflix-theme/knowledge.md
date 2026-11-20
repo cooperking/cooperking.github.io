@@ -346,6 +346,7 @@ Sources: John's messages (7–14 Nov 2026), 15 session summaries, and the dated 
 65. Theme films put on the 1sts created duplicates (Jaws twice etc.) → admin swaps; `motd-fill.py --unrepeat`; "a film may repeat a year later".
 66. Films not pulled onto the month's 1st after setting themes → admin Save does all 1sts, past months too.
 67. Kane image black for John because the browser cached a 404 from before Pages deployed → version asset URLs (`?v=2`).
+68. Grifflix's film strip lost its sprocket holes, and its film sat off centre, on frames whose poster isn't 2:3 (20 Nov 2026: "there's no sprockets on the film here - and the pictures are drifting again") → the shared `.podd` rule (`background-size: contain`, for odd-shaped posters) was sizing the frame's own background, which in `picture` is the film and its holes. A theme that draws its film or frame in a day's background must be left out of `.podd` (`.th:not(.th-picture)`) and fit the poster in its own layer (`::before`).
 
 ---
 
