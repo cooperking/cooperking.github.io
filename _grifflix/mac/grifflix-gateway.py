@@ -2952,8 +2952,10 @@ def make_handler(g):
                 except (IndexError, ValueError):
                     return self.send_json(500, {'error': 'The Mac mini couldn’t look: ' + (r_.stderr or '').strip()[-200:]})
             last = ''
-            try:
-                last = open(os.path.join(home, 'duplicates.log'), encoding='utf-8', errors='replace').read()[-2000:]
+            try:   # (what the last setting aside did, for an hour after it, not ever after: John, 20 Nov 2026, "Not sure why it still shows this")
+                lf_ = os.path.join(home, 'duplicates.log')
+                if running or time.time() - os.path.getmtime(lf_) < 3600:
+                    last = open(lf_, encoding='utf-8', errors='replace').read()[-2000:]
             except OSError:
                 pass
             return self.send_json(200, dict((found or (0, {}))[1], running=running, last=last, at=DUPS.get('at')))
