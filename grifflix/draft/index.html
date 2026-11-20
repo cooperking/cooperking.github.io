@@ -2650,7 +2650,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'eb488d5b8280' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'fbd229a3c8af' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6193,18 +6193,21 @@ function browse(into) {
     '<span class="sp"></span>' + (S.browse === 'collections' || S.browse === 'now' ? '' : sfBar()) + '</div>' +
     // (Films and TV each with its own search bar, finding in what the page shows: John, 19 Nov 2026, "both should show the search bar, so there
     // isn't a need for a separate search box")
-    (!into && !PUBLIC && (S.browse === 'movies' || S.browse === 'tv') ? '<div class="bsbar"><input type="search" class="cfind" id="bsq" placeholder="' + (S.browse === 'tv' ? 'Find on TV' : 'Find a film') + '" aria-label="' + (S.browse === 'tv' ? 'Search TV' : 'Search films') + '" autocomplete="off"' + (TV ? ' readonly' : '') + '></div>' : '') +
+    // (Now showing with one too, for films and TV alike, above Carry on watching and Recently added: the phone's magnifying glass opens it: John,
+    // 20 Nov 2026, "The search icon on mobile should link to the film and tv page where there's a search bar but also recently added, continue
+    // watching etc")
+    (!into && !PUBLIC && (S.browse === 'movies' || S.browse === 'tv' || S.browse === 'now') ? '<div class="bsbar"><input type="search" class="cfind" id="bsq" placeholder="' + (S.browse === 'tv' ? 'Find on TV' : S.browse === 'now' ? 'Find a film or TV' : 'Find a film') + '" aria-label="' + (S.browse === 'tv' ? 'Search TV' : S.browse === 'now' ? 'Search films and TV' : 'Search films') + '" autocomplete="off"' + (TV ? ' readonly' : '') + '></div>' : '') +
     '<div class="moods" id="moods"></div><div id="bsres" class="gridcards" hidden></div><div id="bgrid"></div>';
   var bq = $('#bsq', main);
   if (bq && TV) bq.onclick = bq.onkeydown = function (e) { if (!e.key || e.key === 'Enter') { e.preventDefault && e.preventDefault(); searchSheet(); } };   // (the TV: its own letters, in the search pop-up)
-  else if (bq) { var bqt = 0, kind = S.browse === 'tv' ? 'series' : 'movie';
+  else if (bq) { var bqt = 0, kind = S.browse === 'tv' ? 'series' : S.browse === 'now' ? 'both' : 'movie';
     bq.oninput = function () { var q = bq.value.trim(); clearTimeout(bqt); bqt = setTimeout(function () {
       var res = $('#bsres', main), grid = $('#bgrid', main), mo = $('#moods', main); if (!res) return;
       if (q.length < 2) { res.hidden = true; res.innerHTML = ''; grid.hidden = false; if (mo) mo.hidden = false; return; }
       api('search?q=' + encodeURIComponent(q)).then(function (r) { if (bq.value.trim() !== q) return;
-        var L = (r.items || []).filter(function (i) { return i.type === kind; });
+        var L = (r.items || []).filter(function (i) { return kind === 'both' ? (i.type === 'movie' || i.type === 'series') : i.type === kind; });
         grid.hidden = true; if (mo) mo.hidden = true; res.hidden = false;
-        res.innerHTML = L.length ? L.map(function (i) { return cardHTML(i); }).join('') : '<div class="empty">' + (kind === 'series' ? 'Nothing on TV called that.' : 'No film called that.') + '</div>';
+        res.innerHTML = L.length ? L.map(function (i) { return cardHTML(i); }).join('') : '<div class="empty">' + (kind === 'series' ? 'Nothing on TV called that.' : kind === 'both' ? 'Nothing called that.' : 'No film called that.') + '</div>';
         wireCards(res, L);
       }).catch(function () {});
     }, 160); };
@@ -6353,7 +6356,7 @@ function navWords(on) {
     // should be separate - film showing film, tv showing tv")
     // (on a phone, the magnifying glass to Search instead, as before: John, 19 Nov 2026, "film and tv should just be the search icon for mobile and
     // take you to search instead")
-    (PUBLIC && !DEMO ? '' : !TV && matchMedia('(max-width: 600px)').matches ? '<button type="button" data-nv="search" aria-label="Search films and TV"' + (on === 'search' ? ' class="on" aria-current="page"' : '') + '>Search</button>' : ['movies', 'tv'].map(function (k) { var here = S.view === 'browse' && S.browse === k && !dlg.open; return '<button type="button" data-nv="' + k + '" aria-label="' + (k === 'tv' ? 'TV' : 'Films') + '"' + (here ? ' class="on" aria-current="page"' : '') + '>' + (k === 'tv' ? 'TV' : 'Film') + '</button>'; }).join(''));   // (signed out: no searching the library)
+    (PUBLIC && !DEMO ? '' : !TV && matchMedia('(max-width: 600px)').matches ? '<button type="button" data-nv="search" aria-label="Search films and TV"' + (on === 'search' || (S.view === 'browse' && !dlg.open) ? ' class="on" aria-current="page"' : '') + '>Search</button>' : ['movies', 'tv'].map(function (k) { var here = S.view === 'browse' && S.browse === k && !dlg.open; return '<button type="button" data-nv="' + k + '" aria-label="' + (k === 'tv' ? 'TV' : 'Films') + '"' + (here ? ' class="on" aria-current="page"' : '') + '>' + (k === 'tv' ? 'TV' : 'Film') + '</button>'; }).join(''));   // (signed out: no searching the library)
 }
 
 // ---- Grifflix at Criterion: the C beside the switch, its intro, its page and its cover (John, 17 Nov 2026)
@@ -6680,7 +6683,7 @@ function navGo(w) {
   if (w === 'criterion') { if (dlg.open) closeSheet(); return critIntro(); }
   if (w === 'a24') { if (dlg.open) closeSheet(); return a24Intro(); }
   var oncal = dlg.open && !!$('#sheetIn .tcal'), onsearch = dlg.open && !!$('#sheetIn #sq'), d = dlg.open ? S.sheetDate : null;
-  if (w === 'search') { if (!onsearch) searchSheet(); return; }
+  if (w === 'search') { if (dlg.open) closeSheet(); location.hash = '#browse/now'; window.scrollTo(0, 0); return; }   // (to Now showing, its search bar and its rows: John, 20 Nov 2026)
   if (w === 'movies' || w === 'tv') { if (dlg.open) closeSheet(); location.hash = '#browse/' + w; window.scrollTo(0, 0); return; }
   if (w === 'calendar') {
     if (oncal) return;
@@ -6725,7 +6728,7 @@ addEventListener('resize', function () { clearTimeout(gxMarks._t); gxMarks._t = 
 function navBar() {
   try { gxMarks(); } catch (e) {}
   var n = $('#barnav'); if (!n) { ($('.bar-top .homeic') || $('.bar-top .brand')).insertAdjacentHTML('afterend', '<nav id="barnav" aria-label="Grifflix"></nav>'); n = $('#barnav'); }
-  n.innerHTML = navWords(VIEW() === 'themes' && !S.mcal ? 'theme' : 'calendar');
+  n.innerHTML = navWords(VIEW() === 'themes' && !S.mcal ? 'theme' : S.view === 'browse' ? 'browse' : 'calendar');   // (on Film & TV, not Calendar marked)
   $$('#barnav [data-nv]').forEach(function (b) { b.onclick = function () { navGo(b.dataset.nv); }; });
 }
 function shBrand() {   // GRIFFLIX over a pop-up, just where the bar's is (the bar is behind it): home from there too
