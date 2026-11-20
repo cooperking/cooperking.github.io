@@ -2001,7 +2001,11 @@ def make_handler(g):
                 rate = h['rate'] if now_t - h['at'] > 30 else got * 8 / took / 1e6
                 now.update(got=got, pct=round(min(99.9, 100.0 * got / now['size']), 1) if now.get('size') else 0, mbps=round(rate, 1),
                            still=int(now_t - h['moved']) if now_t - h['at'] > 90 else 0)
-            waiting = [x for x in (st.get('waiting') or []) if not (now and x.get('file') == now.get('file'))]
+            # (one John cancelled gone from the list at once, not at the downloader's next look: John, 20 Nov 2026, "I just cancelled a download
+            # but it's still listed")
+            cx_ = set(x for x in (load(os.path.join(home, 'fetch-cancelled.json'), []) or []) if isinstance(x, str))
+            waiting = [x for x in (st.get('waiting') or []) if not (now and x.get('file') == now.get('file'))
+                       and not (x.get('key') in cx_ or x.get('file') in cx_ or (x.get('file') or '').strip('/') in cx_)]
             return self.send_json(200, {'setup': setup, 'running': running, 'now': now, 'waiting': waiting,
                                         'recent': [x for x in st.get('recent') or [] if x.get('ok')],   # (only what came: John, 15 Nov 2026) 'checked': st.get('checked'), 'next': int(GDRIVE_NEXT[0]) or None, 'error': GDRIVE_ERR[0], 'trouble': st.get('trouble') or [], 'hold': st.get('hold'),
                                         'attorbox': st.get('attorbox') or [],   # (still coming in at TorBox: 20 Nov 2026)
