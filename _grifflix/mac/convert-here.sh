@@ -225,6 +225,11 @@ curl -fsS "$url" -o "$job" || { echo "Grifflix: the Mac mini didn't give the job
 field() { osascript -l JavaScript -e "var j = JSON.parse($.NSString.stringWithContentsOfFileEncodingError('$job', 4, null).js); j['$1']"; }
 name=$(field name); src=$(field src); tmp=$(field tmp); dur=$(field dur); dur=${dur%.*}
 args=("${(@f)$(osascript -l JavaScript -e "JSON.parse($.NSString.stringWithContentsOfFileEncodingError('$job', 4, null).js).args.join('\n')")}")
+# (an HDR film: its colours made ordinary by ffmpeg's zscale and tonemap; an ffmpeg without them would make it washed out, so it stops and says
+# so: John, 20 Nov 2026)
+if [[ "${args[*]}" == *zscale* ]] && ! "$FF" -hide_banner -filters 2>/dev/null | grep -q ' zscale '; then
+  fail "This film is HDR, and this Mac's ffmpeg can't turn HDR colours into ordinary ones (it has no zscale). Get the full ffmpeg from osxexperts.net into ~/bin (or: brew install ffmpeg), then queue it again." "HDR: this Mac's ffmpeg has no zscale (get the osxexperts.net ffmpeg, or brew install ffmpeg)"
+fi
 echo "Converting $name on this Mac."
 # (each step told to the Mac mini, so the film's Edit panel says where it's got to, and a stall shows: John, 17 Nov 2026, "it got stuck and I
 # shut the terminal - nothing is happening", "it still says converting")

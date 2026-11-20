@@ -520,6 +520,16 @@ def convert(item, ffmpeg, ffprobe, st):
         raise SystemExit('The drive is nearly full (%.0f GB free). Delete some of “Grifflix Originals” once you’ve checked them, then run again.' % (free / 1e9))
 
     vf = "scale=w='min(%d,iw)':h='min(%d,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2" % (MAX_W, MAX_H)   # (only ever smaller, never enlarged)
+    # (HDR, made into an ordinary picture, on John's Mac only: its brightness brought into the ordinary range and its wider colours into
+    # ordinary ones (zscale and tonemap, Hable's curve), then 8-bit like every other film; John, 20 Nov 2026. The Mac mini's own ffmpeg can't,
+    # so here it's never converted, only planned for his Mac)
+    hdr_ = (v.get('color_transfer') or '') in ('smpte2084', 'arib-std-b67')
+    if hdr_ and not remux:
+        if not item.get('plan_only'):
+            raise RuntimeError('it’s HDR: converted on John’s Mac only')
+        tin = 'arib-std-b67' if v.get('color_transfer') == 'arib-std-b67' else 'smpte2084'
+        vf += (',zscale=tin=%s:pin=bt2020:min=bt2020nc:t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,'
+               'zscale=t=bt709:m=bt709:r=tv,format=yuv420p' % tin)
     cmd = [ffmpeg, '-hide_banner', '-nostdin', '-y', '-i', src, '-map', '0:%d' % v['index']]
     main_a, chose, unsure = pick_sound(audio, item, s)
     if main_a:   # (of that language's soundtracks, the fullest: its 5.1, not a stereo copy made from it before)
@@ -844,7 +854,7 @@ def claimed(iid):
 SKIPWHY = {}   # (why one was passed over, said as it is, not "this or that": John, 20 Nov 2026, Wild at Heart "failed, but I don't see any message")
 
 
-def shrink_item(iid, name=None):
+def shrink_item(iid, name=None, mac=False):
     """Any film, to be made smaller at the careful setting, whatever the converter would have said of it (the largest, chosen by John);
     not an HDR one (its colours would be spoilt)."""
     it = call('GET', '/Users/%s/Items/%s' % (s['jf_user_id'], iid), Fields='MediaSources,Path,ProductionYear,CommunityRating,DateCreated') or {}
@@ -853,8 +863,14 @@ def shrink_item(iid, name=None):
         SKIPWHY[iid] = 'its file isn’t where the media server says it is' + (' (%s)' % os.path.basename(os.path.dirname(path)) if path else '') + ': nothing to convert.'
         return None
     v = next((x for x in g((g(it, 'MediaSources') or [{}])[0], 'MediaStreams') or [] if g(x, 'Type') == 'Video'), {})
-    if is_hdr(v):
-        SKIPWHY[iid] = 'it’s HDR (%s), kept as it is so its colours aren’t spoilt: nothing to convert.' % (g(v, 'VideoRangeType') or g(v, 'VideoRange') or 'HDR')
+    # (HDR: only on John's Mac, whose ffmpeg can turn its colours into ordinary ones (tone-mapping); this Mac mini's can't, and they came out
+    # washed out: John, 20 Nov 2026, "there's no reason my mac shouldn't be able to do it ... allow me to queue on my mac and change the rule")
+    rt = g(v, 'VideoRangeType') or g(v, 'VideoRange') or 'HDR'
+    if is_hdr(v) and not mac:
+        SKIPWHY[iid] = 'it’s HDR (%s): converted on your Mac only (queue it for your Mac).' % rt
+        return None
+    if is_hdr(v) and rt.upper() == 'DOVI':   # (Dolby Vision alone, with no ordinary HDR picture beneath it: its colours can't be worked out)
+        SKIPWHY[iid] = 'it’s Dolby Vision only (no HDR10 picture beneath), which can’t be turned into ordinary colours: replace it with another copy.'
         return None
     return {'id': iid, 'name': g(it, 'Name') or name or '?', 'year': g(it, 'ProductionYear', ''), 'lib': 'movies' if g(it, 'Type') == 'Movie' else 'tv',
             'why': SHRINK + ' (chosen by you)', 'mode': 'shrink', 'path': path, 'mins': round((g(it, 'RunTimeTicks') or 0) / 6e8),
@@ -868,8 +884,8 @@ if CMD in ('plan', 'finish'):   # (John's "Convert on this Mac", 16 Nov 2026: th
         # (one queued for John's Mac: made smaller, never only repackaged, which there frees nothing and copies the whole film over the
         # network twice: Disclosure Day, 40.6 GB, at 0.6x: John, 18 Nov 2026, "I'm going to save space by converting the bigger files on my mac")
         if 'force' in sys.argv[3:] and (not found or found[0].get('mode') == 'remux'):
-            f = shrink_item(sys.argv[2])
-            found = [f] if f else []   # (an HDR one: passed over here; the Mac mini repackages it itself if it needs it)
+            f = shrink_item(sys.argv[2], mac=True)
+            found = [f] if f else []   # (HDR: made on John's Mac, its colours tone-mapped (convert); Dolby Vision alone passed over)
         if not found:
             print(json.dumps({'error': (SKIPWHY.get(sys.argv[2]) or 'it plays everywhere as it is: nothing to convert.')}))
             sys.exit()

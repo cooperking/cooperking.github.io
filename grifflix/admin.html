@@ -1989,7 +1989,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var q = 'good', why = '';
     // (HDR: the Mac mini can't make it smaller without spoiling its colours, so it's one to replace, said why, as soon as it comes: John, 20 Nov
     // 2026, Wild at Heart "any like that, that the server won't be able to handle should be immediately flagged to replace with the reason")
-    if (x.hdr) { q = 'replace'; why = res + ' ' + x.hdr + ': the Mac mini can’t convert it without spoiling its colours' + (x.gb ? ' (' + x.gb + ' GB)' : '') + '. Replace it with an SDR copy, 1080p'; }
+    // (HDR: converted on John's Mac, its colours made ordinary there; the Mac mini's own ffmpeg can't: John, 20 Nov 2026, "there's no reason my
+    // mac shouldn't be able to do it ... allow me to queue on my mac and change the rule". Dolby Vision alone can't be: one to replace)
+    if (x.hdrt && /only/.test(x.hdrt)) { q = 'replace'; why = res + ' Dolby Vision only: no ordinary HDR picture beneath, so it can’t be converted. Replace it with another copy'; }
+    else if (x.hdrt) { q = 'convert'; why = res + ' ' + x.hdrt + ': to convert on your Mac (Queue for my Mac), which turns its HDR colours into ordinary ones; the Mac mini can’t'; }
     else if (bpp != null && bpp < .035) { q = 'replace'; why = 'poor for ' + (res === '?' ? 'its size' : res) + ': little picture for its size (' + x.mbps + ' Mbps' + (x.v ? ' ' + x.v.toUpperCase() : '') + ')'; }
     else if (x.w > 1928 || x.h > 1088) { q = 'convert'; why = 'bigger than 1080p (' + x.w + '×' + x.h + ')'; }
     else if (x.mbps && x.mbps > thr) { q = 'convert'; why = 'bigger than ' + res + ' needs (' + x.mbps + ' Mbps; ' + thr.toFixed(1) + ' is plenty)'; }
@@ -2039,7 +2042,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         (x.ps ? '<span class="why2">Picture subtitles (' + esc(x.ps) + '): ' + (/^to repackage/.test(x.why || '') ? 'repackaging leaves them in the original, kept in Grifflix Originals' : 'in this file') + '</span>' : '') +
         // (the largest: any of them made smaller next, whatever the converter would have said: John, 16 Nov 2026, "I need a tab for the largest
         // files, so that I can convert them")
-        (x.hdr ? '' : (LB.f === 'big' ? '<button type="button" class="lbnext" data-lbnext="' + x.id + '" data-force="1" data-n="' + esc(x.n) + '">Make smaller next</button>' :
+        (x.hdrt ? (/only/.test(x.hdrt) ? '' : '<button type="button" class="lbnext" data-lbmac="' + x.id + '" data-force="1" data-n="' + esc(x.n) + '">' + (LB.MQ[x.id] ? 'Queued for your Mac ✓' : 'Queue for my Mac') + '</button>') : (LB.f === 'big' ? '<button type="button" class="lbnext" data-lbnext="' + x.id + '" data-force="1" data-n="' + esc(x.n) + '">Make smaller next</button>' :
         x.why && (!x.conv || x.rp) ? '<button type="button" class="lbnext" data-lbnext="' + x.id + '" data-n="' + esc(x.n) + '">' + (/^to make smaller/.test(x.why) ? 'Make smaller next' : 'Do next') + '</button>' : '') +
         // (or on John's own Mac, far faster, queued from here: John, 18 Nov 2026, "how can I queue things on my mac to convert?")
         (LB.f === 'big' || (x.why && (!x.conv || x.rp)) ? '<button type="button" class="lbnext" data-lbmac="' + x.id + '"' + (LB.f === 'big' ? ' data-force="1"' : '') + ' data-n="' + esc(x.n) + '">' + (LB.MQ[x.id] ? 'Queued for your Mac ✓' : 'Queue for my Mac') + '</button>' : '')) + '</span></li>';
