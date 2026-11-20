@@ -384,12 +384,15 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       <section class="card" data-tab="dupes">
         <div class="kicker">Duplicates</div>
         <h2 id="duphead">Films you have twice</h2>
-        <p class="stat">For each film, the copy marked is kept and the others are set aside, into “Set aside/Duplicates” on the G-Drive (not deleted: empty it when you’re happy). The best copy is chosen for you (the sharpest picture, then the most detail); choose another if you’d rather. Calendars, lists and hearts follow the copy kept, and its extras stay with it.</p>
+        <p class="stat">For each film, the copy marked is kept and the others are set aside, into “Set aside/Duplicates” on the G-Drive (not deleted: delete them below when you’re happy). The best copy is chosen for you (the sharpest picture, then the most detail); choose another if you’d rather. Calendars, lists and hearts follow the copy kept, and its extras stay with it.</p>
         <div id="duplist"></div>
         <div class="state"><button class="btn primary" id="dupgo" type="button" hidden>Set the others aside</button></div>
         <p class="stat" id="dupsay"></p>
         <pre id="duplog" hidden style="white-space:pre-wrap;max-height:240px;overflow:auto;font-size:12px;opacity:.85"></pre>
         <div id="dupwrong"></div>
+        <h3 style="margin:26px 0 6px;font-size:17px">Set aside</h3>
+        <p class="stat" id="sasay">What’s kept in “Set aside” on the G-Drive. Delete any of it for good when you’re happy you won’t want it.</p>
+        <div id="salist"></div>
       </section>
       <section class="card" data-tab="updates">
         <div class="kicker">Updates</div>
@@ -2098,14 +2101,42 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 
   // ---- duplicates: the films John has twice, his choice of copy to keep, the others set aside (John, 16 Nov 2026: "make it a tab if
   // there are duplicates and let me be able to select and fix there")
-  var dupT = 0;
+  var dupT = 0, DUPN = 0, SAN = 0;
+  // ---- Set aside: each folder kept there, its size, and a Delete for each and for all (John, 20 Nov 2026: "I should have a delete option on
+  // any folder where copies are kept in admin"); twice to delete, as it's for good
+  function saCall(body) {
+    return fetch(GW + '/api/setaside', body ? { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'Couldn’t reach the Mac mini.'); return j; }); });
+  }
+  function saPaint(j) {
+    var L = j.items || [], gb = L.reduce(function (n, x) { return n + (x.gb || 0); }, 0);
+    SAN = L.length; $('#dupetab').hidden = !DUPN && !SAN;
+    var where = { Duplicates: 'Copies set aside', Movies: 'Films set aside', TV: 'TV set aside', '': 'Other' }, groups = {};
+    L.forEach(function (x) { (groups[x.in] = groups[x.in] || []).push(x); });
+    $('#salist').innerHTML = !L.length ? '<p class="stat">Nothing in Set aside.</p>' :
+      '<p class="stat" style="margin:4px 0 10px"><b>' + L.length + ' kept, ' + gb.toFixed(1) + ' GB</b> <button class="btn" type="button" data-sadel="*">Delete all</button></p>' +
+      Object.keys(groups).sort().map(function (k) {
+        return '<p class="stat" style="margin:14px 0 4px;font-weight:600">' + esc(where[k] || k) + '</p><ul class="changes">' + groups[k].map(function (x) {
+          return '<li style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="flex:1;min-width:180px">' + esc(x.name) + '<span class="when">' + x.gb.toFixed(2) + ' GB · set aside ' + esc(when(x.at * 1000)) + '</span></span><button class="btn" type="button" data-sadel="' + esc(x.p) + '">Delete</button></li>';
+        }).join('') + '</ul>';
+      }).join('');
+    [].forEach.call(document.querySelectorAll('[data-sadel]'), function (b) {
+      b.onclick = function () {
+        if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = b.dataset.sadel === '*' ? 'Sure? All of it, for good' : 'Sure? For good'; return; }
+        b.disabled = true; b.textContent = 'Deleting…';
+        saCall(b.dataset.sadel === '*' ? { all: true } : { delete: [b.dataset.sadel] }).then(function (k) { toast(k.deleted.length + ' deleted, ' + k.gb + ' GB freed'); saPaint(k); })
+          .catch(function (e) { b.disabled = false; b.textContent = 'Delete'; delete b.dataset.sure; toast(e.message); });
+      };
+    });
+  }
+  function saLoad() { if (GW) saCall().then(saPaint).catch(function (e) { $('#salist').innerHTML = '<p class="stat">' + esc(e.message) + '</p>'; }); }
   function dupCall(body, fresh) {
     return fetch(GW + '/api/duplicates' + (fresh ? '?fresh=1' : ''), body ? { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' })
       .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'Couldn’t reach the Mac mini.'); return j; }); });
   }
   function dupPaint(j) {
     var G = j.groups || [], W = j.wrong || [];
-    $('#dupetab').hidden = !G.length && !W.length && !j.running; $('#dupetab').textContent = 'Copies' + (G.length + W.length ? ' ' + (G.length + W.length) : '');   // (and the ones to look at: 18 Nov 2026)
+    DUPN = G.length + W.length + (j.running ? 1 : 0); $('#dupetab').hidden = !DUPN && !SAN; $('#dupetab').textContent = 'Copies' + (G.length + W.length ? ' ' + (G.length + W.length) : '');   // (and the ones to look at: 18 Nov 2026)
     $('#duphead').innerHTML = G.length ? G.length + ' film' + (G.length === 1 ? '' : 's') + ' you have <em>twice</em>' : 'No duplicates';
     var q = function (c) { return c.h + 'p ' + esc(c.codec) + (c.bits > 8 ? ' 10-bit' : '') + ' · ' + c.gb + ' GB · ' + c.mbps + ' Mbps · ' + c.mins + ' min'; };
     $('#duplist').innerHTML = G.map(function (g, i) {
@@ -2850,7 +2881,7 @@ var feats = function (doc) {
     fetch('/grifflix/config.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (c) {
       var gw = String(c.gateway || '').replace(/\/$/, ''), t0 = Date.now();
       if (!gw) { $('#machead').textContent = 'Not connected'; return; }
-      GW = gw; a24Look(); convert(); fetching(); software(); dlLook(); hhLoad(); autoState(); lbAuto(); originals().then(orLine).catch(function () {});
+      GW = gw; saLoad(); a24Look(); convert(); fetching(); software(); dlLook(); hhLoad(); autoState(); lbAuto(); originals().then(orLine).catch(function () {});
       return fetch(gw + '/api/me', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (me) {
         var L = me.libraries || {};
         $('#machead').innerHTML = 'Answering <em>(' + (Date.now() - t0) + ' ms)</em>';

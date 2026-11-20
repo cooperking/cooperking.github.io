@@ -2920,6 +2920,61 @@ def make_handler(g):
             return self.send_json(200, {'running': bool(CRIT.get('p') and CRIT['p'].poll() is None), 'at': CRIT.get('at'), 'log': tail,
                                         'ready': os.path.exists(script)})
 
+        def api_setaside(self, me, user, q, b):
+            """John's only: what's kept in Set aside on the G-Drive (the copies set aside, and older folders), each with its size, for the admin page,
+            and any of it deleted for good from there (John, 20 Nov 2026: "I should have a delete option on any folder where copies are kept in
+            admin"). GET: the folders. POST {delete: [their paths]} or {all: true}: deleted, only ever inside Set aside."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            import shutil
+            base = os.path.realpath(SETASIDE)
+            def size(p_):
+                if os.path.isfile(p_):
+                    return os.path.getsize(p_)
+                t_ = 0
+                for r_, ds_, fs_ in os.walk(p_):
+                    for f_ in fs_:
+                        try:
+                            t_ += os.path.getsize(os.path.join(r_, f_))
+                        except OSError:
+                            pass
+                return t_
+            def entries():
+                out_ = []
+                if not os.path.isdir(base):
+                    return out_
+                for top_ in sorted(os.listdir(base)):
+                    tp_ = os.path.join(base, top_)
+                    if top_.startswith('.'):
+                        continue
+                    kids_ = [k_ for k_ in sorted(os.listdir(tp_)) if not k_.startswith('.')] if os.path.isdir(tp_) and top_ in ('Duplicates', 'Movies', 'TV') else None
+                    if kids_ is None:
+                        out_.append({'p': top_, 'in': '', 'name': top_, 'gb': round(size(tp_) / 1e9, 2), 'at': int(os.path.getmtime(tp_))})
+                    for k_ in kids_ or []:
+                        kp_ = os.path.join(tp_, k_)
+                        out_.append({'p': top_ + '/' + k_, 'in': top_, 'name': k_, 'gb': round(size(kp_) / 1e9, 2), 'at': int(os.path.getmtime(kp_))})
+                return out_
+            if b:
+                L_ = entries()
+                want_ = [e_['p'] for e_ in L_] if b.get('all') else [str(x_) for x_ in (b.get('delete') or [])][:500]
+                gone_, freed_ = [], 0
+                for rel_ in want_:
+                    rp_ = os.path.realpath(os.path.join(base, rel_))
+                    if not rp_.startswith(base + os.sep) or not os.path.exists(rp_):
+                        continue
+                    try:
+                        sz_ = size(rp_)
+                        shutil.rmtree(rp_) if os.path.isdir(rp_) and not os.path.islink(rp_) else os.remove(rp_)
+                        freed_ += sz_
+                        gone_.append(rel_)
+                    except OSError as e_:
+                        log('Set aside: couldn’t delete %s: %s' % (rel_, e_))
+                for d_ in ('Duplicates', 'Movies', 'TV'):   # (the folders that hold them kept, empty)
+                    os.makedirs(os.path.join(base, d_), exist_ok=True) if os.path.isdir(base) else None
+                log('Set aside: John deleted %d (%.1f GB): %s' % (len(gone_), freed_ / 1e9, ', '.join(gone_)[:400]))
+                return self.send_json(200, {'deleted': gone_, 'gb': round(freed_ / 1e9, 1), 'items': entries()})
+            return self.send_json(200, {'items': entries()})
+
         def api_duplicates(self, me, user, q, b):
             """John's only: films he has more than one copy of, for the admin page's Duplicates tab (John, 16 Nov 2026: "that should be part
             of the admin page - make it a tab if there are duplicates and let me be able to select and fix there"). GET: what duplicates.py
