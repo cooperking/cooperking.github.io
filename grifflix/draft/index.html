@@ -2534,7 +2534,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '61313e4515c1' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '59384578544e' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5877,8 +5877,10 @@ function collectionView(id, into) {
           // (a film released on its own as well as in this set: here, the set's cover, and on its page opened from here; its own release's
           // cover everywhere else: John, 20 Nov 2026, "it should show the box set cover when you click on the box set, and on the film when
           // you view it from there. When you view the film as its own release you should see the cover it was given as part of that")
-          var setCov = BSI[openSet] ? BSI[openSet].replace(/_(small|thumbnail)\./, '_large.') : '', SC = {};
-          if (setCov) L.forEach(function (i) { if (i.spine && String(i.spine) !== String(BSP[openSet] || '')) SC[i.id] = setCov; });
+          // (its own cover as it is in this set, not the set's outer cover: John, 20 Nov 2026, "it should show the box set covers which are
+          // released with the film, not the box set overall cover"; its usual cover till Criterion's set page has been read for it)
+          var SC = {};
+          L.forEach(function (i) { var n_ = (i.cset || []).indexOf(openSet), u_ = n_ >= 0 && (i.csetfimg || [])[n_]; if (u_) SC[i.id] = u_.replace(/_(small|thumbnail)\./, '_large.'); });
           g.className = 'csets';
           // (the set opened as Criterion's own page for it: its cover large, its name, its description, then its films: John, 18 Nov 2026, "I'd like
           // to be able to see the picture of the box set cover larger, as it is on criterion")
