@@ -912,6 +912,11 @@ def make_handler(g):
                     if not want or not tok or not hmac.compare_digest(hashlib.sha256(tok.encode()).hexdigest(), want):
                         return self.send_json(403, {'error': 'Not allowed.'})
                     MACAGENT['seen'] = int(time.time()); MACAGENT['home'] = q.get('home') == '1'
+                    # (that it has ever checked in, kept over restarts: admin's "Set up your Mac" to-do stayed open after every restart while
+                    # his Mac was off: John, 20 Nov 2026, "This has been there for a while, but I sorted this a while ago")
+                    ma_ = g.st.get('macagent') or {}
+                    if ma_.get('key') and not ma_.get('worked'):
+                        ma_['worked'] = int(time.time()); g.st['macagent'] = ma_; save(SETTINGS, g.st)
                     if q.get('home') != '1':   # (away from home, the G-Drive out of reach: the queue kept for when it's back)
                         return self.send_json(200, {'wait': 'away'})
                     # (the plan made in the background and handed over at the next ask: planning took longer than the 20 seconds John's
@@ -2578,7 +2583,7 @@ def make_handler(g):
                 log('Queue for John’s Mac: %s %s' % ({'add': 'added', 'first': 'put first', 'remove': 'taken off'}.get(op, op), b.get('name') or iid))
             a = g.st.get('macagent') or {}
             P_ = [y for y in (load(MACQ + '.passed', []) or []) if time.time() - y.get('at', 0) < 3 * 86400]
-            return self.send_json(200, {'queue': Q, 'passed': P_, 'setup': bool(a.get('key')), 'seen': MACAGENT.get('seen'), 'home': MACAGENT.get('home')})
+            return self.send_json(200, {'queue': Q, 'passed': P_, 'setup': bool(a.get('key')), 'worked': bool(a.get('key') and (a.get('worked') or MACAGENT.get('seen') or any(v.get('mac') for v in list(CONVJOBS.values())))), 'seen': MACAGENT.get('seen'), 'home': MACAGENT.get('home')})
 
         def api_fileinfo(self, me, user, q, b):
             """John's only: a film's file as it is, for its Edit panel (John, 16 Nov 2026: "I need to see file format details in the edit

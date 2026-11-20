@@ -1784,7 +1784,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var get = function (p) { return fetch(GW + '/api/' + p, { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); };
     Promise.all([get('macqueue'), get('diskhealth'), get('waiting'), get('claudeasks')]).then(function (r) {
       WT.asks = r[3] ? r[3].asks || [] : [];
-      if (r[0]) WT.auto.macagent = !!r[0].seen;
+      if (r[0]) WT.auto.macagent = !!(r[0].worked || r[0].seen);   // (set up and once seen working, kept over the Mac mini's restarts)
       if (r[1]) { WT.auto.smart = !!r[1].smartctl; if (r[1].free) WT.auto.space = r[1].free > 150e9; WT.free = r[1].free; }
       WT.gw = !!r[2]; if (r[2]) WT.done = r[2].done || {};
       wtDraw();
