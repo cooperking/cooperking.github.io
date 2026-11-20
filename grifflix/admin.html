@@ -2342,7 +2342,7 @@ var feats = function (doc) {
         d.textContent = 'Grifflix: done. ' + Object.keys(st.out).length + ' synopses and ' + Object.keys(st.feat).filter(function (k) { return st.feat[k].length; }).length + ' special features lists saved as criterion-synopses.json in your Downloads' + (st.miss ? ' (' + st.miss + ' pages had no synopsis)' : '') + '. Choose it on the admin page.';
       })();
     };
-    $('#synbm').href = 'javascript:(' + BM.toString() + ')();void 0';
+    $('#synbm').href = 'javascript:' + encodeURIComponent('(' + BM.toString() + ')();void 0');   // (encoded, its line breaks kept: taken out, a // note ended the bookmark there: 20 Nov 2026)
     $('#synbm').onclick = function (e) { e.preventDefault(); toast('Drag it to your bookmarks bar, then click it on criterion.com'); };
     var listTxt = '', listInfo = '';
     $('#syncopy').onclick = function () {
@@ -2460,7 +2460,7 @@ var feats = function (doc) {
             var doc = new DOMParser().parseFromString(h, 'text/html');
             var rws = [].map.call(doc.querySelectorAll('tr.gridFilm, tr[data-href], [data-href*="/films/"], [data-href*="/boxsets/"], td a[href*="/boxsets/"], .gridFilm a[href*="/boxsets/"]'), function (el) { var tr = (el.closest && el.closest('tr')) || el, td = tr.querySelector ? tr.querySelector('td') : null; var im = tr.querySelector ? tr.querySelector('img') : null; return { h: el.getAttribute('data-href') || el.getAttribute('href') || '', sp: ((td ? td.textContent : '').trim().match(/^\d+$/) || [''])[0], im: im ? (im.getAttribute('data-src') || im.getAttribute('src') || '') : '' }; }).filter(function (x) { return x.h; });
             var hrefs = rws.map(function (x) { return x.h; });
-            var slugs = [], direct = [], seenH = {};   // (direct: the films the list shows themselves, not through a box set: a set's genres aren't each film's)
+            var slugs = [], direct = [], seenH = {};   /* (direct: the films the list shows themselves, not through a box set: a set's genres aren't each film's) */
             for (var k = 0; k < hrefs.length; k++) {
               var hr = hrefs[k].replace(/[?\u0023].*$/, ''); if (seenH[hr]) continue; seenH[hr] = 1;
               if (/\/films\//.test(hr)) { slugs.push(hr.replace(/^.*\/films\//, '')); direct.push(hr.replace(/^.*\/films\//, '')); continue; }
@@ -2473,12 +2473,12 @@ var feats = function (doc) {
                 var bd = new DOMParser().parseFromString(bh, 'text/html');
                 [].forEach.call(bd.querySelectorAll('header, footer, nav, aside, [class*="related"], [class*="recommend"]'), function (x) { x.remove(); });
                 var inset = [], fim = {};
-                // (and each film's own cover as it is in this set, beside its link: John, 20 Nov 2026, "it should show the box set covers which are released
-                // with the film, not the box set overall cover")
+                /* (and each film's own cover as it is in this set, beside its link: John, 20 Nov 2026, "it should show the box set covers which are released
+                with the film, not the box set overall cover"; no line comments in a bookmark: its line breaks are taken out, so one ends it) */
                 [].forEach.call(bd.querySelectorAll('a[href*="/films/"]'), function (a2) { var sl = a2.getAttribute('href').replace(/^.*\/films\//, '').replace(/[?\u0023/].*$/, ''); if (/^\d+-/.test(sl)) { slugs.push(sl); if (inset.indexOf(sl) < 0) inset.push(sl);
-                  // (its picture searched for more widely: in the link, or in the nearest box around it that holds no other film; lazy-loaded
-                  // pictures (data-src, srcset, a picture's source) and background pictures too: John, 20 Nov 2026, "box set individual covers are
-                  // still not being picked up": none had been found beside the link itself)
+                  /* (its picture searched for more widely: in the link, or in the nearest box around it that holds no other film; lazy-loaded
+                  pictures (data-src, srcset, a picture's source) and background pictures too: John, 20 Nov 2026, "box set individual covers are
+                  still not being picked up": none had been found beside the link itself) */
                   var pick = function (el) { if (!el) return ''; var im = el.matches && el.matches('img, source') ? el : el.querySelector('img, picture source');
                     var v = im ? (im.getAttribute('data-src') || im.getAttribute('data-lazy-src') || im.getAttribute('data-original') || (im.getAttribute('data-srcset') || im.getAttribute('srcset') || '').split(',').pop().trim().split(' ')[0] || im.getAttribute('src') || '') : '';
                     if (!v) { var bgel = [el].concat([].slice.call(el.querySelectorAll('[style*="background"], [data-bg], [data-background]'))).filter(function (q) { return /url\(|^http|^\//.test((q.getAttribute('style') || '') + (q.getAttribute('data-bg') || q.getAttribute('data-background') || '')); })[0];
@@ -2510,7 +2510,7 @@ var feats = function (doc) {
         d.textContent = 'Grifflix: done: ' + Object.keys(out.tags).length + ' of ' + W.length + ' read' + (out.missing.length ? ' (not found here: ' + out.missing.join(', ') + ')' : '') + '. Saved as criterion-tags.json in your Downloads: choose it on the admin page.';
       })();
     };
-    $('#tagbm').href = 'javascript:(' + TBM.toString() + ')();void 0';
+    $('#tagbm').href = 'javascript:' + encodeURIComponent('(' + TBM.toString() + ')();void 0');   // (encoded, its line breaks kept: taken out, a // note ended the bookmark there: 20 Nov 2026)
     $('#tagbm').onclick = function (e) { e.preventDefault(); toast('Drag it to your bookmarks bar, then click it on Criterion’s list'); };
     $('#tagfile').onchange = function () {
       var f = this.files[0]; this.value = ''; if (!f) return; if (!GW) return toast('The Mac mini isn’t answering.');
