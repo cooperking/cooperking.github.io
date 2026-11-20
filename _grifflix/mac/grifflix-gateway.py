@@ -5971,7 +5971,7 @@ def match_unmatched(g):
     Night's six), the clutter off (a year, "a.k.a.", "DDC", "01 ", "- Horror"); TMDB searched for it and any other title it gives, its year
     and a year either side; put on only when one film fits by title and year and, where both are known, by its length (within 10 minutes).
     The rest listed (match-unmatched.json and the log) for Fix match by hand. Each film tried at most once a week."""
-    import difflib
+    import difflib, unicodedata
     if not g.st.get('tmdb_key'):
         return
     lid = (g.st.get('libraries') or {}).get('movies')
@@ -5979,9 +5979,9 @@ def match_unmatched(g):
         return
     tried_at = os.path.expanduser('~/Grifflix/match-unmatched.json')
     T = load(tried_at, {}) or {}
-    if T.get('_v') != 2:   # (the first run's "not found"s were TMDB asking it to slow down, not TMDB not having them: tried again)
+    if T.get('_v') != 3:   # (the first run's "not found"s were TMDB asking it to slow down; v3: accented names and searches without a year)
         T = {k: v for k, v in T.items() if isinstance(v, dict) and v.get('done')}
-        T['_v'] = 2
+        T['_v'] = 3
     items = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie',
                                                                'Fields': 'Path,ProductionYear,ProviderIds,LockedFields,MediaSources'}).get('Items') or []
     VID = ('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')
@@ -5999,6 +5999,7 @@ def match_unmatched(g):
         except OSError:
             continue
         raw = os.path.splitext(os.path.basename(p))[0] if many else os.path.basename(folder)
+        raw = unicodedata.normalize('NFC', raw)   # (the Mac's file names spell é as e + accent, which TMDB's search doesn't find: La Jetée)
         ym = re.search(r'\((\d{4})\)', raw) or re.search(r'\b(19\d\d|20\d\d)\b', raw)
         year = int(ym.group(1)) if ym else int(it.get('ProductionYear') or 0)
         t = re.sub(r'\((\d{4})\)|\[[^\]]*\]', ' ', raw)
@@ -6020,10 +6021,10 @@ def match_unmatched(g):
         names = list(dict.fromkeys(n for n in names if n))
         ms = (it.get('MediaSources') or [{}])[0]
         mins = round((ms.get('RunTimeTicks') or it.get('RunTimeTicks') or 0) / 6e8)
-        cands, failed = {}, False
+        cands, failed, near = {}, False, []
         try:
             for n in names:
-                for y in ([year, year - 1, year + 1] if year else [None]):
+                for y in ([year, year - 1, year + 1, None] if year else [None]):   # (and with no year: TMDB's year is its first release anywhere)
                     q_ = {'query': n}
                     if y:
                         q_['year'] = y
@@ -6042,6 +6043,7 @@ def match_unmatched(g):
                     continue
                 rt = tmdb_runtime(g, tid)['rt'] if mins else 0
                 if mins and rt and abs(rt - mins) > 10:
+                    near.append('%s (%s, %d min; this file %d min)' % (x.get('title'), xy or '?', rt, mins))
                     continue
                 scored.append((sim - (abs(xy - year) * .05 if year and xy else 0) - (abs(rt - mins) / 200 if mins and rt else 0), tid, x))
             scored.sort(key=lambda c: -c[0])
@@ -6065,7 +6067,10 @@ def match_unmatched(g):
             except Exception as e:
                 T[iid]['note'] = 'couldn’t be put on: %s' % str(e)[:120]
         else:
-            T[iid]['note'] = 'not found on TMDB' if not scored else 'several could be it: ' + '; '.join('%s (%s)' % (c[2].get('title'), (c[2].get('release_date') or '')[:4]) for c in scored[:3])
+            seen = sorted(cands.values(), key=lambda x: -(x.get('popularity') or 0))[:4]
+            T[iid]['q'] = names
+            T[iid]['saw'] = ['%s (%s)' % (x.get('title'), (x.get('release_date') or '')[:4]) for x in seen]
+            T[iid]['note'] = ('found, but a different length: ' + '; '.join(near[:3])) if near and not scored else 'not found on TMDB' if not scored else 'several could be it: ' + '; '.join('%s (%s)' % (c[2].get('title'), (c[2].get('release_date') or '')[:4]) for c in scored[:3])
             unsure.append('%s (%s)' % (raw, T[iid]['note']))
     save(tried_at, T)
     if TMDBC.pop('_dirty', None):
