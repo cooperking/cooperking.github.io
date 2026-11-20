@@ -567,8 +567,11 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
     var kk = el('div', 'kicker'); kk.appendChild(el('span', null, s.m ? 'Files (✕ deletes one; the download job fetches it again)' : 'Members only: your own')); sec.appendChild(kk);
     if (!media) { sec.appendChild(el('p', 'stat', 'The Worker has no storage for files yet.')); return sec; }
     var row = el('div', 'files');
-    row.appendChild(fileBtn(e.a ? 'Song · ' + mb(e.a) : 'Add song (MP3)', !!e.a, function () { pick(s, 'a'); }, e.a && function () { drop(s, 'a'); }));
-    row.appendChild(fileBtn(e.v ? 'Video · ' + mb(e.v) : 'Add video (MP4)', !!e.v, function () { pick(s, 'v'); }, e.v && function () { drop(s, 'v'); }));
+    // a member song with none of its own but files all the same (another copy of the same song's, or its owner's): shown
+    // as there (John, 20 Nov 2026: "the song to publish for wild wild west didn't show that we had the files already")
+    var oa = !e.a && s.m && !!s.ha, ov = !e.v && s.m && !!s.hv;
+    row.appendChild(fileBtn(e.a ? 'Song · ' + mb(e.a) : oa ? 'Song · on the site already' : 'Add song (MP3)', !!e.a || oa, function () { pick(s, 'a'); }, e.a && function () { drop(s, 'a'); }));
+    row.appendChild(fileBtn(e.v ? 'Video · ' + mb(e.v) : ov ? 'Video · on the site already' : 'Add video (MP4)', !!e.v || ov, function () { pick(s, 'v'); }, e.v && function () { drop(s, 'v'); }));
     sec.appendChild(row);
     if (theirs) {
       var bar0 = el('div', 'upbar'); bar0.hidden = true; bar0.appendChild(el('i')); bar0.setAttribute('data-bar', s.id); sec.appendChild(bar0);
@@ -635,6 +638,7 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
     var nf = (w.s || []).filter(function (f) { return !f.gone; }).length + Object.keys(w.a || {}).reduce(function (n, k) { return n + w.a[k].f.filter(function (f) { return !f.gone; }).length; }, 0);
     var sum = [(w.moods || []).join(' / ') || 'No mood', (w.genres || []).join(' / ') || 'no genre', nf + (nf === 1 ? ' fact' : ' facts')];
     if (e.a || e.v) sum.push('your ' + [e.a && 'song', e.v && 'video'].filter(Boolean).join(' and '));
+    else if (s.m && (s.ha || s.hv)) sum.push([s.ha && 'song', s.hv && 'video'].filter(Boolean).join(' and ') + ' on the site');
     h.appendChild(el('div', 'ssum', sum.join(' · ')));
     function toggle() { OPEN[s.id] = !OPEN[s.id]; redraw(s); }
     h.addEventListener('click', toggle);
