@@ -906,6 +906,90 @@ def make_handler(g):
                     self.end_headers()
                     self.wfile.write(body_)
                     return
+                if u.path in ('/macagent/subnext', '/macagent/subdone'):   # (John's Mac's helper: English subtitles made ready, a film at a time,
+                    # timed there by what's said (subprep.py): John, 20 Nov 2026, "pre-prepare" ... "I prefer to use the whisper option")
+                    tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
+                    want = (g.st.get('macagent') or {}).get('key')
+                    if not want or not tok or not hmac.compare_digest(hashlib.sha256(tok.encode()).hexdigest(), want):
+                        return self.send_json(403, {'error': 'Not allowed.'})
+                    P = load(SUBPREP, {}) or {}
+                    body = self.body()
+                    if u.path == '/macagent/subdone' and method == 'POST':
+                        iid = str(body.get('id') or '')
+                        e = P.get(iid)
+                        if not e:
+                            return self.send_json(404, {'error': 'Not a film waiting for subtitles.'})
+                        if body.get('setup'):   # (Whisper not on John's Mac yet: the film back to waiting, the admin page says so)
+                            e.update(state='waiting', note='')
+                            P['_setup'] = {'need': True, 'at': int(time.time())}
+                            save(SUBPREP, P)
+                            return self.send_json(200, {'ok': True})
+                        P.pop('_setup', None)
+                        if body.get('ok') and body.get('srt') and self.subs_ready():
+                            try:
+                                it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
+                                cues = SUBS.parse_srt(str(body['srt']))
+                                out = self.subs_write(it.get('Path') or e.get('path'), 'en', cues)
+                                g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
+                                e.update(state='done' if body.get('sure') else 'check', note=str(body.get('how') or '')[:200], chose=str(body.get('chose') or '')[:200],
+                                         n=int(body.get('n') or 0), miss=body.get('miss'), file=out, at=int(time.time()), mins=body.get('mins'))
+                                log('Subtitles made ready on John’s Mac: %s: %s (%s lines matched)%s' % (e.get('name'), e['note'], e['n'], '' if body.get('sure') else ': to check'))
+                            except Exception as ex:
+                                e.update(state='failed', note=('couldn’t be saved: %s' % ex)[:200], at=int(time.time()))
+                        else:
+                            e.update(state='nomatch' if 'matched' in str(body.get('error') or '') else 'failed', note=str(body.get('error') or 'it didn’t work')[:200], at=int(time.time()))
+                            log('Subtitles not made ready for %s: %s' % (e.get('name'), e['note']))
+                        save(SUBPREP, P)
+                        return self.send_json(200, {'ok': True})
+                    if P.get('_paused') or q.get('home') != '1' or not self.subs_ready():
+                        return self.send_json(200, {'wait': 'paused' if P.get('_paused') else 'away'})
+                    o = g.st.get('opensubs') or {}
+                    if o.get('remaining') is not None and int(o.get('remaining') or 0) < 5:
+                        return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
+                    now_ = time.time()
+                    for iid, e in sorted(((k, v) for k, v in P.items() if not k.startswith('_')), key=lambda kv: kv[1].get('order', 0)):
+                        if e.get('state') == 'given' and now_ - e.get('at', 0) < 3 * 3600:
+                            continue
+                        if e.get('state') not in ('waiting', 'given'):
+                            continue
+                        try:
+                            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
+                        except Exception:
+                            it = {}
+                        path = it.get('Path') or ''
+                        if not path or not os.path.exists(path):
+                            e.update(state='failed', note='its file isn’t there', at=int(now_))
+                            continue
+                        pid = it.get('ProviderIds') or {}
+                        try:
+                            mh = SUBS.movie_hash(path)
+                        except OSError:
+                            mh = None
+                        try:
+                            res = self.subs_client().search('en', mhash=mh, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'),
+                                                            year=it.get('ProductionYear'), hint=os.path.basename(path))
+                        except Exception as ex:
+                            e.update(note=('OpenSubtitles: %s' % ex)[:200])
+                            save(SUBPREP, P)
+                            return self.send_json(200, {'wait': 'OpenSubtitles didn’t answer'})
+                        res = [x for x in res if not x.get('machine') and x.get('kind') in ('', 'movie')][:3]
+                        cands = []
+                        for x in res:
+                            try:
+                                cands.append({'name': x.get('name') or '', 'exact': bool(x.get('exact')), 'srt': SUBS.decode(self.subs_client().download(x['file_id']))})
+                            except Exception as ex:
+                                if 'allowed' in str(ex).lower() or 'download' in str(ex).lower():
+                                    save(SUBPREP, P)
+                                    return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
+                        if not cands:
+                            e.update(state='none', note='no English subtitles on OpenSubtitles', at=int(now_))
+                            continue
+                        e.update(state='given', at=int(now_), note='')
+                        save(SUBPREP, P)
+                        return self.send_json(200, {'subjob': {'id': iid, 'name': it.get('Name'), 'path': path, 'dur': (it.get('RunTimeTicks') or 0) / 1e7,
+                                                               'translate': True, 'cands': cands}})
+                    save(SUBPREP, P)
+                    return self.send_json(200, {'wait': 'none waiting'})
                 if u.path == '/macagent/next':   # (John's Mac's helper, asking every minute: the next film queued for it, as a job)
                     tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
                     want = (g.st.get('macagent') or {}).get('key')
@@ -2591,6 +2675,34 @@ def make_handler(g):
                          'subs': [{'name': x.get('name'), 'kind': x.get('kind'), 'forced': x.get('forced'), 'sdh': x.get('sdh')} for x in v.get('subs') or []]}
                         for k, v in P.items()), key=lambda x: -(x.get('at') or 0))
             return self.send_json(200, {'films': L, 'waiting': sum(1 for x in L if not x['text'])})
+
+        def api_subprep(self, me, user, q, b):
+            """John's only: the English subtitles being made ready on his Mac: how many, those to check, those none could be found for;
+            POST op pause, resume, look (the list looked over now) or again (one film tried again)."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            P = load(SUBPREP, {}) or {}
+            if b:
+                op = str(b.get('op') or '')
+                if op in ('pause', 'resume'):
+                    if op == 'pause':
+                        P['_paused'] = int(time.time())
+                    else:
+                        P.pop('_paused', None)
+                    save(SUBPREP, P)
+                elif op == 'look':
+                    threading.Thread(target=subprep_scan, daemon=True).start()
+                elif op == 'again' and str(b.get('id') or '') in P:
+                    P[str(b['id'])].update(state='waiting', note='')
+                    save(SUBPREP, P)
+            F = [dict(v, id=k) for k, v in P.items() if not k.startswith('_')]
+            cnt = {}
+            for x in F:
+                cnt[x.get('state')] = cnt.get(x.get('state'), 0) + 1
+            pick = lambda st_: sorted(({k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'note', 'chose', 'at', 'n')} for x in F if x.get('state') in st_),
+                                      key=lambda x: -(x.get('at') or 0))
+            return self.send_json(200, {'counts': cnt, 'total': len(F), 'paused': bool(P.get('_paused')), 'setup': bool((P.get('_setup') or {}).get('need')),
+                                        'check': pick(('check',)), 'none': pick(('none', 'nomatch', 'failed')), 'done': pick(('done',))[:30]})
 
         def api_waiting(self, me, user, q, b):
             """John's only: what he's ticked off on the admin page's Waiting on you (John, 18 Nov 2026: "I could do with a waiting on you
@@ -5051,6 +5163,51 @@ def keep_extras(g):
         time.sleep(1800 if n_ else 6 * 3600)
 
 
+def subprep_scan():
+    """The foreign-language films with no English subtitles that read as text (in the file, or beside it), added to the list for John's
+    Mac to make ready (subprep.py); those with them now, or gone, taken off (John, 20 Nov 2026: foreign-language films, English)."""
+    g = G_REF[0] if G_REF else None
+    if not g:
+        return
+    libs = g.st.get('libraries', {})
+    if not libs.get('movies'):
+        return
+    P = load(SUBPREP, {}) or {}
+    films, start = [], 0
+    while True:
+        r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': libs['movies'], 'Recursive': 'true', 'IncludeItemTypes': 'Movie',
+                                                              'Fields': 'MediaStreams,ProductionYear', 'StartIndex': start, 'Limit': 200}) or {}
+        films += r.get('Items') or []
+        start += 200
+        if start >= (r.get('TotalRecordCount') or 0):
+            break
+    eng = ('eng', 'en', 'english')
+    seen, added = set(), 0
+    for f in films:
+        st = f.get('MediaStreams') or []
+        au = [x for x in st if x.get('Type') == 'Audio']
+        main = next((x for x in au if x.get('IsDefault')), au[0] if au else None)
+        al = ((main or {}).get('Language') or '').lower()
+        if not al or al in eng or al in ('und', 'unk', 'zxx', 'mis'):
+            continue   # (English, or not known: not on the list)
+        has = any(x.get('Type') == 'Subtitle' and x.get('IsTextSubtitleStream') and (x.get('Language') or '').lower() in eng for x in st)
+        iid = f['Id']
+        seen.add(iid)
+        e = P.get(iid)
+        if has:
+            if e and e.get('state') in ('waiting', 'none', 'failed', 'nomatch'):
+                P.pop(iid, None)
+            continue
+        if not e:
+            P[iid] = {'name': f.get('Name'), 'year': f.get('ProductionYear') or '', 'lang': al, 'state': 'waiting', 'order': len(P), 'at': int(time.time())}
+            added += 1
+    for k in [k for k in P if not k.startswith('_') and k not in seen and P[k].get('state') in ('waiting', 'none', 'failed', 'nomatch')]:
+        P.pop(k, None)
+    save(SUBPREP, P)
+    if added:
+        log('Subtitles to make ready: %d more foreign-language films with no English subtitles' % added)
+
+
 def finish_again():
     """A film made on John's Mac whose putting-in-place here was stopped by the rule kept for the Mac mini's own converting ("it's HDR:
     converted on John's Mac only"), its made file still waiting: put in place now (WALL·E, 20 Nov 2026, "it was converted on my mac")."""
@@ -5093,6 +5250,10 @@ def keep_covers():
             covers_now()
         except Exception as e:
             log('Criterion covers (on the hour):', str(e)[:200])
+        try:   # (the foreign-language films needing English subtitles, looked for each hour: John, 20 Nov 2026)
+            subprep_scan()
+        except Exception as e:
+            log('Subtitles to make ready:', str(e)[:200])
         try:   # (Criterion's genres too, as its own lists give them, each hour: John, 20 Nov 2026)
             if G_REF:
                 give_genres(G_REF[0])
@@ -5188,7 +5349,8 @@ CONVJOBS = {}   # (films being converted on John's Mac: their one-time addresses
 CONVJOBS_AT = os.path.expanduser('~/Grifflix/convert-jobs.json')   # (kept through a restart: the film's Edit panel can still say how it went)
 
 
-MACQ = os.path.expanduser('~/Grifflix/mac-queue.json')   # (films queued for John's Mac, in his order)
+MACQ = os.path.expanduser('~/Grifflix/mac-queue.json')
+SUBPREP = os.path.expanduser('~/Grifflix/subprep.json')   # (the foreign-language films whose English subtitles are made ready on John's Mac)   # (films queued for John's Mac, in his order)
 MACAGENT = {}   # (when his Mac's helper last asked, and whether it was at home)
 
 
