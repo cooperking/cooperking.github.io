@@ -1475,7 +1475,11 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         .map(function (t) { return '<button type="button" data-ft="' + t[0] + '" aria-pressed="' + (tab === t[0]) + '">' + t[1] + ' ' + t[2] + '</button>'; }).join('');
       Array.prototype.forEach.call(document.querySelectorAll('[data-ft]'), function (b) { b.onclick = function () { fetching.naming = 0; fetching.tab = b.dataset.ft; fetching.last && fetching.draw(fetching.last); }; });
       if (fetching.naming && tab === 'next') { clearTimeout(fetching.t); fetching.t = setTimeout(fetching, 30000); return; }   // (not redrawn while a name is being found)
-      $('#flist').innerHTML = tab === 'next' ? ((n ? it(n, true) : '') + G.map(function (x, i) { return it(x, false, i); }).join('') || '<li>Nothing waiting.</li>') :
+      // (and what TorBox is still getting, under them: only what it has finished can be brought in, so Next showed three while more were on
+      // their way: John, 20 Nov 2026, "why does download only show the next 3?")
+      var AT = f.attorbox || [], atH = AT.length ? '<li style="list-style:none;margin-top:14px;font-weight:600;opacity:.85">Still coming in at TorBox (' + AT.length + ')</li>' + AT.map(function (x) {
+        return '<li>' + esc(x.name) + '<span class="when">' + (x.pct || 0) + '%' + (x.gb ? ' of ' + x.gb + ' GB' : '') + (x.state ? ' · ' + esc(x.state) : '') + (x.eta > 0 ? ' · about ' + (x.eta >= 3600 ? Math.round(x.eta / 3600) + ' hr' : Math.max(1, Math.round(x.eta / 60)) + ' min') + ' left' : '') + '</span></li>'; }).join('') : '';
+      $('#flist').innerHTML = tab === 'next' ? (((n ? it(n, true) : '') + G.map(function (x, i) { return it(x, false, i); }).join('') || '<li>Nothing waiting.</li>') + atH) :
         // (a download of a film already here: beside the one here, replaced with it or ignored: John, 17 Nov 2026, "what happens if I download a
         // better version of a film that's already there?" ... "yes, that's important")
         tab === 'up' ? UPL.map(function (x) {

@@ -414,6 +414,32 @@ def got_ok(key=None):
     return g_
 
 
+def torbox_pending():
+    """What TorBox is still getting, not ready to bring in yet: its file view, which this reads, shows only what it has finished, so the
+    admin page's Next showed three while more were on their way (John, 20 Nov 2026, "why does download only show the next 3?"). From its own
+    API, with John's key; nothing without one."""
+    try:
+        conf = json.load(open(TORBOX))
+    except (OSError, ValueError):
+        return []
+    if not conf.get('key'):
+        return []
+    hd = {'Authorization': 'Bearer ' + conf['key'], 'User-Agent': 'Grifflix'}
+    out = []
+    for kind in ('torrents', 'usenet', 'webdl'):
+        try:
+            req = urllib.request.Request('https://api.torbox.app/v1/api/%s/mylist?bypass_cache=true' % kind, headers=hd)
+            mine = json.loads(urllib.request.urlopen(req, timeout=60, context=_ctx()).read() or b'{}').get('data') or []
+        except Exception:
+            continue
+        for x in mine if isinstance(mine, list) else []:
+            if x.get('download_finished') or x.get('download_present'):
+                continue
+            out.append({'name': str(x.get('name') or '?')[:160], 'pct': round(float(x.get('progress') or 0) * 100), 'state': str(x.get('download_state') or '')[:40],
+                        'eta': int(x.get('eta') or 0), 'gb': round((x.get('size') or 0) / 1e9, 1)})
+    return out[:60]
+
+
 def torbox_tidy(listing):
     """Each TorBox download whose films and extras have all come whole into Grifflix, deleted from TorBox through its own API (its WebDAV
     is read-only), when John has switched it on (John, 17 Nov 2026: "can films be deleted from torbox automatically when downloaded?").
@@ -779,7 +805,7 @@ def _run(check):
         pass
     plan = in_order(plan)
     free0 = shutil.disk_usage(root).free
-    status(checked=int(time.time()), trouble=trouble, upgrades=UPG, waiting=[dict(wait_entry(p), noroom=free0 < p['size'] + 20e9) for p in plan], **({} if check else {'now': None}))
+    status(checked=int(time.time()), trouble=trouble, upgrades=UPG, attorbox=torbox_pending(), waiting=[dict(wait_entry(p), noroom=free0 < p['size'] + 20e9) for p in plan], **({} if check else {'now': None}))
     while plan:
         try:   # (a newer version since this fetch began: finish here, between films, and start again as it; never a download thrown
                # away part way: Donnie Darko, 9.4 GB, began again after Update everything: John, 15 Nov 2026, "Downloads seem to have slowed")
