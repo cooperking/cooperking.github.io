@@ -929,7 +929,18 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
               return '<li>' + (r.image ? '<img src="' + esc(r.image) + '" alt="">' : '<i></i>') +
                 '<span><b>' + esc(r.name) + '</b> (' + esc(r.year || '?') + ')' + (r.imdb ? '' : ' · <i>no IMDb number</i>') + (r.tmdb ? ' · <a href="https://www.themoviedb.org/movie/' + esc(r.tmdb) + '" target="_blank" rel="noopener">TMDB</a>' : '') + '<span class="when">' + esc(r.overview || '') + '</span></span>' +
                 '<button class="btn" type="button" data-umpick="' + k + '">This one</button></li>';
-            }).join('') : '<li class="umsay">Nothing on TMDB for that. Try fewer words, no year, or paste its TMDB link.</li>';
+            }).join('') : j.imdbOnly ? '<li class="umsay">TMDB has no film for ' + esc(j.imdbOnly) + ' (it may be a TV series there). <button class="btn" type="button" data-umimdb>Keep it as it is, with this IMDb number</button></li>' :
+              '<li class="umsay">Nothing on TMDB for that. Try fewer words, no year, or paste its TMDB link.</li>';
+            var ib = res.querySelector('[data-umimdb]');
+            if (ib) ib.onclick = function () {   // (its own name and year kept, the IMDb number put on: World on a Wire, 20 Nov 2026)
+              var x = UM.filter(function (y) { return y.id === id; })[0] || {};
+              ib.disabled = true;
+              fetch(GW + '/api/identify', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id, imdb: j.imdbOnly, name: String(x.name || '').replace(/\s*\((19|20)\d\d\)\s*$/, ''), year: yy || x.year }) })
+                .then(function (r2) { return r2.json().then(function (j2) { if (!r2.ok) throw new Error(j2.error || 'the Mac mini said ' + r2.status); return j2; }); })
+                .then(function (j2) { toast('“' + j2.name + '” now has ' + j2.imdb); UM = UM.filter(function (y) { return y.id !== id; }); umDraw(); })
+                .catch(function (e) { ib.disabled = false; toast('Couldn’t: ' + (e.message || e)); });
+            };
             Array.prototype.forEach.call(res.querySelectorAll('[data-umpick]'), function (pb) {
               pb.onclick = function () {
                 var r = R[+pb.dataset.umpick]; pb.disabled = true; pb.textContent = 'Fixing…';
