@@ -489,7 +489,10 @@ def spines(films):
     for f in films:
         if not f['title']:
             continue
-        hit = folders.get(k('%s (%s)' % (f['title'], f['year']))) or TF.get(tmdb_of(f))
+        hit = folders.get(k('%s (%s)' % (f['title'], f['year'])))
+        if not hit and TF.get(tmdb_of(f)):   # (found by its TMDB number: poster-add.py can't find it by name, so its cover put on here too, as a part's)
+            hit = TF[tmdb_of(f)]
+            PARTS[hit] = name_of(f['title'], f['year'])
         if not hit and re.match(r'^\d{4}$', f['year']):
             hit = next((folders[k('%s (%d)' % (f['title'], int(f['year']) + d))] for d in (1, -1) if k('%s (%d)' % (f['title'], int(f['year']) + d)) in folders), None)
         hits = [hit] if hit else []
