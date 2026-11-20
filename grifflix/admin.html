@@ -738,7 +738,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     ['gothamnarrow', 'Criterion’s labels and buttons (Gotham Narrow: Medium, Bold)'], ['gotham', 'Criterion’s details (Gotham: Book, Book Italic, Medium, Bold, Bold Italic)'],
     ['mercurydisplay', 'Criterion’s titles (Mercury Display: Roman, Italic, Semibold, Semibold Italic)'], ['mercurytext', 'Criterion’s text (Mercury Text G1: Roman, Italic)']];
   function fontList(given) {
-    (given ? Promise.resolve({ fonts: given }) : g('fonts')).then(function (j) {
+    // (from the Worker's own list of the fonts kept, as Grifflix's pages read it: asking /g/fonts got "Use POST": John, 20 Nov 2026)
+    (given ? Promise.resolve({ fonts: given }) : fetch(WORKER + '/gf/list?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('the Worker said ' + r.status); return r.json(); })).then(function (j) {
       var F_ = j.fonts || j.names || j.items || (Array.isArray(j) ? j : []); if (F_ && !Array.isArray(F_) && typeof F_ === 'object') F_ = Object.keys(F_);
       var L = (F_ || []).map(function (x) { return typeof x === 'string' ? x : (x.name || x.key || ''); }).filter(Boolean).sort();
       var base = function (n) { return n.toLowerCase().replace(/\.(woff2?|ttf|otf)$/, ''); };
