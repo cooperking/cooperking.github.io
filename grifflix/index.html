@@ -2112,7 +2112,8 @@ html.gcrit .critbtn { background: var(--gc-ink) !important; color: var(--gc-page
 html.gcrit, html.gcrit body, html.gcrit .wrap, html.gcrit .bar-top, html.gcrit #main, html.ga24, html.ga24 body, html.ga24 .wrap, html.ga24 .bar-top, html.ga24 #main { transition: none !important; }
 html.gcrit { --bg: #f4f4f4 !important; --kink: 30, 30, 30 !important; --line: rgba(0, 0, 0, .14) !important; --tile: rgba(0, 0, 0, .06) !important; --shadow: rgba(0, 0, 0, .12) !important; color-scheme: light; }
 html.gcrit, html.gcrit body { background: var(--gc-page) !important; }
-html.gcrit .bar-top, html.gcrit .bar-top .brand { --fg: var(--gc-ink); }
+html.gcrit .bar-top, html.gcrit .bar-top .brand { --fg: var(--gc-ink); --gc-c: var(--gc-ink); }   /* (both logos in the page's own ink, not the month's gold: John, 20 Nov 2026) */
+html.gcrit .bar-top .a24btn:hover, html.gcrit .bar-top .a24btn:focus-visible { color: var(--gc-page) !important; }
 html.gcrit #cbody { color: var(--gc-ink); }
 /* (its cover larger, its count in it, no title under it, and no Collections button above: John, 17 Nov 2026, "The collection picture looks
    messy with the title underneath. Should be a bit larger with the number visible in the picture ... We can remove the collections button") */
@@ -2346,7 +2347,8 @@ html.introtop, html.introtop body { background: var(--introtop) !important; }
 /* its page: white, black, A24's list */
 html.ga24 { --bg: #fff !important; --kink: 0, 0, 0 !important; --line: rgba(0, 0, 0, .12) !important; --tile: rgba(0, 0, 0, .05) !important; --shadow: rgba(0, 0, 0, .1) !important; color-scheme: light; }
 html.ga24, html.ga24 body { background: var(--a24-page) !important; }
-html.ga24 .bar-top, html.ga24 .bar-top .brand { --fg: var(--a24-ink); --gc-ink: var(--a24-ink); }
+html.ga24 .bar-top, html.ga24 .bar-top .brand { --fg: var(--a24-ink); --gc-ink: var(--a24-ink); --gc-c: var(--a24-ink); }
+html.ga24 .bar-top .critbtn:hover, html.ga24 .bar-top .critbtn:focus-visible { color: var(--a24-page) !important; }
 html.ga24 .bar-top { background: var(--a24-page) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: 0 1px 0 var(--a24-line), -100vw 1px 0 var(--a24-line), 100vw 1px 0 var(--a24-line), -100vw 0 0 var(--a24-page), 100vw 0 0 var(--a24-page) !important; }   /* (white to the screen's edges: the list is wider than the bar) */
 html.ga24 .bar-top::before { content: ""; position: absolute; left: -100vw; right: -100vw; bottom: 100%; height: 240px; background: var(--a24-page); pointer-events: none; }
 html.ga24 body::before, html.ga24 body::after { background-color: var(--a24-page) !important; background-image: none !important; }
@@ -2654,7 +2656,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'c63222f99b8d' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: 'b77431631733' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
