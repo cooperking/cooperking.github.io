@@ -321,6 +321,13 @@ html.tv .sheet .people { font-size: var(--crfs, 15px); }
 .sheet textarea { border-radius: 12px; min-height: 76px; resize: vertical; font: italic 400 17px/1.45 var(--serif); }
 .eps { margin-top: 24px; }
 .eps .tabs { margin: 0 0 12px; }
+.xtras .xrow { position: relative; display: flex; align-items: baseline; gap: 14px; width: 100%; padding: 12px 2px 13px; border: 0; border-top: 1px solid rgba(var(--kink), .16); background: none; color: var(--fg); font: 400 16px/1.35 var(--kfont); text-align: left; cursor: pointer; }
+.xtras .xrow:last-child { border-bottom: 1px solid rgba(var(--kink), .16); }
+.xtras .xrow .xpl { flex: none; font-size: 11px; opacity: .6; }
+.xtras .xrow .t { flex: 1; min-width: 0; }
+.xtras .xrow .s { flex: none; font: 500 12px/1 var(--kfont); letter-spacing: .12em; color: var(--muted); }
+.xtras .xrow:hover .t, .xtras .xrow:focus-visible .t { text-decoration: underline; text-underline-offset: 3px; }
+.xtras .xrow .bar { position: absolute; left: 0; bottom: -1px; height: 2px; background: var(--fg); }
 .xtras .xh { margin: 0 0 12px; font: 500 12px/1 var(--kfont); letter-spacing: .26em; text-transform: uppercase; color: var(--muted); }
 .ep { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 14px; align-items: start; width: 100%; padding: 10px; border: 0; background: none; text-align: left; }
 .ep .pic { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: rgba(255, 255, 255, .08); }
@@ -2257,6 +2264,7 @@ html.ga24 #cbody .card .t, html.ga24 #cbody .card .s, html.ga24 #cbody .empty { 
 .a24r .af { font: 500 clamp(26px, 3vw, 42px)/1.04 var(--a24-sans); letter-spacing: -.03em; transition: color .15s; }
 .a24r .ad, .a24r .ac { padding-top: 4px; font: 400 15px/1.3 var(--a24-sans); letter-spacing: -.005em; }
 .a24r .ad span, .a24r .ac span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.a24r:not(.a24h) .ac { height: 5.2em; }   /* (every row the same height, however many it names, and before they've come: John, 20 Nov 2026, "spacing is different in this one place") */
 .a24r .ac { max-height: 5.2em; overflow: hidden; -webkit-mask-image: linear-gradient(#000 45%, transparent); mask-image: linear-gradient(#000 45%, transparent); }
 .a24r .as { padding-top: 6px; text-align: right; font: 400 10px/1.2 var(--a24-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--a24-ink); }
 .a24r .as b { display: inline-block; padding: 3px 5px 2px; background: var(--a24-ink); color: var(--a24-page); font-weight: 400; }
@@ -2526,7 +2534,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'fbe9db31628c' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '26d0a9925410' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2631,8 +2639,16 @@ function isExtra(i) { return !!i && (!!i.extra || (!i.year && i.type === 'movie'
 // "I need this for all criterion films too. I have extras for some")
 function featWords(t) { return String(t || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(function (x) { return x.length > 2 && !/^(the|and|with|new|from|for|film|films|its|his|her|this|that|about|edition|version|part)$/.test(x); }); }
 function featHas(f, names) { var fw = featWords(f); return names.some(function (n) { var nw = featWords(n); if (!nw.length) return false; var hit = nw.filter(function (x) { return fw.indexOf(x) >= 0; }).length; return hit >= Math.max(1, Math.ceil(nw.length * .6)); }); }
-function featHTML(list, names, title) {
+function featHTML(list, names, title, mine) {
   if (!list || !list.length) return '';
+  // (mine: only those here, a section's heading only over one of them, nothing at all if none: John, 20 Nov 2026, of a box set's special
+  // features, "Only show any extras I do have")
+  if (mine) {
+    var keep = list.filter(function (f) { return !/^§ /.test(f) && names.length && featHas(f, names); });
+    if (!keep.length) return '';
+    var L2 = [], head = null; list.forEach(function (f) { if (/^§ /.test(f)) head = f; else if (keep.indexOf(f) >= 0) { if (head) { L2.push(head); head = null; } L2.push(f); } });
+    return featHTML(L2, names, title).replace(/ ?<small>[^<]*<\/small>/, '');   // (no count: John, 20 Nov 2026, "don't [show] '2 here' just show the ones we have")
+  }
   // (a section's own heading, "VOLUME ONE (ONE DISC)", marked § by the bookmark: shown as a heading, not counted: John, 18 Nov 2026)
   var had = 0, n = 0, li = list.map(function (f) { if (/^§ /.test(f)) return '<li class="fh"><span>' + esc(f.slice(2)) + '</span></li>'; n++; var h = names.length && featHas(f, names); if (h) had++; return '<li' + (h ? ' class="have"' : '') + (TV ? ' tabindex="0"' : '') + '><i>' + (h ? '✓' : '·') + '</i><span>' + esc(f) + '</span></li>'; }).join('');
   return '<div class="cfeat"><h3>' + esc(title || 'Criterion’s special features') + ' <small>' + (names.length ? had + ' of ' + n + ' here' : n) + '</small></h3><ul>' + li + '</ul></div>';
@@ -5775,8 +5791,9 @@ function subOf(it) {
 }
 function progBar(it) { return it.pos && it.secs ? '<span class="bar" style="width:' + Math.min(100, it.pos / it.secs * 100).toFixed(1) + '%"></span>' : ''; }
 
-function cardHTML(it, land, spine) {   // (spine: a collection's page, a Criterion film's spine number with it: John, 16 Nov 2026)
-  var src = land ? img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480) : img(it.poster, 'Primary', 320);
+function cardHTML(it, land, spine, cover) {   // (spine: a collection's page, a Criterion film's spine number with it: John, 16 Nov 2026)
+  // (cover: a picture of its own here, a box set's cover on a film seen in that set: John, 20 Nov 2026)
+  var src = cover ? cover : land ? img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480) : img(it.poster, 'Primary', 320);
   return '<button class="card' + (land ? ' land' : '') + '" data-item="' + it.id + '"><div class="pic">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '<div class="noimg">' + esc(showName(it)) + '</div>') + progBar(it) + '</div>' +
     '<div class="t">' + esc(showName(it)) + '</div><div class="s">' + (spine && it.spine ? '<b class="spn">No. ' + esc(String(it.spine)) + '</b> · ' : '') + esc(subOf(it)) + '</div></button>';
 }
@@ -5822,7 +5839,7 @@ function collectionView(id, into) {
       '<h1 class="colltitle">All films</h1>' + (c.overview ? '<p class="ov">' + esc(c.overview) + '</p>' : '') + '</div></div>' +
       '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find an A24 film" aria-label="Find in A24" autocomplete="off"><span class="sp"></span></div>' +
       '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>' : '<div class="collhead"><div class="card coll collpic">' + cov + '</div>' +
-      '<div><div class="kick">Collection</div><h1 class="colltitle' + (/criterion/i.test(c.name) ? ' gctitle"><span class="gclk">' + gcMark('gctm') + '<span class="gcw">' + (/^the criterion collection$/i.test(c.name) ? 'The Criterion<br>Collection' : esc(c.name)) + '</span></span><span class="gcat"><i>at</i><b class="gcx" aria-label="Grifflix">' + gxSvg(.5) + '</b></span>' : '">' + esc(c.name)) + '</h1><div class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' title' : ' titles') + '</i></div>' +
+      '<div><div class="kick">Collection</div><h1 class="colltitle' + (/criterion/i.test(c.name) ? ' gctitle"><span class="gclk">' + gcMark('gctm') + '<span class="gcw">' + (/^the criterion collection$/i.test(c.name) ? 'The Criterion<br>Collection' : esc(c.name)) + '</span></span>'   /* (no "at GRIFFLIX": John, 20 Nov 2026) */ : '">' + esc(c.name)) + '</h1><div class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' title' : ' titles') + '</i></div>' +
       // (Criterion's: what's in it at a glance, in the room the big cover took)
       (/criterion/i.test(c.name) ? (function () { var sets = {}, sp = 0, dirs = {}, ctys = {}; c.items.forEach(function (i) { (i.cset || []).forEach(function (b) { sets[b] = 1; }); if (i.spine) sp++; if (i.cdir) dirs[i.cdir] = 1; if (i.ccty) ctys[i.ccty] = 1; });
         var ns = Object.keys(sets).length, nd = Object.keys(dirs).length, nc = Object.keys(ctys).length;
@@ -5854,6 +5871,11 @@ function collectionView(id, into) {
         var g = $('#cgrid');
         if (openSet && BS[openSet]) {   // one box set, opened: its films
           var L = BS[openSet].slice().sort(function (x, y) { return (+x.spine || 0) - (+y.spine || 0) || nameKey(x).localeCompare(nameKey(y)); });
+          // (a film released on its own as well as in this set: here, the set's cover, and on its page opened from here; its own release's
+          // cover everywhere else: John, 20 Nov 2026, "it should show the box set cover when you click on the box set, and on the film when
+          // you view it from there. When you view the film as its own release you should see the cover it was given as part of that")
+          var setCov = BSI[openSet] ? BSI[openSet].replace(/_(small|thumbnail)\./, '_large.') : '', SC = {};
+          if (setCov) L.forEach(function (i) { if (i.spine && String(i.spine) !== String(BSP[openSet] || '')) SC[i.id] = setCov; });
           g.className = 'csets';
           // (the set opened as Criterion's own page for it: its cover large, its name, its description, then its films: John, 18 Nov 2026, "I'd like
           // to be able to see the picture of the box set cover larger, as it is on criterion")
@@ -5863,16 +5885,16 @@ function collectionView(id, into) {
             (BSD[openSet] ? '<p class="csetdesc">' + esc(BSD[openSet]) + '</p>' : '') +
             // (the TV: the films a row at the foot of the words, beside the cover, along with left and right: John, 18 Nov 2026, "Cover should be
             // big, sized to the size of the tv in the left. Caption on the right. Films in the bottom, scrolling left or right")
-            (TV ? '<div class="gridcards csetrow">' + L.map(function (i) { return cardHTML(i, false, true); }).join('') + '</div>' : '') +
-            '</div></div></div>' + (TV ? '' : '<div class="gridcards">' + L.map(function (i) { return cardHTML(i, false, true); }).join('') + '</div>') +
-            featHTML(BSF[openSet], [].concat.apply([], L.map(function (i) { return LIB && i.extras ? i.extras.map(function (id) { return LIB.items[id]; }).filter(Boolean).map(extraName) : []; })), 'The set’s special features') +
+            (TV ? '<div class="gridcards csetrow">' + L.map(function (i) { return cardHTML(i, false, true, SC[i.id]); }).join('') + '</div>' : '') +
+            '</div></div></div>' + (TV ? '' : '<div class="gridcards">' + L.map(function (i) { return cardHTML(i, false, true, SC[i.id]); }).join('') + '</div>') +
+            featHTML(BSF[openSet], [].concat.apply([], L.map(function (i) { return LIB && i.extras ? i.extras.map(function (id) { return LIB.items[id]; }).filter(Boolean).map(extraName) : []; })), 'The set’s special features', true) +
             (BSM[openSet] && BSM[openSet].length ? '<div class="csmiss"><h3>Not in Grifflix yet <small>' + BSM[openSet].length + '</small></h3><ul>' + BSM[openSet].map(function (m) { return '<li' + (TV ? ' tabindex="0"' : '') + '><span class="cls">' + esc(m[2] || '') + '</span><b>' + esc(m[0]) + '</b><span>' + esc(m[1] || '') + '</span></li>'; }).join('') + '</ul></div>' : '');
           var was_ = openSet;
           $('#csetback').onclick = function () { openSet = null; draw(); if (TV) { var c_ = $$('[data-cset]', g).filter(function (x) { return x.dataset.cset === was_; })[0]; if (c_) { c_.focus({ preventScroll: true }); c_.scrollIntoView({ block: 'center' }); } } };
           // (the TV: a set opened with its first film lit, the set's top under the bar; Back to all the box sets: John, 18 Nov 2026, "Just
           // looked at box sets on fire tv and needs work")
           if (TV) setTimeout(function () { var f_ = $('.csetrow .card', g) || $('.gridcards .card', g) || $('#csetback'); if (f_) f_.focus({ preventScroll: true }); var h_ = $('.csethero', g) || g; window.scrollTo({ top: h_.getBoundingClientRect().top + scrollY - 96 }); if (f_ && f_.getBoundingClientRect().bottom > innerHeight - 4) f_.scrollIntoView({ block: 'end' }); }, 30);
-          wireCards(g, L); return;
+          wireCards(g, L, SC); return;
         }
         openSet = null;
         var hereOf = function (b) { var L = BS[b]; return BSM[b] && BSM[b].length ? L.length + ' of ' + (L.length + BSM[b].length) + ' here' : L.length + (L.length === 1 ? ' film' : ' films'); };
@@ -5976,9 +5998,9 @@ function collectionView(id, into) {
 
   }).catch(oops);
 }
-function wireCards(el, items) {
+function wireCards(el, items, covers) {   // (covers: a picture for each, by id, its film page the same: a box set's films)
   var by = {}; items.forEach(function (i) { by[i.id] = i; SEEN[i.id] = i; });
-  $$('[data-item]', el).forEach(function (b) { b.onclick = function () { var it = by[b.dataset.item]; if (it && it.type === 'collection') { if (S.sheetInto && dlg.open && S.sheetInto.isConnected) { S.sheetInto.dataset.coll = 1; collectionView(it.id, S.sheetInto); } else location.hash = '#collection/' + it.id; } else itemSheet(it); }; });   // (a box set inside a collection opens as a collection)
+  $$('[data-item]', el).forEach(function (b) { b.onclick = function () { var it = by[b.dataset.item]; if (it && it.type === 'collection') { if (S.sheetInto && dlg.open && S.sheetInto.isConnected) { S.sheetInto.dataset.coll = 1; collectionView(it.id, S.sheetInto); } else location.hash = '#collection/' + it.id; } else itemSheet(it, covers && covers[it.id] ? { cover: covers[it.id] } : undefined); }; });   // (a box set inside a collection opens as a collection)
 }
 function drawRows(R, into) {
   var el = into || $('#rows'); if (!el) return;
@@ -6237,7 +6259,10 @@ function critSound() {
   if (!TMUS.on || CALM) return null;
   var c = musicCtx(); if (!c) return null;
   try { musicHush(); } catch (e) {}
-  var t0 = c.currentTime + .05, out = c.createGain(), stopped = false; out.gain.value = .5; out.connect(c.destination);
+  // (its clock the intro's: started when the intro was, so a phone's sound waking a moment late catches up, and the chord comes as GRIFFLIX
+  // rises, not after it: John, 20 Nov 2026, "soundtrack timing on the criterion intro is a bit off")
+  var T0 = performance.now(), out = c.createGain(), stopped = false; out.gain.value = .5; out.connect(c.destination);
+  var build = function (t0) {
   var verb = c.createConvolver(), vl = c.sampleRate * 3.5, ir = c.createBuffer(2, vl, c.sampleRate);   // (a quiet room's long ring)
   for (var ch = 0; ch < 2; ch++) { var dd = ir.getChannelData(ch); for (var i = 0; i < vl; i++) dd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / vl, 3.2); }
   verb.buffer = ir; var wet = c.createGain(); wet.gain.value = .45; verb.connect(wet); wet.connect(out);
@@ -6252,7 +6277,7 @@ function critSound() {
   // the close: one soft, low piano chord, C major spread wide, as a film's last chord (John, 19 Nov 2026, of four tried: "Piano chord is nice
   // but can be louder"; a bell "isn't the right sound"). Each note a piano's: its partials a little stretched, a quick strike, a two-stage
   // fall, darkening as it rings
-  var h = t0 + 1.6, piano = function (at, f, amp, len) {
+  var h = t0 + 1.8, piano = function (at, f, amp, len) {
     var g0 = c.createGain(), lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(Math.min(9000, f * 9), at); lp.frequency.exponentialRampToValueAtTime(Math.max(500, f * 2.5), at + len * .6);
     g0.connect(lp); lp.connect(out); lp.connect(verb);
     [1, 2, 3, 4, 5, 6].forEach(function (k, i) {
@@ -6262,6 +6287,9 @@ function critSound() {
     });
   };
   [[65.41, .05], [98, .04], [130.81, .045], [164.81, .035], [196, .03]].forEach(function (x, i) { piano(h + i * .012, x[0], x[1] * 2, 5); });   // (twice as loud as tried)
+  };
+  var start = function () { if (!stopped) build(c.currentTime + .02 - Math.min(1.2, (performance.now() - T0) / 1000)); };
+  if (c.state === 'running') start(); else { var pr = c.resume && c.resume(); if (pr && pr.then) pr.then(start, start); else start(); }
   return {
     count: function () {},
     stop: function () {
@@ -6796,7 +6824,7 @@ function itemSheet(it, ctx) {
   S.sheetDate = ctx.date || null;
   var dnav = function (d) { return ctx.date && dayNear(ctx.date, d) ? '<button class="ico dnav" id="dstep' + (d < 0 ? 'p' : 'n') + '" data-dstep="' + d + '" aria-label="' + (d < 0 ? 'The day before' : 'The day after') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="' + (d < 0 ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6') + '"/></svg></button>' : ''; };
   var top = it.backdrop ? '<div class="heroimg"><img alt="" src="' + esc(img(it.backdrop, 'Backdrop', 1100)) + '">' + '</div>' : (it.thumb || (it.type === 'video' && it.poster) ? '<div class="heroimg"><img alt="" src="' + esc(img(it.thumb || it.poster, it.thumb ? 'Thumb' : 'Primary', 1100)) + '">' + '</div>' : '<div class="noimg-top" style="position:relative"></div>');
-  var pst = it.poster && it.type !== 'episode' ? img(it.poster, 'Primary', 400) : '';   // (the poster, whole, beside the words on a big screen)
+  var pst = ctx.cover || (it.poster && it.type !== 'episode' ? img(it.poster, 'Primary', 400) : '');   // (ctx.cover: as it was in the box set it was opened from)   // (the poster, whole, beside the words on a big screen)
   S.sheetIt = it; S.sheetCtx = ctx;
   var kept = sheetKeep() || (($('#sheetIn > .film') || S.backItem) && SHEETBACK.length) || ctx.kept;   // (from a page of films: that page kept, and a way back to it)
   openSheet('<div class="film' + (pst ? ' hasposter' : '') + (it.type === 'series' ? ' series' : '') + '">' + (!TV ? '<button type="button" class="fback" id="fback" aria-label="Back">‹ Back</button>' : '') + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it)) + (it.spine ? ' · Criterion no. ' + esc(String(it.spine)) : '')) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');
@@ -6886,9 +6914,10 @@ function bodyHTML(it, ctx) {
   var xs = !PUBLIC && LIB && it.extras ? it.extras.map(function (id) { return LIB.items[id]; }).filter(Boolean) : [];
   if (xs.length) {   // (the film's extras, members only: John, 11 Nov 2026: "features/extras should be viewable from the film page")
     h += '<div class="eps xtras"><h3 class="xh">Extras</h3>';
+    // (a list, no pictures: each extra had only its film's own cover, the same one over and over: John, 20 Nov 2026, "I don't like the
+    // repeated covers on Extras")
     xs.forEach(function (x) {
-      var src = img(x.thumb || x.backdrop || x.poster, x.thumb ? 'Thumb' : (x.backdrop ? 'Backdrop' : 'Primary'), 320);
-      h += '<button class="ep" data-xt="' + x.id + '"><div class="pic">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '') + progBar(x) + '</div><div><div class="s">' + (x.mins ? x.mins + ' min' : 'Extra') + '</div><div class="t">' + esc(extraName(x)) + '</div></div></button>';
+      h += '<button class="xrow" data-xt="' + x.id + '"><span class="xpl" aria-hidden="true">▶\uFE0E</span><span class="t">' + esc(extraName(x)) + '</span><span class="s">' + (x.mins ? x.mins + ' min' : '') + '</span>' + progBar(x) + '</button>';
     });
     h += '</div>';
   }
@@ -6911,7 +6940,7 @@ function wireBody(it, ctx) {
   }).catch(function () {});
   if ($('#cfeatf')) mac('cfeat?id=' + it.id).then(function (j) {
     var xs = LIB && it.extras ? it.extras.map(function (id) { return LIB.items[id]; }).filter(Boolean).map(extraName) : [];
-    if ($('#cfeatf')) $('#cfeatf').innerHTML = featHTML(j.features, xs);
+    if ($('#cfeatf')) $('#cfeatf').innerHTML = featHTML(j.features, xs, 'Special features', true);
   }).catch(function () {});
   var on = function (id, f) { var el = $('#' + id); if (el) el.onclick = f; };
   on('aplay', function () {
