@@ -321,6 +321,13 @@ html.tv .sheet .people { font-size: var(--crfs, 15px); }
 .sheet textarea { border-radius: 12px; min-height: 76px; resize: vertical; font: italic 400 17px/1.45 var(--serif); }
 .eps { margin-top: 24px; }
 .eps .tabs { margin: 0 0 12px; }
+.xtras .xrow { position: relative; display: flex; align-items: baseline; gap: 14px; width: 100%; padding: 12px 2px 13px; border: 0; border-top: 1px solid rgba(var(--kink), .16); background: none; color: var(--fg); font: 400 16px/1.35 var(--kfont); text-align: left; cursor: pointer; }
+.xtras .xrow:last-child { border-bottom: 1px solid rgba(var(--kink), .16); }
+.xtras .xrow .xpl { flex: none; font-size: 11px; opacity: .6; }
+.xtras .xrow .t { flex: 1; min-width: 0; }
+.xtras .xrow .s { flex: none; font: 500 12px/1 var(--kfont); letter-spacing: .12em; color: var(--muted); }
+.xtras .xrow:hover .t, .xtras .xrow:focus-visible .t { text-decoration: underline; text-underline-offset: 3px; }
+.xtras .xrow .bar { position: absolute; left: 0; bottom: -1px; height: 2px; background: var(--fg); }
 .xtras .xh { margin: 0 0 12px; font: 500 12px/1 var(--kfont); letter-spacing: .26em; text-transform: uppercase; color: var(--muted); }
 .ep { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 14px; align-items: start; width: 100%; padding: 10px; border: 0; background: none; text-align: left; }
 .ep .pic { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: rgba(255, 255, 255, .08); }
@@ -2526,7 +2533,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'a85db4d93101' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'df659eae4d1f' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2639,8 +2646,7 @@ function featHTML(list, names, title, mine) {
     var keep = list.filter(function (f) { return !/^§ /.test(f) && names.length && featHas(f, names); });
     if (!keep.length) return '';
     var L2 = [], head = null; list.forEach(function (f) { if (/^§ /.test(f)) head = f; else if (keep.indexOf(f) >= 0) { if (head) { L2.push(head); head = null; } L2.push(f); } });
-    var h2 = featHTML(L2, names, title);
-    return h2.replace(/<small>[^<]*<\/small>/, '<small>' + keep.length + ' here</small>');
+    return featHTML(L2, names, title).replace(/ ?<small>[^<]*<\/small>/, '');   // (no count: John, 20 Nov 2026, "don't [show] '2 here' just show the ones we have")
   }
   // (a section's own heading, "VOLUME ONE (ONE DISC)", marked § by the bookmark: shown as a heading, not counted: John, 18 Nov 2026)
   var had = 0, n = 0, li = list.map(function (f) { if (/^§ /.test(f)) return '<li class="fh"><span>' + esc(f.slice(2)) + '</span></li>'; n++; var h = names.length && featHas(f, names); if (h) had++; return '<li' + (h ? ' class="have"' : '') + (TV ? ' tabindex="0"' : '') + '><i>' + (h ? '✓' : '·') + '</i><span>' + esc(f) + '</span></li>'; }).join('');
@@ -6895,9 +6901,10 @@ function bodyHTML(it, ctx) {
   var xs = !PUBLIC && LIB && it.extras ? it.extras.map(function (id) { return LIB.items[id]; }).filter(Boolean) : [];
   if (xs.length) {   // (the film's extras, members only: John, 11 Nov 2026: "features/extras should be viewable from the film page")
     h += '<div class="eps xtras"><h3 class="xh">Extras</h3>';
+    // (a list, no pictures: each extra had only its film's own cover, the same one over and over: John, 20 Nov 2026, "I don't like the
+    // repeated covers on Extras")
     xs.forEach(function (x) {
-      var src = img(x.thumb || x.backdrop || x.poster, x.thumb ? 'Thumb' : (x.backdrop ? 'Backdrop' : 'Primary'), 320);
-      h += '<button class="ep" data-xt="' + x.id + '"><div class="pic">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '') + progBar(x) + '</div><div><div class="s">' + (x.mins ? x.mins + ' min' : 'Extra') + '</div><div class="t">' + esc(extraName(x)) + '</div></div></button>';
+      h += '<button class="xrow" data-xt="' + x.id + '"><span class="xpl" aria-hidden="true">▶\uFE0E</span><span class="t">' + esc(extraName(x)) + '</span><span class="s">' + (x.mins ? x.mins + ' min' : '') + '</span>' + progBar(x) + '</button>';
     });
     h += '</div>';
   }
@@ -6920,7 +6927,7 @@ function wireBody(it, ctx) {
   }).catch(function () {});
   if ($('#cfeatf')) mac('cfeat?id=' + it.id).then(function (j) {
     var xs = LIB && it.extras ? it.extras.map(function (id) { return LIB.items[id]; }).filter(Boolean).map(extraName) : [];
-    if ($('#cfeatf')) $('#cfeatf').innerHTML = featHTML(j.features, xs);
+    if ($('#cfeatf')) $('#cfeatf').innerHTML = featHTML(j.features, xs, 'Special features', true);
   }).catch(function () {});
   var on = function (id, f) { var el = $('#' + id); if (el) el.onclick = f; };
   on('aplay', function () {
