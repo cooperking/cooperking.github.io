@@ -2638,7 +2638,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '325020fffd76' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: 'ec55b80c635d' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6459,7 +6459,8 @@ function keptFonts(rules) {
   KEPTF = KEPTF || fetch(GF + 'list').then(function (r) { return r.ok ? r.json() : { fonts: [] }; }).catch(function () { return { fonts: [] }; });
   KEPTF.then(function (j) {
     var W = [['hairline', 100], ['thin', 100], ['xlight', 200], ['extralight', 200], ['ultralight', 200], ['light', 300], ['book', 400], ['roman', 400], ['regular', 400], ['normal', 400], ['medium', 500], ['semibold', 600], ['demibold', 600], ['extrabold', 800], ['ultrabold', 800], ['bold', 700], ['black', 900], ['heavy', 900], ['ultra', 900]];
-    var css = (j.fonts || []).map(function (n) {
+    var have = {}; (j.fonts || []).forEach(function (n) { have[n] = 1; });
+    var css = (j.fonts || []).filter(function (n) { return !(/\.woff$/.test(n) && have[n + '2']); }).map(function (n) {   // (a .woff2 kept, its .woff left: one each)
       var r = rules.filter(function (x) { return x[0].test(n); })[0]; if (!r) return '';
       var base = n.replace(/\.woff2?$/, ''), rest = base.indexOf('-') >= 0 ? base.slice(base.indexOf('-')) : base;   // (the family's part of the name off, where a hyphen shows it)
       var w = /variable/.test(rest) ? '100 900' : ((W.filter(function (x) { return rest.indexOf(x[0]) >= 0; })[0] || [0, 400])[1]);
@@ -6471,7 +6472,7 @@ function keptFonts(rules) {
 function critFonts() {   // (Criterion's Mercury and Gotham, if kept; Source Serif 4 and Montserrat stand in)
   if (critFonts.d) return; critFonts.d = 1;
   var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,700;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap'; document.head.appendChild(l);
-  keptFonts([[/^gotham-?narrow(ssm)?-/, 'CritNarrow'], [/^gotham(ssm)?-/, 'CritSans'], [/^mercury-?display/, 'CritDisplay'], [/^mercury-?(text|ssm|g1)|^mercury-/, 'CritText']]);
+  keptFonts([[/^gotham-?narrow(ssm)?-/, 'CritNarrow'], [/^gotham(ssm|pro)?(-|\.woff)/, 'CritSans'], [/^mercury-?display(?!.*sc\.woff)/, 'CritDisplay'], [/^mercury-?text-?g1(?!.*sc\.woff)/, 'CritText']]);
 }
 function a24Fonts() {   // (A24's grotesk and typewriter, fetched only when A24 is shown)
   if (a24Fonts.d) return; a24Fonts.d = 1;
