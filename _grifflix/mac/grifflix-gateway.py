@@ -1384,7 +1384,9 @@ def make_handler(g):
                                         o_['ccty'] = c_
                                     if t_:
                                         o_['ctags'] = t_
-                                    if s_:
+                                    if s_:   # (each box set once: two spellings of one set's name (its ’ and ') made it twice, each film counted twice in it:
+                                        # John, 20 Nov 2026, "The signifyin works of Marlon Riggs isn't showing up properly")
+                                        s_ = [x_ for n_, x_ in enumerate(s_) if snm(x_) not in [snm(y_) for y_ in s_[:n_]]]
                                         o_['cset'] = [snm(x_) for x_ in s_]
                                         o_['csetsp'] = [str((ctj_.get('setspine') or {}).get(x_) or SMETA.get(fold(x_), ('', ''))[0] or '') for x_ in s_]   # (each box set's spine, beside its name)
                                         o_['csetimg'] = [str(SMETA.get(fold(x_), ('', ''))[1] or (ctj_.get('setimg') or {}).get(x_) or '') for x_ in s_]   # (and its cover)
