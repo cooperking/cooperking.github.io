@@ -26607,7 +26607,7 @@
     ],
     [
      "Uplifting",
-     15
+     16
     ]
    ],
    "moodEvidence": [
@@ -26625,7 +26625,7 @@
       ],
       [
        "Uplifting",
-       15
+       16
       ]
      ]
     ]
@@ -26990,7 +26990,7 @@
    "moodMix": [
     [
      "Uplifting",
-     26
+     27
     ],
     [
      "Melancholy",
@@ -27008,7 +27008,7 @@
      [
       [
        "Uplifting",
-       26
+       27
       ],
       [
        "Melancholy",
@@ -27437,7 +27437,7 @@
       ],
       [
        "Joyful",
-       23
+       22
       ]
      ]
     ]
@@ -28311,7 +28311,7 @@
    "moodMix": [
     [
      "Mellow",
-     32
+     33
     ],
     [
      "Dreamy",
@@ -28329,7 +28329,7 @@
      [
       [
        "Mellow",
-       32
+       33
       ],
       [
        "Dreamy",
@@ -29455,6 +29455,148 @@
     "post-punk",
     "punk",
     "rock"
+   ],
+   "check": true
+  },
+  "5B6Kjha6RRIMWGN7zGsAaT": {
+   "n": 284,
+   "title": "So Hot You're Hurting My Feelings",
+   "artist": "Caroline Polachek",
+   "moods": [
+    "Joyful",
+    "Playful"
+   ],
+   "moodMix": [
+    [
+     "Joyful",
+     27
+    ],
+    [
+     "Playful",
+     25
+    ],
+    [
+     "Energetic",
+     19
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Joyful",
+       27
+      ],
+      [
+       "Playful",
+       25
+      ],
+      [
+       "Energetic",
+       19
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Joyful",
+    "Playful",
+    "Energetic"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Disco",
+    "Synth-pop",
+    "Nu-Disco"
+   ],
+   "genres": [
+    "Pop"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Pop",
+     52
+    ],
+    [
+     "Electronic",
+     21
+    ],
+    [
+     "Soul & R&B",
+     16
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Pop",
+       49
+      ],
+      [
+       "Electronic",
+       28
+      ],
+      [
+       "Indie",
+       15
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Pop",
+       82
+      ],
+      [
+       "Rock",
+       9
+      ],
+      [
+       "Electronic",
+       7
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Soul & R&B",
+       62
+      ],
+      [
+       "Electronic",
+       24
+      ],
+      [
+       "Pop",
+       14
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "alternative pop",
+    "alternative r&b",
+    "ambient pop",
+    "art pop",
+    "avant-garde pop",
+    "dance-pop",
+    "downtempo",
+    "electronic",
+    "indie pop",
+    "pop"
    ],
    "check": true
   }
