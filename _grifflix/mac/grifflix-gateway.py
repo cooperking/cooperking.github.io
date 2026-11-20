@@ -5305,6 +5305,32 @@ def act_sfam_move(g, req):
     return 'Moved: %d files into TV/Scenes from a Marriage (1973), its six parts as episodes 1 to 6.' % len(mv)
 
 
+def ask_set_imdb(req):
+    a = req.get('args') or {}
+    g = G_REF[0] if G_REF else None
+    if not (g and re.match(r'^[0-9a-f]{32}$', str(a.get('id') or '')) and re.match(r'^tt\d{6,10}$', str(a.get('imdb') or ''))):
+        raise RuntimeError('which film, and which IMDb number?')
+    it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, a['id'])) or {}
+    if not it:
+        raise RuntimeError('that film isn’t there')
+    req['detail'] = '%s (%s): IMDb number %s put on it; its name, year and pictures stay as they are.' % (it.get('Name'), it.get('ProductionYear') or '?', a['imdb'])
+
+
+def act_set_imdb(g, req):
+    """An IMDb number TMDB has no film for put on a film, as the Unmatched card's "Keep it as it is" does (World on a Wire, 20 Nov 2026)."""
+    a = req.get('args') or {}
+    full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, a['id'])) or {}
+    pid = dict(full.get('ProviderIds') or {})
+    pid['Imdb'] = a['imdb']
+    full['ProviderIds'] = pid
+    full['LockedFields'] = sorted(set((full.get('LockedFields') or []) + ['Name']))
+    g.jf.call('POST', '/Items/%s' % a['id'], full)
+    g.forget()
+    g.publish_soon = time.time() + 60
+    after_fixes()
+    return '%s now has %s.' % (full.get('Name'), a['imdb'])
+
+
 ACTIONS = {
     'plex-off': ('Quit Plex and keep it off', act_plex_off, None),
     'plex-on': ('Start Plex again and let it be', act_plex_on, None),
@@ -5316,6 +5342,7 @@ ACTIONS = {
     'collection-add': ('Put films in a collection', act_collection_add, ask_collection_add),
     'collection-move': ('Move films from one collection to another', act_collection_move, ask_collection_move),
     'disk-tidy': ('Make room on the Mac mini’s own disk (old backups, Plex, old apps, caches)', act_disk_tidy, ask_disk_tidy),
+    'set-imdb': ('Put an IMDb number on a film TMDB has no film for', act_set_imdb, ask_set_imdb),
     'sfam-move': ('Move Scenes from a Marriage (1973) to TV, its six parts as the series’ six episodes', act_sfam_move, ask_sfam_move),
     'fields-split': ('Cut W. C. Fields—Six Short Films into its six shorts, so it shows as its Criterion box set', act_fields_split, ask_fields_split),
     'brakhage-split': ('Give each By Brakhage film its own folder (Volume One, Volume Two and the seven films from Volume One)', act_brakhage_split, ask_brakhage_split),
