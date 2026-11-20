@@ -265,7 +265,11 @@ args[-1]="$lt"
   done ) &
 reporter=$!
 trap 'kill $reporter 2>/dev/null; rm -f "$prog"; echo; echo "Stopped."; curl -fsS -X POST -H "Content-Type: application/json" -d "{\"ok\":false,\"error\":\"stopped\"}" "$url/done" >/dev/null; exit 1' INT TERM HUP
-if "$FF" -nostdin -y -v error -stats -progress "$prog" "${args[@]}"; then
+# (ffmpeg's own words kept as well as shown, so a failure says why on the Mac mini and the admin page, not just "ffmpeg failed": John, 20 Nov
+# 2026, "ffmpeg failed on Pat Garrett and Billy the Kid, do we know why?")
+errf=$(mktemp)
+if "$FF" -nostdin -y -v error -stats -progress "$prog" "${args[@]}" 2> >(tee "$errf" >&2); then
+  rm -f "$errf"
   kill $reporter 2>/dev/null; rm -f "$prog"
   trap - INT TERM HUP
   echo "Made. Copying it to the G-Drive by itself (this window can be closed); the Mac mini then checks it and puts it in place."
@@ -277,6 +281,8 @@ else
   if [[ ! -f "$src" ]]; then   # (the G-Drive gone part-way: the network, or the lid closed): back in the queue, from the start
     echo "The G-Drive went part-way through: the film goes back in the queue."; curl -fsS -m 20 -X POST -H 'Content-Type: application/json' -d '{"ok":false,"error":"lost the G-Drive","again":1}' "$url/done" >/dev/null 2>&1
   else
-    echo "It didn't convert."; curl -fsS -X POST -H 'Content-Type: application/json' -d '{"ok":false,"error":"ffmpeg failed"}' "$url/done" >/dev/null
+    sleep 1   # (ffmpeg's words written out first)
+    why=$(tr '\r' '\n' < "$errf" | grep -v '^frame=\|^size=\|^ *$' | tail -3 | tr '\n' ' ' | sed 's/[\\"]//g; s/[[:cntrl:]]//g' | cut -c1-300); rm -f "$errf"
+    echo "It didn't convert: ${why:-no reason given}"; curl -fsS -X POST -H 'Content-Type: application/json' -d "{\"ok\":false,\"error\":\"ffmpeg failed${why:+: $why}\"}" "$url/done" >/dev/null
   fi
 fi
