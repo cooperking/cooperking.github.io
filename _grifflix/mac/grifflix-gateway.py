@@ -1466,6 +1466,13 @@ def make_handler(g):
                                     y_ = i.get('ProductionYear') or 0
                                     fn_ = fold(re.sub(r'\s*\((19|20)\d\d\)\s*$', '', os.path.basename(os.path.dirname(i.get('Path') or '')).strip()))   # (its folder's name too, where the media server named it otherwise: Anthem taken for "Echo Anthem")
                                     d_, c_, t_, s_, sl0_ = next((CT[(n_, y_ + dy)] for n_ in (fold(i.get('Name')), fn_) for dy in (0, 1, -1) if (n_, y_ + dy) in CT), None) or CTT.get(str((i.get('ProviderIds') or {}).get('Tmdb') or '-')) or ('', '', [], [], '')
+                                # (Criterion's own year for its films, shown whatever TMDB dates it: Clean, Shaven is 1993 at Criterion, 1995 on
+                                # TMDB: John, 20 Nov 2026, "keep criterion film years". Only for the film's own Criterion listing, not a set's or an
+                                # anthology's, whose year isn't each film's)
+                                cy_ = FINFO.get(sl0_, ('', '', ''))[1] if sl0_ else ''
+                                if re.match(r'^\d{4}$', str(cy_)) and o_.get('year') and int(cy_) != o_.get('year'):
+                                    o_['ytmdb'] = o_['year']
+                                    o_['year'] = int(cy_)
                                 fd_ = os.path.dirname(i.get('Path') or '')
                                 af_ = ANTH_.get(fold(re.sub(r'\s*\((19|20)\d\d\)\s*$', '', os.path.basename(fd_)))) if key == 'movies' and FOLDN_.get(fd_, 0) > 1 else None
                                 if af_ and fold(af_.get('title')) != fold(i.get('Name')):
@@ -3045,7 +3052,7 @@ def make_handler(g):
             g.publish_soon = time.time() + 180   # (the site's copy brought up to date by itself, once the media server has read it)
             log('Identified by John: %s → %s (%s)' % (it.get('Name'), pick.get('Name'), pick.get('ProductionYear') or '?'))
             try:   # (its folder and files given the right name too: John, 15 Nov 2026, "I want the folder names corrected too")
-                did = rename_to(g, iid, pick.get('Name') or '', pick.get('ProductionYear'), pick)
+                did = rename_to(g, iid, pick.get('Name') or '', crit_year(pick) or pick.get('ProductionYear'), pick)   # (Criterion's year, for its films)
             except Exception as e:
                 did = 'its folder couldn’t be renamed (%s)' % e
                 log('  rename:', e)
@@ -6129,6 +6136,27 @@ def crit_pairs(g):
             out.append((it['Id'], sl))
     return out
 
+
+def crit_year(pick):
+    """Criterion's own year for a film chosen on TMDB, if it's one of Criterion's (its TMDB number in criterion-tmdb.json), else None:
+    its folder named with Criterion's year, as the site shows it (John, 20 Nov 2026, "keep criterion film years")."""
+    try:
+        tid = str((pick.get('ProviderIds') or {}).get('Tmdb') or '')
+        if not tid:
+            return None
+        for k, v in (load(os.path.expanduser('~/Grifflix/criterion-tmdb.json'), {}) or {}).items():
+            if str((v or [0])[0]) == tid:
+                y = k.rsplit('|', 1)[-1]
+                return int(y) if re.match(r'^\d{4}$', y) else None
+        # (or by its title and a year near TMDB's: Criterion's own link to TMDB can be wrong, Clean, Shaven's was)
+        py = int(pick.get('ProductionYear') or 0)
+        for f in load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or []:
+            if '/films/' in str(f.get('link') or '') and fold(f.get('title')) == fold(pick.get('Name')) and re.match(r'^\d{4}$', str(f.get('year') or '')) \
+                    and (not py or abs(int(f['year']) - py) <= 3):
+                return int(f['year'])
+    except Exception:
+        pass
+    return None
 
 AFTER_FIX = [None]
 
