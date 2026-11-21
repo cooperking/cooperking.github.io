@@ -91,6 +91,9 @@ def has_film(folder):   # (a film in it, not only its extras: an empty folder le
     return False
 
 
+FPATH = {}   # (each film's file, by its id: a cover of its own beside it, named after it)
+
+
 def films_by_folder():   # each film folder → the media server's films in it
     out = {}
     lid = (S.get('libraries') or {}).get('movies')
@@ -106,6 +109,7 @@ def films_by_folder():   # each film folder → the media server's films in it
             if len(parts) > 2 and parts[1].lower() in EXTRAS:   # (a film's extras, in its "Other" folder: not the film)
                 continue
             out.setdefault(parts[0], []).append((it.get('Id', it.get('id')), it.get('Name', it.get('name')) or ''))   # (its folder, even from a sub-folder of it)
+            FPATH[it.get('Id', it.get('id'))] = it.get('Path', it.get('path')) or ''
         start += 500
         if start >= r.get('TotalRecordCount', r.get('totalRecordCount', 0)):
             break
@@ -178,8 +182,30 @@ def main():
         print('  %s → %s%s' % (p, os.path.relpath(dest, BASE), ' (replacing its poster)' if os.path.exists(dest) or any(os.path.exists(o) for o in others) else ''))
         if not GO:
             done += 1; continue
-        if films is not None and len(set(re.sub(r'[^a-z0-9]', '', n.lower()) for _, n in films.get(folder) or [])) > 1:   # (a set of different films: left as they are)
-            server.append('%s (%d different films in that folder: left as they are)' % (folder, len(films[folder])))
+        if films is not None and len(set(re.sub(r'[^a-z0-9]', '', n.lower()) for _, n in films.get(folder) or [])) > 1:
+            # (a release of several films in one folder, its cover the folder's own (W. C. Fields—Six Short Films): that cover on each of its
+            # films, beside each named after its file ("Pool Sharks (1915)-poster.jpg"), as the media server reads a film's own poster in a
+            # shared folder: John, 21 Nov 2026, "in the rare case where box sets don't have individual covers, like WC fields - just use the
+            # box set cover" ... "Wc fields films too")
+            ids_ = [(i_, FPATH.get(i_)) for i_, _ in films[folder] if FPATH.get(i_)]
+            outs = [(i_, os.path.splitext(fp_)[0] + ('-poster.png' if t == 'image/png' else '-poster.jpg')) for i_, fp_ in ids_]
+            if outs and all(os.path.exists(d_) and same(src, d_) for _, d_ in outs):
+                same_n += 1
+                print('  already there: %s (its %d films)' % (folder, len(outs)))
+                if GO and not KEEP:
+                    os.remove(src)
+                continue
+            print('  %s → %s (on each of its %d films)' % (p, folder, len(outs)))
+            if GO:
+                for i_, d_ in outs:
+                    shutil.copyfile(src, d_)
+                    try:
+                        jf('POST', '/Items/%s/Images/Primary' % i_, base64.b64encode(open(d_, 'rb').read()), ctype=t)
+                    except Exception as e:
+                        server.append('%s (%s)' % (os.path.basename(d_), e))
+                if not KEEP:
+                    os.remove(src)
+            done += 1
             continue
         for o in others:   # (one poster per film, so the media server can't pick the old one)
             if os.path.exists(o):
