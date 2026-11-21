@@ -5937,6 +5937,12 @@ function subOf(it) {
 }
 function progBar(it) { return it.pos && it.secs ? '<span class="bar" style="width:' + Math.min(100, it.pos / it.secs * 100).toFixed(1) + '%"></span>' : ''; }
 
+function setOnly(i) {   // (a film Criterion released only in a set of shorts with no covers of their own (W. C. Fields—Six Short Films, its spine
+  // the set's): the set's cover, as its Criterion cover: John, 21 Nov 2026, "just use the box set cover")
+  var c = i.cset || [], sp = i.csetsp || [], im = i.csetimg || [], f = i.csetfimg || [];
+  for (var n = 0; n < c.length; n++) if (im[n] && !f[n] && i.spine && String(sp[n]) === String(i.spine)) return im[n].replace(/_(small|thumbnail)\./, '_large.');
+  return '';
+}
 function cardHTML(it, land, spine, cover) {   // (spine: a collection's page, a Criterion film's spine number with it: John, 16 Nov 2026)
   // (cover: a picture of its own here, a box set's cover on a film seen in that set: John, 20 Nov 2026)
   var src = cover ? cover : land ? img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480) : img(it.poster, 'Primary', 320);
@@ -6035,6 +6041,9 @@ function collectionView(id, into) {
           // released with the film, not the box set overall cover"; its usual cover till Criterion's set page has been read for it)
           var SC = {};
           L.forEach(function (i) { var n_ = (i.cset || []).indexOf(openSet), u_ = n_ >= 0 && (i.csetfimg || [])[n_]; if (u_) SC[i.id] = u_.replace(/_(small|thumbnail)\./, '_large.'); });
+          // (a set whose films have no covers of their own (W. C. Fields—Six Short Films, one disc of shorts): each shown with the set's cover:
+          // John, 21 Nov 2026, "in the rare case where box sets don't have individual covers, like WC fields - just use the box set cover")
+          if (!Object.keys(SC).length && BSI[openSet]) L.forEach(function (i) { SC[i.id] = BSI[openSet].replace(/_(small|thumbnail)\./, '_large.'); });
           g.className = 'csets';
           // (the set opened as Criterion's own page for it: its cover large, its name, its description, then its films: John, 18 Nov 2026, "I'd like
           // to be able to see the picture of the box set cover larger, as it is on criterion")
@@ -6074,19 +6083,20 @@ function collectionView(id, into) {
         return;
       }
       var asList = SPINEOK && clist && !editing;
+      var CSO = {}; items.forEach(function (i) { var u = setOnly(i); if (u) CSO[i.id] = u; });
       $('#cgrid').className = asList ? 'clist' : 'gridcards';
       if (asList) {
         var hd = function (k, t) { var on = sfKey() === k; return '<button type="button" class="clh' + (on ? ' on' : '') + '" data-csk="' + k + '">' + t + (on ? (sfDirOf() > 0 ? ' ↑' : ' ↓') : '') + '</button>'; };
         $('#cgrid').innerHTML = '<div class="clrow clhead"><span class="cls">' + hd('spine', 'Spine #') + '</span><span class="clp"></span><span class="clt">' + hd('name', 'Title') + '</span><span class="cld">' + hd('cdir', 'Director') + '</span><span class="clc">' + hd('ccty', 'Country') + '</span><span class="cly">' + hd('year', 'Year') + '</span></div>' +
-          (items.length ? items.map(function (i) { var src = img(i.poster, 'Primary', 120);
+          (items.length ? items.map(function (i) { var src = setOnly(i) || img(i.poster, 'Primary', 120);
             return '<button class="clrow" data-item="' + i.id + '"><span class="cls">' + esc(i.spine ? String(i.spine) : '') + '</span><span class="clp">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '') + '</span><span class="clt">' + esc(showName(i)) + '</span><span class="cld">' + esc(i.cdir || '') + '</span><span class="clc">' + esc(i.ccty || '') + '</span><span class="cly">' + esc(String(sfYear(i) || '')) + '</span></button>'; }).join('')
             : '<div class="empty">' + (fq ? 'Nothing called that in this collection.' : 'Nothing like that in this collection.') + '</div>');
         $$('[data-csk]', $('#cgrid')).forEach(function (b) { b.onclick = function () { var k = b.dataset.csk; if (sfKey() === k) SF.dir = -sfDirOf(); else { SF.sort = k; SF.dir = 1; } sfSave(); draw(); var so = $('#sfsort', $('#cbody')); if (so) { var kk = sfKeys().filter(function (x) { return x[0] === sfKey(); })[0]; so.innerHTML = SFICON + '<b>' + kk[1] + ' ' + (sfDirOf() > 0 ? '↑' : '↓') + '</b>'; } }; });
-        wireCards($('#cgrid'), items); return;
+        wireCards($('#cgrid'), items, CSO); return;
       }
-      $('#cgrid').innerHTML = items.length ? items.map(function (i) { var h = cardHTML(i, false, SPINEOK); return editing ? '<div class="cedit">' + h + '<button type="button" class="crm" data-crm="' + i.id + '" aria-label="Take ' + esc(showName(i)) + ' out of the collection">Take out</button></div>' : h; }).join('')
+      $('#cgrid').innerHTML = items.length ? items.map(function (i) { var h = cardHTML(i, false, SPINEOK, CSO[i.id]); return editing ? '<div class="cedit">' + h + '<button type="button" class="crm" data-crm="' + i.id + '" aria-label="Take ' + esc(showName(i)) + ' out of the collection">Take out</button></div>' : h; }).join('')
         : '<div class="empty">' + (fq ? 'Nothing called that in this collection.' : 'Nothing like that in this collection.') + '</div>';
-      wireCards($('#cgrid'), items);
+      wireCards($('#cgrid'), items, CSO);
       $$('[data-crm]', $('#cgrid')).forEach(function (b) { b.onclick = function () {
         var it = c.items.filter(function (x) { return x.id === b.dataset.crm; })[0]; if (!it) return;
         b.disabled = true; b.textContent = 'Taking out…';
