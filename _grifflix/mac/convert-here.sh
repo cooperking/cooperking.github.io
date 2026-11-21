@@ -113,9 +113,23 @@ if [[ "${1:-}" == "agent-off" ]]; then
 fi
 if [[ "${1:-}" == "subs-setup" ]]; then   # (once: whisper.cpp and its model, for English subtitles made ready here: John, 20 Nov 2026)
   mkdir -p "$HERE/whisper"
+  BREW=$(command -v brew || ls /opt/homebrew/bin/brew /usr/local/bin/brew 2>/dev/null | head -1)
+  if [[ -z "$BREW" ]]; then
+    # (no Homebrew, and no administrator rights needed: faster-whisper, Whisper in Python, in its own folder here; ffmpeg as the converter
+    # already has it: John, 21 Nov 2026, "we need a way without homebrew")
+    FF=$( [[ -x "$HOME/bin/ffmpeg" ]] && echo "$HOME/bin/ffmpeg" || command -v ffmpeg )
+    [[ -n "$FF" ]] || { echo "Grifflix: ffmpeg is needed first: from osxexperts.net (Apple Silicon) unzip ffmpeg into ~/bin, then: xattr -d com.apple.quarantine ~/bin/ffmpeg"; exit 1; }
+    echo "Grifflix: putting faster-whisper in ~/Grifflix/fw (no Homebrew, nothing system-wide)…"
+    [[ -x "$HERE/fw/bin/python3" ]] || /usr/bin/python3 -m venv "$HERE/fw" || exit 1
+    "$HERE/fw/bin/python3" -m pip install -q --upgrade pip >/dev/null 2>&1
+    "$HERE/fw/bin/python3" -m pip install -q faster-whisper || exit 1
+    echo "Grifflix: getting Whisper's model (about 500 MB, once)…"
+    "$HERE/fw/bin/python3" -c "from faster_whisper import WhisperModel; WhisperModel('${GRIFFLIX_FW_MODEL:-small}', device='cpu', compute_type='int8')" || exit 1
+    touch "$HERE/whisper/fw-ready"
+    echo "Grifflix: ready. This Mac makes English subtitles ready whenever it has no film to convert."
+    exit 0
+  fi
   if ! command -v whisper-cli >/dev/null 2>&1 && [[ ! -x /opt/homebrew/bin/whisper-cli && ! -x /usr/local/bin/whisper-cli ]]; then
-    BREW=$(command -v brew || ls /opt/homebrew/bin/brew /usr/local/bin/brew 2>/dev/null | head -1)
-    [[ -n "$BREW" ]] || { echo "Grifflix: Homebrew is needed first (brew.sh: one line to paste in Terminal), then run this again."; exit 1; }
     echo "Grifflix: installing whisper.cpp (Homebrew)…"; "$BREW" install whisper-cpp || exit 1
   fi
   command -v ffmpeg >/dev/null 2>&1 || [[ -x /opt/homebrew/bin/ffmpeg || -x /usr/local/bin/ffmpeg || -x "$HOME/bin/ffmpeg" ]] || { BREW=$(command -v brew || ls /opt/homebrew/bin/brew /usr/local/bin/brew 2>/dev/null | head -1); "$BREW" install ffmpeg || exit 1; }
@@ -218,7 +232,7 @@ if [[ "${1:-}" == "agent" ]]; then
   if [[ -z "$job" ]]; then
     # (no film to convert: English subtitles made ready for a foreign-language film, timed here by what's said (subprep.py, with
     # whisper.cpp): John, 20 Nov 2026, "pre-prepare" ... "I prefer to use the whisper option")
-    [[ -f "$HERE/whisper/ggml-medium.bin" ]] || exit 0
+    [[ -f "$HERE/whisper/ggml-medium.bin" || -f "$HERE/whisper/fw-ready" ]] || exit 0
     sj="$HERE/subjob.json"
     curl -fsS -m 300 -H "Authorization: Bearer $key" "$base/macagent/subnext?home=$home" -o "$sj" || exit 0
     grep -q '"subjob"' "$sj" || exit 0
