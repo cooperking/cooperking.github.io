@@ -194,7 +194,7 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
     <h1>Songs</h1>
     <p class="sub" id="stat">Loading…</p>
     <div class="seg" role="group" aria-label="Show">
-      <button type="button" data-show="waiting" aria-pressed="true">Waiting<span class="n" id="n-waiting"></span></button>
+      <button type="button" data-show="waiting" aria-pressed="true">To sign off<span class="n" id="n-waiting"></span></button>
       <button type="button" data-show="check" aria-pressed="false">To check<span class="n" id="n-check"></span></button>
       <button type="button" data-show="all" aria-pressed="false">All</button>
       <button type="button" data-show="members" aria-pressed="false">Member Songs<span class="n" id="n-members"></span></button>
@@ -747,7 +747,7 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
       var me = Object.assign({}, CAT[s.id] || {}), mq = $('q').value.trim().toLowerCase(), mm = $('month').value;
       if (s.ha) me.a = me.a || 1; if (s.hv) me.v = me.v || 1;   // (its owner's own file, or another copy's, as its calendar plays)
       if (show === 'check' || show === 'none' || show === 'files') return false;
-      if (show === 'waiting' && state(s).st !== 'waiting') return false;
+      if (show === 'waiting' && state(s).st !== 'waiting' && !changed(s, state(s))) return false;   // (waiting, or changed and not signed off yet: what Sign off all takes)
       if ((show === 'noa' && me.a) || (show === 'nov' && me.v) || (show === 'still' && !stillPic(s)) || missing(s)) return false;
       if (mm && s.d.slice(0, 7) !== mm) return false;
       return !mq || (s.title + ' ' + s.artist + ' ' + s.cals.map(function (c) { return c.o + ' ' + c.t + ' ' + c.n + (c.oj ? ' you yours' : ''); }).join(' ')).toLowerCase().indexOf(mq) >= 0;
@@ -758,7 +758,7 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
     if (show === 'files' && !e.a && !e.v && !COVERS[s.id]) return false;
     if ((show === 'noa' && e.a) || (show === 'nov' && e.v) || missing(s)) return false;
     if (show === 'still' && !stillPic(s)) return false;   // songs with no recording or no video of yours up
-    if (['waiting', 'signed', 'none'].indexOf(show) >= 0 && st !== show) return false;
+    if (['waiting', 'signed', 'none'].indexOf(show) >= 0 && st !== show && !(show === 'waiting' && changed(s, state(s)))) return false;   // (To sign off: waiting, or changed and not signed off yet: John, 21 Nov 2026, "I can't see what the songs to sign off are")
     if (m && dayOf(s.a).month !== m) return false;
     return !q || (s.title + ' ' + s.artist).toLowerCase().indexOf(q) >= 0;
   }
@@ -956,12 +956,14 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
     }
     return out;
   }
+  document.getElementById('dockn').addEventListener('click', function () { var c = document.querySelector('[data-show="waiting"]'); if (show !== 'waiting' && c && !c.hidden) { c.click(); window.scrollTo({ top: 0, behavior: 'smooth' }); } });   // (the songs it signs off, a tap away)
   function bulkLabel(shown) {
     shown = shown || rows().filter(visible);
     var dock = $('dock'), b = $('bulk'), ready = shown.filter(function (s) { var st = state(s); return st.st === 'waiting' || changed(s, st); });
     dock.hidden = ready.length < 2;
     b.textContent = armed ? 'Tap again to sign off ' + ready.length : 'Sign off all ' + ready.length;
-    $('dockn').textContent = armed ? 'Exactly as shown, with your changes' : 'Waiting or changed, shown here';
+    $('dockn').textContent = armed ? 'Exactly as shown, with your changes' : show === 'waiting' ? 'Waiting or changed, shown here' : 'Waiting or changed: show them';
+    $('dockn').style.cursor = show === 'waiting' ? '' : 'pointer';
   }
   // the day's YouTube video is only a still picture: the sound, no film. p is from YouTube's own three frames of the
   // video (_sotd/video_still.py: the same picture in all three); until those are looked at, the title says (k audio:
@@ -973,7 +975,8 @@ a.srchpill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--li
     var mwait = 0; MSONGS.forEach(function (s) { var e = CAT[s.id] || {}; if (!e.a && !s.ha) noa++; if (!e.v && !s.hv) nov++; if (state(s).st === 'waiting') mwait++; });
     c.waiting += mwait;
     var noyt = songs.concat(MSONGS).filter(function (s) { return !hasYt(s); }).length, nopv = songs.concat(MSONGS).filter(function (s) { return !s.p; }).length;
-    var n0 = { noa: noa, nov: nov, noyt: noyt, nopv: nopv, still: songs.filter(stillPic).length + MSONGS.filter(stillPic).length, waiting: c.waiting, check: chk, none: c.none, members: MSONGS.length };
+    var toSign = songs.concat(MSONGS).filter(function (s) { var st = state(s); return st.st === 'waiting' || changed(s, st); }).length;
+    var n0 = { noa: noa, nov: nov, noyt: noyt, nopv: nopv, still: songs.filter(stillPic).length + MSONGS.filter(stillPic).length, waiting: toSign, check: chk, none: c.none, members: MSONGS.length };
     Object.keys(n0).forEach(function (k) {   // a list with nothing in it isn't shown (John, 28 Oct 2026); All is shown instead
       $('n-' + k).textContent = n0[k];
       var b = document.querySelector('[data-show="' + k + '"]'); b.hidden = !n0[k];
