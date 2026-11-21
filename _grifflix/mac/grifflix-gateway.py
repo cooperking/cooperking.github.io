@@ -947,12 +947,18 @@ def make_handler(g):
                                 out = self.subs_write(it.get('Path') or e.get('path'), 'en', cues)
                                 g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
                                 e.update(state='done' if body.get('sure') else 'check', note=str(body.get('how') or '')[:200], chose=str(body.get('chose') or '')[:200],
-                                         n=int(body.get('n') or 0), miss=body.get('miss'), file=out, at=int(time.time()), mins=body.get('mins'))
+                                         n=int(body.get('n') or 0), miss=body.get('miss'), file=out, at=int(time.time()), mins=body.get('mins'),
+                                         # (all it found, for the admin page: each subtitle tried and how well it fitted, each part of the film
+                                         # listened to and the timing there: John, 21 Nov 2026, "I still need to know what the fix chose to do")
+                                         tried=[[str(x[0])[:160], int(x[1] or 0), bool(x[2])] for x in (body.get('tried') or []) if isinstance(x, list) and len(x) >= 3][:12],
+                                         samples=[[float(x[0]), int(x[1] or 0), float(x[2])] for x in (body.get('samples') or []) if isinstance(x, list) and len(x) >= 3][:12],
+                                         sure=bool(body.get('sure')))
                                 log('Subtitles made ready on John’s Mac: %s: %s (%s lines matched)%s' % (e.get('name'), e['note'], e['n'], '' if body.get('sure') else ': to check'))
                             except Exception as ex:
                                 e.update(state='failed', note=('couldn’t be saved: %s' % ex)[:200], at=int(time.time()))
                         else:
-                            e.update(state='nomatch' if 'matched' in str(body.get('error') or '') else 'failed', note=str(body.get('error') or 'it didn’t work')[:200], at=int(time.time()))
+                            e.update(state='nomatch' if 'matched' in str(body.get('error') or '') else 'failed', note=str(body.get('error') or 'it didn’t work')[:200], at=int(time.time()),
+                                     tried=[[str(x[0])[:160], int(x[1] or 0)] for x in (body.get('tried') or []) if isinstance(x, list) and len(x) >= 2][:12])
                             log('Subtitles not made ready for %s: %s' % (e.get('name'), e['note']))
                         save(SUBPREP, P)
                         return self.send_json(200, {'ok': True})
@@ -2866,7 +2872,7 @@ def make_handler(g):
             # is happening")
             now_ = sorted(({k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'at', 'step', 'stepat')} for x in F if x.get('state') == 'given'), key=lambda x: -(x.get('at') or 0))
             # (and each film tried lately, however it went, with what it found: John, 21 Nov 2026, "I want more details than that")
-            recent_ = sorted(({k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'state', 'note', 'chose', 'n', 'miss', 'mins', 'at', 'step', 'stepat')}
+            recent_ = sorted(({k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'state', 'note', 'chose', 'n', 'miss', 'mins', 'at', 'step', 'stepat', 'tried', 'samples', 'sure', 'file')}
                               for x in F if x.get('state') not in ('waiting',)), key=lambda x: -max(x.get('at') or 0, x.get('stepat') or 0))[:25]
             return self.send_json(200, {'counts': cnt, 'total': len(F), 'paused': bool(P.get('_paused')), 'setup': bool((P.get('_setup') or {}).get('need')), 'now': now_[:3], 'recent': recent_,
                                         'check': pick(('check',)), 'none': pick(('none', 'nomatch', 'failed')), 'done': pick(('done',))[:30]})
