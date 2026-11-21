@@ -8026,6 +8026,14 @@ window.addEventListener('pagehide', saveProgress);
     }).catch(function () { say(conv); });
   }, 20000); });
   ['playing', 'canplay', 'seeked', 'pause', 'emptied'].forEach(function (ev) { v.addEventListener(ev, function () { el.classList.remove('wait'); unstuck(); }); });
+  // (after a jump through the film, the subtitles shown again: browsers can leave the line that should be showing undrawn, or none at all, till
+  // they're turned off and on, which John had to do: so done here, unseen: John, 21 Nov 2026, "the player also not handling subtitles well when
+  // you move through the film, I had to turn it on and off")
+  v.addEventListener('seeked', function () {
+    Array.prototype.forEach.call(v.textTracks || [], function (t) {
+      if ((t.kind === 'subtitles' || t.kind === 'captions') && t.mode === 'showing') { t.mode = 'hidden'; setTimeout(function () { if (t.mode === 'hidden') t.mode = 'showing'; }, 30); }
+    });
+  });
   $('#pplay').onclick = toggle; $('#pbig').onclick = function (e) { e.stopPropagation(); toggle(); };
   // (the film's place: pressed or dragged anywhere along it, the time shown above the finger; let go, it goes there)
   var at = function (e) { var r = seek.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };
