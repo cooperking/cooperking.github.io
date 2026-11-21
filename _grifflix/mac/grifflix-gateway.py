@@ -7627,7 +7627,9 @@ def keep_scanning(g):
                     XD = ('other', 'others', 'extras', 'extra', 'featurettes', 'behind the scenes', 'deleted scenes', 'interviews', 'trailers', 'shorts', 'scenes', 'bonus')
                     if any(seg.strip().lower() in XD for x in new for seg in x.split('/')[:-1]):
                         threading.Timer(300, sheet_now).start()
-                    publish_at = time.time() + 540   # (the site updated once the media server has read them: about 10 minutes on)
+                    # (the site updated once the media server has read them, about 10 minutes on, but not put back by each film after: films
+                    # came every few minutes on 21 Nov 2026 and the update, put back each time, never ran from 10:47; those after it, the next)
+                    publish_at = publish_at or time.time() + 540
             if getattr(g, 'publish_soon', 0) and not publish_at:   # (John put a film's details right: the site follows)
                 publish_at, g.publish_soon = g.publish_soon, 0
             if publish_at and time.time() >= publish_at:
