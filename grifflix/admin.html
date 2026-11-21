@@ -1038,13 +1038,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   // (what it did for a film, in full: the subtitle chosen, how it was moved and how sure, each part of the film listened to, the others tried:
   // John, 21 Nov 2026, "I still need to know what the fix chose to do - if it moved them - what subtitles it chose, etc")
   function spWhat(x) {
-    if (!(x.chose || (x.tried || []).length || (x.samples || []).length)) return '';
+    if (!(x.chose || x.origin || (x.tried || []).length || (x.samples || []).length)) return '';
     var mmss = function (t) { t = Math.round(t / 60); return t < 1 ? 'the start' : t + ' min in'; };
     var how = String(x.note || ''), m = /moved ([+-][\d.]+) s/.exec(how), sp = /at ([\d.]+)x speed/.exec(how), part = /^moved by part/.test(how);
     var said = part ? 'Moved by a different amount in different parts of the film (a different cut of it): ' + esc(how.replace(/^moved by part /, '')) :
       m ? 'Moved ' + Math.abs(+m[1]).toFixed(1) + ' s ' + (+m[1] >= 0 ? 'later' : 'earlier') + ' to fit what’s said' : esc(how);
     if (sp) said += '; and ' + (+sp[1] > 1 ? 'stretched' : 'squeezed') + ' to ' + sp[1] + '× (made for a copy running at another speed: 25 against 23.976 frames a second)';
     var h = '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:13px;opacity:.85">What it did</summary><div class="stat" style="margin:6px 0 0;font-size:13px;line-height:1.55">';
+    if (x.origin) h += '<b>Downloaded as:</b> ' + esc(x.origin) + ' (subtitles made for this release looked for first)<br>';
     if (x.chose) h += '<b>Subtitles chosen:</b> “' + esc(x.chose) + '” (from OpenSubtitles)<br>';
     h += '<b>Timing:</b> ' + said + '<br>';
     if (x.n) h += '<b>How sure:</b> ' + (x.sure || x.state === 'done' ? 'sure' : 'not sure: worth a look while watching') + ', ' + x.n + ' lines matched to what Whisper heard' + (x.miss != null ? ', and once moved, each within about ' + x.miss + ' s of when it’s said' : '') + '<br>';
