@@ -2457,7 +2457,8 @@ html.tv .a24list { --ayw: 150px; } html.tv .a24r .af { font-size: 34px; } html.t
   html #barnav button[data-nv="search"].on, html #shnav button[data-nv="search"].on { text-decoration: none; } html #barnav button[data-nv="search"].on::after, html #shnav button[data-nv="search"].on::after { opacity: 1; }
   html.phone #barnav { gap: 8px !important; }
   @media (max-width: 440px) {   /* (phones: Film and TV beside the rest, room kept for the music and the profile) */
-    html #barnav, html.phone #barnav { gap: 3px !important; }
+    html #barnav, html.phone #barnav { gap: 8px !important; }   /* (apart, not crammed together: John, 21 Nov 2026, "The icons in the top bar are just very close together") */
+    @media (max-width: 380px) { html #barnav, html.phone #barnav { gap: 3px !important; } }   /* (the smallest phones (an iPhone SE): close again, so search clears the sound) */
     html .a24btn { padding: 0 4px !important; } html .critbtn { width: 28px; }
     html #barnav button[data-nv="movies"], html #shnav button[data-nv="movies"], html #barnav button[data-nv="tv"], html #shnav button[data-nv="tv"] { width: 22px; }
     html #barnav button[data-nv="movies"]::after, html #barnav button[data-nv="tv"]::after, html #shnav button[data-nv="movies"]::after, html #shnav button[data-nv="tv"]::after { width: 16px; height: 16px; margin: -8px 0 0 -8px; }
@@ -2578,7 +2579,7 @@ html.ga24:not(.tv) .bar-top::before, html.gcrit:not(.tv) .bar-top::before { cont
 html.gcrit:not(.tv) .bar-top::before { background: var(--gc-page) !important; border-bottom-color: var(--gc-line); }
 /* (and there, the bar as on any page, at the top, whatever the month's theme: the Table's and the Hall's bar is set down from the top and
    narrower, for their own scenes: John, 19 Nov 2026, "top bar has extra space at the top") */
-html.ga24.hall[data-page] #main, html.ga24.table[data-page] #main, html.gcrit.hall[data-page] #main, html.gcrit.table[data-page] #main { padding-top: env(safe-area-inset-top, 0px) !important; }   /* (clear of a phone's clock and notch, not under them: John, 21 Nov 2026, "The icons are bunched at the top of the page on phone") */   /* (no room kept for the Table's lowered bar) */
+html.ga24.hall[data-page] #main, html.ga24.table[data-page] #main, html.gcrit.hall[data-page] #main, html.gcrit.table[data-page] #main { padding-top: 0 !important; }   /* (no room kept for the Table's lowered bar) */
 html.ga24.table:not(.tv) .bar-top, html.ga24.hall:not(.tv) .bar-top, html.gcrit.table:not(.tv) .bar-top, html.gcrit.hall:not(.tv) .bar-top { position: sticky !important; top: max(8px, calc(env(safe-area-inset-top) + 10px)) !important; left: auto !important; right: auto !important; }
 html.ga24 .bar-top, html.gcrit .bar-top { box-shadow: none !important; }   /* (a home icon hidden over pop-ups showed all the same, alone in the top corner of a phone) */
 html:not(.hall):not(.table):not(.tv) .bar-top::before { content: ""; position: fixed; left: 0; right: 0; top: 0; height: calc(env(safe-area-inset-top) + 66px); background: linear-gradient(var(--bg) 82%, rgba(0, 0, 0, 0)); z-index: -1; pointer-events: none; }   /* (the bar on its own ground, as the page scrolls under it: the calendar's films showed through CALENDAR and THEME) */
@@ -2666,7 +2667,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '54ec169722d3' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'f1b0f9aba1b1' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
