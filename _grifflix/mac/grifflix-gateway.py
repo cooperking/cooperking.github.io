@@ -1449,6 +1449,7 @@ def make_handler(g):
                         # Martha Graham: Dance on Film, Three Documentaries): its films grouped as a box set under the release, with its spine
                         # and cover: John, 18 Nov 2026, "the same may be true of other unusual criterion collection items")
                         FOLDN_ = __import__("collections").Counter(os.path.dirname(i.get('Path') or '') for i in raw) if key == 'movies' else {}
+                        FOLDP_ = __import__("collections").Counter(os.path.dirname(os.path.dirname(i.get('Path') or '')) for i in raw) if key == 'movies' else {}   # (and by the folder above)
                         ANTH_ = {}
                         # (the box sets once kept as collections, by each film's folder, as they were when they were taken apart: John,
                         # 18 Nov 2026, "Remove them from normal collections when they were as the others do")
@@ -1479,6 +1480,10 @@ def make_handler(g):
                                     o_['year'] = int(cy_)
                                 fd_ = os.path.dirname(i.get('Path') or '')
                                 af_ = ANTH_.get(fold(re.sub(r'\s*\((19|20)\d\d\)\s*$', '', os.path.basename(fd_)))) if key == 'movies' and FOLDN_.get(fd_, 0) > 1 else None
+                                if not af_ and key == 'movies':   # (or its films each in a folder of their own inside the release's: "Jimi Plays Monterey &
+                                    # Shake! Otis at Monterey (1986)/Jimi Plays Monterey (1987)/…": John, 21 Nov 2026, "have both but are separate files")
+                                    up_ = os.path.dirname(fd_)
+                                    af_ = ANTH_.get(fold(re.sub(r'\s*\((19|20)\d\d\)\s*$', '', os.path.basename(up_)))) if FOLDP_.get(up_, 0) > 1 and os.path.basename(fd_).lower() not in XDIRS else None   # (not a film's own extras folder)
                                 if af_ and fold(af_.get('title')) != fold(i.get('Name')):
                                     an_ = str(af_.get('title') or '')
                                     SMETA.setdefault(fold(an_), (str(af_.get('spine') or ''), str(af_.get('img') or '')))
