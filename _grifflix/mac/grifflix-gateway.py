@@ -5788,6 +5788,39 @@ def keep_plex_off(g):
         time.sleep(300)
 
 
+WALKC = {}   # (folder → (its date, what's in it), for files_under)
+
+
+def files_under(root, vid):
+    """As os.walk would give them: at the top, everything; below, the films and episodes. A folder whose date hasn't changed since last
+    time isn't read again (only its date looked at), so a look over the library is a moment's work, not minutes of the G-Drive."""
+    out = []
+
+    def go(d, top):
+        try:
+            m = os.stat(d).st_mtime_ns
+        except OSError:
+            return
+        c = WALKC.get(d)
+        if not c or c[0] != m:
+            try:
+                c = WALKC[d] = (m, [(e.name, e.is_dir(follow_symlinks=False)) for e in os.scandir(d)])
+            except OSError:
+                return
+        for n, isd in c[1]:
+            p = os.path.join(d, n)
+            if n.startswith('.'):   # (not listed, but looked inside, as os.walk did)
+                if isd:
+                    go(p, False)
+                continue
+            if top or (not isd and n.lower().endswith(vid)):
+                out.append(p)
+            if isd:
+                go(p, False)
+    go(root, True)
+    return out
+
+
 CRIT_TMDB = {'m': 0, 'd': {}}
 
 
@@ -7570,8 +7603,10 @@ def keep_scanning(g):
             # (every film and episode file, not only the folders at the top: a new episode in a series already there, or a film arriving in
             # a folder made earlier, by a download that failed, was never noticed: John, 15 Nov 2026, Ghosts "not even in the queue")
             VID = ('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')
-            now_ = sorted(os.path.join(d, n) for r in roots if os.path.isdir(r) for d, ds, fs in os.walk(r)
-                          for n in fs + ([] if d != r else ds) if not n.startswith('.') and (d == r or n.lower().endswith(VID)))
+            # (each folder read again only when its date has changed, not the whole drive every time: a folder's date changes when anything
+            # is added to it, so a film in a folder already there and a new episode in a season are still found: John, 21 Nov 2026, "Why does
+            # it need to check every folder on the g-drive")
+            now_ = sorted(x for r in roots if os.path.isdir(r) for x in files_under(r, VID))
             before = load(seen_at, None)
             if before is not None:
                 new = [x for x in now_ if x not in set(before)]
