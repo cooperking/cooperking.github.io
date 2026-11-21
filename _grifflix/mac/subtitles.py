@@ -107,7 +107,7 @@ class OpenSubs:
                         found[fid]['exact'] = found[fid]['exact'] or exact
                         continue
                     fd = a.get('feature_details') or {}
-                    found[fid] = {'file_id': fid, 'name': a.get('release') or f.get('file_name') or '', 'lang': a.get('language') or lang,
+                    found[fid] = {'file_id': fid, 'name': a.get('release') or f.get('file_name') or '', 'fname': f.get('file_name') or '', 'lang': a.get('language') or lang,
                                   'kind': (fd.get('feature_type') or '').lower(), 'tmdb': fd.get('tmdb_id') or fd.get('parent_tmdb_id') or '', 'imdb': str(fd.get('imdb_id') or fd.get('parent_imdb_id') or ''),
                                   'exact': exact, 'downloads': a.get('download_count') or 0, 'hi': bool(a.get('hearing_impaired')),
                                   'fps': a.get('fps') or 0, 'trusted': bool(a.get('from_trusted')),
@@ -126,6 +126,13 @@ class OpenSubs:
             ask({'languages': lang, 'tmdb_id': tmdb} if tmdb else {'languages': lang, 'imdb_id': re.sub(r'\D', '', imdb or '')})
         if query and len(found) < 5:
             ask({'languages': lang, 'query': query, 'year': year})
+        # (and by the name the film was downloaded as: a subtitle is very often uploaded under the very name of the copy it was made for:
+        # John, 21 Nov 2026, "the subtitle filename is highly likely to be the same name as the" film's)
+        if hint and re.search(r'(19|20)\d\d', hint) and not episode:
+            try:
+                ask({'languages': lang, 'query': os.path.splitext(hint)[0] if re.search(r'\.(mkv|mp4|avi|m4v|mov)$', hint, re.I) else hint})
+            except RuntimeError:
+                pass
         out = [found[f] for f in order]
         # (only this film's: a title search also finds others with the word in them, a TV episode among them (John, 13 Nov
         # 2026: "Medium S01E15" for Fantasia). Kept: made for this file; the same film by its TMDB number; or, with no number,
@@ -146,13 +153,16 @@ class OpenSubs:
             q_ = flat(query)
             return not q_ or not x.get('title') or q_ in flat(x['title']) or flat(x['title']) in q_
         out = [x for x in out if ours(x)]
+        rel = lambda t: re.sub(r'\.(srt|sub|ass|ssa|vtt|mkv|mp4|avi|m4v|mov)$', '', (t or '').strip(), flags=re.I)
+        same = lambda a, b: bool(a and b) and re.sub(r'[^a-z0-9]', '', rel(a).lower()) == re.sub(r'[^a-z0-9]', '', rel(b).lower())
         for x in out:   # (how like this copy each one's release is: the same disc, picture size, encoding or group, or the same cut)
             x['like'] = likeness(hint, x['name'])
+            x['samename'] = same(hint, x['name']) or same(hint, x.get('fname'))   # (named as this copy was downloaded: made for it)
         # (the likeliest to fit first: made for this file, then those like this copy, then trusted uploaders and the most
         # downloaded; machine translations last)
         # (the obvious ones first: John, 13 Nov 2026, "subtitles don't work if they don't select the obvious best ones". Made for this
         # file; then the same release (source and group); then by how many have used them, a little for likeness and trust)
-        out.sort(key=lambda x: (not x['exact'], x['like'] < 7, x['machine'],
+        out.sort(key=lambda x: (not x['exact'], not x.get('samename'), x['like'] < 7, x['machine'],
                                 -(math.log10(1 + x['downloads']) + 0.15 * x['like'] + (0.5 if x['trusted'] else 0))))
         return out[:40]
 
