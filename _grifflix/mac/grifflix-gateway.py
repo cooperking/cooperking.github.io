@@ -940,6 +940,11 @@ def make_handler(g):
                                 body['srt'] = base64.b64decode(str(body['srt64'])).decode('utf-8', 'replace')
                             except Exception:
                                 pass
+                        if isinstance(body.get('evidence'), list) and re.match(r'^[0-9a-f]{32}$', iid):   # (what Whisper heard and matched, for the admin page)
+                            try:
+                                save(os.path.join(os.path.expanduser('~/Grifflix/subprep-evidence'), iid + '.json'), {'at': int(time.time()), 'parts': body['evidence'][:8]})
+                            except Exception:
+                                pass
                         if body.get('ok') and body.get('srt') and self.subs_ready():
                             try:
                                 it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
@@ -2850,6 +2855,9 @@ def make_handler(g):
             if not me.get('owner'):
                 return self.send_json(403, {'error': 'Only John.'})
             P = load(SUBPREP, {}) or {}
+            if re.match(r'^[0-9a-f]{32}$', str(q.get('evidence') or '')):   # (one film's: what Whisper heard, and the subtitle lines matched to it)
+                ev_ = load(os.path.join(os.path.expanduser('~/Grifflix/subprep-evidence'), q['evidence'] + '.json'), None)
+                return self.send_json(200, ev_ or {'parts': []})
             if b:
                 op = str(b.get('op') or '')
                 if op in ('pause', 'resume'):

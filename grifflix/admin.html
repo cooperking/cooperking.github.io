@@ -200,6 +200,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .mset summary .cbbar i { display: block; height: 100%; background: currentColor; }
 .cbdock { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); background: var(--bg, #1f3657); border-top: 1px solid var(--line, rgba(255,255,255,.2)); }
 .cbdock[hidden] { display: none; } .cbdock b { flex: 1 1 100%; font-size: 14px; } @media (min-width: 600px) { .cbdock b { flex: 1 1 auto; } }
+.spt { border-collapse: collapse; font-size: 12.5px; line-height: 1.4; min-width: 640px; } .spt th { text-align: left; font-weight: 600; opacity: .8; padding: 4px 8px; border-bottom: 1px solid var(--line); }
+.spt td { padding: 4px 8px; vertical-align: top; border-bottom: 1px solid rgba(255,255,255,.08); } .spt td:first-child, .spt td:nth-child(4), .spt td:nth-child(5) { white-space: nowrap; font-variant-numeric: tabular-nums; } .spt tr.off td { color: #f08a4b; }
 .dks { display: grid; gap: 16px; }
 .dk { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: baseline; }
 .dk .nm { font-size: 14px; color: var(--fg-2); } .dk .fr { font: 400 26px/1 var(--display); color: var(--fg); white-space: nowrap; } .dk .fr small { font: 400 13px/1 var(--sans, sans-serif); color: var(--fg-2); margin-left: 6px; }
@@ -1054,6 +1056,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     if (others.length) h += '<b>Others tried:</b> ' + others.map(function (t) { return '“' + esc(t[0]) + '”, ' + t[1] + ' lines matched' + (t[2] ? ' (sure)' : ''); }).join('; ') + '<br>';
     if (x.file) h += '<b>Saved as:</b> ' + esc(String(x.file).split('/').pop()) + '<br>';
     if (x.mins) h += '<b>Time taken on your Mac:</b> ' + x.mins + ' min';
+    if (x.state === 'done' || x.state === 'check') h += '<div style="margin-top:8px"><button class="btn" type="button" data-spev="' + x.id + '">What Whisper heard</button><div class="spev" data-for="' + x.id + '"></div></div>';
     return h + '</div></details>';
   }
   function subPrep(body) {
@@ -1083,6 +1086,25 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         $('#splists').innerHTML = (j.check.length ? '<p class="stat" style="margin:14px 0 6px"><b>To check</b> (' + j.check.length + ') · saved, but the timing couldn’t be confirmed</p><ul class="changes">' + j.check.map(function (x) { return li(x, true); }).join('') + '</ul>' : '') +
           (j.none.length ? '<p class="stat" style="margin:14px 0 6px"><b>Couldn’t be made ready</b> (' + j.none.length + ')</p><ul class="changes">' + j.none.map(function (x) { return li(x, true); }).join('') + '</ul>' : '') +
           (j.done.length ? '<p class="stat" style="margin:14px 0 6px"><b>Made ready lately</b></p><ul class="changes">' + j.done.map(function (x) { return li(x, false); }).join('') + '</ul>' : '');
+        // (each part of the film listened to: when Whisper heard each line, what it heard in English, the subtitle line it matched, that
+        // line's own time and where it was moved to, and whether it agreed: John, 21 Nov 2026, "I should be able to see what whisper took as
+        // the timing, the translation, the matching lines")
+        Array.prototype.forEach.call(document.querySelectorAll('[data-spev]'), function (bt) { bt.onclick = function () {
+          var box = document.querySelector('.spev[data-for="' + bt.dataset.spev + '"]'); if (box.innerHTML) { box.innerHTML = ''; return; }
+          box.textContent = 'Asking the Mac mini…';
+          var tm = function (t) { t = Math.max(0, t); var h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), sx = Math.floor(t % 60); return (h ? h + ':' + ('0' + m).slice(-2) : m) + ':' + ('0' + sx).slice(-2); };
+          fetch(GW + '/api/subprep?evidence=' + bt.dataset.spev, { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+            var P = j.parts || [];
+            if (!P.length) { box.textContent = 'Not kept for this film: only those done from now on.'; return; }
+            box.innerHTML = P.map(function (p) {
+              var ok = p.rows.filter(function (r) { return r[5]; }).length, m = p.rows.filter(function (r) { return r.length > 2; }).length;
+              return '<p class="stat" style="margin:12px 0 4px"><b>From ' + tm(p.from) + '</b> · ' + p.rows.length + ' lines heard, ' + m + ' matched to a subtitle, ' + ok + ' agreeing with the timing chosen</p>' +
+                '<div style="overflow-x:auto"><table class="spt"><tr><th>Heard at</th><th>Whisper heard (in English)</th><th>Subtitle line matched</th><th>Its time</th><th>Moved to</th><th></th></tr>' +
+                p.rows.map(function (r) { return '<tr' + (r.length > 2 && !r[5] ? ' class="off"' : '') + '><td>' + tm(r[0]) + '</td><td>' + esc(r[1]) + '</td>' +
+                  (r.length > 2 ? '<td>' + esc(r[3]) + '</td><td>' + tm(r[2]) + '</td><td>' + tm(r[4]) + '</td><td>' + (r[5] ? '✓' : '✗ ' + (r[0] - r[4] >= 0 ? '+' : '') + (r[0] - r[4]).toFixed(1) + ' s') + '</td>' : '<td colspan="4" style="opacity:.6">no subtitle line like it</td>') + '</tr>'; }).join('') + '</table></div>';
+            }).join('');
+          }).catch(function (e) { box.textContent = 'Couldn’t ask: ' + (e.message || e); });
+        }; });
         Array.prototype.forEach.call(document.querySelectorAll('[data-spagain]'), function (bt) { bt.onclick = function () { bt.disabled = true; subPrep({ op: 'again', id: bt.dataset.spagain }); }; });
       }).catch(function (e) { $('#spsay').textContent = 'Couldn’t ask just now: ' + (e.message || e) + '.'; });
     if (!body) { clearTimeout(subPrep.t); subPrep.t = setTimeout(function () { subPrep(); }, 60000); }

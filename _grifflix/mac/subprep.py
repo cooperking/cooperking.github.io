@@ -109,7 +109,7 @@ def transcribe(ff, wcli, film, t0, length, translate, work):
         if translate:
             cmd.append('-tr')
         subprocess.run(cmd, check=True, timeout=3600, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    segs = [(a + t0, b + t0, words(t)) for a, b, t in parse_srt(open(out + '.srt', encoding='utf-8', errors='replace').read())]
+    segs = [(a + t0, b + t0, words(t), t) for a, b, t in parse_srt(open(out + '.srt', encoding='utf-8', errors='replace').read())]   # (its words, and as heard)
     return [s for s in segs if s[2]]
 
 
@@ -117,7 +117,8 @@ def matches(segs, cues):
     """Each heard line and the subtitle line most like it: (film time, subtitle time, likeness)."""
     cw = [(c[0], words(c[2])) for c in cues]
     out = []
-    for s0, s1, sw in segs:
+    for sg in segs:
+        s0, s1, sw = sg[0], sg[1], sg[2]
         best = None
         for ct, w in cw:
             if not w:
@@ -244,9 +245,38 @@ def prepare(job, ff, wcli, work):
             moved = [[r * a + off(a), r * e + off(a), t] for a, e, t in cues]
             how = 'moved by part (' + ', '.join('%+.1f s' % w[2] for w in good) + ')%s' % ('' if r == 1 else ', at %.3fx speed' % r)
             sure = sure and all(w[3] <= .6 for w in good)
-        results.append({'name': cand.get('name') or '', 'n': n, 'miss': round(miss, 2), 'sure': bool(sure), 'how': how, 'srt': write_srt(moved),
+        results.append({'_ci': cand_i, '_wins': wins, '_r': r, '_b': b, 'name': cand.get('name') or '', 'n': n, 'miss': round(miss, 2), 'sure': bool(sure), 'how': how, 'srt': write_srt(moved),
                         'samples': [[round(w[0]), w[1], round(w[2], 2)] for w in wins]})
     results.sort(key=lambda x: (x['sure'], x['n'], -x['miss']), reverse=True)
+    if results:   # (what was heard and matched, for the admin page: John, 21 Nov 2026, "I should be able to see what whisper took as the timing,
+        # the translation, the matching lines")
+        best = results[0]
+        cues = cues_all[best['_ci']]
+        offs = dict((round(w[0]), w[2]) for w in best['_wins'])
+        ev = []
+        for t0, segs in heard:
+            o_ = offs.get(round(t0), best['_b']) if best['how'].startswith('moved by part') else best['_b']
+            rows = []
+            for sg in segs[:60]:
+                bi = None
+                for ci, c in enumerate(cues):
+                    w = words(c[2])
+                    sh = sg[2] & w
+                    if w and (len(sh) >= 2 or (len(sh) == 1 and len(next(iter(sh))) >= 6 and min(len(sg[2]), len(w)) <= 2)):
+                        sim = len(sh) / min(len(sg[2]), len(w))
+                        if sim >= .5 and (not bi or sim > bi[1]):
+                            bi = (ci, sim)
+                row = [round(sg[0], 1), sg[3].strip()[:160]]
+                if bi:
+                    c = cues[bi[0]]
+                    mv = best['_r'] * c[0] + o_
+                    row += [round(c[0], 1), re.sub(r'<[^>]+>', '', c[2]).replace('\n', ' ').strip()[:160], round(mv, 1), abs(sg[0] - mv) <= .7]
+                rows.append(row)
+            ev.append({'from': round(t0), 'rows': rows})
+        best['evidence'] = ev
+    for x in results:
+        for k in ('_ci', '_wins', '_r', '_b'):
+            x.pop(k, None)
     return results
 
 
@@ -284,7 +314,7 @@ def main():
     # (sent packed, base64, not as text: Cloudflare in front of the Mac mini refused a whole film's dialogue as plain text, 403: Io Capitano,
     # John, 21 Nov 2026)
     import base64
-    say({'ok': True, 'srt64': base64.b64encode(best['srt'].encode('utf-8')).decode(), 'sure': best['sure'], 'how': best['how'], 'n': best['n'], 'miss': best['miss'], 'chose': best['name'],
+    say({'ok': True, 'evidence': best.get('evidence') or [], 'srt64': base64.b64encode(best['srt'].encode('utf-8')).decode(), 'sure': best['sure'], 'how': best['how'], 'n': best['n'], 'miss': best['miss'], 'chose': best['name'],
          'samples': best['samples'], 'mins': round((time.time() - t0) / 60, 1), 'tried': [[x['name'], x['n'], x['sure']] for x in res]})
 
 
