@@ -198,6 +198,11 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .cbexp { margin: 10px 0 2px; flex-wrap: wrap; }
 .mset summary .cbbar { display: inline-block; vertical-align: middle; width: 54px; height: 4px !important; min-height: 0; padding: 0; border: 0; margin-left: 10px; background: rgba(255,255,255,.18); }
 .mset summary .cbbar i { display: block; height: 100%; background: currentColor; }
+.dks { display: grid; gap: 16px; }
+.dk { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: baseline; }
+.dk .nm { font-size: 14px; color: var(--fg-2); } .dk .fr { font: 400 26px/1 var(--display); color: var(--fg); white-space: nowrap; } .dk .fr small { font: 400 13px/1 var(--sans, sans-serif); color: var(--fg-2); margin-left: 6px; }
+.dk .dkbar { grid-column: 1 / -1; display: block; height: 6px !important; min-height: 0; padding: 0; border: 0; margin: 2px 0 0; background: rgba(255,255,255,.14); } .dk .dkbar i { display: block; height: 100%; background: var(--fg); opacity: .75; }
+.dk .of { grid-column: 1 / -1; font-size: 12.5px; color: var(--fg-2); } .dk.low .fr, .dk.low .of b { color: #f08a4b; } .dk.low .dkbar i { background: #f08a4b; opacity: 1; }
 .mset summary .cbto { float: right; line-height: 1.6; font-weight: 400; opacity: .7; font-size: 12px; letter-spacing: .06em; }
 @media (max-width: 600px) { .mrow { grid-template-columns: 44px minmax(0, 1fr); } .mrow .d, .mrow .s { grid-column: 2; } }
 /* the intros, each with where and when it plays, and a preview (John, 19 Nov 2026) */
@@ -384,6 +389,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     </nav>
     <nav class="subtabs" id="subtabs" aria-label="In this tab" hidden></nav>
     <div class="cards">
+      <!-- (free space, first on Home, each drive with a bar and when it was looked at: John, 21 Nov 2026, "I need it in a clearer and better place") -->
+      <section class="card" data-tab="updates" id="dkcard" hidden>
+        <div class="kicker">Free space</div>
+        <div class="dks" id="dkrows"></div>
+        <p class="stat" id="dksay"></p>
+      </section>
       <section class="card" data-tab="updates" id="wtcard">
         <div class="kicker">Waiting on you</div>
         <h2 id="wthead">Looking…</h2>
@@ -460,7 +471,6 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="state"><button class="btn" id="cvskip" type="button" hidden>Skip this film</button></div>
         <div id="cvmac"></div>
         <div id="cvq"></div>
-        <p class="stat" id="cvdisks" hidden></p>
         <div class="cvord" id="cvord" hidden>
           <label class="cvsw"><input type="checkbox" id="cvrf"> <span>Repackage every MKV first, then the conversions <small>(repackaging takes minutes a film, converting hours)</small></span></label>
           <div id="cvpins"></div>
@@ -2353,11 +2363,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       }; });
       if (c.disks && c.disks.length) {   // (each disk's free space, and a warning before one fills: John, 12 Nov 2026, the Mac's own disk filled unnoticed)
         var gb = function (b) { return b >= 1e12 ? (b / 1e12).toFixed(1) + ' TB' : Math.round(b / 1e9) + ' GB'; };
-        $('#cvdisks').hidden = false;
-        $('#cvdisks').innerHTML = 'Free space: ' + c.disks.map(function (d) {
+        $('#dkcard').hidden = false;
+        $('#dkrows').innerHTML = c.disks.map(function (d) {
           var low = d.free < Math.min(50e9, Math.max(10e9, d.total * .05));   // (5% of a small disk, but never more than 50 GB: room for the biggest film and its new copy; 175 GB free on the G-Drive was called nearly full: John, 15 Nov 2026)
-          return (low ? '<b style="color:#f08a4b">' : '<b>') + esc(d.name) + ' ' + gb(d.free) + '</b>' + (low ? ' <span style="color:#f08a4b">(nearly full: films may stop playing; free some space)</span>' : '');
-        }).join(' · ');
+          var used = Math.max(0, Math.min(100, Math.round(100 * (d.total - d.free) / d.total)));
+          return '<div class="dk' + (low ? ' low' : '') + '"><span class="nm">' + esc(d.name === 'The Mac’s own disk' ? 'The Mac mini’s own disk' : d.name) + '</span><span class="fr">' + gb(d.free) + '<small>free</small></span>' +
+            '<span class="dkbar" role="img" aria-label="' + used + '% full"><i style="width:' + used + '%"></i></span><span class="of">' + used + '% full, of ' + gb(d.total) + (low ? ' · <b>nearly full: films may stop playing; free some space</b>' : '') + '</span></div>';
+        }).join('');
+        $('#dksay').textContent = 'Looked at ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ', and again every ' + (c.alive ? 'half minute' : 'two minutes') + ' while this page is open.';
       }
       var n = c.now, bar = $('#cvbar'), sk = $('#cvskip');
       // (John's: give up on the film it's on and go to the next: John, 15 Nov 2026, Moonrise stuck at 0%)
