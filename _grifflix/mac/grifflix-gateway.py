@@ -1003,13 +1003,17 @@ def make_handler(g):
                             mh = None
                         try:
                             org_ = film_origin(path)   # (the release it was downloaded as: subtitles made for it first)
-                            res = self.subs_client().search('en', mhash=mh, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'),
-                                                            year=it.get('ProductionYear'), hint=org_ or os.path.basename(path))
+                            if e.get('kind') == 'episode':
+                                res = self.subs_client().search('en', mhash=mh, query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'),
+                                                                episode=e.get('episode'), hint=org_ or os.path.basename(path))
+                            else:
+                                res = self.subs_client().search('en', mhash=mh, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'),
+                                                                year=it.get('ProductionYear'), hint=org_ or os.path.basename(path))
                         except Exception as ex:
                             e.update(note=('OpenSubtitles: %s' % ex)[:200])
                             save(SUBPREP, P)
                             return self.send_json(200, {'wait': 'OpenSubtitles didn’t answer'})
-                        res = [x for x in res if not x.get('machine') and x.get('kind') in ('', 'movie')]
+                        res = [x for x in res if not x.get('machine') and x.get('kind') in (('', 'episode', 'tvshow') if e.get('kind') == 'episode' else ('', 'movie'))]
                         more_ = [{'file_id': x['file_id'], 'name': x.get('name') or ''} for x in res[3:10]]   # (the next ones, fetched by John's Mac one at a time
                         # only if none of the first fits exactly, without a change of speed: John, 21 Nov 2026, "Better to get the right one exactly before fixing")
                         res = res[:3]
@@ -5794,6 +5798,23 @@ def subprep_scan_():
         start += 200
         if start >= (r.get('TotalRecordCount') or 0):
             break
+    # (TV's episodes too, each by its series' own language: John, 21 Nov 2026, "is tv included in this check?" ... "yes")
+    stmdb = {}
+    if libs.get('tv'):
+        try:
+            for x in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': libs['tv'], 'Recursive': 'true', 'IncludeItemTypes': 'Series',
+                                                                         'Fields': 'ProviderIds'}) or {}).get('Items') or []:
+                stmdb[x['Id']] = str((x.get('ProviderIds') or {}).get('Tmdb') or '')
+            start = 0
+            while True:
+                r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': libs['tv'], 'Recursive': 'true', 'IncludeItemTypes': 'Episode',
+                                                                      'Fields': 'MediaStreams,ProductionYear,ProviderIds,Path', 'StartIndex': start, 'Limit': 200}) or {}
+                films += r.get('Items') or []
+                start += 200
+                if start >= (r.get('TotalRecordCount') or 0):
+                    break
+        except Exception as e:
+            log('Subtitles to make ready (TV):', str(e)[:200])
     eng = ('eng', 'en', 'english')
     # (a film whose sound isn't marked with its language, nearly half of them, by the language TMDB gives as its own: they were all left
     # off, as if English (John, 21 Nov 2026, "I feel like I must have more films than that with no subs"). Asked once each, kept)
@@ -5806,24 +5827,25 @@ def subprep_scan_():
         main = next((x for x in au if x.get('IsDefault')), au[0] if au else None)
         al = ((main or {}).get('Language') or '').lower()
         en_au = [x for x in au if (x.get('Language') or '').lower() in eng and 'comment' not in (x.get('Title') or '').lower()]
-        tid = str((f.get('ProviderIds') or {}).get('Tmdb') or '')
+        ep_ = f.get('Type') == 'Episode'
+        tid = ('tv:' + stmdb.get(f.get('SeriesId'), '') if stmdb.get(f.get('SeriesId')) else '') if ep_ else str((f.get('ProviderIds') or {}).get('Tmdb') or '')
         if al and al not in eng and al not in ('und', 'unk', 'zxx', 'mis') and en_au and tid:
             # (a film heard first in another language with an English soundtrack too: its own language asked of TMDB, an English film
             # heard dubbed put right by the converter, English first: John, 21 Nov 2026, "any english language films that don't have
             # english as first language need fixing": Beverly Hills Cop in Bulgarian, Gandhi in Italian)
             if tid not in TL and asked < 1500:
                 try:
-                    TL[tid] = ((tmdb(g, '/movie/' + tid) or {}).get('original_language') or '').lower()
+                    TL[tid] = ((tmdb(g, ('/tv/' + tid[3:]) if tid.startswith('tv:') else ('/movie/' + tid)) or {}).get('original_language') or '').lower()
                 except Exception:
                     pass
                 asked += 1
             if TL.get(tid) == 'en':
-                efix[f['Id']] = {'name': f.get('Name'), 'year': f.get('ProductionYear') or '', 'path': f.get('Path') or '', 'was': al}
+                efix[f['Id']] = {'name': ('%s S%s E%s' % (f.get('SeriesName'), f.get('ParentIndexNumber'), f.get('IndexNumber'))) if ep_ else f.get('Name'), 'year': f.get('ProductionYear') or '', 'path': f.get('Path') or '', 'was': al}
                 continue
         if not al or al in ('und', 'unk', 'zxx', 'mis'):
             if tid and tid not in TL and asked < 1500:
                 try:
-                    TL[tid] = ((tmdb(g, '/movie/' + tid) or {}).get('original_language') or '').lower()
+                    TL[tid] = ((tmdb(g, ('/tv/' + tid[3:]) if tid.startswith('tv:') else ('/movie/' + tid)) or {}).get('original_language') or '').lower()
                 except Exception:
                     pass   # (asked again next time)
                 asked += 1
@@ -5844,7 +5866,7 @@ def subprep_scan_():
             except OSError:
                 pass
         if al and al not in eng and al not in ('und', 'unk', 'zxx', 'mis', 'xx'):
-            k_ = 'text' if has_t else 'picture' if has_p else 'none'
+            k_ = ('tv ' if ep_ else '') + ('text' if has_t else 'picture' if has_p else 'none')
             tally[k_] = tally.get(k_, 0) + 1
         if not al or al in eng or al in ('und', 'unk', 'zxx', 'mis', 'xx'):
             continue   # (English, or not known: not on the list)
@@ -5861,6 +5883,9 @@ def subprep_scan_():
             continue
         if not e:
             P[iid] = {'name': f.get('Name'), 'year': f.get('ProductionYear') or '', 'lang': al, 'state': 'waiting', 'order': len(P), 'at': int(time.time())}
+            if ep_:   # (an episode: found on OpenSubtitles by its series and its number)
+                P[iid].update(name='%s S%d E%d' % (f.get('SeriesName') or '', f.get('ParentIndexNumber') or 0, f.get('IndexNumber') or 0), kind='episode',
+                              series_tmdb=stmdb.get(f.get('SeriesId'), ''), season=f.get('ParentIndexNumber'), episode=f.get('IndexNumber'), series=f.get('SeriesName') or '')
             added += 1
     for k in [k for k in P if not k.startswith('_') and k not in seen and P[k].get('state') in ('waiting', 'none', 'failed', 'nomatch')]:
         P.pop(k, None)
@@ -6005,7 +6030,21 @@ def film_origin(path):
             pass
         DL_NAMES.update(m=m, d=d)
     rel = os.path.relpath(str(path or ''), os.path.join(os.environ.get('GRIFFLIX_MEDIA') or '/Volumes/G-Drive/Grifflix', 'Movies'))
-    return DL_NAMES['d'].get(rel.split(os.sep)[0]) if not rel.startswith('..') else None
+    got = DL_NAMES['d'].get(rel.split(os.sep)[0]) if not rel.startswith('..') else None
+    if got:
+        return got
+    # (or the name it had before the converter made it again, kept in its record, where that was a download's name: The Boy and the Heron's
+    # "The.Boy.and.The.Heron.2023.aka.Kimitachi.wa.do.ikiru.ka.HDCAM.1080p.x264": John, 21 Nov 2026, "which we have a record of the original name for")
+    try:
+        cs = load(os.path.expanduser('~/Grifflix/convert-state.json'), {}) or {}
+        folder = os.path.dirname(str(path or ''))
+        for v in (cs.get('done') or {}).values():
+            for p_ in (v.get('from'), v.get('kept')):
+                if p_ and os.path.dirname(v.get('to') or '') == folder and re.search(r'(?i)\b(1080p|720p|2160p|bluray|brrip|bdrip|web-?dl|webrip|dvdrip|x26[45]|h\.?26[45]|hevc|xvid|yts|rarbg)\b', os.path.basename(p_)):
+                    return os.path.splitext(os.path.basename(p_))[0]
+    except Exception:
+        pass
+    return None
 
 
 CRIT_TMDB = {'m': 0, 'd': {}}
