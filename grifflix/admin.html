@@ -2171,6 +2171,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   function cbCount() {
     var n = (window.CBR || []).filter(function (x) { return CBP[x.k] && !COMING_K[x.k]; }).length;
     $('#cmpick').disabled = !n; $('#cmpick').textContent = n ? 'Download ' + n + ' chosen (CSV)' : 'Download chosen (CSV)'; $('#cmclear').hidden = !n;
+    try { stoPrep(); } catch (e) {}
     cbAll('#cbmiss .cbsetpick').forEach(function (c) { var rows = cbAll('.cbpick', c.closest('details')), on = rows.filter(function (r) { return r.checked; }).length; c.checked = rows.length > 0 && on === rows.length; c.indeterminate = on > 0 && on < rows.length; });
   }
   function cbWire() {
@@ -2189,17 +2190,29 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   }
   // (the films chosen, or all of them, opened in John's Search Tab Opener, the list carried in its link: John, 21 Nov 2026, "Can the csv
   // files open directly in my other site")
+  // (the list for Search Tab Opener made ready as the choice changes, compressed into its link so even all of it fits, and the tab opened
+  // at once when pressed: on an iPhone, from the Home Screen, the opened tab can't be handed anything, and a tab opened after a wait is
+  // blocked: John, 21 Nov 2026, "Open in search tab opener still not opening anything")
+  var STO = { url: '', csv: '', name: '', n: 0, ch: 0 };
+  function stoRows() { var all = (window.CBR || []).filter(function (x) { return !COMING_K[x.k]; }), ch = all.filter(function (x) { return CBP[x.k]; }); return { rows: (ch.length ? ch : all).map(function (x) { return x.r; }), ch: ch.length }; }
+  function stoPrep() {
+    var o = stoRows(), csv = '\ufeff' + cbText(o.rows), nm = (o.ch ? 'Criterion films chosen ' : 'Criterion box set films missing ') + new Date().toISOString().slice(0, 10), base = 'https://cooperking.github.io/search-tab-opener/#from=grifflix&name=' + encodeURIComponent(nm);
+    var plain = function () { var b64 = btoa(unescape(encodeURIComponent(csv))); return base + (b64.length < 24000 ? '&csv=' + encodeURIComponent('data:text/csv;base64,' + b64) : ''); };
+    STO = { url: plain(), csv: csv, name: nm, n: o.rows.length, ch: o.ch };
+    if (typeof CompressionStream === 'undefined') return;
+    var mine = STO;
+    new Response(new Blob([csv]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer().then(function (ab) {
+      var u = new Uint8Array(ab), bin = ''; for (var i = 0; i < u.length; i += 8192) bin += String.fromCharCode.apply(null, u.subarray(i, i + 8192));
+      if (STO === mine) mine.url = base + '&csvz=' + btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }).catch(function () {});
+  }
   $('#cmsto').onclick = function () {
-    var all = (window.CBR || []).filter(function (x) { return !COMING_K[x.k]; }), ch = all.filter(function (x) { return CBP[x.k]; }), rows = (ch.length ? ch : all).map(function (x) { return x.r; });
-    if (!rows.length) return toast('The list isn’t here yet');
-    // (handed over once the opener says it's ready, as text, however long; carried in the link too, while short enough to, in case the
-    // handover can't happen: John, 21 Nov 2026, "Open in search tab opener isn't loading the csv")
-    var csv = '\ufeff' + cbText(rows), nm = (ch.length ? 'Criterion films chosen ' : 'Criterion box set films missing ') + new Date().toISOString().slice(0, 10);
-    var b64 = btoa(unescape(encodeURIComponent(csv))), inLink = b64.length < 24000;
-    var w = window.open('https://cooperking.github.io/search-tab-opener/#from=grifflix&name=' + encodeURIComponent(nm) + (inLink ? '&csv=' + encodeURIComponent('data:text/csv;base64,' + b64) : ''), '_blank');
-    var hand = function (e) { if (e.origin !== 'https://cooperking.github.io' || !e.data || e.data.type !== 'sto-ready' || e.source !== w) return; window.removeEventListener('message', hand); w.postMessage({ type: 'sto-csv', csv: csv, name: nm }, 'https://cooperking.github.io'); };
+    if (!STO.n) { stoPrep(); if (!STO.n) return toast('The list isn’t here yet'); }
+    var o = STO, w = window.open(o.url, '_blank');
+    // (and handed over as text too, where the opened tab can be: a computer)
+    var hand = function (e) { if (e.origin !== 'https://cooperking.github.io' || !e.data || e.data.type !== 'sto-ready' || !w || e.source !== w) return; window.removeEventListener('message', hand); w.postMessage({ type: 'sto-csv', csv: o.csv, name: o.name }, 'https://cooperking.github.io'); };
     window.addEventListener('message', hand); setTimeout(function () { window.removeEventListener('message', hand); }, 60000);
-    $('#cmsay').textContent = rows.length + ' film' + (rows.length === 1 ? '' : 's') + (ch.length ? ' chosen' : '') + ' opened in Search Tab Opener.';
+    $('#cmsay').textContent = o.n + ' film' + (o.n === 1 ? '' : 's') + (o.ch ? ' chosen' : '') + ' opened in Search Tab Opener.';
   };
   function cbCsv(rows, name) {
     var csv = cbText(rows);
