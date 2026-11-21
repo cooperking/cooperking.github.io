@@ -929,6 +929,11 @@ def make_handler(g):
                             save(SUBPREP, P)
                             return self.send_json(200, {'ok': True})
                         P.pop('_setup', None)
+                        if body.get('srt64') and not body.get('srt'):   # (sent packed: Cloudflare refused it as text)
+                            try:
+                                body['srt'] = base64.b64decode(str(body['srt64'])).decode('utf-8', 'replace')
+                            except Exception:
+                                pass
                         if body.get('ok') and body.get('srt') and self.subs_ready():
                             try:
                                 it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
@@ -2851,7 +2856,10 @@ def make_handler(g):
                 cnt[x.get('state')] = cnt.get(x.get('state'), 0) + 1
             pick = lambda st_: sorted(({k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'note', 'chose', 'at', 'n')} for x in F if x.get('state') in st_),
                                       key=lambda x: -(x.get('at') or 0))
-            return self.send_json(200, {'counts': cnt, 'total': len(F), 'paused': bool(P.get('_paused')), 'setup': bool((P.get('_setup') or {}).get('need')),
+            # (the film being done now, and since when, for the admin page: John, 21 Nov 2026, "I'd like to be able to see in admin if anything
+            # is happening")
+            now_ = sorted(({k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'at')} for x in F if x.get('state') == 'given'), key=lambda x: -(x.get('at') or 0))
+            return self.send_json(200, {'counts': cnt, 'total': len(F), 'paused': bool(P.get('_paused')), 'setup': bool((P.get('_setup') or {}).get('need')), 'now': now_[:3],
                                         'check': pick(('check',)), 'none': pick(('none', 'nomatch', 'failed')), 'done': pick(('done',))[:30]})
 
         def api_waiting(self, me, user, q, b):
