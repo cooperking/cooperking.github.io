@@ -2643,6 +2643,44 @@ def make_handler(g):
             L = [{k: v for k, v in x.items() if k != 'files'} for x in (load(ACTIONS_AT, []) or [])]
             return self.send_json(200, {'asks': L[-30:], 'plex_off': bool(g.st.get('plex_off'))})
 
+        def api_afi(self, me, user, q, b):
+            """John's only: AFI Catalog pages found by his own browser on AFI's site (the admin page's bookmark), for American films to 1993
+            that Wikidata and Wikipedia gave none for (John, 21 Nov 2026, "A bookmarklet would be the best solution"). GET: those films, for
+            the bookmark; POST {afi: {imdb: AFI's number}}: kept with the rest (afi-ids.json), the site updated."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            af = os.path.expanduser('~/Grifflix/afi-ids.json')
+            A = load(af, {}) or {}
+            got = 0
+            if b and isinstance(b.get('afi'), dict):
+                for k, v in b['afi'].items():
+                    if re.match(r'^tt\d{6,10}$', str(k)) and re.match(r'^\d{1,7}$', str(v)):
+                        A[str(k)] = {'id': str(v), 'at': int(time.time()), 'w': 1, 'from': 'afi-bookmark'}
+                        got += 1
+                save(af, A)
+                g.forget()
+                g.publish_soon = time.time() + 60
+                log('AFI Catalog pages: %d films, by John’s browser' % got)
+            lid = (g.st.get('libraries') or {}).get('movies')
+            out, start, linked = [], 0, 0
+            while lid:
+                r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'ProviderIds,ProductionLocations,OriginalTitle',
+                                                                       'StartIndex': start, 'Limit': 500, 'EnableImages': 'false'}, timeout=120) or {}
+                for it in r.get('Items') or []:
+                    t = str((it.get('ProviderIds') or {}).get('Imdb') or '')
+                    y = int(it.get('ProductionYear') or 0)
+                    us = not it.get('ProductionLocations') or any('united states' in str(c).lower() for c in it['ProductionLocations'])
+                    if not (re.match(r'^tt\d{6,10}$', t) and us and 1893 <= y <= 1993):
+                        continue
+                    if (A.get(t) or {}).get('id'):
+                        linked += 1
+                    else:
+                        out.append([t, it.get('Name') or '', y] + ([it['OriginalTitle']] if it.get('OriginalTitle') and it['OriginalTitle'] != it.get('Name') else []))
+                start += 500
+                if start >= (r.get('TotalRecordCount') or 0):
+                    break
+            return self.send_json(200, {'missing': out, 'linked': linked, 'got': got})
+
         def api_distributors(self, me, user, q, b):
             """John's only: each film's US distributor, as Box Office Mojo gives it, read by his own browser (the admin page's bookmark) and
             kept here (John, 20 Nov 2026, "can we find a database that has the info?" ... "make a bookmarklet for this"): GET, the films' IMDb
