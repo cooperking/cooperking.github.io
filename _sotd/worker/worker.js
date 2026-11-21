@@ -1576,7 +1576,15 @@ async function gPicGet(request, url, env, ctx) {   // /gp/<id>/<Kind>-<w>.jpg: f
   if (!o || stale) {   // not copied yet, or changed: from the Mac now, and kept from then on (if the Mac answers)
     const r = await fetch(ask, { headers: { 'User-Agent': 'Grifflix Worker' } }).catch(() => null);
     const ct = r ? (r.headers.get('Content-Type') || '').split(';')[0] : '', good = r && r.ok && /^image\/(jpeg|png|webp)$/.test(ct);
-    if (!good && !o) return Response.redirect(ask, 302);
+    if (!good && !o) {   // (the Mac hasn't it (a film converted since, under a new id): the nearest size kept here, not nothing: John, 21 Nov 2026,
+      // Mamma Roma without its Criterion cover on sharp screens)
+      const all = G_PIC_KINDS[m[2]].map(String), at = all.indexOf(m[3]);
+      for (const x of all.slice(0, at).reverse().concat(all.slice(at + 1))) {
+        const near = await env.MEDIA.get('grifflix/p/' + m[1] + '/' + m[2] + '-' + x + '.jpg').catch(() => null);
+        if (near) return new Response(near.body, { headers: { 'Content-Type': (near.httpMetadata || {}).contentType || 'image/jpeg', 'Cache-Control': 'public, max-age=600', 'Access-Control-Allow-Origin': '*' } });
+      }
+      return Response.redirect(ask, 302);
+    }
     if (good) {
       body = await r.arrayBuffer();
       if (body.byteLength > 200) { o = null; type = ct; const put = env.MEDIA.put(key, body, { httpMetadata: { contentType: ct }, customMetadata: { t: want } }); if (ctx) ctx.waitUntil(put); else await put; }

@@ -211,10 +211,12 @@ def main():
             if GO and not KEEP:
                 os.remove(src)
             continue
-        print('  %s → %s%s' % (p, os.path.relpath(dest, BASE), ' (replacing its poster)' if os.path.exists(dest) or any(os.path.exists(o) for o in others) else ''))
+        multi = films is not None and len(set(re.sub(r'[^a-z0-9]', '', n.lower()) for _, n in films.get(folder) or [])) > 1
+        if not multi:   # (a folder of several films says its own line below: "→ the folder's poster" said every run for W. C. Fields, put on or not)
+            print('  %s → %s%s' % (p, os.path.relpath(dest, BASE), ' (replacing its poster)' if os.path.exists(dest) or any(os.path.exists(o) for o in others) else ''))
         if not GO:
             done += 1; continue
-        if films is not None and len(set(re.sub(r'[^a-z0-9]', '', n.lower()) for _, n in films.get(folder) or [])) > 1:
+        if multi:
             # (a release of several films in one folder, its cover the folder's own (W. C. Fields—Six Short Films): that cover on each of its
             # films, beside each named after its file ("Pool Sharks (1915)-poster.jpg"), as the media server reads a film's own poster in a
             # shared folder: John, 21 Nov 2026, "in the rare case where box sets don't have individual covers, like WC fields - just use the
