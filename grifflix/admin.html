@@ -2211,7 +2211,11 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   }
   $('#cmsto').onclick = function () {
     if (!STO.n) { stoPrep(); if (!STO.n) return toast('The list isn’t here yet'); }
-    var o = STO, w = window.open(o.url, '_blank');
+    var o = STO, w;
+    // (from the Home Screen app on an iPhone, in Safari itself: opened inside the app, every link it opened was stuck there too: John, 21 Nov
+    // 2026, "Search tab opener needs to open outside of the homescreen app")
+    if (navigator.standalone && /iPhone|iPad|iPod/.test(navigator.userAgent)) { location.href = 'x-safari-' + o.url; w = null; toast(o.n + ' film' + (o.n === 1 ? '' : 's') + (o.ch ? ' chosen' : '') + ' opened in Safari'); return; }
+    w = window.open(o.url, '_blank');
     // (and handed over as text too, where the opened tab can be: a computer)
     var hand = function (e) { if (e.origin !== 'https://cooperking.github.io' || !e.data || e.data.type !== 'sto-ready' || !w || e.source !== w) return; window.removeEventListener('message', hand); w.postMessage({ type: 'sto-csv', csv: o.csv, name: o.name }, 'https://cooperking.github.io'); };
     window.addEventListener('message', hand); setTimeout(function () { window.removeEventListener('message', hand); }, 60000);
