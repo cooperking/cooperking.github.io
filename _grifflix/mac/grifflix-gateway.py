@@ -5758,26 +5758,45 @@ def subprep_scan():
     films, start = [], 0
     while True:
         r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': libs['movies'], 'Recursive': 'true', 'IncludeItemTypes': 'Movie',
-                                                              'Fields': 'MediaStreams,ProductionYear', 'StartIndex': start, 'Limit': 200}) or {}
+                                                              'Fields': 'MediaStreams,ProductionYear,ProviderIds', 'StartIndex': start, 'Limit': 200}) or {}
         films += r.get('Items') or []
         start += 200
         if start >= (r.get('TotalRecordCount') or 0):
             break
     eng = ('eng', 'en', 'english')
-    seen, added = set(), 0
+    # (a film whose sound isn't marked with its language, nearly half of them, by the language TMDB gives as its own: they were all left
+    # off, as if English (John, 21 Nov 2026, "I feel like I must have more films than that with no subs"). Asked once each, kept)
+    lf = os.path.expanduser('~/Grifflix/tmdb-langs.json')
+    TL = load(lf, {}) or {}
+    asked, seen, added, tally = 0, set(), 0, {}
     for f in films:
         st = f.get('MediaStreams') or []
         au = [x for x in st if x.get('Type') == 'Audio']
         main = next((x for x in au if x.get('IsDefault')), au[0] if au else None)
         al = ((main or {}).get('Language') or '').lower()
-        if not al or al in eng or al in ('und', 'unk', 'zxx', 'mis'):
+        if not al or al in ('und', 'unk', 'zxx', 'mis'):
+            tid = str((f.get('ProviderIds') or {}).get('Tmdb') or '')
+            if tid and tid not in TL and asked < 1500:
+                try:
+                    TL[tid] = ((tmdb(g, '/movie/' + tid) or {}).get('original_language') or '').lower()
+                except Exception:
+                    pass   # (asked again next time)
+                asked += 1
+                if asked % 100 == 0:
+                    save(lf, TL)
+            al = (TL.get(tid) or '') if tid else ''
+        has_t = any(x.get('Type') == 'Subtitle' and x.get('IsTextSubtitleStream') and (x.get('Language') or '').lower() in eng for x in st)
+        has_p = any(x.get('Type') == 'Subtitle' and not x.get('IsForced') and 'forced' not in (x.get('Title') or '').lower()
+                    and (x.get('Language') or '').lower() in eng for x in st)
+        if al and al not in eng and al not in ('und', 'unk', 'zxx', 'mis', 'xx'):
+            k_ = 'text' if has_t else 'picture' if has_p else 'none'
+            tally[k_] = tally.get(k_, 0) + 1
+        if not al or al in eng or al in ('und', 'unk', 'zxx', 'mis', 'xx'):
             continue   # (English, or not known: not on the list)
-        has = any(x.get('Type') == 'Subtitle' and x.get('IsTextSubtitleStream') and (x.get('Language') or '').lower() in eng for x in st)
-        # (or English picture subtitles of its own, not only the forced ones: their text is to be read from them, exactly timed, when converted
-        # (convert.py pulls them out beside it, picture-subs.json), not made by Whisper: 101 of the 147 listed had them, Wild Strawberries
-        # among them: John, 21 Nov 2026, "I'm not sure why Wild Strawberries was even in the list")
-        has = has or any(x.get('Type') == 'Subtitle' and not x.get('IsForced') and 'forced' not in (x.get('Title') or '').lower()
-                         and (x.get('Language') or '').lower() in eng for x in st)
+        # (English picture subtitles of its own count too, not only the forced ones: their text is to be read from them, exactly timed, when
+        # converted (convert.py pulls them out beside it, picture-subs.json), not made by Whisper: 101 of the 147 listed had them, Wild
+        # Strawberries among them: John, 21 Nov 2026, "I'm not sure why Wild Strawberries was even in the list")
+        has = has_t or has_p
         iid = f['Id']
         seen.add(iid)
         e = P.get(iid)
@@ -5791,6 +5810,9 @@ def subprep_scan():
     for k in [k for k in P if not k.startswith('_') and k not in seen and P[k].get('state') in ('waiting', 'none', 'failed', 'nomatch')]:
         P.pop(k, None)
     save(SUBPREP, P)
+    if asked:
+        save(lf, TL)
+    save(os.path.expanduser('~/Grifflix/foreign-films.json'), dict(tally, at=int(time.time()), films=len(films)))   # (how many in a language not English, and with which English subtitles)
     if added:
         log('Subtitles to make ready: %d more foreign-language films with no English subtitles' % added)
 

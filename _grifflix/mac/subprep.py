@@ -113,10 +113,10 @@ def transcribe(ff, wcli, film, t0, length, translate, work, lang=None):
                     '-ar', '16000', '-c:a', 'pcm_s16le', wav], check=True, timeout=900)
     out = os.path.join(work, 'w')
     if wcli == 'fw':   # (faster-whisper, in its own Python)
-        subprocess.run([FW_PY, '-c', FW_RUN, wav, out + '.srt', FW_MODEL, '1' if translate else '0', LANG2.get(lang or '', '')], check=True, timeout=3600,
+        subprocess.run([FW_PY, '-c', FW_RUN, wav, out + '.srt', FW_MODEL, '1' if translate else '0', LANG2.get(lang or '', lang if len(lang or '') == 2 else '')], check=True, timeout=3600,
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     else:
-        cmd = [wcli, '-m', MODEL, '-f', wav, '-osrt', '-of', out, '-l', LANG2.get(lang or '', '') or 'auto', '-np']
+        cmd = [wcli, '-m', MODEL, '-f', wav, '-osrt', '-of', out, '-l', LANG2.get(lang or '', lang if len(lang or '') == 2 else '') or 'auto', '-np']
         if translate:
             cmd.append('-tr')
         subprocess.run(cmd, check=True, timeout=3600, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
