@@ -1450,7 +1450,7 @@ def make_handler(g):
                         # and cover: John, 18 Nov 2026, "the same may be true of other unusual criterion collection items")
                         FOLDN_ = __import__("collections").Counter(os.path.dirname(i.get('Path') or '') for i in raw) if key == 'movies' else {}
                         FOLDP_ = __import__("collections").Counter(os.path.dirname(os.path.dirname(i.get('Path') or '')) for i in raw) if key == 'movies' else {}   # (and by the folder above)
-                        ANTH_ = {}
+                        ANTH_, HALF_ = {}, {}
                         # (the box sets once kept as collections, by each film's folder, as they were when they were taken apart: John,
                         # 18 Nov 2026, "Remove them from normal collections when they were as the others do")
                         CGFIX_ = load(os.path.expanduser('~/Grifflix/criterion-genres-fixed.json'), {}) or {}
@@ -1458,6 +1458,11 @@ def make_handler(g):
                         for f_ in load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or []:
                             if '/films/' in str(f_.get('link') or ''):
                                 ANTH_.setdefault(fold(f_.get('title')), f_)
+                                # (a release of two films named for both, "Jimi Plays Monterey & Shake! Otis at Monterey": each film, kept on its own,
+                                # one of it: John, 21 Nov 2026, "Can the Monterey pop box set be dealt with and marked as complete")
+                                if ' & ' in str(f_.get('title') or ''):
+                                    for h_ in str(f_['title']).split(' & '):
+                                        HALF_.setdefault(fold(h_), f_)
                         for i in raw:
                             if i['Id'] in items:
                                 sp = spine_of(i.get('Path'), key == 'tv')
@@ -1484,6 +1489,10 @@ def make_handler(g):
                                     # Shake! Otis at Monterey (1986)/Jimi Plays Monterey (1987)/…": John, 21 Nov 2026, "have both but are separate files")
                                     up_ = os.path.dirname(fd_)
                                     af_ = ANTH_.get(fold(re.sub(r'\s*\((19|20)\d\d\)\s*$', '', os.path.basename(up_)))) if FOLDP_.get(up_, 0) > 1 and os.path.basename(fd_).lower() not in XDIRS else None   # (not a film's own extras folder)
+                                if not af_ and key == 'movies' and not sl0_:   # (one of a release's two films, in a folder of its own)
+                                    af_ = HALF_.get(fold(i.get('Name'))) or HALF_.get(fold(re.sub(r'\s*\((19|20)\d\d\)\s*$', '', os.path.basename(fd_))))
+                                    if af_ and not (str(af_.get('year') or '').isdigit() and abs(int(af_['year']) - (i.get('ProductionYear') or 0)) <= 2):
+                                        af_ = None   # (only of its own years: not another film of the same name)
                                 if af_ and fold(af_.get('title')) != fold(i.get('Name')):
                                     an_ = str(af_.get('title') or '')
                                     SMETA.setdefault(fold(an_), (str(af_.get('spine') or ''), str(af_.get('img') or '')))

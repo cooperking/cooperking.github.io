@@ -1465,6 +1465,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         return '<details class="mset"><summary>' + (sp[b] ? 'No. ' + sp[b] + ' · ' : '') + esc(b) + '<small>' + have[b] + ' of ' + all + '</small><span class="cbbar"><i style="width:' + Math.round(100 * have[b] / all) + '%"></i></span><span class="cbto">' + gone[b].length + ' to get</span></summary>' +
           gone[b].map(cbrow).join('') + '</details>';
       }).join('') : '<p class="stat">Every box set begun is complete.</p>';
+      // (and those finished: every film of the set here: John, 21 Nov 2026, "Can the Monterey pop box set be dealt with and marked as complete")
+      var full = Object.keys(gone).filter(function (b) { return !gone[b].length && have[b]; }).sort(function (a, b) { return (sp[a] || 1e9) - (sp[b] || 1e9) || a.localeCompare(b, 'en', { numeric: true }); });
+      if (full.length) $('#cbmiss').insertAdjacentHTML('beforeend', '<details class="mset"><summary class="mhead">Complete<small>' + full.length + ' box sets, every film here</small></summary>' +
+        full.map(function (b) { return '<div class="mrow cb"><span class="y">' + (sp[b] ? 'No. ' + esc(String(sp[b])) : '') + '</span><b>' + esc(b) + '</b><span class="s">' + have[b] + (have[b] === 1 ? ' film' : ' films') + ' ✓</span></div>'; }).join('') + '</details>');
       // (and those not begun: none of their films here yet, each opened to its films: John, 19 Nov 2026, "Can it also list box sets not started")
       var none = (L.csetsnone || []).slice().sort(function (a, b) { return (+a.sp || 1e9) - (+b.sp || 1e9) || a.n.localeCompare(b.n, 'en', { numeric: true }); });   // (Eclipse Series 3 before 30)
       if (none.length) {
