@@ -19,6 +19,9 @@ HOME = os.path.expanduser('~/Grifflix')
 MODEL = os.path.join(HOME, 'whisper', 'ggml-medium.bin')
 # (or, with no Homebrew on John's Mac, faster-whisper: Whisper in Python, put in ~/Grifflix/fw by `convert-here.sh subs-setup` with no
 # administrator rights needed: John, 21 Nov 2026, "we need a way without homebrew")
+# (its own name on what it sends: Cloudflare, in front of the Mac mini, turns away Python's own ("Python-urllib") with 403, and every film's
+# subtitles were lost: Io Capitano, Samurai I: John, 21 Nov 2026)
+UA = 'Grifflix-subprep/1.0'
 FW_PY = os.path.join(HOME, 'fw', 'bin', 'python3')
 FW_MODEL = os.environ.get('GRIFFLIX_FW_MODEL') or 'small'
 FW_RUN = r'''
@@ -155,7 +158,7 @@ def prog(step):
     print(step, flush=True)
     try:
         urllib.request.urlopen(urllib.request.Request(PROG['base'] + '/macagent/subprog', data=json.dumps({'id': PROG['id'], 'step': step}).encode(),
-                                                      headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + PROG['key']}), timeout=30).read()
+                                                      headers={'Content-Type': 'application/json', 'User-Agent': UA, 'Authorization': 'Bearer ' + PROG['key']}), timeout=30).read()
     except Exception:
         pass
 
@@ -252,7 +255,7 @@ def main():
     job = json.load(open(job_file))
     PROG.update(base=base, key=key, id=job['id'])
     say = lambda body: urllib.request.urlopen(urllib.request.Request(base + '/macagent/subdone', data=json.dumps(dict(body, id=job['id'])).encode(),
-                                              headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key}), timeout=120).read()
+                                              headers={'Content-Type': 'application/json', 'User-Agent': UA, 'Authorization': 'Bearer ' + key}), timeout=120).read()
     ff, wcli = tool('ffmpeg'), tool('whisper-cli', 'whisper-cpp', 'main')
     if not (wcli and os.path.exists(MODEL)) and os.access(FW_PY, os.X_OK):
         wcli = 'fw'
