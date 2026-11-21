@@ -405,7 +405,11 @@ def beyond(films):
             if what in ('set', 'series') and box and iid not in held:
                 add.append((iid, nm))
             sig = '%s %d' % (os.path.basename(pth), os.path.getsize(pth))
-            if done.get(iid) == sig:
+            # (put on before, and still there: a film's own folder's poster still the cover. Fix match had the media server put TMDB's poster
+            # over it, and it was taken as done: Jane B. par Agnès V., John, 21 Nov 2026, "Still not criterion images")
+            still = not (folder and what in ('series', 'part')) or any(os.path.exists(os.path.join(folder, o)) and os.path.getsize(os.path.join(folder, o)) == os.path.getsize(pth)
+                                                                         for o in ('poster.jpg', 'poster.png'))
+            if done.get(iid) == sig and still:
                 continue
             put.append('%s (%s)' % (nm, what))
             if GO:
