@@ -1534,6 +1534,11 @@ def make_handler(g):
                                                             and os.path.dirname(x.get('Path') or '') == os.path.dirname(i.get('Path') or '') for x in raw):
                             items.pop(i['Id'], None)
                     lists[key] = [i['Id'] for i in raw if i['Id'] in items]
+                    if key == 'movies':   # (who released each film, and whose library it's in now: John, 21 Nov 2026)
+                        try:
+                            dist_tags(g, items)
+                        except Exception as e:
+                            log('Distributors on the site: %s' % str(e)[:200])
                     if key == 'movies':
                         self.extras(raw, items, lists)
                     # (the extras the media server keeps as extras, in a film's Other or Extras folder: on its page too (John, 17 Nov 2026:
@@ -6618,6 +6623,71 @@ def imdb_distributor(t):
                  and not any(k in e['a'] for k in ('dvd', 'vhs', 'blu-ray', 'laserdisc', 'betamax')) and (not fy or e['y'] <= fy + 1)]
         who = first(shown)
     return re.sub(r'\s+', ' ', who).strip()[:120], rec
+
+
+DLIBS = {'at': 0, 'd': {}}
+
+
+def dist_tags(g, items):
+    """Each film's original distributor (distributors.json: Box Office Mojo, IMDb, its streaming service) as 'dist', and the distributors
+    whose libraries hold it now as 'libs', from their own film lists (grifflix/distributor-libraries.json, kept with the site): by title and
+    a year within one; a list with no years (Sony Pictures Classics, Strand) only for its own releases, so another film of the name isn't
+    taken for it (John, 21 Nov 2026: "Add it")."""
+    import unicodedata
+    if time.time() - DLIBS['at'] > 3600:
+        try:
+            with urllib.request.urlopen(urllib.request.Request('https://cooperking.github.io/grifflix/distributor-libraries.json', headers={'User-Agent': 'Grifflix gateway'}), timeout=60, context=tls()) as r_:
+                DLIBS['d'] = json.loads(r_.read())
+            DLIBS['at'] = time.time()
+        except Exception as e:
+            log('Distributor libraries: %s' % e)
+    D = load(os.path.expanduser('~/Grifflix/distributors.json'), {}) or {}
+    ROM = {'ii': '2', 'iii': '3', 'iv': '4', 'vi': '6', 'vii': '7', 'viii': '8', 'ix': '9'}
+
+    def key(t):
+        t = unicodedata.normalize('NFKD', str(t or '').replace('&', ' and ')).encode('ascii', 'ignore').decode().lower()
+        t = re.sub(r'\s*\((19|20)\d\d\)\s*$', '', t)
+        t = re.sub(r'^(.*), (the|a|an)$', r'\2 \1', t)
+        t = re.sub(r'\b(ii|iii|iv|vi|vii|viii|ix)\b', lambda m: ROM[m.group(1)], t)
+        t = re.sub(r'[^a-z0-9 ]', ' ', t).strip()
+        return re.sub(r'\s+', '', re.sub(r'^(the|a|an) ', '', t))
+    lid = (g.st.get('libraries') or {}).get('movies')
+    mine, start = [], 0
+    while lid:
+        r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'ProviderIds,OriginalTitle',
+                                                               'StartIndex': start, 'Limit': 500, 'EnableImages': 'false'}, timeout=120) or {}
+        mine += r.get('Items') or []
+        start += 500
+        if start >= (r.get('TotalRecordCount') or 0):
+            break
+    by, imdb = {}, {}
+    for it in mine:
+        imdb[it['Id']] = str((it.get('ProviderIds') or {}).get('Imdb') or '')
+        for k in {key(it.get('Name')), key(it.get('OriginalTitle'))} - {''}:
+            by.setdefault(k, []).append(it)
+    libs = {}
+    for dn, L in (DLIBS['d'] or {}).items():
+        w = [x for x in dn.lower().split() if x != 'the'][0]
+        for title, year in L:
+            c = by.get(key(title), [])
+            if year:
+                c = [x for x in c if not x.get('ProductionYear') or abs(int(x['ProductionYear']) - int(year)) <= 1]
+            elif len(c) > 1:
+                c = []
+            if not year:
+                c = [x for x in c if w in (D.get(imdb.get(x['Id'])) or '').lower()]
+            for x in c:
+                if dn not in libs.setdefault(x['Id'], []):
+                    libs[x['Id']].append(dn)
+    for iid, o in items.items():
+        o.pop('dist', None)
+        o.pop('libs', None)
+        d = D.get(imdb.get(iid) or '-') or ''
+        if d:
+            o['dist'] = d
+        l_ = [n for n in libs.get(iid, []) if [x for x in n.lower().split() if x != 'the'][0] not in d.lower()]   # (not its own release again)
+        if l_:
+            o['libs'] = l_
 
 
 def bom_now():
