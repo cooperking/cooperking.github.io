@@ -310,6 +310,11 @@ dialog::backdrop { background: rgba(10, 4, 12, .62); backdrop-filter: blur(6px);
 .sheet .people { margin-top: 14px; font-size: 13.5px; color: var(--muted); }
 .sheet .people b { color: var(--fg-2); font-weight: 500; }
 html.tv .sheet .people { font-size: var(--crfs, 15px); }
+.sheet details.afih { margin-top: 14px; font-size: 14px; line-height: 1.55; color: var(--fg-2); max-width: 70ch; }
+.sheet details.afih summary { cursor: pointer; color: var(--fg); font-weight: 500; list-style: none; }
+.sheet details.afih summary::-webkit-details-marker { display: none; }
+.sheet details.afih summary::after { content: " +"; color: var(--muted); } .sheet details.afih[open] summary::after { content: " −"; }
+.sheet details.afih p { margin: 10px 0 0; }
 .sheet .people a.afi { font: inherit; letter-spacing: inherit; text-transform: none; color: var(--fg-2); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; white-space: nowrap; }
 html.tv .sheet .people a.afi { display: none; }   /* (no browsing out from the TV) */
 .sheet .acts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; align-items: center; }
@@ -7091,13 +7096,22 @@ function bodyHTML(it, ctx) {
   if (it.genres && it.genres.length) h += '<div class="chips">' + it.genres.map(function (g) { return '<span>' + esc(g) + '</span>'; }).join('') + '</div>';
   if ((it.directors && it.directors.length) || (it.cast && it.cast.length)) h += '<div class="people">' + (it.directors && it.directors.length ? '<b>Directed by</b> ' + esc(it.directors.join(', ')) + '. ' : '') + (it.cast && it.cast.length ? '<b>With</b> ' + esc(it.cast.join(', ')) + '.' : '') + '</div>';
   // (who released it, and whose library it's in now (Janus, Kino Lorber, Rialto…): John, 21 Nov 2026)
-  var and_ = function (L) { return esc(L.join(', ').replace(/, ([^,]*)$/, ' and $1')); };
+  // (a list in words, "A, B and C"; a company without its "Inc." or "Corp.", as AFI gives them: Paramount Pictures, Inc.)
+  var co_ = function (n) { return String(n).replace(/,?\s+(inc|incorporated|corp|corporation|ltd|limited|co)\.?$/i, '').trim(); };
+  var and_ = function (L) { L = L.map(co_); return esc(L.length < 2 ? L.join('') : L.slice(0, -1).join(', ') + ' and ' + L[L.length - 1]); };
+  var dot_ = function (t) { return /[.!?]$/.test(t) ? t : t + '.'; };
   // (an American film from 1893 to 1993: the AFI Catalog's search for it, one click, to check who made and released it: John, 21 Nov 2026)
   // (its own page there, by AFI's number for it, where it's known; no search, no icon: John, 21 Nov 2026)
   var afi = it.afi && /^\d+$/.test(it.afi) ? ' <a class="afi" href="https://catalog.afi.com/Catalog/moviedetails/' + it.afi + '" target="_blank" rel="noopener">AFI Catalog</a>' : '';
-  if (it.dist || (it.libs && it.libs.length) || (it.studios && it.studios.length)) h += '<div class="people dist">' + (it.studios && it.studios.length ? '<b>Produced by</b> ' + and_(it.studios) + '. ' : '') + (it.dist ? '<b>Released by</b> ' + esc(it.dist) + '. ' : '') +
-    (it.libs && it.libs.length ? '<b>Now in the library of</b> ' + esc(it.libs.join(', ').replace(/, ([^,]*)$/, ' and $1')) + '.' : '') + afi + '</div>';
+  // (AFI's own record, where it has one, before TMDB's and Box Office Mojo's: John, 21 Nov 2026)
+  var prod_ = it.afiprod && it.afiprod.length ? it.afiprod : it.studios, rel_ = it.afidist && it.afidist.length ? it.afidist : (it.dist ? [it.dist] : null);
+  if (rel_ || (it.libs && it.libs.length) || (prod_ && prod_.length)) h += '<div class="people dist">' + (prod_ && prod_.length ? '<b>Produced by</b> ' + dot_(and_(prod_)) + ' ' : '') + (rel_ ? '<b>Released by</b> ' + dot_(and_(rel_)) + ' ' : '') +
+    (it.libs && it.libs.length ? '<b>Now in the library of</b> ' + dot_(and_(it.libs)) : '') + afi + '</div>';
   else if (afi) h += '<div class="people dist">' + afi.trim() + '</div>';
+  // (the AFI Catalog's genre and subjects, and its History of the film, opened when wanted: John, 21 Nov 2026, "and the history info")
+  if ((it.afig && it.afig.length) || (it.afisub && it.afisub.length)) h += '<div class="people afis">' + (it.afig && it.afig.length ? '<b>Genre</b> ' + dot_(and_(it.afig)) + ' ' : '') +
+    (it.afisub && it.afisub.length ? '<b>Subjects</b> ' + dot_(esc(it.afisub.concat(it.afisubm || []).join(', '))) : '') + '</div>';
+  if (it.afih) h += '<details class="afih"><summary>History, from the AFI Catalog</summary>' + String(it.afih).split(/\n\s*\n/).map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') + '</details>';
   h += '<div class="acts">';
   var TR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M8 5v4M16 5v4"/></svg>';
   if (it.ext) {   // (a theme's film Grifflix hasn't yet: its trailer, the film itself to come: John, 9 Nov 2026)
