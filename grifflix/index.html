@@ -173,7 +173,7 @@ img { display: block; }
 html.tv .pic.odd::before { filter: brightness(.35); inset: 0; }
 .pic.odd img { object-fit: contain !important; }
 /* (the themes: such a poster whole, wherever a theme shows it, on the theme's own ground: John, 16 Nov 2026) */
-.th .vday.podd, .tday.podd, .hday.podd, .th .vday.podd u, .th .vday.podd .ph, .th .vday.podd .pp, .th .podd .np u, .codepic.podd, .cposter.podd, .mposter.podd { background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; }
+.th:not(.th-picture) .vday.podd, .tday.podd, .hday.podd, .th .vday.podd u, .th .vday.podd .ph, .th .vday.podd .pp, .th .podd .np u, .codepic.podd, .cposter.podd, .mposter.podd { background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; }
 .card .bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--fg); }
 .card .t { margin-top: 8px; font: 600 15px/1.2 var(--kfont); text-transform: uppercase; letter-spacing: .03em; color: var(--fg); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .card .s { margin-top: 2px; font: 600 10px/1.3 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
@@ -310,6 +310,13 @@ dialog::backdrop { background: rgba(10, 4, 12, .62); backdrop-filter: blur(6px);
 .sheet .people { margin-top: 14px; font-size: 13.5px; color: var(--muted); }
 .sheet .people b { color: var(--fg-2); font-weight: 500; }
 html.tv .sheet .people { font-size: var(--crfs, 15px); }
+.sheet details.afih { margin-top: 14px; font-size: 14px; line-height: 1.55; color: var(--fg-2); max-width: 70ch; }
+.sheet details.afih summary { cursor: pointer; color: var(--fg); font-weight: 500; list-style: none; }
+.sheet details.afih summary::-webkit-details-marker { display: none; }
+.sheet details.afih summary::after { content: " +"; color: var(--muted); } .sheet details.afih[open] summary::after { content: " −"; }
+.sheet details.afih p { margin: 10px 0 0; }
+.sheet .people a.afi { font: inherit; letter-spacing: inherit; text-transform: none; color: var(--fg-2); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; white-space: nowrap; }
+html.tv .sheet .people a.afi { display: none; }   /* (no browsing out from the TV) */
 .sheet .acts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; align-items: center; }
 .sheet .acts .pill.go { min-height: 46px; padding: 0 22px; background: var(--fg); color: #1b1020; border-color: var(--fg); font-size: 13px; }
 .sheet .acts .pill.go svg { width: 16px; height: 16px; }
@@ -2242,7 +2249,7 @@ html.gcrit #cbody .cstats { color: var(--gc-pale) !important; } html.gcrit #cbod
 html.gcrit #cbody .collhead + .tabs, html.gcrit #cbody #cgrid { background: #fff !important; }
 html.gcrit #cbody .collhead + .tabs { border-top: 2px solid var(--gc-line) !important; }
 html.gcrit #cbody .pill, html.gcrit #cbody .sfb { background: #fff !important; color: var(--gc-ink) !important; border: 2px solid var(--gc-page) !important; border-radius: 0 !important; box-shadow: none !important; }
-html.gcrit #cbody .pill.on, html.gcrit #cbody .sfb.on { background: var(--gc-page) !important; }
+html.gcrit #cbody .pill.on, html.gcrit #cbody .sfb.on { background: var(--gc-ink) !important; border-color: var(--gc-ink) !important; color: #fff !important; }   /* (chosen: as it looks pointed at, so what's chosen shows (List, Covers, Box sets): John, 21 Nov 2026) */
 html.gcrit #cbody .pill:hover, html.gcrit #cbody .sfb:hover, html.gcrit #cbody .pill:focus-visible, html.gcrit #cbody .sfb:focus-visible { background: var(--gc-ink) !important; border-color: var(--gc-ink) !important; color: #fff !important; }
 html.gcrit #cbody .cfind { background: var(--gc-page) !important; border: 2px solid var(--gc-page) !important; color: var(--gc-ink) !important; border-radius: 0 !important; }
 html.gcrit #cbody .clhead { border-bottom: 2px solid var(--gc-ink) !important; } html.gcrit #cbody .clh { color: var(--gc-ink) !important; }
@@ -2557,6 +2564,9 @@ html[data-theme=spiral] .hinfo .w > span { -webkit-text-stroke-width: 2.2px; }
    against the holes as the film runs: John, 16 Nov 2026: "the horizontal posters are drifting within the film strip which looks odd") */
 html .th-picture .vday, html .th-picture .vday.soon { width: 256px; height: 212px; background: linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 9px / 32px 13px repeat-x, linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 190px / 32px 13px repeat-x, linear-gradient(#0c0b0a, #0c0b0a) 8px 38.5px / 240px 135px no-repeat, #141414 !important; box-shadow: none !important; }
 html .th-picture .vday.soon { background: linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 9px / 32px 13px repeat-x, linear-gradient(90deg, transparent 0 9px, #f4ecd8 9px 23px, transparent 23px) 0 190px / 32px 13px repeat-x, linear-gradient(#141210, #141210) 8px 38.5px / 240px 135px no-repeat, #141414 !important; }
+/* (a poster not 2:3 kept whole by the frame's own picture (::before, contain), not by sizing the frame's background, which is the film and its
+   holes: that rule had wiped the holes off those frames and set their film off centre: John, 20 Nov 2026, "there's no sprockets on the film here - and
+   the pictures are drifting again") */
 html .th-picture .vday.has::before { content: ""; position: absolute; left: 50%; top: 50%; width: 135px; height: 240px; margin: -120px 0 0 -67.5px; transform: rotate(90deg); background: var(--p) center / contain no-repeat; pointer-events: none; }
 .th-picture .vday.soon { background: #141210 !important; box-shadow: inset 0 0 0 1px rgba(244, 236, 216, .25) !important; }
 .th-picture .vday.soon .cs { display: grid !important; font: 600 15px/1.2 var(--kfont) !important; letter-spacing: .28em; color: rgba(244, 236, 216, .55) !important; text-transform: uppercase; }
@@ -2568,7 +2578,7 @@ html.ga24:not(.tv) .bar-top::before, html.gcrit:not(.tv) .bar-top::before { cont
 html.gcrit:not(.tv) .bar-top::before { background: var(--gc-page) !important; border-bottom-color: var(--gc-line); }
 /* (and there, the bar as on any page, at the top, whatever the month's theme: the Table's and the Hall's bar is set down from the top and
    narrower, for their own scenes: John, 19 Nov 2026, "top bar has extra space at the top") */
-html.ga24.hall[data-page] #main, html.ga24.table[data-page] #main, html.gcrit.hall[data-page] #main, html.gcrit.table[data-page] #main { padding-top: 0 !important; }   /* (no room kept for the Table's lowered bar) */
+html.ga24.hall[data-page] #main, html.ga24.table[data-page] #main, html.gcrit.hall[data-page] #main, html.gcrit.table[data-page] #main { padding-top: env(safe-area-inset-top, 0px) !important; }   /* (clear of a phone's clock and notch, not under them: John, 21 Nov 2026, "The icons are bunched at the top of the page on phone") */   /* (no room kept for the Table's lowered bar) */
 html.ga24.table:not(.tv) .bar-top, html.ga24.hall:not(.tv) .bar-top, html.gcrit.table:not(.tv) .bar-top, html.gcrit.hall:not(.tv) .bar-top { position: sticky !important; top: max(8px, calc(env(safe-area-inset-top) + 10px)) !important; left: auto !important; right: auto !important; }
 html.ga24 .bar-top, html.gcrit .bar-top { box-shadow: none !important; }   /* (a home icon hidden over pop-ups showed all the same, alone in the top corner of a phone) */
 html:not(.hall):not(.table):not(.tv) .bar-top::before { content: ""; position: fixed; left: 0; right: 0; top: 0; height: calc(env(safe-area-inset-top) + 66px); background: linear-gradient(var(--bg) 82%, rgba(0, 0, 0, 0)); z-index: -1; pointer-events: none; }   /* (the bar on its own ground, as the page scrolls under it: the calendar's films showed through CALENDAR and THEME) */
@@ -2656,7 +2666,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'b77431631733' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '54ec169722d3' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -5934,6 +5944,12 @@ function subOf(it) {
 }
 function progBar(it) { return it.pos && it.secs ? '<span class="bar" style="width:' + Math.min(100, it.pos / it.secs * 100).toFixed(1) + '%"></span>' : ''; }
 
+function setOnly(i) {   // (a film Criterion released only in a set of shorts with no covers of their own (W. C. Fields—Six Short Films, its spine
+  // the set's): the set's cover, as its Criterion cover: John, 21 Nov 2026, "just use the box set cover")
+  var c = i.cset || [], sp = i.csetsp || [], im = i.csetimg || [], f = i.csetfimg || [];
+  for (var n = 0; n < c.length; n++) if (im[n] && !f[n] && i.spine && String(sp[n]) === String(i.spine)) return im[n].replace(/_(small|thumbnail)\./, '_large.');
+  return '';
+}
 function cardHTML(it, land, spine, cover) {   // (spine: a collection's page, a Criterion film's spine number with it: John, 16 Nov 2026)
   // (cover: a picture of its own here, a box set's cover on a film seen in that set: John, 20 Nov 2026)
   var src = cover ? cover : land ? img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), 480) : img(it.poster, 'Primary', 320);
@@ -6024,7 +6040,7 @@ function collectionView(id, into) {
         });
         var g = $('#cgrid');
         if (openSet && BS[openSet]) {   // one box set, opened: its films
-          var L = BS[openSet].slice().sort(function (x, y) { return (+x.spine || 0) - (+y.spine || 0) || nameKey(x).localeCompare(nameKey(y)); });
+          var L = BS[openSet].slice().sort(function (x, y) { return (+x.year || 9999) - (+y.year || 9999) || (+x.spine || 0) - (+y.spine || 0) || nameKey(x).localeCompare(nameKey(y)); });   // (by year, as Criterion orders a set's films: John, 21 Nov 2026)
           // (a film released on its own as well as in this set: here, the set's cover, and on its page opened from here; its own release's
           // cover everywhere else: John, 20 Nov 2026, "it should show the box set cover when you click on the box set, and on the film when
           // you view it from there. When you view the film as its own release you should see the cover it was given as part of that")
@@ -6032,6 +6048,9 @@ function collectionView(id, into) {
           // released with the film, not the box set overall cover"; its usual cover till Criterion's set page has been read for it)
           var SC = {};
           L.forEach(function (i) { var n_ = (i.cset || []).indexOf(openSet), u_ = n_ >= 0 && (i.csetfimg || [])[n_]; if (u_) SC[i.id] = u_.replace(/_(small|thumbnail)\./, '_large.'); });
+          // (a set whose films have no covers of their own (W. C. Fields—Six Short Films, one disc of shorts): each shown with the set's cover:
+          // John, 21 Nov 2026, "in the rare case where box sets don't have individual covers, like WC fields - just use the box set cover")
+          if (!Object.keys(SC).length && BSI[openSet]) L.forEach(function (i) { SC[i.id] = BSI[openSet].replace(/_(small|thumbnail)\./, '_large.'); });
           g.className = 'csets';
           // (the set opened as Criterion's own page for it: its cover large, its name, its description, then its films: John, 18 Nov 2026, "I'd like
           // to be able to see the picture of the box set cover larger, as it is on criterion")
@@ -6071,19 +6090,20 @@ function collectionView(id, into) {
         return;
       }
       var asList = SPINEOK && clist && !editing;
+      var CSO = {}; items.forEach(function (i) { var u = setOnly(i); if (u) CSO[i.id] = u; });
       $('#cgrid').className = asList ? 'clist' : 'gridcards';
       if (asList) {
         var hd = function (k, t) { var on = sfKey() === k; return '<button type="button" class="clh' + (on ? ' on' : '') + '" data-csk="' + k + '">' + t + (on ? (sfDirOf() > 0 ? ' ↑' : ' ↓') : '') + '</button>'; };
         $('#cgrid').innerHTML = '<div class="clrow clhead"><span class="cls">' + hd('spine', 'Spine #') + '</span><span class="clp"></span><span class="clt">' + hd('name', 'Title') + '</span><span class="cld">' + hd('cdir', 'Director') + '</span><span class="clc">' + hd('ccty', 'Country') + '</span><span class="cly">' + hd('year', 'Year') + '</span></div>' +
-          (items.length ? items.map(function (i) { var src = img(i.poster, 'Primary', 120);
+          (items.length ? items.map(function (i) { var src = setOnly(i) || img(i.poster, 'Primary', 120);
             return '<button class="clrow" data-item="' + i.id + '"><span class="cls">' + esc(i.spine ? String(i.spine) : '') + '</span><span class="clp">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '') + '</span><span class="clt">' + esc(showName(i)) + '</span><span class="cld">' + esc(i.cdir || '') + '</span><span class="clc">' + esc(i.ccty || '') + '</span><span class="cly">' + esc(String(sfYear(i) || '')) + '</span></button>'; }).join('')
             : '<div class="empty">' + (fq ? 'Nothing called that in this collection.' : 'Nothing like that in this collection.') + '</div>');
         $$('[data-csk]', $('#cgrid')).forEach(function (b) { b.onclick = function () { var k = b.dataset.csk; if (sfKey() === k) SF.dir = -sfDirOf(); else { SF.sort = k; SF.dir = 1; } sfSave(); draw(); var so = $('#sfsort', $('#cbody')); if (so) { var kk = sfKeys().filter(function (x) { return x[0] === sfKey(); })[0]; so.innerHTML = SFICON + '<b>' + kk[1] + ' ' + (sfDirOf() > 0 ? '↑' : '↓') + '</b>'; } }; });
-        wireCards($('#cgrid'), items); return;
+        wireCards($('#cgrid'), items, CSO); return;
       }
-      $('#cgrid').innerHTML = items.length ? items.map(function (i) { var h = cardHTML(i, false, SPINEOK); return editing ? '<div class="cedit">' + h + '<button type="button" class="crm" data-crm="' + i.id + '" aria-label="Take ' + esc(showName(i)) + ' out of the collection">Take out</button></div>' : h; }).join('')
+      $('#cgrid').innerHTML = items.length ? items.map(function (i) { var h = cardHTML(i, false, SPINEOK, CSO[i.id]); return editing ? '<div class="cedit">' + h + '<button type="button" class="crm" data-crm="' + i.id + '" aria-label="Take ' + esc(showName(i)) + ' out of the collection">Take out</button></div>' : h; }).join('')
         : '<div class="empty">' + (fq ? 'Nothing called that in this collection.' : 'Nothing like that in this collection.') + '</div>';
-      wireCards($('#cgrid'), items);
+      wireCards($('#cgrid'), items, CSO);
       $$('[data-crm]', $('#cgrid')).forEach(function (b) { b.onclick = function () {
         var it = c.items.filter(function (x) { return x.id === b.dataset.crm; })[0]; if (!it) return;
         b.disabled = true; b.textContent = 'Taking out…';
@@ -6694,7 +6714,11 @@ function navGo(w) {
   if (w === 'calendar') {
     if (oncal) return;
     if (dlg.open) closeSheet(); if (d) S.month = d.slice(0, 7);
-    if (MOBQ()) { if (!S.mcal || VIEW() !== 'themes') { store.set('grifflix-tvview', 'themes'); S.mcal = true; drawMonth(); window.scrollTo(0, 0); } return; }   // (a phone: the month's calendar on the page)
+    if (MOBQ()) {   // (a phone: the month's calendar on the page; from another page (Criterion, A24, a collection), the home page first, its calendar there:
+      // John, 21 Nov 2026, "You can't toggle calendar and theme when in criterion or A24")
+      store.set('grifflix-tvview', 'themes'); S.mcal = true;
+      if ((location.hash || '#home').split('/')[0] !== '#home' || !$('#cal')) { location.hash = '#home'; return; }
+      drawMonth(); window.scrollTo(0, 0); return; }
     if (VIEW() === 'themes') { S.calDay = d || null; return calSheet(); }
     if (d) drawMonth(); return;
   }
@@ -7075,6 +7099,23 @@ function bodyHTML(it, ctx) {
   if (NOTES && ctx.note) h += '<div class="note"><b>' + (S.calData && S.calData.id !== 'motd' ? esc(S.calData.ownerName) + ' says' : 'John says') + '</b>' + esc(ctx.note) + '</div>';
   if (it.genres && it.genres.length) h += '<div class="chips">' + it.genres.map(function (g) { return '<span>' + esc(g) + '</span>'; }).join('') + '</div>';
   if ((it.directors && it.directors.length) || (it.cast && it.cast.length)) h += '<div class="people">' + (it.directors && it.directors.length ? '<b>Directed by</b> ' + esc(it.directors.join(', ')) + '. ' : '') + (it.cast && it.cast.length ? '<b>With</b> ' + esc(it.cast.join(', ')) + '.' : '') + '</div>';
+  // (who released it, and whose library it's in now (Janus, Kino Lorber, Rialto…): John, 21 Nov 2026)
+  // (a list in words, "A, B and C"; a company without its "Inc." or "Corp.", as AFI gives them: Paramount Pictures, Inc.)
+  var co_ = function (n) { return String(n).replace(/,?\s+(inc|incorporated|corp|corporation|ltd|limited|co)\.?$/i, '').trim(); };
+  var and_ = function (L) { L = L.map(co_); return esc(L.length < 2 ? L.join('') : L.slice(0, -1).join(', ') + ' and ' + L[L.length - 1]); };
+  var dot_ = function (t) { return /[.!?]$/.test(t) ? t : t + '.'; };
+  // (an American film from 1893 to 1993: the AFI Catalog's search for it, one click, to check who made and released it: John, 21 Nov 2026)
+  // (its own page there, by AFI's number for it, where it's known; no search, no icon: John, 21 Nov 2026)
+  var afi = it.afi && /^\d+$/.test(it.afi) ? ' <a class="afi" href="https://catalog.afi.com/Catalog/moviedetails/' + it.afi + '" target="_blank" rel="noopener">AFI Catalog</a>' : '';
+  // (AFI's own record, where it has one, before TMDB's and Box Office Mojo's: John, 21 Nov 2026)
+  var prod_ = it.afiprod && it.afiprod.length ? it.afiprod : it.studios, rel_ = it.afidist && it.afidist.length ? it.afidist : (it.dist ? [it.dist] : null);
+  if (rel_ || (it.libs && it.libs.length) || (prod_ && prod_.length)) h += '<div class="people dist">' + (prod_ && prod_.length ? '<b>Produced by</b> ' + dot_(and_(prod_)) + ' ' : '') + (rel_ ? '<b>Released by</b> ' + dot_(and_(rel_)) + ' ' : '') +
+    (it.libs && it.libs.length ? '<b>Now in the library of</b> ' + dot_(and_(it.libs)) : '') + afi + '</div>';
+  else if (afi) h += '<div class="people dist">' + afi.trim() + '</div>';
+  // (the AFI Catalog's genre and subjects, and its History of the film, opened when wanted: John, 21 Nov 2026, "and the history info")
+  if ((it.afig && it.afig.length) || (it.afisub && it.afisub.length)) h += '<div class="people afis">' + (it.afig && it.afig.length ? '<b>Genre</b> ' + dot_(and_(it.afig)) + ' ' : '') +
+    (it.afisub && it.afisub.length ? '<b>Subjects</b> ' + dot_(esc(it.afisub.concat(it.afisubm || []).join(', '))) : '') + '</div>';
+  if (it.afih) h += '<details class="afih"><summary>History, from the AFI Catalog</summary>' + String(it.afih).split(/\n\s*\n/).map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') + '</details>';
   h += '<div class="acts">';
   var TR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M8 5v4M16 5v4"/></svg>';
   if (it.ext) {   // (a theme's film Grifflix hasn't yet: its trailer, the film itself to come: John, 9 Nov 2026)
