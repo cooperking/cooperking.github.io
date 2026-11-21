@@ -5773,6 +5773,11 @@ def subprep_scan():
         if not al or al in eng or al in ('und', 'unk', 'zxx', 'mis'):
             continue   # (English, or not known: not on the list)
         has = any(x.get('Type') == 'Subtitle' and x.get('IsTextSubtitleStream') and (x.get('Language') or '').lower() in eng for x in st)
+        # (or English picture subtitles of its own, not only the forced ones: their text is to be read from them, exactly timed, when converted
+        # (convert.py pulls them out beside it, picture-subs.json), not made by Whisper: 101 of the 147 listed had them, Wild Strawberries
+        # among them: John, 21 Nov 2026, "I'm not sure why Wild Strawberries was even in the list")
+        has = has or any(x.get('Type') == 'Subtitle' and not x.get('IsForced') and 'forced' not in (x.get('Title') or '').lower()
+                         and (x.get('Language') or '').lower() in eng for x in st)
         iid = f['Id']
         seen.add(iid)
         e = P.get(iid)
