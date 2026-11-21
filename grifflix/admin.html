@@ -934,18 +934,18 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var t0 = Date.now(), finish = function (R) { clearInterval(iv); done(R); };
       var iv = setInterval(function () {
         var R = []; try { var dd = frame.contentDocument; if (dd && dd.readyState !== 'loading' && dd.body) R = results(dd.documentElement.outerHTML); } catch (e) {}
-        if (R.length || Date.now() - t0 > 15000) finish(R);   /* (its results once they show; after 15 seconds, none) */
+        if (R.length || Date.now() - t0 > 15000) finish(R);   /* (results counted by AFI's links to films) */   /* (its results once they show; after 15 seconds, none) */
       }, 700);
       frame.src = url;
     }); };
     var results = function (h) {
       var doc = new DOMParser().parseFromString(h, 'text/html'), R = {};
       [].forEach.call(doc.querySelectorAll('a[href]'), function (a) {
-        var m = /moviedetails\/(\d+)/i.exec(a.getAttribute('href')) || /[?&]movie=(\d+)/i.exec(a.getAttribute('href')); if (!m) return;
+        var m = /moviedetails\/(\d+)/i.exec(a.getAttribute('href')) || /\/Film\/(\d+)(?:-|\b)/i.exec(a.getAttribute('href')) || /[?&]movie=(\d+)/i.exec(a.getAttribute('href')); if (!m) return;   /* (AFI's links to a film are /Film/12044-SHERLOCK-JR now: John, 21 Nov 2026) */
         var id = m[1], r = R[id] || (R[id] = { id: id, t: '', y: 0 }), tx = (a.textContent || '').replace(/\s+/g, ' ').trim() || a.getAttribute('title') || ((a.querySelector('img') || {}).alt) || '';
         if (tx.length > r.t.length) r.t = tx;
         var e = a; for (var k = 0; k < 6 && e && e.parentElement && !r.y; k++) { e = e.parentElement;
-          var ids = {}; [].forEach.call(e.querySelectorAll('a[href]'), function (b) { var n = /moviedetails\/(\d+)/i.exec(b.getAttribute('href')) || /[?&]movie=(\d+)/i.exec(b.getAttribute('href')); if (n) ids[n[1]] = 1; });
+          var ids = {}; [].forEach.call(e.querySelectorAll('a[href]'), function (b) { var n = /moviedetails\/(\d+)/i.exec(b.getAttribute('href')) || /\/Film\/(\d+)(?:-|\b)/i.exec(b.getAttribute('href')) || /[?&]movie=(\d+)/i.exec(b.getAttribute('href')); if (n) ids[n[1]] = 1; });
           if (Object.keys(ids).length > 1) break;
           var y = /\b(18[89]\d|19\d\d|20[0-3]\d)\b/.exec(e.textContent || ''); if (y) r.y = +y[1]; }
       });
