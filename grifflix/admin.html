@@ -899,9 +899,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 (function () {
   var ABM = function (L, N) {
     if (!/(^|\.)afi\.com$/.test(location.hostname)) { alert('Grifflix: open catalog.afi.com first, then click this again.'); return; }
-    var K = 'grifflix-afi3', D = {}; try { D = JSON.parse(localStorage.getItem(K) || '{}'); } catch (e) { D = {}; }
+    var K = 'grifflix-afi4', D = {}; try { D = JSON.parse(localStorage.getItem(K) || '{}'); } catch (e) { D = {}; }
     /* (from the first copy only the pages found: those it took for not on AFI were AFI refusing its search, asked again: John, 21 Nov 2026, "Nothing is being found") */
-    try { if (!localStorage.getItem(K)) { var D0 = JSON.parse(localStorage.getItem('grifflix-afi') || '{}'); Object.keys(D0).forEach(function (t) { if (D0[t] && D0[t].id) D[t] = D0[t]; }); } } catch (e) {}
+    try { if (!localStorage.getItem(K)) ['grifflix-afi', 'grifflix-afi3'].forEach(function (k0) { var D0 = JSON.parse(localStorage.getItem(k0) || '{}'); Object.keys(D0).forEach(function (t) { if (D0[t] && D0[t].id) D[t] = D0[t]; }); }); } catch (e) {}   /* (only the pages found kept from earlier runs: the "not on AFI" marks of a search that couldn't read its results, asked again) */
     /* (and each film's own AFI page read whole, kept in this site's database as it goes: its genre, subjects, companies and History sorted from
        it on the Mac mini: John, 21 Nov 2026, "Can we also get production company and distributors and the history info") */
     var X = {}, db = null;
@@ -929,6 +929,15 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       d.querySelector('#gxasave').onclick = function () { save(false); }; d.querySelector('#gxastop').onclick = function () { stop = true; }; };
     /* (each result on AFI's search page: its page number, its title (the link's own words, or its picture's), and the year in the words around
        it, going no further up the page than the part that holds that one result) */
+    var frame = null, rendered = function (url) { return new Promise(function (done) {
+      if (!frame) { frame = document.createElement('iframe'); frame.style.cssText = 'position:fixed;left:-9999px;top:0;width:1200px;height:900px;opacity:0;pointer-events:none'; document.body.appendChild(frame); }
+      var t0 = Date.now(), finish = function (R) { clearInterval(iv); done(R); };
+      var iv = setInterval(function () {
+        var R = []; try { var dd = frame.contentDocument; if (dd && dd.readyState !== 'loading' && dd.body) R = results(dd.documentElement.outerHTML); } catch (e) {}
+        if (R.length || Date.now() - t0 > 15000) finish(R);   /* (its results once they show; after 15 seconds, none) */
+      }, 700);
+      frame.src = url;
+    }); };
     var results = function (h) {
       var doc = new DOMParser().parseFromString(h, 'text/html'), R = {};
       [].forEach.call(doc.querySelectorAll('a[href]'), function (a) {
@@ -959,8 +968,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
               if (refused >= 3) { stop = true; blocked = true; break; }
               paint(last + ': trying again in a minute…'); await wait(60000); n--; continue;
             }
-            refused = 0; last = 'AFI’s search answered (' + (tl || 'a page') + ')';
+            refused = 0;
             var R = results(h);
+            /* (none in the page as it comes: AFI's search fills its results in after it loads, so the page opened in a hidden frame, as for
+               John, and its results read once they show: 120 looked up, 0 found: John, 21 Nov 2026) */
+            if (!R.length) R = await rendered('/Search?searchField=MovieName&searchText=' + encodeURIComponent(names[n]) + '&sortType=sortByRelevance');
+            last = 'AFI’s search answered (' + (tl || 'a page') + '): ' + R.length + ' result' + (R.length === 1 ? '' : 's') + ' for “' + names[n].slice(0, 40) + '”';
             seen = seen.concat(R.slice(0, 5).map(function (c) { return c.t + (c.y ? ' (' + c.y + ')' : '') + ' #' + c.id; }));
             var same = R.filter(function (c) { return fold(c.t) === fold(names[n]); });
             pick = same.filter(function (c) { return c.y && Math.abs(c.y - x[2]) <= 1; })[0] || (same.length === 1 && !same[0].y ? same[0] : null);
