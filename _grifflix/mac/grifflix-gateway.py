@@ -2144,6 +2144,14 @@ def make_handler(g):
                 st['attorbox'] = pk.get('attorbox') or []
                 hu_ = set(x.get('key') for x in st.get('upgrades') or [])
                 st['upgrades'] = (st.get('upgrades') or []) + [x for x in pk.get('upgrades') or [] if x.get('key') not in hu_]
+            # (each download's Criterion title, by TMDB's number for it, whatever it's called: "Il vangelo secondo Matteo" is The Gospel
+            # According to Matthew, so it's off the admin page's films to get: John, 21 Nov 2026)
+            ctt_ = crit_by_tmdb()
+            nm_ = load(os.path.join(home, 'fetch-names.json'), {}) or {}
+            for x_ in (st.get('waiting') or []) + (st.get('recent') or []) + ([now] if now else []):
+                t_ = str(x_.get('tid') or (nm_.get(x_.get('key') or '') or nm_.get(x_.get('file') or '') or {}).get('tmdb') or '')
+                if t_ and t_ in ctt_:
+                    x_['crit'] = ctt_[t_]
             waiting = [x for x in (st.get('waiting') or []) if not (now and x.get('file') == now.get('file'))
                        and not (x.get('key') in cx_ or x.get('file') in cx_ or (x.get('file') or '').strip('/') in cx_)]
             return self.send_json(200, {'setup': setup, 'running': running, 'now': now, 'waiting': waiting,
@@ -5758,6 +5766,32 @@ def keep_plex_off(g):
         except Exception as e:
             log('Keeping Plex off:', str(e)[:150])
         time.sleep(300)
+
+
+CRIT_TMDB = {'m': 0, 'd': {}}
+
+
+def crit_by_tmdb():
+    """TMDB's number for each Criterion film → its title and year as Criterion gives them (criterion-tmdb.json and the list), read again
+    only when either changes."""
+    home = os.path.expanduser('~/Grifflix')
+    fa, fb = os.path.join(home, 'criterion-tmdb.json'), os.path.join(home, 'criterion-list.json')
+    try:
+        m = os.path.getmtime(fa) + os.path.getmtime(fb)
+    except OSError:
+        return {}
+    if m != CRIT_TMDB['m']:
+        T = load(fa, {}) or {}
+        out = {}
+        for f in load(fb, []) or []:
+            if '/films/' not in str(f.get('link') or ''):
+                continue
+            pk = re.sub(r'[^a-zA-Z0-9]', '', __import__('unicodedata').normalize('NFKD', str(f.get('title') or '')).encode('ascii', 'ignore').decode()).lower() + '|' + re.sub(r'[^0-9]', '', str(f.get('year') or ''))
+            tid = str((T.get(pk) or [0])[0] or '')
+            if tid and tid != '0':
+                out.setdefault(tid, '%s (%s)' % (f.get('title'), f.get('year')) if f.get('year') else str(f.get('title')))
+        CRIT_TMDB.update(m=m, d=out)
+    return CRIT_TMDB['d']
 
 
 def disks():
