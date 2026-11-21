@@ -60,8 +60,22 @@ def kind(path):   # a real picture? (not a web page saved as .jpg, nor an empty 
     return None
 
 
+HASHES_AT = os.path.join(HOME, 'poster-hashes.json')
+try:
+    HASHES = json.load(open(HASHES_AT))
+except Exception:
+    HASHES = {}
+
+
 def same(a, b):
-    h = lambda p: hashlib.sha1(open(p, 'rb').read()).hexdigest()
+    # (each file's fingerprint kept while its size and date are unchanged: every run read hundreds of posters and covers off the G-Drive
+    # again, and it ran with every film that came in: John, 21 Nov 2026, "The converter shouldn't be putting that much pressure on the server")
+    def h(p):
+        st = os.stat(p)
+        k = '%d %d' % (st.st_size, int(st.st_mtime))
+        if (HASHES.get(p) or [None])[0] != k:
+            HASHES[p] = [k, hashlib.sha1(open(p, 'rb').read()).hexdigest()]
+        return HASHES[p][1]
     return os.path.getsize(a) == os.path.getsize(b) and h(a) == h(b)
 
 
@@ -155,14 +169,27 @@ def main():
             print('(the media server didn’t answer: %s. The posters go in the folders; it picks them up at its next scan)\n' % e)
     done = same_n = 0
     unmatched, unsure, bad, server = [], [], [], []
-    for p in pics:
-        src = os.path.join(SOURCE, p)
-        name = os.path.splitext(p)[0]
+    def hit_of(name):
         hit = exact.get(name.lower()) or exact.get(old_key(name)) or near.get(loose(name.replace('_', ' ')))
         if not hit:   # (a year out: Criterion's year and the folder's, from TMDB, often differ by one; Return to Reason, 2023 and 2024: John, 17 Nov 2026)
             m_ = re.match(r'^(.*)_(\d{4})$', name)
             if m_:
                 hit = [f for f, y in byname.get(loose(m_.group(1)), []) if abs(y - int(m_.group(2))) <= 1] or None
+        return hit
+    # (one folder, two covers: a box set's, named without a year ("thekillers.jpg", The Killers' two films), and the film's own
+    # ("thekillers_1946.jpg"): the film's own only. Each run put one on, then the other, and the media server read the film again each
+    # time: John, 21 Nov 2026, "The converter shouldn't be putting that much pressure on the server")
+    dated = set()
+    for p in pics:
+        h_ = hit_of(os.path.splitext(p)[0])
+        if h_ and len(set(h_)) == 1 and re.search(r'_\d{4}$', os.path.splitext(p)[0]):
+            dated.add(h_[0])
+    for p in pics:
+        src = os.path.join(SOURCE, p)
+        name = os.path.splitext(p)[0]
+        hit = hit_of(name)
+        if hit and len(set(hit)) == 1 and hit[0] in dated and not re.search(r'_\d{4}$', name):
+            continue   # (a box set's cover, where the film's own is here too)
         if not hit:
             unmatched.append(p); continue
         if len(set(hit)) > 1:
@@ -250,4 +277,12 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    finally:
+        try:   # (the fingerprints kept for next time, those of files gone dropped)
+            with open(HASHES_AT + '.part', 'w') as fh_:
+                json.dump({k_: v_ for k_, v_ in HASHES.items() if os.path.exists(k_)}, fh_)
+            os.replace(HASHES_AT + '.part', HASHES_AT)
+        except Exception:
+            pass

@@ -1148,9 +1148,7 @@ def make_handler(g):
                     SCAN_NOW.set()
                     for t_ in (90, 240):
                         threading.Timer(t_, CONV_NOW.set).start()
-                    threading.Timer(150, covers_now).start()   # (a Criterion film: its cover, once the media server has it)
-                    threading.Timer(180, a24_now).start()   # (an A24 film: in the A24 collection)
-                    threading.Timer(240, bom_now).start()   # (and its distributor, from Box Office Mojo: 20 Nov 2026)
+                    new_follow_up()   # (its cover, A24, its distributor: once films stop coming in, not for each)
                     log('Just brought in: %s: the media server asked to look' % os.path.basename(str(self.body().get('path') or ''))[:120])
                     return self.send_json(200, {'ok': True})
                 if u.path == '/local/remap' and method == 'POST':   # convert.py on this Mac: a film's new file has a new id; calendars, lists and progress follow it
@@ -5715,7 +5713,7 @@ def keep_covers():
                 give_genres(G_REF[0])
         except Exception as e:
             log('Criterion genres (on the hour):', str(e)[:200])
-        time.sleep(3600)
+        time.sleep(3 * 3600)   # (every three hours, not each hour: new films set it off themselves: 21 Nov 2026)
 
 
 def keep_plex_off(g):
@@ -6306,6 +6304,32 @@ def crit_year(pick):
     return None
 
 AFTER_FIX = [None]
+NEW_FU = {'t': None, 'first': 0}
+
+
+def new_follow_up():
+    """What follows a film coming in (its Criterion cover and place, A24, its distributor) done once films stop coming in: ten minutes after
+    the last, or half an hour after the first of a run of them, not three jobs for each. 30 films came in on 21 Nov 2026 and each set the
+    covers going over the whole drive: 42 runs that day, the media server too busy to answer (John, 21 Nov 2026, "The converter shouldn't be
+    putting that much pressure on the server")."""
+    now_ = time.time()
+    if NEW_FU['t']:
+        NEW_FU['t'].cancel()
+    else:
+        NEW_FU['first'] = now_
+    wait_ = max(150, min(600, NEW_FU['first'] + 1800 - now_))
+
+    def run():
+        NEW_FU['t'] = None
+        for f in (covers_now, a24_now, bom_now):
+            try:
+                f()
+            except Exception as e:
+                log('After new films: %s' % e)
+            time.sleep(30)
+    NEW_FU['t'] = threading.Timer(wait_, run)
+    NEW_FU['t'].daemon = True
+    NEW_FU['t'].start()
 
 
 def after_fixes():
@@ -7471,9 +7495,7 @@ def keep_scanning(g):
                     # (a Criterion film among them: its cover, spine and place in The Criterion Collection, from the list John last gave, once
                     # the media server has it; however it came in, not only by download: John, 16 Nov 2026, "I shouldn't have to reupload the
                     # criterion html every time to check if a new film is criterion")
-                    threading.Timer(240, covers_now).start()
-                    threading.Timer(270, a24_now).start()   # (an A24 film, however it came in: in the A24 collection: John, 19 Nov 2026)
-                    threading.Timer(330, bom_now).start()   # (its distributor too, from Box Office Mojo: 20 Nov 2026)
+                    new_follow_up()   # (its cover, A24 (John, 19 Nov 2026), its distributor (20 Nov 2026): once films stop coming in)
                     # (an extra put in a film's Other or Extras folder: the Criterion sheet's Extras column marked: John, 17 Nov 2026, "the job
                     # should run when extras are added")
                     XD = ('other', 'others', 'extras', 'extra', 'featurettes', 'behind the scenes', 'deleted scenes', 'interviews', 'trailers', 'shorts', 'scenes', 'bonus')
