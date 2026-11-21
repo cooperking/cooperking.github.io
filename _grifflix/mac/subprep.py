@@ -180,19 +180,10 @@ def prepare(job, ff, wcli, work):
         heard.append((t0, transcribe(ff, wcli, film, t0, SAMPLE, job.get('translate', True), work)))
     prog('Matching %d subtitle file%s to what was heard (%d lines heard)' % (len(job.get('cands') or []), '' if len(job.get('cands') or []) == 1 else 's', sum(len(s_) for _, s_ in heard)))
     results, cues_all = [], []
-    for cand_i, cand in enumerate(job.get('cands') or []):
-        cues = parse_srt(cand.get('srt') or '')
-        cues_all.append(cues)
-        extra = {}
-        if len(cues) < 20:
-            continue
-        # (one timing for the whole film, its speed and its offset; every part listened to must agree with it, or this subtitle doesn't fit
-        # and the next is tried; none fitting is a fail. Not cut into parts, each moved its own way: a different cut has different subtitles,
-        # and patching them never comes right: John, 21 Nov 2026, "The only way to do it is to get the frames right and time it. If it doesn't
-        # match any subtitles after going through each one, then it's a fail")
+    def judge(cues, cand_i, cand, ratios):   # (one subtitle at the given speeds: its one timing for the whole film, and whether every part agrees)
         per = [(t0, matches(segs, cues)) for t0, segs in heard]
         allp = [p for _, ps in per for p in ps]
-        n, r, b, miss = fit(allp)
+        n, r, b, miss = fit(allp, ratios)
         inl = [(f, c) for f, c, _ in allp if abs(f - (r * c + b)) <= 1.0]
         if len(inl) >= 8:   # (the speed and offset fine-tuned on the lines that agree: a film a fraction faster drifts a second over its length)
             mc = sum(c for _, c in inl) / len(inl); mf = sum(f for f, _ in inl) / len(inl)
@@ -213,9 +204,41 @@ def prepare(job, ff, wcli, work):
         sure = fits and n >= 12 and miss <= .6
         moved = [[r * a + b, r * e + b, t] for a, e, t in cues]
         how = 'moved %+.1f s%s' % (b, '' if abs(r - 1) < .00005 else ', at %.4fx speed' % r)
-        results.append({'_ci': cand_i, '_r': r, '_b': b, 'fits': bool(fits), 'name': cand.get('name') or '', 'n': n, 'miss': round(miss, 2), 'sure': bool(sure), 'how': how, 'srt': write_srt(moved),
-                        'samples': [[round(w[0]), w[1], w[2]] for w in wins]})
-    results.sort(key=lambda x: (x['fits'], x['sure'], x['n'], -x['miss']), reverse=True)
+        return {'_ci': cand_i, '_r': r, '_b': b, 'fits': bool(fits), 'exact': abs(r - 1) < .003, 'name': cand.get('name') or '', 'n': n, 'miss': round(miss, 2), 'sure': bool(sure), 'how': how, 'srt': write_srt(moved),
+                'samples': [[round(w[0]), w[1], w[2]] for w in wins]}
+
+    # (each subtitle first as it is, at its own speed: the right one fits with only an offset. Only if none of them, nor the next ones fetched
+    # one at a time, fits so, the best fitted by a change of speed (made for another copy): John, 21 Nov 2026, "before retiming for frame rate,
+    # you need to go try and find the right sub. Better to get the right one exactly before fixing")
+    pool = list(job.get('cands') or [])
+    more = list(job.get('more') or [])
+    k = 0
+    while k < len(pool):
+        cand = pool[k]
+        cues = parse_srt(cand.get('srt') or '')
+        cues_all.append(cues)
+        k += 1
+        if len(cues) < 20:
+            continue
+        ex_ = judge(cues, len(cues_all) - 1, cand, [1.0])
+        if ex_['fits']:
+            results.append(ex_)
+            if ex_['sure']:
+                break   # (found: this one, as it is)
+        else:
+            results.append(judge(cues, len(cues_all) - 1, cand, RATIOS))
+        if k >= len(pool) and more and not any(x['fits'] and x['exact'] for x in results):
+            nx = more.pop(0)
+            prog('None fits exactly yet: trying another subtitle (%s)' % (nx.get('name') or nx.get('file_id')))
+            try:
+                req = urllib.request.Request(PROG['base'] + '/macagent/subfile?file=%s' % nx['file_id'], headers={'User-Agent': UA, 'Authorization': 'Bearer ' + PROG['key']})
+                srt = json.loads(urllib.request.urlopen(req, timeout=120).read() or b'{}').get('srt') or ''
+                if srt:
+                    pool.append({'name': nx.get('name') or '', 'srt': srt})
+            except Exception as e_:
+                prog('Couldn’t get another subtitle: %s' % str(e_)[:100])
+                more = []
+    results.sort(key=lambda x: (x['fits'], x['exact'], x['sure'], x['n'], -x['miss']), reverse=True)
     if results:   # (what was heard and matched, for the admin page: John, 21 Nov 2026, "I should be able to see what whisper took as the timing,
         # the translation, the matching lines")
         best = results[0]

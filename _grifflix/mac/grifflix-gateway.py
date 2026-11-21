@@ -910,7 +910,7 @@ def make_handler(g):
                     self.end_headers()
                     self.wfile.write(body_)
                     return
-                if u.path in ('/macagent/subnext', '/macagent/subdone', '/macagent/subprog'):   # (John's Mac's helper: English subtitles made ready, a film at a time,
+                if u.path in ('/macagent/subnext', '/macagent/subdone', '/macagent/subprog', '/macagent/subfile'):   # (John's Mac's helper: English subtitles made ready, a film at a time,
                     # timed there by what's said (subprep.py): John, 20 Nov 2026, "pre-prepare" ... "I prefer to use the whisper option")
                     tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
                     want = (g.st.get('macagent') or {}).get('key')
@@ -918,6 +918,16 @@ def make_handler(g):
                         return self.send_json(403, {'error': 'Not allowed.'})
                     P = load(SUBPREP, {}) or {}
                     body = self.body()
+                    if u.path == '/macagent/subfile':   # (one more subtitle, asked for by John's Mac when none so far fits exactly)
+                        if not self.subs_ready() or not str(q.get('file') or '').isdigit():
+                            return self.send_json(400, {'error': 'Which?'})
+                        o_ = g.st.get('opensubs') or {}
+                        if o_.get('remaining') is not None and int(o_.get('remaining') or 0) < 3:
+                            return self.send_json(429, {'error': 'OpenSubtitles downloads used up for today'})
+                        try:
+                            return self.send_json(200, {'srt': SUBS.decode(self.subs_client().download(int(q['file'])))})
+                        except Exception as ex:
+                            return self.send_json(502, {'error': str(ex)[:200]})
                     if u.path == '/macagent/subprog' and method == 'POST':   # (what John's Mac is doing now, for the admin page: 21 Nov 2026)
                         e = P.get(str(body.get('id') or ''))
                         if e:
@@ -999,7 +1009,10 @@ def make_handler(g):
                             e.update(note=('OpenSubtitles: %s' % ex)[:200])
                             save(SUBPREP, P)
                             return self.send_json(200, {'wait': 'OpenSubtitles didn’t answer'})
-                        res = [x for x in res if not x.get('machine') and x.get('kind') in ('', 'movie')][:3]
+                        res = [x for x in res if not x.get('machine') and x.get('kind') in ('', 'movie')]
+                        more_ = [{'file_id': x['file_id'], 'name': x.get('name') or ''} for x in res[3:10]]   # (the next ones, fetched by John's Mac one at a time
+                        # only if none of the first fits exactly, without a change of speed: John, 21 Nov 2026, "Better to get the right one exactly before fixing")
+                        res = res[:3]
                         cands = []
                         for x in res:
                             try:
@@ -1014,7 +1027,7 @@ def make_handler(g):
                         e.update(state='given', at=int(now_), note='', origin=org_ or '')
                         save(SUBPREP, P)
                         return self.send_json(200, {'subjob': {'id': iid, 'name': it.get('Name'), 'path': path, 'dur': (it.get('RunTimeTicks') or 0) / 1e7,
-                                                               'translate': True, 'cands': cands}})
+                                                               'translate': True, 'cands': cands, 'more': more_}})
                     save(SUBPREP, P)
                     return self.send_json(200, {'wait': 'none waiting'})
                 if u.path == '/macagent/next':   # (John's Mac's helper, asking every minute: the next film queued for it, as a job)
