@@ -2868,6 +2868,31 @@ def make_handler(g):
                     save(SUBPREP, P)
                 elif op == 'look':
                     threading.Thread(target=subprep_scan, daemon=True).start()
+                elif op == 'redoall':   # (every film done so far, done again; its subtitles set aside, not deleted, so the wrong ones stop showing
+                    # meanwhile: John, 21 Nov 2026, "every subtitle done so far needs doing again, as even confident checks seem very off")
+                    import shutil
+                    dest_ = os.path.join(SETASIDE, 'Subtitles redone')
+                    n_ = 0
+                    for k_, v_ in P.items():
+                        if k_.startswith('_') or not isinstance(v_, dict) or v_.get('state') not in ('done', 'check'):
+                            continue
+                        f_ = str(v_.get('file') or '')
+                        if f_.endswith('.srt') and '.Grifflix.' in os.path.basename(f_) and os.path.exists(f_):
+                            try:
+                                os.makedirs(dest_, exist_ok=True)
+                                shutil.move(f_, os.path.join(dest_, time.strftime('%Y%m%d-%H%M ') + os.path.basename(f_)))
+                                try:
+                                    g.jf.call('POST', '/Items/%s/Refresh' % k_, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
+                                except Exception:
+                                    pass
+                            except OSError as e_:
+                                log('Subtitles to redo: %s not set aside: %s' % (v_.get('name'), e_))
+                        v_.update(state='waiting', note='', redo=int(time.time()))
+                        for x_ in ('tried', 'samples', 'chose', 'n', 'miss', 'mins', 'file', 'sure', 'step', 'stepat'):
+                            v_.pop(x_, None)
+                        n_ += 1
+                    save(SUBPREP, P)
+                    log('Subtitles: %d films to do again, John asked; their subtitles in Set aside › Subtitles redone' % n_)
                 elif op == 'again' and str(b.get('id') or '') in P:
                     P[str(b['id'])].update(state='waiting', note='')
                     save(SUBPREP, P)
