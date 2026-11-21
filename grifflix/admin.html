@@ -519,6 +519,17 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <input type="search" id="umq" class="name" placeholder="Filter this list" autocomplete="off" style="width:100%;margin:8px 0">
         <ul class="changes" id="umlist"></ul>
       </section>
+      <section class="card" data-tab="library" id="aficard">
+        <div class="kicker">AFI Catalog</div>
+        <h2>Each American film’s <em>own AFI page</em></h2>
+        <p class="stat">American films to 1993 link to their page in the AFI Catalog. Most pages are found by themselves (from Wikidata and Wikipedia); this bookmark finds the rest, by looking each one up on AFI’s own site in your browser, one every few seconds.</p>
+        <p class="stat" id="afisay">Looking…</p>
+        <ol class="stat" style="margin:8px 0 0 18px;padding:0">
+          <li>Drag to your bookmarks bar: <a class="btn" id="afibm" href="#" style="cursor:grab">Grifflix: AFI pages</a> <span id="afibmsay"></span></li>
+          <li>Open <a href="https://catalog.afi.com/" target="_blank" rel="noopener">catalog.afi.com</a>, click the bookmark and leave the tab open. Stopped, it carries on where it left off.</li>
+          <li>Choose the <b>grifflix-afi.json</b> it saves: <label class="btn" for="afifile">Choose the file</label><input type="file" id="afifile" accept=".json,application/json" hidden></li>
+        </ol>
+      </section>
       <section class="card" data-tab="library" id="distcard">
         <div class="kicker">Distributors</div>
         <h2>Who <em>released</em> each film</h2>
@@ -861,6 +872,77 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var rows = [['Distributor', 'Films', 'Film', 'Year']]; last.dist.forEach(function (x) { x[2].forEach(function (f) { rows.push([x[0], x[1], f[0], f[1]]); }); });
     var csv = rows.map(function (r) { return r.map(function (c) { c = String(c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\r\n');
     var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })); a.download = 'Grifflix distributors.csv'; document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 1500); };
+})();
+  // ---- AFI Catalog pages, found by John's own browser on AFI's site for the American films Wikidata and Wikipedia had none for (John, 21 Nov 2026,
+  // "A bookmarklet would be the best solution"): each looked up by its title, its page taken where the title and year (within one) agree
+(function () {
+  var ABM = function (L) {
+    if (!/(^|\.)afi\.com$/.test(location.hostname)) { alert('Grifflix: open catalog.afi.com first, then click this again.'); return; }
+    var K = 'grifflix-afi', D = {}; try { D = JSON.parse(localStorage.getItem(K) || '{}'); } catch (e) { D = {}; }
+    var d = document.createElement('div'); d.style.cssText = 'position:fixed;z-index:2147483647;top:12px;right:12px;max-width:340px;background:rgb(17,17,17);color:white;padding:14px 18px;font:14px/1.45 sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.4)';
+    document.body.appendChild(d);
+    var fold = function (t) { t = String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/&/g, ' and ').replace(/\s*\((18|19|20)\d\d\)\s*$/, '');
+      t = t.replace(/^(.*), (the|a|an)$/, '$2 $1').replace(/[^a-z0-9 ]/g, ' ').trim().replace(/^(the|a|an) /, ''); return t.replace(/\s+/g, ''); };
+    var found = function () { return L.filter(function (x) { return D[x[0]] && D[x[0]].id; }).length; };
+    var save = function (done) { var o = {}; Object.keys(D).forEach(function (t) { if (D[t].id) o[t] = D[t].id; });
+      var b = new Blob([JSON.stringify({ v: 1, afi: o, none: D, at: Date.now() })], { type: 'application/json' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'grifflix-afi.json'; document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 1000);
+      if (done) d.innerHTML = 'Grifflix: done. Found ' + found() + ' of ' + L.length + ' films’ AFI pages. Saved <b>grifflix-afi.json</b>: choose it in the admin page, Library, AFI Catalog.'; };
+    var stop = false, wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+    var paint = function (msg) { var n = L.filter(function (x) { return x[0] in D; }).length;
+      d.innerHTML = 'Grifflix: ' + (msg || 'looking up') + '<br>' + n + ' of ' + L.length + ' looked up, ' + found() + ' found. Keep this tab open.<br><button id="gxasave" style="margin-top:8px">Save what’s done</button> <button id="gxastop" style="margin-top:8px">Stop</button>';
+      d.querySelector('#gxasave').onclick = function () { save(false); }; d.querySelector('#gxastop').onclick = function () { stop = true; }; };
+    /* (each result on AFI's search page: its page number, its title (the link's own words, or its picture's), and the year in the words around
+       it, going no further up the page than the part that holds that one result) */
+    var results = function (h) {
+      var doc = new DOMParser().parseFromString(h, 'text/html'), R = {};
+      [].forEach.call(doc.querySelectorAll('a[href]'), function (a) {
+        var m = /moviedetails\/(\d+)/i.exec(a.getAttribute('href')) || /[?&]movie=(\d+)/i.exec(a.getAttribute('href')); if (!m) return;
+        var id = m[1], r = R[id] || (R[id] = { id: id, t: '', y: 0 }), tx = (a.textContent || '').replace(/\s+/g, ' ').trim() || a.getAttribute('title') || ((a.querySelector('img') || {}).alt) || '';
+        if (tx.length > r.t.length) r.t = tx;
+        var e = a; for (var k = 0; k < 6 && e && e.parentElement && !r.y; k++) { e = e.parentElement;
+          var ids = {}; [].forEach.call(e.querySelectorAll('a[href]'), function (b) { var n = /moviedetails\/(\d+)/i.exec(b.getAttribute('href')) || /[?&]movie=(\d+)/i.exec(b.getAttribute('href')); if (n) ids[n[1]] = 1; });
+          if (Object.keys(ids).length > 1) break;
+          var y = /\b(18[89]\d|19\d\d)\b/.exec(e.textContent || ''); if (y) r.y = +y[1]; }
+      });
+      return Object.keys(R).map(function (k) { return R[k]; });
+    };
+    (async function () {
+      var left = L.filter(function (x) { return !(x[0] in D); });
+      for (var i = 0; i < left.length && !stop; i++) {
+        var x = left[i]; paint();
+        try {
+          var names = [x[1]].concat(x[3] ? [x[3]] : []), pick = null, seen = [];
+          for (var n = 0; n < names.length && !pick; n++) {
+            var r = await fetch('/Search?searchField=MovieName&searchText=' + encodeURIComponent(names[n]) + '&sortType=sortByRelevance', { credentials: 'include' });
+            if (r.status === 429 || r.status === 503) { paint('AFI asked to slow down: waiting a minute…'); await wait(60000); n--; continue; }
+            var R = r.ok ? results(await r.text()) : [];
+            seen = seen.concat(R.slice(0, 5).map(function (c) { return c.t + (c.y ? ' (' + c.y + ')' : '') + ' #' + c.id; }));
+            var same = R.filter(function (c) { return fold(c.t) === fold(names[n]); });
+            pick = same.filter(function (c) { return c.y && Math.abs(c.y - x[2]) <= 1; })[0] || (same.length === 1 && !same[0].y ? same[0] : null);
+            if (n < names.length - 1 && !pick) await wait(2000);
+          }
+          D[x[0]] = pick ? { id: pick.id } : { id: '', saw: seen.slice(0, 5) };
+          try { localStorage.setItem(K, JSON.stringify(D)); } catch (e) {}
+        } catch (e) { paint('a page didn’t answer: going on in a moment'); await wait(10000); }
+        await wait(2500 + Math.random() * 1500);
+      }
+      if (stop) { paint('stopped. Click the bookmark again to carry on.'); return; }
+      save(true);
+    })();
+  };
+  var bm = document.getElementById('afibm'), say = document.getElementById('afisay');
+  if (!bm) return;
+  bm.onclick = function (e) { e.preventDefault(); toast(bm.dataset.ready ? 'Drag it to your bookmarks bar, then click it on catalog.afi.com' : 'Still getting the films…'); };
+  var load = function (body) { return fetch(GW + '/api/afi', { method: body ? 'POST' : 'GET', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' })
+    .then(function (r) { if (!r.ok) throw new Error(r.status === 404 ? 'the Mac mini takes its update within a few minutes' : 'the Mac mini said ' + r.status); return r.json(); }); };
+  var show = function (j) { say.textContent = j.linked + ' American films to 1993 link to their AFI page; ' + j.missing.length + ' still have none' + (j.missing.length ? ' (the bookmark looks those up).' : '.');
+    bm.dataset.ready = 1; bm.href = 'javascript:' + encodeURIComponent('(' + ABM.toString() + ')(' + JSON.stringify(j.missing) + ');void 0');
+    document.getElementById('afibmsay').textContent = '(' + j.missing.length + ' films in it)'; };
+  var go = function () { if (!TOKEN || !GW) return setTimeout(go, 3000); load().then(show).catch(function (e) { say.textContent = 'Couldn’t get the films just now: ' + e.message + '.'; setTimeout(go, 60000); }); };
+  go();
+  document.getElementById('afifile').onchange = function () { var f = this.files && this.files[0]; if (!f) return; say.textContent = 'Sending…';
+    f.text().then(function (t) { var j = JSON.parse(t); if (!j || typeof j.afi !== 'object') throw new Error('that isn’t the AFI file'); return load({ afi: j.afi }); })
+      .then(function (j) { show(j); toast('Kept: ' + j.got + ' films’ AFI pages'); }).catch(function (e) { say.textContent = 'That didn’t work: ' + (e.message || e); }); };
 })();
   // ---- picture subtitles saved beside converted films, waiting to be turned into text later (John, 20 Nov 2026, "they should be saved and then
   // converted as a separate job later")
