@@ -17,6 +17,25 @@ import json, os, re, shutil, subprocess, sys, tempfile, time, urllib.request
 
 HOME = os.path.expanduser('~/Grifflix')
 MODEL = os.path.join(HOME, 'whisper', 'ggml-medium.bin')
+# (or, with no Homebrew on John's Mac, faster-whisper: Whisper in Python, put in ~/Grifflix/fw by `convert-here.sh subs-setup` with no
+# administrator rights needed: John, 21 Nov 2026, "we need a way without homebrew")
+FW_PY = os.path.join(HOME, 'fw', 'bin', 'python3')
+FW_MODEL = os.environ.get('GRIFFLIX_FW_MODEL') or 'small'
+FW_RUN = r'''
+import sys
+from faster_whisper import WhisperModel
+wav, out, model, translate = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4] == '1'
+import wave, numpy as np
+w = wave.open(wav, 'rb'); audio = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768.0; w.close()   # (16 kHz mono, as made: not read by its own reader, whose versions differ)
+m = WhisperModel(model, device='cpu', compute_type='int8')
+segs, info = m.transcribe(audio, task='translate' if translate else 'transcribe', vad_filter=True)
+def ts(t):
+    t = max(0.0, t); h = int(t // 3600); mi = int(t % 3600 // 60); se = t % 60
+    return '%02d:%02d:%06.3f' % (h, mi, se)
+with open(out, 'w', encoding='utf-8') as f:
+    for n, s in enumerate(segs, 1):
+        f.write('%d\n%s --> %s\n%s\n\n' % (n, ts(s.start).replace('.', ','), ts(s.end).replace('.', ','), s.text.strip()))
+'''
 RATIOS = [1.0, 25 / 23.976, 23.976 / 25, 25 / 24, 24 / 25, 24 / 23.976, 23.976 / 24]
 SAMPLE = 360   # (seconds of sound in each sample)
 STOP = set('''the and that this with have from they what your you are was were for not but his her him she our out who why how all
@@ -79,10 +98,14 @@ def transcribe(ff, wcli, film, t0, length, translate, work):
     subprocess.run([ff, '-hide_banner', '-nostdin', '-y', '-v', 'error', '-ss', '%.2f' % t0, '-t', str(length), '-i', film, '-vn', '-ac', '1',
                     '-ar', '16000', '-c:a', 'pcm_s16le', wav], check=True, timeout=900)
     out = os.path.join(work, 'w')
-    cmd = [wcli, '-m', MODEL, '-f', wav, '-osrt', '-of', out, '-l', 'auto', '-np']
-    if translate:
-        cmd.append('-tr')
-    subprocess.run(cmd, check=True, timeout=3600, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if wcli == 'fw':   # (faster-whisper, in its own Python)
+        subprocess.run([FW_PY, '-c', FW_RUN, wav, out + '.srt', FW_MODEL, '1' if translate else '0'], check=True, timeout=3600,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
+        cmd = [wcli, '-m', MODEL, '-f', wav, '-osrt', '-of', out, '-l', 'auto', '-np']
+        if translate:
+            cmd.append('-tr')
+        subprocess.run(cmd, check=True, timeout=3600, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     segs = [(a + t0, b + t0, words(t)) for a, b, t in parse_srt(open(out + '.srt', encoding='utf-8', errors='replace').read())]
     return [s for s in segs if s[2]]
 
@@ -215,7 +238,9 @@ def main():
     say = lambda body: urllib.request.urlopen(urllib.request.Request(base + '/macagent/subdone', data=json.dumps(dict(body, id=job['id'])).encode(),
                                               headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key}), timeout=120).read()
     ff, wcli = tool('ffmpeg'), tool('whisper-cli', 'whisper-cpp', 'main')
-    if not ff or not wcli or not os.path.exists(MODEL):
+    if not (wcli and os.path.exists(MODEL)) and os.access(FW_PY, os.X_OK):
+        wcli = 'fw'
+    if not ff or not wcli or (wcli != 'fw' and not os.path.exists(MODEL)):
         say({'ok': False, 'setup': True, 'error': 'Whisper isn’t set up on this Mac yet (admin page, Subtitles made ready: the setup command)'})
         return
     if not os.path.exists(job['path']):
