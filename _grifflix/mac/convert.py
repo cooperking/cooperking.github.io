@@ -589,6 +589,8 @@ def convert(item, ffmpeg, ffprobe, st):
         # TVs) ask for that part first, as they do for any large file. A file made smaller is small, so it keeps it: John, 18 Nov 2026)
         big = remux and os.path.getsize(src) > 10e9
         cmd += ['-c:s', 'mov_text'] + ([] if big else ['-movflags', '+faststart'])
+    if item.get('english'):   # (no other language's subtitles shown by themselves over the English: Jesus of Nazareth's Bulgarian)
+        cmd += ['-disposition:s', '0']
     cmd += ['-max_muxing_queue_size', '9999', tmp]
 
     if item.get('plan_only'):   # (for the Mac John's on, which converts it with its own hardware: what to do, not done here)
