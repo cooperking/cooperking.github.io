@@ -2215,7 +2215,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     // (and handed over as text too, where the opened tab can be: a computer)
     var hand = function (e) { if (e.origin !== 'https://cooperking.github.io' || !e.data || e.data.type !== 'sto-ready' || !w || e.source !== w) return; window.removeEventListener('message', hand); w.postMessage({ type: 'sto-csv', csv: o.csv, name: o.name }, 'https://cooperking.github.io'); };
     window.addEventListener('message', hand); setTimeout(function () { window.removeEventListener('message', hand); }, 60000);
-    $('#cmsay').textContent = o.n + ' film' + (o.n === 1 ? '' : 's') + (o.ch ? ' chosen' : '') + ' opened in Search Tab Opener.';
+    // (said where it's seen, not only above the list, scrolled out of sight on a phone: John, 21 Nov 2026, "There is no confirmation that
+    // anything has opened")
+    var said = o.n + ' film' + (o.n === 1 ? '' : 's') + (o.ch ? ' chosen' : '') + (w === null && !/iPhone|iPad/.test(navigator.userAgent) ? ': if no tab opened, allow pop-ups for this page' : ' opened in Search Tab Opener');
+    $('#cmsay').textContent = said + '.'; toast(said);
   };
   function cbCsv(rows, name) {
     var csv = cbText(rows);
