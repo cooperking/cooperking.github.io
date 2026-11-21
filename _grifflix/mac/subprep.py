@@ -147,6 +147,19 @@ def fit(pairs, ratios=RATIOS, width=1.2):
     return best
 
 
+PROG = {}   # (where to say how it's going: set by main)
+
+
+def prog(step):
+    """What it's doing now, told to the Mac mini for the admin page (John, 21 Nov 2026, "I want more details than that"); never stops it."""
+    print(step, flush=True)
+    try:
+        urllib.request.urlopen(urllib.request.Request(PROG['base'] + '/macagent/subprog', data=json.dumps({'id': PROG['id'], 'step': step}).encode(),
+                                                      headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + PROG['key']}), timeout=30).read()
+    except Exception:
+        pass
+
+
 def prepare(job, ff, wcli, work):
     film, dur = job['path'], float(job.get('dur') or 0)
     if not dur:
@@ -158,8 +171,10 @@ def prepare(job, ff, wcli, work):
     else:
         starts = [0.0] + [max(0, min(dur - SAMPLE, dur * f - SAMPLE / 2)) for f in (.33, .62, .9)]   # (the opening too: versions often differ there)
     heard = []
-    for t0 in starts:
+    for k_, t0 in enumerate(starts):
+        prog('Listening with Whisper: part %d of %d (from %d:%02d)' % (k_ + 1, len(starts), int(t0 // 3600), int(t0 % 3600 // 60)))
         heard.append((t0, transcribe(ff, wcli, film, t0, SAMPLE, job.get('translate', True), work)))
+    prog('Matching %d subtitle file%s to what was heard (%d lines heard)' % (len(job.get('cands') or []), '' if len(job.get('cands') or []) == 1 else 's', sum(len(s_) for _, s_ in heard)))
     results, cues_all = [], []
     for cand_i, cand in enumerate(job.get('cands') or []):
         cues = parse_srt(cand.get('srt') or '')
@@ -235,6 +250,7 @@ def prepare(job, ff, wcli, work):
 def main():
     job_file, base, key = sys.argv[1], sys.argv[2], sys.argv[3]
     job = json.load(open(job_file))
+    PROG.update(base=base, key=key, id=job['id'])
     say = lambda body: urllib.request.urlopen(urllib.request.Request(base + '/macagent/subdone', data=json.dumps(dict(body, id=job['id'])).encode(),
                                               headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key}), timeout=120).read()
     ff, wcli = tool('ffmpeg'), tool('whisper-cli', 'whisper-cpp', 'main')
@@ -247,6 +263,7 @@ def main():
         say({'ok': False, 'error': 'the film isn’t where the Mac mini said (is the G-Drive connected?)'})
         return
     work = tempfile.mkdtemp(prefix='grifflix-subs-')
+    prog('Started on your Mac (%s)' % ('faster-whisper' if wcli == 'fw' else 'whisper.cpp'))
     t0 = time.time()
     try:
         res = prepare(job, ff, wcli, work)
@@ -259,6 +276,7 @@ def main():
         say({'ok': False, 'error': 'none of the subtitles matched what’s said', 'tried': [[x['name'], x['n']] for x in res]})
         return
     best = res[0]
+    prog('Sending the subtitles back (%s, %d lines matched)' % (best['how'], best['n']))
     print('%s: %s (%d lines matched, typically %.1f s out before)%s' % (job.get('name'), best['how'], best['n'], best['miss'], '' if best['sure'] else ': NOT SURE'))
     # (sent packed, base64, not as text: Cloudflare in front of the Mac mini refused a whole film's dialogue as plain text, 403: Io Capitano,
     # John, 21 Nov 2026)
@@ -268,4 +286,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as e_:   # (said on the admin page too, not only in this Mac's log)
+        prog('Stopped: %s' % str(e_)[:160])
+        raise
