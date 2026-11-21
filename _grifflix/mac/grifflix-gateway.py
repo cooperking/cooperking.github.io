@@ -987,8 +987,9 @@ def make_handler(g):
                         except OSError:
                             mh = None
                         try:
+                            org_ = film_origin(path)   # (the release it was downloaded as: subtitles made for it first)
                             res = self.subs_client().search('en', mhash=mh, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'),
-                                                            year=it.get('ProductionYear'), hint=os.path.basename(path))
+                                                            year=it.get('ProductionYear'), hint=org_ or os.path.basename(path))
                         except Exception as ex:
                             e.update(note=('OpenSubtitles: %s' % ex)[:200])
                             save(SUBPREP, P)
@@ -1005,7 +1006,7 @@ def make_handler(g):
                         if not cands:
                             e.update(state='none', note='no English subtitles on OpenSubtitles', at=int(now_))
                             continue
-                        e.update(state='given', at=int(now_), note='')
+                        e.update(state='given', at=int(now_), note='', origin=org_ or '')
                         save(SUBPREP, P)
                         return self.send_json(200, {'subjob': {'id': iid, 'name': it.get('Name'), 'path': path, 'dur': (it.get('RunTimeTicks') or 0) / 1e7,
                                                                'translate': True, 'cands': cands}})
@@ -2872,7 +2873,7 @@ def make_handler(g):
             # is happening")
             now_ = sorted(({k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'at', 'step', 'stepat')} for x in F if x.get('state') == 'given'), key=lambda x: -(x.get('at') or 0))
             # (and each film tried lately, however it went, with what it found: John, 21 Nov 2026, "I want more details than that")
-            recent_ = sorted(({k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'state', 'note', 'chose', 'n', 'miss', 'mins', 'at', 'step', 'stepat', 'tried', 'samples', 'sure', 'file')}
+            recent_ = sorted(({k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'state', 'note', 'chose', 'n', 'miss', 'mins', 'at', 'step', 'stepat', 'tried', 'samples', 'sure', 'file', 'origin')}
                               for x in F if x.get('state') not in ('waiting',)), key=lambda x: -max(x.get('at') or 0, x.get('stepat') or 0))[:25]
             return self.send_json(200, {'counts': cnt, 'total': len(F), 'paused': bool(P.get('_paused')), 'setup': bool((P.get('_setup') or {}).get('need')), 'now': now_[:3], 'recent': recent_,
                                         'check': pick(('check',)), 'none': pick(('none', 'nomatch', 'failed')), 'done': pick(('done',))[:30]})
@@ -5848,6 +5849,33 @@ def files_under(root, vid):
                 go(p, False)
     go(root, True)
     return out
+
+
+ORIGINS = {'m': 0, 'd': {}}
+
+
+def film_origin(path):
+    """The name a film had when it was downloaded ("Medea.1969.1080p.CRIT.WEB-DL.AAC2.0.H.264-BLOOM"), from the downloader's own log of
+    each one it brought in, for its folder: which release it is tells which subtitles fit it (John, 21 Nov 2026, "if you have the original
+    file names it would probably be useful for finding the subtitles"). None if it didn't come that way."""
+    f = os.path.expanduser('~/Grifflix/gdrive.log')
+    try:
+        m = os.path.getmtime(f)
+    except OSError:
+        return None
+    if m != ORIGINS['m']:
+        d = {}
+        try:
+            for line in open(f, encoding='utf-8', errors='replace'):
+                mm = re.search(r'Fetching from [^:]+: (.+?) → (.+?)/ \(', line)
+                if mm:
+                    src = mm.group(1).replace('／', '/').split('/')[-1].strip()
+                    d[mm.group(2).split('/')[0].strip()] = os.path.splitext(src)[0] if re.search(r'\.[A-Za-z0-9]{2,4}$', src) else src
+        except OSError:
+            pass
+        ORIGINS.update(m=m, d=d)
+    rel = os.path.relpath(str(path or ''), os.path.join(os.environ.get('GRIFFLIX_MEDIA') or '/Volumes/G-Drive/Grifflix', 'Movies'))
+    return ORIGINS['d'].get(rel.split(os.sep)[0]) if not rel.startswith('..') else None
 
 
 CRIT_TMDB = {'m': 0, 'd': {}}
