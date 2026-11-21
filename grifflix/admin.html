@@ -542,7 +542,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat">Films in the AFI Catalog link to their page there: American films above all, but later ones and some made elsewhere too (Chariots of Fire). Most pages are found by themselves (from Wikidata and Wikipedia); this bookmark finds the rest, by looking each one up on AFI’s own site in your browser, one every few seconds.</p>
         <p class="stat" id="afisay">Looking…</p>
         <ol class="stat" style="margin:8px 0 0 18px;padding:0">
-          <li>Drag to your bookmarks bar: <a class="btn" id="afibm" href="#" style="cursor:grab">Grifflix: AFI pages</a> <span id="afibmsay"></span></li>
+          <li>Drag to your bookmarks bar: <a class="btn" id="afibm" href="#" style="cursor:grab">Grifflix: AFI pages</a> <span id="afibmsay"></span>
+            <!-- (on a phone it can't be: a bookmark saved there is this page: John, 21 Nov 2026, "it opens the admin page, but I can't see what's happened") -->
+            <p class="stat" id="afiphone" hidden style="margin-top:8px"><b>On a computer only.</b> An iPhone or iPad can’t save this as a bookmark: “Add Bookmark” saves this admin page instead, which is what opens. Open this page on a Mac or PC (Safari: View › Show Favorites Bar, or Chrome’s bookmarks bar), drag the button up there, then follow the steps below.</p></li>
           <li>Open <a href="https://catalog.afi.com/" target="_blank" rel="noopener noreferrer">catalog.afi.com</a> (if that page is blocked, open AFI’s site yourself and do a search for any film), click the bookmark and leave the tab open. Stopped, it carries on where it left off.</li>
           <li>Choose the <b>grifflix-afi.json</b> it saves: <label class="btn" for="afifile">Choose the file</label><input type="file" id="afifile" accept=".json,application/json" hidden></li>
         </ol>
@@ -987,6 +989,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     })();
   };
   var bm = document.getElementById('afibm'), say = document.getElementById('afisay');
+  if (/iPhone|iPad|iPod|Android/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent))) { var ap = document.getElementById('afiphone'); if (ap) ap.hidden = false; }
   if (!bm) return;
   bm.onclick = function (e) { e.preventDefault(); toast(bm.dataset.ready ? 'Drag it to your bookmarks bar, then click it on catalog.afi.com' : 'Still getting the films…'); };
   var load = function (body) { return fetch(GW + '/api/afi', { method: body ? 'POST' : 'GET', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' })
