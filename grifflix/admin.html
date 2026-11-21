@@ -2139,7 +2139,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var all = window.CBR || [], ch = all.filter(function (x) { return CBP[x.k]; }), rows = (ch.length ? ch : all).map(function (x) { return x.r; });
     if (!rows.length) return toast('The list isn’t here yet');
     var b64 = btoa(unescape(encodeURIComponent('\ufeff' + cbText(rows))));
-    window.open('https://cooperking.github.io/search-tab-opener/#csv=' + encodeURIComponent('data:text/csv;base64,' + b64), '_blank', 'noopener');
+    window.open('https://cooperking.github.io/search-tab-opener/#csv=' + encodeURIComponent('data:text/csv;base64,' + b64) + '&name=' + encodeURIComponent((ch.length ? 'Criterion films chosen ' : 'Criterion box set films missing ') + new Date().toISOString().slice(0, 10)), '_blank', 'noopener');
     $('#cmsay').textContent = rows.length + ' film' + (rows.length === 1 ? '' : 's') + (ch.length ? ' chosen' : '') + ' opened in Search Tab Opener.';
   };
   function cbCsv(rows, name) {
