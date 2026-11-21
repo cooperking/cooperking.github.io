@@ -5398,6 +5398,45 @@ def act_set_imdb(g, req):
     return '%s now has %s.' % (full.get('Name'), a['imdb'])
 
 
+def ask_restore_aside(req):
+    """A film put back from Set aside/Duplicates into the films folder (Demon Pond (1979), set aside as a copy with no other copy left: John,
+    21 Nov 2026, "Demon Pond (1979) was set aside but not sure how or why")."""
+    n = str((req.get('args') or {}).get('name') or '')
+    src = os.path.join(SETASIDE, 'Duplicates', n)
+    if not n or '/' in n or n.startswith('.') or not os.path.isdir(src):
+        raise RuntimeError('nothing called that in Set aside › Duplicates')
+    files = [x for x in os.listdir(src) if not x.startswith('.')]
+    req['detail'] = '%s: %s moved back to Movies/%s, beside what’s left there (its poster, background and extras). Nothing deleted.' % (n, ', '.join(files)[:300], n)
+
+
+def act_restore_aside(g, req):
+    import shutil
+    n = str((req.get('args') or {}).get('name') or '')
+    src, dst = os.path.join(SETASIDE, 'Duplicates', n), os.path.join('/Volumes/G-Drive/Grifflix/Movies', n)
+    os.makedirs(dst, exist_ok=True)
+    moved = []
+    for x in os.listdir(src):
+        if x.startswith('.'):
+            continue
+        if os.path.exists(os.path.join(dst, x)):
+            raise RuntimeError('%s is in Movies/%s already' % (x, n))
+        shutil.move(os.path.join(src, x), os.path.join(dst, x))
+        moved.append(x)
+    try:
+        for x in os.listdir(src):
+            os.remove(os.path.join(src, x))
+        os.rmdir(src)
+    except OSError:
+        pass
+    try:
+        g.jf.call('POST', '/Library/Media/Updated', {'Updates': [{'Path': dst, 'UpdateType': 'Modified'}]})
+    except Exception:
+        g.jf.call('POST', '/Library/Refresh')
+    g.forget()
+    g.publish_soon = time.time() + 600
+    return 'Put back in Movies/%s: %s.' % (n, ', '.join(moved))
+
+
 ACTIONS = {
     'plex-off': ('Quit Plex and keep it off', act_plex_off, None),
     'plex-on': ('Start Plex again and let it be', act_plex_on, None),
@@ -5409,6 +5448,7 @@ ACTIONS = {
     'collection-add': ('Put films in a collection', act_collection_add, ask_collection_add),
     'collection-move': ('Move films from one collection to another', act_collection_move, ask_collection_move),
     'disk-tidy': ('Make room on the Mac mini’s own disk (old backups, Plex, old apps, caches)', act_disk_tidy, ask_disk_tidy),
+    'restore-aside': ('Put a film back from Set aside › Duplicates', act_restore_aside, ask_restore_aside),
     'set-imdb': ('Put an IMDb number on a film TMDB has no film for', act_set_imdb, ask_set_imdb),
     'sfam-move': ('Move Scenes from a Marriage (1973) to TV, its six parts as the series’ six episodes', act_sfam_move, ask_sfam_move),
     'fields-split': ('Cut W. C. Fields—Six Short Films into its six shorts, so it shows as its Criterion box set', act_fields_split, ask_fields_split),
