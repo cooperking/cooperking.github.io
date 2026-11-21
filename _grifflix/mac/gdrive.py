@@ -149,8 +149,10 @@ def tmdb_name(title, year, series):
         if not y and r is not res[0]:   # (no year to go by: only TMDB's first answer, and only when it's the same name)
             continue
         if sc >= .97 and (not best or sc > best[0]):
-            best = (sc, r.get('Name'), ry or y)
-    return {'name': best[1], 'year': best[2]} if best else None
+            best = (sc, r.get('Name'), ry or y, str((r.get('ProviderIds') or {}).get('Tmdb') or ''))
+    # (and TMDB's number for it: the admin page knows "Il vangelo secondo Matteo" for Criterion's The Gospel According to Matthew by it:
+    # John, 21 Nov 2026)
+    return {'name': best[1], 'year': best[2], 'tmdb': best[3]} if best else None
 
 
 def rlog_bytes(part):
@@ -605,7 +607,7 @@ def status(**kw):
 
 def wait_entry(p):
     return {'from': p['src']['name'], 'file': p['path'], 'key': p['nkey'], 'to': p['title'], 'gb': round(p['size'] / 1e9, 1), 'noyear': not p['year'],
-            'series': p['series'], 'ep': p['ep'], 'named': p['named'], 'tmdb': p.get('tmdb'), 'extra': p.get('extra'), 'replace': bool(p.get('replace'))}
+            'series': p['series'], 'ep': p['ep'], 'named': p['named'], 'tmdb': p.get('tmdb'), 'extra': p.get('extra'), 'replace': bool(p.get('replace')), 'tid': p.get('tid') or ''}
 
 
 def conv_running():
@@ -809,7 +811,7 @@ def _run(check):
                 continue   # (coming in now)
             plan.append(dict(src=src, loc=loc, path=path, size=size, key=key, folder=folder, title=title, year=year, ext=ext,
                              dest_dir=dest_dir, dest=dest, name=f['Name'], subs=subs, series=series, nkey=nkey, named=bool(mine), extra=f.get('xname'),
-                             ep='S%02dE%02d' % (int(m.group(1)), int(m.group(2))) if m else '', tmdb=bool(tm) or bool(mine), replace=replace))
+                             ep='S%02dE%02d' % (int(m.group(1)), int(m.group(2))) if m else '', tmdb=bool(tm) or bool(mine), replace=replace, tid=str((tm or {}).get('tmdb') or (mine or {}).get('tmdb') or '')))
     try:
         json.dump(TC, open(TMDBC, 'w'))
     except OSError:
@@ -869,8 +871,8 @@ def _run(check):
         work = stage_for(part, size)   # (made on the Mac's own disk if it has room, in many streams; else here, in one)
         if not work and PENDING.get('dest') and os.path.exists(PENDING['dest']):   # (made on the G-Drive itself: after the repackaging)
             wait_repack(PENDING['dest'], PENDING['title']); PENDING.clear()
-        status(now={'from': src['name'], 'file': path, 'to': title, 'extra': p.get('extra'), 'size': size, 'part': work or part, 'since': int(time.time())})
-        came = lambda ok, why='', title=title + (' · extra: ' + os.path.splitext(p['extra'])[0] if p.get('extra') else ''), src=src, size=size: status(now=None, came={'to': title, 'from': src['name'], 'gb': round(size / 1e9, 1), 'at': int(time.time()), 'ok': ok, 'why': why})
+        status(now={'from': src['name'], 'file': path, 'to': title, 'extra': p.get('extra'), 'size': size, 'part': work or part, 'since': int(time.time()), 'tid': p.get('tid') or ''})
+        came = lambda ok, why='', title=title + (' · extra: ' + os.path.splitext(p['extra'])[0] if p.get('extra') else ''), src=src, size=size: status(now=None, came={'tid': p.get('tid') or '', 'to': title, 'from': src['name'], 'gb': round(size / 1e9, 1), 'at': int(time.time()), 'ok': ok, 'why': why})
         said = ''
         try:   # (in Terminal: how far, how fast, how long to go, as it downloads)
             said = fetch(loc, path, work or part, show=sys.stdout.isatty(), streams=16 if work else 0)

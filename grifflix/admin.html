@@ -2144,7 +2144,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   function comingFilms() {
     var f = fetching.last || {}, NM = f.names || {}, out = [];
     var add = function (t) { t = String(t || ''); var m = /^(.*?)\s*\((\d{4})\)\s*$/.exec(t) || /^(.*?)[ ._(\[-]+((?:19|20)\d\d)(?:[ ._)\]-]|$)/.exec(t); out.push(m ? { t: gxFold(m[1].replace(/[._]+/g, ' ')), y: +m[2] } : { t: gxFold(t.replace(/\.[a-z0-9]{2,4}$/i, '').replace(/[._]+/g, ' ')), y: 0 }); };
-    if (f.now) add(f.now.to || f.now.file);
+    if (f.now) { add(f.now.to || f.now.file); if (f.now.crit) add(f.now.crit); }
+    // (by its Criterion title too, from TMDB's number for it: Il vangelo secondo Matteo is The Gospel According to Matthew)
+    (f.waiting || []).forEach(function (x) { if (x.crit && !x.extra) add(x.crit); });
+    (f.recent || []).forEach(function (x) { if (x.crit && x.ok && (!window.LIBAT || (x.at || 0) > window.LIBAT - 900)) add(x.crit); });
     // (by the name John gave it and by its own too: Dos Monjes, named Two Monks, is Criterion's Dos monjes: John, 21 Nov 2026)
     (f.waiting || []).forEach(function (x) { if (x.extra) return; var nm = NM[x.series ? (x.key || x.file) : x.file]; if (nm) add(nm.name + (nm.year ? ' (' + nm.year + ')' : '')); add(x.to || x.file); });
     (f.attorbox || []).forEach(function (x) { add(x.name); });
