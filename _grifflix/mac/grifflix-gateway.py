@@ -5851,7 +5851,7 @@ def files_under(root, vid):
     return out
 
 
-ORIGINS = {'m': 0, 'd': {}}
+DL_NAMES = {'m': 0, 'd': {}}
 
 
 def film_origin(path):
@@ -5863,7 +5863,7 @@ def film_origin(path):
         m = os.path.getmtime(f)
     except OSError:
         return None
-    if m != ORIGINS['m']:
+    if m != DL_NAMES['m']:
         d = {}
         try:
             for line in open(f, encoding='utf-8', errors='replace'):
@@ -5873,9 +5873,9 @@ def film_origin(path):
                     d[mm.group(2).split('/')[0].strip()] = os.path.splitext(src)[0] if re.search(r'\.[A-Za-z0-9]{2,4}$', src) else src
         except OSError:
             pass
-        ORIGINS.update(m=m, d=d)
+        DL_NAMES.update(m=m, d=d)
     rel = os.path.relpath(str(path or ''), os.path.join(os.environ.get('GRIFFLIX_MEDIA') or '/Volumes/G-Drive/Grifflix', 'Movies'))
-    return ORIGINS['d'].get(rel.split(os.sep)[0]) if not rel.startswith('..') else None
+    return DL_NAMES['d'].get(rel.split(os.sep)[0]) if not rel.startswith('..') else None
 
 
 CRIT_TMDB = {'m': 0, 'd': {}}
