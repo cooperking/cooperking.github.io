@@ -1027,7 +1027,7 @@ def make_handler(g):
                         e.update(state='given', at=int(now_), note='', origin=org_ or '')
                         save(SUBPREP, P)
                         return self.send_json(200, {'subjob': {'id': iid, 'name': it.get('Name'), 'path': path, 'dur': (it.get('RunTimeTicks') or 0) / 1e7,
-                                                               'translate': True, 'cands': cands, 'more': more_}})
+                                                               'translate': True, 'cands': cands, 'more': more_, 'lang': e.get('lang') or ''}})
                     save(SUBPREP, P)
                     return self.send_json(200, {'wait': 'none waiting'})
                 if u.path == '/macagent/next':   # (John's Mac's helper, asking every minute: the next film queued for it, as a job)
@@ -5748,13 +5748,13 @@ def subprep_scan():
     if not libs.get('movies'):
         return
     P = load(SUBPREP, {}) or {}
-    if P.get('_v') not in (3,):   # (once: those found to have "no English subtitles" while subtitles of the right film were thrown away for being under
+    if P.get('_v') not in (4,):   # (once: those found to have "no English subtitles" while subtitles of the right film were thrown away for being under
         # its own title, tried again: 21 Nov 2026; v3: those turned down by the too-strict
         # whole-film check, tried again)
         for k_, v_ in P.items():
             if not k_.startswith('_') and isinstance(v_, dict) and v_.get('state') in ('none', 'nomatch', 'failed'):
                 v_.update(state='waiting', note='')
-        P['_v'] = 3
+        P['_v'] = 4
     films, start = [], 0
     while True:
         r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': libs['movies'], 'Recursive': 'true', 'IncludeItemTypes': 'Movie',

@@ -1098,10 +1098,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
             if (!P.length) { box.textContent = 'Not kept for this film: only those done from now on.'; return; }
             box.innerHTML = P.map(function (p) {
               var ok = p.rows.filter(function (r) { return r[5]; }).length, m = p.rows.filter(function (r) { return r.length > 2; }).length;
-              return '<p class="stat" style="margin:12px 0 4px"><b>From ' + tm(p.from) + '</b> · ' + p.rows.length + ' lines heard, ' + m + ' matched to a subtitle, ' + ok + ' agreeing with the timing chosen</p>' +
-                '<div style="overflow-x:auto"><table class="spt"><tr><th>Heard at</th><th>Whisper heard (in English)</th><th>Subtitle line matched</th><th>Its time</th><th>Moved to</th><th></th></tr>' +
+              return '<p class="stat" style="margin:12px 0 4px"><b>From ' + tm(p.from) + '</b> · ' + p.rows.length + ' lines heard in English, ' + ok + ' matching the subtitle at that point by the timing chosen</p>' +
+                '<div style="overflow-x:auto"><table class="spt"><tr><th>Heard at</th><th>Whisper heard (in English)</th><th>Subtitle there</th><th>Its time</th><th>Moved to</th><th></th></tr>' +
                 p.rows.map(function (r) { return '<tr' + (r.length > 2 && !r[5] ? ' class="off"' : '') + '><td>' + tm(r[0]) + '</td><td>' + esc(r[1]) + '</td>' +
-                  (r.length > 2 ? '<td>' + esc(r[3]) + '</td><td>' + tm(r[2]) + '</td><td>' + tm(r[4]) + '</td><td>' + (r[5] ? '✓' : '✗ ' + (r[0] - r[4] >= 0 ? '+' : '') + (r[0] - r[4]).toFixed(1) + ' s') + '</td>' : '<td colspan="4" style="opacity:.6">no subtitle line like it</td>') + '</tr>'; }).join('') + '</table></div>';
+                  (r.length > 2 ? '<td>' + esc(r[3]) + '</td><td>' + tm(r[2]) + '</td><td>' + tm(r[4]) + '</td><td>' + (r[5] ? '✓' : Math.abs(r[0] - r[4]) <= 4 ? '✗ other words' : '✗ ' + (r[0] - r[4] >= 0 ? '+' : '') + (r[0] - r[4]).toFixed(1) + ' s') + '</td>' : '<td colspan="4" style="opacity:.6">no subtitle line then</td>') + '</tr>'; }).join('') + '</table></div>';
             }).join('');
           }).catch(function (e) { box.textContent = 'Couldn’t ask: ' + (e.message || e); });
         }; });
