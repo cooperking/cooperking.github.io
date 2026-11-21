@@ -910,7 +910,7 @@ def make_handler(g):
                     self.end_headers()
                     self.wfile.write(body_)
                     return
-                if u.path in ('/macagent/subnext', '/macagent/subdone'):   # (John's Mac's helper: English subtitles made ready, a film at a time,
+                if u.path in ('/macagent/subnext', '/macagent/subdone', '/macagent/subprog'):   # (John's Mac's helper: English subtitles made ready, a film at a time,
                     # timed there by what's said (subprep.py): John, 20 Nov 2026, "pre-prepare" ... "I prefer to use the whisper option")
                     tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
                     want = (g.st.get('macagent') or {}).get('key')
@@ -918,6 +918,12 @@ def make_handler(g):
                         return self.send_json(403, {'error': 'Not allowed.'})
                     P = load(SUBPREP, {}) or {}
                     body = self.body()
+                    if u.path == '/macagent/subprog' and method == 'POST':   # (what John's Mac is doing now, for the admin page: 21 Nov 2026)
+                        e = P.get(str(body.get('id') or ''))
+                        if e:
+                            e.update(step=str(body.get('step') or '')[:200], stepat=int(time.time()))
+                            save(SUBPREP, P)
+                        return self.send_json(200, {'ok': True})
                     if u.path == '/macagent/subdone' and method == 'POST':
                         iid = str(body.get('id') or '')
                         e = P.get(iid)
@@ -2858,8 +2864,11 @@ def make_handler(g):
                                       key=lambda x: -(x.get('at') or 0))
             # (the film being done now, and since when, for the admin page: John, 21 Nov 2026, "I'd like to be able to see in admin if anything
             # is happening")
-            now_ = sorted(({k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'at')} for x in F if x.get('state') == 'given'), key=lambda x: -(x.get('at') or 0))
-            return self.send_json(200, {'counts': cnt, 'total': len(F), 'paused': bool(P.get('_paused')), 'setup': bool((P.get('_setup') or {}).get('need')), 'now': now_[:3],
+            now_ = sorted(({k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'at', 'step', 'stepat')} for x in F if x.get('state') == 'given'), key=lambda x: -(x.get('at') or 0))
+            # (and each film tried lately, however it went, with what it found: John, 21 Nov 2026, "I want more details than that")
+            recent_ = sorted(({k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'state', 'note', 'chose', 'n', 'miss', 'mins', 'at', 'step', 'stepat')}
+                              for x in F if x.get('state') not in ('waiting',)), key=lambda x: -max(x.get('at') or 0, x.get('stepat') or 0))[:25]
+            return self.send_json(200, {'counts': cnt, 'total': len(F), 'paused': bool(P.get('_paused')), 'setup': bool((P.get('_setup') or {}).get('need')), 'now': now_[:3], 'recent': recent_,
                                         'check': pick(('check',)), 'none': pick(('none', 'nomatch', 'failed')), 'done': pick(('done',))[:30]})
 
         def api_waiting(self, me, user, q, b):

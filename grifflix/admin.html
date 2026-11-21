@@ -523,6 +523,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat">For each foreign-language film with no English subtitles, your Mac takes the likeliest from OpenSubtitles, listens to four parts of the film with Whisper and moves them to fit what’s actually said. Whenever it has no film to convert.</p>
         <p class="stat" id="spsay">Looking…</p>
         <p class="stat" id="spnow"></p>
+        <div id="sprecent"></div>
         <div id="spsetup" hidden><p class="stat" style="margin:10px 0 6px">Once, on your Mac: open Terminal, paste this and press Return (it installs Whisper, about 1.5 GB):</p>
           <pre style="white-space:pre-wrap;word-break:break-all;font-size:12px;padding:10px;border:1px solid var(--line)">curl -fsSL https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/convert-here.sh -o ~/Grifflix/convert-here.sh && zsh ~/Grifflix/convert-here.sh subs-setup</pre>
           <div class="state"><button class="btn" type="button" id="spcopy">Copy</button></div></div>
@@ -1044,7 +1045,16 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         // (what it's doing now: the film, its language, since when; a film given over 3 hours ago is taken to have stopped)
         var LN = { fre: 'French', ita: 'Italian', jpn: 'Japanese', swe: 'Swedish', spa: 'Spanish', ger: 'German', deu: 'German', chi: 'Chinese', rus: 'Russian', per: 'Persian', cze: 'Czech', por: 'Portuguese', rum: 'Romanian', kor: 'Korean', pol: 'Polish', hun: 'Hungarian', gre: 'Greek', ben: 'Bengali', nob: 'Norwegian', nor: 'Norwegian', bul: 'Bulgarian', dan: 'Danish', dut: 'Dutch', fin: 'Finnish', tur: 'Turkish', ara: 'Arabic', heb: 'Hebrew', hin: 'Hindi' };
         var nowL = (j.now || []).filter(function (x) { return Date.now() / 1000 - (x.at || 0) < 3 * 3600; });
-        $('#spnow').innerHTML = nowL.length ? nowL.map(function (x) { return '<b>Now:</b> ' + FL(x.name, x.year, x.id) + ' (' + esc(LN[x.lang] || x.lang || '') + ') · on your Mac since ' + new Date(x.at * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); }).join('<br>') : (j.paused ? '' : '<b>Now:</b> nothing: your Mac takes the next when it’s on, at home and has no film to convert.');
+        var ago = function (t) { var m = Math.max(0, Math.round((Date.now() / 1000 - t) / 60)); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min ago'; };
+        var hm = function (t) { return new Date(t * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); };
+        nowL = nowL.filter(function (x, i) { return i === 0 || (x.stepat && Date.now() / 1000 - x.stepat < 900); });   // (the latest, and any other still saying what it's doing)
+        $('#spnow').innerHTML = nowL.length ? nowL.map(function (x) { return '<b>Now:</b> ' + FL(x.name, x.year, x.id) + ' (' + esc(LN[x.lang] || x.lang || '') + ') · given to your Mac at ' + hm(x.at) +
+          (x.step ? '<br><span style="opacity:.85">' + esc(x.step) + ' · ' + ago(x.stepat) + '</span>' : '<br><span style="opacity:.85">No word from your Mac on it yet</span>'); }).join('<br><br>') :
+          (j.paused ? '' : '<b>Now:</b> nothing: your Mac takes the next when it’s on, at home and has no film to convert.');
+        var STW = { done: '✓ Saved', check: 'Saved, timing to check', failed: 'Didn’t work', nomatch: 'No subtitles matched', none: 'None found', given: 'Given to your Mac' };
+        $('#sprecent').innerHTML = (j.recent || []).length ? '<p class="stat" style="margin:14px 0 6px"><b>Tried lately</b></p><ul class="changes">' + j.recent.map(function (x) {
+          var bits = [STW[x.state] || x.state, x.state === 'given' && x.step ? x.step : '', x.note, x.n ? x.n + ' lines matched' : '', x.miss != null && x.n ? 'about ' + x.miss + ' s out before' : '', x.chose ? 'from “' + x.chose + '”' : '', x.mins ? x.mins + ' min' : ''].filter(Boolean);
+          return '<li>' + FL(x.name, x.year, x.id) + ' <small style="opacity:.7">' + esc(LN[x.lang] || x.lang || '') + '</small><span class="when">' + esc(bits.join(' · ')) + ' · ' + hm(Math.max(x.at || 0, x.stepat || 0)) + '</span></li>'; }).join('') + '</ul>' : '';
         $('#spsetup').hidden = !j.setup && (n('done') + n('check') + n('nomatch') + n('given')) > 0;   // (shown till the first film has gone through: before that, his Mac doesn't ask)
         $('#sppause').textContent = j.paused ? 'Carry on' : 'Pause';
         $('#sppause').onclick = function () { subPrep({ op: j.paused ? 'resume' : 'pause' }); };
