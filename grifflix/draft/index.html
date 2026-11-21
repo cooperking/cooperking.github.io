@@ -2578,7 +2578,7 @@ html.ga24:not(.tv) .bar-top::before, html.gcrit:not(.tv) .bar-top::before { cont
 html.gcrit:not(.tv) .bar-top::before { background: var(--gc-page) !important; border-bottom-color: var(--gc-line); }
 /* (and there, the bar as on any page, at the top, whatever the month's theme: the Table's and the Hall's bar is set down from the top and
    narrower, for their own scenes: John, 19 Nov 2026, "top bar has extra space at the top") */
-html.ga24.hall[data-page] #main, html.ga24.table[data-page] #main, html.gcrit.hall[data-page] #main, html.gcrit.table[data-page] #main { padding-top: 0 !important; }   /* (no room kept for the Table's lowered bar) */
+html.ga24.hall[data-page] #main, html.ga24.table[data-page] #main, html.gcrit.hall[data-page] #main, html.gcrit.table[data-page] #main { padding-top: env(safe-area-inset-top, 0px) !important; }   /* (clear of a phone's clock and notch, not under them: John, 21 Nov 2026, "The icons are bunched at the top of the page on phone") */   /* (no room kept for the Table's lowered bar) */
 html.ga24.table:not(.tv) .bar-top, html.ga24.hall:not(.tv) .bar-top, html.gcrit.table:not(.tv) .bar-top, html.gcrit.hall:not(.tv) .bar-top { position: sticky !important; top: max(8px, calc(env(safe-area-inset-top) + 10px)) !important; left: auto !important; right: auto !important; }
 html.ga24 .bar-top, html.gcrit .bar-top { box-shadow: none !important; }   /* (a home icon hidden over pop-ups showed all the same, alone in the top corner of a phone) */
 html:not(.hall):not(.table):not(.tv) .bar-top::before { content: ""; position: fixed; left: 0; right: 0; top: 0; height: calc(env(safe-area-inset-top) + 66px); background: linear-gradient(var(--bg) 82%, rgba(0, 0, 0, 0)); z-index: -1; pointer-events: none; }   /* (the bar on its own ground, as the page scrolls under it: the calendar's films showed through CALENDAR and THEME) */
@@ -2666,7 +2666,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '061084480cfb' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '54ec169722d3' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6714,7 +6714,11 @@ function navGo(w) {
   if (w === 'calendar') {
     if (oncal) return;
     if (dlg.open) closeSheet(); if (d) S.month = d.slice(0, 7);
-    if (MOBQ()) { if (!S.mcal || VIEW() !== 'themes') { store.set('grifflix-tvview', 'themes'); S.mcal = true; drawMonth(); window.scrollTo(0, 0); } return; }   // (a phone: the month's calendar on the page)
+    if (MOBQ()) {   // (a phone: the month's calendar on the page; from another page (Criterion, A24, a collection), the home page first, its calendar there:
+      // John, 21 Nov 2026, "You can't toggle calendar and theme when in criterion or A24")
+      store.set('grifflix-tvview', 'themes'); S.mcal = true;
+      if ((location.hash || '#home').split('/')[0] !== '#home' || !$('#cal')) { location.hash = '#home'; return; }
+      drawMonth(); window.scrollTo(0, 0); return; }
     if (VIEW() === 'themes') { S.calDay = d || null; return calSheet(); }
     if (d) drawMonth(); return;
   }
