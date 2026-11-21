@@ -2658,7 +2658,7 @@ def make_handler(g):
             return self.send_json(200, {'asks': L[-30:], 'plex_off': bool(g.st.get('plex_off'))})
 
         def api_afi(self, me, user, q, b):
-            """John's only: AFI Catalog pages found by his own browser on AFI's site (the admin page's bookmark), for American films to 1993
+            """John's only: AFI Catalog pages found by his own browser on AFI's site (the admin page's bookmark), for any film
             that Wikidata and Wikipedia gave none for (John, 21 Nov 2026, "A bookmarklet would be the best solution"). GET: those films, for
             the bookmark; POST {afi: {imdb: AFI's number}}: kept with the rest (afi-ids.json), the site updated."""
             if not me.get('owner'):
@@ -2689,7 +2689,7 @@ def make_handler(g):
                 g.publish_soon = time.time() + 120
                 log('AFI Catalog details: %d films, by John’s browser' % n_)
             lid = (g.st.get('libraries') or {}).get('movies')
-            out, start, linked, need = [], 0, 0, []
+            out, start, linked, need, pri = [], 0, 0, [], {}
             while lid:
                 r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'ProviderIds,ProductionLocations,OriginalTitle',
                                                                        'StartIndex': start, 'Limit': 500, 'EnableImages': 'false'}, timeout=120) or {}
@@ -2697,7 +2697,9 @@ def make_handler(g):
                     t = str((it.get('ProviderIds') or {}).get('Imdb') or '')
                     y = int(it.get('ProductionYear') or 0)
                     us = not it.get('ProductionLocations') or any('united states' in str(c).lower() for c in it['ProductionLocations'])
-                    if not (re.match(r'^tt\d{6,10}$', t) and us and 1893 <= y <= 1993):
+                    # (every film, of any year or country: AFI has later films and some made elsewhere, Chariots of Fire: John, 21 Nov 2026,
+                    # "There are later films than 1993 in the afi catalog so the search should be widened"; American films to 1993 asked first)
+                    if not re.match(r'^tt\d{6,10}$', t):
                         continue
                     if (A.get(t) or {}).get('id'):
                         linked += 1
@@ -2705,9 +2707,11 @@ def make_handler(g):
                             need.append([t, A[t]['id']])
                     else:
                         out.append([t, it.get('Name') or '', y] + ([it['OriginalTitle']] if it.get('OriginalTitle') and it['OriginalTitle'] != it.get('Name') else []))
+                        pri[t] = 0 if us and 1893 <= y <= 1993 else 1 if us else 2
                 start += 500
                 if start >= (r.get('TotalRecordCount') or 0):
                     break
+            out.sort(key=lambda x: (pri.get(x[0], 2), x[2]))
             return self.send_json(200, {'missing': out, 'linked': linked, 'got': got, 'need': need, 'read': len(AD)})
 
         def api_distributors(self, me, user, q, b):

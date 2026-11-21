@@ -522,7 +522,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       <section class="card" data-tab="library" id="aficard">
         <div class="kicker">AFI Catalog</div>
         <h2>Each American film’s <em>own AFI page</em></h2>
-        <p class="stat">American films to 1993 link to their page in the AFI Catalog. Most pages are found by themselves (from Wikidata and Wikipedia); this bookmark finds the rest, by looking each one up on AFI’s own site in your browser, one every few seconds.</p>
+        <p class="stat">Films in the AFI Catalog link to their page there: American films above all, but later ones and some made elsewhere too (Chariots of Fire). Most pages are found by themselves (from Wikidata and Wikipedia); this bookmark finds the rest, by looking each one up on AFI’s own site in your browser, one every few seconds.</p>
         <p class="stat" id="afisay">Looking…</p>
         <ol class="stat" style="margin:8px 0 0 18px;padding:0">
           <li>Drag to your bookmarks bar: <a class="btn" id="afibm" href="#" style="cursor:grab">Grifflix: AFI pages</a> <span id="afibmsay"></span></li>
@@ -960,7 +960,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   bm.onclick = function (e) { e.preventDefault(); toast(bm.dataset.ready ? 'Drag it to your bookmarks bar, then click it on catalog.afi.com' : 'Still getting the films…'); };
   var load = function (body) { return fetch(GW + '/api/afi', { method: body ? 'POST' : 'GET', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' })
     .then(function (r) { if (!r.ok) throw new Error(r.status === 404 ? 'the Mac mini takes its update within a few minutes' : 'the Mac mini said ' + r.status); return r.json(); }); };
-  var show = function (j) { say.textContent = j.linked + ' American films to 1993 link to their AFI page; ' + j.missing.length + ' still have none' + (j.missing.length ? ' (the bookmark looks those up)' : '') + '. ' + (j.read || 0) + ' AFI pages read (genre, subjects, companies, History).';
+  var show = function (j) { say.textContent = j.linked + ' films link to their AFI page; ' + j.missing.length + ' not found yet' + (j.missing.length ? ' (the bookmark looks those up, American films to 1993 first; one AFI hasn’t got is remembered and not asked again)' : '') + '. ' + (j.read || 0) + ' AFI pages read (genre, subjects, companies, History).';
     bm.dataset.ready = 1; bm.href = 'javascript:' + encodeURIComponent('(' + ABM.toString() + ')(' + JSON.stringify(j.missing) + ',' + JSON.stringify(j.need || []) + ');void 0');
     document.getElementById('afibmsay').textContent = '(' + j.missing.length + ' to find, ' + (j.need || []).length + ' pages to read)'; };
   var go = function () { if (!TOKEN || !GW) return setTimeout(go, 3000); load().then(show).catch(function (e) { say.textContent = 'Couldn’t get the films just now: ' + e.message + '.'; setTimeout(go, 60000); }); };
