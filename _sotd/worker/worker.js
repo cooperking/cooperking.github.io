@@ -1553,14 +1553,17 @@ function gPicUrl(id, kind, w, tag) {   // a picture's address: its size the near
 async function gPicGet(request, url, env, ctx) {   // /gp/<id>/<Kind>-<w>.jpg: from R2; one not copied yet comes from the Mac
   const m = /^\/gp\/([0-9a-f]{32})\/(Primary|Backdrop|Thumb)-(\d+|full)\.jpg$/.exec(url.pathname);
   if (!m || !(G_PIC_KINDS[m[2]] || []).some(x => String(x) === m[3])) return new Response('Not here.', { status: 404 });
-  const ask = G_API + '/pimg/' + m[1] + '/' + m[2] + '.jpg?' + (m[3] === 'full' ? 'quality=92' : 'maxWidth=' + m[3] + '&quality=82');
-  const cache = caches.default, hit = await cache.match(request);
+  // (its version in the address asked of the Mac too: without it Cloudflare, which keeps the Mac's pictures a week, handed over the old poster,
+  // kept here under the new version: John, 21 Nov 2026, Jane B. by Agnès V. and the W. C. Fields shorts without their Criterion covers on sharp screens)
+  const ask = G_API + '/pimg/' + m[1] + '/' + m[2] + '.jpg?' + (m[3] === 'full' ? 'quality=92' : 'maxWidth=' + m[3] + '&quality=82') + '&tag=' + encodeURIComponent(url.searchParams.get('t') || '-');
+  const ck = new Request(url.toString() + (url.search ? '&' : '?') + 'k=3');   // (k=3: what was kept here before that, not handed out again)
+  const cache = caches.default, hit = await cache.match(ck);
   if (hit) return hit;
   const key = 'grifflix/p/' + m[1] + '/' + m[2] + '-' + m[3] + '.jpg';
   let o = await env.MEDIA.get(key).catch(() => null), body, type = '';
   // (a picture changed on the Mac (its version, t, not the one kept): asked for afresh, for a member, the kept one still shown if the Mac doesn't
   // answer; the first copy was otherwise kept for ever: John, 18 Nov 2026, Fanny and Alexander's poster blurred long after a sharp one replaced it)
-  const want = url.searchParams.get('t') || '', had = o && o.customMetadata ? o.customMetadata.t || '' : '';
+  const want = url.searchParams.get('t') ? url.searchParams.get('t') + '|3' : '', had = o && o.customMetadata ? o.customMetadata.t || '' : '';   // ('|3': each copy made before that asked for once more)
   const stale = !!(o && want && want !== had && url.searchParams.get('m') === '1');
   if (!o && url.searchParams.get('m') !== '1') {   // (a visitor: the nearest size already kept, while the bigger one isn't yet)
     const all = G_PIC_KINDS[m[2]].map(String), at = all.indexOf(m[3]);
@@ -1582,7 +1585,7 @@ async function gPicGet(request, url, env, ctx) {   // /gp/<id>/<Kind>-<w>.jpg: f
     if (!body && !o) return Response.redirect(ask, 302);
   }
   const res = new Response(o ? o.body : body, { headers: { 'Content-Type': (o ? (o.httpMetadata || {}).contentType : type) || 'image/jpeg', 'Cache-Control': 'public, max-age=' + (url.search ? 31536000 : 86400), 'Access-Control-Allow-Origin': '*' } });
-  if (ctx && !(stale && o)) ctx.waitUntil(cache.put(request, res.clone()));   // (the old one, the Mac not answering: not kept under the new version)
+  if (ctx && !(stale && o)) ctx.waitUntil(cache.put(ck, res.clone()));   // (the old one, the Mac not answering: not kept under the new version)
   return res;
 }
 function gRevealed(day) { const t = londonDay(); return day < t || (day === t && londonHour() >= 8); }
