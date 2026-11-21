@@ -34,7 +34,10 @@ w = wave.open(wav, 'rb'); audio = np.frombuffer(w.readframes(w.getnframes()), np
 m = WhisperModel(model, device='cpu', compute_type='int8')
 # (told the film's language, and each line not led by the last: left to itself it slipped from translating into writing the Swedish down,
 # Wild Strawberries' last part after its Latin ceremony, and nothing there could match: John, 21 Nov 2026)
-segs, info = m.transcribe(audio, task='translate' if translate else 'transcribe', vad_filter=True, language=lang, condition_on_previous_text=False)
+try:
+    segs, info = m.transcribe(audio, task='translate' if translate else 'transcribe', vad_filter=True, language=lang, condition_on_previous_text=False)
+except ValueError:   # (a language Whisper doesn't know, Wolof, Irish: heard for itself)
+    segs, info = m.transcribe(audio, task='translate' if translate else 'transcribe', vad_filter=True, condition_on_previous_text=False)
 def ts(t):
     t = max(0.0, t); h = int(t // 3600); mi = int(t % 3600 // 60); se = t % 60
     return '%02d:%02d:%06.3f' % (h, mi, se)
@@ -44,7 +47,7 @@ with open(out, 'w', encoding='utf-8') as f:
 '''
 RATIOS = [1.0, 25 / 23.976, 23.976 / 25, 25 / 24, 24 / 25, 24 / 23.976, 23.976 / 24]
 SAMPLE = 360   # (seconds of sound in each sample)
-LANG2 = {'swe': 'sv', 'dan': 'da', 'nor': 'no', 'nob': 'no', 'fin': 'fi', 'isl': 'is', 'fra': 'fr', 'fre': 'fr', 'ita': 'it', 'spa': 'es', 'por': 'pt',
+LANG2 = {'cn': 'zh', 'swe': 'sv', 'dan': 'da', 'nor': 'no', 'nob': 'no', 'fin': 'fi', 'isl': 'is', 'fra': 'fr', 'fre': 'fr', 'ita': 'it', 'spa': 'es', 'por': 'pt',
          'deu': 'de', 'ger': 'de', 'nld': 'nl', 'dut': 'nl', 'pol': 'pl', 'ces': 'cs', 'cze': 'cs', 'hun': 'hu', 'rus': 'ru', 'ukr': 'uk', 'srp': 'sr',
          'hrv': 'hr', 'ron': 'ro', 'rum': 'ro', 'ell': 'el', 'gre': 'el', 'tur': 'tr', 'heb': 'he', 'ara': 'ar', 'fas': 'fa', 'per': 'fa', 'hin': 'hi',
          'ben': 'bn', 'tam': 'ta', 'jpn': 'ja', 'kor': 'ko', 'zho': 'zh', 'chi': 'zh', 'cmn': 'zh', 'yue': 'yue', 'tha': 'th', 'vie': 'vi', 'ind': 'id',
