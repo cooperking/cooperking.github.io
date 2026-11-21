@@ -646,7 +646,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <h2>Box sets <em>to finish</em></h2>
         <p class="stat" id="cbnote">From Criterion’s own list of each set; it keeps up as films come in.</p>
         <div class="state cbexp"><button class="btn" id="cmsheet" type="button">Make the Google Sheet</button><a class="btn" id="cmopen" href="#" target="_blank" rel="noopener" hidden>Open it</a><button class="btn" id="cmcsv" type="button">Download all (CSV)</button><button class="btn" id="cmpick" type="button" disabled>Download chosen (CSV)</button><button class="btn" id="cmclear" type="button" hidden>Clear chosen</button><button class="btn" id="cmsto" type="button">Open in Search Tab Opener</button></div>
-        <p class="stat" id="cmsay"></p>
+        <p class="stat" id="cmsay"></p><p class="stat" id="cmcoming" hidden></p>
         <div class="mlist" id="cbmiss"><p class="stat">Looking…</p></div>
       </section>
       <section class="card" data-tab="criterion">
@@ -1459,7 +1459,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var got = function (f) { return (mine[fold(f.t)] || []).filter(function (i) { return !i.year || Math.abs(i.year - f.y) <= 1; })[0]; };
       var miss = [], loose = [];
       (A.films || []).forEach(function (f) { var i = got(f); if (!i) miss.push(f); else if (!inA24[i.id]) loose.push(f); });
-      var row = function (f) { return '<div class="mrow"><span class="y">' + f.y + '</span><b>' + esc(f.t) + '</b><span class="d">' + esc((f.d || []).join(', ')) + '</span><span class="s">' + esc(f.s || '') + '</span></div>'; };
+      var row = function (f) { return '<div class="mrow" data-t="' + esc(gxFold(f.t)) + '" data-y="' + esc(f.y || '') + '"><span class="y">' + f.y + '</span><b>' + esc(f.t) + '</b><span class="d">' + esc((f.d || []).join(', ')) + '</span><span class="s">' + esc(f.s || '') + '</span></div>'; };
       var out = !miss.length ? '<p class="stat">Every film in A24’s list is in Grifflix.</p>' : '';
       var soon = miss.filter(function (f) { return /coming/i.test(f.s); }), now = miss.filter(function (f) { return !/coming/i.test(f.s); });
       if (now.length) out += '<h3>Out now<small>' + now.length + '</small></h3>' + now.map(row).join('');
@@ -1477,7 +1477,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       $('#cbnote').textContent = 'From Criterion’s own list of each set; it keeps up as films come in. Open a set to see its films still to get.';
       // (each film to get with a box to tick, and each set's with one for all its films: the ticked ones as a CSV of their own)
       var CBR = window.CBR = [], cbrowIn = function (set, ssp) { return function (m) { var k = set + '|' + m[0] + '|' + (m[1] || ''); CBR.push({ k: k, r: [set, ssp || '', m[0], m[1] || '', m[2] || ''] });
-        return '<label class="mrow cb pk' + (CBP[k] ? ' on' : '') + '"><input type="checkbox" class="cbpick" data-k="' + esc(k) + '"' + (CBP[k] ? ' checked' : '') + '><span class="y">' + esc(m[1] || '') + '</span><b>' + esc(m[0]) + '</b><span class="s">' + (m[2] ? 'No. ' + esc(m[2]) : '') + '</span></label>'; }; };
+        return '<label class="mrow cb pk' + (CBP[k] ? ' on' : '') + '" data-t="' + esc(gxFold(m[0])) + '" data-y="' + esc(m[1] || '') + '"><input type="checkbox" class="cbpick" data-k="' + esc(k) + '"' + (CBP[k] ? ' checked' : '') + '><span class="y">' + esc(m[1] || '') + '</span><b>' + esc(m[0]) + '</b><span class="s">' + (m[2] ? 'No. ' + esc(m[2]) : '') + '</span></label>'; }; };
       var setBox = function (set) { return '<input type="checkbox" class="cbsetpick" data-set="' + esc(set) + '" aria-label="Choose every film of ' + esc(set) + '">'; };
       $('#cbmiss').innerHTML = sets.length ? '<h3 class="mhead first">Begun<small>' + sets.length + ' box sets, ' + nfilms + ' films to get</small></h3>' + sets.map(function (b) {
         var all = have[b] + gone[b].length;
@@ -1496,7 +1496,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
             b.f.map(cbrowIn(b.n, b.sp)).join('') + '</details>';
         }).join(''));
       } else if (!('csetsnone' in L)) $('#cbmiss').insertAdjacentHTML('beforeend', '<p class="stat">The box sets not begun come with the next Update from the Mac.</p>');
-      cbWire();
+      cbWire(); markComing();
       // (each begun box set's special features not here yet, matched to its films' extras as the site's box set page matches them: John, 20 Nov
       // 2026, "Special features to get can be listed in admin")
       var fW = function (t) { return String(t || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(function (x) { return x.length > 2 && !/^(the|and|with|new|from|for|film|films|its|his|her|this|that|about|edition|version|part)$/.test(x); }); };
@@ -1834,7 +1834,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   function fetching() {
     if (!GW) return;
     fetch(GW + '/api/fetching', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (r.status === 404) throw new Error('old'); if (!r.ok) throw 0; return r.json(); }).then(fetching.draw = function (f) {
-      fetching.last = f;
+      fetching.last = f; setTimeout(markComing, 0);
       var n = f.now, w = f.waiting || [], rc = f.recent || [], tab = fetching.tab || 'next';
       $('#fbar').hidden = !n;
       // (Look now always there, greyed while a look or a download is going, saying so: John, 15 Nov 2026, "otherwise it's impossible to
@@ -2111,11 +2111,32 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 
   // ---- every box set's films not in Grifflix, as one spreadsheet (John, 18 Nov 2026: "Want one list of every box set film you're missing?" "Yes")
   // (the CSV made here, from the site's own list, not asked of the Mac: it failed while the Mac was busy, "Load failed": John, 21 Nov 2026)
+  // (a film on its way, downloading, waiting to, or still coming in at TorBox, off the lists of films to get: John, 21 Nov 2026, "When a film
+  // is in the queue for being downloaded can it be removed from the waiting for lists")
+  function gxFold(x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['’‘`´"“”]/g, '').replace(/&/g, ' and ').replace(/^(the|a|an) /, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+  var COMING_K = {};
+  function comingFilms() {
+    var f = fetching.last || {}, NM = f.names || {}, out = [];
+    var add = function (t) { t = String(t || ''); var m = /^(.*?)\s*\((\d{4})\)\s*$/.exec(t) || /^(.*?)[ ._(\[-]+((?:19|20)\d\d)(?:[ ._)\]-]|$)/.exec(t); out.push(m ? { t: gxFold(m[1].replace(/[._]+/g, ' ')), y: +m[2] } : { t: gxFold(t.replace(/\.[a-z0-9]{2,4}$/i, '').replace(/[._]+/g, ' ')), y: 0 }); };
+    if (f.now) add(f.now.to || f.now.file);
+    (f.waiting || []).forEach(function (x) { if (x.extra) return; var nm = NM[x.series ? (x.key || x.file) : x.file]; add(nm ? nm.name + (nm.year ? ' (' + nm.year + ')' : '') : (x.to || x.file)); });
+    (f.attorbox || []).forEach(function (x) { add(x.name); });
+    return out.filter(function (c) { return c.t; });
+  }
+  function markComing() {
+    if (!document.getElementById('cbmiss')) return;
+    var C = comingFilms(), n = 0; COMING_K = {};
+    var on = function (el) { var t = el.dataset.t, y = +el.dataset.y || 0; return C.some(function (c) { return c.t === t && (!c.y || !y || Math.abs(c.y - y) <= 1); }); };
+    cbAll('#cbmiss .mrow.pk[data-t], #a24miss .mrow[data-t]').forEach(function (el) { var c = on(el); el.hidden = c; if (c) { n++; var cb = el.querySelector('.cbpick'); if (cb) COMING_K[cb.dataset.k] = 1; } });
+    cbAll('#cbmiss details.mset').forEach(function (d) { var rows = cbAll('.mrow.pk', d); if (rows.length) d.hidden = rows.every(function (r) { return r.hidden; }); });
+    var el = $('#cmcoming'); el.hidden = !n; el.textContent = n ? n + ' film' + (n === 1 ? '' : 's') + ' on the way (downloading, waiting to, or at TorBox): not listed below.' : '';
+    if (typeof cbCount === 'function') cbCount();
+  }
   var cbAll = function (q, el) { return [].slice.call((el || document).querySelectorAll(q)); };
   var CBP = {}; try { CBP = JSON.parse(localStorage.getItem('gx-cbpick') || '{}') || {}; } catch (e) { CBP = {}; }
   function cbSave() { try { localStorage.setItem('gx-cbpick', JSON.stringify(CBP)); } catch (e) {} cbCount(); }
   function cbCount() {
-    var n = (window.CBR || []).filter(function (x) { return CBP[x.k]; }).length;
+    var n = (window.CBR || []).filter(function (x) { return CBP[x.k] && !COMING_K[x.k]; }).length;
     $('#cmpick').disabled = !n; $('#cmpick').textContent = n ? 'Download ' + n + ' chosen (CSV)' : 'Download chosen (CSV)'; $('#cmclear').hidden = !n;
     cbAll('#cbmiss .cbsetpick').forEach(function (c) { var rows = cbAll('.cbpick', c.closest('details')), on = rows.filter(function (r) { return r.checked; }).length; c.checked = rows.length > 0 && on === rows.length; c.indeterminate = on > 0 && on < rows.length; });
   }
@@ -2136,7 +2157,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   // (the films chosen, or all of them, opened in John's Search Tab Opener, the list carried in its link: John, 21 Nov 2026, "Can the csv
   // files open directly in my other site")
   $('#cmsto').onclick = function () {
-    var all = window.CBR || [], ch = all.filter(function (x) { return CBP[x.k]; }), rows = (ch.length ? ch : all).map(function (x) { return x.r; });
+    var all = (window.CBR || []).filter(function (x) { return !COMING_K[x.k]; }), ch = all.filter(function (x) { return CBP[x.k]; }), rows = (ch.length ? ch : all).map(function (x) { return x.r; });
     if (!rows.length) return toast('The list isn’t here yet');
     var b64 = btoa(unescape(encodeURIComponent('\ufeff' + cbText(rows))));
     window.open('https://cooperking.github.io/search-tab-opener/#csv=' + encodeURIComponent('data:text/csv;base64,' + b64) + '&name=' + encodeURIComponent((ch.length ? 'Criterion films chosen ' : 'Criterion box set films missing ') + new Date().toISOString().slice(0, 10)), '_blank', 'noopener');
@@ -2148,10 +2169,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     a.download = name + ' ' + new Date().toISOString().slice(0, 10) + '.csv'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
     $('#cmsay').textContent = rows.length + ' film' + (rows.length === 1 ? '' : 's') + ' from ' + new Set(rows.map(function (r) { return r[0]; })).size + ' box sets, downloaded.';
   }
-  $('#cmpick').onclick = function () { cbCsv((window.CBR || []).filter(function (x) { return CBP[x.k]; }).map(function (x) { return x.r; }), 'Criterion films chosen'); };
+  $('#cmpick').onclick = function () { cbCsv((window.CBR || []).filter(function (x) { return CBP[x.k] && !COMING_K[x.k]; }).map(function (x) { return x.r; }), 'Criterion films chosen'); };
   $('#cmclear').onclick = function () { CBP = {}; cbAll('#cbmiss .cbpick').forEach(function (r) { r.checked = false; r.closest('.mrow').classList.remove('on'); }); cbSave(); };
   function cmGet(how) {
-    if (how === 'csv' && window.CBR && window.CBR.length) return cbCsv(window.CBR.map(function (x) { return x.r; }), 'Criterion box set films missing');
+    if (how === 'csv' && window.CBR && window.CBR.length) return cbCsv(window.CBR.filter(function (x) { return !COMING_K[x.k]; }).map(function (x) { return x.r; }), 'Criterion box set films missing');
     $('#cmsay').textContent = 'Making the list…';
     fetch(GW + '/api/criterionmissing', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { if (r.status === 404) throw new Error('The Mac mini takes its update in a few minutes.'); return r.json(); }).then(function (j) {
       var R = [['Box set', 'Set spine', 'Film', 'Year', 'Spine', 'Criterion page']].concat(j.rows || []), n = (j.rows || []).length;
