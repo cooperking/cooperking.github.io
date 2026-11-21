@@ -310,7 +310,7 @@ dialog::backdrop { background: rgba(10, 4, 12, .62); backdrop-filter: blur(6px);
 .sheet .people { margin-top: 14px; font-size: 13.5px; color: var(--muted); }
 .sheet .people b { color: var(--fg-2); font-weight: 500; }
 html.tv .sheet .people { font-size: var(--crfs, 15px); }
-.sheet .people a.afi { color: var(--fg-2); text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; margin-left: 4px; }
+.sheet .people a.afi { font: inherit; letter-spacing: inherit; text-transform: none; color: var(--fg-2); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; white-space: nowrap; }
 html.tv .sheet .people a.afi { display: none; }   /* (no browsing out from the TV) */
 .sheet .acts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; align-items: center; }
 .sheet .acts .pill.go { min-height: 46px; padding: 0 22px; background: var(--fg); color: #1b1020; border-color: var(--fg); font-size: 13px; }
@@ -7093,8 +7093,8 @@ function bodyHTML(it, ctx) {
   // (who released it, and whose library it's in now (Janus, Kino Lorber, Rialto…): John, 21 Nov 2026)
   var and_ = function (L) { return esc(L.join(', ').replace(/, ([^,]*)$/, ' and $1')); };
   // (an American film from 1893 to 1993: the AFI Catalog's search for it, one click, to check who made and released it: John, 21 Nov 2026)
-  var afi = it.type === 'movie' && it.year >= 1893 && it.year <= 1993 && (!it.countries || it.countries.some(function (c) { return /united states|usa/i.test(c); }))
-    ? ' <a class="afi" href="https://catalog.afi.com/Search?searchField=MovieName&amp;searchText=' + encodeURIComponent(showName(it)) + '&amp;sortType=sortByRelevance" target="_blank" rel="noopener">AFI Catalog ↗</a>' : '';
+  // (its own page there, by AFI's number for it, where it's known; no search, no icon: John, 21 Nov 2026)
+  var afi = it.afi && /^\d+$/.test(it.afi) ? ' <a class="afi" href="https://catalog.afi.com/Catalog/moviedetails/' + it.afi + '" target="_blank" rel="noopener">AFI Catalog</a>' : '';
   if (it.dist || (it.libs && it.libs.length) || (it.studios && it.studios.length)) h += '<div class="people dist">' + (it.studios && it.studios.length ? '<b>Produced by</b> ' + and_(it.studios) + '. ' : '') + (it.dist ? '<b>Released by</b> ' + esc(it.dist) + '. ' : '') +
     (it.libs && it.libs.length ? '<b>Now in the library of</b> ' + esc(it.libs.join(', ').replace(/, ([^,]*)$/, ' and $1')) + '.' : '') + afi + '</div>';
   else if (afi) h += '<div class="people dist">' + afi.trim() + '</div>';
