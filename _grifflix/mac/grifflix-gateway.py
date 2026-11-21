@@ -6582,7 +6582,7 @@ def streamers_of(ids):
     return out
 
 
-IMDB_Q = ('query($id:ID!){ title(id:$id){ countriesOfOrigin{countries{text}} companyCredits(first:100, filter:{categories:["distribution"]}){ edges{ node{ '
+IMDB_Q = ('query($id:ID!){ title(id:$id){ releaseYear{year} countriesOfOrigin{countries{text}} companyCredits(first:100, filter:{categories:["distribution"]}){ edges{ node{ '
           'company{ companyText{text} } countries{ text } yearsInvolved{ year } attributes{ text } } } } } }')
 IMDB_HOME = ('dvd', 'vhs', 'blu-ray', 'laserdisc', 'video', 'tv', 'streaming', 'digital', 'betamax', 'syndication', 'internet', 'on demand', 'airing',
              'premiere', '4k', 'uhd', 'cable', 'broadcast')
@@ -6611,6 +6611,12 @@ def imdb_distributor(t):
         if home:
             w = first([e for e in E if home[0] in e['c'] and 'theatrical' in e['a']])
             who = '%s (%s)' % (w, home[0]) if w else ''
+    if not who:   # (never in cinemas: the service or network that first showed it, in the US or worldwide, when it was new (Amazon Prime Video,
+        # HBO, CBS), not a disc or a streaming service years on: John, 21 Nov 2026, "go with your suggestion")
+        fy = ((T.get('releaseYear') or {}).get('year')) or 0
+        shown = [e for e in E if ('United States' in e['c'] or 'World-wide' in e['c']) and any(k in e['a'] for k in ('tv', 'vod', 'streaming', 'internet', 'airing'))
+                 and not any(k in e['a'] for k in ('dvd', 'vhs', 'blu-ray', 'laserdisc', 'betamax')) and (not fy or e['y'] <= fy + 1)]
+        who = first(shown)
     return re.sub(r'\s+', ' ', who).strip()[:120], rec
 
 
@@ -6654,14 +6660,14 @@ def bom_now():
         # (none on Box Office Mojo, which hardly knows films before 1980: IMDb's own record of who released it (its company credits), each
         # film asked once: John, 21 Nov 2026, "we need to sort out the distribution work")
         fromimdb = []
-        for t in [t for t, v in D.items() if not v and re.match(r'^tt\d{6,10}$', t) and not (F.get(t) or {}).get('im')][:1200]:
+        for t in [t for t, v in D.items() if not v and re.match(r'^tt\d{6,10}$', t) and not (F.get(t) or {}).get('im2')][:1200]:   # (im2: asked again with TV and streaming)
             try:
                 who, us = imdb_distributor(t)
             except Exception as e:
                 if '429' in str(e) or '503' in str(e):
                     break
                 continue
-            F.setdefault(t, {'t': '', 'f': {}, 'tb': []})['im'] = 1
+            F.setdefault(t, {'t': '', 'f': {}, 'tb': []})['im'] = F[t]['im2'] = 1
             if us:
                 F[t]['imdb'] = us[:12]
             if who:
