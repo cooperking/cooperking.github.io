@@ -260,7 +260,10 @@ def main():
         return
     best = res[0]
     print('%s: %s (%d lines matched, typically %.1f s out before)%s' % (job.get('name'), best['how'], best['n'], best['miss'], '' if best['sure'] else ': NOT SURE'))
-    say({'ok': True, 'srt': best['srt'], 'sure': best['sure'], 'how': best['how'], 'n': best['n'], 'miss': best['miss'], 'chose': best['name'],
+    # (sent packed, base64, not as text: Cloudflare in front of the Mac mini refused a whole film's dialogue as plain text, 403: Io Capitano,
+    # John, 21 Nov 2026)
+    import base64
+    say({'ok': True, 'srt64': base64.b64encode(best['srt'].encode('utf-8')).decode(), 'sure': best['sure'], 'how': best['how'], 'n': best['n'], 'miss': best['miss'], 'chose': best['name'],
          'samples': best['samples'], 'mins': round((time.time() - t0) / 60, 1), 'tried': [[x['name'], x['n'], x['sure']] for x in res]})
 
 
