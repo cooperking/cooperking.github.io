@@ -8,8 +8,8 @@ job: the film's place on the G-Drive, its length, and a few English subtitles fr
     whisper.cpp (its translation, the film's own language heard), with their times;
   * each subtitle's lines are matched to those words (the words they share, names and nouns above all), and from the matches the
     subtitle's timing is worked out: how far out it is, and whether it runs at another speed (25 against 23.976 frames a second);
-  * where the three samples agree, the whole subtitle is moved by that; where they don't (a version with a different cut), each part by
-    its own;
+  * one timing for the whole film, its speed and its offset, which every part listened to must agree with; a subtitle that doesn't fit
+    the whole film is passed over for the next, and none fitting is a fail (not cut into parts: a different cut has different subtitles);
   * the subtitle matching best is sent back, said whether its timing is sure; the Mac mini saves it beside the film.
 Only Python's standard library; whisper.cpp (whisper-cli) and ffmpeg as installed by `convert-here.sh subs-setup`.
 """
@@ -186,76 +186,43 @@ def prepare(job, ff, wcli, work):
         extra = {}
         if len(cues) < 20:
             continue
+        # (one timing for the whole film, its speed and its offset; every part listened to must agree with it, or this subtitle doesn't fit
+        # and the next is tried; none fitting is a fail. Not cut into parts, each moved its own way: a different cut has different subtitles,
+        # and patching them never comes right: John, 21 Nov 2026, "The only way to do it is to get the frames right and time it. If it doesn't
+        # match any subtitles after going through each one, then it's a fail")
         per = [(t0, matches(segs, cues)) for t0, segs in heard]
-        bypos = dict(per)
         allp = [p for _, ps in per for p in ps]
         n, r, b, miss = fit(allp)
-        wins = []   # (each sample's own offset, at the speed found)
+        inl = [(f, c) for f, c, _ in allp if abs(f - (r * c + b)) <= 1.0]
+        if len(inl) >= 8:   # (the speed and offset fine-tuned on the lines that agree: a film a fraction faster drifts a second over its length)
+            mc = sum(c for _, c in inl) / len(inl); mf = sum(f for f, _ in inl) / len(inl)
+            vc = sum((c - mc) ** 2 for _, c in inl)
+            if vc > 0:
+                r2 = sum((c - mc) * (f - mf) for f, c in inl) / vc
+                if abs(r2 / r - 1) < .003:
+                    r, b = r2, mf - r2 * mc
+                    res_ = sorted(abs(f - (r * c + b)) for f, c, _ in allp)
+                    n = sum(1 for x in res_ if x <= .7)
+                    miss = sorted(abs(f - (r * c + b)) for f, c in inl)[len(inl) // 2]
+        wins = []   # (each part: its lines that agree with the whole film's timing, and how far out they are)
         for t0, ps in per:
-            wn, _, wb, wmiss = fit(ps, [r]) if ps else (0, r, b, 99)
-            wins.append((t0, wn, wb, wmiss))
-        good = [w for w in wins if w[1] >= 3]
-        agree = all(abs(w[2] - b) <= .7 for w in good)
-        sure = n >= 12 and len(good) >= min(2, len(wins)) and miss <= .6
-        if agree or len(good) < 2:
-            moved = [[r * a + b, r * e + b, t] for a, e, t in cues]
-            how = 'moved %+.1f s%s' % (b, '' if r == 1 else ', at %.3fx speed' % r)
-        else:   # (a different cut: each part of the film by its own offset; where one part ends found by more, shorter samples between
-            # the two that differ, halving the gap each time till it's within a few minutes)
-            good.sort()
-            bounds = []
-            for k in range(len(good) - 1):
-                lo, hi, ob = good[k][0] + SAMPLE, good[k + 1][0], good[k][2]
-                if abs(good[k + 1][2] - ob) <= .7:
-                    bounds.append((hi - ob) / r)
-                    continue
-                nb = good[k + 1][2]
-                def split(ps):   # (a sample with lines on both sides of the change: just where it is)
-                    old = [f for f, c, _ in ps if abs(f - r * c - ob) <= .7]
-                    new = [f for f, c, _ in ps if abs(f - r * c - nb) <= .7]
-                    return (max(old), min(new)) if len(old) >= 2 and len(new) >= 2 and max(old) < min(new) else None
-                sp = split(bypos.get(good[k][0], [])) or split(bypos.get(good[k + 1][0], []))
-                if sp:
-                    bounds.append(((sp[0] + sp[1]) / 2 - ob) / r)
-                    continue
-                tries = 0
-                while hi - lo > 150 and tries < 8:
-                    tries += 1
-                    mid = (lo + hi) / 2 - 60
-                    key = round(mid)
-                    if key not in extra:
-                        extra[key] = matches(transcribe(ff, wcli, film, mid, 120, job.get('translate', True), work), cues_all[cand_i])
-                    ps = extra[key]
-                    if len(ps) < 2:
-                        break
-                    sp = split(ps)
-                    if sp:   # (the change inside this sample: just where, from its lines)
-                        lo, hi = sp
-                        break
-                    if len([1 for f, c, _ in ps if abs(f - r * c - ob) <= .7]) >= len([1 for f, c, _ in ps if abs(f - r * c - nb) <= .7]):
-                        lo = mid + 120
-                    else:
-                        hi = mid
-                bounds.append(((lo + hi) / 2 - good[k][2]) / r)   # (where it changes, in the subtitle's own time)
-            def off(a):
-                for k, x in enumerate(bounds):
-                    if a < x:
-                        return good[k][2]
-                return good[-1][2]
-            moved = [[r * a + off(a), r * e + off(a), t] for a, e, t in cues]
-            how = 'moved by part (' + ', '.join('%+.1f s' % w[2] for w in good) + ')%s' % ('' if r == 1 else ', at %.3fx speed' % r)
-            sure = sure and all(w[3] <= .6 for w in good)
-        results.append({'_ci': cand_i, '_wins': wins, '_r': r, '_b': b, 'name': cand.get('name') or '', 'n': n, 'miss': round(miss, 2), 'sure': bool(sure), 'how': how, 'srt': write_srt(moved),
-                        'samples': [[round(w[0]), w[1], round(w[2], 2)] for w in wins]})
-    results.sort(key=lambda x: (x['sure'], x['n'], -x['miss']), reverse=True)
+            ok = [abs(f - (r * c + b)) for f, c, _ in ps if abs(f - (r * c + b)) <= .7]
+            wins.append((t0, len(ok), round(sorted(ok)[len(ok) // 2], 2) if ok else 99, len(ps)))
+        heardp = [w for w in wins if w[3] >= 3]   # (parts where enough was said to judge)
+        fits = len(heardp) >= min(2, len(wins)) and all(w[1] >= max(2, w[3] * .3) for w in heardp)
+        sure = fits and n >= 12 and miss <= .6
+        moved = [[r * a + b, r * e + b, t] for a, e, t in cues]
+        how = 'moved %+.1f s%s' % (b, '' if abs(r - 1) < .00005 else ', at %.4fx speed' % r)
+        results.append({'_ci': cand_i, '_r': r, '_b': b, 'fits': bool(fits), 'name': cand.get('name') or '', 'n': n, 'miss': round(miss, 2), 'sure': bool(sure), 'how': how, 'srt': write_srt(moved),
+                        'samples': [[round(w[0]), w[1], w[2]] for w in wins]})
+    results.sort(key=lambda x: (x['fits'], x['sure'], x['n'], -x['miss']), reverse=True)
     if results:   # (what was heard and matched, for the admin page: John, 21 Nov 2026, "I should be able to see what whisper took as the timing,
         # the translation, the matching lines")
         best = results[0]
         cues = cues_all[best['_ci']]
-        offs = dict((round(w[0]), w[2]) for w in best['_wins'])
         ev = []
         for t0, segs in heard:
-            o_ = offs.get(round(t0), best['_b']) if best['how'].startswith('moved by part') else best['_b']
+            o_ = best['_b']
             rows = []
             for sg in segs[:60]:
                 bi = None
@@ -275,7 +242,7 @@ def prepare(job, ff, wcli, work):
             ev.append({'from': round(t0), 'rows': rows})
         best['evidence'] = ev
     for x in results:
-        for k in ('_ci', '_wins', '_r', '_b'):
+        for k in ('_ci', '_r', '_b'):
             x.pop(k, None)
     return results
 
@@ -305,8 +272,8 @@ def main():
         return
     finally:
         shutil.rmtree(work, ignore_errors=True)
-    if not res or res[0]['n'] < 4:
-        say({'ok': False, 'error': 'none of the subtitles matched what’s said', 'tried': [[x['name'], x['n']] for x in res]})
+    if not res or not res[0].get('fits') or res[0]['n'] < 4:   # (none fitting the whole film: a fail, nothing saved)
+        say({'ok': False, 'error': 'none of the subtitles matched what’s said through the whole film', 'tried': [[x['name'], x['n']] for x in res]})
         return
     best = res[0]
     prog('Sending the subtitles back (%s, %d lines matched)' % (best['how'], best['n']))
