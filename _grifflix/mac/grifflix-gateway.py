@@ -34,7 +34,7 @@ VERSION = '1'
 
 FIELDS = ('Overview,Genres,OfficialRating,CommunityRating,ProductionYear,PremiereDate,RunTimeTicks,ImageTags,'
           'BackdropImageTags,ParentBackdropImageTags,SeriesPrimaryImageTag,ChildCount,RecursiveItemCount,MediaSources,'
-          'People,Taglines,Studios,DateCreated,Width,Height,RemoteTrailers,Path')
+          'People,Taglines,Studios,ProductionLocations,DateCreated,Width,Height,RemoteTrailers,Path')
 # lists (rows, Browse, collections, calendars) need only this much: the old Mac answers far faster without each film's
 # files and cast (a film's own pop-up asks for everything)
 LIST_FIELDS = ('Overview,Genres,OfficialRating,CommunityRating,ProductionYear,PremiereDate,RunTimeTicks,ImageTags,'
@@ -432,6 +432,8 @@ def item_out(it, prog=None):
         o['backdrop'] = it['Id']
     elif it.get('ParentBackdropItemId') and it.get('ParentBackdropImageTags'):
         o['backdrop'] = it['ParentBackdropItemId']
+    if it.get('ProductionLocations'):   # (where it was made: an American film's AFI Catalog link, 21 Nov 2026)
+        o['countries'] = it['ProductionLocations'][:4]
     if it.get('Studios'):   # (its production companies, from TMDB: John, 21 Nov 2026, "We also need production companies")
         o['studios'] = [x.get('Name') for x in it['Studios'] if x.get('Name')][:4]
     if it.get('People'):
