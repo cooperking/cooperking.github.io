@@ -5701,6 +5701,12 @@ def subprep_scan():
     if not libs.get('movies'):
         return
     P = load(SUBPREP, {}) or {}
+    if P.get('_v') != 2:   # (once: those found to have "no English subtitles" while subtitles of the right film were thrown away for being under
+        # its own title, tried again: 21 Nov 2026)
+        for k_, v_ in P.items():
+            if not k_.startswith('_') and isinstance(v_, dict) and v_.get('state') in ('none', 'nomatch'):
+                v_.update(state='waiting', note='')
+        P['_v'] = 2
     films, start = [], 0
     while True:
         r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': libs['movies'], 'Recursive': 'true', 'IncludeItemTypes': 'Movie',

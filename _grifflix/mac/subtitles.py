@@ -108,7 +108,7 @@ class OpenSubs:
                         continue
                     fd = a.get('feature_details') or {}
                     found[fid] = {'file_id': fid, 'name': a.get('release') or f.get('file_name') or '', 'lang': a.get('language') or lang,
-                                  'kind': (fd.get('feature_type') or '').lower(), 'tmdb': fd.get('tmdb_id') or fd.get('parent_tmdb_id') or '',
+                                  'kind': (fd.get('feature_type') or '').lower(), 'tmdb': fd.get('tmdb_id') or fd.get('parent_tmdb_id') or '', 'imdb': str(fd.get('imdb_id') or fd.get('parent_imdb_id') or ''),
                                   'exact': exact, 'downloads': a.get('download_count') or 0, 'hi': bool(a.get('hearing_impaired')),
                                   'fps': a.get('fps') or 0, 'trusted': bool(a.get('from_trusted')),
                                   'machine': bool(a.get('machine_translated') or a.get('ai_translated')),
@@ -137,6 +137,12 @@ class OpenSubs:
                 return False
             if x.get('kind') and x['kind'] != want_kind and x['kind'] != 'tvshow':
                 return False
+            # (this film's own by its number, whatever it's called there: OpenSubtitles has films under their own titles, Grifflix in
+            # English, and the title check threw them all away (The Beloved Child is L'enfant aimé…): John, 21 Nov 2026, "It's not
+            # finding subtitles when the film name is an English title but the original film title isn't")
+            if not episode and ((tmdb and x.get('tmdb') and str(x['tmdb']) == str(tmdb)) or
+                                (imdb and x.get('imdb') and re.sub(r'\D', '', str(x['imdb'])).lstrip('0') == re.sub(r'\D', '', str(imdb)).lstrip('0'))):
+                return True
             q_ = flat(query)
             return not q_ or not x.get('title') or q_ in flat(x['title']) or flat(x['title']) in q_
         out = [x for x in out if ours(x)]
