@@ -23,7 +23,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'grifflix', 'data')
 MAC = 'https://media.grifflix.co.uk'
 KINDS = {'Primary': [400], 'Backdrop': [480, 1100], 'Thumb': [480, 1100]}
-BIG = ('overview', 'tagline', 'cast', 'directors', 'trailers')   # (the details, kept apart from the list)
+BIG = ('overview', 'tagline', 'cast', 'directors', 'trailers', 'studios', 'afisub', 'afisubm', 'afiprod', 'afidist', 'afih')   # (the details, kept apart from the list; AFI's too, its History long)
 
 
 def r2():

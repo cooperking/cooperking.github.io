@@ -2661,8 +2661,21 @@ def make_handler(g):
                 g.forget()
                 g.publish_soon = time.time() + 60
                 log('AFI Catalog pages: %d films, by John’s browser' % got)
+            adf = os.path.expanduser('~/Grifflix/afi-details.json')
+            AD = load(adf, {}) or {}
+            if b and isinstance(b.get('det'), dict):   # (each film's AFI page as read, and what's sorted from it)
+                n_ = 0
+                for k, v in b['det'].items():
+                    if re.match(r'^tt\d{6,10}$', str(k)) and isinstance(v, dict) and v.get('x'):
+                        x_ = str(v['x'])[:120000]
+                        AD[str(k)] = {'id': str(v.get('id') or ''), 'x': x_, 'f': afi_parse(x_), 'at': int(time.time())}
+                        n_ += 1
+                save(adf, AD)
+                g.forget()
+                g.publish_soon = time.time() + 120
+                log('AFI Catalog details: %d films, by John’s browser' % n_)
             lid = (g.st.get('libraries') or {}).get('movies')
-            out, start, linked = [], 0, 0
+            out, start, linked, need = [], 0, 0, []
             while lid:
                 r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'ProviderIds,ProductionLocations,OriginalTitle',
                                                                        'StartIndex': start, 'Limit': 500, 'EnableImages': 'false'}, timeout=120) or {}
@@ -2674,12 +2687,14 @@ def make_handler(g):
                         continue
                     if (A.get(t) or {}).get('id'):
                         linked += 1
+                        if t not in AD:
+                            need.append([t, A[t]['id']])
                     else:
                         out.append([t, it.get('Name') or '', y] + ([it['OriginalTitle']] if it.get('OriginalTitle') and it['OriginalTitle'] != it.get('Name') else []))
                 start += 500
                 if start >= (r.get('TotalRecordCount') or 0):
                     break
-            return self.send_json(200, {'missing': out, 'linked': linked, 'got': got})
+            return self.send_json(200, {'missing': out, 'linked': linked, 'got': got, 'need': need, 'read': len(AD)})
 
         def api_distributors(self, me, user, q, b):
             """John's only: each film's US distributor, as Box Office Mojo gives it, read by his own browser (the admin page's bookmark) and
@@ -6667,6 +6682,60 @@ def imdb_distributor(t):
     return re.sub(r'\s+', ' ', who).strip()[:120], rec
 
 
+AFI_LABELS = [('genre', r'genres?'), ('subj', r'subjects? \(major\)'), ('subjm', r'subjects? \(minor\)'), ('prod', r'production compan(?:y|ies)'),
+              ('dist', r'distribution compan(?:y|ies)'), ('rel', r'release date'), ('prem', r'premiere information'), ('mins', r'duration(?: \(in mins\))?'),
+              ('country', r'countr(?:y|ies)'), ('lang', r'languages?')]
+
+
+def afi_parse(x):
+    """An AFI Catalog film page, as John's browser saved its words (one block a line, each link's words between ‖ marks), sorted: its genre,
+    subjects major and minor, production and distribution companies, release, length, country, language, and its History (John, 21 Nov
+    2026, "Can we also get production company and distributors and the history info")."""
+    L = [l.strip() for l in str(x or '').split('\n')]
+    out = {}
+    lab = re.compile(r'^(%s)\s*:\s*(.*)$' % '|'.join('(?P<%s>%s)' % (k, rx) for k, rx in AFI_LABELS), re.I)
+    i = 0
+    while i < len(L):
+        m = lab.match(L[i])
+        if not m:
+            i += 1
+            continue
+        k = next(k for k, _ in AFI_LABELS if m.group(k))
+        val, j = [m.group(len(AFI_LABELS) + 2) or ''], i + 1
+        while j < len(L) and not lab.match(L[j]) and not re.match(r'^[A-Z][A-Z &/()\-]{2,}$', L[j]) and len(val) < 40:
+            if not L[j]:   # (a blank line: past the label, waiting for its words; after them, the end)
+                if ''.join(val).strip():
+                    break
+                j += 1
+                continue
+            val.append(L[j])
+            j += 1
+        v = ' '.join(val)
+        items = [t.strip(' ,;') for t in re.findall(r'‖([^‖]+)‖', v) if t.strip(' ,;')]
+        if not items:
+            items = [t.strip() for t in re.split(r'\s*[;,]\s*', re.sub(r'‖', '', v)) if t.strip()]
+        if k not in out and items:
+            out[k] = items[:30] if k not in ('rel', 'prem', 'mins') else re.sub(r'\s+', ' ', v.replace('‖', ' ')).strip()[:300]
+        i = j
+    # (its History: the words under the heading History, to the next heading)
+    for n, l in enumerate(L):
+        if re.match(r'^history$', l.replace('‖', ''), re.I):
+            h = []
+            for l2 in L[n + 1:]:
+                c = l2.replace('‖', '')
+                if h and (re.match(r'^[A-Z][A-Z &/()\-]{2,}$', c) or re.match(r'^(cast|crew|credits|full credits|details|genre|subject|notes|production compan(y|ies)|'
+                                                                                         r'distribution compan(y|ies)|source citation|physical properties|songs?|music|related titles?|'
+                                                                                         r'production text|summary|synopsis|watch|where to watch)\s*:?$', c, re.I)):
+                    break
+                if c:
+                    h.append(c)
+            h = '\n\n'.join(h).strip()
+            if len(h) > 80:
+                out['hist'] = h[:20000]
+            break
+    return out
+
+
 DLIBS = {'at': 0, 'd': {}}
 
 
@@ -6771,12 +6840,19 @@ def dist_tags(g, items):
         time.sleep(3)
     if ask:
         save(af, A)
+    AD = load(os.path.expanduser('~/Grifflix/afi-details.json'), {}) or {}
     for iid, o in items.items():
         o.pop('dist', None)
         o.pop('libs', None)
         o.pop('afi', None)
         if (A.get(imdb.get(iid) or '-') or {}).get('id'):
             o['afi'] = A[imdb[iid]]['id']
+        for k_ in ('afig', 'afisub', 'afisubm', 'afiprod', 'afidist', 'afih'):
+            o.pop(k_, None)
+        f_ = (AD.get(imdb.get(iid) or '-') or {}).get('f') or {}
+        for k_, src in (('afig', 'genre'), ('afisub', 'subj'), ('afisubm', 'subjm'), ('afiprod', 'prod'), ('afidist', 'dist'), ('afih', 'hist')):
+            if f_.get(src):
+                o[k_] = f_[src]
         d = D.get(imdb.get(iid) or '-') or ''
         if d:
             o['dist'] = d
