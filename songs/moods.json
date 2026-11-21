@@ -25100,8 +25100,8 @@
    "moodFrom": "Claude (researched)",
    "sound": [
     "Romantic",
-    "Joyful",
-    "Playful"
+    "Playful",
+    "Joyful"
    ],
    "claude": [
     "Dreamy",
@@ -26015,7 +26015,7 @@
       ],
       [
        "Romantic",
-       13
+       14
       ]
      ]
     ]
@@ -26138,7 +26138,7 @@
     ],
     [
      "Dreamy",
-     7
+     8
     ]
    ],
    "moodEvidence": [
@@ -26156,7 +26156,7 @@
       ],
       [
        "Dreamy",
-       7
+       8
       ]
      ]
     ]
@@ -26270,7 +26270,7 @@
    "moodMix": [
     [
      "Joyful",
-     45
+     44
     ],
     [
      "Dreamy",
@@ -26288,7 +26288,7 @@
      [
       [
        "Joyful",
-       45
+       44
       ],
       [
        "Dreamy",
@@ -26725,7 +26725,7 @@
     ],
     [
      "Dark",
-     15
+     14
     ],
     [
      "Playful",
@@ -26743,7 +26743,7 @@
       ],
       [
        "Dark",
-       15
+       14
       ],
       [
        "Playful",
@@ -27932,7 +27932,7 @@
     ],
     [
      "Melancholy",
-     13
+     14
     ]
    ],
    "moodEvidence": [
@@ -27950,7 +27950,7 @@
       ],
       [
        "Melancholy",
-       13
+       14
       ]
      ]
     ]
@@ -28720,11 +28720,11 @@
    "moodMix": [
     [
      "Dark",
-     86
+     85
     ],
     [
      "Energetic",
-     11
+     12
     ],
     [
      "Joyful",
@@ -28738,11 +28738,11 @@
      [
       [
        "Dark",
-       86
+       85
       ],
       [
        "Energetic",
-       11
+       12
       ],
       [
        "Joyful",
@@ -29002,7 +29002,7 @@
     ],
     [
      "Dark",
-     10
+     9
     ]
    ],
    "moodEvidence": [
@@ -29020,7 +29020,7 @@
       ],
       [
        "Dark",
-       10
+       9
       ]
      ]
     ]
@@ -29596,6 +29596,148 @@
     "downtempo",
     "electronic",
     "indie pop",
+    "pop"
+   ],
+   "check": true
+  },
+  "3mwvKOyMmG77zZRunnxp9E": {
+   "n": 285,
+   "title": "Buddy Holly",
+   "artist": "Weezer",
+   "moods": [
+    "Dark"
+   ],
+   "moodMix": [
+    [
+     "Dark",
+     54
+    ],
+    [
+     "Energetic",
+     22
+    ],
+    [
+     "Joyful",
+     12
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Dark",
+       54
+      ],
+      [
+       "Energetic",
+       22
+      ],
+      [
+       "Joyful",
+       12
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Dark",
+    "Energetic",
+    "Joyful"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Alternative Rock",
+    "Indie Rock",
+    "Brit Pop"
+   ],
+   "genres": [
+    "Indie",
+    "Rock"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Indie",
+     50
+    ],
+    [
+     "Rock",
+     31
+    ],
+    [
+     "Pop",
+     19
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Indie",
+       44
+      ],
+      [
+       "Rock",
+       28
+      ],
+      [
+       "Pop",
+       28
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Indie",
+       61
+      ],
+      [
+       "Rock",
+       37
+      ],
+      [
+       "Pop",
+       3
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Indie",
+       51
+      ],
+      [
+       "Rock",
+       28
+      ],
+      [
+       "Pop",
+       21
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "alternative",
+    "alternative pop",
+    "alternative rock",
+    "alternative/indie rock",
+    "emo",
+    "garage rock",
+    "geek rock",
+    "indie rock",
+    "mainstream rock",
     "pop"
    ],
    "check": true

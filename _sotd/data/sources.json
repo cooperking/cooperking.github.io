@@ -3853,6 +3853,25 @@
 "job":"Song moods and genres",
 "at":"2026-11-20T09:31:17+00:00"
 }
+},
+"3mwvKOyMmG77zZRunnxp9E":{
+"v":1,
+"n":285,
+"title":"Buddy Holly",
+"artist":"Weezer",
+"album":"Weezer",
+"artists":[
+"3jOstUTkEu2JkjvRdBA5Gu"
+],
+"song":"Buddy Holly (song)",
+"albumPage":"Weezer (Blue Album)",
+"checked":"2026-11-21",
+"run":{
+"id":44899418016,
+"n":921,
+"job":"Song moods and genres",
+"at":"2026-11-21T11:31:39+00:00"
+}
 }
 },
 "artists":{
@@ -17326,6 +17345,298 @@
 "ended":false,
 "url":"https://musicbrainz.org/artist/a32d76a0-a8d4-48fc-9525-b5b4e45036ac"
 }
+},
+"3jOstUTkEu2JkjvRdBA5Gu":{
+"name":"Weezer",
+"qid":"Q209956",
+"found":"wikidata",
+"wiki":"Weezer",
+"checked":"2026-11-21",
+"mb":{
+"mbid":"6fe07aa5-fec0-4eca-a456-f29bff451b04",
+"name":"Weezer",
+"type":"Group",
+"country":"United States",
+"beginArea":"Los Angeles",
+"begin":"1992-02-14",
+"ended":false,
+"disambiguation":"American rock band",
+"members":[
+{
+"name":"Jason Cropper",
+"from":"1992-02-14",
+"to":"1993",
+"ended":true,
+"roles":[
+"background vocals",
+"original"
+]
+},
+{
+"name":"Jason Cropper",
+"from":"1992-02-14",
+"to":"1993",
+"ended":true,
+"roles":[
+"guitar",
+"original"
+]
+},
+{
+"name":"Matt Sharp",
+"from":"1992-02-14",
+"to":"1998-02",
+"ended":true,
+"roles":[
+"background vocals",
+"original"
+]
+},
+{
+"name":"Matt Sharp",
+"from":"1992-02-14",
+"to":"1998-02",
+"ended":true,
+"roles":[
+"bass",
+"original"
+]
+},
+{
+"name":"Rivers Cuomo",
+"from":"1992-02-14",
+"to":null,
+"ended":false,
+"roles":[
+"lead vocals",
+"original"
+]
+},
+{
+"name":"Rivers Cuomo",
+"from":"1992-02-14",
+"to":null,
+"ended":false,
+"roles":[
+"guitar",
+"original"
+]
+},
+{
+"name":"Rivers Cuomo",
+"from":"1992-02-14",
+"to":null,
+"ended":false,
+"roles":[
+"keyboard",
+"original"
+]
+},
+{
+"name":"Patrick Wilson",
+"from":"1992-02-14",
+"to":null,
+"ended":false,
+"roles":[
+"background vocals",
+"original"
+]
+},
+{
+"name":"Patrick Wilson",
+"from":"1992-02-14",
+"to":null,
+"ended":false,
+"roles":[
+"original",
+"percussion"
+]
+},
+{
+"name":"Patrick Wilson",
+"from":"1992-02-14",
+"to":null,
+"ended":false,
+"roles":[
+"drums (drum set)",
+"original"
+]
+},
+{
+"name":"Patrick Wilson",
+"from":"1992-02-14",
+"to":null,
+"ended":false,
+"roles":[
+"guitar",
+"original"
+]
+},
+{
+"name":"Patrick Wilson",
+"from":"1992-02-14",
+"to":null,
+"ended":false,
+"roles":[
+"keyboard",
+"original"
+]
+},
+{
+"name":"Brian Bell",
+"from":"1993",
+"to":null,
+"ended":false,
+"roles":[
+"background vocals"
+]
+},
+{
+"name":"Brian Bell",
+"from":"1993",
+"to":null,
+"ended":false,
+"roles":[
+"guitar"
+]
+},
+{
+"name":"Brian Bell",
+"from":"1993",
+"to":null,
+"ended":false,
+"roles":[
+"keyboard"
+]
+},
+{
+"name":"Mikey Welsh",
+"from":"1998",
+"to":"2001",
+"ended":true,
+"roles":[
+"background vocals"
+]
+},
+{
+"name":"Mikey Welsh",
+"from":"1998",
+"to":"2001",
+"ended":true,
+"roles":[
+"bass"
+]
+},
+{
+"name":"Bobby Schneck",
+"from":"2000",
+"to":"2005",
+"ended":true,
+"roles":[
+"additional",
+"guitar"
+]
+},
+{
+"name":"Bobby Schneck",
+"from":"2000",
+"to":"2005",
+"ended":true,
+"roles":[
+"additional",
+"keyboard"
+]
+},
+{
+"name":"Scott Shriner",
+"from":"2001",
+"to":null,
+"ended":false,
+"roles":[
+"background vocals"
+]
+},
+{
+"name":"Scott Shriner",
+"from":"2001",
+"to":null,
+"ended":false,
+"roles":[
+"bass"
+]
+},
+{
+"name":"Scott Shriner",
+"from":"2001",
+"to":null,
+"ended":false,
+"roles":[
+"keyboard"
+]
+},
+{
+"name":"Josh Freese",
+"from":"2009",
+"to":"2012",
+"ended":true,
+"roles":[
+"additional",
+"drums (drum set)"
+]
+},
+{
+"name":"Daniel Brummel",
+"from":"2012",
+"to":"2014",
+"ended":true,
+"roles":[
+"additional",
+"drums (drum set)"
+]
+},
+{
+"name":"Daniel Brummel",
+"from":"2012",
+"to":"2014",
+"ended":true,
+"roles":[
+"additional",
+"guitar"
+]
+},
+{
+"name":"Daniel Brummel",
+"from":"2012",
+"to":"2014",
+"ended":true,
+"roles":[
+"additional",
+"keyboard"
+]
+},
+{
+"name":"David Elitch",
+"from":"2022-05-03",
+"to":"2022",
+"ended":true,
+"roles":[
+"additional",
+"drums (drum set)"
+]
+},
+{
+"name":"Josh Freese",
+"from":"2025",
+"to":null,
+"ended":false,
+"roles":[
+"additional",
+"percussion"
+]
+}
+],
+"url":"https://musicbrainz.org/artist/6fe07aa5-fec0-4eca-a456-f29bff451b04"
+}
 }
 },
 "pages":{
@@ -20022,6 +20333,24 @@
 "url":"https://en.wikipedia.org/wiki/Pang_%28album%29",
 "rev":1382891073,
 "text":"Pang is the third studio album by American singer-songwriter and producer Caroline Polachek, and her first album released under her own name. It was released by Polachek's imprint Perpetual Novice on October 18, 2019. The album received critical acclaim and was placed on several critics' year-end lists, topping Dazed's list. Commercially, Pang peaked at number 17 on the Billboard Heatseekers Albums chart and number 40 on the Independent Albums chart, making it Polachek's first charting solo album.\n\n== Background and recording ==\n\nIn 2017, Polachek began working frequently with PC Music producers Danny L Harle and A. G. Cook after the dissolution of her band Chairlift. She appeared on Harle's single \"Ashes of Love\" back in 2016, and she also began collaborating with him and Cook in contributions with other artists, such as Superfruit and Charli XCX. Polachek started working on her own material, which was originally going to be a \"warmer, auburn, folk-tinged, peaceful album\" called Calico. When the two began work on the project they \"came up with something that overshadowed Calico and kickstarted a fruitful collaboration\".\nThe title Pang is derived from \"experiencing inexplicable adrenal rushes\" that Polachek experienced \"that stopped her from sleeping and accelerated her metabolism\", which she referred to as \"pangs\". In an interview with Dazed, Polachek revealed what it was like to work with a range of different people, noting that \"Working with different artists is always a learning experience, a new skill for the tool belt, even when it's more about realising what doesn't work.\" She elaborated, saying that she feels more in control of the things she writes and produces, and that she's \"...Ultimately the one in control, the one who is filtering and controlling the palette in real time. I don't leave it up to someone else. It's actually more and more liberating to just get in and start making stuff.\"\nThroughout the duration of 2018, Polachek shared a number of images of her in the studio to record material and hinted at the possibility of working on an album in their captions.\n\n== Singles ==\nIn 2019, Polachek released the album's lead single \"Door\", which was the first to be released under her own name (she previously released music under the names Ramona Lisa and CEP). It was also accompanied by a music video, directed by Polachek herself alongside London-based artist Matt Copson. The song was revealed by a press release as \"the first taste of a forthcoming, larger solo project from Caroline to be released later this year\", hinting that the album could include more than eighteen tracks. In an interview with Vogue, Polachek expressed her surprise that her label was happy to lead with \"Door\" as the first single, explaining \"it's such a long and winding song. There are songs on the record that are a bit more twisty and moody. And this one feels like, no pun intended, an open door. It feels like an invitation.\" Pitchfork listed the song at number 47 for the 100 best songs of 2019.\nThe following month, she announced that she was to release two more cuts from the album \"Ocean of Tears\" and \"Parachute\". With their release sparked the announcement of the album, under the title Pang and its scheduled release period of sometime in fall of 2019. Polachek made both records with Danny L Harle, the sometime collaborator with Charli XCX and Carly Rae Jepsen. A. G. Cook also contributed production to \"Ocean of Tears\", alongside Valley Girl. Of the song \"Parachute\", Polachek said in a press release, \"It was an incredible moment, realizing that this melody we'd written was unintentionally re-telling a dream I'd been shaken by. I went home, re-drafted the words to fit, and came back to the studio at 1 am to record the vocal the same day. And that's the take we kept. From that moment on, Dan and I knew we had a lot more work to do together.\"\nIn September 2019, she released the album's fourth single \"So Hot You're Hurting My Feelings\", which was co-written with Daniel Nigro and Teddy Geiger. Consequence of Sound reviewed the track with the statement, \"While previous tracks 'Parachute' and 'Ocean of Tears' served up ethereal tones, 'So Hot You're Hurting My Feelings' has a little more pep in its step. With a hint of an '80s pop vibe, Polachek's vocals ping-pong off the synths as she sings the refrain\". Around the same time, Polachek announced the album's release date of October 18, 2019.\n\"Look at Me Now\" was released as the final pre-release single on October 14, 2019. The acoustic ballad is described as the \"diary entry\" of the album that Polachek wrote \"while processing a mix of guilt, self-destructiveness, and hope.\" The song was inspired by Lilith Fair artists like Jewel and Sarah McLachlan.\n\n== Composition ==\nPang is a pop, indie pop, experimental pop, and avant-pop record, influenced by ambient, new age, R&B, trap-pop, hip hop, trip hop, sophisti-pop, and classical music. Its sound is described as \"almost symphonic\" and \"blend[s] acoustic and synthetic textures into a surrealist yet affecting listen\"  The album exists in a space in between moody electronica and upbeat pop. As Mark Moody of No Ripcord put it, \"best listened to sad and lonely in your bedroom, Pang is the perfect dance album for smart and sensitive boys and girls after their day's journaling are done.\" Polachek utilizes \"operatic\" vocals on the record, which were described by Shaad D'Souza of The Guardian as \"an alien take on Céline Dion\".\n[…]"
+},
+"Weezer":{
+"title":"Weezer",
+"url":"https://en.wikipedia.org/wiki/Weezer",
+"rev":1386536128,
+"text":"Weezer is an American rock band formed in Los Angeles, California, in 1992. Since 2001, the band has consisted of Rivers Cuomo (lead vocals, guitar, keyboards), Patrick Wilson (drums), Brian Bell (guitar, keyboards, backing vocals), and Scott Shriner (bass, keyboards, backing vocals). They have sold 10 million albums in the United States and over 35 million worldwide.\nAfter signing with Geffen Records in 1993, Weezer released its acclaimed self-titled debut album, also known as the Blue Album, on May 10th 1994. Backed by music videos for the hit singles \"Undone – The Sweater Song\", \"Buddy Holly\", and \"Say It Ain't So\", the Blue Album became a multi-platinum success. Weezer's second album, Pinkerton (1996), featuring a darker, more abrasive sound, was a commercial failure and initially received mixed reviews, but achieved cult status and acclaim later sometime around 2000 before the Green Album. Both the Blue Album and Pinkerton have been cited among the best albums of the 1990s. After the tour for Pinkerton, the founding bassist, Matt Sharp, left the band to pursue his other band, The Rentals, and Weezer went on hiatus.\nIn 2001, Weezer returned with the Green Album and a new bassist, Mikey Welsh. With a more pop-oriented sound, and promoted by singles \"Hash Pipe\", \"Photograph\" and \"Island in the Sun\", it was a commercial success and received mostly good reviews. After the American leg of the Green Album tour, Welsh left after a nervous breakdown and was replaced by Scott Shriner for the remaining touring. Weezer's fourth album, Maladroit (2002), incorporated a hard rock sound and received mostly good reviews, but weaker sales. Make Believe (2005) received mixed reviews but its single \"Beverly Hills\" became Weezer's first single to top the US Modern Rock Tracks chart and their first to reach the top ten on the Billboard Hot 100.\nIn 2008, Weezer released the Red Album. Its lead single, \"Pork and Beans\", became the third Weezer song to top the Modern Rock Tracks chart, backed by a Grammy-winning music video. Raditude (2009) and Hurley (2010) both featured more modern pop production, along with songs written with other artists, receiving further mixed reviews and moderate sales. Everything Will Be Alright in the End (2014) and the White Album (2016) returned to a rock style reminiscent of the band's 1990s sound, mixed with modern alternative production, and received better reviews, while Pacific Daydream (2017) returned to a more mainstream pop sound. In 2019, Weezer surprise-released an album of covers, the Teal Album, followed by the Black Album. In 2021, it released OK Human, which featured an orchestral pop sound and received acclaim, followed by the hard rock-inspired Van Weezer. In 2022, Weezer released SZNZ, a series of four mini-albums based on the four seasons. Weezer's 20th album, the Gold Album, was released in 2026.\n\n=== Formation and first years (1989–1994) ===\nLead vocalist and guitarist Rivers Cuomo moved to Los Angeles from Connecticut, in 1989 with his high school metal band, Avant Garde, which was later renamed Zoom. After the group disbanded, Cuomo met drummer Patrick Wilson and moved in with him and Wilson's friend Matt Sharp. Cuomo moved away from metal and explored alternative rock influences such as Nirvana, the Pixies and Sonic Youth. He and Wilson formed a band, Fuzz, and enlisted Scottie Chapman on bass. Chapman quit after a few early shows; the band reformed as Sixty Wrong Sausages, with Cuomo's friend Pat Finn on bass and Jason Cropper on guitar, but soon disbanded. Cuomo moved to Santa Monica, California, and recorded dozens of demos, including the future Weezer songs \"The World Has Turned and Left Me Here\" and \"Undone – The Sweater Song\". Sharp was enthusiastic about the demos, and became the group's bassist and de facto manager.\nCuomo, Wilson, Sharp, and Cropper formed Weezer on February 15, 1992. Their first show was on March 19, 1992, closing for Keanu Reeves' band Dogstar. They took their name from a nickname Cuomo's father gave him, which was based on a character called \"Wheezer\" from the Our Gang short films. Cuomo gave Sharp one year to get the band a record deal before Cuomo accepted a scholarship at the University of California, Berkeley. In 1992, Weezer recorded a demo, The Kitchen Tape, including a version of the future Weezer single \"Say It Ain't So\". The demo was heard by Todd Sullivan, an A&R man at Geffen Records, who signed Weezer in June 1993.\n\n=== The \"Blue Album\" (1994) ===\n\nWeezer recorded their debut album with the producer Ric Ocasek at Electric Lady Studios in New York City. Cropper was fired during recording, as Cuomo and Sharp felt he was threatening the band chemistry. He was replaced by Brian Bell. Weezer's self-titled debut album, also known as the \"Blue Album\", was released in May 1994. Described by Pitchfork as integrating \"geeky humor, dense cultural references, and positively gargantuan hooks\", it combined alternative rock, power pop, polished production and what AllMusic critic Stephen Thomas Erlewine called an \"'70s trash-rock predilection ... resulting in something quite distinctive\".\nWeezer's first single, \"Undone – The Sweater Song\", was backed by a music video directed by Spike Jonze; filmed in an unbroken take, it featured Weezer performing on a sound stage with little action, barring a pack of dogs swarming the set. The video became an instant hit on MTV. The song reached No. 57 on the Billboard Hot 100. Jonze also directed Weezer's second video, \"Buddy Holly\", splicing the band into footage from the 1970s television sitcom Happy Days. The video achieved heavy rotation on MTV and won four MTV Video Music Awards, including Breakthrough Video and Best Alternative Music Video. \"Buddy Holly\" peaked at No. 18 on the Hot 100 Airplay and No. 2 on the Billboard Modern Rock chart. The song is included on Rolling Stone's 500 Best Songs Of All Time. The single, \"Say It Ain't So\", reached No. 51 on the Hot 100 Airplay chart and No. 7 on the Billboard Modern Rock chart. Pitchfork later ranked it the tenth-best song of the 1990s and Rolling Stone named it one of the 100 greatest guitar songs. In 2020, Rolling Stone ranked the Blue album number 294 on its list of the 500 Greatest Albums Of All Time. Weezer is certified five-times platinum in the US and quadruple-platinum in Canada, making it Weezer's best-selling album.\n\n=== Pinkerton (1994–1997) ===\nIn 1994, Weezer took a break from touring for the Christmas holidays. Cuomo traveled to his home state of Connecticut and began recording demos for Weezer's next album. His original concept was a space-themed rock opera, Songs from the Black Hole, that would express his mixed feelings about success. Cuomo conceived the story as a metaphor for his conflicted feelings about touring in a successful rock band. Weezer developed the concept through intermittent recording sessions through 1995. At the end of the year, Cuomo enrolled at Harvard University, where his songwriting became \"darker, more visceral and exposed, less playful\", and he abandoned Songs from the Black Hole. While attending Harvard, Cuomo experienced loneliness and frustration while also undergoing an extensive surgery for his left leg. These experiences influenced his songwriting for the next record. The other members of Weezer decided to embark on their own side projects during this time. Sharp started the Rentals, who released their debut album, Return of the Rentals, in October 1995, also featuring Wilson on drums.\nWeezer's second album, Pinkerton, was released on September 24, 1996. Pinkerton is named after the character BF Pinkerton from Madama Butterfly, who marries and abandons a Japanese woman named Butterfly. Calling him an \"asshole American sailor similar to a touring rock star\", Cuomo felt the character was \"the perfect symbol for the part of myself that I am trying to come to terms with on this album\". Three singles were released: \"El Scorcho\", \"The Good Life\", and \"Pink Triangle\".\nWith a darker, more abrasive sound, Pinkerton sold poorly compared to the Blue Album and received mixed reviews; it was voted one of the worst albums of 1996 in a Rolling Stone reader poll. it eventually gained a cult following and came to be considered among Weezer's best work; in 2002, Rolling Stone readers voted Pinkerton the 16th-greatest album of all time. In 2004, Rolling Stone gave the album a new review, awarding it five out of five and adding it to the \"Rolling Stone Hall of Fame\". Pinkerton was certified platinum in 2016. It is credited for influencing a number of emo bands in the 2000s.\nIn July 1997, the sisters Mykel, Carli, and Trysta Allan died in a car accident while driving home from a Weezer show in Denver, Colorado. Mykel and Carli ran Weezer's fan club and helped manage publicity for several other Los Angeles bands, and had inspired the \"Sweater Song\" B-side \"Mykel and Carli\". Weezer canceled a show to attend their funeral. In August, Weezer and other bands held a benefit concert for the family in Los Angeles. A compilation album, Hear You Me! A Tribute to Mykel and Carli, was dedicated to their memory. The album included \"Mykel and Carli\", as well as songs by Ozma, That Dog, and Kara's Flowers. In 2001, Jimmy Eat World released \"Hear You Me\", dedicated to Mykel and Carli.\n\n=== Hiatus (1997–2000) ===\n\nWeezer completed the Pinkerton tour in mid-1997 and went on hiatus. Wilson returned to his home in Portland, Oregon to work on his side project, the Special Goodness, and Bell worked on his band Space Twins. In 1998, Sharp left Weezer due to differences with the band members. He said of his departure: \"I certainly have my view of it, as I'm sure everybody else has their sort of foggy things. When you have a group that doesn't communicate, you're going to have a whole lot of different stories.\" \nCuomo returned to Harvard but took a break to focus on songwriting. He formed a new band composed of a changing lineup of Boston musicians, and performed new material. The songs were abandoned, but bootlegs of the Boston shows are traded on the internet. Cuomo formed the side project, Homie. The members were Greg Brown (Cake and Deathray), Matt Sharp, Yuval Gabay (Soul Coughing and Sulfur), Adam Orth (Shufflepuck), and future Weezer bassist Mikey Welsh. Although a Homie album was being recorded, only one song was released, \"American Girls\", for the 1998 film Meet the Deedles.\nIn February 1998, Cuomo, Bell and Wilson reunited in Los Angeles to start work on the next Weezer album. Welsh joined as their new bassist. Weezer continued rehearsing and recording demos until late 1998. Frustration and creative disagreements led to a decline in rehearsals, and in late 1998, Wilson left for his home in Portland pending renewed productivity from Cuomo. In November 1998, the band played two club shows with a substitute drummer in California under the name Goat Punishment, consisting entirely of covers of Nirvana and Oasis songs. In the months following, Cuomo entered a period of depression, unplugging his phone, painting the walls of his home black, and putting fiberglass insulation over his windows to prevent light from entering. During this time, Cuomo started experimenting with his music and wrote 121 songs by 1999. In the meantime, Wilson continued to work with the Special Goodness while Bell worked with Space Twins. Welsh resumed touring with Juliana Hatfield.\n\n=== Comeback, the \"Green Album\" and Maladroit (2000–2002) ===\n\nWeezer reunited in April 2000, when they accepted a lucrative offer to perform at the Fuji Rock Festival. The festival served as a catalyst for Weezer's productivity, and from April to May 2000, they rehearsed and demoed new songs in Los Angeles. They returned to live shows in June 2000, playing small unpromoted concerts once again under the name Goat Punishment. In June 2000, the band joined the American Warped Tour for nine dates.\n[…]"
+},
+"Buddy Holly (song)":{
+"title":"Buddy Holly (song)",
+"url":"https://en.wikipedia.org/wiki/Buddy_Holly_%28song%29",
+"rev":1385356520,
+"text":"\"Buddy Holly\" is a song by the American rock band Weezer. It was written by Rivers Cuomo and released by DGC Records as the second single from the Weezer debut album, Weezer (The Blue Album) (1994). The lyrics reference the 1950s rock-and-roll singer of the same name and the actress Mary Tyler Moore.\nReleased on September 7, 1994—which would have been Holly's 58th birthday—\"Buddy Holly\" ranked number two on the US Billboard Modern Rock Tracks chart and number 18 on the Billboard Hot 100 Airplay chart. It reached number six in Canada, number 12 in the United Kingdom (upon release in 1995), number 13 in Iceland, and number 14 in Sweden. \nThe music video, which features footage from Happy Days and was directed by Spike Jonze, earned considerable exposure when it was included as a bonus media file in Microsoft's initial successful release of the operating system Windows 95.\nRolling Stone ranked \"Buddy Holly\" number 484 on its list of \"The 500 Greatest Songs of All Time\" (2021), raising it 15 spots from number 499 (2010), and raised from around 19 years prior, being ranked number 497 (2004). The digital single was certified four-times platinum by the Recording Industry Association of America in 2026. VH1 ranked it the 59th greatest song of the 1990s in December 2007.\n\n== Background and writing ==\nRivers Cuomo was inspired to write \"Buddy Holly\" after an incident where his Weezer bandmates made fun of his friend from the Santa Monica College Choir. He originally planned to exclude it from the album; he felt it was \"cheesy\" and perhaps did not represent the sound he was pursuing for Weezer. Producer Ric Ocasek persuaded him to include it. In the book River's Edge, Ocasek is quoted saying: \"I remember at one point he was hesitant to do 'Buddy Holly' and I was like, 'Rivers, we can talk about it. Do it anyway, and if you don't like it when it's done, we won't use it. But I think you should try. You did write it and it is a great song.'\" Bassist Matt Sharp recalled: \"Ric said we'd be stupid to leave it off the album. We'd come into the studio in the morning and find little pieces of paper with doodles on them: WE WANT BUDDY HOLLY.\"\nThe song is well known for the distinctive, high-pitched guitar lick at the end of the guitar solo (around 2:09 in the song), which has been used as a bait-and-switch prank in a similar way to Rickrolling. This phenomenon is widely known across the internet as \"Weezer rolling\" or simply getting \"Weezer'd\".\nCoincidentally, the theme song for The Mary Tyler Moore Show was written by Sonny Curtis, who played with Buddy Holly in Texas and later performed as one of The Crickets.\n\n== Critical reception ==\n\nSteve Baltin from Cash Box commented, \"You’ve gotta love a song that makes reference to Mary Tyler Moore. Slightly poppier in its guitar sound than their first single, [...], this Ric Ocasek-produced song could help expand their already-growing fan base. Besides that, it mentions Mary, the woman who could turn the world on with her smile. Therefore, it has to be a hit.\" John Robb from Melody Maker opined, \"Weezer sound like The Proclaimers jamming with The Knack. This is pop-punk-by-numbers.\" Pan-European magazine Music & Media wrote, \"Made loud to play loud and sing along, it's the ideal power pop to cruise round this summer. That silly twin synth/guitar, betrays producer Ocasek, the one-time driver of New York's Cars.\" A reviewer from Music Week gave the song four out of five, adding, \"A short and sweet taster from the album which may not have the same quirky appeal of \"Undone – The Sweater Song\", but has an attractive hook and a video to arouse interest.\" \nJohnny Cigarettes from NME commented, \"A touching paean to nerdish social rejection from people who frankly deserve it. [...] But I am totally suckered by the pop majesty of a song that employs the long forgotten phrase Oo-ee-oo and drills an indelible mark on your taste buds such that you can never forget it's [sic] supernaturally banal chorus.\" NME ranked it number five in their list of the Top 20 of 1995 in December 1995, writing, \"Wahey! American rock ditches the pity-poor-me whingeing of grunge in favour of smiling faces, celestial Beach Boys-esque harmonies and The Tune That Ate Daytime Radio. Accompanied by the best video of the year.\" Paul Evans from Rolling Stone noted \"the self-deprecating humor\" of lines like \"I look just like Buddy Holly/You're Mary Tyler Moore\".\n\n== Music video ==\n\nAccording to Matt Sharp, Spike Jonze came up with three ideas for the accompanying music video for \"Buddy Holly\". Sharp stated that two of the ideas \"weren't great\". When Jonze pitched the idea that came to be the song's video, Sharp told Jonze \"I don't think you'll be able to pull it off\", but the band agreed to do it. The video was filmed at Charlie Chaplin Studios in Hollywood over a single day and portrays Weezer performing at Arnold's Drive-In from the 1970s television show Happy Days, combining footage of the band with clips from the show. Happy Days cast member Al Molinaro makes a cameo in character as Al Delvecchio, introducing the band and describing them as \"Kenosha, Wisconsin's own Weezer\". In fact, Molinaro was from Kenosha, while Weezer is from Los Angeles.\n\nStylist Casey Storm acts as a body double in the climax, alllowing Fonzie to dance to the band's performance. The video also features brief cameos by some members of the band as dancers at Arnold's. Anson Williams, who played Potsie on Happy Days, objected to footage of him appearing in the video, but relented after receiving a letter from David Geffen, founder of Geffen Records. According to drummer Pat Wilson, the video was achieved without computer graphics, only \"clever\" camerawork and editing. At the end of the video, Al is closing up the restaurant after everyone has left for the night, and he asks the band if anyone tried the fish. Sharp replies that it was not very good, after which the band leaves and Al shuts off the lights while grumbling to himself. Sharp stated that the video was \"pretty fucking wacky\".\nThe video was met with great popularity, and heavy rotation on MTV. At the 1995 MTV Video Music Awards, it won Best Alternative Video, Breakthrough Video, Best Direction and Best Editing, and was nominated for Video of the Year.\nThe \"Buddy Holly\" video was included on the Windows 95 installation CD-ROM, resulting in a skyrocket in popularity and earning Weezer a place in the MTV Music Video Awards. Geffen did not tell Weezer they had negotiated with Microsoft to include the video; the band members, none of whom owned computers, were oblivious to the implications. According to Wilson, \"I was furious because at the time I was like, 'How are they allowed to do this without permission?' Turns out it was one of the greatest things that could have happened to us. Can you imagine that happening today? It's like, there's one video on YouTube, and it's your video.\"\nThe video also appears in the music exhibit in the Museum of Modern Art. The music video was featured in Season 5, Episode 30 of MTV's Beavis and Butthead entitled \"Here Comes the Bride's Butt\" on June 9, 1995.\n\n== Impact and legacy ==\nIn 2004 and 2010, Rolling Stone ranked \"Buddy Holly\" numbers 497 and 499 in its list of \"The 500 Greatest Songs of All Time\". In 2021, the song was raised 15 spots in their updated list. In December 2007, VH1 ranked it as the 59th greatest song of the 1990s. In 2024, Forbes magazine ranked it number 45 in their list of \"The 50 Best Songs of the 1990s\", writing, \"Weezer's 'Buddy Holly' isn't your average alt-rock anthem — it's a quirky, nostalgic trip back to the 1950s. With its catchy hooks and geeky charm, it's no wonder it captured the hearts of listeners everywhere. Lead singer Rivers Cuomo was a perfect fit for the song, which seemed to compare him to the late Holly in a fun way.\""
+},
+"Weezer (Blue Album)":{
+"title":"Weezer (Blue Album)",
+"url":"https://en.wikipedia.org/wiki/Weezer_%28Blue_Album%29",
+"rev":1386815299,
+"text":"Weezer (commonly known as the Blue Album) is the debut studio album by the American rock band Weezer, released on May 10, 1994, by DGC Records. It was produced by Ric Ocasek.\nWeezer was formed in Los Angeles in 1992, and initially struggled to engage audiences, who were more interested in grunge. Their demo The Kitchen Tape brought them to the attention of DGC owner Geffen Records. Weezer selected Ocasek because of his work with the Cars. \nMost of the album was recorded at Electric Lady Studios in New York City between August and September 1993. The group treated the guitars and bass as a single, 10-string instrument, playing in unison. The guitarist Jason Cropper was fired during recording, as the band felt he was threatening their chemistry; he was replaced by Brian Bell.\nWeezer was supported by the singles \"Undone – The Sweater Song\", \"Buddy Holly\", and \"Say It Ain't So\", which were accompanied by music videos. The album received acclaim and reached number sixteen on the Billboard 200, and was certified five-times platinum in the US in 2024. It remains Weezer's best-selling album, with more than 15 million copies sold worldwide by 2009. It has been named one of the best albums of the 1990s by several publications. In 2020, Rolling Stone ranked it number 294 on its list of the \"500 Greatest Albums of All Time\". In 2026, it was selected by the Library of Congress for preservation in the National Recording Registry.\n\n== Background ==\nWeezer was formed on February 14, 1992, in Los Angeles by singer and guitarist Rivers Cuomo, drummer Pat Wilson, bassist Matt Sharp, and guitarist Jason Cropper. Although they performed future hits including \"Undone – The Sweater Song\" and \"Say It Ain't So\", Cuomo said they struggled to engage audiences, who wanted to see grunge bands instead.\nIn an effort to create buzz around Los Angeles, Weezer recorded a demo, The Kitchen Tape. This attracted attention from major-label A&R reps looking for alternative rock bands to perform on the same bill as That Dog. Weezer were signed to DGC Records on June 26, 1993, by Todd Sullivan, an A&R rep from Geffen Records.\n\n== Recording and production ==\nWhile preparing for the studio sessions, Weezer focused on their vocal interplay by practicing barbershop quartet-style songs, which helped Cuomo and Sharp feel more comfortable collaborating during rehearsals. Sharp, who had never sung before joining Weezer, developed his falsetto: \"I had to sing an octave higher than Rivers. After a lot of practice, I started to get it down.\"\nWeezer rehearsed 15 songs in New York City in preparation for the Electric Lady Studios sessions. Four songs from this rehearsal were not included on the album: \"I Swear It's True\", \"Getting Up and Leaving\", a reprise of \"In the Garage\", and \"Mykel and Carli\", an ode to the sisters Mykel and Carli Allan, who ran the Weezer fanclub. Weezer later recorded another version of \"Mykel and Carli\" as a B-side for the single \"Undone – The Sweater Song\", with the Weezer collaborator Karl Koch.\nWeezer considered self-producing the album, but were pressured by Geffen to choose a producer. They decided on Ric Ocasek, who was the frontman for the Cars.  Ocasek was selected because of his work on the Cars' song \"Just What I Needed\", which Cuomo said sounded similar to the way that he wanted Weezer to sound like. Ocasek convinced them to switch their guitar pickups from the neck to the bridge, resulting in a brighter sound. Sharp and Cuomo imposed several rules on recording, banning reverb and insisting on all downstrokes on guitar. According to the engineer Chris Shaw, the \"overriding concept\" was to treat the guitars and bass as a single, 10-string instrument, playing in unison. Weezer insisted that the guitars were mixed as loudly as those in Radiohead's 1992 song \"Creep\", burying some vocals. Aside from delay used in the swells on \"Only in Dreams\", the album makes no use of guitar effects. \nDuring the recording, Cropper learned that his girlfriend was pregnant and began acting erratically. Koch said: \"He wasn't handling it well ... He always said he was fine, and then 20 minutes later he'd be up on the roof of Electric Lady screaming or something.\" Sharp said later that \"whatever it is we were setting out to do, it felt like it was gonna be much more difficult if he stayed\". Sharp and Cuomo felt that Cropper would likely leave Weezer eventually and so wanted to remove him before the release of their debut, as they \"wanted things to be very stable for the audience\". According to Cropper, Cuomo told him he could not allow him to jeopardize the work and asked him to leave. In 2014, Cropper said Cuomo had made the right decision. \nCropper left after recording was complete, and was replaced by Brian Bell. While Bell's vocals appear on some tracks, Cuomo re-recorded all of Cropper's guitar parts. Ocasek recalled: \"Rivers came in and said, 'I'm firing the guitar player, and I'm going to do all his guitar parts over.' I said, 'You can't do that!' But he did. In one take.\" Bell is credited in the liner notes for playing guitar, while Cropper received a credit on \"My Name Is Jonas\" for writing the intro.\n\n== Music and lyrics ==\n[…]"
 }
 },
 "about":"What the song facts are written from. pages: English Wikipedia articles, CC BY-SA 4.0, trimmed (each with its address and revision). artists[].mb: MusicBrainz (CC0). Made by _sotd/about.py."
