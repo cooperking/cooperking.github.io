@@ -2670,7 +2670,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'ce7a9d5e060a' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'bff6a81aca4c' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -3232,8 +3232,9 @@ function img(id, kind, w) {
   if (!TV && (window.devicePixelRatio || 1) > 1.4) w = (w || 0) * 2;
   var sizes = { Primary: [400, 800, 'full'], Backdrop: [480, 1100, 1920, 'full'], Thumb: [480, 1100, 1920, 'full'] }[kind] || [400], size = sizes.filter(function (x) { return x === 'full' || x >= (w || 0); })[0];
   var t = PICTAG[id + kind];
-  // (v=2: every picture asked for afresh once, 16 Nov 2026: some posters had been kept in their old version under their new address)
-  return WORKER + '/gp/' + id + '/' + kind + '-' + size + '.jpg?v=2' + (t ? '&t=' + t : '') + (PUBLIC ? '' : '&m=1');   // (signed out: the site's copies only, never the Mac)
+  // (v=2: every picture asked for afresh once, 16 Nov 2026: some posters had been kept in their old version under their new address;
+  // v=3 again, 21 Nov 2026: the bigger copies had been, Jane B. by Agnès V.'s and the W. C. Fields shorts' Criterion covers not shown)
+  return WORKER + '/gp/' + id + '/' + kind + '-' + size + '.jpg?v=3' + (t ? '&t=' + t : '') + (PUBLIC ? '' : '&m=1');   // (signed out: the site's copies only, never the Mac)
 }
 function gwUrl(p) { return DEMO ? p : GW + p; }
 
