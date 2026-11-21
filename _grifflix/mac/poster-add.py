@@ -149,7 +149,12 @@ def main():
         from_drive()
     if not os.path.isdir(SOURCE):
         sys.exit('No "%s": put the posters there (named after their films’ folders) and run this again.' % SOURCE)
-    folders = [f for f in os.listdir(MOVIES) if not f.startswith('.') and os.path.isdir(os.path.join(MOVIES, f)) and has_film(os.path.join(MOVIES, f))]
+    # (only the folders of the films just come in, when told them: not every folder and cover on the drive for one new film: John, 21 Nov 2026,
+    # "The criterion cover run should be very simple and quick?")
+    ONLY = set(json.loads(os.environ.get('GRIFFLIX_ONLY') or '[]'))
+    folders = [f for f in (sorted(ONLY) if ONLY else os.listdir(MOVIES)) if not f.startswith('.') and os.path.isdir(os.path.join(MOVIES, f)) and has_film(os.path.join(MOVIES, f))]
+    if ONLY and not folders:
+        return print('None of the films just come in has a folder of its own here.')
     exact, near, byname = {}, {}, {}
     for f in folders:
         exact.setdefault(old_key(f), []).append(f)

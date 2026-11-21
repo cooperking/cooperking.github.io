@@ -1148,7 +1148,7 @@ def make_handler(g):
                     SCAN_NOW.set()
                     for t_ in (90, 240):
                         threading.Timer(t_, CONV_NOW.set).start()
-                    new_follow_up()   # (its cover, A24, its distributor: once films stop coming in, not for each)
+                    new_follow_up([str(self.body().get('path') or '')])   # (its cover, A24, its distributor: once films stop coming in, not for each)
                     log('Just brought in: %s: the media server asked to look' % os.path.basename(str(self.body().get('path') or ''))[:120])
                     return self.send_json(200, {'ok': True})
                 if u.path == '/local/remap' and method == 'POST':   # convert.py on this Mac: a film's new file has a new id; calendars, lists and progress follow it
@@ -6304,15 +6304,19 @@ def crit_year(pick):
     return None
 
 AFTER_FIX = [None]
-NEW_FU = {'t': None, 'first': 0}
+NEW_FU = {'t': None, 'first': 0, 'folders': set()}
 
 
-def new_follow_up():
+def new_follow_up(paths=()):
     """What follows a film coming in (its Criterion cover and place, A24, its distributor) done once films stop coming in: ten minutes after
     the last, or half an hour after the first of a run of them, not three jobs for each. 30 films came in on 21 Nov 2026 and each set the
     covers going over the whole drive: 42 runs that day, the media server too busy to answer (John, 21 Nov 2026, "The converter shouldn't be
     putting that much pressure on the server")."""
     now_ = time.time()
+    for p_ in paths or ():   # (each one's own folder in Movies, for the covers)
+        rel_ = os.path.relpath(str(p_), os.path.join(os.environ.get('GRIFFLIX_MEDIA') or '/Volumes/G-Drive/Grifflix', 'Movies'))
+        if not rel_.startswith('..') and rel_ != '.':
+            NEW_FU['folders'].add(rel_.split(os.sep)[0])
     if NEW_FU['t']:
         NEW_FU['t'].cancel()
     else:
@@ -6321,7 +6325,8 @@ def new_follow_up():
 
     def run():
         NEW_FU['t'] = None
-        for f in (covers_now, a24_now, bom_now):
+        only_, NEW_FU['folders'] = NEW_FU['folders'], set()
+        for f in (lambda: covers_now(only_ or None), a24_now, bom_now):
             try:
                 f()
             except Exception as e:
@@ -7064,8 +7069,10 @@ def a24_now():
         log('A24, for what came in: %s' % e)
 
 
-def covers_now():
-    """A film just come in: if it's a Criterion film, everything a Criterion film has, from the start (John, 16 Nov 2026: "a new film - the
+def covers_now(only=None):
+    """(only: the Movies folders of the films just come in: theirs alone looked at, not every cover and folder on the drive: John, 21 Nov 2026,
+    "The criterion cover run should be very simple and quick?")
+    A film just come in: if it's a Criterion film, everything a Criterion film has, from the start (John, 16 Nov 2026: "a new film - the
     secret agent wasn't added to the criterion collection automatically"): its cover, its spine number and its place in The Criterion
     Collection, by criterion-covers.py with the list John last gave (its covers mostly here already, so quick). Without that list, its
     cover only (poster-add.py). Not while John's own run of it is going. Quiet unless it changed something."""
@@ -7079,7 +7086,8 @@ def covers_now():
     try:
         import subprocess
         if os.path.exists(cc) and os.path.exists(lst):
-            r = subprocess.run([sys.executable, '-u', cc, 'go'], capture_output=True, text=True, timeout=3600, cwd=home)
+            env_ = dict(os.environ, GRIFFLIX_ONLY=json.dumps(sorted(only))) if only else None
+            r = subprocess.run([sys.executable, '-u', cc, 'go'], capture_output=True, text=True, timeout=3600, cwd=home, env=env_)
             out = r.stdout or ''
             with open(os.path.join(home, 'criterion-auto.log'), 'w') as f:
                 f.write(out)
@@ -7495,7 +7503,7 @@ def keep_scanning(g):
                     # (a Criterion film among them: its cover, spine and place in The Criterion Collection, from the list John last gave, once
                     # the media server has it; however it came in, not only by download: John, 16 Nov 2026, "I shouldn't have to reupload the
                     # criterion html every time to check if a new film is criterion")
-                    new_follow_up()   # (its cover, A24 (John, 19 Nov 2026), its distributor (20 Nov 2026): once films stop coming in)
+                    new_follow_up(new)   # (its cover, A24 (John, 19 Nov 2026), its distributor (20 Nov 2026): once films stop coming in)
                     # (an extra put in a film's Other or Extras folder: the Criterion sheet's Extras column marked: John, 17 Nov 2026, "the job
                     # should run when extras are added")
                     XD = ('other', 'others', 'extras', 'extra', 'featurettes', 'behind the scenes', 'deleted scenes', 'interviews', 'trailers', 'shorts', 'scenes', 'bonus')
