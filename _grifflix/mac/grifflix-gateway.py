@@ -5742,6 +5742,54 @@ def keep_extras(g):
         time.sleep(1800 if n_ else 6 * 3600)
 
 
+def subs_namecheck():
+    """Once (until ~/Grifflix/subs-namecheck.json is there): for each film and episode waiting for English subtitles, OpenSubtitles
+    asked (searches only, none of John's downloads used) which of its English subtitles carry the very name the copy was downloaded as,
+    and which were made for this very file: John, 21 Nov 2026, "how many subs can we find that use the same file name as the original?")"""
+    out_f = os.path.expanduser('~/Grifflix/subs-namecheck.json')
+    g = G_REF[0] if G_REF else None
+    if not g or os.path.exists(out_f) or not (g.st.get('opensubs') or {}).get('key'):
+        return
+    P = load(SUBPREP, {}) or {}
+    cl = SUBS.OpenSubs(g.st.setdefault('opensubs', {}), lambda: save(SETTINGS, g.st), tls())
+    rel_ = re.compile(r'(?i)\b(1080p|720p|2160p|480p|576p|bluray|blu-ray|brrip|bdrip|remux|web-?dl|webrip|dvdrip|hdtv|x26[45]|h\.?26[45]|hevc|xvid|divx|yts|rarbg)\b')
+    res, done_ = {}, 0
+    for iid, e in list(P.items()):
+        if iid.startswith('_') or not isinstance(e, dict) or e.get('state') not in ('waiting', 'none', 'nomatch', 'failed'):
+            continue
+        try:
+            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
+            path = it.get('Path') or ''
+            org = film_origin(path)
+            name = org or os.path.splitext(os.path.basename(path))[0]
+            r_ = {'name': e.get('name'), 'year': e.get('year'), 'release': name, 'from': 'record' if org else ('file name' if rel_.search(name) else ''), 'found': 0, 'same': [], 'exact': 0}
+            if r_['from']:
+                pid = it.get('ProviderIds') or {}
+                try:
+                    mh = SUBS.movie_hash(path)
+                except OSError:
+                    mh = None
+                if e.get('kind') == 'episode':
+                    L = cl.search('en', mhash=mh, query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=name)
+                else:
+                    L = cl.search('en', mhash=mh, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=name)
+                L = [x for x in L if not x.get('machine')]
+                r_.update(found=len(L), same=[x.get('name') or x.get('fname') for x in L if x.get('samename')][:5], exact=sum(1 for x in L if x.get('exact')))
+            res[iid] = r_
+        except Exception as ex:
+            res[iid] = {'name': e.get('name'), 'error': str(ex)[:160]}
+        done_ += 1
+        if done_ % 20 == 0:
+            save(out_f + '.part', res)
+        time.sleep(1.5)
+    save(out_f, {'at': int(time.time()), 'films': res})
+    try:
+        os.remove(out_f + '.part')
+    except OSError:
+        pass
+    log('Subtitles named as the download: %d of %d looked up' % (sum(1 for v in res.values() if v.get('same')), len(res)))
+
+
 SUBSCAN = threading.Lock()
 RE_EN = {}
 
@@ -7979,7 +8027,7 @@ def serve():
     threading.Thread(target=keep_covers, daemon=True).start()   # (every Criterion film its cover, hourly)
     # (the subtitles list looked over a minute after starting, not first in the three-hourly round behind the covers: John, 21 Nov 2026,
     # "there shouldn't be a need for a three hour check")
-    threading.Thread(target=lambda: (time.sleep(60), subprep_scan()), daemon=True).start()
+    threading.Thread(target=lambda: (time.sleep(60), subprep_scan(), subs_namecheck()), daemon=True).start()
     try:   # (the spines set by hand, where criterion.py, for the Google sheet, reads them too)
         f_ = os.path.expanduser('~/Grifflix/criterion-spines-own.json')
         own_ = load(f_, {}) or {}
