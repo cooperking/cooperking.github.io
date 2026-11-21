@@ -1330,6 +1330,9 @@ html.phone .fback { top: calc(env(safe-area-inset-top) + 74px); left: 12px; padd
 .film .close { position: fixed !important; top: 22px; right: 22px; z-index: 82; background: var(--bg) !important; }
 html:not(.phone) .film { display: grid; grid-template-columns: minmax(220px, 30vw) minmax(0, 1fr); gap: clamp(32px, 4vw, 72px); align-items: center; padding: 96px clamp(40px, 6vw, 110px) 60px; box-sizing: border-box; }
 html:not(.phone) .film .heroimg { display: none !important; }
+/* (nor the empty space kept for a picture where there's none (a series with no wide picture, Agnès de ci de là Varda, Fanny and Alexander): it took
+   the first column, the poster went right and the words, Play and the episodes below the screen: John, 21 Nov 2026, on Chrome) */
+html:not(.phone) .film .noimg-top { display: none !important; }
 html:not(.phone) .film:not(.hasposter) .heroimg { display: block !important; position: relative !important; inset: auto !important; height: auto !important; aspect-ratio: 16 / 9 !important; width: 100% !important; border: 1px solid rgba(var(--kink), .25); }
 html:not(.phone) .film:not(.hasposter) { grid-template-columns: minmax(300px, 42vw) minmax(0, 1fr); }
 /* (the poster at the top, kept in view as the words or a series' episodes scroll beside it, not centred against them, where a long right side
