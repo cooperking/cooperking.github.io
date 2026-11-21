@@ -7658,6 +7658,17 @@ def keep_converting():
 def serve():
     g = Gateway()
     G_REF.append(g)   # (for what runs on its own: covers_now's synopses)
+    # (looks for duplicates left running by the gateway before this one (they only read the drive): stopped, so they don't pile up and starve
+    # the media server; nine at once on 21 Nov 2026, load 85, and the site couldn't update)
+    try:
+        import subprocess, signal
+        for line_ in subprocess.run(['ps', '-axo', 'pid=,command='], capture_output=True, text=True, timeout=20).stdout.splitlines():
+            pid_, _, cmd_ = line_.strip().partition(' ')
+            if 'duplicates.py json' in cmd_ and pid_.isdigit() and int(pid_) != os.getpid():
+                os.kill(int(pid_), signal.SIGTERM)
+                log('Stopped a look for duplicates left running (%s)' % pid_)
+    except Exception as e:
+        log('Looking for duplicates left running:', str(e)[:120])
     port = int(g.st.get('port', 8097))
     srv = ThreadingHTTPServer(('127.0.0.1', port), make_handler(g))
     try:   # (a film being planned for John's Mac when the gateway stopped: back at the front of its queue)
