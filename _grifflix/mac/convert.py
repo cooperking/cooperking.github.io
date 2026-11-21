@@ -428,6 +428,10 @@ def pick_sound(audio, item, s):
         return None, '', False
     if item.get('redo'):   # (made again with John's language: not the stereo copy made last time, as the first choice)
         cand = sorted(cand, key=lambda a: ((a.get('tags') or {}).get('title') == 'Stereo', -(a.get('channels') or 2)))
+    if item.get('english'):   # (an English film whose first soundtrack was a dub: English first, John, 21 Nov 2026)
+        a = next((a for a in cand if lang(a) in ('eng', 'en')), None)
+        if a:
+            return a, 'English, its own language', False
     mine = chosen_lang(item['id'])
     if mine and mine != 'ok':
         a = next((a for a in cand if lang_name(a) == mine), None)
@@ -998,6 +1002,18 @@ def redos():
             out.append({'id': k, 'name': x['name'], 'year': x.get('year'), 'path': x['to'], 'mode': 'remux', 'redo': True, 'urgent': True,
                         'why': 'your language: ' + c, 'mins': 0, 'gb': round(os.path.getsize(x['to']) / 1e9, 1)})
     save_state(st)
+    # (English films heard first in a dub, the media server's list (english-first.json): each made again once, English first, its other
+    # soundtracks kept: John, 21 Nov 2026, "any english language films that don't have english as first language need fixing")
+    try:
+        E = json.load(open(os.path.join(HOME, 'english-first.json')))
+    except (OSError, ValueError):
+        E = {}
+    for k, x in E.items():
+        p_ = x.get('path') or ''
+        if k in st.setdefault('english_done', {}) or k in st['failed'] or not os.path.exists(p_):
+            continue
+        out.append({'id': k, 'name': x.get('name') or '', 'year': x.get('year'), 'path': p_, 'mode': 'remux', 'english': True,
+                    'why': 'English first (it was %s)' % x.get('was', 'a dub'), 'mins': 0, 'gb': round(os.path.getsize(p_) / 1e9, 1)})
     return out
 
 
@@ -1197,7 +1213,8 @@ leftovers()
 log('starting: %d to convert' % len(items))
 RUN['total'] = len(items)
 follow_up(st)
-rest, n = redos() + list(items), -1
+rest, n = redos(), -1
+rest += [i for i in items if i['id'] not in set(x['id'] for x in rest)]   # (a film both made again and planned: once)
 looked = time.time()
 while rest:
     if time.time() - looked > 1800:   # (every half hour, a look for films brought in since: they go to the top, not to the end of the queue)
@@ -1270,6 +1287,9 @@ while rest:
             continue
         if it.get('redo'):   # (made again in John's language: the flag down)
             st['ask'].pop(it['id'], None)
+            save_state(st)
+        if it.get('english'):
+            st.setdefault('english_done', {})[it['id']] = int(time.time())
             save_state(st)
     except RuntimeError as e:
         if it.get('mode') == 'remux' and 'skipped by John' not in str(e):   # (a picture an MP4 can't hold as it is: converted instead, in its turn, not given up on)
