@@ -5739,6 +5739,24 @@ def keep_extras(g):
 
 
 SUBSCAN = threading.Lock()
+RE_EN = {}
+
+
+def reads_english(path):
+    """Whether a subtitle file reads as English: its commonest words an eighth of its words or more (kept by the file's time)."""
+    try:
+        m = os.path.getmtime(path)
+        if RE_EN.get(path, (None,))[0] == m:
+            return RE_EN[path][1]
+        with open(path, 'rb') as fh:
+            t = fh.read(40000).decode('utf-8', 'replace').lower()
+    except (OSError, TypeError):
+        return False
+    w = re.findall(r"[a-z']+", re.sub(r'\d+:\d+:\d+[,.]\d+', ' ', t))
+    common = set('the and you that is it to of what not this have was are for with my your me he she we they'.split())
+    ok = len(w) >= 200 and sum(1 for z in w if z in common) / len(w) >= .12
+    RE_EN[path] = (m, ok)
+    return ok
 
 
 def subprep_scan():
@@ -5771,7 +5789,7 @@ def subprep_scan_():
     films, start = [], 0
     while True:
         r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': libs['movies'], 'Recursive': 'true', 'IncludeItemTypes': 'Movie',
-                                                              'Fields': 'MediaStreams,ProductionYear,ProviderIds', 'StartIndex': start, 'Limit': 200}) or {}
+                                                              'Fields': 'MediaStreams,ProductionYear,ProviderIds,Path', 'StartIndex': start, 'Limit': 200}) or {}
         films += r.get('Items') or []
         start += 200
         if start >= (r.get('TotalRecordCount') or 0):
@@ -5781,14 +5799,28 @@ def subprep_scan_():
     # off, as if English (John, 21 Nov 2026, "I feel like I must have more films than that with no subs"). Asked once each, kept)
     lf = os.path.expanduser('~/Grifflix/tmdb-langs.json')
     TL = load(lf, {}) or {}
-    asked, seen, added, tally = 0, set(), 0, {}
+    asked, seen, added, tally, efix = 0, set(), 0, {}, {}
     for f in films:
         st = f.get('MediaStreams') or []
         au = [x for x in st if x.get('Type') == 'Audio']
         main = next((x for x in au if x.get('IsDefault')), au[0] if au else None)
         al = ((main or {}).get('Language') or '').lower()
+        en_au = [x for x in au if (x.get('Language') or '').lower() in eng and 'comment' not in (x.get('Title') or '').lower()]
+        tid = str((f.get('ProviderIds') or {}).get('Tmdb') or '')
+        if al and al not in eng and al not in ('und', 'unk', 'zxx', 'mis') and en_au and tid:
+            # (a film heard first in another language with an English soundtrack too: its own language asked of TMDB, an English film
+            # heard dubbed put right by the converter, English first: John, 21 Nov 2026, "any english language films that don't have
+            # english as first language need fixing": Beverly Hills Cop in Bulgarian, Gandhi in Italian)
+            if tid not in TL and asked < 1500:
+                try:
+                    TL[tid] = ((tmdb(g, '/movie/' + tid) or {}).get('original_language') or '').lower()
+                except Exception:
+                    pass
+                asked += 1
+            if TL.get(tid) == 'en':
+                efix[f['Id']] = {'name': f.get('Name'), 'year': f.get('ProductionYear') or '', 'path': f.get('Path') or '', 'was': al}
+                continue
         if not al or al in ('und', 'unk', 'zxx', 'mis'):
-            tid = str((f.get('ProviderIds') or {}).get('Tmdb') or '')
             if tid and tid not in TL and asked < 1500:
                 try:
                     TL[tid] = ((tmdb(g, '/movie/' + tid) or {}).get('original_language') or '').lower()
@@ -5801,6 +5833,16 @@ def subprep_scan_():
         has_t = any(x.get('Type') == 'Subtitle' and x.get('IsTextSubtitleStream') and (x.get('Language') or '').lower() in eng for x in st)
         has_p = any(x.get('Type') == 'Subtitle' and not x.get('IsForced') and 'forced' not in (x.get('Title') or '').lower()
                     and (x.get('Language') or '').lower() in eng for x in st)
+        if not (has_t or has_p):   # (a subtitle file beside it with no language in its name, "Stolen Kisses (1968).srt": read, English if it reads so;
+            # 26 of the 29 such were: John, 21 Nov 2026, "I need a list of foreign films with truly no subtitles"), or English picture
+            # subtitles saved beside it when converted (Gomorrah's .eng.sup), which the media server doesn't list
+            has_t = any(x.get('Type') == 'Subtitle' and x.get('IsExternal') and x.get('IsTextSubtitleStream') and not x.get('Language')
+                        and reads_english(x.get('Path')) for x in st)
+            d_ = os.path.dirname(f.get('Path') or '')
+            try:
+                has_p = bool(d_) and any(re.search(r'\.(eng|en)(\.\d+)?\.(sup|mks)$', n_, re.I) for n_ in os.listdir(d_))
+            except OSError:
+                pass
         if al and al not in eng and al not in ('und', 'unk', 'zxx', 'mis', 'xx'):
             k_ = 'text' if has_t else 'picture' if has_p else 'none'
             tally[k_] = tally.get(k_, 0) + 1
@@ -5825,7 +5867,8 @@ def subprep_scan_():
     save(SUBPREP, P)
     if asked:
         save(lf, TL)
-    save(os.path.expanduser('~/Grifflix/foreign-films.json'), dict(tally, at=int(time.time()), films=len(films)))   # (how many in a language not English, and with which English subtitles)
+    save(os.path.expanduser('~/Grifflix/foreign-films.json'), dict(tally, at=int(time.time()), films=len(films)))
+    save(os.path.expanduser('~/Grifflix/english-first.json'), efix)   # (for the converter: English made the first soundtrack)   # (how many in a language not English, and with which English subtitles)
     if added:
         log('Subtitles to make ready: %d more foreign-language films with no English subtitles' % added)
 
