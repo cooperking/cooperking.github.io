@@ -6582,6 +6582,38 @@ def streamers_of(ids):
     return out
 
 
+IMDB_Q = ('query($id:ID!){ title(id:$id){ countriesOfOrigin{countries{text}} companyCredits(first:100, filter:{categories:["distribution"]}){ edges{ node{ '
+          'company{ companyText{text} } countries{ text } yearsInvolved{ year } attributes{ text } } } } } }')
+IMDB_HOME = ('dvd', 'vhs', 'blu-ray', 'laserdisc', 'video', 'tv', 'streaming', 'digital', 'betamax', 'syndication', 'internet', 'on demand', 'airing',
+             'premiere', '4k', 'uhd', 'cable', 'broadcast')
+
+
+def imdb_distributor(t):
+    """Who first released a film in American cinemas, from IMDb's company credits (its own data service, as its pages use): the earliest
+    US theatrical release that isn't a re-release; else the earliest US release that isn't TV or home video; else the earliest cinema release
+    in its own country, named with the country. Returns (name, [its US releases, for the record])."""
+    req = urllib.request.Request('https://caching.graphql.imdb.com/', data=json.dumps({'query': IMDB_Q, 'variables': {'id': t}}).encode(),
+                                 headers={'content-type': 'application/json', 'x-imdb-client-name': 'imdb-web-next', 'User-Agent': 'Mozilla/5.0 (Macintosh) Grifflix'})
+    with urllib.request.urlopen(req, timeout=30, context=tls()) as r_:
+        T = (json.loads(r_.read()).get('data') or {}).get('title') or {}
+    E = []
+    for e in ((T.get('companyCredits') or {}).get('edges') or []):
+        n = e.get('node') or {}
+        E.append({'n': ((n.get('company') or {}).get('companyText') or {}).get('text') or '', 'c': [c.get('text') for c in n.get('countries') or []],
+                  'y': (n.get('yearsInvolved') or {}).get('year') or 9999, 'a': ' '.join((x.get('text') or '') for x in n.get('attributes') or []).lower()})
+    E = [e for e in E if e['n'] and 're-release' not in e['a']]
+    first = lambda L: min(L, key=lambda e: e['y'])['n'] if L else ''
+    us = [e for e in E if 'United States' in e['c']]
+    rec = ['%s (%s%s)' % (e['n'], '' if e['y'] == 9999 else e['y'], ', ' + e['a'] if e['a'] else '') for e in sorted(us, key=lambda e: e['y'])]
+    who = first([e for e in us if 'theatrical' in e['a']]) or first([e for e in us if not any(h in e['a'] for h in IMDB_HOME)])
+    if not who:
+        home = [c.get('text') for c in ((T.get('countriesOfOrigin') or {}).get('countries') or [])][:1]
+        if home:
+            w = first([e for e in E if home[0] in e['c'] and 'theatrical' in e['a']])
+            who = '%s (%s)' % (w, home[0]) if w else ''
+    return re.sub(r'\s+', ' ', who).strip()[:120], rec
+
+
 def bom_now():
     """Each film come in (or newly matched, so with its IMDb number now) looked up on Box Office Mojo by the Mac mini itself: its US
     distributor and everything else on its page, kept with what John's bookmark read (distributors.json, distributors-full.json): John, 20
@@ -6619,6 +6651,29 @@ def bom_now():
             D[t] = re.sub(r'\s+', ' ', (v.get('f') or {}).get('Domestic Distributor') or '').strip()[:120]
             got.append('%s: %s' % (name, D[t] or 'none'))
             time.sleep(2)
+        # (none on Box Office Mojo, which hardly knows films before 1980: IMDb's own record of who released it (its company credits), each
+        # film asked once: John, 21 Nov 2026, "we need to sort out the distribution work")
+        fromimdb = []
+        for t in [t for t, v in D.items() if not v and re.match(r'^tt\d{6,10}$', t) and not (F.get(t) or {}).get('im')][:1200]:
+            try:
+                who, us = imdb_distributor(t)
+            except Exception as e:
+                if '429' in str(e) or '503' in str(e):
+                    break
+                continue
+            F.setdefault(t, {'t': '', 'f': {}, 'tb': []})['im'] = 1
+            if us:
+                F[t]['imdb'] = us[:12]
+            if who:
+                D[t] = who
+                F[t].setdefault('f', {})['IMDb distributor'] = who
+                fromimdb.append(who)
+            if len(fromimdb) % 50 == 49:
+                save(at, D)
+                save(fa, F)
+            time.sleep(.5)
+        if fromimdb:
+            log('IMDb, for films Box Office Mojo had no distributor for (%d): %s' % (len(fromimdb), ', '.join('%s %d' % (k, fromimdb.count(k)) for k in sorted(set(fromimdb), key=lambda k: -fromimdb.count(k))[:15])))
         # (no cinema distributor: its streaming service, if it went straight to one, from Wikidata; each film asked once)
         years = {str((f.get('ProviderIds') or {}).get('Imdb') or ''): int(f.get('ProductionYear') or 0) for f in films}
         ask = [t for t, v in D.items() if not v and t in years and not (F.get(t) or {}).get('ws')]
