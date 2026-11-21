@@ -6687,19 +6687,50 @@ def dist_tags(g, items):
     # asked once, one with none again after a month: John, 21 Nov 2026, "link to the actual page not the search")
     af = os.path.expanduser('~/Grifflix/afi-ids.json')
     A = load(af, {}) or {}
-    ask = [t for t in set(imdb.values()) if re.match(r'^tt\d{6,10}$', t) and (t not in A or (not A[t].get('id') and time.time() - A[t].get('at', 0) > 30 * 86400))]
+    ask = [t for t in set(imdb.values()) if re.match(r'^tt\d{6,10}$', t) and (t not in A or (not A[t].get('id') and (not A[t].get('w') or time.time() - A[t].get('at', 0) > 30 * 86400)))]
+    wp = {}
     for n in range(0, len(ask), 300):
-        q = 'SELECT ?imdb ?afi WHERE { VALUES ?imdb { %s } ?f wdt:P345 ?imdb . ?f wdt:P3593 ?afi . }' % ' '.join('"%s"' % x for x in ask[n:n + 300])
+        q = ('SELECT ?imdb ?afi ?art WHERE { VALUES ?imdb { %s } ?f wdt:P345 ?imdb . OPTIONAL { ?f wdt:P3593 ?afi } '
+             'OPTIONAL { ?art schema:about ?f ; schema:isPartOf <https://en.wikipedia.org/> } }') % ' '.join('"%s"' % x for x in ask[n:n + 300])
         try:
             req = urllib.request.Request('https://query.wikidata.org/sparql?' + urllib.parse.urlencode({'query': q}),
                                          headers={'Accept': 'application/sparql-results+json', 'User-Agent': 'Grifflix/1.0 (family film library)'})
             with urllib.request.urlopen(req, timeout=120, context=tls()) as r_:
-                got = {b['imdb']['value']: b['afi']['value'] for b in json.loads(r_.read()).get('results', {}).get('bindings', [])}
+                rows = json.loads(r_.read()).get('results', {}).get('bindings', [])
         except Exception:
             break
+        got = {b['imdb']['value']: b['afi']['value'] for b in rows if 'afi' in b}
+        for b in rows:
+            if 'art' in b and b['imdb']['value'] not in got:
+                wp[urllib.parse.unquote(b['art']['value'].split('/wiki/', 1)[-1]).replace('_', ' ')] = b['imdb']['value']
         for t in ask[n:n + 300]:
-            A[t] = {'id': got.get(t, ''), 'at': int(time.time())}
+            A[t] = {'id': got.get(t, ''), 'at': int(time.time()), 'w': 1}   # (w: Wikipedia looked at too)
         time.sleep(1)
+    # (and where Wikidata hasn't AFI's number, the film's English Wikipedia article's own link to its AFI page (its External links), read
+    # from Wikipedia's API, gently: John, 21 Nov 2026, "There must be other sources that have the links")
+    titles = list(wp)
+    for n in range(0, len(titles), 20):
+        try:
+            req = urllib.request.Request('https://en.wikipedia.org/w/api.php?' + urllib.parse.urlencode(
+                {'action': 'query', 'format': 'json', 'prop': 'extlinks', 'titles': '|'.join(titles[n:n + 20]), 'ellimit': '500', 'redirects': 1, 'maxlag': 5}),
+                headers={'User-Agent': 'Grifflix/1.0 (family film library)'})
+            with urllib.request.urlopen(req, timeout=60, context=tls()) as r_:
+                d_ = json.loads(r_.read()).get('query') or {}
+        except Exception:   # (asked to slow down: the rest another time)
+            for t_ in titles[n:]:
+                A.pop(wp[t_], None)
+            break
+        back = {x['to']: x['from'] for x in (d_.get('redirects') or []) + (d_.get('normalized') or [])}
+        for pg in (d_.get('pages') or {}).values():
+            t_ = pg.get('title')
+            t_ = back.get(t_, t_)
+            t_ = back.get(t_, t_)
+            for l_ in pg.get('extlinks') or []:
+                m_ = re.search(r'afi\.com/.*?(?:moviedetails/|[?&]movie=)(\d+)', l_.get('*') or l_.get('url') or '', re.I)
+                if m_ and wp.get(t_):
+                    A[wp[t_]] = {'id': m_.group(1), 'at': int(time.time()), 'from': 'wikipedia'}
+                    break
+        time.sleep(3)
     if ask:
         save(af, A)
     for iid, o in items.items():
