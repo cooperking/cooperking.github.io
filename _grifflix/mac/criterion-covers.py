@@ -494,7 +494,9 @@ def spines(films):
         if not f['title']:
             continue
         hit = folders.get(k('%s (%s)' % (f['title'], f['year'])))
-        if not hit and TF.get(tmdb_of(f)):   # (found by its TMDB number: poster-add.py can't find it by name, so its cover put on here too, as a part's)
+        # (never a box set's entry: Criterion's set "The Killers" is the 1946 film's on TMDB, and its set cover went on the film as a "part"
+        # every run, the film's own cover put back after, each time: John, 21 Nov 2026)
+        if not hit and TF.get(tmdb_of(f)) and '/boxsets/' not in (f.get('link') or ''):   # (found by its TMDB number: poster-add.py can't find it by name, so its cover put on here too, as a part's)
             hit = TF[tmdb_of(f)]
             PARTS[hit] = name_of(f['title'], f['year'])
         if not hit and re.match(r'^\d{4}$', f['year']):
