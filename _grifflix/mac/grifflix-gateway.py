@@ -5738,7 +5738,20 @@ def keep_extras(g):
         time.sleep(1800 if n_ else 6 * 3600)
 
 
+SUBSCAN = threading.Lock()
+
+
 def subprep_scan():
+    """Run at once only (the gateway starting, new films, John's Look now, the three-hourly round)."""
+    if not SUBSCAN.acquire(blocking=False):
+        return
+    try:
+        subprep_scan_()
+    finally:
+        SUBSCAN.release()
+
+
+def subprep_scan_():
     """The foreign-language films with no English subtitles that read as text (in the file, or beside it), added to the list for John's
     Mac to make ready (subprep.py); those with them now, or gone, taken off (John, 20 Nov 2026: foreign-language films, English)."""
     g = G_REF[0] if G_REF else None
@@ -6573,7 +6586,7 @@ def new_follow_up(paths=()):
     def run():
         NEW_FU['t'] = None
         only_, NEW_FU['folders'] = NEW_FU['folders'], set()
-        for f in (lambda: covers_now(only_ or None), a24_now, bom_now):
+        for f in (lambda: covers_now(only_ or None), a24_now, bom_now, subprep_scan):   # (new foreign films on the subtitles list then, not hours later)
             try:
                 f()
             except Exception as e:
@@ -7882,6 +7895,9 @@ def serve():
     threading.Thread(target=keep_plex_off, args=(g,), daemon=True).start()
     threading.Thread(target=keep_extras, args=(g,), daemon=True).start()
     threading.Thread(target=keep_covers, daemon=True).start()   # (every Criterion film its cover, hourly)
+    # (the subtitles list looked over a minute after starting, not first in the three-hourly round behind the covers: John, 21 Nov 2026,
+    # "there shouldn't be a need for a three hour check")
+    threading.Thread(target=lambda: (time.sleep(60), subprep_scan()), daemon=True).start()
     try:   # (the spines set by hand, where criterion.py, for the Google sheet, reads them too)
         f_ = os.path.expanduser('~/Grifflix/criterion-spines-own.json')
         own_ = load(f_, {}) or {}
