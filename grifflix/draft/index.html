@@ -2659,7 +2659,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '44cd6bc93508' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '25264e789495' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6033,7 +6033,7 @@ function collectionView(id, into) {
         });
         var g = $('#cgrid');
         if (openSet && BS[openSet]) {   // one box set, opened: its films
-          var L = BS[openSet].slice().sort(function (x, y) { return (+x.spine || 0) - (+y.spine || 0) || nameKey(x).localeCompare(nameKey(y)); });
+          var L = BS[openSet].slice().sort(function (x, y) { return (+x.year || 9999) - (+y.year || 9999) || (+x.spine || 0) - (+y.spine || 0) || nameKey(x).localeCompare(nameKey(y)); });   // (by year, as Criterion orders a set's films: John, 21 Nov 2026)
           // (a film released on its own as well as in this set: here, the set's cover, and on its page opened from here; its own release's
           // cover everywhere else: John, 20 Nov 2026, "it should show the box set cover when you click on the box set, and on the film when
           // you view it from there. When you view the film as its own release you should see the cover it was given as part of that")
