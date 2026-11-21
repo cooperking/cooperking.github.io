@@ -1347,10 +1347,13 @@ html:not(.phone) .film .ipost img { display: block; width: 100%; height: auto; m
 html:not(.phone) .film .in { padding: 0 !important; min-height: 0 !important; display: block !important; }
 /* (the picture as big as the screen's height lets it be, the words beside it taking what's left: John, 19 Nov 2026, "the right hand side should be
    shrunk in desktop/ fire tv more rather than the left, so the picture can fill the screen better") */
-html:not(.phone) .film { grid-template-columns: minmax(220px, max(30vw, min(50vw, calc((100vh - 150px) * .667)))) minmax(0, 1fr); gap: clamp(28px, 3vw, 56px); padding-left: clamp(28px, 4vw, 80px); }
+html:not(.phone) .film { grid-template-columns: minmax(220px, max(30vw, min(62vw, calc((100vh - 150px) * var(--pa, .667))))) minmax(0, 1fr); gap: clamp(28px, 3vw, 56px); padding-left: clamp(28px, 4vw, 80px); }
+/* (and as wide as the picture's own shape needs to fill the height, not a film poster's: a Criterion cover is wider, and stopped short of the
+   height; the words beside it give way first: John, 21 Nov 2026, "the right side should shrink before the left in a wider format like this,
+   so the image takes up the full space") */
 html:not(.phone) .film:not(.hasposter) { grid-template-columns: minmax(300px, 52vw) minmax(0, 1fr); }
 html:not(.phone) .film .ipost img { max-height: calc(100vh - 150px); }
-html.tv .film { grid-template-columns: calc((100vh - 116px) * .667) minmax(0, 1fr); }   /* (the TV: the picture its full height, no gap beside it) */
+html.tv .film { grid-template-columns: min(62vw, calc((100vh - 116px) * var(--pa, .667))) minmax(0, 1fr); }   /* (the TV: the picture its full height, no gap beside it) */
 html.tv .film .ipost img { max-height: calc(100vh - 116px); }
 html.tv .film .ov { font-size: var(--ovfs, 21px) !important; max-width: none !important; display: block !important; -webkit-line-clamp: unset !important; overflow: visible !important; }   /* (all of it, made smaller to fit: tvFit) */
 html.tv .film .tag { font-size: 24px !important; }
@@ -7071,6 +7074,9 @@ function itemSheet(it, ctx) {
   // (a Back on every film: to the page of films it came from, else closed, back where you were: John, 18 Nov 2026, "Films should have a back
   // on them - there was before, so you're not stuck in a film")
   var fb = $('#fback'); if (fb) fb.onclick = function () { if (SHEETBACK.length) sheetBack(); else closeSheet(); };
+  (function () { var pi = $('#sheetIn .film .ipost img'), fm = $('#sheetIn .film'); if (!pi || !fm) return;   // (the picture's own shape, for its column)
+    var setPa = function () { if (pi.naturalWidth && pi.naturalHeight) fm.style.setProperty('--pa', Math.min(1.2, Math.max(.5, pi.naturalWidth / pi.naturalHeight)).toFixed(3)); };
+    if (pi.complete) setPa(); else pi.addEventListener('load', setPa); })();
   wireBody(it, ctx); setTimeout(tvFit, 30);
   var mine = function (full) { if (PUBLIC || DEMO || !full.id) return full;   // (the member's own: from the Mac, if it's on)
     own('lists').then(function (L) { var h = L.hearts.some(function (x) { return x.id === it.id; }); if (h !== !!it.hearted) { it.hearted = full.hearted = h; var b = $('#aheart'); if (b && dlg.open) b.innerHTML = HEART(h); } }).catch(function () {});
