@@ -455,7 +455,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="cvbar" id="fbar" hidden><span id="ffill"></span></div>
         <div class="lbchips" id="ftabs" style="margin:14px 0 4px"></div>
         <ul class="changes cvl" id="flist"></ul>
-        <div class="state"><button class="btn" id="flook" type="button" hidden>Look now</button></div>
+        <div class="state"><button class="btn" id="flook" type="button" hidden>Look now</button><button class="btn" id="fpeek" type="button" hidden>Check TorBox</button></div>
+        <p class="stat" id="fpeeksay" hidden style="margin-top:6px"></p>
         <details id="tbbox" style="margin-top:14px"><summary class="stat" style="cursor:pointer"><b>TorBox</b>: <span id="tbsay">…</span></summary>
           <p class="stat" style="margin:10px 0 6px">Each download is deleted from TorBox once all of it (the film and its extras) has come into Grifflix whole. One whose film was already here, that you cancelled, or that didn’t come is left. It needs your TorBox API key: on torbox.app, Settings › API. It’s kept on the Mac mini only.</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap"><input type="password" id="tbkey" class="name" placeholder="TorBox API key" autocomplete="off" style="flex:1 1 220px"><button class="btn" type="button" id="tbsave">Save the key</button></div>
@@ -1852,6 +1853,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var fl = $('#flook'), asked = fetching.asked && Date.now() - fetching.asked < 60000 && !(f.checked && f.checked * 1000 > fetching.asked);
       if (f.running || n) fetching.asked = 0;
       fl.hidden = !f.setup; fl.disabled = !!(f.running || n || asked);
+      // (Check TorBox: what's new there and still coming, looked at now, even while a download goes on, which isn't touched: John, 21 Nov
+      // 2026, "Can I have a check for upcoming downloads option on Torbox")
+      var fp = $('#fpeek'), pk = f.peeking || (fetching.peekAsked && Date.now() - fetching.peekAsked < 15000);
+      if (!f.peeking && f.peeked && fetching.peekAsked && f.peeked * 1000 >= fetching.peekAsked - 5000) { var nw = (f.waiting || []).filter(function (x) { return x.new; }).length; fetching.peekAsked = 0; toast(nw ? nw + ' more to come in, added to Next' : 'Checked: nothing new to come in'); }
+      fp.hidden = !f.setup; fp.disabled = !!pk; fp.textContent = pk ? 'Checking TorBox…' : 'Check TorBox';
+      $('#fpeeksay').hidden = !f.peeked; if (f.peeked) $('#fpeeksay').textContent = 'TorBox checked ' + when(f.peeked * 1000) + '.';
+      if (pk) { clearTimeout(fetching.pt); fetching.pt = setTimeout(fetching, 5000); }
       fl.textContent = n ? 'Downloading…' : f.running && f.hold ? 'Waiting for ' + f.hold + '…' : f.running || asked ? 'Looking now…' : 'Look now';   // (waiting while the film it brought in is repackaged, said so, not "looking": John, 19 Nov 2026)
       var mins = function (t) { var m = Math.max(0, Math.round((t * 1000 - Date.now()) / 60000)); return m < 1 ? 'any moment' : 'in ' + m + ' min'; };
       if (!f.setup) {
@@ -1990,6 +1998,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   };
   $('#tbauto').onclick = function () { var b = this; b.disabled = true; tbPost({ auto: !b.dataset.on }).then(tbDraw).catch(function (e) { b.disabled = false; toast(e.message); }); };
   setTimeout(tbLoad, 3000);
+  $('#fpeek').onclick = function () {
+    var b = this; b.disabled = true; b.textContent = 'Checking TorBox…';
+    fetch(GW + '/api/fetching', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ peek: true }) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'The Mac mini didn’t answer.'); return j; }); })
+      .then(function () { fetching.peekAsked = Date.now(); setTimeout(fetching, 5000); })
+      .catch(function (e) { toast(e.message === 'Not Found' ? 'Press Update everything first' : e.message); b.disabled = false; b.textContent = 'Check TorBox'; });
+  };
   $('#flook').onclick = function () {
     var b = this; b.disabled = true; b.textContent = 'Looking now…';
     fetch(GW + '/api/fetching', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ look: true }) })

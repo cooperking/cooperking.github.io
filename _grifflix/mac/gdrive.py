@@ -816,7 +816,12 @@ def _run(check):
         pass
     plan = in_order(plan)
     free0 = shutil.disk_usage(root).free
-    status(checked=int(time.time()), trouble=trouble, upgrades=UPG, attorbox=torbox_pending(), waiting=[dict(wait_entry(p), noroom=free0 < p['size'] + 20e9) for p in plan], **({} if check else {'now': None}))
+    if check:   # (a look only, maybe while a download runs: kept apart, so the run's own list isn't written over; the admin page adds what's new
+        # from it: John, 21 Nov 2026, "Can I have a check for upcoming downloads option on Torbox")
+        status(peek={'at': int(time.time()), 'trouble': trouble, 'upgrades': UPG, 'attorbox': torbox_pending(),
+                     'waiting': [dict(wait_entry(p), noroom=free0 < p['size'] + 20e9) for p in plan]})
+    else:
+        status(checked=int(time.time()), trouble=trouble, upgrades=UPG, attorbox=torbox_pending(), waiting=[dict(wait_entry(p), noroom=free0 < p['size'] + 20e9) for p in plan], now=None, peek=None)
     while plan:
         try:   # (a newer version since this fetch began: finish here, between films, and start again as it; never a download thrown
                # away part way: Donnie Darko, 9.4 GB, began again after Update everything: John, 15 Nov 2026, "Downloads seem to have slowed")

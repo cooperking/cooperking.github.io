@@ -2062,6 +2062,17 @@ def make_handler(g):
                     f.insert(0, str(b['file'])[:500])
                 save(fp, f[:50])
                 return self.send_json(200, {'ok': True, 'first': f[:50]})
+            if b and b.get('peek'):   # (what's new at TorBox and Google Drive, looked at now, any time, a download going on or not: gdrive.py's
+                # look-only check, its own list kept apart; the download in progress goes on: John, 21 Nov 2026, "Can I have a check for
+                # upcoming downloads option on Torbox")
+                if not setup:
+                    return self.send_json(400, {'error': 'Google Drive and TorBox aren’t set up on the Mac mini yet.'})
+                pr = PEEK.get('p')
+                if not (pr and pr.poll() is None):
+                    import subprocess
+                    PEEK['p'] = subprocess.Popen([sys.executable, os.path.join(home, 'gdrive.py'), 'check'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=home)
+                    PEEK['at'] = time.time()
+                return self.send_json(200, {'ok': True, 'peeking': True})
             if b and b.get('look'):
                 if not setup:
                     return self.send_json(400, {'error': 'Google Drive and TorBox aren’t set up on the Mac mini yet.'})
@@ -2117,11 +2128,19 @@ def make_handler(g):
             # (one John cancelled gone from the list at once, not at the downloader's next look: John, 20 Nov 2026, "I just cancelled a download
             # but it's still listed")
             cx_ = set(x for x in (load(os.path.join(home, 'fetch-cancelled.json'), []) or []) if isinstance(x, str))
+            pk = st.get('peek') or {}
+            if pk.get('at') and pk['at'] > (st.get('checked') or 0):   # (a look-only check since the run's own: what it found, added)
+                have_ = set(x.get('file') for x in st.get('waiting') or [])
+                st['waiting'] = (st.get('waiting') or []) + [dict(x, new=1) for x in pk.get('waiting') or [] if x.get('file') not in have_]
+                st['attorbox'] = pk.get('attorbox') or []
+                hu_ = set(x.get('key') for x in st.get('upgrades') or [])
+                st['upgrades'] = (st.get('upgrades') or []) + [x for x in pk.get('upgrades') or [] if x.get('key') not in hu_]
             waiting = [x for x in (st.get('waiting') or []) if not (now and x.get('file') == now.get('file'))
                        and not (x.get('key') in cx_ or x.get('file') in cx_ or (x.get('file') or '').strip('/') in cx_)]
             return self.send_json(200, {'setup': setup, 'running': running, 'now': now, 'waiting': waiting,
                                         'recent': [x for x in st.get('recent') or [] if x.get('ok')],   # (only what came: John, 15 Nov 2026) 'checked': st.get('checked'), 'next': int(GDRIVE_NEXT[0]) or None, 'error': GDRIVE_ERR[0], 'trouble': st.get('trouble') or [], 'hold': st.get('hold'),
                                         'attorbox': st.get('attorbox') or [],   # (still coming in at TorBox: 20 Nov 2026)
+                                        'peeked': pk.get('at') or None, 'peeking': bool(PEEK.get('p') and PEEK['p'].poll() is None),
                                         'hold': st.get('hold'),   # (the film it waits on to be repackaged: admin says so, not "nothing has come": 20 Nov 2026)
                                         'upgrades': st.get('upgrades') or [], 'chosen': load(os.path.join(home, 'fetch-upgrades.json'), {}) or {},
                                         'cancelled': [dict(v, key=k) for k, v in (load(os.path.join(home, 'fetch-cancelled-names.json'), {}) or {}).items()],
@@ -5987,6 +6006,7 @@ def vt_args(cmd):
 SCAN_NOW = threading.Event()   # (a film just brought in: the library looked at now, not at the next 10 minutes)
 MACPLAN, MACPLAN_LOCK = {}, threading.Lock()   # (the next film for John's Mac, being planned)
 CONV_NOW = threading.Event()   # (films just brought in: the converter started for them now, if it isn't running)
+PEEK = {}   # (admin's Check TorBox: the look-only check running, if one is)
 GDRIVE_NOW = threading.Event()   # (admin's Look now: a look straight away, not at the next quarter hour)
 GDRIVE_NEXT = [0]
 GDRIVE_ERR = ['']   # (why the last look didn't work, for the admin page)
