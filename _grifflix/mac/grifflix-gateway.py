@@ -432,6 +432,8 @@ def item_out(it, prog=None):
         o['backdrop'] = it['Id']
     elif it.get('ParentBackdropItemId') and it.get('ParentBackdropImageTags'):
         o['backdrop'] = it['ParentBackdropItemId']
+    if it.get('Studios'):   # (its production companies, from TMDB: John, 21 Nov 2026, "We also need production companies")
+        o['studios'] = [x.get('Name') for x in it['Studios'] if x.get('Name')][:4]
     if it.get('People'):
         o['cast'] = [p['Name'] for p in it['People'] if p.get('Type') == 'Actor'][:6]
         o['directors'] = [p['Name'] for p in it['People'] if p.get('Type') == 'Director'][:2]
