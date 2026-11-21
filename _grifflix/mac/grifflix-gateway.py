@@ -6683,9 +6683,31 @@ def dist_tags(g, items):
             for x in c:
                 if dn not in libs.setdefault(x['Id'], []):
                     libs[x['Id']].append(dn)
+    # (each film's own page in the AFI Catalog, by AFI's number for it from Wikidata (AFI itself turns automated readers away); each film
+    # asked once, one with none again after a month: John, 21 Nov 2026, "link to the actual page not the search")
+    af = os.path.expanduser('~/Grifflix/afi-ids.json')
+    A = load(af, {}) or {}
+    ask = [t for t in set(imdb.values()) if re.match(r'^tt\d{6,10}$', t) and (t not in A or (not A[t].get('id') and time.time() - A[t].get('at', 0) > 30 * 86400))]
+    for n in range(0, len(ask), 300):
+        q = 'SELECT ?imdb ?afi WHERE { VALUES ?imdb { %s } ?f wdt:P345 ?imdb . ?f wdt:P3593 ?afi . }' % ' '.join('"%s"' % x for x in ask[n:n + 300])
+        try:
+            req = urllib.request.Request('https://query.wikidata.org/sparql?' + urllib.parse.urlencode({'query': q}),
+                                         headers={'Accept': 'application/sparql-results+json', 'User-Agent': 'Grifflix/1.0 (family film library)'})
+            with urllib.request.urlopen(req, timeout=120, context=tls()) as r_:
+                got = {b['imdb']['value']: b['afi']['value'] for b in json.loads(r_.read()).get('results', {}).get('bindings', [])}
+        except Exception:
+            break
+        for t in ask[n:n + 300]:
+            A[t] = {'id': got.get(t, ''), 'at': int(time.time())}
+        time.sleep(1)
+    if ask:
+        save(af, A)
     for iid, o in items.items():
         o.pop('dist', None)
         o.pop('libs', None)
+        o.pop('afi', None)
+        if (A.get(imdb.get(iid) or '-') or {}).get('id'):
+            o['afi'] = A[imdb[iid]]['id']
         d = D.get(imdb.get(iid) or '-') or ''
         if d:
             o['dist'] = d
