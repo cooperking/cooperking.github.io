@@ -198,6 +198,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .cbexp { margin: 10px 0 2px; flex-wrap: wrap; }
 .mset summary .cbbar { display: inline-block; vertical-align: middle; width: 54px; height: 4px !important; min-height: 0; padding: 0; border: 0; margin-left: 10px; background: rgba(255,255,255,.18); }
 .mset summary .cbbar i { display: block; height: 100%; background: currentColor; }
+.cbdock { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); background: var(--bg, #1f3657); border-top: 1px solid var(--line, rgba(255,255,255,.2)); }
+.cbdock[hidden] { display: none; } .cbdock b { flex: 1 1 100%; font-size: 14px; } @media (min-width: 600px) { .cbdock b { flex: 1 1 auto; } }
 .dks { display: grid; gap: 16px; }
 .dk { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: baseline; }
 .dk .nm { font-size: 14px; color: var(--fg-2); } .dk .fr { font: 400 26px/1 var(--display); color: var(--fg); white-space: nowrap; } .dk .fr small { font: 400 13px/1 var(--sans, sans-serif); color: var(--fg-2); margin-left: 6px; }
@@ -659,6 +661,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="state cbexp"><button class="btn" id="cmsheet" type="button">Make the Google Sheet</button><a class="btn" id="cmopen" href="#" target="_blank" rel="noopener" hidden>Open it</a><button class="btn" id="cmcsv" type="button">Download all (CSV)</button><button class="btn" id="cmpick" type="button" disabled>Download chosen (CSV)</button><button class="btn" id="cmclear" type="button" hidden>Clear chosen</button><button class="btn" id="cmsto" type="button">Open in Search Tab Opener</button></div>
         <p class="stat" id="cmsay"></p><p class="stat" id="cmcoming" hidden></p>
         <div class="mlist" id="cbmiss"><p class="stat">Looking…</p></div>
+        <!-- (what's ticked, always in sight while any is: John, 21 Nov 2026, "I need a way to clear all on criterion box sets to get") -->
+        <div class="cbdock" id="cbdock" hidden><b id="cbdockn"></b><button class="btn" type="button" id="cbdclear">Clear all</button><button class="btn" type="button" id="cbdsto">Search Tab Opener</button><button class="btn" type="button" id="cbdcsv">Download</button></div>
       </section>
       <section class="card" data-tab="criterion">
         <div class="kicker">Special features</div>
@@ -2174,6 +2178,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   function cbCount() {
     var n = (window.CBR || []).filter(function (x) { return CBP[x.k] && !COMING_K[x.k]; }).length;
     $('#cmpick').disabled = !n; $('#cmpick').textContent = n ? 'Download ' + n + ' chosen (CSV)' : 'Download chosen (CSV)'; $('#cmclear').hidden = !n;
+    $('#cbdock').hidden = !n; $('#cbdockn').textContent = n + ' film' + (n === 1 ? '' : 's') + ' chosen';
     try { stoPrep(); } catch (e) {}
     cbAll('#cbmiss .cbsetpick').forEach(function (c) { var rows = cbAll('.cbpick', c.closest('details')), on = rows.filter(function (r) { return r.checked; }).length; c.checked = rows.length > 0 && on === rows.length; c.indeterminate = on > 0 && on < rows.length; });
   }
@@ -2231,6 +2236,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     $('#cmsay').textContent = rows.length + ' film' + (rows.length === 1 ? '' : 's') + ' from ' + new Set(rows.map(function (r) { return r[0]; })).size + ' box sets, downloaded.';
   }
   $('#cmpick').onclick = function () { cbCsv((window.CBR || []).filter(function (x) { return CBP[x.k] && !COMING_K[x.k]; }).map(function (x) { return x.r; }), 'Criterion films chosen'); };
+  $('#cbdclear').onclick = function () { $('#cmclear').click(); toast('Cleared: nothing chosen'); };
+  $('#cbdsto').onclick = function () { $('#cmsto').click(); };
+  $('#cbdcsv').onclick = function () { $('#cmpick').click(); };
   $('#cmclear').onclick = function () { CBP = {}; cbAll('#cbmiss .cbpick').forEach(function (r) { r.checked = false; r.closest('.mrow').classList.remove('on'); }); cbSave(); };
   function cmGet(how) {
     if (how === 'csv' && window.CBR && window.CBR.length) return cbCsv(window.CBR.filter(function (x) { return !COMING_K[x.k]; }).map(function (x) { return x.r; }), 'Criterion box set films missing');
