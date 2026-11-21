@@ -28,10 +28,13 @@ FW_RUN = r'''
 import sys
 from faster_whisper import WhisperModel
 wav, out, model, translate = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4] == '1'
+lang = (sys.argv[5] if len(sys.argv) > 5 else '') or None
 import wave, numpy as np
 w = wave.open(wav, 'rb'); audio = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768.0; w.close()   # (16 kHz mono, as made: not read by its own reader, whose versions differ)
 m = WhisperModel(model, device='cpu', compute_type='int8')
-segs, info = m.transcribe(audio, task='translate' if translate else 'transcribe', vad_filter=True)
+# (told the film's language, and each line not led by the last: left to itself it slipped from translating into writing the Swedish down,
+# Wild Strawberries' last part after its Latin ceremony, and nothing there could match: John, 21 Nov 2026)
+segs, info = m.transcribe(audio, task='translate' if translate else 'transcribe', vad_filter=True, language=lang, condition_on_previous_text=False)
 def ts(t):
     t = max(0.0, t); h = int(t // 3600); mi = int(t % 3600 // 60); se = t % 60
     return '%02d:%02d:%06.3f' % (h, mi, se)
@@ -41,6 +44,12 @@ with open(out, 'w', encoding='utf-8') as f:
 '''
 RATIOS = [1.0, 25 / 23.976, 23.976 / 25, 25 / 24, 24 / 25, 24 / 23.976, 23.976 / 24]
 SAMPLE = 360   # (seconds of sound in each sample)
+LANG2 = {'swe': 'sv', 'dan': 'da', 'nor': 'no', 'nob': 'no', 'fin': 'fi', 'isl': 'is', 'fra': 'fr', 'fre': 'fr', 'ita': 'it', 'spa': 'es', 'por': 'pt',
+         'deu': 'de', 'ger': 'de', 'nld': 'nl', 'dut': 'nl', 'pol': 'pl', 'ces': 'cs', 'cze': 'cs', 'hun': 'hu', 'rus': 'ru', 'ukr': 'uk', 'srp': 'sr',
+         'hrv': 'hr', 'ron': 'ro', 'rum': 'ro', 'ell': 'el', 'gre': 'el', 'tur': 'tr', 'heb': 'he', 'ara': 'ar', 'fas': 'fa', 'per': 'fa', 'hin': 'hi',
+         'ben': 'bn', 'tam': 'ta', 'jpn': 'ja', 'kor': 'ko', 'zho': 'zh', 'chi': 'zh', 'cmn': 'zh', 'yue': 'yue', 'tha': 'th', 'vie': 'vi', 'ind': 'id',
+         'cat': 'ca', 'lat': 'la', 'est': 'et', 'lav': 'lv', 'lit': 'lt', 'bul': 'bg', 'slk': 'sk', 'slo': 'sk', 'slv': 'sl', 'geo': 'ka', 'kat': 'ka', 'tgl': 'tl', 'wol': 'wo'}
+EN = set("the a an and of to is it in you i he she we they that this what not be was are have do don't me my your his her our no yes".split())
 STOP = set('''the and that this with have from they what your you are was were for not but his her him she our out who why how all
 any can its it's i'm you're don't didn't that's there their them then than when will would could should been being just like know
 get got here come came going want okay yes yeah well now one two very much more some about into over only also too really right
@@ -97,22 +106,32 @@ def words(t):
     return set(w[:6] for w in re.findall(r"[a-z0-9][a-z0-9']+", t) if (len(w) >= 3 or w.isdigit()) and w not in STOP)
 
 
-def transcribe(ff, wcli, film, t0, length, translate, work):
+def transcribe(ff, wcli, film, t0, length, translate, work, lang=None):
     """Six minutes of the film's sound from t0, put into words by whisper.cpp: [(start, end, words)] in the film's own time."""
     wav = os.path.join(work, 'w.wav')
     subprocess.run([ff, '-hide_banner', '-nostdin', '-y', '-v', 'error', '-ss', '%.2f' % t0, '-t', str(length), '-i', film, '-vn', '-ac', '1',
                     '-ar', '16000', '-c:a', 'pcm_s16le', wav], check=True, timeout=900)
     out = os.path.join(work, 'w')
     if wcli == 'fw':   # (faster-whisper, in its own Python)
-        subprocess.run([FW_PY, '-c', FW_RUN, wav, out + '.srt', FW_MODEL, '1' if translate else '0'], check=True, timeout=3600,
+        subprocess.run([FW_PY, '-c', FW_RUN, wav, out + '.srt', FW_MODEL, '1' if translate else '0', LANG2.get(lang or '', '')], check=True, timeout=3600,
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     else:
-        cmd = [wcli, '-m', MODEL, '-f', wav, '-osrt', '-of', out, '-l', 'auto', '-np']
+        cmd = [wcli, '-m', MODEL, '-f', wav, '-osrt', '-of', out, '-l', LANG2.get(lang or '', '') or 'auto', '-np']
         if translate:
             cmd.append('-tr')
         subprocess.run(cmd, check=True, timeout=3600, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     segs = [(a + t0, b + t0, words(t), t) for a, b, t in parse_srt(open(out + '.srt', encoding='utf-8', errors='replace').read())]   # (its words, and as heard)
+    if translate:   # (lines Whisper wrote in the film's own language, not English, left out: they can't match an English subtitle)
+        segs = [s for s in segs if english(s[3])]
     return [s for s in segs if s[2]]
+
+
+def english(t):
+    """Whether a heard line reads as English: no letters English doesn't use, and, if four words or more, some of its commonest words."""
+    if re.search(r'[åäöæøéèêëàâîïôûùüçñßłńśźżčřšžőű]', t.lower()):
+        return False
+    ws = re.findall(r"[a-z']+", t.lower())
+    return len(ws) < 4 or any(w in EN for w in ws)
 
 
 def matches(segs, cues):
@@ -133,6 +152,31 @@ def matches(segs, cues):
         if best:
             out.append(best)
     return out
+
+
+def here(sg, cues, r, b, show=False):
+    """The subtitle line at a heard line's own point of the film by this timing (speed r, offset b): (film time, subtitle time, its text,
+    likeness, moved time, agrees) for the likest within a second and a half, or, if show, the nearest within four seconds, not agreeing."""
+    best, near = None, None
+    for c in cues:
+        mv = r * c[0] + b
+        d = abs(sg[0] - mv)
+        if d > 4:
+            continue
+        if show and (not near or d < near[0]):
+            near = (d, c, mv)
+        if d <= 1.5:
+            w = words(c[2])
+            sh = sg[2] & w
+            if w and (len(sh) >= 2 or (len(sh) == 1 and (len(next(iter(sh))) >= 5 or min(len(sg[2]), len(w)) <= 2))):
+                sim = len(sh) / min(len(sg[2]), len(w))
+                if sim >= .34 and (not best or sim > best[3]):
+                    best = (sg[0], c[0], c[2], sim, mv, True)
+    if best:
+        return best
+    if near:
+        return (sg[0], near[1][0], near[1][2], 0, near[2], False)
+    return None
 
 
 def fit(pairs, ratios=RATIOS, width=1.2):
@@ -179,7 +223,7 @@ def prepare(job, ff, wcli, work):
     heard = []
     for k_, t0 in enumerate(starts):
         prog('Listening with Whisper: part %d of %d (from %d:%02d)' % (k_ + 1, len(starts), int(t0 // 3600), int(t0 % 3600 // 60)))
-        heard.append((t0, transcribe(ff, wcli, film, t0, SAMPLE, job.get('translate', True), work)))
+        heard.append((t0, transcribe(ff, wcli, film, t0, SAMPLE, job.get('translate', True), work, job.get('lang'))))
     prog('Matching %d subtitle file%s to what was heard (%d lines heard)' % (len(job.get('cands') or []), '' if len(job.get('cands') or []) == 1 else 's', sum(len(s_) for _, s_ in heard)))
     results, cues_all = [], []
     def judge(cues, cand_i, cand, ratios):   # (one subtitle at the given speeds: its one timing for the whole film, and whether every part agrees)
@@ -197,12 +241,18 @@ def prepare(job, ff, wcli, work):
                     res_ = sorted(abs(f - (r * c + b)) for f, c, _ in allp)
                     n = sum(1 for x in res_ if x <= 1.0)
                     miss = sorted(abs(f - (r * c + b)) for f, c in inl)[len(inl) // 2]
-        wins = []   # (each part: its lines that agree with the whole film's timing, and how far out they are)
-        for t0, ps in per:
-            ok = [abs(f - (r * c + b)) for f, c, _ in ps if abs(f - (r * c + b)) <= 1.0]   # (within a second: Whisper's own lines start loosely)
-            wins.append((t0, len(ok), round(sorted(ok)[len(ok) // 2], 2) if ok else 99, len(ps)))
-        heardp = [w for w in wins if w[3] >= 3]   # (parts where enough was said to judge)
-        fits = len(heardp) >= min(2, len(wins)) and all(w[1] >= 2 for w in heardp) and sum(w[1] for w in wins) >= 8   # (every part with enough heard agreeing)
+        # (then each heard line against only the subtitle lines at that point of the film by this timing, not its likeliest anywhere: a
+        # phrase said twice in a film matched where it's said the other time, and the agreeing ones went uncounted: Wild Strawberries,
+        # John, 21 Nov 2026, "it's matching to the wrong parts of the text". The way WhisperTimeSync works: the two texts side by side, in order)
+        wins, n = [], 0   # (each part: its lines that agree with the whole film's timing, and how far out they are)
+        for t0, segs in heard:
+            ok = [abs(m_[0] - m_[4]) for m_ in (here(sg, cues, r, b) for sg in segs) if m_ and m_[5]]
+            wins.append((t0, len(ok), round(sorted(ok)[len(ok) // 2], 2) if ok else 99, len(segs)))
+            n += len(ok)
+        heardp = [w for w in wins if w[3] >= 8]   # (parts where enough was said in English to judge)
+        # (every part with enough heard in English has an eighth of its lines or more agreeing, three at least: chance finds one or two in a
+        # part at a wrong timing, the right one most of them)
+        fits = len(heardp) >= min(2, len(wins)) and all(w[1] >= max(3, .12 * w[3]) for w in heardp) and sum(w[1] for w in wins) >= 10
         sure = fits and n >= 12 and miss <= .6
         moved = [[r * a + b, r * e + b, t] for a, e, t in cues]
         how = 'moved %+.1f s%s' % (b, '' if abs(r - 1) < .00005 else ', at %.4fx speed' % r)
@@ -249,20 +299,12 @@ def prepare(job, ff, wcli, work):
         for t0, segs in heard:
             o_ = best['_b']
             rows = []
-            for sg in segs[:60]:
-                bi = None
-                for ci, c in enumerate(cues):
-                    w = words(c[2])
-                    sh = sg[2] & w
-                    if w and (len(sh) >= 2 or (len(sh) == 1 and len(next(iter(sh))) >= 6 and min(len(sg[2]), len(w)) <= 2)):
-                        sim = len(sh) / min(len(sg[2]), len(w))
-                        if sim >= .5 and (not bi or sim > bi[1]):
-                            bi = (ci, sim)
+            for sg in segs[:60]:   # (each heard line beside the subtitle line at that same point by the timing chosen: the one it matches, or
+                # else the one on screen then, marked not matching)
                 row = [round(sg[0], 1), sg[3].strip()[:160]]
-                if bi:
-                    c = cues[bi[0]]
-                    mv = best['_r'] * c[0] + o_
-                    row += [round(c[0], 1), re.sub(r'<[^>]+>', '', c[2]).replace('\n', ' ').strip()[:160], round(mv, 1), abs(sg[0] - mv) <= 1.0]
+                m_ = here(sg, cues, best['_r'], o_, show=True)
+                if m_:
+                    row += [round(m_[1], 1), re.sub(r'<[^>]+>', '', m_[2]).replace('\n', ' ').strip()[:160], round(m_[4], 1), bool(m_[5])]
                 rows.append(row)
             ev.append({'from': round(t0), 'rows': rows})
         best['evidence'] = ev
