@@ -1330,6 +1330,9 @@ html.phone .fback { top: calc(env(safe-area-inset-top) + 74px); left: 12px; padd
 .film .close { position: fixed !important; top: 22px; right: 22px; z-index: 82; background: var(--bg) !important; }
 html:not(.phone) .film { display: grid; grid-template-columns: minmax(220px, 30vw) minmax(0, 1fr); gap: clamp(32px, 4vw, 72px); align-items: center; padding: 96px clamp(40px, 6vw, 110px) 60px; box-sizing: border-box; }
 html:not(.phone) .film .heroimg { display: none !important; }
+/* (nor the empty space kept for a picture where there's none (a series with no wide picture, Agnès de ci de là Varda, Fanny and Alexander): it took
+   the first column, the poster went right and the words, Play and the episodes below the screen: John, 21 Nov 2026, on Chrome) */
+html:not(.phone) .film .noimg-top { display: none !important; }
 html:not(.phone) .film:not(.hasposter) .heroimg { display: block !important; position: relative !important; inset: auto !important; height: auto !important; aspect-ratio: 16 / 9 !important; width: 100% !important; border: 1px solid rgba(var(--kink), .25); }
 html:not(.phone) .film:not(.hasposter) { grid-template-columns: minmax(300px, 42vw) minmax(0, 1fr); }
 /* (the poster at the top, kept in view as the words or a series' episodes scroll beside it, not centred against them, where a long right side
@@ -1344,10 +1347,13 @@ html:not(.phone) .film .ipost img { display: block; width: 100%; height: auto; m
 html:not(.phone) .film .in { padding: 0 !important; min-height: 0 !important; display: block !important; }
 /* (the picture as big as the screen's height lets it be, the words beside it taking what's left: John, 19 Nov 2026, "the right hand side should be
    shrunk in desktop/ fire tv more rather than the left, so the picture can fill the screen better") */
-html:not(.phone) .film { grid-template-columns: minmax(220px, max(30vw, min(50vw, calc((100vh - 150px) * .667)))) minmax(0, 1fr); gap: clamp(28px, 3vw, 56px); padding-left: clamp(28px, 4vw, 80px); }
+html:not(.phone) .film { grid-template-columns: minmax(220px, max(30vw, min(62vw, calc((100vh - 150px) * var(--pa, .667))))) minmax(0, 1fr); gap: clamp(28px, 3vw, 56px); padding-left: clamp(28px, 4vw, 80px); }
+/* (and as wide as the picture's own shape needs to fill the height, not a film poster's: a Criterion cover is wider, and stopped short of the
+   height; the words beside it give way first: John, 21 Nov 2026, "the right side should shrink before the left in a wider format like this,
+   so the image takes up the full space") */
 html:not(.phone) .film:not(.hasposter) { grid-template-columns: minmax(300px, 52vw) minmax(0, 1fr); }
 html:not(.phone) .film .ipost img { max-height: calc(100vh - 150px); }
-html.tv .film { grid-template-columns: calc((100vh - 116px) * .667) minmax(0, 1fr); }   /* (the TV: the picture its full height, no gap beside it) */
+html.tv .film { grid-template-columns: min(62vw, calc((100vh - 116px) * var(--pa, .667))) minmax(0, 1fr); }   /* (the TV: the picture its full height, no gap beside it) */
 html.tv .film .ipost img { max-height: calc(100vh - 116px); }
 html.tv .film .ov { font-size: var(--ovfs, 21px) !important; max-width: none !important; display: block !important; -webkit-line-clamp: unset !important; overflow: visible !important; }   /* (all of it, made smaller to fit: tvFit) */
 html.tv .film .tag { font-size: 24px !important; }
@@ -2670,7 +2676,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: 'bff6a81aca4c' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '88e82885e786' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -7068,6 +7074,9 @@ function itemSheet(it, ctx) {
   // (a Back on every film: to the page of films it came from, else closed, back where you were: John, 18 Nov 2026, "Films should have a back
   // on them - there was before, so you're not stuck in a film")
   var fb = $('#fback'); if (fb) fb.onclick = function () { if (SHEETBACK.length) sheetBack(); else closeSheet(); };
+  (function () { var pi = $('#sheetIn .film .ipost img'), fm = $('#sheetIn .film'); if (!pi || !fm) return;   // (the picture's own shape, for its column)
+    var setPa = function () { if (pi.naturalWidth && pi.naturalHeight) fm.style.setProperty('--pa', Math.min(1.2, Math.max(.5, pi.naturalWidth / pi.naturalHeight)).toFixed(3)); };
+    if (pi.complete) setPa(); else pi.addEventListener('load', setPa); })();
   wireBody(it, ctx); setTimeout(tvFit, 30);
   var mine = function (full) { if (PUBLIC || DEMO || !full.id) return full;   // (the member's own: from the Mac, if it's on)
     own('lists').then(function (L) { var h = L.hearts.some(function (x) { return x.id === it.id; }); if (h !== !!it.hearted) { it.hearted = full.hearted = h; var b = $('#aheart'); if (b && dlg.open) b.innerHTML = HEART(h); } }).catch(function () {});
@@ -8017,6 +8026,14 @@ window.addEventListener('pagehide', saveProgress);
     }).catch(function () { say(conv); });
   }, 20000); });
   ['playing', 'canplay', 'seeked', 'pause', 'emptied'].forEach(function (ev) { v.addEventListener(ev, function () { el.classList.remove('wait'); unstuck(); }); });
+  // (after a jump through the film, the subtitles shown again: browsers can leave the line that should be showing undrawn, or none at all, till
+  // they're turned off and on, which John had to do: so done here, unseen: John, 21 Nov 2026, "the player also not handling subtitles well when
+  // you move through the film, I had to turn it on and off")
+  v.addEventListener('seeked', function () {
+    Array.prototype.forEach.call(v.textTracks || [], function (t) {
+      if ((t.kind === 'subtitles' || t.kind === 'captions') && t.mode === 'showing') { t.mode = 'hidden'; setTimeout(function () { if (t.mode === 'hidden') t.mode = 'showing'; }, 30); }
+    });
+  });
   $('#pplay').onclick = toggle; $('#pbig').onclick = function (e) { e.stopPropagation(); toggle(); };
   // (the film's place: pressed or dragged anywhere along it, the time shown above the finger; let go, it goes there)
   var at = function (e) { var r = seek.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };
