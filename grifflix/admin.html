@@ -2169,8 +2169,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   $('#cmsto').onclick = function () {
     var all = (window.CBR || []).filter(function (x) { return !COMING_K[x.k]; }), ch = all.filter(function (x) { return CBP[x.k]; }), rows = (ch.length ? ch : all).map(function (x) { return x.r; });
     if (!rows.length) return toast('The list isn’t here yet');
-    var b64 = btoa(unescape(encodeURIComponent('\ufeff' + cbText(rows))));
-    window.open('https://cooperking.github.io/search-tab-opener/#csv=' + encodeURIComponent('data:text/csv;base64,' + b64) + '&name=' + encodeURIComponent((ch.length ? 'Criterion films chosen ' : 'Criterion box set films missing ') + new Date().toISOString().slice(0, 10)), '_blank', 'noopener');
+    // (handed over once the opener says it's ready, as text, however long; carried in the link too, while short enough to, in case the
+    // handover can't happen: John, 21 Nov 2026, "Open in search tab opener isn't loading the csv")
+    var csv = '\ufeff' + cbText(rows), nm = (ch.length ? 'Criterion films chosen ' : 'Criterion box set films missing ') + new Date().toISOString().slice(0, 10);
+    var b64 = btoa(unescape(encodeURIComponent(csv))), inLink = b64.length < 24000;
+    var w = window.open('https://cooperking.github.io/search-tab-opener/#from=grifflix&name=' + encodeURIComponent(nm) + (inLink ? '&csv=' + encodeURIComponent('data:text/csv;base64,' + b64) : ''), '_blank');
+    var hand = function (e) { if (e.origin !== 'https://cooperking.github.io' || !e.data || e.data.type !== 'sto-ready' || e.source !== w) return; window.removeEventListener('message', hand); w.postMessage({ type: 'sto-csv', csv: csv, name: nm }, 'https://cooperking.github.io'); };
+    window.addEventListener('message', hand); setTimeout(function () { window.removeEventListener('message', hand); }, 60000);
     $('#cmsay').textContent = rows.length + ' film' + (rows.length === 1 ? '' : 's') + (ch.length ? ' chosen' : '') + ' opened in Search Tab Opener.';
   };
   function cbCsv(rows, name) {
