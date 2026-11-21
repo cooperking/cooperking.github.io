@@ -2242,7 +2242,7 @@ html.gcrit #cbody .cstats { color: var(--gc-pale) !important; } html.gcrit #cbod
 html.gcrit #cbody .collhead + .tabs, html.gcrit #cbody #cgrid { background: #fff !important; }
 html.gcrit #cbody .collhead + .tabs { border-top: 2px solid var(--gc-line) !important; }
 html.gcrit #cbody .pill, html.gcrit #cbody .sfb { background: #fff !important; color: var(--gc-ink) !important; border: 2px solid var(--gc-page) !important; border-radius: 0 !important; box-shadow: none !important; }
-html.gcrit #cbody .pill.on, html.gcrit #cbody .sfb.on { background: var(--gc-page) !important; }
+html.gcrit #cbody .pill.on, html.gcrit #cbody .sfb.on { background: var(--gc-ink) !important; border-color: var(--gc-ink) !important; color: #fff !important; }   /* (chosen: as it looks pointed at, so what's chosen shows (List, Covers, Box sets): John, 21 Nov 2026) */
 html.gcrit #cbody .pill:hover, html.gcrit #cbody .sfb:hover, html.gcrit #cbody .pill:focus-visible, html.gcrit #cbody .sfb:focus-visible { background: var(--gc-ink) !important; border-color: var(--gc-ink) !important; color: #fff !important; }
 html.gcrit #cbody .cfind { background: var(--gc-page) !important; border: 2px solid var(--gc-page) !important; color: var(--gc-ink) !important; border-radius: 0 !important; }
 html.gcrit #cbody .clhead { border-bottom: 2px solid var(--gc-ink) !important; } html.gcrit #cbody .clh { color: var(--gc-ink) !important; }
@@ -2659,7 +2659,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'e836e56c4e3e' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '44cd6bc93508' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
