@@ -92,7 +92,9 @@ def write_srt(cues):
 
 def words(t):
     t = re.sub(r'<[^>]+>|\{[^}]+\}|\[[^\]]*\]|\([^)]*\)', ' ', t.lower()).replace('’', "'")
-    return set(w for w in re.findall(r"[a-z0-9][a-z0-9']+", t) if (len(w) >= 3 or w.isdigit()) and w not in STOP)
+    # (each word by its stem, its first six letters: Whisper's translation and a subtitle seldom use quite the same form, "soldier" and
+    # "soldiers", "marched" and "marching": 146 lines heard of Samurai I and two matched, 21 Nov 2026)
+    return set(w[:6] for w in re.findall(r"[a-z0-9][a-z0-9']+", t) if (len(w) >= 3 or w.isdigit()) and w not in STOP)
 
 
 def transcribe(ff, wcli, film, t0, length, translate, work):
@@ -184,7 +186,7 @@ def prepare(job, ff, wcli, work):
         per = [(t0, matches(segs, cues)) for t0, segs in heard]
         allp = [p for _, ps in per for p in ps]
         n, r, b, miss = fit(allp, ratios)
-        inl = [(f, c) for f, c, _ in allp if abs(f - (r * c + b)) <= 1.0]
+        inl = [(f, c) for f, c, _ in allp if abs(f - (r * c + b)) <= 2.0]   # (lines up to 2 s out too: a slight drift, The Seventh Seal's 1.3 s, fine-tuned away)
         if len(inl) >= 8:   # (the speed and offset fine-tuned on the lines that agree: a film a fraction faster drifts a second over its length)
             mc = sum(c for _, c in inl) / len(inl); mf = sum(f for f, _ in inl) / len(inl)
             vc = sum((c - mc) ** 2 for _, c in inl)
@@ -193,14 +195,14 @@ def prepare(job, ff, wcli, work):
                 if abs(r2 / r - 1) < .003:
                     r, b = r2, mf - r2 * mc
                     res_ = sorted(abs(f - (r * c + b)) for f, c, _ in allp)
-                    n = sum(1 for x in res_ if x <= .7)
+                    n = sum(1 for x in res_ if x <= 1.0)
                     miss = sorted(abs(f - (r * c + b)) for f, c in inl)[len(inl) // 2]
         wins = []   # (each part: its lines that agree with the whole film's timing, and how far out they are)
         for t0, ps in per:
-            ok = [abs(f - (r * c + b)) for f, c, _ in ps if abs(f - (r * c + b)) <= .7]
+            ok = [abs(f - (r * c + b)) for f, c, _ in ps if abs(f - (r * c + b)) <= 1.0]   # (within a second: Whisper's own lines start loosely)
             wins.append((t0, len(ok), round(sorted(ok)[len(ok) // 2], 2) if ok else 99, len(ps)))
         heardp = [w for w in wins if w[3] >= 3]   # (parts where enough was said to judge)
-        fits = len(heardp) >= min(2, len(wins)) and all(w[1] >= max(2, w[3] * .3) for w in heardp)
+        fits = len(heardp) >= min(2, len(wins)) and all(w[1] >= 2 for w in heardp) and sum(w[1] for w in wins) >= 8   # (every part with enough heard agreeing)
         sure = fits and n >= 12 and miss <= .6
         moved = [[r * a + b, r * e + b, t] for a, e, t in cues]
         how = 'moved %+.1f s%s' % (b, '' if abs(r - 1) < .00005 else ', at %.4fx speed' % r)
@@ -260,7 +262,7 @@ def prepare(job, ff, wcli, work):
                 if bi:
                     c = cues[bi[0]]
                     mv = best['_r'] * c[0] + o_
-                    row += [round(c[0], 1), re.sub(r'<[^>]+>', '', c[2]).replace('\n', ' ').strip()[:160], round(mv, 1), abs(sg[0] - mv) <= .7]
+                    row += [round(c[0], 1), re.sub(r'<[^>]+>', '', c[2]).replace('\n', ' ').strip()[:160], round(mv, 1), abs(sg[0] - mv) <= 1.0]
                 rows.append(row)
             ev.append({'from': round(t0), 'rows': rows})
         best['evidence'] = ev
@@ -295,8 +297,9 @@ def main():
         return
     finally:
         shutil.rmtree(work, ignore_errors=True)
-    if not res or not res[0].get('fits') or res[0]['n'] < 4:   # (none fitting the whole film: a fail, nothing saved)
-        say({'ok': False, 'error': 'none of the subtitles matched what’s said through the whole film', 'tried': [[x['name'], x['n']] for x in res]})
+    if not res or not res[0].get('fits') or res[0]['n'] < 4:   # (none fitting the whole film: a fail, nothing saved; what was heard against the nearest sent all the same)
+        say({'ok': False, 'error': 'none of the subtitles matched what’s said through the whole film', 'tried': [[x['name'], x['n']] for x in res],
+             'evidence': (res[0].get('evidence') or []) if res else []})
         return
     best = res[0]
     prog('Sending the subtitles back (%s, %d lines matched)' % (best['how'], best['n']))

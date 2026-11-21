@@ -1040,7 +1040,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   // (what it did for a film, in full: the subtitle chosen, how it was moved and how sure, each part of the film listened to, the others tried:
   // John, 21 Nov 2026, "I still need to know what the fix chose to do - if it moved them - what subtitles it chose, etc")
   function spWhat(x) {
-    if (!(x.chose || x.origin || (x.tried || []).length || (x.samples || []).length)) return '';
+    if (!(x.chose || x.origin || (x.tried || []).length || (x.samples || []).length || x.state === 'nomatch')) return '';
     var mmss = function (t) { t = Math.round(t / 60); return t < 1 ? 'the start' : t + ' min in'; };
     var how = String(x.note || ''), m = /moved ([+-][\d.]+) s/.exec(how), sp = /at ([\d.]+)x speed/.exec(how), part = /^moved by part/.test(how);
     var said = part ? 'Moved by a different amount in different parts of the film (a different cut of it): ' + esc(how.replace(/^moved by part /, '')) :
@@ -1056,7 +1056,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     if (others.length) h += '<b>Others tried:</b> ' + others.map(function (t) { return '“' + esc(t[0]) + '”, ' + t[1] + ' lines matched' + (t[2] ? ' (sure)' : ''); }).join('; ') + '<br>';
     if (x.file) h += '<b>Saved as:</b> ' + esc(String(x.file).split('/').pop()) + '<br>';
     if (x.mins) h += '<b>Time taken on your Mac:</b> ' + x.mins + ' min';
-    if (x.state === 'done' || x.state === 'check') h += '<div style="margin-top:8px"><button class="btn" type="button" data-spev="' + x.id + '">What Whisper heard</button><div class="spev" data-for="' + x.id + '"></div></div>';
+    if (x.state === 'done' || x.state === 'check' || x.state === 'nomatch' || x.state === 'failed') h += '<div style="margin-top:8px"><button class="btn" type="button" data-spev="' + x.id + '">What Whisper heard</button><div class="spev" data-for="' + x.id + '"></div></div>';
     return h + '</div></details>';
   }
   function subPrep(body) {
