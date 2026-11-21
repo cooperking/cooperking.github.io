@@ -3415,16 +3415,36 @@ def make_handler(g):
                 DUPS['p'] = subprocess.Popen([sys.executable, '-u', script, 'go', 'keep=' + ','.join(keep)], stdout=open(os.path.join(home, 'duplicates.log'), 'w'),
                                              stderr=subprocess.STDOUT, cwd=home)
                 DUPS['at'], DUPS['found'] = time.time(), None
+                try:   # (and the kept answer, out of date now)
+                    os.remove(os.path.join(home, 'duplicates-found.json'))
+                except OSError:
+                    pass
                 log('Duplicates: John chose %d to keep' % len(keep))
             running = bool(DUPS.get('p') and DUPS['p'].poll() is None)
+            # (one look at a time, in the background, its answer kept on disk through a restart: each visit to the admin page had started a
+            # look over the whole drive and waited for it; with the Mac busy, they outlasted the page and piled up, nine at once, and the media
+            # server stopped answering: 21 Nov 2026)
+            ff_ = os.path.join(home, 'duplicates-found.json')
             found = DUPS.get('found')
-            if not running and (not found or q.get('fresh') == '1' or time.time() - found[0] > 600):
-                r_ = subprocess.run([sys.executable, script, 'json'], capture_output=True, text=True, timeout=900, cwd=home)
+            if not found:
+                fd_ = load(ff_, None)
+                if isinstance(fd_, dict) and fd_.get('at'):
+                    found = DUPS['found'] = (fd_['at'], fd_.get('r') or {})
+            scan_ = DUPS.get('scan')
+            if scan_ and scan_.poll() is not None:   # (a look just ended: its answer kept)
                 try:
-                    found = (time.time(), json.loads([l for l in (r_.stdout or '').splitlines() if l.startswith('{')][-1]))
-                    DUPS['found'] = found
-                except (IndexError, ValueError):
-                    return self.send_json(500, {'error': 'The Mac mini couldn’t look: ' + (r_.stderr or '').strip()[-200:]})
+                    out_ = open(os.path.join(home, 'duplicates-scan.out'), encoding='utf-8', errors='replace').read()
+                    r_ = json.loads([l for l in out_.splitlines() if l.startswith('{')][-1])
+                    found = DUPS['found'] = (time.time(), r_)
+                    save(ff_, {'at': found[0], 'r': r_})
+                except (OSError, IndexError, ValueError):
+                    pass
+                scan_ = DUPS['scan'] = None
+            scanning = bool(scan_)
+            if not running and not scanning and (not found or q.get('fresh') == '1' or time.time() - found[0] > 600):
+                DUPS['scan'] = subprocess.Popen([sys.executable, script, 'json'], stdout=open(os.path.join(home, 'duplicates-scan.out'), 'w'),
+                                                stderr=subprocess.DEVNULL, cwd=home)
+                scanning = True
             last = ''
             try:   # (what the last setting aside did, for an hour after it, not ever after: John, 20 Nov 2026, "Not sure why it still shows this")
                 lf_ = os.path.join(home, 'duplicates.log')
@@ -3432,7 +3452,7 @@ def make_handler(g):
                     last = open(lf_, encoding='utf-8', errors='replace').read()[-2000:]
             except OSError:
                 pass
-            return self.send_json(200, dict((found or (0, {}))[1], running=running, last=last, at=DUPS.get('at')))
+            return self.send_json(200, dict((found or (0, {}))[1], running=running, last=last, at=DUPS.get('at'), scanning=scanning, looked=int((found or (0,))[0])))
 
         def api_lookkey(self, me, user, q, b):
             """John's only: a key for Claude to look at the Mac mini with (its logs, its folders, what's running), reading only, never

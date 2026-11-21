@@ -2723,6 +2723,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     $('#dupsay').textContent = j.running ? 'Setting them aside…' : '';
     $('#duplog').hidden = !j.last; $('#duplog').textContent = j.last || '';
     clearTimeout(dupT); if (j.running) dupT = setTimeout(function () { dupCall(null, false).then(function (k) { if (!k.running) dupCall(null, true).then(dupPaint); else dupPaint(k); }).catch(function () {}); }, 4000);
+    else if (j.scanning) { if (!j.looked) $('#duphead').textContent = 'Looking for copies…'; dupT = setTimeout(function () { dupCall(null, false).then(dupPaint).catch(function () {}); }, 30000); }   // (the Mac looking, in the background: asked again in half a minute)
   }
   setTimeout(function () { if (GW) dupCall().then(dupPaint).catch(function () {}); }, 2500);
   $('#dupgo').onclick = function () {
