@@ -645,7 +645,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="kicker">Box sets</div>
         <h2>Box sets <em>to finish</em></h2>
         <p class="stat" id="cbnote">From Criterion’s own list of each set; it keeps up as films come in.</p>
-        <div class="state cbexp"><button class="btn" id="cmsheet" type="button">Make the Google Sheet</button><a class="btn" id="cmopen" href="#" target="_blank" rel="noopener" hidden>Open it</a><button class="btn" id="cmcsv" type="button">Download all (CSV)</button><button class="btn" id="cmpick" type="button" disabled>Download chosen (CSV)</button><button class="btn" id="cmclear" type="button" hidden>Clear chosen</button></div>
+        <div class="state cbexp"><button class="btn" id="cmsheet" type="button">Make the Google Sheet</button><a class="btn" id="cmopen" href="#" target="_blank" rel="noopener" hidden>Open it</a><button class="btn" id="cmcsv" type="button">Download all (CSV)</button><button class="btn" id="cmpick" type="button" disabled>Download chosen (CSV)</button><button class="btn" id="cmclear" type="button" hidden>Clear chosen</button><button class="btn" id="cmsto" type="button">Open in Search Tab Opener</button></div>
         <p class="stat" id="cmsay"></p>
         <div class="mlist" id="cbmiss"><p class="stat">Looking…</p></div>
       </section>
@@ -2129,9 +2129,21 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     cbAll('.cbsetpick', box).forEach(function (c) { c.onclick = function (e) { e.stopPropagation(); }; });   // (ticking a set doesn't open or close it)
     cbCount();
   }
-  function cbCsv(rows, name) {
+  function cbText(rows) {
     var R = [['Box set', 'Set spine', 'Film', 'Year', 'Spine']].concat(rows);
-    var csv = R.map(function (r) { return r.map(function (c) { c = String(c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\r\n');
+    return R.map(function (r) { return r.map(function (c) { c = String(c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\r\n');
+  }
+  // (the films chosen, or all of them, opened in John's Search Tab Opener, the list carried in its link: John, 21 Nov 2026, "Can the csv
+  // files open directly in my other site")
+  $('#cmsto').onclick = function () {
+    var all = window.CBR || [], ch = all.filter(function (x) { return CBP[x.k]; }), rows = (ch.length ? ch : all).map(function (x) { return x.r; });
+    if (!rows.length) return toast('The list isn’t here yet');
+    var b64 = btoa(unescape(encodeURIComponent('\ufeff' + cbText(rows))));
+    window.open('https://cooperking.github.io/search-tab-opener/#csv=' + encodeURIComponent('data:text/csv;base64,' + b64), '_blank', 'noopener');
+    $('#cmsay').textContent = rows.length + ' film' + (rows.length === 1 ? '' : 's') + (ch.length ? ' chosen' : '') + ' opened in Search Tab Opener.';
+  };
+  function cbCsv(rows, name) {
+    var csv = cbText(rows);
     var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
     a.download = name + ' ' + new Date().toISOString().slice(0, 10) + '.csv'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
     $('#cmsay').textContent = rows.length + ' film' + (rows.length === 1 ? '' : 's') + ' from ' + new Set(rows.map(function (r) { return r[0]; })).size + ' box sets, downloaded.';
