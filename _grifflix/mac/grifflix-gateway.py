@@ -2027,6 +2027,15 @@ def make_handler(g):
                 if ch == 'replace' and not running:
                     GDRIVE_NOW.set()
                 return self.send_json(200, {'ok': True})
+            if b and b.get('op') == 'cxclear':   # (the Cancelled list cleared: still cancelled, never fetched, only not listed: John, 21 Nov
+                # 2026, "I don't need to see cancelled requests always. Let me clear them")
+                nf_ = os.path.join(home, 'fetch-cancelled-names.json')
+                names_ = load(nf_, {}) or {}
+                for v_ in names_.values():
+                    if isinstance(v_, dict):
+                        v_['hid'] = 1
+                save(nf_, names_)
+                return self.send_json(200, {'ok': True})
             if b and b.get('op') in ('cancel', 'uncancel'):   # (John's: a download he doesn't want, never fetched; the one coming in now stopped
                 # and its part thrown away: John, 17 Nov 2026, "I need to be able to cancel downloads")
                 fp = os.path.join(home, 'fetch-cancelled.json')
@@ -2143,7 +2152,7 @@ def make_handler(g):
                                         'peeked': pk.get('at') or None, 'peeking': bool(PEEK.get('p') and PEEK['p'].poll() is None),
                                         'hold': st.get('hold'),   # (the film it waits on to be repackaged: admin says so, not "nothing has come": 20 Nov 2026)
                                         'upgrades': st.get('upgrades') or [], 'chosen': load(os.path.join(home, 'fetch-upgrades.json'), {}) or {},
-                                        'cancelled': [dict(v, key=k) for k, v in (load(os.path.join(home, 'fetch-cancelled-names.json'), {}) or {}).items()],
+                                        'cancelled': [dict(v, key=k) for k, v in (load(os.path.join(home, 'fetch-cancelled-names.json'), {}) or {}).items() if isinstance(v, dict) and not v.get('hid')],
                                         'first': load(os.path.join(home, 'fetch-first.json'), []) or [], 'names': load(os.path.join(home, 'fetch-names.json'), {}) or {}})
 
         def api_convert(self, me, user, q, b):
