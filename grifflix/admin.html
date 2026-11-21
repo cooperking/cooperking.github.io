@@ -1463,7 +1463,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   (function () {
     var fold = function (x) { return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['’‘`´"“”]/g, '').replace(/&/g, ' and ').replace(/\b(xviii|viii|xiii|xvii|iii|vii|xii|xiv|xvi|xix|ii|iv|vi|ix|xi|xv|xx)\b/g, function (m) { return String({ii: 2, iii: 3, iv: 4, vi: 6, vii: 7, viii: 8, ix: 9, xi: 11, xii: 12, xiii: 13, xiv: 14, xv: 15, xvi: 16, xvii: 17, xviii: 18, xix: 19, xx: 20}[m]); }).replace(/^(the|a|an) /, '').replace(/[^a-z0-9]+/g, ' ').trim(); };
     Promise.all([fetch('/grifflix/data/library.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }), fetch('/grifflix/a24-list.json', { cache: 'no-cache' }).then(function (r) { return r.json(); })]).then(function (r) {
-      var L = r[0], A = r[1], I = L.items || {}, mine = {}, inA24 = {};
+      var L = r[0], A = r[1], I = L.items || {}, mine = {}, inA24 = {}; window.LIBAT = +L.at || 0;
       Object.keys(I).forEach(function (k) { var i = I[k]; if (i.type === 'movie' && !i.extra) (mine[fold(i.name)] = mine[fold(i.name)] || []).push(i); });
       var a24 = Object.keys(I).filter(function (k) { return I[k].type === 'collection' && /^a24$/i.test(I[k].name); })[0];
       ((L.sets || {})[a24] || []).forEach(function (id) { inA24[id] = 1; });
@@ -2146,6 +2146,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     if (f.now) add(f.now.to || f.now.file);
     (f.waiting || []).forEach(function (x) { if (x.extra) return; var nm = NM[x.series ? (x.key || x.file) : x.file]; add(nm ? nm.name + (nm.year ? ' (' + nm.year + ')' : '') : (x.to || x.file)); });
     (f.attorbox || []).forEach(function (x) { add(x.name); });
+    // (and those come since the site's list was last made: downloaded, not yet in it: John, 21 Nov 2026, "recognises Downloads but not what's
+    // done and not yet added to the media library")
+    (f.recent || []).forEach(function (x) { if (x.ok && !/ · extra: /.test(x.to || '') && (!window.LIBAT || (x.at || 0) > window.LIBAT - 900)) add(x.to); });
     return out.filter(function (c) { return c.t; });
   }
   function markComing() {
@@ -2154,7 +2157,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var on = function (el) { var t = el.dataset.t, y = +el.dataset.y || 0; return C.some(function (c) { return c.t === t && (!c.y || !y || Math.abs(c.y - y) <= 1); }); };
     cbAll('#cbmiss .mrow.pk[data-t], #a24miss .mrow[data-t]').forEach(function (el) { var c = on(el); el.hidden = c; if (c) { n++; var cb = el.querySelector('.cbpick'); if (cb) COMING_K[cb.dataset.k] = 1; } });
     cbAll('#cbmiss details.mset').forEach(function (d) { var rows = cbAll('.mrow.pk', d); if (rows.length) d.hidden = rows.every(function (r) { return r.hidden; }); });
-    var el = $('#cmcoming'); el.hidden = !n; el.textContent = n ? n + ' film' + (n === 1 ? '' : 's') + ' on the way (downloading, waiting to, or at TorBox): not listed below.' : '';
+    var el = $('#cmcoming'); el.hidden = !n; el.textContent = n ? n + ' film' + (n === 1 ? '' : 's') + ' on the way or just come (downloading, waiting to, at TorBox, or come in and not yet in the site’s list): not listed below.' : '';
     if (typeof cbCount === 'function') cbCount();
   }
   var cbAll = function (q, el) { return [].slice.call((el || document).querySelectorAll(q)); };
