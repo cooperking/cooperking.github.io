@@ -16,7 +16,7 @@ none. Calendars, lists, hearts and where people stopped follow the kept copy.
   python3 ~/Grifflix/duplicates.py json   the same as JSON, for the admin page's Duplicates tab
   python3 ~/Grifflix/duplicates.py go keep=<id>,<id>   only those films, each keeping the copy chosen (from the admin page)
 """
-import collections, difflib, json, os, re, shutil, sys, unicodedata, urllib.parse, urllib.request
+import collections, difflib, json, os, re, shutil, sys, time, unicodedata, urllib.parse, urllib.request
 
 GO = 'go' in sys.argv[1:]
 JSON = 'json' in sys.argv[1:]
@@ -100,7 +100,23 @@ def aside(path):   # a file (and its own subtitles and pictures, which share its
     os.makedirs(dest, exist_ok=True)
     for n in os.listdir(folder):
         if n == os.path.basename(path) or (n.startswith(base + '.') or n.startswith(base + '-')) and not n.lower().endswith(VIDEO):
-            shutil.move(os.path.join(folder, n), os.path.join(dest, n))
+            mv(os.path.join(folder, n), os.path.join(dest, n))
+
+
+def mv(a, b):   # (a file gone already is no fault: the drive's hidden "._" companions go by themselves with their own file: Shake! Otis at
+    # Monterey left in place, 21 Nov 2026)
+    try:
+        shutil.move(a, b)
+    except FileNotFoundError:
+        pass
+
+
+def note(t):   # (every run kept, not only the last: Demon Pond set aside on 20 Nov with no record left of what was kept: John, 21 Nov 2026)
+    try:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'duplicates-history.log'), 'a', encoding='utf-8') as fh:
+            fh.write(time.strftime('%Y-%m-%d %H:%M  ') + t + '\n')
+    except OSError:
+        pass
 
 
 def find():
@@ -174,8 +190,15 @@ def main():
         print('(Collections not followed: %s)' % e)
     for v in same:
         keep = v[0]
+        if not os.path.exists(keep['path']):   # (never the last copy: the one kept has to be there)
+            print('Not set aside: the copy to keep of %s isn’t there (%s)' % (keep['name'], keep['path']))
+            note('NOT set aside (kept copy missing): %s' % keep['path'])
+            for d in v[1:]:
+                moves.pop(d['id'], None)
+            continue
         for d in v[1:]:
             try:
+                note('kept %s | set aside %s' % (os.path.relpath(keep['path'], MOVIES), os.path.relpath(d['path'], MOVIES)))
                 aside(d['path'])
                 folder = os.path.join(MOVIES, d['folder'])
                 if d['folder'] != keep['folder'] and os.path.isdir(folder) and not has_film(folder):
@@ -187,8 +210,11 @@ def main():
                     dest = os.path.join(ASIDE, d['folder'])
                     os.makedirs(dest, exist_ok=True)
                     for n in os.listdir(folder):
-                        shutil.move(os.path.join(folder, n), os.path.join(dest, n))
-                    os.rmdir(folder)
+                        mv(os.path.join(folder, n), os.path.join(dest, n))
+                    try:
+                        os.rmdir(folder)
+                    except OSError:
+                        pass
                 print('Set aside: %s' % os.path.relpath(d['path'], MOVIES))
             except Exception as e:
                 print('Couldn’t set aside %s: %s' % (d['path'], e))
