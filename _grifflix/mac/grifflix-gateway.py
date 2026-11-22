@@ -1549,7 +1549,12 @@ def make_handler(g):
                                     # Axe: Mangrove, Lovers Rock…): in that set, and its films all held: John, 22 Nov 2026, "hasn't been added")
                                     y_ = i.get('ProductionYear') or 0
                                     sn_ = fold(re.sub(r'\s*\((19|20)\d\d\)\s*$', '', i.get('Name') or ''))
-                                    d_, c_, t_, s_, sl0_ = next((CT[(sn_, y_ + dy)] for dy in (0, 1, -1) if (sn_, y_ + dy) in CT), None) or ('', '', [], [], '')
+                                    # (or by its folder's name, where TMDB names it otherwise: "Agnès Varda: From Here to There" is Criterion's Agnès
+                                    # de ci de là Varda, once it had its IMDb number: John, 22 Nov 2026)
+                                    sf_ = fold(re.sub(r'\s*\((19|20)\d\d\)\s*$', '', os.path.basename((i.get('Path') or '').rstrip('/'))))
+                                    d_, c_, t_, s_, sl0_ = next((CT[(n_, y_ + dy)] for n_ in (sn_, sf_) for dy in (0, 1, -1) if (n_, y_ + dy) in CT), None) or ('', '', [], [], '')
+                                    if not (d_ or t_) and sf_ in SNAME:
+                                        sn_ = sf_
                                     if not (d_ or t_) and sn_ in SNAME:
                                         bx_ = SNAME[sn_]
                                         mem_ = next((v_ for k_, v_ in (ctj_.get('sets') or {}).items() if fold(k_) == sn_), [])
@@ -8322,7 +8327,7 @@ def serve():
     threading.Thread(target=lambda: (time.sleep(60), subprep_scan(), subs_exact_all(), subs_namecheck()), daemon=True).start()
     threading.Thread(target=lambda: (time.sleep(240), posters_on()), daemon=True).start()   # (any film whose poster's in its folder but not on it)
     threading.Thread(target=lambda: (time.sleep(90), ids_given()), daemon=True).start()
-    mk2_ = os.path.expanduser('~/Grifflix/tv-criterion-2.done')
+    mk2_ = os.path.expanduser('~/Grifflix/tv-criterion-3.done')
     if not os.path.exists(mk2_):   # (once: the site updated, for the TV series now in Criterion's box sets: 22 Nov 2026)
         try:
             open(mk2_, 'w').write(str(int(time.time())))
