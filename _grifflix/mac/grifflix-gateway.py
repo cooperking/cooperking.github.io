@@ -77,6 +77,16 @@ def log(*a):
     print(time.strftime('%Y-%m-%d %H:%M:%S'), *a, flush=True)
 
 
+def record(what, **kw):
+    """Kept for good, one line each, in ~/Grifflix/record.jsonl: every change made to John's films, subtitles and their details, what
+    it was and why (John, 22 Nov 2026, "keep a log of everything"). Never stops what it's recording."""
+    try:
+        with open(os.path.expanduser('~/Grifflix/record.jsonl'), 'a', encoding='utf-8') as f_:
+            f_.write(json.dumps(dict({'at': time.strftime('%Y-%m-%d %H:%M:%S'), 'what': what}, **kw), ensure_ascii=False) + '\n')
+    except Exception:
+        pass
+
+
 LOOKED = {}
 DUPS = {}   # (duplicates.py, from the admin page)
 SYN = {}   # (Criterion's synopses being given to their films, in the background: how far it's got)
@@ -969,12 +979,15 @@ def make_handler(g):
                                          samples=[[float(x[0]), int(x[1] or 0), float(x[2])] for x in (body.get('samples') or []) if isinstance(x, list) and len(x) >= 3][:12],
                                          sure=bool(body.get('sure')))
                                 log('Subtitles made ready on John’s Mac: %s: %s (%s lines matched)%s' % (e.get('name'), e['note'], e['n'], '' if body.get('sure') else ': to check'))
+                                record('subtitles saved', film=e.get('name'), id=iid, file=out, how='timed by Whisper on John’s Mac: ' + e['note'], chose=e.get('chose'),
+                                       lines_matched=e['n'], sure=bool(body.get('sure')), tried=e.get('tried'))
                             except Exception as ex:
                                 e.update(state='failed', note=('couldn’t be saved: %s' % ex)[:200], at=int(time.time()))
                         else:
                             e.update(state='nomatch' if 'matched' in str(body.get('error') or '') else 'failed', note=str(body.get('error') or 'it didn’t work')[:200], at=int(time.time()),
                                      tried=[[str(x[0])[:160], int(x[1] or 0)] for x in (body.get('tried') or []) if isinstance(x, list) and len(x) >= 2][:12])
                             log('Subtitles not made ready for %s: %s' % (e.get('name'), e['note']))
+                            record('subtitles not made', film=e.get('name'), id=iid, why=e['note'], tried=body.get('tried'))
                         save(SUBPREP, P)
                         return self.send_json(200, {'ok': True})
                     if P.get('_paused') or q.get('home') != '1' or not self.subs_ready():
@@ -1024,6 +1037,8 @@ def make_handler(g):
                                     e.update(state='done', note='made for this very file (OpenSubtitles, by its fingerprint): its timing as it is',
                                              chose=ex_[0].get('name') or '', file=out_, at=int(now_), sure=True, n=len(cues_), how='exact')
                                     log('Subtitles made for the very file: %s (%d lines)' % (e.get('name'), len(cues_)))
+                                    record('subtitles saved', film=e.get('name'), id=iid, file=out_, how='made for this very file (OpenSubtitles fingerprint)',
+                                           opensubtitles_file=ex_[0].get('file_id'), release=ex_[0].get('name'), lines=len(cues_))
                                     save(SUBPREP, P)
                                     continue
                             except Exception as ex:
@@ -2763,6 +2778,7 @@ def make_handler(g):
                 g.forget()
                 g.publish_soon = time.time() + 60
                 log('AFI Catalog pages: %d films, by John’s browser' % got)
+                record('AFI pages linked', films=got, by='John’s browser (the bookmark)')
             adf = os.path.expanduser('~/Grifflix/afi-details.json')
             AD = load(adf, {}) or {}
             if b and isinstance(b.get('det'), dict):   # (each film's AFI page as read, and what's sorted from it)
@@ -2776,6 +2792,7 @@ def make_handler(g):
                 g.forget()
                 g.publish_soon = time.time() + 120
                 log('AFI Catalog details: %d films, by John’s browser' % n_)
+                record('AFI details read', films=n_, by='John’s browser (the bookmark)')
             lid = (g.st.get('libraries') or {}).get('movies')
             out, start, linked, need, pri = [], 0, 0, [], {}
             while lid:
@@ -2911,7 +2928,9 @@ def make_handler(g):
                         if f_.endswith('.srt') and '.Grifflix.' in os.path.basename(f_) and os.path.exists(f_):
                             try:
                                 os.makedirs(dest_, exist_ok=True)
-                                shutil.move(f_, os.path.join(dest_, time.strftime('%Y%m%d-%H%M ') + os.path.basename(f_)))
+                                to_ = os.path.join(dest_, time.strftime('%Y%m%d-%H%M ') + os.path.basename(f_))
+                                shutil.move(f_, to_)
+                                record('subtitles set aside', film=v_.get('name'), id=k_, moved_from=f_, moved_to=to_, why='John asked for all to be done again')
                                 try:
                                     g.jf.call('POST', '/Items/%s/Refresh' % k_, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
                                 except Exception:
@@ -5782,6 +5801,7 @@ def exact_sub(g, cl, e, iid, path):
         e.update(state='done', note='made for this very file (OpenSubtitles, by its fingerprint): its timing as it is', chose='OpenSubtitles file %s' % fid,
                  file=out, at=int(time.time()), sure=True, n=len(cues), how='exact')
         log('Subtitles made for the very file: %s (%d lines)' % (e.get('name'), len(cues)))
+        record('subtitles saved', film=e.get('name'), id=iid, file=out, how='made for this very file (OpenSubtitles fingerprint)', opensubtitles_file=fid, lines=len(cues))
         return True
     return False
 
@@ -6003,6 +6023,7 @@ def subprep_scan_():
             continue
         if not e:
             P[iid] = {'name': f.get('Name'), 'year': f.get('ProductionYear') or '', 'lang': al, 'state': 'waiting', 'order': len(P), 'at': int(time.time())}
+            record('subtitles to make', film=f.get('Name'), id=iid, lang=al, why='in a language not English, with no English subtitles')
             if ep_:   # (an episode: found on OpenSubtitles by its series and its number)
                 P[iid].update(name='%s S%d E%d' % (f.get('SeriesName') or '', f.get('ParentIndexNumber') or 0, f.get('IndexNumber') or 0), kind='episode',
                               series_tmdb=stmdb.get(f.get('SeriesId'), ''), season=f.get('ParentIndexNumber'), episode=f.get('IndexNumber'), series=f.get('SeriesName') or '')
@@ -6013,6 +6034,10 @@ def subprep_scan_():
     if asked:
         save(lf, TL)
     save(os.path.expanduser('~/Grifflix/foreign-films.json'), dict(tally, at=int(time.time()), films=len(films)))
+    old_ = load(os.path.expanduser('~/Grifflix/english-first.json'), {}) or {}
+    for k_, v_ in efix.items():
+        if k_ not in old_:
+            record('to be made English first', film=v_.get('name'), id=k_, path=v_.get('path'), first_soundtrack_was=v_.get('was'))
     save(os.path.expanduser('~/Grifflix/english-first.json'), efix)   # (for the converter: English made the first soundtrack)   # (how many in a language not English, and with which English subtitles)
     if added:
         log('Subtitles to make ready: %d more foreign-language films with no English subtitles' % added)
