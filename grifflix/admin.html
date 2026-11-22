@@ -1129,11 +1129,16 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   }
   // (the right subtitles given by John: from OpenSubtitles' list for the film, or a file of his own; used as they are, or timed to the film:
   // John, 22 Nov 2026, "I also need a way to give the correct subtitles to work with in the admin")
+  var SPL2 = {"rus": "ru", "fre": "fr", "fra": "fr", "ita": "it", "spa": "es", "ger": "de", "deu": "de", "jpn": "ja", "chi": "zh", "zho": "zh", "swe": "sv", "por": "pt", "pol": "pl", "cze": "cs", "ces": "cs", "gre": "el", "ell": "el", "kor": "ko", "dut": "nl", "nld": "nl", "dan": "da", "nor": "nb", "nob": "nb", "fin": "fi", "hun": "hu", "tur": "tr", "ara": "ar", "heb": "he", "hin": "hi", "rum": "ro", "ron": "ro", "per": "fa", "fas": "fa", "ben": "bn", "bul": "bg", "ukr": "uk", "srp": "sr", "hrv": "hr", "tha": "th", "vie": "vi", "ind": "id"};
+  var SPLANGS = [['ru','Russian'],['fr','French'],['it','Italian'],['es','Spanish'],['de','German'],['ja','Japanese'],['zh','Chinese'],['sv','Swedish'],['pt','Portuguese'],['pl','Polish'],['cs','Czech'],['el','Greek'],['ko','Korean'],['nl','Dutch'],['da','Danish'],['nb','Norwegian'],['fi','Finnish'],['hu','Hungarian'],['tr','Turkish'],['ar','Arabic'],['he','Hebrew'],['hi','Hindi'],['ro','Romanian'],['fa','Persian'],['bn','Bengali'],['bg','Bulgarian'],['uk','Ukrainian'],['sr','Serbian'],['hr','Croatian'],['th','Thai'],['vi','Vietnamese'],['id','Indonesian']];
   function spGiveBox(x) {
     return '<details class="spgive" style="margin:10px 0 0"><summary style="cursor:pointer;font-size:13px">Give the subtitles to use</summary>' +
       '<p class="spnote">Choose the right English subtitles from OpenSubtitles, or upload a file of your own (.srt). Then use them as they are, or have them timed to the film: by the subtitle made for this copy if there is one, otherwise by Whisper on your Mac with these alone.</p>' +
       '<div class="spact"><button class="btn" type="button" data-spsearch="' + x.id + '">List those on OpenSubtitles</button><label class="btn" style="cursor:pointer">Upload a file<input type="file" accept=".srt,.txt,text/plain" data-spfile="' + x.id + '" hidden></label></div>' +
-      '<p class="spnote" data-gsay="' + x.id + '"></p><ul class="changes" data-gfor="' + x.id + '" style="margin:4px 0 0"></ul></details>';
+      '<p class="spnote" data-gsay="' + x.id + '"></p><ul class="changes" data-gfor="' + x.id + '" style="margin:4px 0 0"></ul>' +
+      '<p class="spnote" style="margin-top:14px"><b>Or a subtitle in another language</b> (best of all one made for your copy): the English lined up by it, and it translated into English on your Mac and compared; the translation kept to see beside the dialogue and use if it’s good enough.</p>' +
+      '<div class="spact"><select data-glang="' + x.id + '" aria-label="Its language">' + SPLANGS.map(function (l) { return '<option value="' + l[0] + '"' + (l[0] === (SPL2[x.lang] || x.lang) ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') + '</select>' +
+      '<label class="btn" style="cursor:pointer">Upload it<input type="file" accept=".srt,.txt,text/plain" data-spref="' + x.id + '" hidden></label></div></details>';
   }
   function spGiveWire(x, bd) {
     var list = bd.querySelector('[data-gfor="' + x.id + '"]'), say = bd.querySelector('[data-gsay="' + x.id + '"]'); if (!list) return;
@@ -1157,6 +1162,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         Array.prototype.forEach.call(list.querySelectorAll('[data-gk]'), function (li) { var r = R[+li.dataset.gk]; wireTwo(li, { file_id: r.file_id, name: r.name }); });
       }).catch(function (e) { say.textContent = 'Couldn’t ask: ' + (e.message || e); });
     };
+    var rfi = bd.querySelector('[data-spref]'); if (rfi) rfi.onchange = function () { var f = rfi.files && rfi.files[0]; if (!f) return;
+      if (f.size > 800000) { say.textContent = 'That file is too big for subtitles.'; return; }
+      var lg = bd.querySelector('[data-glang]').value;
+      f.text().then(function (t) { say.textContent = 'Saving…';
+        fetch(GW + '/api/subprep', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'giveref', id: x.id, lang: lg, srt: t, name: f.name }) })
+          .then(function (r) { return r.json().then(function (j) { if (!r.ok || j.error) throw new Error(j.error || r.status); return j; }); })
+          .then(function () { toast('Given: tried next, and translated on your Mac'); subPrep(); })
+          .catch(function (e) { say.textContent = 'Not saved: ' + (e.message || e); }); }); };
     var fi = bd.querySelector('[data-spfile]'); if (fi) fi.onchange = function () { var f = fi.files && fi.files[0]; if (!f) return;
       if (f.size > 800000) { say.textContent = 'That file is too big for subtitles.'; return; }
       f.text().then(function (t) { list.innerHTML = '<li><b>' + esc(f.name) + '</b><span class="when">your file · ' + (t.match(/-->/g) || []).length + ' lines</span>' + two() + '</li>'; say.textContent = '';
@@ -1262,6 +1275,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           }
           if (x.how === 'verified-moved') return '✓ Its subtitles from before were out, now put right: ' + (moved || 'retimed') + '. The old file set aside.';
           if (x.k === 'todo') {
+            if (x.ref_given) return (x.state === 'given' ? '▶ On your Mac now: translating the ' + LNAME(x.ref_lang) + ' subtitle you gave, and trying it' + (x.step ? ': ' + x.step : '') : '… The ' + LNAME(x.ref_lang) + ' subtitle you gave (' + x.ref_given + '), waiting to be tried and translated on your Mac') + '.' + (x.prev && x.prev.state ? ' What it has now stays meanwhile.' : '');
             if (x.givenfile) return (x.state === 'given' ? '▶ On your Mac now: timing the subtitles you gave' + (x.step ? ': ' + x.step : '') : '… The subtitles you gave, waiting to be timed by Whisper on your Mac') + '.';
             if (x.old_vfile && !x.ref_only) return (x.state === 'given' ? '▶ On your Mac now' + (x.step ? ': ' + x.step : '') + '. ' : '… ') + 'Its subtitles from before didn’t fit what’s said: others being looked for. The old ones stay until then.';
             if (x.ref_only) return '⟳ Being looked at again on your Mac: a ' + LNAME(x.ref_lang) + ' subtitle made for this copy, translated and compared. Its subtitles timed by Whisper stay meanwhile' + (x.step ? '. Now: ' + x.step : '') + '.';
