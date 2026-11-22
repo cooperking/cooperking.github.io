@@ -203,6 +203,58 @@ def fit(pairs, ratios=RATIOS, width=1.2):
 PROG = {}   # (where to say how it's going: set by main)
 
 
+TR_RUN = r'''
+import sys, json, subprocess
+src, inp, out = sys.argv[1], sys.argv[2], sys.argv[3]
+try:
+    import argostranslate.package, argostranslate.translate
+except ImportError:
+    subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', 'argostranslate'], check=True)
+    import argostranslate.package, argostranslate.translate
+if not any(p.from_code == src and p.to_code == 'en' for p in argostranslate.package.get_installed_packages()):
+    argostranslate.package.update_package_index()
+    pk = next((p for p in argostranslate.package.get_available_packages() if p.from_code == src and p.to_code == 'en'), None)
+    if not pk:
+        sys.exit(3)
+    argostranslate.package.install_from_path(pk.download())
+lines = json.load(open(inp))
+tr = argostranslate.translate.get_translation_from_codes(src, 'en')
+json.dump([tr.translate(l) if l.strip() else '' for l in lines], open(out, 'w'))
+'''
+
+
+def translated_ref(job, work, dur):
+    """The subtitle in another language made for this very copy (job['ref']), its lines put into English here (Argos Translate, offline,
+    in Whisper's own Python, put in the first time), as if heard: four parts of it, each a quarter of the film. None if there's none, or it
+    can't be translated."""
+    ref = job.get('ref') or {}
+    cues = parse_srt(ref.get('srt') or '')
+    lang = re.split(r'[-_]', str(ref.get('lang') or '').lower())[0]
+    lang = {'ze': 'zh', 'pb': 'pt', 'cn': 'zh'}.get(lang, lang)
+    if len(cues) < 50 or not lang or lang == 'en' or not os.access(FW_PY, os.X_OK):
+        return None
+    prog('Translating the %s subtitle made for this copy (%d lines), to compare with the English before listening' % (lang, len(cues)))
+    texts = [re.sub(r'<[^>]+>|\{[^}]+\}', '', t).replace('\n', ' ').strip() for _, _, t in cues]
+    inp, out = os.path.join(work, 'tr-in.json'), os.path.join(work, 'tr-out.json')
+    json.dump(texts, open(inp, 'w'))
+    try:
+        subprocess.run([FW_PY, '-c', TR_RUN, lang, inp, out], check=True, timeout=5400, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        en = json.load(open(out))
+    except Exception:
+        prog('Couldn’t translate the %s subtitle here: listening with Whisper instead' % lang)
+        return None
+    segs = [(a, e, words(t), t) for (a, e, _), t in zip(cues, en) if t and words(t)]
+    if len(segs) < 40:
+        return None
+    end = max(dur or 0, segs[-1][1])
+    parts = []
+    for q in range(4):
+        lo, hi = end * q / 4, end * (q + 1) / 4
+        ps = [x for x in segs if lo <= x[0] < hi]
+        parts.append((lo, ps[:250]))
+    return parts
+
+
 def prog(step):
     """What it's doing now, told to the Mac mini for the admin page (John, 21 Nov 2026, "I want more details than that"); never stops it."""
     print(step, flush=True)
@@ -223,124 +275,144 @@ def prepare(job, ff, wcli, work):
         starts = [0.0]
     else:
         starts = [0.0] + [max(0, min(dur - SAMPLE, dur * f - SAMPLE / 2)) for f in (.33, .62, .9)]   # (the opening too: versions often differ there)
-    heard = []
-    for k_, t0 in enumerate(starts):
-        prog('Listening with Whisper: part %d of %d (from %d:%02d)' % (k_ + 1, len(starts), int(t0 // 3600), int(t0 % 3600 // 60)))
-        segs = transcribe(ff, wcli, film, t0, SAMPLE, job.get('translate', True), work, job.get('lang'))
-        # (a part with next to nothing said in it (titles, music, a silent stretch): another part listened to in its place, the six minutes after
-        # it, then before it: John, 22 Nov 2026, "if a part checked has no text at all, choose another part")
-        for t1 in ([min(dur - SAMPLE, t0 + SAMPLE), max(0, t0 - SAMPLE)] if dur >= 600 else []):
-            if len(segs) >= 8:
-                break
-            if any(abs(t1 - h_[0]) < SAMPLE for h_ in heard) or abs(t1 - t0) < 1:
-                continue
-            prog('Part %d had %d line%s said: listening from %d:%02d instead' % (k_ + 1, len(segs), '' if len(segs) == 1 else 's', int(t1 // 3600), int(t1 % 3600 // 60)))
-            s2 = transcribe(ff, wcli, film, t1, SAMPLE, job.get('translate', True), work, job.get('lang'))
-            if len(s2) > len(segs):
-                t0, segs = t1, s2
-        heard.append((t0, segs))
-    prog('Matching %d subtitle file%s to what was heard (%d lines heard)' % (len(job.get('cands') or []), '' if len(job.get('cands') or []) == 1 else 's', sum(len(s_) for _, s_ in heard)))
-    results, cues_all = [], []
-    def judge(cues, cand_i, cand, ratios):   # (one subtitle at the given speeds: its one timing for the whole film, and whether every part agrees)
-        per = [(t0, matches(segs, cues)) for t0, segs in heard]
-        allp = [p for _, ps in per for p in ps]
-        n, r, b, miss = fit(allp, ratios)
-        inl = [(f, c) for f, c, _ in allp if abs(f - (r * c + b)) <= 2.0]   # (lines up to 2 s out too: a slight drift, The Seventh Seal's 1.3 s, fine-tuned away)
-        if len(inl) >= 8:   # (the speed and offset fine-tuned on the lines that agree: a film a fraction faster drifts a second over its length)
-            mc = sum(c for _, c in inl) / len(inl); mf = sum(f for f, _ in inl) / len(inl)
-            vc = sum((c - mc) ** 2 for _, c in inl)
-            if vc > 0:
-                r2 = sum((c - mc) * (f - mf) for f, c in inl) / vc
-                if abs(r2 / r - 1) < .003:
-                    r, b = r2, mf - r2 * mc
-                    res_ = sorted(abs(f - (r * c + b)) for f, c, _ in allp)
-                    n = sum(1 for x in res_ if x <= 1.0)
-                    miss = sorted(abs(f - (r * c + b)) for f, c in inl)[len(inl) // 2]
-        # (then each heard line against only the subtitle lines at that point of the film by this timing, not its likeliest anywhere: a
-        # phrase said twice in a film matched where it's said the other time, and the agreeing ones went uncounted: Wild Strawberries,
-        # John, 21 Nov 2026, "it's matching to the wrong parts of the text". The way WhisperTimeSync works: the two texts side by side, in order)
-        wins, n = [], 0   # (each part: its lines that agree with the whole film's timing, how far out, how many heard, and another timing it prefers)
-        for t0, segs in heard:
-            ok = [abs(m_[0] - m_[4]) for m_ in (here(sg, cues, r, b) for sg in segs) if m_ and m_[5]]
-            # (whether this part's lines agree better at some other timing: a different cut there. Its lines' likeliest subtitle lines anywhere,
-            # and the most of them at any one timing)
-            offs = sorted(f - r * c for f, c, _ in matches(segs, cues))
-            alt, j_ = (0, 0.0), 0
-            for i_ in range(len(offs)):
-                while offs[i_] - offs[j_] > 1.2:
-                    j_ += 1
-                if i_ - j_ + 1 > alt[0]:
-                    alt = (i_ - j_ + 1, offs[(i_ + j_) // 2])
-            other = alt[0] >= 4 and abs(alt[1] - b) > 2 and alt[0] > len(ok)
-            wins.append((t0, len(ok), round(sorted(ok)[len(ok) // 2], 2) if ok else 99, len(segs), round(alt[1] - b, 1) if other else None))
-            n += len(ok)
-        # (one timing for the whole film, enough of its lines agreeing in at least two parts, twelve or more in all, and no part agreeing better
-        # at another timing (a different cut), nor a part with plenty said and none of it agreeing. Not every part needing three: a film's
-        # opening minutes are often titles and music, ten lines or so heard (The 400 Blows, 80 lines agreeing, and A Room in Town, 89, were turned
-        # down for one or two in the opening): John, 22 Nov 2026, "rejecting where there are clear matches")
-        fits = n >= 12 and sum(1 for w in wins if w[1] >= 3) >= min(2, len(wins)) and not any(w[4] is not None for w in wins) and \
-            not any(w[3] >= 25 and w[1] < max(3, .1 * w[3]) for w in wins)   # (a part with plenty heard: a tenth of it agreeing at least, as
-            # the right subtitle's do even when Whisper's translation is loose (Menashe, Yiddish, an eighth); at a wrong speed, a twentieth)
-        sure = fits and n >= 12 and miss <= .6
-        moved = [[r * a + b, r * e + b, t] for a, e, t in cues]
-        how = 'moved %+.1f s%s' % (b, '' if abs(r - 1) < .00005 else ', at %.4fx speed' % r)
-        return {'_ci': cand_i, '_r': r, '_b': b, 'fits': bool(fits), 'exact': abs(r - 1) < .003, 'name': cand.get('name') or '', 'n': n, 'miss': round(miss, 2), 'sure': bool(sure), 'how': how, 'srt': write_srt(moved),
-                'samples': [[round(w[0]), w[1], w[2], w[3], w[4]] for w in wins]}
+    def listen():
+        heard = []
+        for k_, t0 in enumerate(starts):
+            prog('Listening with Whisper: part %d of %d (from %d:%02d)' % (k_ + 1, len(starts), int(t0 // 3600), int(t0 % 3600 // 60)))
+            segs = transcribe(ff, wcli, film, t0, SAMPLE, job.get('translate', True), work, job.get('lang'))
+            # (a part with next to nothing said in it (titles, music, a silent stretch): another part listened to in its place, the six minutes after
+            # it, then before it: John, 22 Nov 2026, "if a part checked has no text at all, choose another part")
+            for t1 in ([min(dur - SAMPLE, t0 + SAMPLE), max(0, t0 - SAMPLE)] if dur >= 600 else []):
+                if len(segs) >= 8:
+                    break
+                if any(abs(t1 - h_[0]) < SAMPLE for h_ in heard) or abs(t1 - t0) < 1:
+                    continue
+                prog('Part %d had %d line%s said: listening from %d:%02d instead' % (k_ + 1, len(segs), '' if len(segs) == 1 else 's', int(t1 // 3600), int(t1 % 3600 // 60)))
+                s2 = transcribe(ff, wcli, film, t1, SAMPLE, job.get('translate', True), work, job.get('lang'))
+                if len(s2) > len(segs):
+                    t0, segs = t1, s2
+            heard.append((t0, segs))
+        return heard
 
-    # (each subtitle first as it is, at its own speed: the right one fits with only an offset. Only if none of them, nor the next ones fetched
-    # one at a time, fits so, the best fitted by a change of speed (made for another copy): John, 21 Nov 2026, "before retiming for frame rate,
-    # you need to go try and find the right sub. Better to get the right one exactly before fixing")
-    pool = list(job.get('cands') or [])
-    more = list(job.get('more') or [])
-    k = 0
-    while k < len(pool):
-        cand = pool[k]
-        cues = parse_srt(cand.get('srt') or '')
-        cues_all.append(cues)
-        k += 1
-        if len(cues) < 20:
-            continue
-        ex_ = judge(cues, len(cues_all) - 1, cand, [1.0])
-        if ex_['fits']:
-            results.append(ex_)
-            if ex_['sure']:
-                break   # (found: this one, as it is)
-        else:
-            results.append(judge(cues, len(cues_all) - 1, cand, RATIOS))
-        if k >= len(pool) and more and not any(x['fits'] and x['exact'] for x in results):
-            nx = more.pop(0)
-            prog('None fits exactly yet: trying another subtitle (%s)' % (nx.get('name') or nx.get('file_id')))
-            try:
-                req = urllib.request.Request(PROG['base'] + '/macagent/subfile?file=%s' % nx['file_id'], headers={'User-Agent': UA, 'Authorization': 'Bearer ' + PROG['key']})
-                srt = json.loads(urllib.request.urlopen(req, timeout=120).read() or b'{}').get('srt') or ''
-                if srt:
-                    pool.append({'name': nx.get('name') or '', 'srt': srt})
-            except Exception as e_:
-                prog('Couldn’t get another subtitle: %s' % str(e_)[:100])
-                more = []
-    results.sort(key=lambda x: (x['fits'], x['exact'], x['sure'], x['n'], -x['miss']), reverse=True)
-    # (what was heard and matched, for the admin page: John, 21 Nov 2026, "I should be able to see what whisper took as the timing, the
-    # translation, the matching lines"; and for each of the likeliest three, to compare them line by line: John, 22 Nov 2026, "I need a good
-    # way to compare dialogue in a table for these reject or accepts")
-    for best in results[:3]:
-        cues = cues_all[best['_ci']]
-        ev = []
-        for t0, segs in heard:
-            o_ = best['_b']
-            rows = []
-            for sg in segs[:60]:   # (each heard line beside the subtitle line at that same point by the timing chosen: the one it matches, or
-                # else the one on screen then, marked not matching)
-                row = [round(sg[0], 1), sg[3].strip()[:160]]
-                m_ = here(sg, cues, best['_r'], o_, show=True)
-                if m_:
-                    row += [round(m_[1], 1), re.sub(r'<[^>]+>', '', m_[2]).replace('\n', ' ').strip()[:160], round(m_[4], 1), bool(m_[5])]
-                rows.append(row)
-            ev.append({'from': round(t0), 'rows': rows})
-        best['evidence'] = ev
-    for x in results:
-        for k in ('_ci', '_r', '_b'):
-            x.pop(k, None)
-    return results
+    def evaluate():
+        prog('Matching %d subtitle file%s to what was heard (%d lines heard)' % (len(job.get('cands') or []), '' if len(job.get('cands') or []) == 1 else 's', sum(len(s_) for _, s_ in heard)))
+        results, cues_all = [], []
+        def judge(cues, cand_i, cand, ratios):   # (one subtitle at the given speeds: its one timing for the whole film, and whether every part agrees)
+            per = [(t0, matches(segs, cues)) for t0, segs in heard]
+            allp = [p for _, ps in per for p in ps]
+            n, r, b, miss = fit(allp, ratios)
+            inl = [(f, c) for f, c, _ in allp if abs(f - (r * c + b)) <= 2.0]   # (lines up to 2 s out too: a slight drift, The Seventh Seal's 1.3 s, fine-tuned away)
+            if len(inl) >= 8:   # (the speed and offset fine-tuned on the lines that agree: a film a fraction faster drifts a second over its length)
+                mc = sum(c for _, c in inl) / len(inl); mf = sum(f for f, _ in inl) / len(inl)
+                vc = sum((c - mc) ** 2 for _, c in inl)
+                if vc > 0:
+                    r2 = sum((c - mc) * (f - mf) for f, c in inl) / vc
+                    if abs(r2 / r - 1) < .003:
+                        r, b = r2, mf - r2 * mc
+                        res_ = sorted(abs(f - (r * c + b)) for f, c, _ in allp)
+                        n = sum(1 for x in res_ if x <= 1.0)
+                        miss = sorted(abs(f - (r * c + b)) for f, c in inl)[len(inl) // 2]
+            # (then each heard line against only the subtitle lines at that point of the film by this timing, not its likeliest anywhere: a
+            # phrase said twice in a film matched where it's said the other time, and the agreeing ones went uncounted: Wild Strawberries,
+            # John, 21 Nov 2026, "it's matching to the wrong parts of the text". The way WhisperTimeSync works: the two texts side by side, in order)
+            wins, n = [], 0   # (each part: its lines that agree with the whole film's timing, how far out, how many heard, and another timing it prefers)
+            for t0, segs in heard:
+                ok = [abs(m_[0] - m_[4]) for m_ in (here(sg, cues, r, b) for sg in segs) if m_ and m_[5]]
+                # (whether this part's lines agree better at some other timing: a different cut there. Its lines' likeliest subtitle lines anywhere,
+                # and the most of them at any one timing)
+                offs = sorted(f - r * c for f, c, _ in matches(segs, cues))
+                alt, j_ = (0, 0.0), 0
+                for i_ in range(len(offs)):
+                    while offs[i_] - offs[j_] > 1.2:
+                        j_ += 1
+                    if i_ - j_ + 1 > alt[0]:
+                        alt = (i_ - j_ + 1, offs[(i_ + j_) // 2])
+                other = alt[0] >= 4 and abs(alt[1] - b) > 2 and alt[0] > len(ok)
+                wins.append((t0, len(ok), round(sorted(ok)[len(ok) // 2], 2) if ok else 99, len(segs), round(alt[1] - b, 1) if other else None))
+                n += len(ok)
+            # (one timing for the whole film, enough of its lines agreeing in at least two parts, twelve or more in all, and no part agreeing better
+            # at another timing (a different cut), nor a part with plenty said and none of it agreeing. Not every part needing three: a film's
+            # opening minutes are often titles and music, ten lines or so heard (The 400 Blows, 80 lines agreeing, and A Room in Town, 89, were turned
+            # down for one or two in the opening): John, 22 Nov 2026, "rejecting where there are clear matches")
+            fits = n >= 12 and sum(1 for w in wins if w[1] >= 3) >= min(2, len(wins)) and not any(w[4] is not None for w in wins) and \
+                not any(w[3] >= 25 and w[1] < max(3, .1 * w[3]) for w in wins)   # (a part with plenty heard: a tenth of it agreeing at least, as
+                # the right subtitle's do even when Whisper's translation is loose (Menashe, Yiddish, an eighth); at a wrong speed, a twentieth)
+            sure = fits and n >= 12 and miss <= .6
+            moved = [[r * a + b, r * e + b, t] for a, e, t in cues]
+            how = 'moved %+.1f s%s' % (b, '' if abs(r - 1) < .00005 else ', at %.4fx speed' % r)
+            return {'_ci': cand_i, '_r': r, '_b': b, 'fits': bool(fits), 'exact': abs(r - 1) < .003, 'name': cand.get('name') or '', 'n': n, 'miss': round(miss, 2), 'sure': bool(sure), 'how': how, 'srt': write_srt(moved),
+                    'samples': [[round(w[0]), w[1], w[2], w[3], w[4]] for w in wins]}
+
+        # (each subtitle first as it is, at its own speed: the right one fits with only an offset. Only if none of them, nor the next ones fetched
+        # one at a time, fits so, the best fitted by a change of speed (made for another copy): John, 21 Nov 2026, "before retiming for frame rate,
+        # you need to go try and find the right sub. Better to get the right one exactly before fixing")
+        pool = list(job.get('cands') or [])
+        more = list(job.get('more') or [])
+        k = 0
+        while k < len(pool):
+            cand = pool[k]
+            cues = parse_srt(cand.get('srt') or '')
+            cues_all.append(cues)
+            k += 1
+            if len(cues) < 20:
+                continue
+            ex_ = judge(cues, len(cues_all) - 1, cand, [1.0])
+            if ex_['fits']:
+                results.append(ex_)
+                if ex_['sure']:
+                    break   # (found: this one, as it is)
+            else:
+                results.append(judge(cues, len(cues_all) - 1, cand, RATIOS))
+            if k >= len(pool) and more and not any(x['fits'] and x['exact'] for x in results):
+                nx = more.pop(0)
+                prog('None fits exactly yet: trying another subtitle (%s)' % (nx.get('name') or nx.get('file_id')))
+                try:
+                    req = urllib.request.Request(PROG['base'] + '/macagent/subfile?file=%s' % nx['file_id'], headers={'User-Agent': UA, 'Authorization': 'Bearer ' + PROG['key']})
+                    srt = json.loads(urllib.request.urlopen(req, timeout=120).read() or b'{}').get('srt') or ''
+                    if srt:
+                        pool.append({'name': nx.get('name') or '', 'srt': srt})
+                except Exception as e_:
+                    prog('Couldn’t get another subtitle: %s' % str(e_)[:100])
+                    more = []
+        results.sort(key=lambda x: (x['fits'], x['exact'], x['sure'], x['n'], -x['miss']), reverse=True)
+        # (what was heard and matched, for the admin page: John, 21 Nov 2026, "I should be able to see what whisper took as the timing, the
+        # translation, the matching lines"; and for each of the likeliest three, to compare them line by line: John, 22 Nov 2026, "I need a good
+        # way to compare dialogue in a table for these reject or accepts")
+        for best in results[:3]:
+            cues = cues_all[best['_ci']]
+            ev = []
+            for t0, segs in heard:
+                o_ = best['_b']
+                rows = []
+                for sg in segs[:60]:   # (each heard line beside the subtitle line at that same point by the timing chosen: the one it matches, or
+                    # else the one on screen then, marked not matching)
+                    row = [round(sg[0], 1), sg[3].strip()[:160]]
+                    m_ = here(sg, cues, best['_r'], o_, show=True)
+                    if m_:
+                        row += [round(m_[1], 1), re.sub(r'<[^>]+>', '', m_[2]).replace('\n', ' ').strip()[:160], round(m_[4], 1), bool(m_[5])]
+                    rows.append(row)
+                ev.append({'from': round(t0), 'rows': rows})
+            best['evidence'] = ev
+        for x in results:
+            for k in ('_ci', '_r', '_b'):
+                x.pop(k, None)
+        return results
+
+    # (first, a subtitle in another language made for this very copy, translated into English on this Mac and compared line by line with
+    # the English ones: its lines are where the film's are said, so no listening needed; Whisper only if none lines up: John, 22 Nov 2026,
+    # "Efforts should be made to find matching foreign subs and timing before whisper is used at all. It would be better to translate those
+    # and compare before relying on whisper")
+    heard = translated_ref(job, work, dur)
+    if heard:
+        res = evaluate()
+        if res and res[0].get('fits'):
+            lg = (job.get('ref') or {}).get('lang') or ''
+            for x in res:
+                x['how'] = 'by the %s subtitle made for this copy, translated: %s' % (lg, x['how'])
+            return res
+        prog('None lined up with the translated %s subtitle: listening with Whisper' % ((job.get('ref') or {}).get('lang') or ''))
+    heard = listen()
+    return evaluate()
 
 
 def main():
