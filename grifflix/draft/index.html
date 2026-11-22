@@ -2676,7 +2676,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '88e82885e786' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '81ab28ac8315' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2686,13 +2686,16 @@ var Q = new URLSearchParams(location.search);
 // (John's editing (Edit, Delete, Edit collections, Convert, a collection's pencil) hidden till he turns on edit mode, from the admin page's
 // link (?edit=1); Done turns it off: John, 20 Nov 2026, "I also don't need the edit button on the screen at all anywhere, keep them hidden
 // except in an edit mode, which will be linked from admin")
-function editMode() { return !!(ME && ME.owner && store.get('grifflix-edit') === '1'); }
+// (and always on in the draft, John's preview: its films editable as he looks them over: John, 22 Nov 2026, "Films should be editable in
+// draft / preview")
+function editMode() { return !!(ME && ME.owner && (BUILD.draft || store.get('grifflix-edit') === '1')); }
 function editBadge() {
   var b = document.getElementById('editbadge');
   if (!editMode() || TV) { if (b) b.remove(); return; }
   if (b) return;
   b = document.createElement('button'); b.type = 'button'; b.id = 'editbadge'; b.className = 'pill'; b.innerHTML = 'Edit mode · <b>Done</b>';
-  b.onclick = function () { store.set('grifflix-edit', ''); b.remove(); if (typeof route === 'function') route(); };
+  if (BUILD.draft) { b.innerHTML = 'Draft · editing on'; b.disabled = true; }   // (nothing to turn off: the draft's always editable)
+  else b.onclick = function () { store.set('grifflix-edit', ''); b.remove(); if (typeof route === 'function') route(); };
   document.body.appendChild(b);
 }
 var store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
