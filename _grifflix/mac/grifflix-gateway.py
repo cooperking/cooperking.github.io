@@ -5827,6 +5827,13 @@ def ref_sub(g, cl, e, iid, path, it):
             break
     if len(ref) < 50:
         return False
+    try:   # (kept, to see how the English lined up with it)
+        save_txt = os.path.join(os.path.expanduser('~/Grifflix/subprep-ref'), iid + '.%s.srt' % refs[0][1])
+        os.makedirs(os.path.dirname(save_txt), exist_ok=True)
+        with open(save_txt, 'w', encoding='utf-8') as f_:
+            f_.write(SUBS.write_srt(ref))
+    except Exception:
+        pass
     pid = it.get('ProviderIds') or {}
     org = film_origin(path)
     hint = org or os.path.basename(path)
@@ -5858,8 +5865,8 @@ def ref_sub(g, cl, e, iid, path, it):
         g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
     except Exception:
         pass
-    e.update(state='done' if share >= .6 else 'check', note='%s (%d%% of its lines on the %s subtitle’s)' % (how, round(100 * share), refs[0][1]),
-             chose=x.get('name') or '', file=fn, at=int(time.time()), sure=share >= .6, n=hit, how='by reference')
+    e.update(state='done' if share >= .6 else 'check', note='%s (the %s subtitle’s)' % (how, refs[0][1]),
+             chose=x.get('name') or '', file=fn, at=int(time.time()), sure=share >= .6, n=hit, how='by reference', ref_v=2)
     log('Subtitles timed by a %s subtitle made for the very file: %s (%d%% of lines on its lines)' % (refs[0][1], e.get('name'), round(100 * share)))
     record('subtitles saved', film=e.get('name'), id=iid, file=fn, how=e['note'], english_from=x.get('name'), opensubtitles_file=x.get('file_id'),
            timed_by_language=refs[0][1], lines_on_reference=hit, share=round(share, 3))
@@ -5875,7 +5882,8 @@ def subs_exact_all():
     P = load(SUBPREP, {}) or {}
     n = 0
     for iid, e in list(P.items()):
-        if iid.startswith('_') or not isinstance(e, dict) or e.get('state') not in ('waiting', 'none', 'nomatch', 'failed') or e.get('ref_tried'):
+        redo_ = isinstance(e, dict) and e.get('how') == 'by reference' and e.get('ref_v') != 2   # (those timed before lines between were moved by their neighbours: again)
+        if iid.startswith('_') or not isinstance(e, dict) or ((e.get('state') not in ('waiting', 'none', 'nomatch', 'failed') or e.get('ref_tried')) and not redo_):
             continue
         try:
             it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
@@ -5883,8 +5891,8 @@ def subs_exact_all():
             if path and os.path.exists(path):
                 Q = load(SUBPREP, {}) or {}   # (saved as it goes, over what John's Mac has done meanwhile)
                 q = Q.get(iid)
-                if isinstance(q, dict) and q.get('state') in ('waiting', 'none', 'nomatch', 'failed'):
-                    ok = exact_sub(g, cl, q, iid, path) or ref_sub(g, cl, q, iid, path, it)
+                if isinstance(q, dict) and (q.get('state') in ('waiting', 'none', 'nomatch', 'failed') or redo_):
+                    ok = (not redo_ and exact_sub(g, cl, q, iid, path)) or ref_sub(g, cl, q, iid, path, it)
                     q['exact_tried'] = q['ref_tried'] = int(time.time())
                     save(SUBPREP, Q)
                     n += bool(ok)
