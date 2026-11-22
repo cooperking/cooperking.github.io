@@ -866,6 +866,12 @@ def _run(check):
             log('Not enough room on the drive for %s (%.0f GB free): left in %s' % (path, free / 1e9, src['name']))
             continue
         log('Fetching from %s: %s → %s/%s (%.1f GB)' % (src['name'], path, title, 'Other/' if p.get('extra') else '', size / 1e9))
+        try:   # (kept for good, with the name it came as: John, 22 Nov 2026, "keep a log of everything")
+            with open(os.path.join(HOME, 'record.jsonl'), 'a', encoding='utf-8') as f_:
+                f_.write(json.dumps({'at': time.strftime('%Y-%m-%d %H:%M:%S'), 'what': 'downloaded', 'from': src['name'], 'original_name': path,
+                                     'to': title + ('/Other' if p.get('extra') else ''), 'gb': round(size / 1e9, 2)}, ensure_ascii=False) + '\n')
+        except Exception:
+            pass
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         part = dest + '.adding'
         work = stage_for(part, size)   # (made on the Mac's own disk if it has room, in many streams; else here, in one)

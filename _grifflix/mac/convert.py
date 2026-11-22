@@ -768,6 +768,13 @@ def convert(item, ffmpeg, ffprobe, st):
     shutil.move(tmp, dst)   # (the same drive: a rename)
     mins = (time.time() - t0) / 60
     log('  done in %d min: %.1f GB → %.1f GB; original %s' % (mins, item['gb'], os.path.getsize(dst) / 1e9, ('kept in ' + os.path.dirname(keep_at)) if keep_at else 'deleted'))
+    try:   # (kept for good: John, 22 Nov 2026, "keep a log of everything")
+        with open(os.path.join(HOME, 'record.jsonl'), 'a', encoding='utf-8') as f_:
+            f_.write(json.dumps({'at': time.strftime('%Y-%m-%d %H:%M:%S'), 'what': 'repackaged' if remux else 'converted', 'film': item['name'], 'id': item['id'],
+                                 'from': src, 'to': dst, 'original_kept_at': keep_at, 'why': item.get('why'),
+                                 'soundtrack_first': lang_name(main_a) if main_a else ''}, ensure_ascii=False) + '\n')
+    except Exception:
+        pass
     st['done'][item['id']] = {'name': item['name'], 'from': src, 'to': dst, 'kept': keep_at, 'at': int(time.time()), 'mins': round(mins),
                               'why': item['why'], 'before': before, 'after': brief(probe(ffprobe, dst), dst),
                               'chose': (lang_name(main_a) + (': ' + chose if chose else '')) if main_a and len(audio) > 1 else ''}
@@ -1293,6 +1300,12 @@ while rest:
         if it.get('english'):
             st.setdefault('english_done', {})[it['id']] = int(time.time())
             save_state(st)
+            try:   # (in the record of every change: John, 22 Nov 2026, "keep a log of everything")
+                with open(os.path.join(HOME, 'record.jsonl'), 'a', encoding='utf-8') as f_:
+                    f_.write(json.dumps({'at': time.strftime('%Y-%m-%d %H:%M:%S'), 'what': 'made English first', 'film': it['name'], 'id': it['id'],
+                                         'path': it['path'], 'why': it.get('why')}, ensure_ascii=False) + '\n')
+            except Exception:
+                pass
     except RuntimeError as e:
         if it.get('mode') == 'remux' and 'skipped by John' not in str(e):   # (a picture an MP4 can't hold as it is: converted instead, in its turn, not given up on)
             log('  couldn’t repackage', it['name'], '(%s): it will be converted instead' % str(e)[:160])
