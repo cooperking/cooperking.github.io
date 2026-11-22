@@ -234,6 +234,18 @@ def fetch(loc, path, part, show=False, streams=16):
                 if w != last:
                     last, still = w, time.time()
                 elif time.time() - still > 600:
+                    # (none of it at all in 10 minutes: TorBox isn't giving this one now, so the rest go first and it's tried next round,
+                    # not three times over, half an hour with 18 behind it: John, 22 Nov 2026, Madadayo "nothing has come for 16 min")
+                    if w <= 0:
+                        log('  none of it came in 10 minutes: TorBox isn’t giving it now; the rest first, and this tried again next round')
+                        pr.terminate()
+                        try:
+                            pr.wait(30)
+                        except subprocess.TimeoutExpired:
+                            pr.kill()
+                            pr.wait()
+                        shutil.rmtree(tmpd, ignore_errors=True)
+                        return 1, 'none of it came from TorBox in 10 minutes (tried again next round)'
                     log('  nothing came for 10 minutes (%.1f GB so far): starting it again%s' % (w / 1e9, '' if attempt < 2 else ' (the last try)'))
                     pr.terminate()
                     try:
