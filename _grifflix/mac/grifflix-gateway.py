@@ -7675,6 +7675,43 @@ def a24_now():
         log('A24, for what came in: %s' % e)
 
 
+IDS_GIVEN = {   # (a film or series the media server had no details for, its IMDb number given by John)
+    '7cf4dda6bea6adc9e3d8d38e10a0e1dd': 'tt2125012',   # (Agnès de ci de là Varda: John, 22 Nov 2026, its IMDb page)
+}
+
+
+def ids_given():
+    """Each in IDS_GIVEN given its IMDb number and TMDB's, and its details read again from them (its genres, its overview), once."""
+    g = G_REF[0] if G_REF else None
+    if not g:
+        return
+    df = os.path.expanduser('~/Grifflix/ids-given.json')
+    done = load(df, {}) or {}
+    for iid, imdb in IDS_GIVEN.items():
+        if done.get(iid) == imdb:
+            continue
+        try:
+            full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid)) or {}
+            if not full:
+                continue
+            f_ = tmdb(g, '/find/' + imdb, external_source='imdb_id') or {}
+            hit = (f_.get('tv_results') if full.get('Type') == 'Series' else f_.get('movie_results')) or f_.get('tv_results') or f_.get('movie_results') or []
+            pid = dict(full.get('ProviderIds') or {}, Imdb=imdb)
+            if hit:
+                pid['Tmdb'] = str(hit[0].get('id'))
+            full['ProviderIds'] = pid
+            g.jf.call('POST', '/Items/%s' % iid, full)
+            g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'FullRefresh', 'ImageRefreshMode': 'Default',
+                                                               'ReplaceAllMetadata': 'true', 'ReplaceAllImages': 'false'})
+            done[iid] = imdb
+            save(df, done)
+            log('Its IMDb number given: %s → %s%s' % (full.get('Name'), imdb, ' (TMDB %s)' % pid['Tmdb'] if hit else ''))
+            record('identified', film=full.get('Name'), id=iid, imdb=imdb, tmdb=pid.get('Tmdb'), by='John (its IMDb page)')
+            g.publish_soon = time.time() + 300
+        except Exception as e:
+            log('Its IMDb number, %s: %s' % (iid, str(e)[:160]))
+
+
 def posters_on(only=None):
     """Each film whose folder has its poster (poster.jpg or .png) but the media server shows no picture for it: that poster put on it.
     A Criterion cover put in a film's folder just after Fix match renamed it was never taken up (Totally F***ed Up, John, 22 Nov 2026,
@@ -8284,6 +8321,7 @@ def serve():
     # "there shouldn't be a need for a three hour check")
     threading.Thread(target=lambda: (time.sleep(60), subprep_scan(), subs_exact_all(), subs_namecheck()), daemon=True).start()
     threading.Thread(target=lambda: (time.sleep(240), posters_on()), daemon=True).start()   # (any film whose poster's in its folder but not on it)
+    threading.Thread(target=lambda: (time.sleep(90), ids_given()), daemon=True).start()
     mk2_ = os.path.expanduser('~/Grifflix/tv-criterion-2.done')
     if not os.path.exists(mk2_):   # (once: the site updated, for the TV series now in Criterion's box sets: 22 Nov 2026)
         try:
