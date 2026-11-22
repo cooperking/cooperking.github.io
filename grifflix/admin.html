@@ -1115,17 +1115,52 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   // 22 Nov 2026, "showing a clear comparison or the ability to choose and see - this should be on anything adjusted, not just rejected")
   var spLN = function (c) { return c || ''; };
   function spBody(x, LNAME) {
-    if (x.k === 'todo') return '<p class="spnote">' + (x.state === 'given' ? 'On your Mac now' + (x.step ? ': ' + esc(x.step) : '') : 'Waiting its turn.') + '</p>' + (x.state === 'waiting' ? '<div class="spact"><button class="btn" type="button" data-spquiet="' + x.id + '">No subtitles needed</button></div>' : '');
+    if (x.k === 'todo') return '<p class="spnote">' + (x.state === 'given' ? 'On your Mac now' + (x.step ? ': ' + esc(x.step) : '') : 'Waiting its turn.') + '</p>' + (x.state === 'waiting' ? '<div class="spact"><button class="btn" type="button" data-spquiet="' + x.id + '">No subtitles needed</button></div>' : '') + spGiveBox(x);
     var nt = String(x.note || ''), mv = /moved ([+-][\d.]+) s/.exec(nt), sp = /at ([\d.]+)x speed/.exec(nt);
     var by = { exact: 'Made for this very copy (found by its fingerprint): used as it is', 'by reference': 'Lined up with the ' + LNAME(x.ref_lang) + ' subtitle made for this copy',
       translated: 'The ' + LNAME(x.ref_lang) + ' subtitle made for this copy, translated on your Mac and compared line by line', 'machine-translated': 'The ' + LNAME(x.ref_lang || (x.translated || {}).lang) + ' subtitle made for this copy, machine-translated: chosen by you',
-      chosen: 'Chosen by you', 'verified-moved': 'Its subtitles from before, put right' }[x.how] || (x.k === 'none' ? 'Nothing fitted the whole film: the closest below, to see and choose' : x.k === 'existing' ? 'Its subtitles from before, checked against what’s said' : 'Timed by Whisper on your Mac, from what’s said in four parts of the film');
+      chosen: 'Chosen by you', given: 'Given by you' + (/timed|moved/.test(nt) ? ', timed to the film' : /as they are/.test(nt) ? ', used as they are' : ', timed by Whisper on your Mac'), 'verified-moved': 'Its subtitles from before, put right' }[x.how] || (x.k === 'none' ? 'Nothing fitted the whole film: the closest below, to see and choose' : x.k === 'existing' ? 'Its subtitles from before, checked against what’s said' : 'Timed by Whisper on your Mac, from what’s said in four parts of the film');
     var kv = [['Film', FL(x.name, x.year, x.id)], ['Subtitles', x.chose && !/^OpenSubtitles file/.test(x.chose) ? esc(x.chose) : (x.vfile ? esc(String(x.vfile).split('/').pop()) : '')], ['How', esc(by)],
       ['Moved', mv ? (Math.abs(+mv[1]) < .05 ? 'not at all: already in time' : Math.abs(+mv[1]).toFixed(1) + ' s ' + (+mv[1] >= 0 ? 'later' : 'earlier')) + (sp ? ', and ' + (+sp[1] > 1 ? 'slowed' : 'sped up') + ' to ' + sp[1] + '× (made for a copy at another speed)' : '') : (/^moved by part/.test(nt) ? esc(nt.replace(/^moved by part /, 'by a different amount in each part: ')) : '')],
       ['Fit', x.n ? x.n + ' lines on the lines said' + (x.k === 'check' ? ': not enough to be sure' : '') : ''], ['Saved as', x.file ? esc(String(x.file).split('/').pop()) : '']].filter(function (r) { return r[1]; });
     return '<dl class="spkv">' + kv.map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>'; }).join('') + '</dl>' +
       '<div class="spvers" data-vfor="' + x.id + '"></div><div class="spcmp" data-cfor="' + x.id + '"><p class="spnote">Loading the dialogue…</p></div>' +
-      '<div class="spact">' + (x.k === 'check' || x.k === 'none' || x.k === 'corrected' || x.k === 'added' || x.k === 'quiet' ? '<button class="btn" type="button" data-spagain="' + x.id + '">Do it again</button>' : '') + (x.k === 'none' || x.k === 'check' || x.k === 'todo' ? '<button class="btn" type="button" data-spquiet="' + x.id + '">No subtitles needed</button>' : '') + '</div>';
+      spGiveBox(x) + '<div class="spact">' + (x.k === 'check' || x.k === 'none' || x.k === 'corrected' || x.k === 'added' || x.k === 'quiet' ? '<button class="btn" type="button" data-spagain="' + x.id + '">Do it again</button>' : '') + (x.k === 'none' || x.k === 'check' || x.k === 'todo' ? '<button class="btn" type="button" data-spquiet="' + x.id + '">No subtitles needed</button>' : '') + '</div>';
+  }
+  // (the right subtitles given by John: from OpenSubtitles' list for the film, or a file of his own; used as they are, or timed to the film:
+  // John, 22 Nov 2026, "I also need a way to give the correct subtitles to work with in the admin")
+  function spGiveBox(x) {
+    return '<details class="spgive" style="margin:10px 0 0"><summary style="cursor:pointer;font-size:13px">Give the subtitles to use</summary>' +
+      '<p class="spnote">Choose the right English subtitles from OpenSubtitles, or upload a file of your own (.srt). Then use them as they are, or have them timed to the film: by the subtitle made for this copy if there is one, otherwise by Whisper on your Mac with these alone.</p>' +
+      '<div class="spact"><button class="btn" type="button" data-spsearch="' + x.id + '">List those on OpenSubtitles</button><label class="btn" style="cursor:pointer">Upload a file<input type="file" accept=".srt,.txt,text/plain" data-spfile="' + x.id + '" hidden></label></div>' +
+      '<p class="spnote" data-gsay="' + x.id + '"></p><ul class="changes" data-gfor="' + x.id + '" style="margin:4px 0 0"></ul></details>';
+  }
+  function spGiveWire(x, bd) {
+    var list = bd.querySelector('[data-gfor="' + x.id + '"]'), say = bd.querySelector('[data-gsay="' + x.id + '"]'); if (!list) return;
+    var send = function (body, b) { if (b) b.disabled = true; say.textContent = 'Saving…';
+      fetch(GW + '/api/subprep', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        .then(function (r) { return r.json().then(function (j) { if (!r.ok || j.error) throw new Error(j.error || r.status); return j; }); })
+        .then(function () { toast(body.mode === 'asis' ? 'Saved as its English subtitles' : 'Given: being timed to the film'); subPrep(); })
+        .catch(function (e) { if (b) b.disabled = false; say.textContent = 'Not saved: ' + (e.message || e); }); };
+    var two = function (lab, body) { return '<span class="spact" style="margin:6px 0 0"><button class="btn" type="button" data-gtime="1">Time it to the film</button><button class="btn" type="button" data-gasis="1">Use as it is</button></span>'; };
+    var wireTwo = function (li, body) { li.querySelector('[data-gtime]').onclick = function () { send(Object.assign({ op: 'give', id: x.id, mode: 'time' }, body), this); };
+      li.querySelector('[data-gasis]').onclick = function () { send(Object.assign({ op: 'give', id: x.id, mode: 'asis' }, body), this); }; };
+    var sb = bd.querySelector('[data-spsearch]'); if (sb) sb.onclick = function () {
+      say.textContent = 'Asking OpenSubtitles…'; list.innerHTML = '';
+      fetch(GW + '/api/subprep?search=' + x.id, { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+        if (j.error) throw new Error(j.error);
+        var R = j.results || [];
+        var len = function (nm) { nm = String(nm || '').toLowerCase(); var a = /(\d)\s*h(?:rs?|ours?)?[\s.:]*(\d{1,2})\s*m/.exec(nm), c = /\b(\d{2,3})\s*min/.exec(nm); return a ? +a[1] * 60 + +a[2] : c ? +c[1] : 0; };
+        say.textContent = R.length ? R.length + ' found. The film runs ' + j.mins + ' minutes: a length in a name that differs is another cut.' : 'None found on OpenSubtitles.';
+        list.innerHTML = R.map(function (r, k) { var L = len(r.name), d = L && j.mins ? L - j.mins : null;
+          return '<li data-gk="' + k + '"><b>' + esc(r.name || 'Subtitles') + '</b><span class="when">' + [r.exact ? 'made for this very file' : r.like >= 5 ? 'like your copy' : '', L ? L + ' min' + (Math.abs(d) <= 4 ? ' (this length)' : ' (another cut?)') : '', r.downloads ? Number(r.downloads).toLocaleString() + ' downloads' : '', r.hi ? 'for the hard of hearing' : '', r.machine ? 'machine translated' : ''].filter(Boolean).join(' · ') + '</span>' + two() + '</li>'; }).join('');
+        Array.prototype.forEach.call(list.querySelectorAll('[data-gk]'), function (li) { var r = R[+li.dataset.gk]; wireTwo(li, { file_id: r.file_id, name: r.name }); });
+      }).catch(function (e) { say.textContent = 'Couldn’t ask: ' + (e.message || e); });
+    };
+    var fi = bd.querySelector('[data-spfile]'); if (fi) fi.onchange = function () { var f = fi.files && fi.files[0]; if (!f) return;
+      if (f.size > 800000) { say.textContent = 'That file is too big for subtitles.'; return; }
+      f.text().then(function (t) { list.innerHTML = '<li><b>' + esc(f.name) + '</b><span class="when">your file · ' + (t.match(/-->/g) || []).length + ' lines</span>' + two() + '</li>'; say.textContent = '';
+        wireTwo(list.querySelector('li'), { srt: t, name: f.name }); }); };
   }
   function spCompare(x, w) {
     var box = document.querySelector('.spcmp[data-cfor="' + x.id + '"]'), vb = document.querySelector('.spvers[data-vfor="' + x.id + '"]'); if (!box) return;
@@ -1134,7 +1169,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     fetch(GW + '/api/subprep?compare=' + x.id + (w ? '&with=' + encodeURIComponent(w) : ''), { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
       var V = j.versions || [], sel = j.with || '', cur = j.cur || '';
       // (the versions: the one in use first, then each other, to see; the one being seen can be used)
-      var vlab = { ref: 'tried against the subtitle made for this copy', whisper: 'tried by Whisper', tr: 'machine translation' };
+      var vlab = { ref: 'tried against the subtitle made for this copy', whisper: 'tried by Whisper', tr: 'machine translation', given: 'given by you' };
       if (x.k === 'none' && !w && V.length) { spCompare(x, V[0].i); return; }   // (none in use: the closest shown first)
       vb.innerHTML = V.length ? (x.k === 'none' ? '' : '<button type="button" data-vw="" aria-pressed="' + (!w) + '">In use now<small>' + esc(x.chose && !/^OpenSubtitles file/.test(x.chose) ? x.chose : 'its English subtitles') + '</small></button>') +
         V.filter(function (v) { return v.i !== cur; }).map(function (v) { return '<button type="button" data-vw="' + esc(v.i) + '" aria-pressed="' + (w === v.i) + '">' + esc(v.name || 'another') + '<small>' + esc(vlab[v.kind] || '') + (v.n ? ' · ' + v.n + ' lines on the lines said' : '') + (v.share != null ? ' · ' + Math.round(v.share * 100) + '%' : '') + '</small></button>'; }).join('') : '';
@@ -1227,6 +1262,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           }
           if (x.how === 'verified-moved') return '✓ Its subtitles from before were out, now put right: ' + (moved || 'retimed') + '. The old file set aside.';
           if (x.k === 'todo') {
+            if (x.givenfile) return (x.state === 'given' ? '▶ On your Mac now: timing the subtitles you gave' + (x.step ? ': ' + x.step : '') : '… The subtitles you gave, waiting to be timed by Whisper on your Mac') + '.';
             if (x.old_vfile && !x.ref_only) return (x.state === 'given' ? '▶ On your Mac now' + (x.step ? ': ' + x.step : '') + '. ' : '… ') + 'Its subtitles from before didn’t fit what’s said: others being looked for. The old ones stay until then.';
             if (x.ref_only) return '⟳ Being looked at again on your Mac: a ' + LNAME(x.ref_lang) + ' subtitle made for this copy, translated and compared. Its subtitles timed by Whisper stay meanwhile' + (x.step ? '. Now: ' + x.step : '') + '.';
             return x.state === 'given' ? '▶ On your Mac now' + (x.step ? ': ' + x.step : '') + '.' : '… Waiting its turn.';
@@ -1234,6 +1270,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           if (x.how === 'exact') return '✓ English subtitles made for this very copy, used as they are: nothing moved.';
           if (x.how === 'machine-translated') return '✓ The ' + LNAME(rl || (x.translated || {}).lang) + ' subtitle made for this copy, machine-translated into English on your Mac: chosen by you.';
           if (x.how === 'chosen') return '✓ Chosen by you from those turned down: ' + (moved || 'as timed') + '.' + src;
+          if (x.how === 'given') return (x.k === 'check' ? '? ' : '✓ ') + 'Subtitles you gave' + (x.chose ? ' (“' + x.chose + '”)' : '') + (/as they are/.test(nt) ? ', used as they are.' : ': ' + (moved || 'timed to the film') + '.');
           if (x.how === 'by reference') return (x.k === 'check' ? '? ' : '✓ ') + 'Timed by the ' + LNAME(rl) + ' subtitle made for this copy: ' + (moved || 'lined up') + ', each line set on its line.' + src;
           if (x.how === 'translated') return (x.k === 'check' ? '? ' : '✓ ') + 'Timed by the ' + LNAME(rl) + ' subtitle made for this copy, translated on your Mac and compared line by line: ' + (moved || 'lined up') + '.' + src;
           if (x.k === 'corrected' || x.k === 'check') return (x.k === 'check' ? '? Timing not confirmed. ' : '✓ ') + 'Timed by Whisper on your Mac, by what’s said in four parts of the film: ' + (moved || 'lined up') + (x.n ? ', ' + x.n + ' lines matched to what’s said' : '') + '.' + src;
@@ -1264,6 +1301,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           var bd = document.querySelector('.spbody[data-bfor="' + x.id + '"]'); if (!bd) return;
           bd.hidden = false; bd.innerHTML = spBody(x, LNAME);
           if (x.k !== 'todo') spCompare(x, '');
+          spGiveWire(x, bd);
           Array.prototype.forEach.call(bd.querySelectorAll('[data-spquiet]'), function (bt) { bt.onclick = function () { bt.disabled = true; subPrep({ op: 'nodialogue', id: bt.dataset.spquiet }); toast('No subtitles needed: in Not needed'); }; });
           Array.prototype.forEach.call(bd.querySelectorAll('[data-spagain]'), function (bt) { bt.onclick = function () { bt.disabled = true; subPrep({ op: 'again', id: bt.dataset.spagain }); toast('To be done again, in its turn'); }; });
         };

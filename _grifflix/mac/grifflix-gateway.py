@@ -1038,6 +1038,9 @@ def make_handler(g):
                                     record('subtitles set aside', film=e.get('name'), id=iid, moved_from=ov_, why='replaced by ones that fit')
                                 if str(body.get('how') or '').startswith('by the '):   # (timed by a translated subtitle made for this copy, not by Whisper)
                                     e['how'] = 'translated'
+                                if e.get('givenfile'):   # (the ones John gave, timed by Whisper)
+                                    e['how'], e['cur'] = 'given', 'g'
+                                    e.pop('givenfile', None)
                                 log('Subtitles made ready on John’s Mac: %s: %s (%s lines matched)%s' % (e.get('name'), e['note'], e['n'], '' if body.get('sure') else ': to check'))
                                 record('subtitles saved', film=e.get('name'), id=iid, file=out, how='timed by Whisper on John’s Mac: ' + e['note'], chose=e.get('chose'),
                                        lines_matched=e['n'], sure=bool(body.get('sure')), tried=e.get('tried'))
@@ -1070,6 +1073,7 @@ def make_handler(g):
                                 except Exception:
                                     pass
                             e['cands'] = kept_
+                            e.pop('givenfile', None)   # (John's, kept to use as it is: not handed out again by itself)
                             # (Whisper heard next to no speech in any part listened to: a film with little or no dialogue, not a failure, and not
                             # tried again and again: John, 22 Nov 2026, "Robot Dreams is a virtually dialogue free film, so failing")
                             ss_ = [p_ for c_ in kept_ for p_ in (c_.get('samples') or [])]
@@ -1117,6 +1121,13 @@ def make_handler(g):
                         if not path or not os.path.exists(path):
                             e.update(state='failed', note='its file isn’t there', at=int(now_))
                             continue
+                        gf_ = e.get('givenfile') or ''
+                        if gf_ and os.path.exists(gf_):   # (the subtitles John gave: only those, timed to the film by Whisper on his Mac)
+                            e.update(state='given', at=int(now_), note='')
+                            save(SUBPREP, P)
+                            return self.send_json(200, {'subjob': {'id': iid, 'name': it.get('Name'), 'path': path, 'dur': (it.get('RunTimeTicks') or 0) / 1e7,
+                                                                   'translate': True, 'lang': e.get('lang') or '', 'more': [],
+                                                                   'cands': [{'name': e.get('givenname') or 'the subtitles you gave', 'srt': open(gf_, encoding='utf-8', errors='replace').read()}]}})
                         pid = it.get('ProviderIds') or {}
                         try:
                             mh = SUBS.movie_hash(path)
@@ -3116,6 +3127,19 @@ def make_handler(g):
                 i_ = str(q.get('i') or '')
                 ev_ = load(os.path.join(os.path.expanduser('~/Grifflix/subprep-evidence'), q['evidence'] + ('.%s' % i_ if re.match(r'^[0-2]$', i_) else '') + '.json'), None)
                 return self.send_json(200, ev_ or {'parts': []})
+            if re.match(r'^[0-9a-f]{32}$', str(q.get('search') or '')):   # (English subtitles for one film on OpenSubtitles, for John to give one)
+                iid_ = q['search']
+                it_ = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid_), query={'Fields': 'Path,ProviderIds'}) or {}
+                pid_ = it_.get('ProviderIds') or {}
+                e_ = P.get(iid_) or {}
+                try:
+                    if e_.get('kind') == 'episode':
+                        R_ = self.subs_client().search('en', query=e_.get('series'), parent_tmdb=e_.get('series_tmdb'), season=e_.get('season'), episode=e_.get('episode'), hint=os.path.basename(it_.get('Path') or ''))
+                    else:
+                        R_ = self.subs_client().search('en', tmdb=pid_.get('Tmdb'), imdb=pid_.get('Imdb'), query=it_.get('Name'), year=it_.get('ProductionYear'), hint=os.path.basename(it_.get('Path') or ''))
+                except Exception as ex:
+                    return self.send_json(502, {'error': str(ex)[:200]})
+                return self.send_json(200, {'mins': round((it_.get('RunTimeTicks') or 0) / 6e8), 'results': [{k: x.get(k) for k in ('file_id', 'name', 'downloads', 'exact', 'like', 'hi', 'machine', 'fps')} for x in R_[:40]]})
             if re.match(r'^[0-9a-f]{32}$', str(q.get('compare') or '')):
                 return self.send_json(200, subs_compare(g, P, q['compare'], str(q.get('with') or '')))
             if b:
@@ -3175,9 +3199,11 @@ def make_handler(g):
                 elif op == 'choose' and str(b.get('id') or '') in P:   # (John's own choice of a subtitle turned down: saved as it'd be timed)
                     iid_, i_ = str(b['id']), str(b.get('i') if b.get('i') is not None else 0)
                     e_ = P[iid_]
-                    if not re.match(r'^r?\d$', i_):
+                    if not re.match(r'^r?\d$|^g$', i_):
                         return self.send_json(400, {'error': 'Which one?'})
                     c_ = next((c for c in (e_.get('cands') or []) + (e_.get('rcands') or []) if str(c.get('i')) == i_), None)
+                    if i_ == 'g':
+                        c_ = {'i': 'g', 'name': e_.get('givenname') or 'the ones you gave', 'how': 'given by John', 'n': 0}
                     fn_ = os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.%s.srt' % (iid_, i_))
                     if not c_ or not os.path.exists(fn_) or not re.match(r'^[0-9a-f]{32}$', iid_):
                         return self.send_json(400, {'error': 'That subtitle isn’t kept any more: Try again.'})
@@ -3192,6 +3218,66 @@ def make_handler(g):
                     save(SUBPREP, P)
                     log('Subtitles chosen by John: %s: %s' % (e_.get('name'), c_.get('name')))
                     record('subtitles saved', film=e_.get('name'), id=iid_, file=out_, how='chosen by John from those turned down: ' + str(c_.get('how')), chose=c_.get('name'))
+                elif op == 'give' and str(b.get('id') or '') in P:
+                    # (the right subtitles, given by John: chosen from OpenSubtitles' list or a file of his own; used as they are, or timed to
+                    # the film: by the subtitle made for this copy if there is one, else by Whisper on his Mac with these alone: John, 22 Nov 2026,
+                    # "I also need a way to give the correct subtitles to work with in the admin")
+                    iid_ = str(b['id'])
+                    e_ = P[iid_]
+                    if not re.match(r'^[0-9a-f]{32}$', iid_):
+                        return self.send_json(400, {'error': 'Which film?'})
+                    try:
+                        if b.get('srt'):
+                            txt_ = str(b['srt'])[:900000]
+                            nm_ = str(b.get('name') or 'a file you gave')[:160]
+                        else:
+                            txt_ = SUBS.decode(self.subs_client().download(int(b.get('file_id') or 0)))
+                            nm_ = str(b.get('name') or 'chosen by you')[:160]
+                        cues_ = SUBS.parse_srt(txt_)
+                    except Exception as ex:
+                        return self.send_json(502, {'error': str(ex)[:200]})
+                    if len(cues_) < 5:
+                        return self.send_json(400, {'error': 'Those subtitles have hardly any lines: is it an .srt file?'})
+                    gf_ = os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.g.srt' % iid_)
+                    os.makedirs(os.path.dirname(gf_), exist_ok=True)
+                    with open(gf_, 'w', encoding='utf-8') as f_:
+                        f_.write(SUBS.write_srt(cues_))
+                    it_ = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid_), query={'Fields': 'Path'}) or {}
+                    if not it_.get('Path'):
+                        return self.send_json(400, {'error': 'The film isn’t there.'})
+                    e_['givenname'] = nm_
+                    if b.get('mode') == 'asis':
+                        out_ = self.subs_write(it_['Path'], 'en', cues_)
+                        e_.update(state='done', how='given', cur='g', note='given by John, used as they are', chose=nm_, file=out_, at=int(time.time()), n=len(cues_), sure=True)
+                        e_.pop('givenfile', None)
+                        said_ = 'used as they are'
+                    else:
+                        ref_ = SUBS.parse_srt(open(e_['ref_file'], encoding='utf-8', errors='replace').read()) if e_.get('ref_file') and os.path.exists(e_['ref_file']) else []
+                        sh_ = 0
+                        if len(ref_) >= 50:
+                            sh_, hit_, outc_, how_ = SUBS.align_to_ref(ref_, cues_)
+                        if sh_ >= .45:
+                            with open(os.path.join(os.path.dirname(gf_), '%s.g.orig.srt' % iid_), 'w', encoding='utf-8') as f_:
+                                f_.write(SUBS.write_srt(cues_))
+                            with open(gf_, 'w', encoding='utf-8') as f_:
+                                f_.write(SUBS.write_srt(outc_))
+                            out_ = self.subs_write(it_['Path'], 'en', outc_)
+                            e_.update(state='done' if sh_ >= .6 else 'check', how='given', cur='g', note='given by John, %s (the %s subtitle’s)' % (how_, e_.get('ref_lang') or ''),
+                                      chose=nm_, file=out_, at=int(time.time()), n=hit_, sure=sh_ >= .6)
+                            e_.pop('givenfile', None)
+                            said_ = 'timed by the subtitle made for this copy'
+                        else:
+                            e_.update(state='waiting', givenfile=gf_, order=-2, note='given by John: to be timed by Whisper on your Mac')
+                            said_ = 'to be timed by Whisper on your Mac, next'
+                    for x_ in ('ref_only', 'prev'):
+                        e_.pop(x_, None)
+                    try:
+                        g.jf.call('POST', '/Items/%s/Refresh' % iid_, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
+                    except Exception:
+                        pass
+                    save(SUBPREP, P)
+                    log('Subtitles given by John for %s: %s, %s' % (e_.get('name'), nm_, said_))
+                    record('subtitles given', film=e_.get('name'), id=iid_, name=nm_, how=said_)
                 elif op == 'nodialogue' and str(b.get('id') or '') in P:   # (John: no subtitles needed for this one)
                     P[str(b['id'])].update(state='nodialogue', note='no subtitles needed: said by John', at=int(time.time()))
                     save(SUBPREP, P)
@@ -3219,7 +3305,7 @@ def make_handler(g):
                                         # found: John, 22 Nov 2026, "I need a tab of added, corrected (with details), to do etc. Tidy")
                                         'all': [{k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'state', 'note', 'chose', 'n', 'miss', 'mins', 'at', 'step', 'stepat',
                                                                        'tried', 'samples', 'sure', 'file', 'origin', 'how', 'kind', 'series', 'cands', 'translated', 'ref_only', 'ref_lang', 'vfile', 'verifying', 'old_vfile',
-                                                                       'rcands', 'cur', 'chosen_from', 'ref_file')} for x in F]})
+                                                                       'rcands', 'cur', 'chosen_from', 'ref_file', 'givenfile', 'givenname')} for x in F]})
 
         def api_waiting(self, me, user, q, b):
             """John's only: what he's ticked off on the admin page's Waiting on you (John, 18 Nov 2026: "I could do with a waiting on you
@@ -6149,7 +6235,7 @@ def subs_compare(g, P, iid, w=''):
     e = P.get(iid) or {}
     cdir = os.path.expanduser('~/Grifflix/subprep-cands')
     rd = lambda f: SUBS.parse_srt(open(f, encoding='utf-8', errors='replace').read()) if f and os.path.exists(f) else []
-    w = w if re.match(r'^r?\d$|^tr$', w or '') else ''
+    w = w if re.match(r'^r?\d$|^tr$|^g$', w or '') else ''
     cur = str(e.get('cur') or '')
     sel = w or cur
     out = {'with': sel, 'cur': cur, 'versions': []}
@@ -6158,6 +6244,8 @@ def subs_compare(g, P, iid, w=''):
         out['versions'].append({'i': c['i'], 'name': c.get('name') or '', 'n': c.get('n'), 'share': c.get('share'), 'kind': 'ref'})
     for c in e.get('cands') or []:
         out['versions'].append({'i': str(c.get('i')), 'name': c.get('name') or '', 'n': c.get('n'), 'kind': 'whisper'})
+    if os.path.exists(os.path.join(cdir, '%s.g.srt' % iid)):
+        out['versions'].append({'i': 'g', 'name': e.get('givenname') or 'the ones you gave', 'kind': 'given'})
     if os.path.exists(os.path.join(cdir, '%s.tr.srt' % iid)):
         out['versions'].append({'i': 'tr', 'name': 'machine translation of the %s subtitle made for this copy' % ((e.get('translated') or {}).get('lang') or e.get('ref_lang') or ''), 'kind': 'tr'})
     # (Whisper's evidence, where there's no subtitle made for this copy to compare by)
@@ -6175,7 +6263,7 @@ def subs_compare(g, P, iid, w=''):
     tr = rd(os.path.join(cdir, '%s.tr.srt' % iid))
     if w == 'tr':
         now, was = tr, []
-    elif sel and re.match(r'^r\d$', sel):
+    elif sel and re.match(r'^r\d$|^g$', sel):
         now, was = rd(os.path.join(cdir, '%s.%s.srt' % (iid, sel))), rd(os.path.join(cdir, '%s.%s.orig.srt' % (iid, sel)))
     elif sel and re.match(r'^\d$', sel):
         now, was = rd(os.path.join(cdir, '%s.%s.srt' % (iid, sel))), []
@@ -6319,8 +6407,8 @@ def subs_exact_all():
     for iid, e in list(P.items()):
         redo_ = isinstance(e, dict) and e.get('how') == 'by reference' and e.get('ref_v') != 3   # (those timed before lines between were moved by their neighbours, or before
         # the English ones tried were kept to compare and choose from: again)
-        if iid.startswith('_') or not isinstance(e, dict) or ((e.get('state') not in ('waiting', 'none', 'nomatch', 'failed') or e.get('ref_tried2')) and not redo_):
-            continue
+        if iid.startswith('_') or not isinstance(e, dict) or e.get('givenfile') or e.get('how') == 'given' or ((e.get('state') not in ('waiting', 'none', 'nomatch', 'failed') or e.get('ref_tried2')) and not redo_):
+            continue   # (nor one John gave subtitles for: his stand)
         try:
             it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
             path = it.get('Path') or ''
