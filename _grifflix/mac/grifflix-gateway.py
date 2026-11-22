@@ -3419,6 +3419,13 @@ def make_handler(g):
             # (the film being done now, and since when, for the admin page: John, 21 Nov 2026, "I'd like to be able to see in admin if anything
             # is happening")
             now_ = sorted(({k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'at', 'step', 'stepat')} for x in F if x.get('state') == 'given'), key=lambda x: -(x.get('at') or 0))
+            LNM_ = {'zh': 'Chinese', 'ja': 'Japanese', 'fr': 'French', 'es': 'Spanish', 'it': 'Italian', 'de': 'German', 'ru': 'Russian', 'pt': 'Portuguese', 'ar': 'Arabic', 'ro': 'Romanian',
+                    'sv': 'Swedish', 'el': 'Greek', 'ko': 'Korean', 'pl': 'Polish', 'tr': 'Turkish', 'he': 'Hebrew', 'fi': 'Finnish', 'nl': 'Dutch', 'sr': 'Serbian', 'fa': 'Persian', 'vi': 'Vietnamese'}
+            for x in F:   # (and a translation being done on John's Mac: shown as what it's doing now, not "nothing": John, 22 Nov 2026)
+                if x.get('tr_given') and time.time() - x['tr_given'] < 1800 and not os.path.exists(os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.tr.srt' % x['id'])):
+                    lg_ = str(x.get('ref_lang') or '').lower()[:2]
+                    now_.insert(0, {'id': x['id'], 'name': x.get('name'), 'year': x.get('year'), 'lang': x.get('lang'), 'at': x['tr_given'],
+                                    'step': x.get('step') or 'Translating the %s subtitle it was timed by, to compare' % LNM_.get(lg_, lg_), 'stepat': x.get('stepat') or x['tr_given']})
             # (and each film tried lately, however it went, with what it found: John, 21 Nov 2026, "I want more details than that")
             recent_ = sorted(({k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'state', 'note', 'chose', 'n', 'miss', 'mins', 'at', 'step', 'stepat', 'tried', 'samples', 'sure', 'file', 'origin')}
                               for x in F if x.get('state') not in ('waiting',)), key=lambda x: -max(x.get('at') or 0, x.get('stepat') or 0))[:25]
@@ -6443,6 +6450,14 @@ def speech_try(g, cl, e, iid, path, it):
     tried against it, any whose lines start when people speak in this copy taken as made for it, and the English timed by it; else (2)
     the English ones lined up by it directly. True if subtitles were saved; None to try again later (downloads used up). John, 22 Nov 2026,
     "whisper should be the rarest case - better to find other subtitles in other languages first - whisper only as a last resort"."""
+    if not e.get('name_tried'):   # (English named for this very release first: no listening at all if there is one)
+        e['name_tried'] = int(time.time())
+        SPEECH['now'] = '%s: looking for English named for this very release' % e.get('name')
+        if name_sub(g, cl, e, iid, path, it):
+            return True
+        if cl.out_of_downloads():
+            e.pop('name_tried', None)
+            return None
     ff = next((c for c in ('/Applications/Jellyfin.app/Contents/MacOS/ffmpeg', '/usr/local/bin/ffmpeg', '/opt/homebrew/bin/ffmpeg') if os.path.exists(c)), 'ffmpeg')
     cf = os.path.join(os.path.expanduser('~/Grifflix/speech'), iid + '.json')
     sz = os.path.getsize(path)
@@ -6566,7 +6581,7 @@ def keep_speech_first(g):
                 continue
             P = load(SUBPREP, {}) or {}
             todo = sorted(((k, v) for k, v in P.items() if not k.startswith('_') and isinstance(v, dict) and v.get('state') == 'waiting' and not v.get('speech_tried')
-                           and not v.get('givenfile') and not v.get('ref_only') and v.get('ref_tried2') and v.get('name_tried')), key=lambda kv: kv[1].get('order', 0))
+                           and not v.get('givenfile') and not v.get('ref_only') and v.get('ref_tried2')), key=lambda kv: kv[1].get('order', 0))
             for iid, e in todo[:1]:
                 did = True
                 it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
