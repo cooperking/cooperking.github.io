@@ -223,6 +223,9 @@ json.dump([tr.translate(l) if l.strip() else '' for l in lines], open(out, 'w'))
 '''
 
 
+TRANSLATED = {}
+
+
 def translated_ref(job, work, dur):
     """The subtitle in another language made for this very copy (job['ref']), its lines put into English here (Argos Translate, offline,
     in Whisper's own Python, put in the first time), as if heard: four parts of it, each a quarter of the film. None if there's none, or it
@@ -243,6 +246,9 @@ def translated_ref(job, work, dur):
     except Exception:
         prog('Couldn’t translate the %s subtitle here: listening with Whisper instead' % lang)
         return None
+    # (the whole of it, translated, kept to send back: John may take it as the film's English subtitles himself, timed for this copy: John,
+    # 22 Nov 2026, "I should also have the option to use the translated version if I think it's good enough")
+    TRANSLATED.update(lang=lang, srt=write_srt([(a, e, t) for (a, e, _), t in zip(cues, en) if t]))
     segs = [(a, e, words(t), t) for (a, e, _), t in zip(cues, en) if t and words(t)]
     if len(segs) < 40:
         return None
@@ -420,6 +426,14 @@ def prepare(job, ff, wcli, work):
     return evaluate()
 
 
+def tr_out():
+    """The translated subtitle made for this copy, if one was translated, to send back (packed, as the subtitles are)."""
+    import base64
+    if not TRANSLATED.get('srt'):
+        return {}
+    return {'translated': {'lang': TRANSLATED.get('lang'), 'srt64': base64.b64encode(TRANSLATED['srt'].encode('utf-8')).decode()}}
+
+
 def main():
     job_file, base, key = sys.argv[1], sys.argv[2], sys.argv[3]
     job = json.load(open(job_file))
@@ -452,7 +466,7 @@ def main():
         cands = [{'name': x['name'], 'n': x['n'], 'how': x['how'], 'miss': x['miss'], 'samples': x['samples'],
                   'srt64': base64.b64encode(x['srt'].encode('utf-8')).decode(), 'evidence': x.get('evidence') or []} for x in res[:3]]
         say({'ok': False, 'error': 'none of the subtitles matched what’s said through the whole film', 'tried': [[x['name'], x['n']] for x in res],
-             'evidence': (res[0].get('evidence') or []) if res else [], 'cands': cands})
+             'evidence': (res[0].get('evidence') or []) if res else [], 'cands': cands, **tr_out()})
         return
     best = res[0]
     prog('Sending the subtitles back (%s, %d lines matched)' % (best['how'], best['n']))
@@ -461,7 +475,7 @@ def main():
     # John, 21 Nov 2026)
     import base64
     say({'ok': True, 'evidence': best.get('evidence') or [], 'srt64': base64.b64encode(best['srt'].encode('utf-8')).decode(), 'sure': best['sure'], 'how': best['how'], 'n': best['n'], 'miss': best['miss'], 'chose': best['name'],
-         'samples': best['samples'], 'mins': round((time.time() - t0) / 60, 1), 'tried': [[x['name'], x['n'], x['sure']] for x in res]})
+         'samples': best['samples'], 'mins': round((time.time() - t0) / 60, 1), 'tried': [[x['name'], x['n'], x['sure']] for x in res], **tr_out()})
 
 
 if __name__ == '__main__':
