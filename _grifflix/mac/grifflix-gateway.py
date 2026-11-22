@@ -1165,19 +1165,42 @@ def make_handler(g):
                                 e.pop('ref_tried2', None)
                                 save(SUBPREP, P)
                                 return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
+                        # (the film's own length first: a subtitle named for a cut of its length before others, one named for a longer or shorter
+                        # cut last: Andrei Rublev is the 183-minute version, and "BluRay 3hrs 02mn 59s" was there among the 205-minute ones but
+                        # not tried first: John, 22 Nov 2026, "it's clearly the criterion copy and the 183 minute version")
+                        dmin_ = (it.get('RunTimeTicks') or 0) / 6e8
+                        def lenfit_(nm):
+                            nm = str(nm or '').lower()
+                            m1 = re.search(r'(\d)\s*h(?:rs?|ours?)?[\s.:]*(\d{1,2})\s*m', nm)
+                            m2 = re.search(r'\b(\d{2,3})\s*min', nm)
+                            mm_ = int(m1.group(1)) * 60 + int(m1.group(2)) if m1 else int(m2.group(1)) if m2 else None
+                            if not mm_ or not dmin_:
+                                return 0
+                            return 2 if abs(mm_ - dmin_) <= 4 else -3 if abs(mm_ - dmin_) > 8 else 0
+                        if dmin_:
+                            res = sorted(res, key=lambda x: (not x.get('exact'), -lenfit_(x.get('name'))))   # (stable: OpenSubtitles' own order otherwise)
                         more_ = [{'file_id': x['file_id'], 'name': x.get('name') or ''} for x in res[3:10]]   # (the next ones, fetched by John's Mac one at a time
                         # only if none of the first fits exactly, without a change of speed: John, 21 Nov 2026, "Better to get the right one exactly before fixing")
-                        res = res[:3]
-                        cands = []
-                        for x in res:
+                        cands, longer_, last_ = [], [], -1
+                        for k_, x in enumerate(res[:8]):
+                            if len(cands) >= 3:
+                                break
+                            last_ = k_
                             try:
-                                cands.append({'name': x.get('name') or '', 'exact': bool(x.get('exact')), 'srt': SUBS.decode(self.subs_client().download(x['file_id']))})
+                                t_ = SUBS.decode(self.subs_client().download(x['file_id']))
+                                c_ = SUBS.parse_srt(t_)
+                                if dmin_ and c_ and c_[-1][1] > dmin_ * 60 + 300:   # (lines running on past the film's end: made for a longer cut)
+                                    longer_.append(x.get('name') or '')
+                                    continue
+                                cands.append({'name': x.get('name') or '', 'exact': bool(x.get('exact')), 'srt': t_})
                             except Exception as ex:
                                 if 'allowed' in str(ex).lower() or 'download' in str(ex).lower():
                                     save(SUBPREP, P)
                                     return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
+                        more_ = [{'file_id': x['file_id'], 'name': x.get('name') or ''} for x in res[last_ + 1:last_ + 8]]   # (the next ones after those taken)
                         if not cands:
-                            e.update(state='none', note='no English subtitles on OpenSubtitles', at=int(now_))
+                            e.update(state='nomatch' if longer_ else 'none', at=int(now_),
+                                     note=('only English subtitles made for a longer cut (%s)' % ', '.join(longer_[:3]))[:200] if longer_ else 'no English subtitles on OpenSubtitles')
                             continue
                         e.update(state='given', at=int(now_), note='', origin=org_ or '')
                         save(SUBPREP, P)
@@ -8964,6 +8987,20 @@ def serve():
             save(SUBPREP, P_)
     except Exception as e:
         log('Subtitles, films with no dialogue: %s' % e)
+    try:   # (once: those turned down tried again, the subtitles of the film's own length first now (Andrei Rublev): each file kept, so no downloads spent again)
+        mk_l = os.path.expanduser('~/Grifflix/subs-lenfit.done')
+        if not os.path.exists(mk_l):
+            P_ = load(SUBPREP, {}) or {}
+            n_l = 0
+            for k_, e_ in P_.items():
+                if isinstance(e_, dict) and e_.get('state') == 'nomatch':
+                    e_.update(state='waiting', note='to be tried again: the subtitles of its own length first')
+                    n_l += 1
+            save(SUBPREP, P_)
+            open(mk_l, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+            log('Subtitles: %d turned down to be tried again, those of the film’s own length first' % n_l)
+    except Exception as e:
+        log('Subtitles, tried again by length: %s' % e)
 
     def tfu_match():
         """Totally Fucked Up's match put back, if it hasn't it: the Mac restarted for an update two minutes after renaming it, before it was
