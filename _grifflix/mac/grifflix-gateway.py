@@ -8015,6 +8015,112 @@ def ids_given():
 POSTERS_TRIED = {}
 
 
+SMALL_AXE = {1: 'Mangrove', 2: 'Lovers Rock', 3: 'Red, White and Blue', 4: 'Alex Wheatle', 5: 'Education'}
+
+
+def small_axe_films(g):
+    """Once: Small Axe's five episodes made five films in Movies, "Mangrove (2020)/Mangrove (2020).mp4" and so on, as Criterion has them:
+    five films, each with its own cover, in its Small Axe box set (John, 22 Nov 2026, "each of the small axe films are treated as film in
+    the criterion collection but tv - should they be moved to film folders separately?" ... "yes, go ahead"). Each keeps its details as
+    the episode had them (title, year, description, IMDb number), held so the media server doesn't match it to some other film of the
+    name: TMDB hasn't most of them as films. Calendars, hearts, lists and where people stopped follow them; the emptied series folder goes
+    to Set aside."""
+    import shutil
+    from xml.sax.saxutils import escape as xe
+    mk = os.path.expanduser('~/Grifflix/small-axe-films.done')
+    if os.path.exists(mk):
+        return
+    time.sleep(200)
+    try:
+        sid = '12c2cbeb5dc8058e843139de045f9e0f'
+        ser = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, sid), query={'Fields': 'Path'}) or {}
+        eps = (g.jf.call('GET', '/Shows/%s/Episodes' % sid, query={'UserId': g.uid, 'Fields': 'Path,Overview,ProviderIds,DateCreated,PremiereDate'}) or {}).get('Items') or []
+        open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+        if ser.get('Name') != 'Small Axe' or not eps:
+            log('Small Axe: the series wasn’t found to make into films (done already?)')
+            return
+        movies = next((l for v in g.jf.call('GET', '/Library/VirtualFolders') or [] if v.get('CollectionType') == 'movies' for l in v.get('Locations') or []), None)
+        if not movies or not os.path.isdir(movies):
+            log('Small Axe: the Movies folder wasn’t there; left as it is')
+            return
+        want, done_ = {}, []
+        for e in eps:
+            t = SMALL_AXE.get(e.get('IndexNumber'))
+            src = e.get('Path') or ''
+            if not t or e.get('ParentIndexNumber') not in (1, None) or not os.path.exists(src):
+                continue
+            new = '%s (2020)' % t
+            fold = os.path.join(movies, new)
+            if os.path.exists(fold):
+                log('Small Axe: %s is there already; that episode left as it is' % new)
+                continue
+            os.makedirs(fold)
+            imdb = (e.get('ProviderIds') or {}).get('Imdb') or ''
+            with open(os.path.join(fold, 'movie.nfo'), 'w', encoding='utf-8') as f_:   # (its details there before its file, so they're what's read)
+                f_.write('<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<movie>\n  <title>%s</title>\n  <year>2020</year>\n'
+                         '  <premiered>%s</premiered>\n  <plot>%s</plot>\n  <director>Steve McQueen</director>\n  <imdbid>%s</imdbid>\n'
+                         '  <uniqueid type="imdb" default="true">%s</uniqueid>\n  <set>Small Axe</set>\n</movie>\n'
+                         % (xe(t), (e.get('PremiereDate') or '2020-01-01')[:10], xe(e.get('Overview') or ''), xe(imdb), xe(imdb)))
+            stem = os.path.splitext(os.path.basename(src))[0]
+            d_ = os.path.dirname(src)
+            for n in sorted(os.listdir(d_)):   # (the film, and its subtitles and the like beside it, named after it)
+                if n.startswith(stem):
+                    shutil.move(os.path.join(d_, n), os.path.join(fold, new + n[len(stem):]))
+            want[os.path.realpath(os.path.join(fold, new + os.path.splitext(src)[1]))] = e
+            done_.append(new)
+        if not want:
+            return
+        log('Small Axe made films, as John said: %s' % ', '.join(done_))
+        record('moved', change='Small Axe’s episodes made films in Movies', films=done_, by='John’s say-so', why='Criterion has them as five films in its Small Axe box set')
+        VIDS = ('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.webm')
+        sp = ser.get('Path') or ''
+        if sp and os.path.isdir(sp) and not any(n.lower().endswith(VIDS) for _, _, fs in os.walk(sp) for n in fs):
+            try:
+                os.makedirs(SETASIDE, exist_ok=True)
+                shutil.move(sp, os.path.join(SETASIDE, 'Small Axe (2020) (TV, its films now in Movies)'))
+            except Exception as e:
+                log('  Small Axe: its emptied TV folder stays (%s)' % e)
+        try:
+            g.jf.call('POST', '/Library/Refresh')
+        except Exception:
+            pass
+        m, got = {}, {}
+        for _ in range(40):   # (once the media server has them as films: their details put on and held, everything moved over)
+            time.sleep(30)
+            r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path'}, timeout=120) or {}
+            for x in r.get('Items') or []:
+                rp = os.path.realpath(x.get('Path') or '')
+                if rp in want and rp not in got:
+                    got[rp] = x['Id']
+            if len(got) == len(want):
+                break
+        for rp, nid in got.items():
+            e = want[rp]
+            try:
+                full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, nid)) or {}
+                full.update(Name=SMALL_AXE[e['IndexNumber']], ProductionYear=2020, Overview=e.get('Overview') or full.get('Overview'),
+                            ProviderIds={'Imdb': (e.get('ProviderIds') or {}).get('Imdb') or ''}, LockData=True)
+                if e.get('PremiereDate'):
+                    full['PremiereDate'] = e['PremiereDate']
+                if e.get('DateCreated'):   # (not shown among the new films)
+                    full['DateCreated'] = e['DateCreated']
+                g.jf.call('POST', '/Items/%s' % nid, full)
+            except Exception as x_:
+                log('  Small Axe, %s: its details: %s' % (SMALL_AXE.get(e.get('IndexNumber')), x_))
+            m[e['Id']] = nid
+            if e.get('IndexNumber') == 1:
+                m[sid] = nid   # (the series itself, wherever it was: Mangrove, its first)
+        n = g.remap(m) if m else 0
+        log('  Small Axe: %d of %d films seen by the media server; calendars, lists, hearts and places followed them (%d changed)' % (len(got), len(want), n))
+        covers_now(only={os.path.basename(os.path.dirname(rp)) for rp in want})
+        time.sleep(120)
+        posters_on(only={os.path.basename(os.path.dirname(rp)) for rp in want})
+        g.forget()
+        g.publish_soon = time.time() + 180
+    except Exception as e:
+        log('Small Axe: %s' % e)
+
+
 def posters_on(only=None):
     """Each film whose folder has its poster (poster.jpg or .png) but the media server shows no picture for it: that poster put on it.
     A Criterion cover put in a film's folder just after Fix match renamed it was never taken up (Totally F***ed Up, John, 22 Nov 2026,
@@ -8675,6 +8781,7 @@ def serve():
                 log('  Totally Fucked Up: its cover: %s' % ('on' if posters_on(only={'Totally Fucked Up (1993)'}) else 'on already, or none in its folder'))
                 return
     threading.Thread(target=tfu_rename, daemon=True).start()
+    threading.Thread(target=small_axe_films, args=(g,), daemon=True).start()
     mk_ = os.path.expanduser('~/Grifflix/afi-reread.done')
     if not os.path.exists(mk_):   # (once: the site updated, so every AFI page kept is read again by the better reading: 22 Nov 2026)
         try:
