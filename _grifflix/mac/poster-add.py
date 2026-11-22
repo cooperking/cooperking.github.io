@@ -180,6 +180,13 @@ def main():
             m_ = re.match(r'^(.*)_(\d{4})$', name)
             if m_:
                 hit = [f for f, y in byname.get(loose(m_.group(1)), []) if abs(y - int(m_.group(2))) <= 1] or None
+        if not hit and not re.search(r'_\d{4}$', name):
+            # (a release of several films, its cover named without a year as Criterion gives none ("ahollisframptonodyssey.jpg"), and its one
+            # folder "A Hollis Frampton Odyssey (1966)" holding its films: that folder's, as W. C. Fields's is: John, 22 Nov 2026, "The Hollis
+            # frampton films should all have their box set covers")
+            c_ = [f for f, y in byname.get(loose(name), [])]
+            if len(c_) == 1 and sum(1 for n_ in os.listdir(os.path.join(MOVIES, c_[0])) if n_.lower().endswith(VIDEO) and not n_.startswith('._')) > 1:
+                hit = c_
         return hit
     # (one folder, two covers: a box set's, named without a year ("thekillers.jpg", The Killers' two films), and the film's own
     # ("thekillers_1946.jpg"): the film's own only. Each run put one on, then the other, and the media server read the film again each
