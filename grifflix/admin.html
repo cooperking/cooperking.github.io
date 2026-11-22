@@ -1176,6 +1176,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         var ago = function (t) { var m = Math.max(0, Math.round((Date.now() / 1000 - t) / 60)); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min ago'; };
         var hm = function (t) { return new Date(t * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); };
         nowL = nowL.filter(function (x, i) { return i === 0 || (x.stepat && Date.now() / 1000 - x.stepat < 900); });   // (the latest, and any other still saying what it's doing)
+        // (OpenSubtitles' downloads left today, and when they're back if used up: John, 22 Nov 2026, "it said I've used up my 1000 downloads for today")
+        var dl = j.dl || {}, rs = dl.reset ? new Date(String(dl.reset).replace(/(\.\d+)?Z?$/, 'Z')) : null;
+        $('#spsay').innerHTML += dl.out ? '<br><b>OpenSubtitles downloads used up for today</b>' + (rs && !isNaN(rs) ? ': they’re back at ' + rs.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + (rs.toDateString() !== new Date().toDateString() ? ' tomorrow' : '') : '') + '. Films needing new subtitles wait till then. Each file is now downloaded once and kept, so the same one is never fetched twice.'
+          : dl.left != null ? '<br>OpenSubtitles downloads left today: ' + dl.left + '.' : '';
         $('#spnow').innerHTML = nowL.length ? nowL.map(function (x) { return '<b>Now:</b> ' + FL(x.name, x.year, x.id) + ' (' + esc(LN[x.lang] || x.lang || '') + ') · given to your Mac at ' + hm(x.at) +
           (x.step ? '<br><span style="opacity:.85">' + esc(x.step) + ' · ' + ago(x.stepat) + '</span>' : '<br><span style="opacity:.85">No word from your Mac on it yet</span>'); }).join('<br><br>') :
           (j.paused ? '' : '<b>Now:</b> nothing: your Mac takes the next when it’s on, at home and has no film to convert.');
