@@ -505,9 +505,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           <div class="lbbar"><span class="lbchips" id="lbres"></span></div>
           <div class="lbbar"><span class="lbchips" id="lbchips"></span><select id="lbsort" class="name"><option value="worst">Worst first</option><option value="big">Biggest files</option><option value="az">A to Z</option></select><input type="search" id="lbq" class="name" placeholder="A film’s name" autocomplete="off"></div>
           <div class="lbbar"><small style="opacity:.75;margin-right:4px">Waiting on the Mac mini’s converter:</small><span class="lbchips" id="lbqueue"></span></div>
-          <div class="lbbar"><button class="btn" type="button" id="lbcopy">Copy all for Google Sheets</button><button class="btn" type="button" id="lbcsv">Download all (CSV)</button></div>
+          <div class="lbbar"><button class="btn" type="button" id="lbcopy">Copy all for Google Sheets</button><button class="btn" type="button" id="lbcsv">Download all (CSV)</button><button class="btn" type="button" id="lbsto">This list in Search Tab Opener</button></div>
           <p class="stat" id="lbsum" style="margin:10px 0 0"></p>
           <ul class="changes lbl" id="lblist"></ul>
+          <div class="cbdock" id="lbdock" hidden><b id="lbdockn"></b><button class="btn" type="button" id="lbdall">Tick all shown</button><button class="btn" type="button" id="lbdclear">Clear all</button><button class="btn" type="button" id="lbdsto">Search Tab Opener</button><button class="btn" type="button" id="lbdcsv">Download</button></div>
           <div class="state"><button class="btn" id="lbmore" type="button" style="display:none">More</button></div>
         </div>
       </section>
@@ -2614,6 +2615,40 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       return [x.n || '', x.y || '', x.g.res, x.w || '', x.h || '', vn(x.v), x.b > 8 ? '10-bit' : '8-bit', x.mbps || '', x.gb || '', x.mins || '', x.a || '', LBQ[x.g.q], x.g.why, x.why || (x.conv ? (x.rp ? 'repackaged' : 'converted') : ''), 'https://grifflix.co.uk/#film/' + (flId(x.n, x.y) || x.id)];
     }));
   }
+  // (films in the library ticked, as the missing box set films are, and opened in John's Search Tab Opener or downloaded: the chosen, or with
+  // none chosen the list as it's shown: John, 22 Nov 2026, "I need the same functionality for opening with my tab opener for library
+  // conversions as I do for box sets")
+  var LBP = {}; try { LBP = JSON.parse(localStorage.getItem('gx-lbpick') || '{}') || {}; } catch (e) { LBP = {}; }
+  function lbSave() { try { localStorage.setItem('gx-lbpick', JSON.stringify(LBP)); } catch (e) {} lbCount(); }
+  function lbChosen() { return (LB.all || []).filter(function (x) { return LBP[x.id]; }); }
+  function lbCount() { var n = lbChosen().length; $('#lbdock').hidden = !n; $('#lbdockn').textContent = n + ' film' + (n === 1 ? '' : 's') + ' chosen'; try { lbStoPrep(); } catch (e) {} }
+  $('#lblist').addEventListener('change', function (e) { var t = e.target; if (!t.classList.contains('lbpick')) return; if (t.checked) LBP[t.dataset.id] = 1; else delete LBP[t.dataset.id]; t.closest('li').classList.toggle('on', t.checked); lbSave(); });
+  function lbPickRows() { var ch = lbChosen(); return { list: ch.length ? ch : (LB.cur || []), ch: ch.length }; }
+  function lbCsvOf(list) { return '\ufeff' + lbRows(list).map(function (r) { return r.map(function (c) { c = String(c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\r\n'); }
+  var LBSTO = null;
+  function lbStoPrep() {   // (made ready beforehand, compressed into its link, so the tab opens at once when pressed: as for the box sets)
+    var o = lbPickRows(), csv = lbCsvOf(o.list), nm = (o.ch ? 'Grifflix films chosen ' : 'Grifflix library ' + ({ replace: 'to replace', convert: 'to convert', good: 'good' }[LB.f] || 'list') + ' ') + new Date().toISOString().slice(0, 10);
+    var base = 'https://cooperking.github.io/search-tab-opener/#from=grifflix&name=' + encodeURIComponent(nm), b64 = btoa(unescape(encodeURIComponent(csv)));
+    var me = LBSTO = { url: base + (b64.length < 24000 ? '&csv=' + encodeURIComponent('data:text/csv;base64,' + b64) : ''), csv: csv, name: nm, n: o.list.length, ch: o.ch };
+    if (typeof CompressionStream !== 'undefined') new Response(new Blob([csv]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer().then(function (ab) {
+      var u = new Uint8Array(ab), bin = ''; for (var i = 0; i < u.length; i += 8192) bin += String.fromCharCode.apply(null, u.subarray(i, i + 8192));
+      me.url = base + '&csvz=' + btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }).catch(function () {});
+    return me;
+  }
+  function lbStoOpen() {
+    var o = LBSTO || lbStoPrep();
+    if (!o.n) return toast('Nothing in the list');
+    if (navigator.standalone && /iPhone|iPad|iPod/.test(navigator.userAgent)) { location.href = 'x-safari-' + o.url; toast(o.n + ' film' + (o.n === 1 ? '' : 's') + ' opened in Safari'); return; }
+    var w = window.open(o.url, '_blank');
+    var hand = function (e) { if (e.origin !== 'https://cooperking.github.io' || !e.data || e.data.type !== 'sto-ready' || !w || e.source !== w) return; window.removeEventListener('message', hand); w.postMessage({ type: 'sto-csv', csv: o.csv, name: o.name }, 'https://cooperking.github.io'); };
+    window.addEventListener('message', hand); setTimeout(function () { window.removeEventListener('message', hand); }, 60000);
+    toast(o.n + ' film' + (o.n === 1 ? '' : 's') + (o.ch ? ' chosen' : '') + (w === null && !/iPhone|iPad/.test(navigator.userAgent) ? ': if no tab opened, allow pop-ups for this page' : ' opened in Search Tab Opener'));
+  }
+  $('#lbsto').onclick = lbStoOpen; $('#lbdsto').onclick = lbStoOpen;   // (its list made ready as the choice or the list changes (lbCount): a tab opened after a wait is blocked)
+  $('#lbdclear').onclick = function () { LBP = {}; Array.prototype.forEach.call(document.querySelectorAll('#lblist .lbpick'), function (r) { r.checked = false; r.closest('li').classList.remove('on'); }); lbSave(); toast('Cleared: nothing chosen'); };
+  $('#lbdall').onclick = function () { (LB.cur || []).forEach(function (x) { LBP[x.id] = 1; }); Array.prototype.forEach.call(document.querySelectorAll('#lblist .lbpick'), function (r) { r.checked = true; r.closest('li').classList.add('on'); }); lbSave(); };
+  $('#lbdcsv').onclick = function () { var o = lbPickRows(), a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([lbCsvOf(o.list)], { type: 'text/csv;charset=utf-8' })); a.download = 'Grifflix films chosen ' + new Date().toISOString().slice(0, 10) + '.csv'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000); toast('Downloaded ' + o.list.length + ' film' + (o.list.length === 1 ? '' : 's')); };
   function lbExport(how) {
     var all = (LB.all || []).slice().sort(function (p, q) { return LBRES.indexOf(p.g.res) - LBRES.indexOf(q.g.res) || (p.n || '').localeCompare(q.n || ''); });
     var R = lbRows(all);
@@ -2645,7 +2680,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var vn = function (v) { return { h264: 'H.264', hevc: 'HEVC', h265: 'HEVC', mpeg4: 'MPEG-4 (XviD/DivX)', mpeg2video: 'MPEG-2', vc1: 'VC-1', av1: 'AV1', vp9: 'VP9' }[v] || (v || '?').toUpperCase(); };
     var fl = function (f) { return f ? (f.w ? f.w + '×' + f.h + ' ' : '') + esc(f.v) + (f.mbps ? ', ' + f.mbps + ' Mbps' : '') + (f.gb ? ', ' + f.gb + ' GB' : '') : ''; };
     $('#lblist').innerHTML = L.slice(0, LB.n).map(function (x) {
-      return '<li>' + FL(x.n, x.y, x.id) + (x.y ? ' <span class="when" style="display:inline">(' + x.y + ')</span>' : '') + '<span class="q ' + x.g.q + '">' + LBQ[x.g.q] + '</span>' +
+      return '<li' + (LBP[x.id] ? ' class="on"' : '') + '><input type="checkbox" class="lbpick" data-id="' + esc(x.id) + '"' + (LBP[x.id] ? ' checked' : '') + ' aria-label="Choose ' + esc(x.n) + '" style="margin-right:8px;vertical-align:middle"> ' + FL(x.n, x.y, x.id) + (x.y ? ' <span class="when" style="display:inline">(' + x.y + ')</span>' : '') + '<span class="q ' + x.g.q + '">' + LBQ[x.g.q] + '</span>' +
         '<span class="spec">' + x.g.res + (x.w ? ' · ' + x.w + '×' + x.h : '') + ' · ' + vn(x.v) + (x.b > 8 ? ' 10-bit' : '') + (x.mbps ? ' · ' + x.mbps + ' Mbps' : '') + (x.gb ? ' · ' + x.gb + ' GB' : '') + (x.mins ? ' · ' + x.mins + ' min' : '') + (x.a ? ' · ' + esc(x.a) : '') + '</span>' +
         '<span class="why2">' + [x.g.why ? esc(x.g.why) : '', x.conv ? (x.rp ? 'repackaged' : 'converted') + (x.was ? ' (was ' + fl(x.was) + ')' : '') : '', x.why ? (/^to (repackage|make smaller)/.test(x.why) ? esc(x.why) : 'waiting to convert: ' + esc(x.why)) : ''].filter(Boolean).join(' · ') +
         (x.ps ? '<span class="why2">Picture subtitles (' + esc(x.ps) + '): ' + (x.why ? 'saved beside the film when it’s converted (an MP4 can’t hold them), to be turned into text later' : 'in this file') + '</span>' : '') +
@@ -2656,6 +2691,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         // (or on John's own Mac, far faster, queued from here: John, 18 Nov 2026, "how can I queue things on my mac to convert?")
         (LB.f === 'big' || (x.why && (!x.conv || x.rp)) ? '<button type="button" class="lbnext" data-lbmac="' + x.id + '"' + (LB.f === 'big' ? ' data-force="1"' : '') + ' data-n="' + esc(x.n) + '">' + (LB.MQ[x.id] ? 'Queued for your Mac ✓' : 'Queue for my Mac') + '</button>' : '')) + '</span></li>';
     }).join('') || '<li>None.</li>';
+    LB.cur = L; lbCount();
     $('#lbmore').style.display = L.length <= LB.n ? 'none' : ''; $('#lbmore').textContent = 'Load more (' + (L.length - LB.n) + ' more)'; $('#lbmore').onclick = function () { LB.n += 50; lbDraw(); };
     Array.prototype.forEach.call(document.querySelectorAll('[data-lbmac]'), function (b) { if (LB.MQ[b.dataset.lbmac]) b.disabled = true; b.onclick = function () {
       b.disabled = true;
