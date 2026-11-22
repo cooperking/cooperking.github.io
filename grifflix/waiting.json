@@ -6,7 +6,7 @@
    "added": "2026-11-18",
    "auto": "draft",
    "title": "Put the draft live",
-   "why": "Changes to the site are on the draft until you put them live (Queue for my Mac's button on films, the Criterion pages).",
+   "why": "Changes to the site are on the draft until you put them live. Waiting now: editing always on in the draft, AFI details for members only (live shows none till then), For kids tightened, the series page and picture width, subtitles redrawn after skipping.",
    "how": "Home › Updates: look at the Preview, then press Update everything."
   },
   {
@@ -15,8 +15,7 @@
    "auto": "macagent",
    "title": "Set up your Mac to take queued films",
    "why": "So the big films you queue are converted on your Mac by themselves, freeing space on the G-Drive.",
-   "how": "On your Mac: Conversions › Set up your Mac to take queued films, press Copy, paste into Terminal, press Return. Then Queue for my Mac on each big film."
-,
+   "how": "On your Mac: Conversions › Set up your Mac to take queued films, press Copy, paste into Terminal, press Return. Then Queue for my Mac on each big film.",
    "done": "2026-11-20"
   },
   {
@@ -122,6 +121,51 @@
    "title": "Run both Criterion bookmarklets again, for the special features",
    "why": "Criterion's special features lists, for each film and each box set, ticked where you have that extra.",
    "how": "Criterion: drag both bookmarks to your bar again (replacing the old ones). Genres: open Criterion's list, click it, choose criterion-tags.json. Synopses: Copy your list, open criterion.com, click it, paste, then choose criterion-synopses.json (it reads every film again once, about 3 seconds each, and carries on if Criterion pauses it)."
+  },
+  {
+   "id": "afi-pages-434",
+   "added": "2026-11-22",
+   "title": "Run the AFI bookmark again, for the 434 films whose AFI pages weren't read",
+   "why": "434 films have their AFI page linked but no details: mostly films after 1993, whose pages AFI shows differently. The bookmark now reads those too.",
+   "how": "Reload this page, drag Library › AFI Catalog › Grifflix: AFI pages to your bar again (replacing the old one), run it on catalog.afi.com (about half an hour), then choose the grifflix-afi.json it saves there. Tell Claude when it's in, for the AFI document."
+  },
+  {
+   "id": "ask-set-genres",
+   "added": "2026-11-22",
+   "title": "Re-read the genres of films Criterion only lists inside a box set?",
+   "why": "Those films were given their whole box set's genres (as Agnès de ci de là Varda had Comedy and Musical). Re-reading them from TMDB gives them their own, but changes the genres of every such film.",
+   "how": "Tell Claude yes or no."
+  },
+  {
+   "id": "ask-kids-12a",
+   "added": "2026-11-22",
+   "optional": true,
+   "title": "Should 12A animation count as For kids?",
+   "why": "For kids now leaves out animation rated 12A and over: The Boy and the Heron and Ne Zha 2 dropped out with By Brakhage.",
+   "how": "Tell Claude if 12A should count; otherwise nothing to do."
+  },
+  {
+   "id": "ask-varda-title",
+   "added": "2026-11-22",
+   "optional": true,
+   "title": "Agnès de ci de là Varda: keep its English title?",
+   "why": "Given its IMDb number, the media server named it Agnès Varda: From Here to There, TMDB's English title.",
+   "how": "Tell Claude if you'd rather it kept the French title; otherwise nothing to do."
+  },
+  {
+   "id": "ask-picture-subs",
+   "added": "2026-11-22",
+   "title": "Turn picture subtitles into text?",
+   "why": "99 foreign films have English picture subtitles (Blu-ray PGS) inside them, exactly timed. Read into text they'd play everywhere, better than any made by Whisper.",
+   "how": "Tell Claude yes to build it: it would run on your Mac, like the Whisper job."
+  },
+  {
+   "id": "ask-afi-history",
+   "added": "2026-11-22",
+   "optional": true,
+   "title": "Remove the AFI text from the site's past versions on GitHub?",
+   "why": "The AFI details are now for members only and no longer in the site's files, but copies published before stay in the repository's history.",
+   "how": "Tell Claude if you want them gone: it means rewriting the repository's history, so only if you're sure."
   }
  ]
 }
