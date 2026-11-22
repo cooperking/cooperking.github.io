@@ -1069,6 +1069,21 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   // ---- English subtitles made ready on John's Mac (subprep.py), timed by Whisper: John, 20 Nov 2026, "pre-prepare"
   // (what it did for a film, in full: the subtitle chosen, how it was moved and how sure, each part of the film listened to, the others tried:
   // John, 21 Nov 2026, "I still need to know what the fix chose to do - if it moved them - what subtitles it chose, etc")
+  // (why one was turned down, in full: each of the likeliest subtitles, how many of its lines agreed with what's said in each part of the film
+  // listened to, and whether a part agreed better at another timing (a different cut); and each one to choose: John, 22 Nov 2026, "I need
+  // more details for rejections ... I should be able to say to choose that one if I view it")
+  function spWhy(x) {
+    var C = x.cands || []; if (!C.length) return '';
+    var mm = function (t) { t = Math.round(t / 60); return t < 1 ? 'the start' : t + ' min'; };
+    return '<details style="margin-top:6px"' + (C.length ? ' open' : '') + '><summary style="cursor:pointer;font-size:13px;opacity:.85">Why it was turned down, and the likeliest to choose</summary><div class="stat" style="margin:6px 0 0;font-size:13px;line-height:1.55">' +
+      'To be taken by itself, a subtitle needs one timing for the whole film, 12 or more lines agreeing with what’s said, at least 3 in two parts, at least a tenth in any part where plenty is said, and no part agreeing better at another timing (a different cut).' +
+      C.map(function (c) {
+        var parts = (c.samples || []).map(function (p) { return '<li>From ' + mm(p[0]) + ': ' + p[1] + ' of ' + (p[3] != null ? p[3] : '?') + ' lines heard agreeing' + (p[1] ? ' (typically ' + p[2] + ' s out)' : '') +
+          (p[4] != null ? ' · <b>agrees better ' + (p[4] > 0 ? p[4] + ' s later' : -p[4] + ' s earlier') + '</b>: a different cut here?' : '') + (p[3] >= 25 && p[1] < Math.max(3, .1 * p[3]) ? ' · <b>too few for so much said</b>' : '') + '</li>'; }).join('');
+        return '<div style="margin:10px 0 0;padding:8px 0 0;border-top:1px solid var(--line)"><b>“' + esc(c.name) + '”</b>: ' + c.n + ' lines agreeing in all, ' + esc(c.how) + (c.miss != null ? ', typically ' + c.miss + ' s out' : '') +
+          '<ul style="margin:4px 0 6px 18px;padding:0">' + parts + '</ul><button class="btn" type="button" data-spchoose="' + x.id + '|' + c.i + '">Use this one</button></div>';
+      }).join('') + '</div></details>';
+  }
   function spWhat(x) {
     var sv = x.file ? '<b>Saved as:</b> ' + esc(String(x.file).split('/').pop()) + '<br>' : '';
     if (x.how === 'exact') return '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:13px;opacity:.85">What it did</summary><div class="stat" style="margin:6px 0 0;font-size:13px;line-height:1.55">' +
@@ -1155,7 +1170,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           $('#splists').innerHTML = L.length ? L.slice(0, 300).map(function (x) {
             var again = x.k === 'check' || x.k === 'none' || x.k === 'corrected';
             return '<li>' + FL(x.name, x.year, x.id) + ' <small style="opacity:.7">' + langN(x) + '</small><span class="when">' + line(x) + (x.at && x.k !== 'todo' ? ' · ' + new Date(x.at * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') + '</span>' +
-              (x.k === 'todo' ? '' : spWhat(x)) + (again ? '<span class="state" style="margin-top:4px"><button class="btn" type="button" data-spagain="' + x.id + '">Try again</button></span>' : '') + '</li>';
+              (x.k === 'todo' ? '' : spWhat(x)) + (x.k === 'none' || x.k === 'check' ? spWhy(x) : '') + (again ? '<span class="state" style="margin-top:4px"><button class="btn" type="button" data-spagain="' + x.id + '">Try again</button></span>' : '') + '</li>';
           }).join('') : '<li>None.</li>';
           wire();
         };
@@ -1182,6 +1197,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           }).catch(function (e) { box.textContent = 'Couldn’t ask: ' + (e.message || e); });
         }; });
         Array.prototype.forEach.call(document.querySelectorAll('[data-spagain]'), function (bt) { bt.onclick = function () { bt.disabled = true; subPrep({ op: 'again', id: bt.dataset.spagain }); }; });
+        Array.prototype.forEach.call(document.querySelectorAll('[data-spchoose]'), function (bt) { bt.onclick = function () {
+          var pr = bt.dataset.spchoose.split('|'); bt.disabled = true; bt.textContent = 'Saving…';
+          subPrep({ op: 'choose', id: pr[0], i: +pr[1] }); toast('Saved as its English subtitles: in Corrected');
+        }; });
         };
         draw();
       }).catch(function (e) { $('#spsay').textContent = 'Couldn’t ask just now: ' + (e.message || e) + '.'; });

@@ -247,20 +247,33 @@ def prepare(job, ff, wcli, work):
         # (then each heard line against only the subtitle lines at that point of the film by this timing, not its likeliest anywhere: a
         # phrase said twice in a film matched where it's said the other time, and the agreeing ones went uncounted: Wild Strawberries,
         # John, 21 Nov 2026, "it's matching to the wrong parts of the text". The way WhisperTimeSync works: the two texts side by side, in order)
-        wins, n = [], 0   # (each part: its lines that agree with the whole film's timing, and how far out they are)
+        wins, n = [], 0   # (each part: its lines that agree with the whole film's timing, how far out, how many heard, and another timing it prefers)
         for t0, segs in heard:
             ok = [abs(m_[0] - m_[4]) for m_ in (here(sg, cues, r, b) for sg in segs) if m_ and m_[5]]
-            wins.append((t0, len(ok), round(sorted(ok)[len(ok) // 2], 2) if ok else 99, len(segs)))
+            # (whether this part's lines agree better at some other timing: a different cut there. Its lines' likeliest subtitle lines anywhere,
+            # and the most of them at any one timing)
+            offs = sorted(f - r * c for f, c, _ in matches(segs, cues))
+            alt, j_ = (0, 0.0), 0
+            for i_ in range(len(offs)):
+                while offs[i_] - offs[j_] > 1.2:
+                    j_ += 1
+                if i_ - j_ + 1 > alt[0]:
+                    alt = (i_ - j_ + 1, offs[(i_ + j_) // 2])
+            other = alt[0] >= 4 and abs(alt[1] - b) > 2 and alt[0] > len(ok)
+            wins.append((t0, len(ok), round(sorted(ok)[len(ok) // 2], 2) if ok else 99, len(segs), round(alt[1] - b, 1) if other else None))
             n += len(ok)
-        heardp = [w for w in wins if w[3] >= 8]   # (parts where enough was said in English to judge)
-        # (every part with enough heard in English has an eighth of its lines or more agreeing, three at least: chance finds one or two in a
-        # part at a wrong timing, the right one most of them)
-        fits = len(heardp) >= min(2, len(wins)) and all(w[1] >= max(3, .12 * w[3]) for w in heardp) and sum(w[1] for w in wins) >= 10
+        # (one timing for the whole film, enough of its lines agreeing in at least two parts, twelve or more in all, and no part agreeing better
+        # at another timing (a different cut), nor a part with plenty said and none of it agreeing. Not every part needing three: a film's
+        # opening minutes are often titles and music, ten lines or so heard (The 400 Blows, 80 lines agreeing, and A Room in Town, 89, were turned
+        # down for one or two in the opening): John, 22 Nov 2026, "rejecting where there are clear matches")
+        fits = n >= 12 and sum(1 for w in wins if w[1] >= 3) >= min(2, len(wins)) and not any(w[4] is not None for w in wins) and \
+            not any(w[3] >= 25 and w[1] < max(3, .1 * w[3]) for w in wins)   # (a part with plenty heard: a tenth of it agreeing at least, as
+            # the right subtitle's do even when Whisper's translation is loose (Menashe, Yiddish, an eighth); at a wrong speed, a twentieth)
         sure = fits and n >= 12 and miss <= .6
         moved = [[r * a + b, r * e + b, t] for a, e, t in cues]
         how = 'moved %+.1f s%s' % (b, '' if abs(r - 1) < .00005 else ', at %.4fx speed' % r)
         return {'_ci': cand_i, '_r': r, '_b': b, 'fits': bool(fits), 'exact': abs(r - 1) < .003, 'name': cand.get('name') or '', 'n': n, 'miss': round(miss, 2), 'sure': bool(sure), 'how': how, 'srt': write_srt(moved),
-                'samples': [[round(w[0]), w[1], w[2]] for w in wins]}
+                'samples': [[round(w[0]), w[1], w[2], w[3], w[4]] for w in wins]}
 
     # (each subtitle first as it is, at its own speed: the right one fits with only an offset. Only if none of them, nor the next ones fetched
     # one at a time, fits so, the best fitted by a change of speed (made for another copy): John, 21 Nov 2026, "before retiming for frame rate,
@@ -343,8 +356,13 @@ def main():
     finally:
         shutil.rmtree(work, ignore_errors=True)
     if not res or not res[0].get('fits') or res[0]['n'] < 4:   # (none fitting the whole film: a fail, nothing saved; what was heard against the nearest sent all the same)
+        import base64
+        # (and the likeliest three as they'd be timed, each with how each part of the film agreed, so John can see why and choose one himself:
+        # John, 22 Nov 2026, "I need more details for rejections ... I should be able to say to choose that one if I view it")
+        cands = [{'name': x['name'], 'n': x['n'], 'how': x['how'], 'miss': x['miss'], 'samples': x['samples'],
+                  'srt64': base64.b64encode(x['srt'].encode('utf-8')).decode()} for x in res[:3]]
         say({'ok': False, 'error': 'none of the subtitles matched what’s said through the whole film', 'tried': [[x['name'], x['n']] for x in res],
-             'evidence': (res[0].get('evidence') or []) if res else []})
+             'evidence': (res[0].get('evidence') or []) if res else [], 'cands': cands})
         return
     best = res[0]
     prog('Sending the subtitles back (%s, %d lines matched)' % (best['how'], best['n']))
