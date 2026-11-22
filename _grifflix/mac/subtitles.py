@@ -731,15 +731,71 @@ def align_to_ref(ref, cues, ratios=RATIOS):
         if abs(r2 / r - 1) > .003:
             break
         r, b = r2, my - r2 * mx
-    out, hit = [], 0
-    for s0, e0, t in cues:
-        s1, e1 = r * s0 + b, r * e0 + b
-        j = near(s1)
-        if j is not None and abs(st[j] - s1) <= .3:
-            hit += 1
-            s1 = st[j]
-            if abs(rs[j][1] - e1) <= .6:
-                e1 = rs[j][1]
+    # (each English line that lands on one of its lines given that line's times; each that doesn't (split or joined differently, the
+    # English made for another copy) moved by as much as the landed lines either side of it were, in proportion, not by the whole film's
+    # one timing: Lady Snowblood 2, 66% landed, John, 22 Nov 2026, "isn't good. Why?")
+    # (a line counts as landed only among others landing at the same timing, four of any six in a row: by chance alone one in eight lands
+    # near some line of the other; and where the English copy is cut differently, a part at another timing found the same way, the other
+    # subtitle being this very file's own timing)
+    anchor = {}
+
+    def land(r_, b_, free):
+        hits = {}
+        for n in free:
+            s1 = r_ * cues[n][0] + b_
+            j = near(s1)
+            if j is not None and abs(st[j] - s1) <= .3:
+                hits[n] = (st[j] - cues[n][0], rs[j][1], abs(st[j] - s1))
+        keep = {}
+        for n in hits:   # (by the lines' own order in the subtitle, so a line's neighbours are its neighbours)
+            for k in range(n - 5, n + 1):
+                if sum(1 for m in range(k, k + 6) if m in hits) >= 4:
+                    keep[n] = hits[n]
+                    break
+        return keep
+    anchor.update(land(r, b, range(len(cues))))
+    for _ in range(6):   # (further parts at their own timings, each a run of lines, while any are found)
+        free = [n for n in range(len(cues)) if n not in anchor]
+        if len(free) < 8:
+            break
+        h = Counter()
+        for n in free[::max(1, len(free) // 300)]:
+            for s_ in st:
+                h[round((s_ - r * cues[n][0]) * 5)] += 1
+        got = {}
+        for k_, _ in h.most_common(5):
+            got = land(r, k_ / 5.0, free)
+            if len(got) >= 8:
+                break
+        if len(got) < 8:
+            break
+        anchor.update(got)
+    keys = sorted(anchor)
+    out = []
+    for n, (s0, e0, t) in enumerate(cues):
+        if n in anchor:
+            d, rend, _ = anchor[n]
+            s1, e1 = s0 + d, e0 + d
+            if abs(rend - e1) <= .6:
+                e1 = rend
+        else:
+            i = bisect.bisect_left(keys, n)
+            lo = keys[i - 1] if i > 0 else None
+            hi = keys[i] if i < len(keys) else None
+            if lo is not None and hi is not None:
+                a0, a1 = cues[lo][0], cues[hi][0]
+                w = (s0 - a0) / (a1 - a0) if a1 > a0 else 0
+                d = anchor[lo][0] + w * (anchor[hi][0] - anchor[lo][0])
+            elif lo is not None or hi is not None:
+                d = anchor[lo if lo is not None else hi][0]
+            else:
+                d = (r - 1) * s0 + b
+            s1, e1 = s0 + d, e0 + d
         out.append((max(0, s1), max(s1 + .3, e1), t))
-    how = 'timed by a subtitle made for this very file: moved %+.1f s%s, lines on its lines' % (b, '' if abs(r - 1) < .0005 else ', at %.4fx speed' % r)
+    hit = len(anchor)
+    miss = sorted(v[2] for v in anchor.values())
+    gap = max([cues[keys[i + 1]][0] - cues[keys[i]][0] for i in range(len(keys) - 1)] or [0])
+    how = ('timed by a subtitle made for this very file: moved %+.1f s%s; %d of %d lines on its lines (typically %.2f s out before), the rest '
+           'between them; the longest stretch with none %d s' % (b, '' if abs(r - 1) < .0005 else ', at %.4fx speed' % r, hit, len(cues),
+                                                                  miss[len(miss) // 2] if miss else 0, gap))
     return hit / len(cues), hit, out, how
