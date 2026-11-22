@@ -8059,7 +8059,7 @@ def small_axe_films(g):
             with open(os.path.join(fold, 'movie.nfo'), 'w', encoding='utf-8') as f_:   # (its details there before its file, so they're what's read)
                 f_.write('<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<movie>\n  <title>%s</title>\n  <year>2020</year>\n'
                          '  <premiered>%s</premiered>\n  <plot>%s</plot>\n  <director>Steve McQueen</director>\n  <imdbid>%s</imdbid>\n'
-                         '  <uniqueid type="imdb" default="true">%s</uniqueid>\n  <set>Small Axe</set>\n</movie>\n'
+                         '  <uniqueid type="imdb" default="true">%s</uniqueid>\n</movie>\n'
                          % (xe(t), (e.get('PremiereDate') or '2020-01-01')[:10], xe(e.get('Overview') or ''), xe(imdb), xe(imdb)))
             stem = os.path.splitext(os.path.basename(src))[0]
             d_ = os.path.dirname(src)
