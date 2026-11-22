@@ -741,6 +741,17 @@ def make_handler(g):
                 self.send_header('Access-Control-Max-Age', '86400')
 
         def send_json(self, status, obj):
+            if getattr(self, '_subnext', False):   # (what John's Mac was given when it asked for subtitles work, or why nothing: logged when it changes)
+                self._subnext = False
+                try:
+                    said_ = ('given: %s%s' % ((obj.get('subjob') or {}).get('name'), ' (translation)' if (obj.get('subjob') or {}).get('translate_only') else '')) if isinstance(obj, dict) and obj.get('subjob') \
+                        else ('nothing: %s' % (obj.get('wait') or obj.get('error') or 'nothing to do') if isinstance(obj, dict) else str(status))
+                    SUBASK.update(at=int(time.time()), said=said_)
+                    if said_ != SUBASK.get('logged') or time.time() - SUBASK.get('logged_at', 0) > 1800:
+                        SUBASK.update(logged=said_, logged_at=int(time.time()))
+                        log('Subtitles: John’s Mac asked for work: %s' % said_)
+                except Exception:
+                    pass
             raw = json.dumps(obj).encode()
             self.send_response(status)
             self.cors()
@@ -929,6 +940,8 @@ def make_handler(g):
                     self.end_headers()
                     self.wfile.write(body_)
                     return
+                if u.path == '/macagent/subnext':
+                    self._subnext = True
                 if u.path in ('/macagent/subnext', '/macagent/subdone', '/macagent/subprog', '/macagent/subfile'):   # (John's Mac's helper: English subtitles made ready, a film at a time,
                     # timed there by what's said (subprep.py): John, 20 Nov 2026, "pre-prepare" ... "I prefer to use the whisper option")
                     tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
@@ -3440,7 +3453,7 @@ def make_handler(g):
                               for x in F if x.get('state') not in ('waiting',)), key=lambda x: -max(x.get('at') or 0, x.get('stepat') or 0))[:25]
             os_ = g.st.get('opensubs') or {}
             dl_ = {'left': os_.get('remaining'), 'reset': os_.get('reset'), 'out': self.subs_client().out_of_downloads() if os_.get('key') else False}
-            return self.send_json(200, {'dl': dl_, 'counts': cnt, 'total': len(F), 'paused': bool(P.get('_paused')), 'setup': bool((P.get('_setup') or {}).get('need')), 'now': now_[:3], 'recent': recent_,
+            return self.send_json(200, {'mac': {'asked': SUBASK.get('at'), 'said': SUBASK.get('said'), 'seen': MACAGENT.get('seen'), 'home': MACAGENT.get('home')}, 'dl': dl_, 'counts': cnt, 'total': len(F), 'paused': bool(P.get('_paused')), 'setup': bool((P.get('_setup') or {}).get('need')), 'now': now_[:3], 'recent': recent_,
                                         'check': pick(('check',)), 'none': pick(('none', 'nomatch', 'failed')), 'done': pick(('done',))[:30],
                                         # (every film, for the admin page's tabs: to do, added as they were, corrected (and how), to check, not
                                         # found: John, 22 Nov 2026, "I need a tab of added, corrected (with details), to do etc. Tidy")
@@ -6460,6 +6473,7 @@ def subs_compare(g, P, iid, w=''):
     return out
 
 
+SUBASK = {}   # (when John's Mac last asked for subtitles work, and what it was told)
 SPEECH = {'ok': False, 'now': None}   # (off: on real films no subtitle stood out by it (Mandabi, Jour de fête, 22 Nov 2026: about 2 against 2 for the next
 # best, where the test films gave 9), so it only held films back before Whisper; the files' own checks first, then Whisper)
 SP_LOCK = threading.RLock()   # (the subtitles' record written by one at a time)
