@@ -7651,6 +7651,42 @@ def a24_now():
         log('A24, for what came in: %s' % e)
 
 
+def posters_on(only=None):
+    """Each film whose folder has its poster (poster.jpg or .png) but the media server shows no picture for it: that poster put on it.
+    A Criterion cover put in a film's folder just after Fix match renamed it was never taken up (Totally F***ed Up, John, 22 Nov 2026,
+    "hasn't picked up its criterion images"). only: those folders' names; else every film missing its picture."""
+    g = G_REF[0] if G_REF else None
+    lid = ((g.st.get('libraries') or {}).get('movies')) if g else None
+    if not lid:
+        return 0
+    n, start = 0, 0
+    while True:
+        r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path',
+                                                              'StartIndex': start, 'Limit': 500, 'EnableImages': 'true'}, timeout=120) or {}
+        for it in r.get('Items') or []:
+            pth = it.get('Path') or ''
+            fold = os.path.dirname(pth)
+            if not pth or (only is not None and os.path.basename(fold) not in only) or (it.get('ImageTags') or {}).get('Primary'):
+                continue
+            pic = next((os.path.join(fold, o) for o in ('poster.jpg', 'poster.png') if os.path.exists(os.path.join(fold, o))), None)
+            if not pic:
+                continue
+            try:
+                with open(pic, 'rb') as f_:
+                    g.jf.raw('POST', '/Items/%s/Images/Primary' % it['Id'], base64.b64encode(f_.read()), 'image/png' if pic.endswith('.png') else 'image/jpeg')
+                n += 1
+                log('Its poster put on: %s' % it.get('Name'))
+                record('poster put on', film=it.get('Name'), id=it['Id'], picture=pic, why='its folder had it, the media server showed none')
+            except Exception as e:
+                log('Its poster, %s: %s' % (it.get('Name'), str(e)[:160]))
+        start += 500
+        if start >= (r.get('TotalRecordCount') or 0):
+            break
+    if n:
+        g.publish_soon = time.time() + 120
+    return n
+
+
 def covers_now(only=None):
     """(only: the Movies folders of the films just come in: theirs alone looked at, not every cover and folder on the drive: John, 21 Nov 2026,
     "The criterion cover run should be very simple and quick?")
@@ -7686,6 +7722,9 @@ def covers_now(only=None):
                     log('Criterion synopses:', e)
             if put or col:
                 log('Criterion, for what just came in: %s%s' % ('covers: ' + '; '.join(put)[:400] if put else '', ('; in The Criterion Collection: ' + ', '.join(col)[:300]) if col else ''))
+            if put:   # (and made sure each is on its film in the media server, a minute on, once it has looked)
+                folders_ = set(m_.group(1) for m_ in (re.search(r'Movies/([^/]+)/', l) for l in put) if m_)
+                threading.Timer(60, lambda: posters_on(folders_)).start()
         elif os.path.exists(pa):
             r = subprocess.run([sys.executable, pa, 'drive', 'nofetch', 'go'], capture_output=True, text=True, timeout=1800)
             put = [l.strip() for l in (r.stdout or '').splitlines() if ' → ' in l]
@@ -8220,6 +8259,7 @@ def serve():
     # (the subtitles list looked over a minute after starting, not first in the three-hourly round behind the covers: John, 21 Nov 2026,
     # "there shouldn't be a need for a three hour check")
     threading.Thread(target=lambda: (time.sleep(60), subprep_scan(), subs_exact_all(), subs_namecheck()), daemon=True).start()
+    threading.Thread(target=lambda: (time.sleep(240), posters_on()), daemon=True).start()   # (any film whose poster's in its folder but not on it)
     mk_ = os.path.expanduser('~/Grifflix/afi-reread.done')
     if not os.path.exists(mk_):   # (once: the site updated, so every AFI page kept is read again by the better reading: 22 Nov 2026)
         try:
