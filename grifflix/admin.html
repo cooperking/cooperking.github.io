@@ -212,7 +212,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .spvers { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; } .spvers button { font: 13px/1.25 inherit; text-align: left; padding: 6px 10px; border: 1px solid var(--line); background: none; color: var(--fg); cursor: pointer; max-width: 320px; }
 .spvers button[aria-pressed="true"] { background: var(--fg); color: var(--bg, #173a5e); } .spvers small { display: block; opacity: .75; font-size: 11.5px; }
 .spact { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; } .spnote { font-size: 13px; color: var(--muted); margin: 6px 0; }
-.spt td.said i { display: block; color: var(--muted); font-style: italic; } .spt td.was { color: var(--muted); } .spt td.okc { text-align: center; }
+.spt td.said i { display: block; color: var(--muted); font-style: italic; } .spt .nil { color: var(--muted); font-style: italic; } .spt tr.gap td { opacity: .75; } .spt td.was { color: var(--muted); } .spt td.okc { text-align: center; }
 .spt td { padding: 4px 8px; vertical-align: top; border-bottom: 1px solid rgba(255,255,255,.08); } .spt td:first-child, .spt td:nth-child(4), .spt td:nth-child(5) { white-space: nowrap; font-variant-numeric: tabular-nums; } .spt tr.off td { color: #f08a4b; }
 .dks { display: grid; gap: 16px; }
 .dk { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: baseline; }
@@ -1191,18 +1191,15 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var P = j.parts || [], use = w && (w !== cur || x.k === 'none') ? '<div class="spact"><button class="btn" type="button" data-spuse="' + x.id + '|' + esc(w) + '">Use this version</button></div>' : '';
       if (!P.length) { box.innerHTML = '<p class="spnote">' + (j.by === 'exact' ? 'Made for this very copy: nothing to compare, the lines are where they were made to be.' : 'No dialogue kept to compare for this one (only those done from now on, or after it’s done again).') + '</p>' + use; wireUse(); return; }
       var lang = LNAME(j.lang || x.ref_lang);
-      var head = j.by === 'ref' ? '<tr><th>When</th><th>Said (the ' + esc(lang) + ' subtitle made for this copy)</th>' + (P.some(function (p) { return p.rows.some(function (r) { return r.was; }); }) ? '<th>English before</th>' : '') + '<th>English ' + (w && w !== cur ? 'in this version' : 'now') + '</th><th></th></tr>'
-        : '<tr><th>When</th><th>Said (what Whisper heard, in English)</th><th>English ' + (w && w !== cur ? 'in this version' : 'now') + '</th><th>Moved</th><th></th></tr>';
-      var hasWas = j.by === 'ref' && P.some(function (p) { return p.rows.some(function (r) { return r.was; }); });
-      var nOk = 0, nAll = 0;
+      // (each English line beside what's said then, and nothing else: John, 22 Nov 2026, "I just need the information matched")
+      var head = '<tr><th>When</th><th>English subtitle' + (w && w !== cur ? ' (this version)' : '') + '</th><th>Said then' + (j.by === 'ref' ? ' (' + esc(lang) + ')' : ' (what Whisper heard)') + '</th></tr>';
       var body = P.map(function (p) {
-        return '<tr><td colspan="5" style="padding-top:12px;border:0"><b>From ' + tm(p.from) + '</b></td></tr>' + p.rows.map(function (r) {
-          nAll++; if (r.ok) nOk++;
-          if (j.by === 'ref') return '<tr' + (r.ok ? '' : ' class="off"') + '><td>' + tm(r.t) + '</td><td class="said">' + esc(r.said) + (r.said_en ? '<i>' + esc(r.said_en) + '</i>' : '') + '</td>' + (hasWas ? '<td class="was">' + esc(r.was || '—') + '</td>' : '') + '<td>' + esc(r.now || '—') + '</td><td class="okc">' + (r.ok ? '✓' : '✗') + '</td></tr>';
-          return '<tr' + (r.ok === false ? ' class="off"' : '') + '><td>' + tm(r.t) + '</td><td class="said">' + esc(r.said) + '</td><td>' + esc(r.now || '—') + '</td><td>' + (r.was_t != null ? tm(r.was_t) + ' → ' + tm(r.now_t) : '') + '</td><td class="okc">' + (r.ok == null ? '' : r.ok ? '✓' : '✗') + '</td></tr>';
+        return '<tr><td colspan="3" style="padding-top:12px;border:0"><b>From ' + tm(p.from) + '</b></td></tr>' + p.rows.map(function (r) {
+          var en = j.by === 'ref' ? r.en : r.now, said = r.said;
+          return '<tr' + (en && said ? '' : ' class="gap"') + '><td>' + tm(r.t) + '</td><td>' + (en ? esc(en) : '<span class="nil">no English line</span>') + '</td><td class="said">' + (said ? esc(said) : '<span class="nil">nothing said</span>') + (r.said_en ? '<i>' + esc(r.said_en) + '</i>' : '') + '</td></tr>';
         }).join('');
       }).join('');
-      box.innerHTML = '<p class="spnote">' + (j.by === 'ref' ? nOk + ' of ' + nAll + ' lines said in these four parts have an English line showing with them.' : nOk + ' of ' + nAll + ' lines heard agree with the English line at that moment.') + ' ✗ marks where they don’t.</p>' +
+      box.innerHTML = '<p class="spnote">Each English line as it shows, beside what’s said at that moment' + (j.by === 'ref' ? ' (from the ' + esc(lang) + ' subtitle made for this copy' + (P.some(function (p) { return p.rows.some(function (r) { return r.said_en; }); }) ? ', with your Mac’s translation of it under' : '') + ')' : ' (as Whisper heard it)') + ', in four parts of the film.</p>' +
         '<div style="overflow-x:auto"><table class="spt">' + head + body + '</table></div>' + use;
       wireUse();
     }).catch(function (e) { box.innerHTML = '<p class="spnote">Couldn’t ask the Mac mini: ' + esc(e.message || e) + '</p>'; });

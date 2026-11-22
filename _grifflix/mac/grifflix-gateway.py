@@ -6311,15 +6311,25 @@ def subs_compare(g, P, iid, w=''):
         return cs[k] if k >= 0 and cs[k][0] <= t <= cs[k][1] + .3 else None
     end = ref[-1][1] if ref else 0
     parts = []
+    # (each English line as it shows, beside what's said then: the information matched, nothing else: John, 22 Nov 2026, "I just need the
+    # information matched")
+    ov = lambda a, b: min(a[1], b[1]) - max(a[0], b[0]) > .15
     for fr in (.12, .37, .62, .87):   # (four parts, three minutes each)
         t0 = end * fr
-        rows = []
-        for c in ref:
-            if t0 <= c[0] < t0 + 180:
-                mid = (c[0] + c[1]) / 2
-                n_, w_, tl_ = at(now, mid), at(was, mid), at(tr, mid) if w != 'tr' else None
-                rows.append({'t': round(c[0], 1), 'said': c[2], 'said_en': tl_[2] if tl_ else '', 'now': n_[2] if n_ else '', 'now_t': round(n_[0], 1) if n_ else None,
-                             'was': w_[2] if w_ else '', 'ok': bool(n_)})
+        R = [c for c in ref if t0 <= c[0] < t0 + 180]
+        N = [c for c in now if t0 <= c[0] < t0 + 180]
+        T = [c for c in tr if t0 - 5 <= c[0] < t0 + 185] if w != 'tr' else []
+        rows, used = [], set()
+        for c in N:
+            m_ = [k for k, r in enumerate(R) if ov(c, r)]
+            used.update(m_)
+            tl = [x[2] for x in T if ov(c, x)]
+            rows.append({'t': round(c[0], 1), 'en': c[2], 'said': ' / '.join(R[k][2] for k in m_), 'said_en': ' / '.join(dict.fromkeys(tl)), 'ok': bool(m_)})
+        for k, r in enumerate(R):   # (what's said with no English line at all)
+            if k not in used:
+                tl = [x[2] for x in T if ov(r, x)]
+                rows.append({'t': round(r[0], 1), 'en': '', 'said': r[2], 'said_en': ' / '.join(dict.fromkeys(tl)), 'ok': False})
+        rows.sort(key=lambda x: x['t'])
         if rows:
             parts.append({'from': round(t0), 'rows': rows[:40]})
     out['parts'] = parts
