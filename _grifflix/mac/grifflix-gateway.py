@@ -1121,7 +1121,8 @@ def make_handler(g):
                         # (first, a quick one: the subtitle in another language a film's English was timed by, translated, so the comparison shows what's
                         # said in English: John, 22 Nov 2026, "fallen angels needed translations otherwise impossible for me to judge - that should
                         # always be done for a film where the subtitle used as a basis is not english")
-                        for iid, e in sorted(P.items(), key=lambda kv: -((kv[1].get('tr_asked') or 0) if isinstance(kv[1], dict) else 0)):   # (those John asked for first)
+                        prio_ = any(isinstance(v_, dict) and v_.get('prio') and v_.get('state') in ('waiting', 'verify') for v_ in P.values())   # (one John put next: before any translation)
+                        for iid, e in ([] if prio_ else sorted(P.items(), key=lambda kv: -((kv[1].get('tr_asked') or 0) if isinstance(kv[1], dict) else 0))):   # (those John asked for first)
                             if iid.startswith('_') or not isinstance(e, dict) or not re.match(r'^[0-9a-f]{32}$', iid):
                                 continue
                             if e.get('state') not in ('done', 'check') and not e.get('tr_asked'):
@@ -1137,7 +1138,7 @@ def make_handler(g):
                             save(SUBPREP, P)
                             return self.send_json(200, {'subjob': {'id': iid, 'name': e.get('name'), 'path': '', 'dur': 0, 'translate_only': True, 'cands': [], 'more': [],
                                                                    'lang': e.get('lang') or '', 'ref': {'lang': e.get('ref_lang'), 'srt': open(rf_, encoding='utf-8', errors='replace').read()}}})
-                        for iid, e in sorted(((k, v) for k, v in P.items() if not k.startswith('_') and isinstance(v, dict)), key=lambda kv: (kv[1].get('state') == 'verify', kv[1].get('order', 0))):
+                        for iid, e in sorted(((k, v) for k, v in P.items() if not k.startswith('_') and isinstance(v, dict)), key=lambda kv: (not kv[1].get('prio'), kv[1].get('state') == 'verify', kv[1].get('order', 0))):
                             if e.get('state') == 'given' and now_ - e.get('at', 0) < 3 * 3600:
                                 continue
                             if e.get('state') == 'verify':   # (subtitles from before, checked as they are: only once none is waiting)
@@ -1153,6 +1154,7 @@ def make_handler(g):
                                 except OSError:
                                     continue
                                 e.update(state='given', verifying=True, at=int(now_), note='')
+                                e.pop('prio', None)
                                 save(SUBPREP, P)
                                 return self.send_json(200, {'subjob': {'id': iid, 'name': it.get('Name'), 'path': it['Path'], 'dur': (it.get('RunTimeTicks') or 0) / 1e7,
                                                                        'translate': bool(e.get('translate')), 'lang': e.get('lang') or '', 'verify': True, 'more': [],
@@ -1279,6 +1281,7 @@ def make_handler(g):
                                 e.update(state='nomatch' if longer_ else 'none', at=int(now_),
                                          note=('only English subtitles made for a longer cut (%s)' % ', '.join(longer_[:3]))[:200] if longer_ else 'no English subtitles on OpenSubtitles')
                                 continue
+                            e.pop('prio', None)
                             chk(e, 'whisper', 'Given to your Mac at %s: Whisper listens to four parts and tries %d English subtitle%s against what’s said' % (time.strftime('%H:%M'), len(cands), '' if len(cands) == 1 else 's'))
                             e.update(state='given', at=int(now_), note='', origin=org_ or '')
                             save(SUBPREP, P)

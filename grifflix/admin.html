@@ -1129,11 +1129,11 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         (c ? '<span>' + esc(c.r) + ' <small>' + hm(c.at) + '</small></span>' : st[2] ? '<span>Checked ' + hm(st[2]) + ': nothing found (what it saw wasn’t kept then: Check again, or Do it again, for the details)</span>' : '<span>Not yet</span>') + '</li>';
     }).join('') + '</ol>';
   }
-  function spBody(x, LNAME) {
-    return spChecks(x) + spBody0(x, LNAME);
+  function spBody(x, LNAME) {   // (the film itself first, a link to its page; then its checks; then the rest)
+    return '<p class="spnote" style="margin:2px 0 8px">' + FL(x.name, x.year, x.id) + '</p>' + spChecks(x) + spBody0(x, LNAME);
   }
   function spBody0(x, LNAME) {
-    if (x.k === 'todo') return '<p class="spnote">' + (x.state === 'given' ? 'On your Mac now' + (x.step ? ': ' + esc(x.step) : '') : 'Waiting its turn.') + '</p>' + (x.state === 'waiting' ? '<div class="spact"><button class="btn" type="button" data-spagain="' + x.id + '">Check again</button><button class="btn" type="button" data-spfirst="' + x.id + '">Do next</button><button class="btn" type="button" data-splast="' + x.id + '">Do last</button><button class="btn" type="button" data-spquiet="' + x.id + '">No subtitles needed</button></div>' : '') + spGiveBox(x);
+    if (x.k === 'todo') return '<p class="spnote">' + (x.state === 'given' ? 'On your Mac now' + (x.step ? ': ' + esc(x.step) : '') : 'Waiting its turn.') + '</p>' + (x.state !== 'given' ? '<div class="spact">' + (x.state === 'waiting' ? '<button class="btn" type="button" data-spagain="' + x.id + '">Check again</button>' : '') + '<button class="btn" type="button" data-spfirst="' + x.id + '">Do next</button><button class="btn" type="button" data-splast="' + x.id + '">Do last</button><button class="btn" type="button" data-spquiet="' + x.id + '">No subtitles needed</button></div>' : '') + spGiveBox(x);
     var nt = String(x.note || ''), mv = /moved ([+-][\d.]+) s/.exec(nt), sp = /at ([\d.]+)x speed/.exec(nt);
     var by = { exact: 'Made for this very copy (found by its fingerprint): used as it is', 'by reference': 'Lined up with the ' + LNAME(x.ref_lang) + ' subtitle made for this copy',
       translated: 'The ' + LNAME(x.ref_lang) + ' subtitle made for this copy, translated on your Mac and compared line by line', 'machine-translated': 'The ' + LNAME(x.ref_lang || (x.translated || {}).lang) + ' subtitle made for this copy, machine-translated: chosen by you',
