@@ -5901,23 +5901,16 @@ def keep_extras(g):
 
 
 def hashes_for(path):
-    """The file's fingerprint for OpenSubtitles, and its original's too where the converter kept it (Grifflix Originals): a film repackaged or
-    converted has a new fingerprint, and the subtitles made for the copy it was are known by the old one (John, 22 Nov 2026, "I suspect
-    there is a mismatch in finding")."""
+    """The file's fingerprint for OpenSubtitles, and the one it had as it came, remembered by the converter when it made this file
+    (fingerprints.json): subtitles made for the copy as downloaded are known by that (John, 22 Nov 2026, "I suspect there is a mismatch in
+    finding"). Originals are deleted once converted, so that record is the only way back to them."""
     out = []
     try:
         out.append(SUBS.movie_hash(path))
     except OSError:
         pass
-    fp_ = (load(os.path.expanduser('~/Grifflix/fingerprints.json'), {}) or {}).get(path) or {}   # (the file as it came, remembered when converted)
+    fp_ = (load(os.path.expanduser('~/Grifflix/fingerprints.json'), {}) or {}).get(path) or {}
     out += [h for h in [fp_.get('hash')] + list(fp_.get('hashes') or []) if h]
-    try:
-        for v in ((load(os.path.expanduser('~/Grifflix/convert-state.json'), {}) or {}).get('done') or {}).values():
-            k_ = v.get('kept')
-            if v.get('to') == path and k_ and os.path.exists(k_):
-                out.append(SUBS.movie_hash(k_))
-    except Exception:
-        pass
     return [h for h in dict.fromkeys(out) if h]
 
 
