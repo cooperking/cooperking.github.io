@@ -970,16 +970,19 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     };
     /* (each film's own AFI page read, by the link already known: first, before any searching, those whose link is known already: John, 22 Nov 2026, "if we have the direct link the bookmarklet needed to get the data from the site") */
     var pagesTo = 0, pagesDone = 0, pagesBad = 0, pagesHad = 0;
+    /* (a film's page, not AFI's search page that a later film's old address goes to: that has "Production Company" among its filters, and
+       42 were kept as pages: John, 22 Nov 2026, "I don't think the bookmarklet has given us everything") */
+    var isPage = function (t) { t = t || ''; return /genre|subject|history|production compan/i.test(t) && !/NARROW RESULTS/i.test(t); };
     var renderedPage = function (url) { return new Promise(function (done) {   /* (a page that fills itself in: opened in a hidden frame, its words once they show) */
       if (!frame) { frame = document.createElement('iframe'); frame.style.cssText = 'position:fixed;left:-9999px;top:0;width:1200px;height:900px;opacity:0;pointer-events:none'; document.body.appendChild(frame); }
       var t0 = Date.now(), iv = setInterval(function () {
         var tx = ''; try { var dd = frame.contentDocument; if (dd && dd.readyState !== 'loading' && dd.body) tx = words(dd.documentElement.outerHTML); } catch (e) {}
-        if (/genre|subject|history|production compan/i.test(tx) || Date.now() - t0 > 20000) { clearInterval(iv); done(tx); }
+        if (isPage(tx) || Date.now() - t0 > 20000) { clearInterval(iv); done(tx); }
       }, 800);
       frame.src = url;
     }); };
     var readPages = async function (list) {
-      var R = list.filter(function (x) { return !(X[x[0]] && /genre|subject|history|production compan/i.test(X[x[0]].x || '')); }); pagesTo += R.length; pagesHad += list.length - R.length;   /* (read before in this browser, the Mac mini not given them yet: in the file it saves) */   /* (one kept with nothing in it read again) */
+      var R = list.filter(function (x) { return !(X[x[0]] && isPage(X[x[0]].x)); }); pagesTo += R.length; pagesHad += list.length - R.length;   /* (read before in this browser, the Mac mini not given them yet: in the file it saves) */   /* (one kept with nothing in it read again) */
       for (var j = 0; j < R.length && !stop; j++) {
         paint('reading each film’s AFI page by its link: ' + pagesDone + ' of ' + pagesTo);
         try {
@@ -988,12 +991,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           var tx = r2.ok ? words(await r2.text()) : '';
           /* (a later film's page, after 1993, isn't at that address, or fills itself in after it opens: 434 of them never read, the Mac told
              it had none: John, 22 Nov 2026. Then its page as AFI links it now, /Film/<number>, opened as John's browser shows it) */
-          if (!/genre|subject|history|production compan/i.test(tx)) {
+          if (!isPage(tx)) {
             var r3 = await fetch('/Film/' + R[j][1], { credentials: 'include' });
             tx = r3.ok ? words(await r3.text()) : '';
-            if (!/genre|subject|history|production compan/i.test(tx)) tx = await renderedPage('/Film/' + R[j][1]);
+            if (!isPage(tx)) tx = await renderedPage('/Film/' + R[j][1]);
           }
-          if (/genre|subject|history|production compan/i.test(tx)) { X[R[j][0]] = { id: R[j][1], x: tx }; await put(R[j][0], X[R[j][0]]); pagesDone++; }
+          if (isPage(tx)) { X[R[j][0]] = { id: R[j][1], x: tx }; await put(R[j][0], X[R[j][0]]); pagesDone++; }
           else { pagesBad++; last = 'AFI’s page ' + R[j][1] + ' had nothing to read'; }
         } catch (e) { paint('a page didn’t answer: going on in a moment'); await wait(10000); }
         await wait(2500 + Math.random() * 1500);
@@ -1059,7 +1062,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   document.getElementById('afifile').onchange = function () { var f = this.files && this.files[0]; if (!f) return; say.textContent = 'Sending…';
     // (sent in parts: the Mac mini takes at most 1 MB at once, and each page read is long)
     f.text().then(function (t) { var j = JSON.parse(t); if (!j || typeof j.afi !== 'object') throw new Error('that isn’t the AFI file');
-      var parts = [], cur = {}, size = 0; Object.keys(j.det || {}).forEach(function (k) { var n = JSON.stringify(j.det[k]).length; if (size + n > 600000 && size) { parts.push(cur); cur = {}; size = 0; } cur[k] = j.det[k]; size += n; });
+      /* (measured in bytes, not letters: AFI's pages are full of ‖ and the like, three bytes each, so parts went over the Mac mini's 1 MB
+         and the sending stopped there, 389 pages never sent: John, 22 Nov 2026. Each page to what the Mac mini keeps of it; a search page not sent) */
+      var bytes = function (o) { return new Blob([JSON.stringify(o)]).size; };
+      var parts = [], cur = {}, size = 0; Object.keys(j.det || {}).forEach(function (k) { var v = j.det[k]; if (!v || /NARROW RESULTS/i.test(v.x || '')) return; v = { id: v.id, x: String(v.x || '').slice(0, 120000) }; var n = bytes(v) + 40; if (size + n > 600000 && size) { parts.push(cur); cur = {}; size = 0; } cur[k] = v; size += n; });
       if (size) parts.push(cur);
       return load({ afi: j.afi }).then(function (r) { return parts.reduce(function (p, part, n) { return p.then(function () { say.textContent = 'Sending pages, part ' + (n + 1) + ' of ' + parts.length + '…'; return load({ det: part }); }); }, Promise.resolve(r)); }); })
       .then(function (j) { show(j); toast('Kept: ' + j.got + ' films’ AFI pages'); }).catch(function (e) { say.textContent = 'That didn’t work: ' + (e.message || e); }); };

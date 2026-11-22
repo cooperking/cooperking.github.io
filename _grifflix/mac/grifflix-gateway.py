@@ -1604,6 +1604,7 @@ def make_handler(g):
                                 TS.setdefault(sl_, []).append(k_)
                         CTMDB_ = load(os.path.expanduser('~/Grifflix/criterion-tmdb.json'), {}) or {}
                         CTT = {}
+                        CLL_ = {}   # (every film of each spine: some share one, Ivan the Terrible Parts I and II both 88)
                         CT = {}   # (and by title and year, for the films with no spine number: Criterion Premieres, Eclipse and the rest, which had no
                         # Criterion labels at all: John, 17 Nov 2026, "the filter on criterion is saying there are no criterion premieres or eclipse")
                         for f_ in load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or []:
@@ -1612,6 +1613,7 @@ def make_handler(g):
                             FINFO[sl_] = (str(f_.get('title') or ''), str(f_.get('year') or ''), str(f_.get('spine') or ''))
                             if str(f_.get('spine') or '').isdigit():
                                 CL.setdefault(int(f_['spine']), v_)
+                                CLL_.setdefault(int(f_['spine']), []).append((fold(f_.get('title')), str(f_.get('year') or ''), v_))
                             if re.match(r'^\d{4}$', str(f_.get('year') or '')):
                                 CT.setdefault((fold(f_.get('title')), int(f_['year'])), v_)
                                 # (and by either of its names, when Criterion gives two: "Non, Je Ne Regrette Rien (No Regret)" is No Regret too: John,
@@ -1652,6 +1654,16 @@ def make_handler(g):
                                 if sp:
                                     o_['spine'] = sp
                                 d_, c_, t_, s_, sl0_ = CL.get(int(sp), ('', '', [], [], '')) if sp and str(sp).isdigit() else ('', '', [], [], '')
+                                if sp and str(sp).isdigit() and len(CLL_.get(int(sp)) or []) > 1:
+                                    # (a spine two films share: the one of this film's name, or else its year, not the first listed: Part I was taken
+                                    # for Part II and shown missing from its box set: John, 22 Nov 2026, "Ivan the terrible is in the collection but it
+                                    # still says it's missing")
+                                    fn2_ = fold(re.sub(r'\s*\((19|20)\d\d\)\s*$', '', os.path.basename(os.path.dirname(i.get('Path') or '')).strip()))
+                                    y2_ = i.get('ProductionYear') or 0
+                                    cs_ = CLL_[int(sp)]
+                                    pk2_ = next((c for c in cs_ if c[0] in (fold(i.get('Name')), fn2_)), None) or next((c for c in cs_ if c[1].isdigit() and abs(int(c[1]) - y2_) <= 1), None)
+                                    if pk2_:
+                                        d_, c_, t_, s_, sl0_ = pk2_[2]
                                 if not (d_ or t_) and key == 'movies':
                                     y_ = i.get('ProductionYear') or 0
                                     fn_ = fold(re.sub(r'\s*\((19|20)\d\d\)\s*$', '', os.path.basename(os.path.dirname(i.get('Path') or '')).strip()))   # (its folder's name too, where the media server named it otherwise: Anthem taken for "Echo Anthem")
@@ -2926,7 +2938,7 @@ def make_handler(g):
             if b and isinstance(b.get('det'), dict):   # (each film's AFI page as read, and what's sorted from it)
                 n_ = 0
                 for k, v in b['det'].items():
-                    if re.match(r'^tt\d{6,10}$', str(k)) and isinstance(v, dict) and v.get('x'):
+                    if re.match(r'^tt\d{6,10}$', str(k)) and isinstance(v, dict) and v.get('x') and 'NARROW RESULTS' not in str(v['x'])[:3000]:
                         x_ = str(v['x'])[:120000]
                         AD[str(k)] = {'id': str(v.get('id') or ''), 'x': x_, 'f': afi_parse(x_), 'at': int(time.time())}
                         n_ += 1
@@ -2950,7 +2962,7 @@ def make_handler(g):
                         continue
                     if (A.get(t) or {}).get('id'):
                         linked += 1
-                        if t not in AD:
+                        if t not in AD or 'NARROW RESULTS' in (AD[t].get('x') or '')[:3000]:   # (or what's kept is AFI's search page, not its)
                             need.append([t, A[t]['id']])
                     else:
                         out.append([t, it.get('Name') or '', y] + ([it['OriginalTitle']] if it.get('OriginalTitle') and it['OriginalTitle'] != it.get('Name') else []))
@@ -8781,6 +8793,24 @@ def serve():
                 log('  Totally Fucked Up: its cover: %s' % ('on' if posters_on(only={'Totally Fucked Up (1993)'}) else 'on already, or none in its folder'))
                 return
     threading.Thread(target=tfu_rename, daemon=True).start()
+
+    def tfu_match():
+        """Totally Fucked Up's match put back, if it hasn't it: the Mac restarted for an update two minutes after renaming it, before it was
+        (22 Nov 2026). Its title, Totally F***ed Up, and its details from TMDB; its own cover in its folder kept."""
+        time.sleep(240)
+        try:
+            lid = (g.st.get('libraries') or {}).get('movies')
+            r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path,ProviderIds',
+                                                                  'SearchTerm': 'Totally'}, timeout=120) or {}
+            x = next((y for y in r.get('Items') or [] if os.path.basename(os.path.dirname(y.get('Path') or '')) == 'Totally Fucked Up (1993)'), None)
+            if x and not (x.get('ProviderIds') or {}).get('Imdb'):
+                apply_match(g, x['Id'], {'Name': 'Totally F***ed Up', 'ProductionYear': 1994, 'ProviderIds': {'Tmdb': '33560', 'Imdb': 'tt0108366'}, 'SearchProviderName': 'TheMovieDb'})
+                g.forget()
+                g.publish_soon = time.time() + 180
+                log('Totally Fucked Up: its match put back (Totally F***ed Up, TMDB 33560)')
+        except Exception as e:
+            log('Totally Fucked Up, its match: %s' % e)
+    threading.Thread(target=tfu_match, daemon=True).start()
     threading.Thread(target=small_axe_films, args=(g,), daemon=True).start()
     mk_ = os.path.expanduser('~/Grifflix/afi-reread.done')
     if not os.path.exists(mk_):   # (once: the site updated, so every AFI page kept is read again by the better reading: 22 Nov 2026)
