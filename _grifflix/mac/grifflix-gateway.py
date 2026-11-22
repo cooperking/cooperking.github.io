@@ -111,7 +111,7 @@ def load(path, default):
 
 def save(path, obj):
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    tmp = path + '.tmp'
+    tmp = '%s.%d.tmp' % (path, threading.get_ident())   # (each thread its own: two saving the same file at once, the subtitles list, lost one: 22 Nov 2026)
     with open(tmp, 'w') as f:
         json.dump(obj, f, indent=1)
     os.replace(tmp, path)
