@@ -1157,8 +1157,6 @@ def make_handler(g):
                                                                        'cands': [{'name': 'the subtitles it has (%s)' % os.path.basename(vf_), 'srt': srt_}]}})
                             if e.get('state') not in ('waiting', 'given'):
                                 continue
-                            if e.get('state') == 'waiting' and not e.get('speech_tried') and SPEECH['ok'] and not (e.get('givenfile') or e.get('ref_only')):
-                                continue   # (other subtitles, timed by when people speak, tried first on the Mac mini: Whisper only after that)
                             try:
                                 it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
                             except Exception:
@@ -1210,6 +1208,18 @@ def make_handler(g):
                                         continue
                                 except Exception as ex:
                                     log('Subtitles made for the very file, %s: %s' % (e.get('name'), str(ex)[:160]))
+                            if not e.get('name_tried'):   # (English named for this very release: used as it is, no listening)
+                                e['name_tried'] = int(now_)
+                                try:
+                                    if name_sub(g, self.subs_client(), e, iid, path, it, res):
+                                        save(SUBPREP, P)
+                                        continue
+                                except Exception as ex:
+                                    log('Subtitles named for the release, %s: %s' % (e.get('name'), str(ex)[:160]))
+                                if self.subs_client().out_of_downloads():
+                                    e.pop('name_tried', None)
+                                    save(SUBPREP, P)
+                                    return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
                             if not e.get('ref_tried2'):   # (a subtitle made for this copy in another language: the English timed by its lines, no Whisper)
                                 e['ref_tried2'] = int(now_)
                                 try:
@@ -1223,6 +1233,11 @@ def make_handler(g):
                                     e.pop('ref_tried2', None)
                                     save(SUBPREP, P)
                                     return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
+                            # (by the files themselves found nothing: when people speak tried on the Mac mini next, only for these; Whisper after that:
+                            # John, 22 Nov 2026, "I don't think you should be needing to do audio checks very often")
+                            if e.get('state') == 'waiting' and not e.get('speech_tried') and SPEECH['ok'] and not (e.get('givenfile') or e.get('ref_only')):
+                                save(SUBPREP, P)
+                                continue
                             # (the film's own length first: a subtitle named for a cut of its length before others, one named for a longer or shorter
                             # cut last: Andrei Rublev is the 183-minute version, and "BluRay 3hrs 02mn 59s" was there among the 205-minute ones but
                             # not tried first: John, 22 Nov 2026, "it's clearly the criterion copy and the 183 minute version")
@@ -6536,7 +6551,7 @@ def keep_speech_first(g):
                 continue
             P = load(SUBPREP, {}) or {}
             todo = sorted(((k, v) for k, v in P.items() if not k.startswith('_') and isinstance(v, dict) and v.get('state') == 'waiting' and not v.get('speech_tried')
-                           and not v.get('givenfile') and not v.get('ref_only')), key=lambda kv: kv[1].get('order', 0))
+                           and not v.get('givenfile') and not v.get('ref_only') and v.get('ref_tried2') and v.get('name_tried')), key=lambda kv: kv[1].get('order', 0))
             for iid, e in todo[:1]:
                 did = True
                 it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
@@ -6564,6 +6579,46 @@ def keep_speech_first(g):
             log('Subtitles by when people speak: %s' % str(ex)[:200])
         SPEECH['now'] = None
         time.sleep(20 if did else 300)
+
+
+def name_sub(g, cl, e, iid, path, it, res=None):
+    """English subtitles uploaded under the very name this copy was downloaded as (or of the same release: its source and group the same),
+    and of the film's length: made for this release, so used as they are, with no listening and no timing (John, 22 Nov 2026, "The vast
+    majority of the time you should be able to find the film subtitle without it"). True if saved."""
+    pid = it.get('ProviderIds') or {}
+    org = film_origin(path) or os.path.splitext(str(((load(os.path.expanduser('~/Grifflix/fingerprints.json'), {}) or {}).get(path) or {}).get('name') or ''))[0] or None
+    hint = org or os.path.splitext(os.path.basename(path))[0]
+    if res is None:
+        if e.get('kind') == 'episode':
+            res = cl.search('en', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=hint)
+        else:
+            res = cl.search('en', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint)
+    dur = (it.get('RunTimeTicks') or 0) / 1e7
+    for x in [y for y in res if not y.get('machine') and not y.get('exact') and (y.get('samename') or (y.get('like') or 0) >= 8)][:3]:
+        try:
+            cues = SUBS.parse_srt(SUBS.decode(cl.download(x['file_id'])))
+        except Exception:
+            if cl.out_of_downloads():
+                raise
+            continue
+        if len(cues) < 50:
+            continue
+        if dur and (cues[-1][1] > dur + 120 or cues[-1][1] < dur * .8):   # (its last line past the film's end, or long before it: another cut)
+            continue
+        fn = '%s.Grifflix.en.srt' % os.path.splitext(path)[0]
+        with open(fn + '.tmp', 'w', encoding='utf-8') as f:
+            f.write(SUBS.write_srt(cues))
+        os.replace(fn + '.tmp', fn)
+        try:
+            g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
+        except Exception:
+            pass
+        e.update(state='done', how='by name', note='named for this very release (%s): used as it is' % ('the same name' if x.get('samename') else 'the same source and group'),
+                 chose=x.get('name') or '', file=fn, at=int(time.time()), n=len(cues), sure=True)
+        log('Subtitles for %s: English named for this very release, used as they are: %s' % (e.get('name'), x.get('name')))
+        record('subtitles saved', film=e.get('name'), id=iid, file=fn, how='named for this very release', chose=x.get('name'), opensubtitles_file=x.get('file_id'))
+        return True
+    return False
 
 
 def ref_sub(g, cl, e, iid, path, it):
@@ -6693,7 +6748,9 @@ def subs_exact_all():
                 Q = load(SUBPREP, {}) or {}   # (saved as it goes, over what John's Mac has done meanwhile)
                 q = Q.get(iid)
                 if isinstance(q, dict) and (q.get('state') in ('waiting', 'none', 'nomatch', 'failed') or redo_):
-                    ok = (not redo_ and exact_sub(g, cl, q, iid, path)) or ref_sub(g, cl, q, iid, path, it)
+                    ok = (not redo_ and exact_sub(g, cl, q, iid, path)) or (not redo_ and not q.get('name_tried') and name_sub(g, cl, q, iid, path, it)) or ref_sub(g, cl, q, iid, path, it)
+                    if not redo_:
+                        q['name_tried'] = q.get('name_tried') or int(time.time())
                     if cl.out_of_downloads():   # (the day's downloads gone part-way: not counted as tried; the rest after the reset)
                         log('Subtitles: OpenSubtitles downloads used up for today; the rest of the look-over after they reset')
                         return
