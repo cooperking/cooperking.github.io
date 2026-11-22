@@ -1061,6 +1061,14 @@ def make_handler(g):
                                     continue
                             except Exception as ex:
                                 log('Subtitles made for the very file, %s: %s' % (e.get('name'), str(ex)[:160]))
+                        if not e.get('ref_tried'):   # (a subtitle made for this copy in another language: the English timed by its lines, no Whisper)
+                            e['ref_tried'] = int(now_)
+                            try:
+                                if ref_sub(g, self.subs_client(), e, iid, path, it):
+                                    save(SUBPREP, P)
+                                    continue
+                            except Exception as ex:
+                                log('Subtitles timed by another language, %s: %s' % (e.get('name'), str(ex)[:160]))
                         more_ = [{'file_id': x['file_id'], 'name': x.get('name') or ''} for x in res[3:10]]   # (the next ones, fetched by John's Mac one at a time
                         # only if none of the first fits exactly, without a change of speed: John, 21 Nov 2026, "Better to get the right one exactly before fixing")
                         res = res[:3]
@@ -1078,7 +1086,11 @@ def make_handler(g):
                         e.update(state='given', at=int(now_), note='', origin=org_ or '')
                         save(SUBPREP, P)
                         return self.send_json(200, {'subjob': {'id': iid, 'name': it.get('Name'), 'path': path, 'dur': (it.get('RunTimeTicks') or 0) / 1e7,
-                                                               'translate': True, 'cands': cands, 'more': more_, 'lang': e.get('lang') or ''}})
+                                                               'translate': True, 'cands': cands, 'more': more_, 'lang': e.get('lang') or '',
+                                                               # (and the one in another language made for this copy, if any, for John's Mac to
+                                                               # translate and compare with the English before listening with Whisper)
+                                                               'ref': ({'lang': e.get('ref_lang'), 'srt': open(e['ref_file'], encoding='utf-8').read()}
+                                                                       if e.get('ref_file') and os.path.exists(e['ref_file']) else None)}})
                     save(SUBPREP, P)
                     return self.send_json(200, {'wait': 'none waiting'})
                 if u.path == '/macagent/next':   # (John's Mac's helper, asking every minute: the next film queued for it, as a job)
@@ -5890,6 +5902,20 @@ def ref_sub(g, cl, e, iid, path, it):
     if not mh:
         return False
     refs = [(fid, lang) for fid, lang in cl.exact_any(mh) if str(lang).lower() not in ('en', 'eng')]
+    pid = it.get('ProviderIds') or {}
+    org = film_origin(path)
+    hint = org or os.path.basename(path)
+    if not refs and org:
+        # (or one in any language uploaded under the very name this copy was downloaded as: made for it too, whatever its language: John,
+        # 22 Nov 2026, "Efforts should be made to find matching foreign subs and timing before whisper is used at all")
+        try:
+            if e.get('kind') == 'episode':
+                A_ = cl.search('', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=hint)
+            else:
+                A_ = cl.search('', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint)
+            refs = [(x['file_id'], x.get('lang') or '?') for x in A_ if x.get('samename') and not x.get('machine') and str(x.get('lang') or '').lower() not in ('en', 'eng')]
+        except Exception:
+            refs = []
     if not refs:
         return False
     ref = []
@@ -5899,16 +5925,14 @@ def ref_sub(g, cl, e, iid, path, it):
             break
     if len(ref) < 50:
         return False
-    try:   # (kept, to see how the English lined up with it)
+    try:   # (kept, to see how the English lined up with it, and for John's Mac to translate and compare if they don't line up by their timing)
         save_txt = os.path.join(os.path.expanduser('~/Grifflix/subprep-ref'), iid + '.%s.srt' % refs[0][1])
         os.makedirs(os.path.dirname(save_txt), exist_ok=True)
         with open(save_txt, 'w', encoding='utf-8') as f_:
             f_.write(SUBS.write_srt(ref))
+        e['ref_file'], e['ref_lang'] = save_txt, str(refs[0][1])
     except Exception:
         pass
-    pid = it.get('ProviderIds') or {}
-    org = film_origin(path)
-    hint = org or os.path.basename(path)
     if e.get('kind') == 'episode':
         L = cl.search('en', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=hint)
     else:
