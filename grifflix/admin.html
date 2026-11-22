@@ -553,7 +553,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div id="spsetup" hidden><p class="stat" style="margin:10px 0 6px">Once, on your Mac: open Terminal, paste this and press Return (it installs Whisper, about 1.5 GB):</p>
           <pre style="white-space:pre-wrap;word-break:break-all;font-size:12px;padding:10px;border:1px solid var(--line)">curl -fsSL https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/convert-here.sh -o ~/Grifflix/convert-here.sh && zsh ~/Grifflix/convert-here.sh subs-setup</pre>
           <div class="state"><button class="btn" type="button" id="spcopy">Copy</button></div></div>
-        <div class="state"><button class="btn" type="button" id="sppause">Pause</button><button class="btn" type="button" id="splook">Look for films now</button><button class="btn" type="button" id="spredo">Do them all again</button></div>
+        <div class="state"><button class="btn" type="button" id="sppause">Pause</button><button class="btn" type="button" id="splook">Look for films now</button><button class="btn" type="button" id="spredo">Do them all again</button><button class="btn" type="button" id="sptrall" hidden>Translate those not yet</button></div>
         <div class="lbchips" id="sptabs" style="margin:14px 0 8px"></div>
         <input type="search" id="spq" class="name" placeholder="Find a film" autocomplete="off" style="width:100%;margin:0 0 8px">
         <p class="stat" id="sptabsay" style="margin:0 0 6px"></p>
@@ -1126,6 +1126,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       ['Fit', x.n ? x.n + ' lines on the lines said' + (x.k === 'check' ? ': not enough to be sure' : '') : ''], ['Saved as', x.file ? esc(String(x.file).split('/').pop()) : '']].filter(function (r) { return r[1]; });
     return '<dl class="spkv">' + kv.map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>'; }).join('') + '</dl>' +
       '<div class="spvers" data-vfor="' + x.id + '"></div><div class="spcmp" data-cfor="' + x.id + '"><p class="spnote">Loading the dialogue…</p></div>' +
+      (x.trable && !x.trdone ? '<p class="spnote" style="margin-top:10px">' + (x.tr_asked ? 'Its ' + esc(spLN(x.ref_lang)) + ' subtitle is waiting to be translated on your Mac' + (x.tr_tried ? ' (tried: it couldn’t be)' : '') + '.' : 'Its ' + esc(spLN(x.ref_lang)) + ' subtitle isn’t translated yet.') + ' <button class="btn" type="button" data-sptrans="' + x.id + '">' + (x.tr_asked ? 'Ask again' : 'Translate it') + '</button></p>' : '') +
       spGiveBox(x) + '<div class="spact">' + (x.k === 'check' || x.k === 'none' || x.k === 'corrected' || x.k === 'added' || x.k === 'quiet' ? '<button class="btn" type="button" data-spagain="' + x.id + '">Do it again</button>' : '') + (x.k === 'none' || x.k === 'check' || x.k === 'todo' ? '<button class="btn" type="button" data-spquiet="' + x.id + '">No subtitles needed</button>' : '') + '</div>';
   }
   // (the right subtitles given by John: from OpenSubtitles' list for the film, or a file of his own; used as they are, or timed to the film:
@@ -1244,7 +1245,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           if (x.state === 'nodialogue') return 'quiet';
           return 'none';
         };
-        var ALL = (j.all || []).map(function (x) { x.k = kindOf(x); return x; });
+        var TRA = {}, TRD = {}; (j.trable || []).forEach(function (i) { TRA[i] = 1; }); (j.trdone || []).forEach(function (i) { TRD[i] = 1; });
+        var ALL = (j.all || []).map(function (x) { x.k = kindOf(x); x.trable = !!TRA[x.id]; x.trdone = !!TRD[x.id]; return x; });
+        var trLeft = ALL.filter(function (x) { return x.trable && !x.trdone; }).length;
+        if ($('#sptrall')) { $('#sptrall').hidden = !trLeft; $('#sptrall').textContent = 'Translate the ' + trLeft + ' not translated yet'; }
         var TABS = [['todo', 'To do'], ['added', 'Added'], ['corrected', 'Corrected'], ['check', 'To check'], ['none', 'Not found'], ['quiet', 'Not needed'], ['existing', 'From before']];
         var TSAY = { existing: 'English subtitles films had before any of this (Grifflix’s first ones, or ones that came with a download), each checked against what’s said on your Mac once nothing else is waiting. ✓ in time, kept. If out, put right (in Corrected); if they don’t fit at all, others looked for, and the old ones set aside once replaced.',
           todo: 'Not done yet: each in turn, the steps above in order. ⟳ marks one done by Whisper earlier, being looked at again with a subtitle made for its copy.',
@@ -1316,6 +1320,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           bd.hidden = false; bd.innerHTML = spBody(x, LNAME);
           if (x.k !== 'todo') spCompare(x, '');
           spGiveWire(x, bd);
+          Array.prototype.forEach.call(bd.querySelectorAll('[data-sptrans]'), function (bt) { bt.onclick = function () { bt.disabled = true; subPrep({ op: 'translate', id: bt.dataset.sptrans }); toast('To be translated next on your Mac'); }; });
           Array.prototype.forEach.call(bd.querySelectorAll('[data-spquiet]'), function (bt) { bt.onclick = function () { bt.disabled = true; subPrep({ op: 'nodialogue', id: bt.dataset.spquiet }); toast('No subtitles needed: in Not needed'); }; });
           Array.prototype.forEach.call(bd.querySelectorAll('[data-spagain]'), function (bt) { bt.onclick = function () { bt.disabled = true; subPrep({ op: 'again', id: bt.dataset.spagain }); toast('To be done again, in its turn'); }; });
         };
@@ -1336,6 +1341,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   }
   subPrep();
   (function () { var b = document.getElementById('splook'); if (b) b.onclick = function () { subPrep({ op: 'look' }); toast('Looking over the films: a minute or two'); setTimeout(function () { subPrep(); }, 90000); };
+    var ta = document.getElementById('sptrall'); if (ta) ta.onclick = function () { ta.disabled = true; subPrep({ op: 'translateall' }); toast('All asked for: your Mac translates them one after another'); setTimeout(function () { ta.disabled = false; }, 5000); };
     var rd = document.getElementById('spredo'); if (rd) rd.onclick = function () {
       if (!confirm('Do every film’s subtitles again? Those made so far are moved to Set aside › Subtitles redone (not deleted), and each film is done again in its turn.')) return;
       subPrep({ op: 'redoall' }); toast('Every film’s subtitles to be done again; the old ones set aside');

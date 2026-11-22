@@ -1119,8 +1119,10 @@ def make_handler(g):
                         # (first, a quick one: the subtitle in another language a film's English was timed by, translated, so the comparison shows what's
                         # said in English: John, 22 Nov 2026, "fallen angels needed translations otherwise impossible for me to judge - that should
                         # always be done for a film where the subtitle used as a basis is not english")
-                        for iid, e in P.items():
-                            if iid.startswith('_') or not isinstance(e, dict) or e.get('state') not in ('done', 'check') or not re.match(r'^[0-9a-f]{32}$', iid):
+                        for iid, e in sorted(P.items(), key=lambda kv: -((kv[1].get('tr_asked') or 0) if isinstance(kv[1], dict) else 0)):   # (those John asked for first)
+                            if iid.startswith('_') or not isinstance(e, dict) or not re.match(r'^[0-9a-f]{32}$', iid):
+                                continue
+                            if e.get('state') not in ('done', 'check') and not e.get('tr_asked'):
                                 continue
                             rf_ = e.get('ref_file') or ''
                             if not rf_ or not os.path.exists(rf_) or str(e.get('ref_lang') or '').lower()[:2] in ('', 'en'):
@@ -3357,6 +3359,20 @@ def make_handler(g):
                     save(SUBPREP, P)
                     log('Subtitles: John gave a %s subtitle for %s, to time the English by and translate' % (lg_, e_.get('name')))
                     record('subtitle in another language given', film=e_.get('name'), id=iid_, lang=lg_, name=e_['ref_given'])
+                elif op in ('translate', 'translateall'):   # (John asks for the subtitle a film was timed by translated, now: one, or every one not yet)
+                    n_ = 0
+                    for k_, x_ in P.items():
+                        if k_.startswith('_') or not isinstance(x_, dict) or (op == 'translate' and k_ != str(b.get('id') or '')):
+                            continue
+                        if not (x_.get('ref_file') and os.path.exists(x_['ref_file'])) or str(x_.get('ref_lang') or '').lower()[:2] in ('', 'en'):
+                            continue
+                        if os.path.exists(os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.tr.srt' % k_)):
+                            continue
+                        x_.pop('tr_tried', None); x_.pop('tr_given', None)
+                        x_['tr_asked'] = int(time.time())
+                        n_ += 1
+                    save(SUBPREP, P)
+                    log('Subtitles: %d to be translated on John’s Mac, John asked' % n_)
                 elif op == 'nodialogue' and str(b.get('id') or '') in P:   # (John: no subtitles needed for this one)
                     P[str(b['id'])].update(state='nodialogue', note='no subtitles needed: said by John', at=int(time.time()))
                     save(SUBPREP, P)
@@ -3385,7 +3401,11 @@ def make_handler(g):
                                         'all': [{k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'state', 'note', 'chose', 'n', 'miss', 'mins', 'at', 'step', 'stepat',
                                                                        'tried', 'samples', 'sure', 'file', 'origin', 'how', 'kind', 'series', 'cands', 'translated', 'ref_only', 'ref_lang', 'vfile', 'verifying', 'old_vfile',
                                                                        'rcands', 'cur', 'chosen_from', 'ref_file', 'givenfile', 'givenname', 'ref_given',
-                                                                       'speech_tried', 'speech_note', 'ref_byspeech')} for x in F], 'speech_now': SPEECH.get('now')})
+                                                                       'speech_tried', 'speech_note', 'ref_byspeech', 'tr_asked', 'tr_tried')}
+                                               for x in F], 'speech_now': SPEECH.get('now'),
+                                        # (which have a subtitle in another language to translate, and which have it translated: for John's Translate buttons)
+                                        'trable': [x['id'] for x in F if x.get('ref_file') and str(x.get('ref_lang') or '').lower()[:2] not in ('', 'en') and os.path.exists(x['ref_file'])],
+                                        'trdone': [x['id'] for x in F if os.path.exists(os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.tr.srt' % x['id']))]})
 
         def api_waiting(self, me, user, q, b):
             """John's only: what he's ticked off on the admin page's Waiting on you (John, 18 Nov 2026: "I could do with a waiting on you
