@@ -2937,6 +2937,13 @@ def make_handler(g):
                 g.forget()
                 g.publish_soon = time.time() + 60
                 log('AFI Catalog pages: %d films, by John’s browser' % got)
+            if b and isinstance(b.get('none'), dict):   # (what AFI's search showed for each film it didn't find: kept to look into misses)
+                nf_ = os.path.expanduser('~/Grifflix/afi-notfound.json')
+                NF = load(nf_, {}) or {}
+                for k, v in list(b['none'].items())[:3000]:
+                    if re.match(r'^tt\d{6,10}$', str(k)) and isinstance(v, dict):
+                        NF[str(k)] = {'saw': [str(x)[:200] for x in (v.get('saw') or [])[:5]], 'q': [str(x)[:200] for x in (v.get('q') or [])[:3]], 'at': int(time.time())}
+                save(nf_, NF)
                 record('AFI pages linked', films=got, by='John’s browser (the bookmark)')
             adf = os.path.expanduser('~/Grifflix/afi-details.json')
             AD = load(adf, {}) or {}
@@ -2979,7 +2986,8 @@ def make_handler(g):
             if not g.st.get('afibm_key'):
                 g.st['afibm_key'] = secrets.token_urlsafe(18)
                 save(SETTINGS, g.st)
-            return self.send_json(200, {'missing': out, 'linked': linked, 'got': got, 'need': need, 'read': len(AD), 'bm': g.st['afibm_key']})
+            return self.send_json(200, {'missing': out, 'linked': linked, 'got': got, 'need': need, 'read': len(AD), 'bm': g.st['afibm_key'],
+                                        'ask': [x[0] for x in out if pri.get(x[0]) == 0]})
 
         def api_distributors(self, me, user, q, b):
             """John's only: each film's US distributor, as Box Office Mojo gives it, read by his own browser (the admin page's bookmark) and
