@@ -234,6 +234,7 @@ def translated_ref(job, work, dur):
     cues = parse_srt(ref.get('srt') or '')
     lang = re.split(r'[-_]', str(ref.get('lang') or '').lower())[0]
     lang = {'ze': 'zh', 'pb': 'pt', 'cn': 'zh'}.get(lang, lang)
+    lang = LANG2.get(lang, lang)   # (a film's own subtitle is named in three letters, "ita": Argos wants two)
     if len(cues) < 50 or not lang or lang == 'en' or not os.access(FW_PY, os.X_OK):
         return None
     prog('Translating the %s subtitle made for this copy (%d lines), to compare with the English before listening' % (lang, len(cues)))
