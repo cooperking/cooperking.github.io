@@ -102,6 +102,11 @@ def keep_added(items):
 
 def build(snap, now, days_only=False):
     items, series = snap.get('items', {}), snap.get('series', {})
+    # (AFI's details never in the site's own files, which anyone can read: members get them from the Mac as they open a film: John, 22 Nov 2026,
+    # "Can any afi information be for members only")
+    for v in list(items.values()) + [e for x in series.values() for e in x.get('episodes', [])]:
+        for k in [k for k in v if k.startswith('afi')]:
+            v.pop(k, None)
     eps = {e['id']: e for v in series.values() for e in v.get('episodes', [])}
     changed = 0
     # Movie of the Day: the days shown so far, each with its film (an episode too)

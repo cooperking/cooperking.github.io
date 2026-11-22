@@ -1317,6 +1317,7 @@ def make_handler(g):
             o['subs'] = [{'index': s['Index'], 'lang': s.get('Language') or '', 'title': s.get('DisplayTitle') or s.get('Language') or 'Subtitles'}
                          for s in ms.get('MediaStreams', []) if s.get('Type') == 'Subtitle' and s.get('IsTextSubtitleStream')]
             o['hearted'] = o['id'] in user['hearts']
+            o.update(afi_of(str((it.get('ProviderIds') or {}).get('Imdb') or '')))   # (AFI's details, for members only: never in the site's own files)
             if me.get('owner') and it.get('Type') in ('Movie', 'Episode'):   # (John, 13 Nov 2026: "a convert now option to films if I need them sooner")
                 o['conv'] = conv_why(ms)
                 P = load(os.path.expanduser('~/Grifflix/convert-priority.json'), {}) or {}
@@ -7431,6 +7432,35 @@ def afi_parse(x):
                 out['hist'] = h[:20000]
             break
     return out
+
+
+AFI_C = {'m': None, 'A': {}, 'AD': {}, 'f': {}}
+
+
+def afi_of(imdb):
+    """A film's AFI Catalog details (its page's number, genre, subjects, companies, History), for a member's own look at it: kept off the
+    site's public files, which anyone can read (John, 22 Nov 2026, "Can any afi information be for members only" ... "Yes")."""
+    if not re.match(r'^tt\d{6,10}$', imdb or ''):
+        return {}
+    try:
+        af, adf = os.path.expanduser('~/Grifflix/afi-ids.json'), os.path.expanduser('~/Grifflix/afi-details.json')
+        m = (os.path.getmtime(af) if os.path.exists(af) else 0, os.path.getmtime(adf) if os.path.exists(adf) else 0)
+        if AFI_C['m'] != m:
+            AFI_C.update(m=m, A=load(af, {}) or {}, AD=load(adf, {}) or {}, f={})
+        out = {}
+        a = (AFI_C['A'].get(imdb) or {}).get('id')
+        if a:
+            out['afi'] = str(a)
+        if imdb not in AFI_C['f']:
+            x = (AFI_C['AD'].get(imdb) or {}).get('x')
+            AFI_C['f'][imdb] = afi_parse(x) if x else {}
+        f_ = AFI_C['f'][imdb]
+        for k_, src in (('afig', 'genre'), ('afisub', 'subj'), ('afisubm', 'subjm'), ('afiprod', 'prod'), ('afidist', 'dist'), ('afih', 'hist')):
+            if f_.get(src):
+                out[k_] = f_[src]
+        return out
+    except Exception:
+        return {}
 
 
 DLIBS = {'at': 0, 'd': {}}
