@@ -2676,7 +2676,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '88e82885e786' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: 'f0533d6cac51' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2686,13 +2686,16 @@ var Q = new URLSearchParams(location.search);
 // (John's editing (Edit, Delete, Edit collections, Convert, a collection's pencil) hidden till he turns on edit mode, from the admin page's
 // link (?edit=1); Done turns it off: John, 20 Nov 2026, "I also don't need the edit button on the screen at all anywhere, keep them hidden
 // except in an edit mode, which will be linked from admin")
-function editMode() { return !!(ME && ME.owner && store.get('grifflix-edit') === '1'); }
+// (and always on in the draft, John's preview: its films editable as he looks them over: John, 22 Nov 2026, "Films should be editable in
+// draft / preview")
+function editMode() { return !!(ME && ME.owner && (BUILD.draft || store.get('grifflix-edit') === '1')); }
 function editBadge() {
   var b = document.getElementById('editbadge');
   if (!editMode() || TV) { if (b) b.remove(); return; }
   if (b) return;
   b = document.createElement('button'); b.type = 'button'; b.id = 'editbadge'; b.className = 'pill'; b.innerHTML = 'Edit mode · <b>Done</b>';
-  b.onclick = function () { store.set('grifflix-edit', ''); b.remove(); if (typeof route === 'function') route(); };
+  if (BUILD.draft) { b.innerHTML = 'Draft · editing on'; b.disabled = true; }   // (nothing to turn off: the draft's always editable)
+  else b.onclick = function () { store.set('grifflix-edit', ''); b.remove(); if (typeof route === 'function') route(); };
   document.body.appendChild(b);
 }
 var store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -7080,7 +7083,8 @@ function itemSheet(it, ctx) {
   wireBody(it, ctx); setTimeout(tvFit, 30);
   var mine = function (full) { if (PUBLIC || DEMO || !full.id) return full;   // (the member's own: from the Mac, if it's on)
     own('lists').then(function (L) { var h = L.hearts.some(function (x) { return x.id === it.id; }); if (h !== !!it.hearted) { it.hearted = full.hearted = h; var b = $('#aheart'); if (b && dlg.open) b.innerHTML = HEART(h); } }).catch(function () {});
-    return soon(mac('item?id=' + it.id), 6000).then(function (m) { ['pos', 'next', 'subs'].forEach(function (k) { if (m[k] != null) full[k] = m[k]; });
+    // (and AFI's details, a member's only, from the Mac: never in the site's own files: John, 22 Nov 2026, "Can any afi information be for members only")
+    return soon(mac('item?id=' + it.id), 6000).then(function (m) { ['pos', 'next', 'subs', 'afi', 'afig', 'afisub', 'afisubm', 'afiprod', 'afidist', 'afih'].forEach(function (k) { if (m[k] != null) full[k] = m[k]; });
       var at = {}; (m.episodes || []).forEach(function (e) { if (e.pos) at[e.id] = e.pos; }); (full.episodes || []).forEach(function (e) { if (at[e.id]) e.pos = at[e.id]; }); return full; }, function () { return full; }); };
   var drawFull = function (full) { if (!dlg.open) return; Object.assign(it, full); var had = document.activeElement && document.activeElement.id; $('#isbody').innerHTML = bodyHTML(it, ctx); wireBody(it, ctx); if (TV) { var back = had && dlg._moved && !/^(asignin|aplay|atrailer)$/.test(had) && $('#' + had); if (back) back.focus({ preventScroll: true }); else tvStart(); }   /* (the trailer arrives with the details: chosen then, unless something else was) */  setTimeout(tvFit, 30); };   // (the site's details at once; the Mac's own for this member when it answers, without waiting for it: John, 8 Nov 2026)
   if (!it.ext) api('item?id=' + it.id).then(function (full) { drawFull(full); return mine(full); }).then(function (full) { if (full && dlg.open && S.sheetItem === it.id) drawFull(full); }).catch(function () {});
