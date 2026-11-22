@@ -999,6 +999,8 @@ def make_handler(g):
                                     os.makedirs(os.path.dirname(fn_), exist_ok=True)
                                     with open(fn_, 'w', encoding='utf-8') as f_:
                                         f_.write(t_)
+                                    if isinstance(c_.get('evidence'), list):   # (its lines beside what was heard, to compare)
+                                        save(os.path.join(os.path.expanduser('~/Grifflix/subprep-evidence'), '%s.%d.json' % (iid, i_)), {'at': int(time.time()), 'parts': c_['evidence'][:8]})
                                     kept_.append({'i': i_, 'name': str(c_.get('name') or '')[:160], 'n': int(c_.get('n') or 0), 'how': str(c_.get('how') or '')[:120],
                                                   'miss': c_.get('miss'), 'samples': c_.get('samples') if isinstance(c_.get('samples'), list) else []})
                                 except Exception:
@@ -2949,8 +2951,10 @@ def make_handler(g):
             if not me.get('owner'):
                 return self.send_json(403, {'error': 'Only John.'})
             P = load(SUBPREP, {}) or {}
-            if re.match(r'^[0-9a-f]{32}$', str(q.get('evidence') or '')):   # (one film's: what Whisper heard, and the subtitle lines matched to it)
-                ev_ = load(os.path.join(os.path.expanduser('~/Grifflix/subprep-evidence'), q['evidence'] + '.json'), None)
+            if re.match(r'^[0-9a-f]{32}$', str(q.get('evidence') or '')):   # (one film's: what Whisper heard, and the subtitle lines matched to it;
+                # with i, one of the likeliest three turned down)
+                i_ = str(q.get('i') or '')
+                ev_ = load(os.path.join(os.path.expanduser('~/Grifflix/subprep-evidence'), q['evidence'] + ('.%s' % i_ if re.match(r'^[0-2]$', i_) else '') + '.json'), None)
                 return self.send_json(200, ev_ or {'parts': []})
             if b:
                 op = str(b.get('op') or '')
@@ -6692,6 +6696,9 @@ def give_genres(g):
                 byd.setdefault(sl, []).append(k)
     if F:
         by = dict(by, **byd)
+        # (a film Criterion only lists inside a box set: not given the set's genres; its own, from TMDB: John, 22 Nov 2026, "Re-read the
+        # genres of films Criterion only lists inside a box set?" ... "yes")
+        by = {sl: v for sl, v in by.items() if sl in byd}
     if not by:
         return
     gf = os.path.join(home, 'criterion-genres-given.json')
@@ -6701,6 +6708,24 @@ def give_genres(g):
     put = 0
     try:
         for iid, sl in crit_pairs(g):
+            if F and sl not in byd and given.get(iid) and not given.get('_own:' + iid):   # (given its set's before: its own read from TMDB, once)
+                try:
+                    full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid)) or {}
+                    tid = str((full.get('ProviderIds') or {}).get('Tmdb') or '')
+                    own = [x_.get('name') for x_ in ((tmdb(g, '/movie/' + tid) or {}).get('genres') or [])] if tid else []
+                    own = [x_ for x_ in own if x_]
+                    if own and sorted(full.get('Genres') or []) != sorted(own):
+                        record('genres put back', film=full.get('Name'), id=iid, was=full.get('Genres'), now=own, why='its box set’s, not its own: TMDB’s')
+                        full['Genres'] = own
+                        full['GenreItems'] = [{'Name': x_} for x_ in own]
+                        full['LockedFields'] = sorted(set((full.get('LockedFields') or []) + ['Genres']))
+                        g.jf.call('POST', '/Items/%s' % iid, full)
+                        put += 1
+                    given.pop(iid, None)
+                    given['_own:' + iid] = own or ['?']
+                except Exception as e:
+                    log('Its own genres for %s: %s' % (iid, e))
+                continue
             gs = sorted(by.get(sl) or [])
             if F and sl in byd:   # (the site's Criterion filters as these too)
                 fixed[sl] = gs

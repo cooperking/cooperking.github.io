@@ -1081,7 +1081,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         var parts = (c.samples || []).map(function (p) { return '<li>From ' + mm(p[0]) + ': ' + p[1] + ' of ' + (p[3] != null ? p[3] : '?') + ' lines heard agreeing' + (p[1] ? ' (typically ' + p[2] + ' s out)' : '') +
           (p[4] != null ? ' · <b>agrees better ' + (p[4] > 0 ? p[4] + ' s later' : -p[4] + ' s earlier') + '</b>: a different cut here?' : '') + (p[3] >= 25 && p[1] < Math.max(3, .1 * p[3]) ? ' · <b>too few for so much said</b>' : '') + '</li>'; }).join('');
         return '<div style="margin:10px 0 0;padding:8px 0 0;border-top:1px solid var(--line)"><b>“' + esc(c.name) + '”</b>: ' + c.n + ' lines agreeing in all, ' + esc(c.how) + (c.miss != null ? ', typically ' + c.miss + ' s out' : '') +
-          '<ul style="margin:4px 0 6px 18px;padding:0">' + parts + '</ul><button class="btn" type="button" data-spchoose="' + x.id + '|' + c.i + '">Use this one</button></div>';
+          '<ul style="margin:4px 0 6px 18px;padding:0">' + parts + '</ul><button class="btn" type="button" data-spchoose="' + x.id + '|' + c.i + '">Use this one</button> <button class="btn" type="button" data-spev="' + x.id + '|' + c.i + '">Compare the dialogue</button><div class="spev" data-for="' + x.id + '|' + c.i + '"></div></div>';
       }).join('') + '</div></details>';
   }
   function spWhat(x) {
@@ -1106,7 +1106,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     if (others.length) h += '<b>Others tried:</b> ' + others.map(function (t) { return '“' + esc(t[0]) + '”, ' + t[1] + ' lines matched' + (t[2] ? ' (sure)' : ''); }).join('; ') + '<br>';
     if (x.file) h += '<b>Saved as:</b> ' + esc(String(x.file).split('/').pop()) + '<br>';
     if (x.mins) h += '<b>Time taken on your Mac:</b> ' + x.mins + ' min';
-    if (x.state === 'done' || x.state === 'check' || x.state === 'nomatch' || x.state === 'failed') h += '<div style="margin-top:8px"><button class="btn" type="button" data-spev="' + x.id + '">What Whisper heard</button><div class="spev" data-for="' + x.id + '"></div></div>';
+    if (x.state === 'done' || x.state === 'check' || x.state === 'nomatch' || x.state === 'failed') h += '<div style="margin-top:8px"><button class="btn" type="button" data-spev="' + x.id + '">Compare the dialogue</button><div class="spev" data-for="' + x.id + '"></div></div>';
     return h + '</div></details>';
   }
   function subPrep(body) {
@@ -1184,13 +1184,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           var box = document.querySelector('.spev[data-for="' + bt.dataset.spev + '"]'); if (box.innerHTML) { box.innerHTML = ''; return; }
           box.textContent = 'Asking the Mac mini…';
           var tm = function (t) { t = Math.max(0, t); var h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), sx = Math.floor(t % 60); return (h ? h + ':' + ('0' + m).slice(-2) : m) + ':' + ('0' + sx).slice(-2); };
-          fetch(GW + '/api/subprep?evidence=' + bt.dataset.spev, { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+          var ev2 = bt.dataset.spev.split('|');
+          fetch(GW + '/api/subprep?evidence=' + ev2[0] + (ev2[1] != null ? '&i=' + ev2[1] : ''), { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
             var P = j.parts || [];
             if (!P.length) { box.textContent = 'Not kept for this film: only those done from now on.'; return; }
             box.innerHTML = P.map(function (p) {
               var ok = p.rows.filter(function (r) { return r[5]; }).length, m = p.rows.filter(function (r) { return r.length > 2; }).length;
               return '<p class="stat" style="margin:12px 0 4px"><b>From ' + tm(p.from) + '</b> · ' + p.rows.length + ' lines heard in English, ' + ok + ' matching the subtitle at that point by the timing chosen</p>' +
-                '<div style="overflow-x:auto"><table class="spt"><tr><th>Heard at</th><th>Whisper heard (in English)</th><th>Subtitle there</th><th>Its time</th><th>Moved to</th><th></th></tr>' +
+                '<div style="overflow-x:auto"><table class="spt"><tr><th>When</th><th>What’s said (Whisper’s English)</th><th>The subtitle then</th><th>Its own time</th><th>Moved to</th><th>Same?</th></tr>' +
                 p.rows.map(function (r) { return '<tr' + (r.length > 2 && !r[5] ? ' class="off"' : '') + '><td>' + tm(r[0]) + '</td><td>' + esc(r[1]) + '</td>' +
                   (r.length > 2 ? '<td>' + esc(r[3]) + '</td><td>' + tm(r[2]) + '</td><td>' + tm(r[4]) + '</td><td>' + (r[5] ? '✓' : Math.abs(r[0] - r[4]) <= 4 ? '✗ other words' : '✗ ' + (r[0] - r[4] >= 0 ? '+' : '') + (r[0] - r[4]).toFixed(1) + ' s') + '</td>' : '<td colspan="4" style="opacity:.6">no subtitle line then</td>') + '</tr>'; }).join('') + '</table></div>';
             }).join('');
