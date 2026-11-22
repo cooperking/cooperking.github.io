@@ -410,7 +410,12 @@ def prepare(job, ff, wcli, work):
             for x in res:
                 x['how'] = 'by the %s subtitle made for this copy, translated: %s' % (lg, x['how'])
             return res
+        if job.get('ref_only'):   # (one timed by Whisper already, looked at again: kept as it is)
+            prog('None lined up with the translated %s subtitle: the one timed by Whisper kept' % ((job.get('ref') or {}).get('lang') or ''))
+            return [dict(x, fits=False) for x in res] if res else []
         prog('None lined up with the translated %s subtitle: listening with Whisper' % ((job.get('ref') or {}).get('lang') or ''))
+    if job.get('ref_only'):
+        return []
     heard = listen()
     return evaluate()
 
