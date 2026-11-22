@@ -6397,16 +6397,18 @@ def speech_try(g, cl, e, iid, path, it):
     cf = os.path.join(os.path.expanduser('~/Grifflix/speech'), iid + '.json')
     sz = os.path.getsize(path)
     c_ = load(cf, None) or {}
-    if c_.get('size') == sz and c_.get('m'):
-        mask, n = int(c_['m'], 16), int(c_['n'])
+    if c_.get('size') == sz and c_.get('m') and c_.get('k'):
+        mask, n, known = int(c_['m'], 16), int(c_['n']), int(c_['k'], 16)
     else:
         SPEECH['now'] = '%s: listening for when people speak' % e.get('name')
-        mask, n = SUBS.speech_mask(SUBS.speech_levels(path, ff))
-        if not n:
+        lv_ = SUBS.speech_levels_parts(path, ff, (it.get('RunTimeTicks') or 0) / 1e7)
+        mask, n = SUBS.speech_mask(lv_)
+        known = SUBS.known_mask(lv_)
+        if not n or not known:
             e['speech_note'] = 'its sound couldn’t be read'
             return False
         os.makedirs(os.path.dirname(cf), exist_ok=True)
-        save(cf, {'size': sz, 'n': n, 'm': '%x' % mask, 'at': int(time.time())})
+        save(cf, {'size': sz, 'n': n, 'm': '%x' % mask, 'k': '%x' % known, 'at': int(time.time())})
     pid = it.get('ProviderIds') or {}
     org = film_origin(path) or os.path.splitext(str(((load(os.path.expanduser('~/Grifflix/fingerprints.json'), {}) or {}).get(path) or {}).get('name') or ''))[0] or None
     hint = org or os.path.splitext(os.path.basename(path))[0]
@@ -6433,7 +6435,7 @@ def speech_try(g, cl, e, iid, path, it):
                 continue
             if len(cues) < 50:
                 continue
-            f = SUBS.speech_fit(cues, mask, n, ratios=[1.0], span=300)
+            f = SUBS.speech_fit(cues, mask, n, ratios=[1.0], span=300, known=known)
             said.append('%s %s: z %s/%s at %+.1f s' % (x.get('lang'), (x.get('name') or '')[:40], f and f['z'], f and f['second'], (f or {}).get('offset', 0)))
             if f and f['z'] >= 5 and f['z'] >= 3 * max(f['second'], .5) and abs(f['offset']) <= .4:
                 rf = os.path.join(os.path.expanduser('~/Grifflix/subprep-ref'), '%s.%s.srt' % (iid, x.get('lang') or 'xx'))
@@ -6475,7 +6477,7 @@ def speech_try(g, cl, e, iid, path, it):
             continue
         if len(cues) < 50 or (dmin and cues[-1][1] > dmin * 60 + 300):
             continue
-        f = SUBS.speech_fit(cues, mask, n)
+        f = SUBS.speech_fit(cues, mask, n, known=known)
         said.append('en %s: z %s/%s, %+.1f s at %s×, %d%% on speech' % ((x.get('name') or '')[:40], f and f['z'], f and f['second'], (f or {}).get('offset', 0), round((f or {}).get('ratio', 1), 4), 100 * (f or {}).get('frac', 0)))
         if f and f['z'] >= 8 and f['z'] >= 3.5 * max(f['second'], .5) and f['frac'] >= .6:
             out = SUBS.shift_cues(cues, f['ratio'], f['offset'])

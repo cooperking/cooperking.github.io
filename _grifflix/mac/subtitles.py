@@ -882,16 +882,45 @@ def speech_levels(path, ff='ffmpeg', timeout=1800):
     return out
 
 
+def speech_levels_parts(path, ff='ffmpeg', dur=0, parts=4, seg=360, timeout=900):
+    """The same, for four stretches of the film only (six minutes each, spread through it), read straight from those places: the whole
+    film's sound took half an hour and more from the G-Drive while it was converting others (Mandabi, 22 Nov 2026). The rest left unknown
+    (None)."""
+    if not dur or dur < parts * seg * 1.5:
+        return speech_levels(path, ff, timeout=timeout * 2)
+    out = [None] * int(dur / STEP + 1)
+    for q in range(parts):
+        t0 = max(0.0, dur * (q + .5) / parts - seg / 2)
+        cmd = [ff, '-nostdin', '-v', 'error', '-ss', '%.2f' % t0, '-t', str(seg), '-i', path, '-map', '0:a:0', '-vn', '-sn', '-dn', '-ac', '1', '-ar', '8000',
+               '-af', 'highpass=f=300,lowpass=f=3000,asetnsamples=n=800:p=0,astats=metadata=1:reset=1,ametadata=print:key=lavfi.astats.Overall.RMS_level:file=-',
+               '-f', 'null', '-']
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        k = int(round(t0 / STEP))
+        for l in r.stdout.splitlines():
+            if l.startswith('lavfi.astats.Overall.RMS_level='):
+                v = l.split('=', 1)[1].strip()
+                try:
+                    v = float(v) if v not in ('-inf', 'inf', 'nan') else -120.0
+                except ValueError:
+                    v = -120.0
+                if 0 <= k < len(out):
+                    out[k] = v
+                k += 1
+    return out
+
+
 def speech_mask(levels):
     """(frames when someone's likely speaking, as the bits of one number; how many frames): those louder in the speech band than the
     film's middle (its quiet stretches, music and effects mostly fall below or are brief)."""
     if not levels:
         return 0, 0
-    s = sorted(levels)
+    s = sorted(v for v in levels if v is not None)   # (only the stretches listened to)
+    if not s:
+        return 0, 0
     thr = s[int(len(s) * .55)]
     m = 0
     for i, v in enumerate(levels):
-        if v > thr and v > -60:
+        if v is not None and v > thr and v > -60:
             m |= 1 << i
     return m, len(levels)
 
@@ -907,7 +936,16 @@ def cue_mask(cues, n, ratio=1.0, offset=0.0):
     return m
 
 
-def speech_fit(cues, mask, n, ratios=None, span=600):
+def known_mask(levels):
+    """The frames listened to (all of them, for a whole film)."""
+    k = 0
+    for i, v in enumerate(levels):
+        if v is not None:
+            k |= 1 << i
+    return k
+
+
+def speech_fit(cues, mask, n, ratios=None, span=600, known=None):
     """How well a subtitle's lines sit on when people speak: for each speed tried and each shift up to span frames either way, how many
     of its frames fall on speech. Returns the best: {ratio, offset (s), z (how far above the usual), second (the next best elsewhere,
     in the same units), frac (share of its frames on speech)}."""
@@ -924,6 +962,9 @@ def speech_fit(cues, mask, n, ratios=None, span=600):
         mean = sum(sc) / len(sc)
         sd = (sum((x - mean) ** 2 for x in sc) / len(sc)) ** .5 or 1.0
         k0 = max(range(len(sc)), key=lambda i: sc[i])
+        if known:   # (its share on speech counted in the stretches listened to only)
+            sh0 = (sm << (k0 - span)) if k0 >= span else (sm >> (span - k0))
+            tot = (sh0 & known).bit_count() or tot
         far = [sc[i] for i in range(len(sc)) if abs(i - k0) > 15]   # (the best elsewhere, more than 1.5 s away)
         res = {'ratio': r, 'offset': round((k0 - span) * STEP, 2), 'z': round((sc[k0] - mean) / sd, 2),
                'second': round(((max(far) if far else mean) - mean) / sd, 2), 'frac': round(sc[k0] / tot, 3)}
