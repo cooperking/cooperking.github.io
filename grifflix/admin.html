@@ -393,6 +393,16 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     </nav>
     <nav class="subtabs" id="subtabs" aria-label="In this tab" hidden></nav>
     <div class="cards">
+      <!-- (Updates first on Home, with the draft, editable, beside it: John, 22 Nov 2026, "Could Updates be the first tab too") -->
+      <section class="card" data-tab="updates">
+        <div class="kicker">Updates</div>
+        <h2 id="allhead">Looking…</h2>
+        <ul class="changes" id="alllist"></ul>
+        <ol class="steps" id="allsteps" hidden></ol>
+        <p class="stat">One button: the Mac’s Grifflix files brought up to date (if there’s an update), the films brought over from the Mac, and, if the draft has changes, <b>the draft put live for everyone</b> (listed above). Look at the Preview first.</p>
+        <div class="state"><button class="btn primary" id="allgo" type="button">Update everything</button><button class="btn" id="scango" type="button">Check the library</button><a class="btn" href="https://grifflix.co.uk/preview" target="grifflix-preview" rel="noopener">Preview</a><a class="btn" id="editgoh" href="/grifflix/draft/?edit=1" target="grifflix-draft" rel="noopener">The draft, editable</a></div>
+        <p class="stat" id="scansay">Check the library: the Mac mini looks through the drive for new and changed films now, and the site gets them. Nothing else changes.</p>
+      </section>
       <!-- (free space, first on Home, each drive with a bar and when it was looked at: John, 21 Nov 2026, "I need it in a clearer and better place") -->
       <section class="card" data-tab="updates" id="dkcard" hidden>
         <div class="kicker">Free space</div>
@@ -419,15 +429,6 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <h3 style="margin:26px 0 6px;font-size:17px">Set aside</h3>
         <p class="stat" id="sasay">What’s kept in “Set aside” on the G-Drive. Delete any of it for good when you’re happy you won’t want it.</p>
         <div id="salist"></div>
-      </section>
-      <section class="card" data-tab="updates">
-        <div class="kicker">Updates</div>
-        <h2 id="allhead">Looking…</h2>
-        <ul class="changes" id="alllist"></ul>
-        <ol class="steps" id="allsteps" hidden></ol>
-        <p class="stat">One button: the Mac’s Grifflix files brought up to date (if there’s an update), the films brought over from the Mac, and, if the draft has changes, <b>the draft put live for everyone</b> (listed above). Look at the Preview first.</p>
-        <div class="state"><button class="btn primary" id="allgo" type="button">Update everything</button><button class="btn" id="scango" type="button">Check the library</button><a class="btn" href="https://grifflix.co.uk/preview" target="grifflix-preview" rel="noopener">Preview</a></div>
-        <p class="stat" id="scansay">Check the library: the Mac mini looks through the drive for new and changed films now, and the site gets them. Nothing else changes.</p>
       </section>
       <section class="card" data-tab="members">
         <div class="kicker">Members</div>
@@ -780,8 +781,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var k = FK(nm); return (y && (LIBIDX[k + '|' + y] || LIBIDX[k + '|' + (+y - 1)] || LIBIDX[k + '|' + (+y + 1)])) || LIBIDX[k] || null;
   }
   var SITE = location.hostname === 'admin.grifflix.co.uk' ? 'https://grifflix.co.uk/grifflix/' : '/grifflix/';
-  (function () { var c = document.getElementById('collgo'); if (c) c.href = SITE + '#browse/collections'; var e = document.getElementById('editgo'); if (e) e.href = SITE + '?edit=1'; var d = document.getElementById('editgod'); if (d) d.href = SITE + 'draft/?edit=1'; })();   // (on the admin's own address, Grifflix is on its own)
-  function flA(id, text) { return '<a class="flink" href="' + SITE + '#film/' + id + '" target="grifflix" rel="noopener" title="Open it in Grifflix">' + esc(text) + '</a>'; }
+  (function () { var c = document.getElementById('collgo'); if (c) c.href = SITE + '#browse/collections'; var e = document.getElementById('editgo'); if (e) e.href = SITE + '?edit=1'; var d = document.getElementById('editgod'); if (d) d.href = SITE + 'draft/?edit=1'; var dh = document.getElementById('editgoh'); if (dh) dh.href = SITE + 'draft/?edit=1'; })();   // (on the admin's own address, Grifflix is on its own)
+  // (each film opened in the draft, always editable for John: John, 22 Nov 2026, "Can films linked to from draft be in edit mode?")
+  function flA(id, text) { return '<a class="flink" href="' + SITE + 'draft/#film/' + id + '" target="grifflix-draft" rel="noopener" title="Open it in the draft, to edit">' + esc(text) + '</a>'; }
   if (location.hostname === 'admin.grifflix.co.uk') [].forEach.call(document.querySelectorAll('a[href^="/grifflix/"]'), function (a) { a.href = 'https://grifflix.co.uk' + a.getAttribute('href'); a.target = 'grifflix'; });
   // (and from grifflix.co.uk, a way to it, signed in: what this page knows of John's sign-in carried in the link's #, never sent anywhere)
   // (admin.grifflix.co.uk opened straight, not signed in there yet: one tap to grifflix.co.uk's admin, which sends it back signed in)
