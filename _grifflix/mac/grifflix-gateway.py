@@ -1098,9 +1098,8 @@ def make_handler(g):
                             return self.send_json(200, {'ok': True})
                         if P.get('_paused') or q.get('home') != '1' or not self.subs_ready():
                             return self.send_json(200, {'wait': 'paused' if P.get('_paused') else 'away'})
-                        o = g.st.get('opensubs') or {}
-                        if o.get('remaining') is not None and int(o.get('remaining') or 0) < 5:
-                            return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
+                        # (no blanket stop on a remembered count of downloads left: it went stale, and held every job back, translations and John's own
+                        # order too: John, 22 Nov 2026, "the mac is ignoring my ordering". Each step stops by itself when they're really used up)
                         now_ = time.time()
                         # (any left as on John's Mac with no word from it for half an hour: finished there if its subtitles were saved since, else
                         # back to waiting: Sound of Falling showed "part 3 of 4" four hours after it was done)
@@ -9482,6 +9481,17 @@ def serve():
                 log('  Totally Fucked Up: its cover: %s' % ('on' if posters_on(only={'Totally Fucked Up (1993)'}) else 'on already, or none in its folder'))
                 return
     threading.Thread(target=tfu_rename, daemon=True).start()
+    try:   # (translations that failed for a language code Argos didn't know then ("ea": Spanish), tried again now)
+        with SP_LOCK:
+            P_ = load(SUBPREP, {}) or {}
+            n_ = 0
+            for k_, e_ in P_.items():
+                if isinstance(e_, dict) and e_.get('tr_tried') and str(e_.get('ref_lang') or '').lower()[:2] in ('ea', 'sp', 'pm', 'zt', 'me', 'sy'):
+                    e_.pop('tr_tried', None); e_.pop('tr_given', None); n_ += 1
+            if n_:
+                save(SUBPREP, P_)
+    except Exception:
+        pass
     threading.Thread(target=keep_speech_first, args=(g,), daemon=True).start()   # (other subtitles timed by when people speak, before Whisper)
     try:   # (films already turned down where Whisper heard next to no speech anywhere (Robot Dreams): little or no dialogue, not tried again)
         P_ = load(SUBPREP, {}) or {}

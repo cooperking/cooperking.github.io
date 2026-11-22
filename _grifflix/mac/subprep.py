@@ -234,7 +234,7 @@ def translated_ref(job, work, dur):
     ref = job.get('ref') or {}
     cues = parse_srt(ref.get('srt') or '')
     lang = re.split(r'[-_]', str(ref.get('lang') or '').lower())[0]
-    lang = {'ze': 'zh', 'pb': 'pt', 'cn': 'zh'}.get(lang, lang)
+    lang = {'ze': 'zh', 'pb': 'pt', 'cn': 'zh', 'ea': 'es', 'sp': 'es', 'pm': 'pt', 'zt': 'zh', 'me': 'sr', 'sy': 'ar'}.get(lang, lang)   # (OpenSubtitles' own codes: "ea" is Spanish: Europa, 22 Nov 2026)
     lang = LANG2.get(lang, lang)   # (a film's own subtitle is named in three letters, "ita": Argos wants two)
     if len(cues) < 50 or not lang or lang == 'en' or not os.access(FW_PY, os.X_OK):
         return None
