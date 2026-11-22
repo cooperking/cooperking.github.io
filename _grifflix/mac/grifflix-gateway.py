@@ -3078,6 +3078,8 @@ def make_handler(g):
                 i_ = str(q.get('i') or '')
                 ev_ = load(os.path.join(os.path.expanduser('~/Grifflix/subprep-evidence'), q['evidence'] + ('.%s' % i_ if re.match(r'^[0-2]$', i_) else '') + '.json'), None)
                 return self.send_json(200, ev_ or {'parts': []})
+            if re.match(r'^[0-9a-f]{32}$', str(q.get('compare') or '')):
+                return self.send_json(200, subs_compare(g, P, q['compare'], str(q.get('with') or '')))
             if b:
                 op = str(b.get('op') or '')
                 if op in ('pause', 'resume'):
@@ -3133,10 +3135,12 @@ def make_handler(g):
                     log('Subtitles: the translated %s one taken for %s, John chose' % (lg_, e_.get('name')))
                     record('subtitles saved', film=e_.get('name'), id=iid_, file=out_, how='the %s subtitle made for this copy, machine-translated, chosen by John' % lg_)
                 elif op == 'choose' and str(b.get('id') or '') in P:   # (John's own choice of a subtitle turned down: saved as it'd be timed)
-                    iid_, i_ = str(b['id']), int(b.get('i') or 0)
+                    iid_, i_ = str(b['id']), str(b.get('i') if b.get('i') is not None else 0)
                     e_ = P[iid_]
-                    c_ = next((c for c in e_.get('cands') or [] if c.get('i') == i_), None)
-                    fn_ = os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.%d.srt' % (iid_, i_))
+                    if not re.match(r'^r?\d$', i_):
+                        return self.send_json(400, {'error': 'Which one?'})
+                    c_ = next((c for c in (e_.get('cands') or []) + (e_.get('rcands') or []) if str(c.get('i')) == i_), None)
+                    fn_ = os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.%s.srt' % (iid_, i_))
                     if not c_ or not os.path.exists(fn_) or not re.match(r'^[0-9a-f]{32}$', iid_):
                         return self.send_json(400, {'error': 'That subtitle isn’t kept any more: Try again.'})
                     it_ = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid_), query={'Fields': 'Path'}) or {}
@@ -3146,7 +3150,7 @@ def make_handler(g):
                     out_ = self.subs_write(it_['Path'], 'en', cues_)
                     g.jf.call('POST', '/Items/%s/Refresh' % iid_, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
                     e_.update(state='done', note='chosen by John: %s (%d lines agreeing)' % (c_.get('how'), c_.get('n') or 0), chose=c_.get('name'), file=out_, at=int(time.time()),
-                              n=c_.get('n'), sure=True, how='chosen', samples=c_.get('samples'))
+                              n=c_.get('n'), sure=True, how='chosen', samples=c_.get('samples'), cur=i_, chosen_from=e_.get('how') if e_.get('how') != 'chosen' else e_.get('chosen_from'))
                     save(SUBPREP, P)
                     log('Subtitles chosen by John: %s: %s' % (e_.get('name'), c_.get('name')))
                     record('subtitles saved', film=e_.get('name'), id=iid_, file=out_, how='chosen by John from those turned down: ' + str(c_.get('how')), chose=c_.get('name'))
@@ -3170,7 +3174,8 @@ def make_handler(g):
                                         # (every film, for the admin page's tabs: to do, added as they were, corrected (and how), to check, not
                                         # found: John, 22 Nov 2026, "I need a tab of added, corrected (with details), to do etc. Tidy")
                                         'all': [{k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'state', 'note', 'chose', 'n', 'miss', 'mins', 'at', 'step', 'stepat',
-                                                                       'tried', 'samples', 'sure', 'file', 'origin', 'how', 'kind', 'series', 'cands', 'translated', 'ref_only', 'ref_lang', 'vfile', 'verifying', 'old_vfile')} for x in F]})
+                                                                       'tried', 'samples', 'sure', 'file', 'origin', 'how', 'kind', 'series', 'cands', 'translated', 'ref_only', 'ref_lang', 'vfile', 'verifying', 'old_vfile',
+                                                                       'rcands', 'cur', 'chosen_from', 'ref_file')} for x in F]})
 
         def api_waiting(self, me, user, q, b):
             """John's only: what he's ticked off on the admin page's Waiting on you (John, 18 Nov 2026: "I could do with a waiting on you
@@ -6072,6 +6077,71 @@ def own_foreign_sub(g, iid, path):
     return None
 
 
+def subs_compare(g, P, iid, w=''):
+    """One film's English subtitles set beside what's said, for the admin page (John, 22 Nov 2026, "showing a clear comparison or the
+    ability to choose and see - this should be on anything adjusted"): in four parts of the film, each line said (by the subtitle made for
+    this copy, in its language, with your Mac's English of it where there is one; or by what Whisper heard), the English line that showed
+    there before it was put right, and the one that shows now. w: one of the others to see instead of the one in use."""
+    e = P.get(iid) or {}
+    cdir = os.path.expanduser('~/Grifflix/subprep-cands')
+    rd = lambda f: SUBS.parse_srt(open(f, encoding='utf-8', errors='replace').read()) if f and os.path.exists(f) else []
+    w = w if re.match(r'^r?\d$|^tr$', w or '') else ''
+    cur = str(e.get('cur') or '')
+    sel = w or cur
+    out = {'with': sel, 'cur': cur, 'versions': []}
+    # (the versions there are to see: the one in use, the others tried for its copy, the likeliest Whisper turned down, the machine translation)
+    for c in e.get('rcands') or []:
+        out['versions'].append({'i': c['i'], 'name': c.get('name') or '', 'n': c.get('n'), 'share': c.get('share'), 'kind': 'ref'})
+    for c in e.get('cands') or []:
+        out['versions'].append({'i': str(c.get('i')), 'name': c.get('name') or '', 'n': c.get('n'), 'kind': 'whisper'})
+    if os.path.exists(os.path.join(cdir, '%s.tr.srt' % iid)):
+        out['versions'].append({'i': 'tr', 'name': 'machine translation of the %s subtitle made for this copy' % ((e.get('translated') or {}).get('lang') or e.get('ref_lang') or ''), 'kind': 'tr'})
+    # (Whisper's evidence, where there's no subtitle made for this copy to compare by)
+    ref = rd(e.get('ref_file'))
+    if not ref:
+        ev = load(os.path.join(os.path.expanduser('~/Grifflix/subprep-evidence'), iid + ('.%s' % w if re.match(r'^\d$', w) else '') + '.json'), None) or {}
+        out['by'] = 'whisper'
+        out['parts'] = [{'from': p.get('from'), 'rows': [{'t': r[0], 'said': r[1], 'now': r[3] if len(r) > 2 else '', 'was_t': r[2] if len(r) > 2 else None, 'now_t': r[4] if len(r) > 2 else None,
+                                                          'ok': bool(r[5]) if len(r) > 5 else None} for r in p.get('rows') or []]} for p in ev.get('parts') or []]
+        if not out['parts'] and e.get('how') == 'exact':
+            out['by'] = 'exact'
+        return out
+    out['by'] = 'ref'
+    out['lang'] = e.get('ref_lang') or ''
+    tr = rd(os.path.join(cdir, '%s.tr.srt' % iid))
+    if w == 'tr':
+        now, was = tr, []
+    elif sel and re.match(r'^r\d$', sel):
+        now, was = rd(os.path.join(cdir, '%s.%s.srt' % (iid, sel))), rd(os.path.join(cdir, '%s.%s.orig.srt' % (iid, sel)))
+    elif sel and re.match(r'^\d$', sel):
+        now, was = rd(os.path.join(cdir, '%s.%s.srt' % (iid, sel))), []
+    else:
+        now, was = rd(e.get('file')), []
+    if not now:
+        now = rd(e.get('file'))
+    import bisect
+    def at(cs, t):   # (the line showing at t, if any)
+        if not cs:
+            return None
+        k = bisect.bisect_right([c[0] for c in cs], t) - 1
+        return cs[k] if k >= 0 and cs[k][0] <= t <= cs[k][1] + .3 else None
+    end = ref[-1][1] if ref else 0
+    parts = []
+    for fr in (.12, .37, .62, .87):   # (four parts, three minutes each)
+        t0 = end * fr
+        rows = []
+        for c in ref:
+            if t0 <= c[0] < t0 + 180:
+                mid = (c[0] + c[1]) / 2
+                n_, w_, tl_ = at(now, mid), at(was, mid), at(tr, mid) if w != 'tr' else None
+                rows.append({'t': round(c[0], 1), 'said': c[2], 'said_en': tl_[2] if tl_ else '', 'now': n_[2] if n_ else '', 'now_t': round(n_[0], 1) if n_ else None,
+                             'was': w_[2] if w_ else '', 'ok': bool(n_)})
+        if rows:
+            parts.append({'from': round(t0), 'rows': rows[:40]})
+    out['parts'] = parts
+    return out
+
+
 def ref_sub(g, cl, e, iid, path, it):
     """No English made for this very file, but one in another language is: its lines' times used to time the English ones found for
     the film (John, 22 Nov 2026, "If there are subtitles in any language from that file but no English they will be useful for timing
@@ -6125,20 +6195,34 @@ def ref_sub(g, cl, e, iid, path, it):
         L = cl.search('en', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint)
     L = [x for x in L if not x.get('machine')][:6]
     best = None
-    for x in L:
+    # (each English one tried kept, as it came and as timed, to compare and to choose instead: John, 22 Nov 2026, "showing a clear comparison
+    # or the ability to choose and see - this should be on anything adjusted, not just rejected")
+    cdir_ = os.path.expanduser('~/Grifflix/subprep-cands')
+    rc_ = []
+    for k_, x in enumerate(L):
         try:
             cues = SUBS.parse_srt(SUBS.decode(cl.download(x['file_id'])))
         except Exception:
             continue
         share, hit, out, how = SUBS.align_to_ref(ref, cues)
+        try:
+            os.makedirs(cdir_, exist_ok=True)
+            for sfx_, cc_ in (('r%d.srt' % k_, out), ('r%d.orig.srt' % k_, cues)):
+                with open(os.path.join(cdir_, '%s.%s' % (iid, sfx_)), 'w', encoding='utf-8') as f_:
+                    f_.write(SUBS.write_srt(cc_))
+            rc_.append({'i': 'r%d' % k_, 'name': x.get('name') or '', 'share': round(share, 3), 'n': hit, 'how': how})
+        except Exception:
+            pass
         if not best or share > best[0]:
-            best = (share, hit, out, how, x)
+            best = (share, hit, out, how, x, 'r%d' % k_)
         if share >= .8:
             break
+    e['rcands'] = sorted(rc_, key=lambda c: -c['share'])
     if not best or best[0] < .45 or best[1] < 60:
         e['ref_note'] = 'a subtitle made for this file in %s, but no English one lined up with it (best %d%%)' % (refs[0][1], round(100 * best[0]) if best else 0)
         return False
-    share, hit, out, how, x = best
+    share, hit, out, how, x, ci_ = best
+    e['cur'] = ci_   # (which of those is the one in use)
     fn = '%s.Grifflix.en.srt' % os.path.splitext(path)[0]
     with open(fn + '.tmp', 'w', encoding='utf-8') as f:
         f.write(SUBS.write_srt(out))
@@ -6148,7 +6232,7 @@ def ref_sub(g, cl, e, iid, path, it):
     except Exception:
         pass
     e.update(state='done' if share >= .6 else 'check', note='%s (the %s subtitle’s)' % (how, refs[0][1]),
-             chose=x.get('name') or '', file=fn, at=int(time.time()), sure=share >= .6, n=hit, how='by reference', ref_v=2)
+             chose=x.get('name') or '', file=fn, at=int(time.time()), sure=share >= .6, n=hit, how='by reference', ref_v=3)
     log('Subtitles timed by a %s subtitle made for the very file: %s (%d%% of lines on its lines)' % (refs[0][1], e.get('name'), round(100 * share)))
     record('subtitles saved', film=e.get('name'), id=iid, file=fn, how=e['note'], english_from=x.get('name'), opensubtitles_file=x.get('file_id'),
            timed_by_language=refs[0][1], lines_on_reference=hit, share=round(share, 3))
@@ -6164,7 +6248,8 @@ def subs_exact_all():
     P = load(SUBPREP, {}) or {}
     n = 0
     for iid, e in list(P.items()):
-        redo_ = isinstance(e, dict) and e.get('how') == 'by reference' and e.get('ref_v') != 2   # (those timed before lines between were moved by their neighbours: again)
+        redo_ = isinstance(e, dict) and e.get('how') == 'by reference' and e.get('ref_v') != 3   # (those timed before lines between were moved by their neighbours, or before
+        # the English ones tried were kept to compare and choose from: again)
         if iid.startswith('_') or not isinstance(e, dict) or ((e.get('state') not in ('waiting', 'none', 'nomatch', 'failed') or e.get('ref_tried2')) and not redo_):
             continue
         try:

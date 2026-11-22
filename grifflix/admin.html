@@ -201,6 +201,18 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .cbdock { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); background: var(--bg, #1f3657); border-top: 1px solid var(--line, rgba(255,255,255,.2)); }
 .cbdock[hidden] { display: none; } .cbdock b { flex: 1 1 100%; font-size: 14px; } @media (min-width: 600px) { .cbdock b { flex: 1 1 auto; } }
 .spt { border-collapse: collapse; font-size: 12.5px; line-height: 1.4; min-width: 640px; } .spt th { text-align: left; font-weight: 600; opacity: .8; padding: 4px 8px; border-bottom: 1px solid var(--line); }
+/* (subtitles, tidied: one line a film, opened for what was done, versions to see, and the dialogue side by side: John, 22 Nov 2026) */
+#splists { list-style: none; padding: 0; margin: 0; } #splists > li { padding: 0 !important; border-bottom: 1px solid var(--line) !important; }
+.sphead { display: grid; grid-template-columns: 22px 1fr auto; gap: 4px 10px; width: 100%; text-align: left; background: none; border: 0; color: var(--fg); padding: 10px 2px; cursor: pointer; font: inherit; }
+.sphead .ic { font-weight: 700; } .sphead .nm { font-weight: 600; } .sphead .lg { color: var(--muted); font-size: 12px; margin-left: 6px; font-weight: 400; }
+.sphead .st { grid-column: 2 / 4; color: var(--muted); font-size: 13px; line-height: 1.4; } .sphead .dt { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.sphead[aria-expanded="true"] .nm { text-decoration: underline; text-underline-offset: 3px; }
+.spbody { padding: 2px 2px 16px 34px; } .spkv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 13px; line-height: 1.45; margin: 0 0 12px; }
+.spkv dt { color: var(--muted); } .spkv dd { margin: 0; }
+.spvers { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; } .spvers button { font: 13px/1.25 inherit; text-align: left; padding: 6px 10px; border: 1px solid var(--line); background: none; color: var(--fg); cursor: pointer; max-width: 320px; }
+.spvers button[aria-pressed="true"] { background: var(--fg); color: var(--bg, #173a5e); } .spvers small { display: block; opacity: .75; font-size: 11.5px; }
+.spact { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; } .spnote { font-size: 13px; color: var(--muted); margin: 6px 0; }
+.spt td.said i { display: block; color: var(--muted); font-style: italic; } .spt td.was { color: var(--muted); } .spt td.okc { text-align: center; }
 .spt td { padding: 4px 8px; vertical-align: top; border-bottom: 1px solid rgba(255,255,255,.08); } .spt td:first-child, .spt td:nth-child(4), .spt td:nth-child(5) { white-space: nowrap; font-variant-numeric: tabular-nums; } .spt tr.off td { color: #f08a4b; }
 .dks { display: grid; gap: 16px; }
 .dk { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: baseline; }
@@ -524,7 +536,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       <section class="card" data-tab="library" id="spcard">
         <div class="kicker">Subtitles made ready</div>
         <h2>English subtitles, <em>timed by what’s said</em></h2>
-        <p class="stat">For each foreign-language film with no English subtitles, tried in this order, stopping at the first that works:</p>
+        <details class="stat" style="margin:0 0 8px"><summary style="cursor:pointer">How it works</summary>
+        <p class="stat" style="margin:6px 0 0">For each foreign-language film with no English subtitles, tried in this order, stopping at the first that works:</p>
         <ol class="stat" style="margin:4px 0 8px 18px;padding:0;line-height:1.55">
           <li><b>English subtitles made for this very copy</b> (OpenSubtitles knows the file by its fingerprint): used as they are. <i>Added</i>.</li>
           <li><b>A subtitle in another language made for this copy</b> (by its fingerprint, or uploaded under the name the copy was downloaded as): an English subtitle timed to its lines, on the Mac mini. <i>Corrected</i>.</li>
@@ -532,6 +545,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           <li><b>Whisper on your Mac</b>: four parts of the film listened to, and an English subtitle timed to what’s said. <i>Corrected</i>, or <i>To check</i> if the timing couldn’t be confirmed.</li>
           <li>If nothing fits: <i>Not found</i>, with why, and the closest to choose yourself.</li>
         </ol>
+        <p class="stat" style="margin:0">Open any film for what was done, the versions there are, and its dialogue side by side: each line said, the English line that showed there before, and the one that shows now. Choose another version to see it, and use it if it's better.</p></details>
         <p class="stat" id="spsay">Looking…</p>
         <p class="stat" id="spnow"></p>
         <div id="sprecent" hidden></div>
@@ -1097,51 +1111,57 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   // (why one was turned down, in full: each of the likeliest subtitles, how many of its lines agreed with what's said in each part of the film
   // listened to, and whether a part agreed better at another timing (a different cut); and each one to choose: John, 22 Nov 2026, "I need
   // more details for rejections ... I should be able to say to choose that one if I view it")
-  function spWhy(x) {
-    var C = x.cands || []; if (!C.length) return '';
-    var mm = function (t) { t = Math.round(t / 60); return t < 1 ? 'the start' : t + ' min'; };
-    return '<details style="margin-top:6px"' + (C.length ? ' open' : '') + '><summary style="cursor:pointer;font-size:13px;opacity:.85">Why it was turned down, and the likeliest to choose</summary><div class="stat" style="margin:6px 0 0;font-size:13px;line-height:1.55">' +
-      'To be taken by itself, a subtitle needs one timing for the whole film, 12 or more lines agreeing with what’s said, at least 3 in two parts, at least a tenth in any part where plenty is said, and no part agreeing better at another timing (a different cut).' +
-      C.map(function (c) {
-        var parts = (c.samples || []).map(function (p) { return '<li>From ' + mm(p[0]) + ': ' + p[1] + ' of ' + (p[3] != null ? p[3] : '?') + ' lines heard agreeing' + (p[1] ? ' (typically ' + p[2] + ' s out)' : '') +
-          (p[4] != null ? ' · <b>agrees better ' + (p[4] > 0 ? p[4] + ' s later' : -p[4] + ' s earlier') + '</b>: a different cut here?' : '') + (p[3] >= 25 && p[1] < Math.max(3, .1 * p[3]) ? ' · <b>too few for so much said</b>' : '') + '</li>'; }).join('');
-        return '<div style="margin:10px 0 0;padding:8px 0 0;border-top:1px solid var(--line)"><b>“' + esc(c.name) + '”</b>: ' + c.n + ' lines agreeing in all, ' + esc(c.how) + (c.miss != null ? ', typically ' + c.miss + ' s out' : '') +
-          '<ul style="margin:4px 0 6px 18px;padding:0">' + parts + '</ul><button class="btn" type="button" data-spchoose="' + x.id + '|' + c.i + '">Use this one</button> <button class="btn" type="button" data-spev="' + x.id + '|' + c.i + '">Compare the dialogue</button><div class="spev" data-for="' + x.id + '|' + c.i + '"></div></div>';
-      }).join('') + '</div></details>';
+  // (one film opened: what was done, plainly; the versions there are; the dialogue side by side for the one chosen; and to use another: John,
+  // 22 Nov 2026, "showing a clear comparison or the ability to choose and see - this should be on anything adjusted, not just rejected")
+  var spLN = function (c) { return c || ''; };
+  function spBody(x, LNAME) {
+    if (x.k === 'todo') return '<p class="spnote">' + (x.state === 'given' ? 'On your Mac now' + (x.step ? ': ' + esc(x.step) : '') : 'Waiting its turn.') + '</p>';
+    var nt = String(x.note || ''), mv = /moved ([+-][\d.]+) s/.exec(nt), sp = /at ([\d.]+)x speed/.exec(nt);
+    var by = { exact: 'Made for this very copy (found by its fingerprint): used as it is', 'by reference': 'Lined up with the ' + LNAME(x.ref_lang) + ' subtitle made for this copy',
+      translated: 'The ' + LNAME(x.ref_lang) + ' subtitle made for this copy, translated on your Mac and compared line by line', 'machine-translated': 'The ' + LNAME(x.ref_lang || (x.translated || {}).lang) + ' subtitle made for this copy, machine-translated: chosen by you',
+      chosen: 'Chosen by you', 'verified-moved': 'Its subtitles from before, put right' }[x.how] || (x.k === 'none' ? 'Nothing fitted the whole film: the closest below, to see and choose' : x.k === 'existing' ? 'Its subtitles from before, checked against what’s said' : 'Timed by Whisper on your Mac, from what’s said in four parts of the film');
+    var kv = [['Film', FL(x.name, x.year, x.id)], ['Subtitles', x.chose && !/^OpenSubtitles file/.test(x.chose) ? esc(x.chose) : (x.vfile ? esc(String(x.vfile).split('/').pop()) : '')], ['How', esc(by)],
+      ['Moved', mv ? (Math.abs(+mv[1]) < .05 ? 'not at all: already in time' : Math.abs(+mv[1]).toFixed(1) + ' s ' + (+mv[1] >= 0 ? 'later' : 'earlier')) + (sp ? ', and ' + (+sp[1] > 1 ? 'slowed' : 'sped up') + ' to ' + sp[1] + '× (made for a copy at another speed)' : '') : (/^moved by part/.test(nt) ? esc(nt.replace(/^moved by part /, 'by a different amount in each part: ')) : '')],
+      ['Fit', x.n ? x.n + ' lines on the lines said' + (x.k === 'check' ? ': not enough to be sure' : '') : ''], ['Saved as', x.file ? esc(String(x.file).split('/').pop()) : '']].filter(function (r) { return r[1]; });
+    return '<dl class="spkv">' + kv.map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>'; }).join('') + '</dl>' +
+      '<div class="spvers" data-vfor="' + x.id + '"></div><div class="spcmp" data-cfor="' + x.id + '"><p class="spnote">Loading the dialogue…</p></div>' +
+      '<div class="spact">' + (x.k === 'check' || x.k === 'none' || x.k === 'corrected' || x.k === 'added' ? '<button class="btn" type="button" data-spagain="' + x.id + '">Do it again</button>' : '') + '</div>';
   }
-  // (the subtitle made for this copy in another language, as your Mac translated it: a sample of its lines, and to take it as the film's English
-  // subtitles: John, 22 Nov 2026, "I should also have the option to use the translated version if I think it's good enough")
-  function spTr(x) {
-    var t = x.translated; if (!t || x.how === 'machine-translated') return '';
-    var tm = function (s) { s = Math.round(s); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); };
-    return '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:13px;opacity:.85">The ' + esc(t.lang) + ' subtitle made for this copy, machine-translated</summary><div class="stat" style="margin:6px 0 0;font-size:13px;line-height:1.55">' +
-      t.n + ' lines, timed exactly for this copy, translated into English on your Mac (Argos Translate): plainer than a person’s translation. A sample:<ul style="margin:4px 0 6px 18px;padding:0">' +
-      (t.sample || []).map(function (l) { return '<li>' + tm(l[0]) + ' · ' + esc(l[1]) + '</li>'; }).join('') + '</ul><button class="btn" type="button" data-sptr="' + x.id + '">Use the translated version</button></div></details>';
-  }
-  function spWhat(x) {
-    var sv = x.file ? '<b>Saved as:</b> ' + esc(String(x.file).split('/').pop()) + '<br>' : '';
-    if (x.how === 'exact') return '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:13px;opacity:.85">What it did</summary><div class="stat" style="margin:6px 0 0;font-size:13px;line-height:1.55">' +
-      '<b>Subtitles:</b> made for this very copy of the film (OpenSubtitles knows it by its fingerprint), so taken as they are: nothing moved<br>' + (x.n ? '<b>Lines:</b> ' + x.n + '<br>' : '') + sv + '</div></details>';
-    if (x.how === 'by reference') return '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:13px;opacity:.85">What it did</summary><div class="stat" style="margin:6px 0 0;font-size:13px;line-height:1.55">' +
-      (x.chose ? '<b>English subtitles chosen:</b> “' + esc(x.chose) + '” (made for another copy)<br>' : '') + '<b>Timing:</b> ' + esc(String(x.note || '')) + '<br>' + sv + '</div></details>';
-    if (!(x.chose || x.origin || (x.tried || []).length || (x.samples || []).length || x.state === 'nomatch')) return '';
-    var mmss = function (t) { t = Math.round(t / 60); return t < 1 ? 'the start' : t + ' min in'; };
-    var how = String(x.note || ''), m = /moved ([+-][\d.]+) s/.exec(how), sp = /at ([\d.]+)x speed/.exec(how), part = /^moved by part/.test(how);
-    var said = part ? 'Moved by a different amount in different parts of the film (a different cut of it): ' + esc(how.replace(/^moved by part /, '')) :
-      m ? 'Moved ' + Math.abs(+m[1]).toFixed(1) + ' s ' + (+m[1] >= 0 ? 'later' : 'earlier') + ' to fit what’s said' : esc(how);
-    if (sp) said += '; and ' + (+sp[1] > 1 ? 'stretched' : 'squeezed') + ' to ' + sp[1] + '× (made for a copy running at another speed: 25 against 23.976 frames a second)';
-    var h = '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:13px;opacity:.85">What it did</summary><div class="stat" style="margin:6px 0 0;font-size:13px;line-height:1.55">';
-    if (x.origin) h += '<b>Downloaded as:</b> ' + esc(x.origin) + ' (subtitles made for this release looked for first)<br>';
-    if (x.chose) h += '<b>Subtitles chosen:</b> “' + esc(x.chose) + '” (from OpenSubtitles)<br>';
-    h += '<b>Timing:</b> ' + said + '<br>';
-    if (x.n) h += '<b>How sure:</b> ' + (x.sure || x.state === 'done' ? 'sure' : 'not sure: worth a look while watching') + ', ' + x.n + ' lines matched to what Whisper heard' + (x.miss != null ? ', and once moved, each within about ' + x.miss + ' s of when it’s said' : '') + '<br>';
-    if ((x.samples || []).length) h += '<b>Parts of the film listened to:</b> ' + x.samples.map(function (p) { return mmss(p[0]) + ': ' + p[1] + ' line' + (p[1] === 1 ? '' : 's') + (p[1] ? ', ' + (p[2] >= 0 ? '+' : '') + (+p[2]).toFixed(1) + ' s' : ''); }).join(' · ') + '<br>';
-    var others = (x.tried || []).filter(function (t) { return t[0] !== x.chose; });
-    if (others.length) h += '<b>Others tried:</b> ' + others.map(function (t) { return '“' + esc(t[0]) + '”, ' + t[1] + ' lines matched' + (t[2] ? ' (sure)' : ''); }).join('; ') + '<br>';
-    if (x.file) h += '<b>Saved as:</b> ' + esc(String(x.file).split('/').pop()) + '<br>';
-    if (x.mins) h += '<b>Time taken on your Mac:</b> ' + x.mins + ' min';
-    if (x.state === 'done' || x.state === 'check' || x.state === 'nomatch' || x.state === 'failed') h += '<div style="margin-top:8px"><button class="btn" type="button" data-spev="' + x.id + '">Compare the dialogue</button><div class="spev" data-for="' + x.id + '"></div></div>';
-    return h + '</div></details>';
+  function spCompare(x, w) {
+    var box = document.querySelector('.spcmp[data-cfor="' + x.id + '"]'), vb = document.querySelector('.spvers[data-vfor="' + x.id + '"]'); if (!box) return;
+    box.innerHTML = '<p class="spnote">Loading the dialogue…</p>';
+    var tm = function (t) { if (t == null) return ''; t = Math.max(0, t); var h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), sx = Math.floor(t % 60); return (h ? h + ':' + ('0' + m).slice(-2) : m) + ':' + ('0' + sx).slice(-2); };
+    fetch(GW + '/api/subprep?compare=' + x.id + (w ? '&with=' + encodeURIComponent(w) : ''), { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+      var V = j.versions || [], sel = j.with || '', cur = j.cur || '';
+      // (the versions: the one in use first, then each other, to see; the one being seen can be used)
+      var vlab = { ref: 'tried against the subtitle made for this copy', whisper: 'tried by Whisper', tr: 'machine translation' };
+      if (x.k === 'none' && !w && V.length) { spCompare(x, V[0].i); return; }   // (none in use: the closest shown first)
+      vb.innerHTML = V.length ? (x.k === 'none' ? '' : '<button type="button" data-vw="" aria-pressed="' + (!w) + '">In use now<small>' + esc(x.chose && !/^OpenSubtitles file/.test(x.chose) ? x.chose : 'its English subtitles') + '</small></button>') +
+        V.filter(function (v) { return v.i !== cur; }).map(function (v) { return '<button type="button" data-vw="' + esc(v.i) + '" aria-pressed="' + (w === v.i) + '">' + esc(v.name || 'another') + '<small>' + esc(vlab[v.kind] || '') + (v.n ? ' · ' + v.n + ' lines on the lines said' : '') + (v.share != null ? ' · ' + Math.round(v.share * 100) + '%' : '') + '</small></button>'; }).join('') : '';
+      Array.prototype.forEach.call(vb.querySelectorAll('[data-vw]'), function (b2) { b2.onclick = function () { spCompare(x, b2.dataset.vw); }; });
+      var P = j.parts || [], use = w && (w !== cur || x.k === 'none') ? '<div class="spact"><button class="btn" type="button" data-spuse="' + x.id + '|' + esc(w) + '">Use this version</button></div>' : '';
+      if (!P.length) { box.innerHTML = '<p class="spnote">' + (j.by === 'exact' ? 'Made for this very copy: nothing to compare, the lines are where they were made to be.' : 'No dialogue kept to compare for this one (only those done from now on, or after it’s done again).') + '</p>' + use; wireUse(); return; }
+      var lang = LNAME(j.lang || x.ref_lang);
+      var head = j.by === 'ref' ? '<tr><th>When</th><th>Said (the ' + esc(lang) + ' subtitle made for this copy)</th>' + (P.some(function (p) { return p.rows.some(function (r) { return r.was; }); }) ? '<th>English before</th>' : '') + '<th>English ' + (w && w !== cur ? 'in this version' : 'now') + '</th><th></th></tr>'
+        : '<tr><th>When</th><th>Said (what Whisper heard, in English)</th><th>English ' + (w && w !== cur ? 'in this version' : 'now') + '</th><th>Moved</th><th></th></tr>';
+      var hasWas = j.by === 'ref' && P.some(function (p) { return p.rows.some(function (r) { return r.was; }); });
+      var nOk = 0, nAll = 0;
+      var body = P.map(function (p) {
+        return '<tr><td colspan="5" style="padding-top:12px;border:0"><b>From ' + tm(p.from) + '</b></td></tr>' + p.rows.map(function (r) {
+          nAll++; if (r.ok) nOk++;
+          if (j.by === 'ref') return '<tr' + (r.ok ? '' : ' class="off"') + '><td>' + tm(r.t) + '</td><td class="said">' + esc(r.said) + (r.said_en ? '<i>' + esc(r.said_en) + '</i>' : '') + '</td>' + (hasWas ? '<td class="was">' + esc(r.was || '—') + '</td>' : '') + '<td>' + esc(r.now || '—') + '</td><td class="okc">' + (r.ok ? '✓' : '✗') + '</td></tr>';
+          return '<tr' + (r.ok === false ? ' class="off"' : '') + '><td>' + tm(r.t) + '</td><td class="said">' + esc(r.said) + '</td><td>' + esc(r.now || '—') + '</td><td>' + (r.was_t != null ? tm(r.was_t) + ' → ' + tm(r.now_t) : '') + '</td><td class="okc">' + (r.ok == null ? '' : r.ok ? '✓' : '✗') + '</td></tr>';
+        }).join('');
+      }).join('');
+      box.innerHTML = '<p class="spnote">' + (j.by === 'ref' ? nOk + ' of ' + nAll + ' lines said in these four parts have an English line showing with them.' : nOk + ' of ' + nAll + ' lines heard agree with the English line at that moment.') + ' ✗ marks where they don’t.</p>' +
+        '<div style="overflow-x:auto"><table class="spt">' + head + body + '</table></div>' + use;
+      wireUse();
+    }).catch(function (e) { box.innerHTML = '<p class="spnote">Couldn’t ask the Mac mini: ' + esc(e.message || e) + '</p>'; });
+    function wireUse() { Array.prototype.forEach.call(box.querySelectorAll('[data-spuse]'), function (b3) { b3.onclick = function () {
+      var pr = b3.dataset.spuse.split('|'); if (!confirm('Use this version as the film’s English subtitles? The one in use now is replaced.')) return;
+      b3.disabled = true; b3.textContent = 'Saving…'; subPrep(pr[1] === 'tr' ? { op: 'translated', id: pr[0] } : { op: 'choose', id: pr[0], i: pr[1] }); toast('Saved as its English subtitles');
+    }; }); }
+    function LNAME(c) { return spLN(c); }
   }
   function subPrep(body) {
     if (!TOKEN || !GW) return setTimeout(function () { subPrep(); }, 5000);
@@ -1187,7 +1207,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         var langN = function (x) { var l = x.lang || ''; var nm = LN[l]; if (!nm && DN && /^[a-z]{2,3}$/.test(l)) { try { nm = DN.of(l); } catch (e) {} } return esc(nm && nm !== l ? nm : l); };
         // (one plain sentence a film: what happened to it, and how it was timed: John, 22 Nov 2026, "Admin section needs to be very clear about
         // what's happened so make sure it is")
-        var LNAME = function (c) { c = String(c || ''); var b = c.split(/[-_]/)[0]; var nm = LN[c] || LN[b]; if (!nm && DN) { try { nm = DN.of(b); } catch (e) {} } return nm && nm !== b ? nm : c; };
+        var LNAME = function (c) { c = String(c || ''); var b = c.split(/[-_]/)[0]; var nm = LN[c] || LN[b]; if (!nm && DN) { try { nm = DN.of(b); } catch (e) {} } return nm && nm !== b ? nm : c; }; spLN = LNAME;
         var secs = function (v) { v = Math.abs(+v); return v < 60 ? v.toFixed(1) + ' s' : Math.floor(v / 60) + ' min ' + Math.round(v % 60) + ' s'; };
         var line = function (x) {
           var nt = String(x.note || ''), mv = /moved ([+-][\d.]+) s/.exec(nt), sp = /at ([\d.]+)x speed/.exec(nt), rl = (/the (\S+) subtitle’s\)$/.exec(nt) || /^by the (\S+) subtitle/.exec(nt) || [])[1];
@@ -1213,53 +1233,43 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           if (x.k === 'corrected' || x.k === 'check') return (x.k === 'check' ? '? Timing not confirmed. ' : '✓ ') + 'Timed by Whisper on your Mac, by what’s said in four parts of the film: ' + (moved || 'lined up') + (x.n ? ', ' + x.n + ' lines matched to what’s said' : '') + '.' + src;
           if (x.state === 'none') return '✗ No English subtitles on OpenSubtitles for this film.';
           var C = x.cands || [];
-          return '✗ None fitted the whole film' + ((x.tried || []).length ? ': ' + x.tried.length + ' English subtitle' + (x.tried.length === 1 ? '' : 's') + ' tried' : '') + (C.length ? ', the closest with ' + C[0].n + ' lines matching' : '') + '. Open “Why it was turned down”.';
+          return '✗ None fitted the whole film' + ((x.tried || []).length ? ': ' + x.tried.length + ' English subtitle' + (x.tried.length === 1 ? '' : 's') + ' tried' : '') + (C.length ? ', the closest with ' + C[0].n + ' lines matching' : '') + '. Open it to see the closest and choose one.';
         };
+        // (one line a film; opened, what was done, its versions and its dialogue side by side; open ones kept open, and not redrawn under you
+        // while the list refreshes itself)
+        subPrep.open = subPrep.open || {};
         var draw = function () {
           var q = ($('#spq').value || '').trim().toLowerCase();
           var L = ALL.filter(function (x) { return x.k === subPrep.tab && (!q || String(x.name || '').toLowerCase().indexOf(q) >= 0); })
             .sort(function (a, b) { return subPrep.tab === 'todo' ? (a.state === 'given' ? -1 : 0) - (b.state === 'given' ? -1 : 0) || String(a.name).localeCompare(String(b.name)) : (b.at || 0) - (a.at || 0); });
           $('#sptabsay').textContent = TSAY[subPrep.tab] || '';
           $('#splists').innerHTML = L.length ? L.slice(0, 300).map(function (x) {
-            var again = x.k === 'check' || x.k === 'none' || x.k === 'corrected';
-            return '<li>' + FL(x.name, x.year, x.id) + ' <small>' + langN(x) + '</small><span class="when" style="white-space:normal">' + esc(line(x)) + (x.at && x.k !== 'todo' ? ' · ' + new Date(x.at * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') + '</span>' +
-              (x.k === 'todo' || (x.k === 'none' && (x.cands || []).length) ? '' : spWhat(x)) + (x.k === 'none' || x.k === 'check' ? spWhy(x) : '') + spTr(x) + (again ? '<span class="state" style="margin-top:4px"><button class="btn" type="button" data-spagain="' + x.id + '">Try again</button></span>' : '') + '</li>';
-          }).join('') : '<li>None.</li>';
+            var ln = line(x), ic = /^[✓?✗…▶⟳]/.test(ln) ? ln.charAt(0) : '', st = ic ? ln.slice(1).trim() : ln, op = !!subPrep.open[x.id];
+            return '<li><button type="button" class="sphead" data-spopen="' + x.id + '" aria-expanded="' + op + '"><span class="ic">' + esc(ic) + '</span><span><span class="nm">' + esc(x.name || '') + (x.year ? ' (' + x.year + ')' : '') + '</span><span class="lg">' + langN(x) + '</span></span>' +
+              '<span class="dt">' + (x.at && x.k !== 'todo' ? new Date(x.at * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') + '</span><span class="st">' + esc(st) + '</span></button>' +
+              '<div class="spbody"' + (op ? '' : ' hidden') + ' data-bfor="' + x.id + '"></div></li>';
+          }).join('') : '<li style="padding:10px 2px !important">None.</li>';
+          L.forEach(function (x) { if (subPrep.open[x.id]) openRow(x); });
           wire();
         };
-        Array.prototype.forEach.call(document.querySelectorAll('[data-sptab]'), function (bt) { bt.onclick = function () { subPrep.tab = bt.dataset.sptab; Array.prototype.forEach.call(document.querySelectorAll('[data-sptab]'), function (o) { o.setAttribute('aria-pressed', o === bt); }); draw(); }; });
+        var BYID = {}; ALL.forEach(function (x) { BYID[x.id] = x; });
+        var openRow = function (x) {
+          var bd = document.querySelector('.spbody[data-bfor="' + x.id + '"]'); if (!bd) return;
+          bd.hidden = false; bd.innerHTML = spBody(x, LNAME);
+          if (x.k !== 'todo') spCompare(x, '');
+          Array.prototype.forEach.call(bd.querySelectorAll('[data-spagain]'), function (bt) { bt.onclick = function () { bt.disabled = true; subPrep({ op: 'again', id: bt.dataset.spagain }); toast('To be done again, in its turn'); }; });
+        };
+        Array.prototype.forEach.call(document.querySelectorAll('[data-sptab]'), function (bt) { bt.onclick = function () { subPrep.tab = bt.dataset.sptab; subPrep.open = {}; Array.prototype.forEach.call(document.querySelectorAll('[data-sptab]'), function (o) { o.setAttribute('aria-pressed', o === bt); }); draw(); }; });
         $('#spq').oninput = draw;
         var wire = function () {
-        // (each part of the film listened to: when Whisper heard each line, what it heard in English, the subtitle line it matched, that
-        // line's own time and where it was moved to, and whether it agreed: John, 21 Nov 2026, "I should be able to see what whisper took as
-        // the timing, the translation, the matching lines")
-        Array.prototype.forEach.call(document.querySelectorAll('[data-spev]'), function (bt) { bt.onclick = function () {
-          var box = document.querySelector('.spev[data-for="' + bt.dataset.spev + '"]'); if (box.innerHTML) { box.innerHTML = ''; return; }
-          box.textContent = 'Asking the Mac mini…';
-          var tm = function (t) { t = Math.max(0, t); var h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), sx = Math.floor(t % 60); return (h ? h + ':' + ('0' + m).slice(-2) : m) + ':' + ('0' + sx).slice(-2); };
-          var ev2 = bt.dataset.spev.split('|');
-          fetch(GW + '/api/subprep?evidence=' + ev2[0] + (ev2[1] != null ? '&i=' + ev2[1] : ''), { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
-            var P = j.parts || [];
-            if (!P.length) { box.textContent = 'Not kept for this film: only those done from now on.'; return; }
-            box.innerHTML = P.map(function (p) {
-              var ok = p.rows.filter(function (r) { return r[5]; }).length, m = p.rows.filter(function (r) { return r.length > 2; }).length;
-              return '<p class="stat" style="margin:12px 0 4px"><b>From ' + tm(p.from) + '</b> · ' + p.rows.length + ' lines heard in English, ' + ok + ' matching the subtitle at that point by the timing chosen</p>' +
-                '<div style="overflow-x:auto"><table class="spt"><tr><th>When</th><th>What’s said (Whisper’s English)</th><th>The subtitle then</th><th>Its own time</th><th>Moved to</th><th>Same?</th></tr>' +
-                p.rows.map(function (r) { return '<tr' + (r.length > 2 && !r[5] ? ' class="off"' : '') + '><td>' + tm(r[0]) + '</td><td>' + esc(r[1]) + '</td>' +
-                  (r.length > 2 ? '<td>' + esc(r[3]) + '</td><td>' + tm(r[2]) + '</td><td>' + tm(r[4]) + '</td><td>' + (r[5] ? '✓' : Math.abs(r[0] - r[4]) <= 4 ? '✗ other words' : '✗ ' + (r[0] - r[4] >= 0 ? '+' : '') + (r[0] - r[4]).toFixed(1) + ' s') + '</td>' : '<td colspan="4" style="opacity:.6">no subtitle line then</td>') + '</tr>'; }).join('') + '</table></div>';
-            }).join('');
-          }).catch(function (e) { box.textContent = 'Couldn’t ask: ' + (e.message || e); });
-        }; });
-        Array.prototype.forEach.call(document.querySelectorAll('[data-spagain]'), function (bt) { bt.onclick = function () { bt.disabled = true; subPrep({ op: 'again', id: bt.dataset.spagain }); }; });
-        Array.prototype.forEach.call(document.querySelectorAll('[data-sptr]'), function (bt) { bt.onclick = function () {
-          if (!confirm('Use the machine-translated subtitles for this film? They replace the English subtitles it has now.')) return;
-          bt.disabled = true; bt.textContent = 'Saving…'; subPrep({ op: 'translated', id: bt.dataset.sptr }); toast('The translated subtitles are now its English subtitles');
-        }; });
-        Array.prototype.forEach.call(document.querySelectorAll('[data-spchoose]'), function (bt) { bt.onclick = function () {
-          var pr = bt.dataset.spchoose.split('|'); bt.disabled = true; bt.textContent = 'Saving…';
-          subPrep({ op: 'choose', id: pr[0], i: +pr[1] }); toast('Saved as its English subtitles: in Corrected');
-        }; });
+          Array.prototype.forEach.call(document.querySelectorAll('[data-spopen]'), function (bt) { bt.onclick = function () {
+            var id = bt.dataset.spopen, x = BYID[id], bd = document.querySelector('.spbody[data-bfor="' + id + '"]');
+            if (subPrep.open[id]) { delete subPrep.open[id]; bt.setAttribute('aria-expanded', 'false'); bd.hidden = true; bd.innerHTML = ''; return; }
+            subPrep.open[id] = 1; bt.setAttribute('aria-expanded', 'true'); openRow(x);
+          }; });
         };
+        if (!body && Object.keys(subPrep.open).length && subPrep.drawn === subPrep.tab) return;   // (one open: the refresh doesn't redraw under it)
+        subPrep.drawn = subPrep.tab;
         draw();
       }).catch(function (e) { $('#spsay').textContent = 'Couldn’t ask just now: ' + (e.message || e) + '.'; });
     if (!body) { clearTimeout(subPrep.t); subPrep.t = setTimeout(function () { subPrep(); }, 60000); }
