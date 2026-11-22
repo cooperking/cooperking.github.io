@@ -3640,7 +3640,8 @@ def make_handler(g):
                     return self.send_json(403, {'error': 'Not a file that can be read.'})
                 if not p.lower().endswith(('.json', '.csv', '.txt', '.log', '.out', '.py', '.sh', '.srt', '.nfo', '.xml', '.plist')):
                     return self.send_json(403, {'error': 'Only text files.'})
-                with open(p, 'rb') as fh:
+                with open(p, 'rb') as fh:   # (from a point in it too, for a file larger than one look: &off=bytes)
+                    fh.seek(max(0, int(q.get('off') or 0)) if str(q.get('off') or '0').isdigit() else 0)
                     data = fh.read(2 * 1024 * 1024)
                 return self.send_json(200, {'path': os.path.realpath(p), 'size': os.path.getsize(p), 'text': data.decode('utf-8', 'replace')})
             if what == 'ps':
