@@ -731,7 +731,8 @@ def make_handler(g):
         # --- answering
         def cors(self):
             o = self.headers.get('Origin')
-            if o and (o in g.origins or re.match(r'^http://(localhost|127\.0\.0\.1)(:\d+)?$', o)):
+            # (and AFI's own site, for the AFI bookmark's list only: /afibm/list)
+            if o and (o in g.origins or re.match(r'^http://(localhost|127\.0\.0\.1)(:\d+)?$', o) or (o == 'https://catalog.afi.com' and self.path.startswith('/afibm/'))):
                 self.send_header('Access-Control-Allow-Origin', o)
                 self.send_header('Vary', 'Origin')
                 self.send_header('Access-Control-Allow-Headers', 'Authorization, Content-Type, Range')
@@ -802,6 +803,14 @@ def make_handler(g):
             if getattr(self.server, 'lan', False) and u.path != '/macagent/upload':   # (the home network's door: John's Mac's films only)
                 return self.send_json(404, {'error': 'Not here.'})
             try:
+                if u.path == '/afibm/list':
+                    # (the AFI bookmark asks for the films to find and the pages to read when it's clicked, so an old bookmark never runs
+                    # on the list it was made with: John, 22 Nov 2026, "the AFI bookmarklet first listed only four again". Its key opens
+                    # only this list)
+                    want = str(g.st.get('afibm_key') or '')
+                    if not want or not hmac.compare_digest(str(q.get('k') or ''), want):
+                        return self.send_json(403, {'error': 'Not allowed.'})
+                    return self.api_afi({'owner': True}, None, {}, None)
                 if u.path == '/macagent/upload':
                     # (a film made on John's Mac, sent here and written to the G-Drive by this Mac, as macOS on his Mac won't let its
                     # helper write to a network drive ("operation not permitted"): John, 19 Nov 2026, "Any luck on the films?")
@@ -2950,7 +2959,10 @@ def make_handler(g):
                 if start >= (r.get('TotalRecordCount') or 0):
                     break
             out.sort(key=lambda x: (pri.get(x[0], 2), x[2]))
-            return self.send_json(200, {'missing': out, 'linked': linked, 'got': got, 'need': need, 'read': len(AD)})
+            if not g.st.get('afibm_key'):
+                g.st['afibm_key'] = secrets.token_urlsafe(18)
+                save(SETTINGS, g.st)
+            return self.send_json(200, {'missing': out, 'linked': linked, 'got': got, 'need': need, 'read': len(AD), 'bm': g.st['afibm_key']})
 
         def api_distributors(self, me, user, q, b):
             """John's only: each film's US distributor, as Box Office Mojo gives it, read by his own browser (the admin page's bookmark) and

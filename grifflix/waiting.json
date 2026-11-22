@@ -173,7 +173,7 @@
    "added": "2026-11-22",
    "title": "Put Argos Translate on your Mac (once, optional)",
    "why": "Your Mac now translates a film's own subtitles in another language (built in or beside it), or ones made for its copy, and compares them with the English before Whisper listens. It installs Argos Translate by itself the first time it needs it: a large download (around 1 GB with what it needs), which holds that first film up while it downloads.",
-   "how": "To have it ready beforehand, on your Mac: open Terminal, paste  ~/Grifflix/fw/bin/python3 -m pip install argostranslate  and press Return. Each language's translation model (about 100 MB) comes the first time a film in that language needs it."
+   "how": "On your own Mac, the one whose helper listens for Whisper's work (not the Mac mini, which hasn't Whisper on it): open Terminal, paste  ~/Grifflix/fw/bin/python3 -m pip install argostranslate  and press Return. If it says there's no such file, Whisper hasn't been set up on that Mac yet either, and both come the first time it's needed. Each language's translation model (about 100 MB) comes the first time a film in that language needs it."
   }
  ]
 }
