@@ -914,7 +914,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   // ---- AFI Catalog pages, found by John's own browser on AFI's site for the American films Wikidata and Wikipedia had none for (John, 21 Nov 2026,
   // "A bookmarklet would be the best solution"): each looked up by its title, its page taken where the title and year (within one) agree
 (function () {
-  var ABM = function (L, N) {
+  var ABM = function (L, N, SRC) {
     if (!/(^|\.)afi\.com$/.test(location.hostname)) { alert('Grifflix: open catalog.afi.com first, then click this again.'); return; }
     var K = 'grifflix-afi4', D = {}; try { D = JSON.parse(localStorage.getItem(K) || '{}'); } catch (e) { D = {}; }
     /* (from the first copy only the pages found: those it took for not on AFI were AFI refusing its search, asked again: John, 21 Nov 2026, "Nothing is being found") */
@@ -1001,6 +1001,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     };
     (async function () {
       try { db = await idb(); X = await all(); } catch (e) { X = {}; }
+      /* (the lists as they are now, from the Mac mini: the ones in the bookmark are as they were when it was dragged to the bar: John, 22 Nov 2026) */
+      var fresh = false; if (SRC) { try { d.innerHTML = 'Grifflix: asking the Mac mini for the films…'; var rl = await fetch(SRC, { cache: 'no-store' }); if (rl.ok) { var jl = await rl.json(); L = jl.missing || L; N = jl.need || N; fresh = true; } } catch (e) {} }
+      last = (fresh ? 'The Mac mini’s list now: ' : 'The Mac mini didn’t answer, so the bookmark’s own list (as when it was dragged to the bar; drag it again from the admin page for a newer one): ') + (N || []).length + ' pages to read, ' + L.length + ' to find.';
       await readPages(N || []);
       if (stop) { paint('stopped. Click the bookmark again to carry on.'); return; }
       var left = L.filter(function (x) { return !(x[0] in D); });
@@ -1049,7 +1052,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   var load = function (body) { return fetch(GW + '/api/afi', { method: body ? 'POST' : 'GET', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' })
     .then(function (r) { if (!r.ok) throw new Error(r.status === 404 ? 'the Mac mini takes its update within a few minutes' : 'the Mac mini said ' + r.status); return r.json(); }); };
   var show = function (j) { say.textContent = j.linked + ' films link to their AFI page; ' + j.missing.length + ' not found yet' + (j.missing.length ? ' (the bookmark looks those up, American films to 1993 first; one AFI hasn’t got is remembered and not asked again)' : '') + '. ' + (j.read || 0) + ' AFI pages read (genre, subjects, companies, History).';
-    bm.dataset.ready = 1; bm.href = 'javascript:' + encodeURIComponent('(' + ABM.toString() + ')(' + JSON.stringify(j.missing) + ',' + JSON.stringify(j.need || []) + ');void 0');
+    bm.dataset.ready = 1; bm.href = 'javascript:' + encodeURIComponent('(' + ABM.toString() + ')(' + JSON.stringify(j.missing) + ',' + JSON.stringify(j.need || []) + ',' + JSON.stringify(j.bm ? GW + '/afibm/list?k=' + encodeURIComponent(j.bm) : '') + ');void 0');
     document.getElementById('afibmsay').textContent = '(' + j.missing.length + ' to find, ' + (j.need || []).length + ' pages to read)'; };
   var go = function () { if (!TOKEN || !GW) return setTimeout(go, 3000); load().then(show).catch(function (e) { say.textContent = 'Couldn’t get the films just now: ' + e.message + '.'; setTimeout(go, 60000); }); };
   go();
