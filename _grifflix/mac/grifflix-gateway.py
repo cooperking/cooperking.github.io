@@ -8012,6 +8012,9 @@ def ids_given():
             log('Its IMDb number, %s: %s' % (iid, str(e)[:160]))
 
 
+POSTERS_TRIED = {}
+
+
 def posters_on(only=None):
     """Each film whose folder has its poster (poster.jpg or .png) but the media server shows no picture for it: that poster put on it.
     A Criterion cover put in a film's folder just after Fix match renamed it was never taken up (Totally F***ed Up, John, 22 Nov 2026,
@@ -8031,6 +8034,12 @@ def posters_on(only=None):
                 continue
             pic = next((os.path.join(fdir_, o) for o in ('poster.jpg', 'poster.png') if os.path.exists(os.path.join(fdir_, o))), None)
             if not pic:
+                continue
+            # (not over and over when the media server won't take it up: Totally F***ed Up's put on 13 times one day, never shown)
+            POSTERS_TRIED[pic] = POSTERS_TRIED.get(pic, 0) + 1
+            if POSTERS_TRIED[pic] > 3:
+                if POSTERS_TRIED[pic] == 4:
+                    log('Its poster, %s: put on 3 times and the media server still shows none; not tried again until the Mac restarts' % it.get('Name'))
                 continue
             try:
                 with open(pic, 'rb') as f_:
@@ -8629,6 +8638,43 @@ def serve():
             g.publish_soon = time.time() + 300
         except OSError:
             pass
+    def tfu_rename():
+        """Once: Totally F***ed Up's folder and file renamed Totally Fucked Up (1993), the media server never taking up a cover in a folder
+        whose name has asterisks in it (it had it, listed among its pictures, but never gave it the film: John, 22 Nov 2026, "yes, rename it
+        to Totally Fucked Up"). By Fix match's own renaming, so calendars, hearts, lists and its box set follow it; its title stays."""
+        mk = os.path.expanduser('~/Grifflix/tfu-rename.done')
+        if os.path.exists(mk):
+            return
+        time.sleep(150)
+        lid = (g.st.get('libraries') or {}).get('movies')
+        r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path,ProviderIds',
+                                                              'SearchTerm': 'Totally'}, timeout=120) or {}
+        it = next((x for x in r.get('Items') or [] if '*' in os.path.dirname(x.get('Path') or '') and (x.get('ProviderIds') or {}).get('Imdb') == 'tt0108366'), None)
+        open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+        if not it:
+            log('Totally F***ed Up: its folder wasn’t found to rename (already renamed?)')
+            return
+        pick = {'Name': it.get('Name') or 'Totally F***ed Up', 'ProductionYear': it.get('ProductionYear') or 1994, 'ProviderIds': it.get('ProviderIds'), 'SearchProviderName': 'TheMovieDb'}
+        try:   # (no match given to the renaming, which would put it on replacing every picture: Apply as Fix match does, its cover kept)
+            did = rename_to(g, it['Id'], 'Totally Fucked Up', 1993)
+        except Exception as e:
+            did = 'not renamed (%s)' % e
+        log('Totally F***ed Up, renamed as John said: %s' % (did or 'done'))
+        record('renamed', film='Totally F***ed Up', to='Totally Fucked Up (1993)', why='the media server never took up a cover in a folder named with asterisks', by='John’s say-so', result=did)
+        new = os.path.join(os.path.dirname(os.path.dirname(it['Path'])), 'Totally Fucked Up (1993)')
+        for _ in range(40):   # (once the media server has it at its new place: its match put on again, its cover on it)
+            time.sleep(30)
+            r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path', 'SearchTerm': 'Totally'}, timeout=120) or {}
+            x = next((y for y in r.get('Items') or [] if os.path.dirname(y.get('Path') or '') == new), None)
+            if x:
+                try:
+                    apply_match(g, x['Id'], pick)
+                except Exception as e:
+                    log('  Totally Fucked Up: its match: %s' % e)
+                time.sleep(60)
+                log('  Totally Fucked Up: its cover: %s' % ('on' if posters_on(only={'Totally Fucked Up (1993)'}) else 'on already, or none in its folder'))
+                return
+    threading.Thread(target=tfu_rename, daemon=True).start()
     mk_ = os.path.expanduser('~/Grifflix/afi-reread.done')
     if not os.path.exists(mk_):   # (once: the site updated, so every AFI page kept is read again by the better reading: 22 Nov 2026)
         try:
