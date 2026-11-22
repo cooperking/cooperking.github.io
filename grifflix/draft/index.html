@@ -2676,7 +2676,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '3286c01d2708' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '08747684f35e' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -8133,12 +8133,10 @@ window.addEventListener('pagehide', saveProgress);
       // (a line a touch early or late: moved half a second at a time; a subtitle file beside the film is moved for everyone: John, 13 Nov 2026)
       if (on >= 0) h += '<hr><div class="pnudge"><button data-n="-0.5" aria-label="Subtitles half a second earlier">− ½ s</button><span>' + (P.subMove ? (P.subMove > 0 ? '+' : '−') + Math.abs(P.subMove).toFixed(1) + ' s' : 'In time?') + '</span><button data-n="0.5" aria-label="Subtitles half a second later">+ ½ s</button></div>';
       var si = on >= 0 ? ((P.info && P.info.subs) || [])[on] || {} : {};
-      if (si.ext) h += '<button data-sync="1"><i></i>Line up by a line…</button>';
       if (si.mine && ME && ME.owner) h += '<button data-del="' + si.sid + '"><i></i>Remove these subtitles</button>';   // (John only: John, 13 Nov 2026)
       var sw = P.subWork && P.it && P.subWork.film === P.it.id ? P.subWork : null;
       if (sw && !sw.unsure) h += '<hr><div class="psubwork"><b>Finding subtitles</b><span>' + esc(sw.say) + '</span></div>';
-      if (sw && sw.unsure) h += '<hr><div class="psubwork"><b>Not added</b><span>' + esc(sw.say) + '</span></div><button data-f="1"><i></i>Choose others…</button><button data-keep="1"><i></i>Add the nearest anyway, to line up by hand</button>';
-      else if (canFind()) h += (on < 0 && !sw ? '<hr>' : '') + '<button data-f="1"><i></i>Find subtitles…</button>'; }
+      if (canFind()) h += (on < 0 && !sw ? '<hr>' : '') + '<button data-f="1"><i></i>Find subtitles…</button>'; }
     else if (kind === 'aud') { var au = (P.info && P.info.audio) || [];   // (the film's soundtracks: a commentary, or another language, chosen here: John, 18 Nov 2026)
       h = '<h4>Sound</h4>' + au.map(function (a) { return '<button role="menuitemradio" data-a="' + a.i + '"><i>' + (P.info.aud === a.i ? '✓' : '') + '</i>' + esc(a.name) + (a.ch ? ' <small>' + esc(a.ch) + '</small>' : '') + '</button>'; }).join(''); }
     else h = '<h4>Speed</h4>' + SP.map(function (r) { return '<button role="menuitemradio" data-r="' + r + '"><i>' + (v.playbackRate === r ? '✓' : '') + '</i>' + (r === 1 ? 'Normal' : r + '×') + '</button>'; }).join('');
@@ -8280,28 +8278,25 @@ window.addEventListener('pagehide', saveProgress);
       mac('subs?id=' + encodeURIComponent(it.id) + '&lang=' + encodeURIComponent(lang)).then(function (r) {
         if (gone) return;
         var L = r.results || [];
-        say.textContent = L.length ? 'Listed with the likeliest to fit this copy of the film first. Whichever is added, the Mac mini checks it fits and times it to the film.' : 'None found in this language.';
+        say.textContent = L.length ? 'The likeliest to fit this copy of the film first. Choose one and it’s on straight away, as it is: if its lines are a touch early or late, the subtitles menu moves them half a second at a time.' : 'None found in this language.';
         // (the likeliest few, tried in turn by the Mac mini, the first that surely fits kept: no guessing which cut each is for)
-        var auto = L.filter(function (x) { return !x.machine; }).slice(0, 4);
-        res.innerHTML = (auto.length > 1 ? '<li><button type="button" class="psfauto" id="psfauto">Choose the best one for me<span>The Mac mini tries those numbered 1 to ' + auto.length + ' below, in that order, and keeps the first it can confirm fits this copy.</span></button></li>' : '') +
+        var auto = [];
+        res.innerHTML = '' +
           L.map(function (x, k) {
           var m = [x.downloads ? Number(x.downloads).toLocaleString() + ' downloads' : '', x.hi ? 'for the hard of hearing' : '', x.machine ? 'machine translated' : '', x.fps ? x.fps + ' fps' : ''].filter(Boolean).join(' · ');
           var ai = auto.length > 1 ? auto.indexOf(x) : -1;   // (which of them Choose for me tries, and in what order)
           return '<li><button type="button" data-k="' + k + '"><span class="n">' + (ai >= 0 ? '<span class="x n">' + (ai + 1) + '</span>' : '') + (x.exact ? '<span class="x">Made for this file</span>' : x.like >= 5 ? '<span class="x l">Like your copy</span>' : '') + esc(x.name || 'Subtitles') + '</span>' + (m ? '<span class="m">' + esc(m) + '</span>' : '') + '</button></li>';
         }).join('');
         $$('#psfres button[data-k]').forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); add(L[+b.dataset.k]); }; });
-        if ($('#psfauto')) $('#psfauto').onclick = function (e) { e.stopPropagation(); add(null, auto); };
         var f = $('#psfres button'); if (f) f.focus(); else sel.focus();
       }).catch(function (e) { if (!gone) say.textContent = e.message || 'Couldn’t look just now.'; });
     }
-    function add(x, several) {   // (started, then out of the way: the film plays on while the Mac mini works; John, 13 Nov 2026,
-      // "having the searching going over the image while it works it out spoils the watching experience")
-      res.innerHTML = ''; sel.disabled = true; say.textContent = 'Asking the Mac mini…';
-      mac('subs', several ? { op: 'auto', id: it.id, lang: lang, tries: several.map(function (y) { return { file_id: y.file_id, exact: !!y.exact, name: y.name }; }) }
-        : { op: 'add', id: it.id, file_id: x.file_id, lang: lang, exact: !!x.exact }).then(function (r) {
-        subsWatch(r.job, it); close();
-        toast(several ? 'The Mac mini is trying the likeliest subtitles: keep watching, it’ll say when they’re on' : 'The Mac mini is timing them: keep watching, it’ll say when they’re on');
-      }).catch(function (e) { sel.disabled = false; say.textContent = e.message || 'Couldn’t ask the Mac mini.'; });
+    function add(x) {   // (chosen, added as it is and on at once: no timing it as it plays: John, 22 Nov 2026, "go back to a normal choose or select way")
+      res.innerHTML = ''; sel.disabled = true; say.textContent = 'Adding them…';
+      mac('subs', { op: 'plain', id: it.id, file_id: x.file_id, lang: lang, name: x.name }).then(function (r) {
+        close(); setTracks(r.subs || [], r.pick != null && r.subs && r.subs[r.pick] ? r.subs[r.pick].sid : null);
+        toast('Subtitles on: if they’re a touch early or late, the subtitles menu moves them');
+      }).catch(function (e) { sel.disabled = false; say.textContent = e.message || 'Couldn’t add them.'; look(); });
     }
     look();
   }

@@ -4155,6 +4155,26 @@ def make_handler(g):
                 subs, pick = self.subs_show(iid, out, key)
                 j.update(state='done', say='Added as they came: now line them up by hand (subtitles menu, Line up by a line)', subs=subs, pick=pick, hand=True)
                 return self.send_json(200, {'ok': True, 'subs': subs, 'pick': pick})
+            if op == 'plain':   # (one chosen from the list, added as it is and on at once: no timing it as it plays: John, 22 Nov 2026, "the way
+                # we tried to synch the subtitles as it played before should be stopped - go back to a normal choose or select way")
+                fid = int(b.get('file_id') or 0)
+                lang = re.sub(r'[^a-z]', '', (b.get('lang') or 'en').lower().split('-')[0])[:3] or 'en'
+                if not fid or not path or not os.path.exists(path):
+                    return self.send_json(400, {'error': 'That film’s file isn’t there.' if fid else 'Which subtitles?'})
+                day = time.strftime('%Y-%m-%d')
+                if SUBDAY.get((me['uid'], day), 0) >= 15 and not me.get('owner'):
+                    return self.send_json(429, {'error': 'That’s 15 subtitles today: more tomorrow.'})
+                try:
+                    cues = SUBS.parse_srt(SUBS.decode(self.subs_client().download(fid)))
+                except Exception as e:
+                    return self.send_json(502, {'error': str(e)[:200]})
+                if len(cues) < 5:
+                    return self.send_json(502, {'error': 'Those subtitles came empty: choose others.'})
+                SUBDAY[(me['uid'], day)] = SUBDAY.get((me['uid'], day), 0) + 1
+                out = self.subs_write(path, lang, cues)
+                subs, pick = self.subs_show(iid, out, key)
+                log('Subtitles: %s chosen by %s for %s, added as they are' % (str(b.get('name') or fid)[:80], me['name'], it.get('Name')))
+                return self.send_json(200, {'ok': True, 'subs': subs, 'pick': pick})
             if op not in ('add', 'auto'):
                 return self.send_json(400, {'error': 'Which?'})
             # (one chosen, or "Choose for me": the likeliest few tried in turn, the first that surely fits this copy kept: John,
