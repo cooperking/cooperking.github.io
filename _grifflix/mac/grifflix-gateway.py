@@ -5909,6 +5909,8 @@ def hashes_for(path):
         out.append(SUBS.movie_hash(path))
     except OSError:
         pass
+    fp_ = (load(os.path.expanduser('~/Grifflix/fingerprints.json'), {}) or {}).get(path) or {}   # (the file as it came, remembered when converted)
+    out += [h for h in [fp_.get('hash')] + list(fp_.get('hashes') or []) if h]
     try:
         for v in ((load(os.path.expanduser('~/Grifflix/convert-state.json'), {}) or {}).get('done') or {}).values():
             k_ = v.get('kept')
@@ -5950,7 +5952,7 @@ def ref_sub(g, cl, e, iid, path, it):
     the English subtitles"). True if saved."""
     refs = [(fid, lang) for mh in hashes_for(path) for fid, lang in cl.exact_any(mh) if str(lang).lower() not in ('en', 'eng')]
     pid = it.get('ProviderIds') or {}
-    org = film_origin(path)
+    org = film_origin(path) or os.path.splitext(str(((load(os.path.expanduser('~/Grifflix/fingerprints.json'), {}) or {}).get(path) or {}).get('name') or ''))[0] or None
     hint = org or os.path.splitext(os.path.basename(path))[0]
     relname = bool(org) or bool(re.search(r'(?i)\b(1080p|720p|2160p|480p|bluray|brrip|bdrip|remux|web-?dl|webrip|dvdrip|x26[45]|h\.?26[45]|hevc|xvid|yts|rarbg)\b', hint))
     if not refs and relname:   # (the file's own name when it's still a download's, not only one on record)

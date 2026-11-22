@@ -491,8 +491,28 @@ def watching():
 
 # ---------------------------------------------------------------- one file
 
+def fingerprint(path):
+    """OpenSubtitles' fingerprint of a file (its size, and its first and last 64 KB added up as 64-bit numbers): what subtitles made for it
+    are known by."""
+    import struct
+    size = os.path.getsize(path)
+    if size < 131072:
+        return None
+    h = size
+    with open(path, 'rb') as f:
+        for where in (0, size - 65536):
+            f.seek(where)
+            for (n,) in struct.iter_unpack('<Q', f.read(65536)):
+                h = (h + n) & 0xFFFFFFFFFFFFFFFF
+    return '%016x' % h
+
+
 def convert(item, ffmpeg, ffprobe, st):
     src = item['path']
+    try:   # (its fingerprint taken now, while it's as it came: kept with the new file once made, below)
+        item['_fp'], item['_size'] = fingerprint(src), os.path.getsize(src)
+    except OSError:
+        pass
     info = probe(ffprobe, src)
     dur = float((info.get('format') or {}).get('duration') or 0)
     streams = info.get('streams') or []
@@ -775,6 +795,22 @@ def convert(item, ffmpeg, ffprobe, st):
                                  'soundtrack_first': lang_name(main_a) if main_a else ''}, ensure_ascii=False) + '\n')
     except Exception:
         pass
+    # (the file as it came, remembered by what subtitles made for it are known by, its fingerprint and its name: the new file has neither, and
+    # subtitles made for this very copy would be lost to it: John, 22 Nov 2026, "In future we need to make sure conversion either doesn't lose
+    # fingerprint or we have enough information to make sure we know it's the right subtitle")
+    try:
+        fpf = os.path.join(HOME, 'fingerprints.json')
+        try:
+            FP = json.load(open(fpf))
+        except (OSError, ValueError):
+            FP = {}
+        prior = FP.get(src) or {}
+        FP[dst] = {'hash': prior.get('hash') or item.get('_fp'), 'hashes': list(dict.fromkeys((prior.get('hashes') or []) + [h for h in (prior.get('hash'), item.get('_fp')) if h])),
+                   'name': prior.get('name') or os.path.basename(src), 'size': prior.get('size') or item.get('_size'), 'film': item['name'], 'at': int(time.time())}
+        json.dump(FP, open(fpf + '.tmp', 'w'), indent=1)
+        os.replace(fpf + '.tmp', fpf)
+    except Exception as e:
+        log('  (its fingerprint not kept: %s)' % e)
     st['done'][item['id']] = {'name': item['name'], 'from': src, 'to': dst, 'kept': keep_at, 'at': int(time.time()), 'mins': round(mins),
                               'why': item['why'], 'before': before, 'after': brief(probe(ffprobe, dst), dst),
                               'chose': (lang_name(main_a) + (': ' + chose if chose else '')) if main_a and len(audio) > 1 else ''}
