@@ -226,7 +226,19 @@ def prepare(job, ff, wcli, work):
     heard = []
     for k_, t0 in enumerate(starts):
         prog('Listening with Whisper: part %d of %d (from %d:%02d)' % (k_ + 1, len(starts), int(t0 // 3600), int(t0 % 3600 // 60)))
-        heard.append((t0, transcribe(ff, wcli, film, t0, SAMPLE, job.get('translate', True), work, job.get('lang'))))
+        segs = transcribe(ff, wcli, film, t0, SAMPLE, job.get('translate', True), work, job.get('lang'))
+        # (a part with next to nothing said in it (titles, music, a silent stretch): another part listened to in its place, the six minutes after
+        # it, then before it: John, 22 Nov 2026, "if a part checked has no text at all, choose another part")
+        for t1 in ([min(dur - SAMPLE, t0 + SAMPLE), max(0, t0 - SAMPLE)] if dur >= 600 else []):
+            if len(segs) >= 8:
+                break
+            if any(abs(t1 - h_[0]) < SAMPLE for h_ in heard) or abs(t1 - t0) < 1:
+                continue
+            prog('Part %d had %d line%s said: listening from %d:%02d instead' % (k_ + 1, len(segs), '' if len(segs) == 1 else 's', int(t1 // 3600), int(t1 % 3600 // 60)))
+            s2 = transcribe(ff, wcli, film, t1, SAMPLE, job.get('translate', True), work, job.get('lang'))
+            if len(s2) > len(segs):
+                t0, segs = t1, s2
+        heard.append((t0, segs))
     prog('Matching %d subtitle file%s to what was heard (%d lines heard)' % (len(job.get('cands') or []), '' if len(job.get('cands') or []) == 1 else 's', sum(len(s_) for _, s_ in heard)))
     results, cues_all = [], []
     def judge(cues, cand_i, cand, ratios):   # (one subtitle at the given speeds: its one timing for the whole film, and whether every part agrees)
@@ -307,9 +319,10 @@ def prepare(job, ff, wcli, work):
                 prog('Couldn’t get another subtitle: %s' % str(e_)[:100])
                 more = []
     results.sort(key=lambda x: (x['fits'], x['exact'], x['sure'], x['n'], -x['miss']), reverse=True)
-    if results:   # (what was heard and matched, for the admin page: John, 21 Nov 2026, "I should be able to see what whisper took as the timing,
-        # the translation, the matching lines")
-        best = results[0]
+    # (what was heard and matched, for the admin page: John, 21 Nov 2026, "I should be able to see what whisper took as the timing, the
+    # translation, the matching lines"; and for each of the likeliest three, to compare them line by line: John, 22 Nov 2026, "I need a good
+    # way to compare dialogue in a table for these reject or accepts")
+    for best in results[:3]:
         cues = cues_all[best['_ci']]
         ev = []
         for t0, segs in heard:
@@ -360,7 +373,7 @@ def main():
         # (and the likeliest three as they'd be timed, each with how each part of the film agreed, so John can see why and choose one himself:
         # John, 22 Nov 2026, "I need more details for rejections ... I should be able to say to choose that one if I view it")
         cands = [{'name': x['name'], 'n': x['n'], 'how': x['how'], 'miss': x['miss'], 'samples': x['samples'],
-                  'srt64': base64.b64encode(x['srt'].encode('utf-8')).decode()} for x in res[:3]]
+                  'srt64': base64.b64encode(x['srt'].encode('utf-8')).decode(), 'evidence': x.get('evidence') or []} for x in res[:3]]
         say({'ok': False, 'error': 'none of the subtitles matched what’s said through the whole film', 'tried': [[x['name'], x['n']] for x in res],
              'evidence': (res[0].get('evidence') or []) if res else [], 'cands': cands})
         return
