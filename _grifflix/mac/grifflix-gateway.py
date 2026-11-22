@@ -1256,8 +1256,8 @@ def make_handler(g):
                         return self.send_json(404, {'error': 'That job isn’t here (the Mac mini may have restarted): press Convert on this Mac again.'})
                     pl = job['plan']
                     if method == 'GET':
-                        if job.get('ended'):
-                            return self.send_json(404, {'error': 'That job is finished: press Convert on this Mac again.'})
+                        if job.get('ended') or job.get('cancel'):
+                            return self.send_json(404, {'error': 'That job is cancelled or finished.' if job.get('cancel') or job.get('state') == 'cancelled' else 'That job is finished: press Convert on this Mac again.'})
                         job['state'], job['seen'] = 'started', time.time()
                         convjobs_save()
                         return self.send_json(200, {'name': pl['item'].get('name'), 'src': pl['src'], 'tmp': pl['tmp'], 'dur': pl['dur'], 'args': vt_args(pl['cmd'])})
@@ -1271,8 +1271,13 @@ def make_handler(g):
                         if body.get('copying'):   # (made: copying itself to the G-Drive while John's Mac takes up the next film)
                             job['state'] = 'copying'
                         convjobs_save()
+                        if job.get('cancel'):
+                            return self.send_json(200, {'ok': True, 'cancel': True})
                         claim_renew(job['id'])
                         return self.send_json(200, {'ok': True})
+                    if len(parts) > 3 and parts[3] == 'progress' and job.get('cancel'):   # (John cancelled it: John's Mac told to stop)
+                        job['seen'] = time.time()
+                        return self.send_json(200, {'ok': True, 'cancel': True})
                     if len(parts) > 3 and parts[3] == 'progress':   # (how far John's Mac has got, every few seconds: for the film's Edit panel)
                         job['t'], job['speed'], job['state'], job['seen'] = float(body.get('t') or 0), str(body.get('speed') or '')[:12], 'converting', time.time()
                         if time.time() - job.get('saved', 0) > 30:
@@ -1281,7 +1286,7 @@ def make_handler(g):
                             claim_renew(job['id'])   # (the Mac mini keeps off it while John's Mac is at it: John, 17 Nov 2026)
                         return self.send_json(200, {'ok': True})
                     home = os.path.expanduser('~/Grifflix')
-                    job['state'] = 'checking' if body.get('ok') else 'failed'
+                    job['state'] = 'checking' if body.get('ok') else 'cancelled' if job.get('cancel') else 'failed'
                     job['error'] = str(body.get('error') or '')[:200]
                     def finish(job=job, ok=bool(body.get('ok'))):
                         try:
@@ -1300,7 +1305,7 @@ def make_handler(g):
                                 CONV_NOW.set()
                             else:
                                 log('Not converted on John’s Mac: %s (%s)' % (job['plan']['item'].get('name'), str(body.get('error') or '')[:200]))
-                                if body.get('again'):   # (the G-Drive went part-way: back at the front of its queue)
+                                if body.get('again') and not job.get('cancel'):   # (the G-Drive went part-way: back at the front of its queue)
                                     macq_again(job, time.time(), str(body.get('error') or ''))
                                 try:
                                     os.remove(job['plan']['tmp'])
@@ -3242,6 +3247,25 @@ def make_handler(g):
             (John, 17 Nov 2026: "If something is converting in the Mac I'd like to be able to see progress from anywhere I'm signed in")."""
             if not me.get('owner'):
                 return self.send_json(403, {'error': 'Only John.'})
+            if b and b.get('cancel'):
+                # (a film's conversion on John's Mac stopped: one not yet taken up, ended here; one converting, told to stop at its next word,
+                # which is every few seconds, and its part-made file deleted there: John, 22 Nov 2026, "how can I cancel converts on my mac")
+                j = CONVJOBS.get(str(b['cancel']))
+                if not j or not j.get('mac') or j.get('ended'):
+                    return self.send_json(404, {'error': 'That one isn’t converting on your Mac now.'})
+                nm_ = j['plan']['item'].get('name')
+                if (j.get('state') or 'waiting') == 'waiting':
+                    j['state'], j['ended'], j['error'] = 'cancelled', time.time(), 'cancelled'
+                elif j.get('state') in ('started', 'converting'):
+                    j['cancel'] = time.time()
+                else:
+                    return self.send_json(409, {'error': 'It’s made already: it’s being copied over or put in place.'})
+                claims = load(os.path.expanduser('~/Grifflix/convert-claims.json'), {}) or {}
+                if claims.pop(j['id'], None) is not None:
+                    save(os.path.expanduser('~/Grifflix/convert-claims.json'), claims)
+                convjobs_save()
+                log('Cancelled on John’s Mac, John asked: %s' % nm_)
+                record('conversion cancelled', film=nm_, id=j['id'], where='John’s Mac', by='John')
             out, now_ = [], time.time()
             # (a job that went quiet is left off once John's Mac has since done or started another, three hours after its last word, or once
             # the film has been converted since it began (John, 17 Nov 2026: Career Girls "no word from your Mac since 14:48 ... but it was
@@ -3253,7 +3277,9 @@ def make_handler(g):
                 st_ = j.get('state') or 'waiting'
                 if st_ == 'lost' and j.get('again') and now_ - (j.get('ended') or j['at']) < 1800:
                     st_ = 'again'   # (back in John's Mac's queue, said why, for half an hour)
-                if st_ in ('notstarted', 'lost') or (st_ in ('done', 'failed') and now_ - (j.get('ended') or j['at']) > 1800) or now_ - j['at'] > 86400:
+                if j.get('cancel') and not j.get('ended'):
+                    st_ = 'cancelling'
+                if st_ in ('notstarted', 'lost') or (st_ in ('done', 'failed', 'cancelled') and now_ - (j.get('ended') or j['at']) > 1800) or now_ - j['at'] > 86400:
                     continue
                 if st_ in ('started', 'converting', 'copying'):
                     heard = j.get('seen') or j['at']
@@ -3262,7 +3288,7 @@ def make_handler(g):
                 if st_ == 'waiting' and now_ - j['at'] > 900:
                     continue
                 quiet = (st_ == 'converting' and now_ - (j.get('seen') or j['at']) > 600) or (st_ == 'started' and now_ - (j.get('seen') or j['at']) > 180)
-                out.append({'id': j['id'], 'name': j['plan']['item'].get('name'), 'state': 'quiet' if quiet else st_, 't': j.get('t') or 0, 'dur': j['plan'].get('dur') or 0,
+                out.append({'id': j['id'], 'tok': next((k_ for k_, v_ in CONVJOBS.items() if v_ is j), ''), 'name': j['plan']['item'].get('name'), 'state': 'quiet' if quiet and st_ != 'cancelling' else st_, 't': j.get('t') or 0, 'dur': j['plan'].get('dur') or 0,
                             'speed': j.get('speed') or '', 'stage': j.get('stage') or '', 'error': j.get('error') or '', 'at': j['at'], 'seen': j.get('seen'), 'ended': j.get('ended')})
             seen_ids = set()
             return self.send_json(200, {'jobs': [x for x in out if not (x['id'] in seen_ids or seen_ids.add(x['id']))]})   # (the newest for each film)

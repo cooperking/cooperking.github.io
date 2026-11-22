@@ -2270,12 +2270,25 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           : x.state === 'copying' ? (cpw(x) ? 'made: ' + x.stage : 'made: copying to the Mac mini')
           : x.state === 'checking' ? 'made: the Mac mini is checking it and putting it in place' : x.state === 'done' ? 'converted on your Mac' + (x.ended ? ' at ' + new Date(x.ended * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '') + ', and in Grifflix now'
           : x.state === 'again' ? 'back at the front of your Mac’s queue, to start again when it’s home' + (x.error ? ' (' + x.error + ')' : '')
+          : x.state === 'cancelling' ? 'cancelling: your Mac stops it within a few seconds'
+          : x.state === 'cancelled' ? 'cancelled' + (x.ended ? ' at ' + new Date(x.ended * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '') + ': nothing was changed'
           : x.state === 'quiet' ? 'no word from your Mac since ' + new Date((x.seen || x.at) * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ' (asleep, or its window closed?)'
           : 'didn’t convert' + (x.error ? ': ' + x.error : '');
+        var can = x.tok && /^(waiting|started|converting|quiet)$/.test(x.state) && !(x.state === 'converting' && (pc >= 99.5 || /^finishing/.test(x.stage || '')));
         return '<div style="margin:0 0 10px">' + FL(x.name, null, x.id) + ' <span class="when" style="display:inline">· ' + esc(say) + '</span>' +
+          (can ? ' <button class="btn" type="button" data-cvcan="' + esc(x.tok) + '" data-n="' + esc(x.name) + '" style="margin-left:6px">Cancel</button>' : '') +
           (x.state === 'converting' ? '<div class="cvbar" style="margin-top:6px"><span style="width:' + pc.toFixed(1) + '%"></span></div>' : '') +
           (cm ? '<div class="cvbar" style="margin-top:6px"><span style="width:' + Math.min(100, +cm[1]) + '%;background:#3c9a5f"></span></div>' : '') + '</div>';
       }).join('') : '';
+      // (a film converting on John's Mac cancelled from here: John, 22 Nov 2026, "how can I cancel converts on my mac")
+      Array.prototype.forEach.call(document.querySelectorAll('[data-cvcan]'), function (b) { b.onclick = function () {
+        if (!confirm('Stop converting ' + b.dataset.n + ' on your Mac? Its file stays as it is.')) return;
+        b.disabled = true;
+        fetch(GW + '/api/convertjobs', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ cancel: b.dataset.cvcan }) })
+          .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); })
+          .then(function () { toast(b.dataset.n + ': cancelling on your Mac'); cvMac(); })
+          .catch(function (e) { b.disabled = false; toast('Not cancelled: ' + (e.message || e)); });
+      }; });
       cmT = setTimeout(cvMac, live ? 5000 : 60000);
     }).catch(function () { cmT = setTimeout(cvMac, 60000); });
   }
