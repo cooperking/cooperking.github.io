@@ -936,12 +936,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     document.body.appendChild(d);
     var fold = function (t) { t = String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/&/g, ' and ').replace(/\s*\((18|19|20)\d\d\)\s*$/, '');
       t = t.replace(/^(.*), (the|a|an)$/, '$2 $1').replace(/[^a-z0-9 ]/g, ' ').trim().replace(/^(the|a|an) /, ''); return t.replace(/\s+/g, ''); };
-    var found = function () { return L.filter(function (x) { return D[x[0]] && D[x[0]].id; }).length; };
+    var RUN = 0, found = function () { return L.filter(function (x) { return D[x[0]] && D[x[0]].id; }).length; };
     var save = function (done) { var o = {}; Object.keys(D).forEach(function (t) { if (D[t].id) o[t] = D[t].id; });
       var b = new Blob([JSON.stringify({ v: 2, afi: o, det: X, none: D, at: Date.now() })], { type: 'application/json' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'grifflix-afi.json'; document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 1000);
       if (done) d.innerHTML = 'Grifflix: done. Read ' + pagesDone + ' of ' + pagesTo + ' films’ pages by their links' + (pagesBad ? ' (' + pagesBad + ' had nothing to read)' : '') + (pagesHad ? ', and ' + pagesHad + ' more the Mac mini hasn’t got were read before in this browser: they’re in the file, so do choose it' : '') + '; and of the ' + L.length + ' with no link, found ' + found() + ' (most aren’t American, or are after 1993: AFI hasn’t them). ' + Object.keys(X).length + ' pages read in all. Saved <b>grifflix-afi.json</b>: choose it in the admin page, Library, AFI Catalog.'; };
     var stop = false, blocked = false, refused = 0, last = '', wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
-    var paint = function (msg) { var n = L.filter(function (x) { return x[0] in D; }).length;
+    var paint = function (msg) { var n = L.filter(function (x) { return D[x[0]] && (D[x[0]].run === RUN || (D[x[0]].id && RUN)); }).length;
       d.innerHTML = 'Grifflix: ' + (msg || 'looking up') + '<br>' + n + ' of ' + L.length + ' with no link looked up, ' + found() + ' found; ' + Object.keys(X).length + ' pages read. Keep this tab open.' + (last ? '<br><small style="opacity:.7">' + last + '</small>' : '') + '<br><button id="gxasave" style="margin-top:8px">Save what’s done</button> <button id="gxastop" style="margin-top:8px">Stop</button>';
       d.querySelector('#gxasave').onclick = function () { save(false); }; d.querySelector('#gxastop').onclick = function () { stop = true; }; };
     /* (each result on AFI's search page: its page number, its title (the link's own words, or its picture's), and the year in the words around
@@ -1013,7 +1013,11 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
          asked again: John, 22 Nov 2026, "the bookmarklet isn't finding anything") */
       var ASK = {}; (ASKA || []).forEach(function (t) { ASK[t] = 1; });
       Object.keys(D).forEach(function (t) { if (ASK[t] && D[t] && !D[t].id && !D[t].v5) delete D[t]; });
-      var left = L.filter(function (x) { return !(x[0] in D); });
+      /* (every film with no link looked up again on every run: "not on AFI" from an earlier run is never trusted, as it threw us so many
+         times: John, 22 Nov 2026, "we need to stop the not looking up again rule". Only a run stopped part-way carries on from where it got to) */
+      try { RUN = +localStorage.getItem(K + '-run') || 0; } catch (e) { RUN = 0; }
+      if (!RUN) { RUN = Date.now(); try { localStorage.setItem(K + '-run', String(RUN)); } catch (e) {} }
+      var left = L.filter(function (x) { return !(D[x[0]] && (D[x[0]].id || D[x[0]].run === RUN)); });
       for (var i = 0; i < left.length && !stop; i++) {
         var x = left[i]; paint();
         try {
@@ -1040,7 +1044,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
             if (n < names.length - 1 && !pick) await wait(2000);
           }
           if (blocked) break;
-          D[x[0]] = pick ? { id: pick.id } : { id: '', saw: seen.slice(0, 5), v5: 1, q: names };
+          D[x[0]] = pick ? { id: pick.id, run: RUN } : { id: '', saw: seen.slice(0, 5), v5: 1, q: names, run: RUN };
           try { localStorage.setItem(K, JSON.stringify(D)); } catch (e) {}
         } catch (e) { paint('a page didn’t answer: going on in a moment'); await wait(10000); }
         await wait(2500 + Math.random() * 1500);
@@ -1049,6 +1053,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       await readPages(L.filter(function (x) { return D[x[0]] && D[x[0]].id; }).map(function (x) { return [x[0], D[x[0]].id]; }));
       if (blocked) { d.innerHTML = 'Grifflix: stopped. AFI is refusing its searches: ' + last + '.<br>Do a search on catalog.afi.com yourself (any film), and once its results show, click the bookmark again on that page. What was found so far is kept.<br><button id="gxasave" style="margin-top:8px">Save what’s done</button>'; d.querySelector('#gxasave').onclick = function () { save(false); }; return; }
       if (stop) { paint('stopped. Click the bookmark again to carry on.'); return; }
+      try { localStorage.removeItem(K + '-run'); } catch (e) {}   /* (a whole run done: the next looks up every one again) */
       save(true);
     })();
   };
