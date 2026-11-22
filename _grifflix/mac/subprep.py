@@ -438,6 +438,11 @@ def tr_out():
 
 def main():
     job_file, base, key = sys.argv[1], sys.argv[2], sys.argv[3]
+    if key == '-':   # (the helper's key from its own settings file, not the command line)
+        try:
+            key = next((l.split('=', 1)[1].strip() for l in open(os.path.expanduser('~/Grifflix/agent.conf')) if l.startswith('key=')), '')
+        except OSError:
+            key = ''
     job = json.load(open(job_file))
     PROG.update(base=base, key=key, id=job['id'])
     say = lambda body: urllib.request.urlopen(urllib.request.Request(base + '/macagent/subdone', data=json.dumps(dict(body, id=job['id'])).encode(),

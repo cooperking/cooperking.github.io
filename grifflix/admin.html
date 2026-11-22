@@ -1138,7 +1138,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     }).join('') + '</ol>';
   }
   function spBody(x, LNAME) {   // (the film itself first, a link to its page; then its checks; then the rest)
-    return '<p class="spnote" style="margin:2px 0 8px">' + FL(x.name, x.year, x.id) + '</p>' + spChecks(x) + spBody0(x, LNAME);
+    var sid = x.kind === 'episode' && x.series ? flId(x.series, null) : null;   // (an episode: its series' page)
+    return '<p class="spnote" style="margin:2px 0 8px">' + (sid ? flA(sid, x.name) + ' <small>(its series’ page)</small>' : FL(x.name, x.year, x.id)) + '</p>' + spChecks(x) + spBody0(x, LNAME);
   }
   function spBody0(x, LNAME) {
     if (x.k === 'todo') return '<p class="spnote">' + (x.state === 'given' ? 'On your Mac now' + (x.step ? ': ' + esc(x.step) : '') : 'Waiting its turn.') + '</p>' + (x.state !== 'given' ? '<div class="spact">' + (x.state === 'waiting' ? '<button class="btn" type="button" data-spagain="' + x.id + '">Check again</button>' : '') + '<button class="btn" type="button" data-spfirst="' + x.id + '">Do next</button><button class="btn" type="button" data-splast="' + x.id + '">Do last</button><button class="btn" type="button" data-spquiet="' + x.id + '">No subtitles needed</button></div>' : '') + spGiveBox(x);
@@ -1311,7 +1312,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
             if (x.givenfile) return (x.state === 'given' ? '▶ On your Mac now: timing the subtitles you gave' + (x.step ? ': ' + x.step : '') : '… The subtitles you gave, waiting to be timed by Whisper on your Mac') + '.';
             if (x.old_vfile && !x.ref_only) return (x.state === 'given' ? '▶ On your Mac now' + (x.step ? ': ' + x.step : '') + '. ' : '… ') + 'Its subtitles from before didn’t fit what’s said: others being looked for. The old ones stay until then.';
             if (x.ref_only) return '⟳ Being looked at again on your Mac: a ' + LNAME(x.ref_lang) + ' subtitle made for this copy, translated and compared. Its subtitles timed by Whisper stay meanwhile' + (x.step ? '. Now: ' + x.step : '') + '.';
-            return x.state === 'given' ? '▶ On your Mac now' + (x.step ? ': ' + x.step : '') + '.' : '… Waiting: no subtitle made for this copy found by its files, so Whisper on your Mac, in its turn.';
+            return x.state === 'given' ? '▶ On your Mac now' + (x.step ? ': ' + x.step : '') + '.' : (x.exact_tried && x.name_tried && x.ref_tried2 ? '… None found by its files (its checks below): waiting for Whisper on your Mac, in its turn.' : '… Its files being checked first, on the Mac mini (made for this exact file, named for its release, in another language): Whisper only if none of them finds one.');
           }
           if (x.how === 'exact') return '✓ English subtitles made for this very copy, used as they are: nothing moved.';
           if (x.how === 'machine-translated') return '✓ The ' + LNAME(rl || (x.translated || {}).lang) + ' subtitle made for this copy, machine-translated into English on your Mac: chosen by you.';

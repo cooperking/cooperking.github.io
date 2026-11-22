@@ -6479,6 +6479,30 @@ SPEECH = {'ok': False, 'now': None}   # (off: on real films no subtitle stood ou
 SP_LOCK = threading.RLock()   # (the subtitles' record written by one at a time)
 
 
+def subprep_commit(before, after):
+    """The subtitles' record written back by something that took a while (the library scan, a look-over): only what it changed, over the
+    record as it is now, so what John's Mac or the admin page did meanwhile isn't saved over (a film handed to John's Mac at 22:50 lost,
+    the scan saving its older copy over it: John, 22 Nov 2026)."""
+    with SP_LOCK:
+        cur = load(SUBPREP, {}) or {}
+        for k in set(before) | set(after):
+            b, a = before.get(k), after.get(k)
+            if b == a:
+                continue
+            if a is None:
+                cur.pop(k, None)
+            elif b is None or not isinstance(a, dict) or not isinstance(cur.get(k), dict):
+                cur[k] = a
+            else:
+                for f in set(b) | set(a):
+                    if b.get(f) != a.get(f):
+                        if f in a:
+                            cur[k][f] = a[f]
+                        else:
+                            cur[k].pop(f, None)
+        save(SUBPREP, cur)
+
+
 def speech_try(g, cl, e, iid, path, it):
     """Before Whisper (the last resort): when people speak in the film found (whatever they say), then (1) subtitles in other languages
     tried against it, any whose lines start when people speak in this copy taken as made for it, and the English timed by it; else (2)
@@ -6597,6 +6621,61 @@ def speech_try(g, cl, e, iid, path, it):
             return True
     e['speech_note'] = '; '.join(said)[:600]
     return False
+
+
+def keep_file_checks(g):
+    """Each film waiting for English subtitles has its files checked here on the Mac mini as soon as it's waiting: an English subtitle made
+    for this very file, one named for its release, one in another language made for this copy. Not left until John's Mac asks for its next
+    film, so the checks show, and only a film none of them found waits for Whisper: John, 22 Nov 2026, "the whisper message is either
+    wrong or the checks to whisper just aren't showing"."""
+    time.sleep(90)
+    while True:
+        did = False
+        try:
+            if not (g.st.get('opensubs') or {}).get('key'):
+                time.sleep(3600)
+                continue
+            cl = SUBS.OpenSubs(g.st.setdefault('opensubs', {}), lambda: save(SETTINGS, g.st), tls())
+            if cl.out_of_downloads():
+                time.sleep(900)
+                continue
+            P = load(SUBPREP, {}) or {}
+            todo = sorted(((k, v) for k, v in P.items() if not k.startswith('_') and isinstance(v, dict) and v.get('state') == 'waiting'
+                           and not v.get('givenfile') and not v.get('ref_only') and not (v.get('exact_tried') and v.get('name_tried') and v.get('ref_tried2'))),
+                          key=lambda kv: (not kv[1].get('prio'), kv[1].get('order', 0)))
+            for iid, e in todo[:1]:
+                did = True
+                it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
+                path = it.get('Path') or ''
+                e0 = __import__('copy').deepcopy(e)
+                e = __import__('copy').deepcopy(e)
+                ok = False
+                if path and os.path.exists(path):
+                    try:
+                        if not e.get('exact_tried'):
+                            ok = exact_sub(g, cl, e, iid, path)
+                            e['exact_tried'] = int(time.time())
+                        if not ok and not e.get('name_tried'):
+                            ok = name_sub(g, cl, e, iid, path, it)
+                            e['name_tried'] = int(time.time())
+                        if not ok and not e.get('ref_tried2'):
+                            ok = ref_sub(g, cl, e, iid, path, it)
+                            e['ref_tried2'] = int(time.time())
+                    except Exception as ex:
+                        if cl.out_of_downloads():
+                            break
+                        log('Subtitles, the files’ checks for %s: %s' % (e.get('name'), str(ex)[:160]))
+                        e['exact_tried'] = e.get('exact_tried') or int(time.time()); e['name_tried'] = e.get('name_tried') or int(time.time()); e['ref_tried2'] = e.get('ref_tried2') or int(time.time())
+                else:
+                    e['exact_tried'] = e['name_tried'] = e['ref_tried2'] = int(time.time())
+                    chk(e, 'exact', 'Its file isn’t there to check')
+                with SP_LOCK:
+                    Q = load(SUBPREP, {}) or {}
+                    if isinstance(Q.get(iid), dict) and Q[iid].get('state') == 'waiting':   # (unless something else has taken it meanwhile: only what the checks changed)
+                        subprep_commit({iid: e0}, {iid: e})
+        except Exception as ex:
+            log('Subtitles, the files’ checks: %s' % str(ex)[:200])
+        time.sleep(5 if did else 120)
 
 
 def keep_speech_first(g):
@@ -6829,6 +6908,7 @@ def subs_exact_all():
             path = it.get('Path') or ''
             if path and os.path.exists(path):
                 Q = load(SUBPREP, {}) or {}   # (saved as it goes, over what John's Mac has done meanwhile)
+                Q0_ = __import__('copy').deepcopy(Q)
                 q = Q.get(iid)
                 if isinstance(q, dict) and (q.get('state') in ('waiting', 'none', 'nomatch', 'failed') or redo_):
                     ok = (not redo_ and exact_sub(g, cl, q, iid, path)) or (not redo_ and not q.get('name_tried') and name_sub(g, cl, q, iid, path, it)) or ref_sub(g, cl, q, iid, path, it)
@@ -6838,7 +6918,7 @@ def subs_exact_all():
                         log('Subtitles: OpenSubtitles downloads used up for today; the rest of the look-over after they reset')
                         return
                     q['exact_tried'] = q['ref_tried'] = q['ref_tried2'] = int(time.time())
-                    save(SUBPREP, Q)
+                    subprep_commit(Q0_, Q)
                     n += bool(ok)
         except Exception as ex:
             log('Subtitles made for the very file, %s: %s' % (e.get('name'), str(ex)[:160]))
@@ -6855,6 +6935,7 @@ def subs_exact_all():
             it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
             path = it.get('Path') or ''
             Q = load(SUBPREP, {}) or {}
+            Q0_ = __import__('copy').deepcopy(Q)
             q = Q.get(iid)
             if not (path and os.path.exists(path) and isinstance(q, dict) and q.get('state') in ('done', 'check') and not q.get('how')):
                 continue
@@ -6866,12 +6947,12 @@ def subs_exact_all():
                 n2 += 1
             elif cl.out_of_downloads():   # (not looked at after all: again after the reset)
                 q.pop('rechecked2', None)
-                save(SUBPREP, Q)
+                subprep_commit(Q0_, Q)
                 break
             elif q.get('ref_file') and os.path.exists(q['ref_file']):
                 q.update(state='waiting', ref_only=True, prev=prev, order=-1)
                 q2 += 1
-            save(SUBPREP, Q)
+            subprep_commit(Q0_, Q)
         except Exception as ex:
             log('Subtitles looked at again, %s: %s' % (e.get('name'), str(ex)[:160]))
         time.sleep(1.5)
@@ -6968,6 +7049,8 @@ def subprep_scan_():
     if not libs.get('movies'):
         return
     P = load(SUBPREP, {}) or {}
+    import copy
+    P0_ = copy.deepcopy(P)   # (as it was: only what this changes written back)
     if P.get('_v') not in (5,):   # (once: those found to have "no English subtitles" while subtitles of the right film were thrown away for being under
         # its own title, tried again: 21 Nov 2026; v3: those turned down by the too-strict
         # whole-film check, tried again)
@@ -7086,7 +7169,7 @@ def subprep_scan_():
             added += 1
     for k in [k for k in P if not k.startswith('_') and k not in seen and P[k].get('state') in ('waiting', 'none', 'failed', 'nomatch')]:
         P.pop(k, None)
-    save(SUBPREP, P)
+    subprep_commit(P0_, P)
     if asked:
         save(lf, TL)
     save(os.path.expanduser('~/Grifflix/foreign-films.json'), dict(tally, at=int(time.time()), films=len(films)))
@@ -9506,7 +9589,8 @@ def serve():
                 save(SUBPREP, P_)
     except Exception:
         pass
-    threading.Thread(target=keep_speech_first, args=(g,), daemon=True).start()   # (other subtitles timed by when people speak, before Whisper)
+    threading.Thread(target=keep_speech_first, args=(g,), daemon=True).start()
+    threading.Thread(target=keep_file_checks, args=(g,), daemon=True).start()   # (each waiting film's files checked here as soon as it's waiting)   # (other subtitles timed by when people speak, before Whisper)
     try:   # (films already turned down where Whisper heard next to no speech anywhere (Robot Dreams): little or no dialogue, not tried again)
         P_ = load(SUBPREP, {}) or {}
         ch_ = 0
