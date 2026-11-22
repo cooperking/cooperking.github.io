@@ -1168,6 +1168,7 @@ def make_handler(g):
                             e['ref_tried2'] = int(now_)
                             try:
                                 if ref_sub(g, self.subs_client(), e, iid, path, it):
+                                    e.pop('ref_only', None); e.pop('prev', None)   # (timed by it here: nothing left for his Mac to try)
                                     save(SUBPREP, P)
                                     continue
                             except Exception as ex:
@@ -3278,6 +3279,34 @@ def make_handler(g):
                     save(SUBPREP, P)
                     log('Subtitles given by John for %s: %s, %s' % (e_.get('name'), nm_, said_))
                     record('subtitles given', film=e_.get('name'), id=iid_, name=nm_, how=said_)
+                elif op == 'giveref' and str(b.get('id') or '') in P:
+                    # (a subtitle in another language John uploads, made for his copy: the English timed by it on the Mac mini, and it translated on
+                    # his Mac and compared, the translation kept to see and use: John, 22 Nov 2026, "I also need to be able to upload a subtitle and
+                    # translate it and try that")
+                    iid_ = str(b['id'])
+                    e_ = P[iid_]
+                    lg_ = re.sub(r'[^a-z]', '', str(b.get('lang') or '').lower())[:3]
+                    if not re.match(r'^[0-9a-f]{32}$', iid_) or not lg_:
+                        return self.send_json(400, {'error': 'Which language is it in?'})
+                    cues_ = SUBS.parse_srt(str(b.get('srt') or '')[:900000])
+                    if len(cues_) < 50:
+                        return self.send_json(400, {'error': 'That has only %d lines: is it the whole film’s .srt file?' % len(cues_)})
+                    rf_ = os.path.join(os.path.expanduser('~/Grifflix/subprep-ref'), '%s.%s.srt' % (iid_, lg_))
+                    os.makedirs(os.path.dirname(rf_), exist_ok=True)
+                    with open(rf_, 'w', encoding='utf-8') as f_:
+                        f_.write(SUBS.write_srt(cues_))
+                    try:   # (an old translation isn't this one's)
+                        os.remove(os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.tr.srt' % iid_))
+                    except OSError:
+                        pass
+                    prev_ = e_.get('prev') if e_.get('ref_only') else {k: e_.get(k) for k in ('state', 'note', 'chose', 'file', 'n', 'miss', 'sure', 'samples', 'tried', 'mins', 'at', 'how', 'cur')}
+                    for x_ in ('givenfile', 'ref_tried2', 'translated'):
+                        e_.pop(x_, None)
+                    e_.update(ref_file=rf_, ref_lang=lg_, ref_given=str(b.get('name') or 'your file')[:160], ref_only=True, prev=prev_, state='waiting', order=-2,
+                              note='your %s subtitle: to be tried, and translated on your Mac' % lg_)
+                    save(SUBPREP, P)
+                    log('Subtitles: John gave a %s subtitle for %s, to time the English by and translate' % (lg_, e_.get('name')))
+                    record('subtitle in another language given', film=e_.get('name'), id=iid_, lang=lg_, name=e_['ref_given'])
                 elif op == 'nodialogue' and str(b.get('id') or '') in P:   # (John: no subtitles needed for this one)
                     P[str(b['id'])].update(state='nodialogue', note='no subtitles needed: said by John', at=int(time.time()))
                     save(SUBPREP, P)
@@ -3305,7 +3334,7 @@ def make_handler(g):
                                         # found: John, 22 Nov 2026, "I need a tab of added, corrected (with details), to do etc. Tidy")
                                         'all': [{k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'state', 'note', 'chose', 'n', 'miss', 'mins', 'at', 'step', 'stepat',
                                                                        'tried', 'samples', 'sure', 'file', 'origin', 'how', 'kind', 'series', 'cands', 'translated', 'ref_only', 'ref_lang', 'vfile', 'verifying', 'old_vfile',
-                                                                       'rcands', 'cur', 'chosen_from', 'ref_file', 'givenfile', 'givenname')} for x in F]})
+                                                                       'rcands', 'cur', 'chosen_from', 'ref_file', 'givenfile', 'givenname', 'ref_given')} for x in F]})
 
         def api_waiting(self, me, user, q, b):
             """John's only: what he's ticked off on the admin page's Waiting on you (John, 18 Nov 2026: "I could do with a waiting on you
@@ -6300,7 +6329,12 @@ def ref_sub(g, cl, e, iid, path, it):
     the English subtitles"). True if saved."""
     # (first, one this very file has in it already, or beside it, in another language: timed for this copy by definition (Io Capitano's
     # Italian): John, 22 Nov 2026, "if it has an inbuilt sub in the wrong language, then that should be used for the argos work")
-    own_ref = own_foreign_sub(g, iid, path)
+    own_ref = None
+    if e.get('ref_given') and e.get('ref_file') and os.path.exists(e['ref_file']):   # (one John uploaded, in its language: that, before any other)
+        rc_ = SUBS.parse_srt(open(e['ref_file'], encoding='utf-8', errors='replace').read())
+        if len(rc_) >= 50:
+            own_ref = (e.get('ref_lang') or '?', rc_)
+    own_ref = own_ref or own_foreign_sub(g, iid, path)
     refs = [] if own_ref else [(fid, lang) for mh in hashes_for(path) for fid, lang in cl.exact_any(mh) if str(lang).lower() not in ('en', 'eng')]
     pid = it.get('ProviderIds') or {}
     org = film_origin(path) or os.path.splitext(str(((load(os.path.expanduser('~/Grifflix/fingerprints.json'), {}) or {}).get(path) or {}).get('name') or ''))[0] or None
