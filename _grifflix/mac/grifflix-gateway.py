@@ -5989,16 +5989,44 @@ def exact_sub(g, cl, e, iid, path):
     return False
 
 
+def own_foreign_sub(g, iid, path):
+    """A text subtitle in a language not English that the file has in it, or that's beside it: (its language, its lines), or None."""
+    try:
+        it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'MediaStreams'}) or {}
+    except Exception:
+        return None
+    import subprocess
+    ff = next((c for c in ('/Applications/Jellyfin.app/Contents/MacOS/ffmpeg', '/usr/local/bin/ffmpeg', '/opt/homebrew/bin/ffmpeg') if os.path.exists(c)), 'ffmpeg')
+    for x in it.get('MediaStreams') or []:
+        lg = str(x.get('Language') or '').lower()
+        if x.get('Type') != 'Subtitle' or not x.get('IsTextSubtitleStream') or not lg or lg in ('eng', 'en', 'und') or x.get('IsForced'):
+            continue
+        try:
+            if x.get('IsExternal') and x.get('Path'):
+                cues = SUBS.parse_srt(SUBS.decode(open(x['Path'], 'rb').read()))
+            else:
+                out = subprocess.run([ff, '-v', 'error', '-i', path, '-map', '0:%d' % x['Index'], '-f', 'srt', '-'], capture_output=True, timeout=900).stdout
+                cues = SUBS.parse_srt(SUBS.decode(out))
+        except Exception:
+            continue
+        if len(cues) >= 50:
+            return (lg, cues)
+    return None
+
+
 def ref_sub(g, cl, e, iid, path, it):
     """No English made for this very file, but one in another language is: its lines' times used to time the English ones found for
     the film (John, 22 Nov 2026, "If there are subtitles in any language from that file but no English they will be useful for timing
     the English subtitles"). True if saved."""
-    refs = [(fid, lang) for mh in hashes_for(path) for fid, lang in cl.exact_any(mh) if str(lang).lower() not in ('en', 'eng')]
+    # (first, one this very file has in it already, or beside it, in another language: timed for this copy by definition (Io Capitano's
+    # Italian): John, 22 Nov 2026, "if it has an inbuilt sub in the wrong language, then that should be used for the argos work")
+    own_ref = own_foreign_sub(g, iid, path)
+    refs = [] if own_ref else [(fid, lang) for mh in hashes_for(path) for fid, lang in cl.exact_any(mh) if str(lang).lower() not in ('en', 'eng')]
     pid = it.get('ProviderIds') or {}
     org = film_origin(path) or os.path.splitext(str(((load(os.path.expanduser('~/Grifflix/fingerprints.json'), {}) or {}).get(path) or {}).get('name') or ''))[0] or None
     hint = org or os.path.splitext(os.path.basename(path))[0]
     relname = bool(org) or bool(re.search(r'(?i)\b(1080p|720p|2160p|480p|bluray|brrip|bdrip|remux|web-?dl|webrip|dvdrip|x26[45]|h\.?26[45]|hevc|xvid|yts|rarbg)\b', hint))
-    if not refs and relname:   # (the file's own name when it's still a download's, not only one on record)
+    if not refs and not own_ref and relname:   # (the file's own name when it's still a download's, not only one on record)
         # (or one in any language uploaded under the very name this copy was downloaded as: made for it too, whatever its language: John,
         # 22 Nov 2026, "Efforts should be made to find matching foreign subs and timing before whisper is used at all")
         try:
@@ -6013,13 +6041,16 @@ def ref_sub(g, cl, e, iid, path, it):
             refs = [(x['file_id'], x.get('lang') or '?') for x in fo_ if x.get('samename') or (x.get('like') or 0) >= 7][:3]
         except Exception:
             refs = []
-    if not refs:
-        return False
-    ref = []
-    for fid, lang in refs[:2]:
-        ref = SUBS.parse_srt(SUBS.decode(cl.download(fid)))
-        if len(ref) >= 50:
-            break
+    if own_ref:
+        refs, ref = [('own', own_ref[0])], own_ref[1]
+    else:
+        if not refs:
+            return False
+        ref = []
+        for fid, lang in refs[:2]:
+            ref = SUBS.parse_srt(SUBS.decode(cl.download(fid)))
+            if len(ref) >= 50:
+                break
     if len(ref) < 50:
         return False
     try:   # (kept, to see how the English lined up with it, and for John's Mac to translate and compare if they don't line up by their timing)

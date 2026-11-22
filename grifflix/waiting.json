@@ -167,6 +167,13 @@
    "title": "Remove the AFI text from the site's past versions on GitHub?",
    "why": "The AFI details are now for members only and no longer in the site's files, but copies published before stay in the repository's history.",
    "how": "Tell Claude if you want them gone: it means rewriting the repository's history, so only if you're sure."
+  },
+  {
+   "id": "argos-setup",
+   "added": "2026-11-22",
+   "title": "Put Argos Translate on your Mac (once, optional)",
+   "why": "Your Mac now translates a film's own subtitles in another language (built in or beside it), or ones made for its copy, and compares them with the English before Whisper listens. It installs Argos Translate by itself the first time it needs it: a large download (around 1 GB with what it needs), which holds that first film up while it downloads.",
+   "how": "To have it ready beforehand, on your Mac: open Terminal, paste  ~/Grifflix/fw/bin/python3 -m pip install argostranslate  and press Return. Each language's translation model (about 100 MB) comes the first time a film in that language needs it."
   }
  ]
 }
