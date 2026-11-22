@@ -1128,7 +1128,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     return '<dl class="spkv">' + kv.map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>'; }).join('') + '</dl>' +
       '<div class="spvers" data-vfor="' + x.id + '"></div><div class="spcmp" data-cfor="' + x.id + '"><p class="spnote">Loading the dialogue…</p></div>' +
       (x.trable && !x.trdone ? '<p class="spnote" style="margin-top:10px">' + (x.tr_asked ? 'Its ' + esc(spLN(x.ref_lang)) + ' subtitle is waiting to be translated on your Mac' + (x.tr_tried ? ' (tried: it couldn’t be)' : '') + '.' : 'Its ' + esc(spLN(x.ref_lang)) + ' subtitle isn’t translated yet.') + ' <button class="btn" type="button" data-sptrans="' + x.id + '">' + (x.tr_asked ? 'Ask again' : 'Translate it') + '</button></p>' : '') +
-      spGiveBox(x) + '<div class="spact">' + (x.k === 'check' || x.k === 'none' || x.k === 'corrected' || x.k === 'added' || x.k === 'quiet' ? '<button class="btn" type="button" data-spagain="' + x.id + '">Do it again</button>' : '') + (x.k === 'none' || x.k === 'check' || x.k === 'todo' ? '<button class="btn" type="button" data-spquiet="' + x.id + '">No subtitles needed</button>' : '') + '</div>';
+      spGiveBox(x) + '<div class="spact">' + (x.k === 'check' ? '<button class="btn" type="button" data-spok="' + x.id + '">Confirm: the timing is right</button>' : '') + (x.k === 'check' || x.k === 'none' || x.k === 'corrected' || x.k === 'added' || x.k === 'quiet' ? '<button class="btn" type="button" data-spagain="' + x.id + '">Do it again</button>' : '') + (x.k === 'none' || x.k === 'check' || x.k === 'todo' ? '<button class="btn" type="button" data-spquiet="' + x.id + '">No subtitles needed</button>' : '') + '</div>';
   }
   // (the right subtitles given by John: from OpenSubtitles' list for the film, or a file of his own; used as they are, or timed to the film:
   // John, 22 Nov 2026, "I also need a way to give the correct subtitles to work with in the admin")
@@ -1267,7 +1267,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         // what's happened so make sure it is")
         var LNAME = function (c) { c = String(c || ''); var b = c.split(/[-_]/)[0]; var nm = LN[c] || LN[b]; if (!nm && DN) { try { nm = DN.of(b); } catch (e) {} } return nm && nm !== b ? nm : c; }; spLN = LNAME;
         var secs = function (v) { v = Math.abs(+v); return v < 60 ? v.toFixed(1) + ' s' : Math.floor(v / 60) + ' min ' + Math.round(v % 60) + ' s'; };
-        var line = function (x) {
+        var line = function (x) { var l0 = line0(x); return x.confirmed && x.state === 'done' ? l0.replace(/\.?$/, '') + ' · confirmed by you.' : l0; };
+        var line0 = function (x) {
           var nt = String(x.note || ''), mv = /moved ([+-][\d.]+) s/.exec(nt), sp = /at ([\d.]+)x speed/.exec(nt), rl = (/the (\S+) subtitle’s\)$/.exec(nt) || /^by the (\S+) subtitle/.exec(nt) || [])[1];
           var moved = mv ? (Math.abs(+mv[1]) < .05 ? 'already in time' : 'moved ' + secs(mv[1]) + ' ' + (+mv[1] >= 0 ? 'later' : 'earlier')) + (sp ? ' and ' + (+sp[1] > 1 ? 'slowed' : 'sped up') + ' to fit (made for a copy running at another speed)' : '') : '';
           var src = x.chose && !/^OpenSubtitles file|^translated from/.test(x.chose) ? ' Subtitles: “' + x.chose + '”.' : '';
@@ -1324,6 +1325,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           bd.hidden = false; bd.innerHTML = spBody(x, LNAME);
           if (x.k !== 'todo') spCompare(x, '');
           spGiveWire(x, bd);
+          Array.prototype.forEach.call(bd.querySelectorAll('[data-spok]'), function (bt) { bt.onclick = function () { bt.disabled = true; delete subPrep.open[bt.dataset.spok]; subPrep({ op: 'confirm', id: bt.dataset.spok }); toast('Confirmed: done'); }; });
           Array.prototype.forEach.call(bd.querySelectorAll('[data-spfirst],[data-splast]'), function (bt) { bt.onclick = function () { bt.disabled = true; subPrep({ op: bt.dataset.spfirst ? 'first' : 'last', id: bt.dataset.spfirst || bt.dataset.splast }); toast(bt.dataset.spfirst ? 'Next in the queue' : 'Last in the queue'); }; });
           Array.prototype.forEach.call(bd.querySelectorAll('[data-sptrans]'), function (bt) { bt.onclick = function () { bt.disabled = true; subPrep({ op: 'translate', id: bt.dataset.sptrans }); toast('To be translated next on your Mac'); }; });
           Array.prototype.forEach.call(bd.querySelectorAll('[data-spquiet]'), function (bt) { bt.onclick = function () { bt.disabled = true; subPrep({ op: 'nodialogue', id: bt.dataset.spquiet }); toast('No subtitles needed: in Not needed'); }; });

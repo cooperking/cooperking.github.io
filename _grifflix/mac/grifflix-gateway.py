@@ -3374,6 +3374,13 @@ def make_handler(g):
                     save(SUBPREP, P)
                     log('Subtitles: John gave a %s subtitle for %s, to time the English by and translate' % (lg_, e_.get('name')))
                     record('subtitle in another language given', film=e_.get('name'), id=iid_, lang=lg_, name=e_['ref_given'])
+                elif op == 'confirm' and str(b.get('id') or '') in P:   # (John has looked, and its timing is right: done)
+                    e_ = P[str(b['id'])]
+                    if e_.get('state') == 'check':
+                        e_.update(state='done', sure=True, confirmed=int(time.time()))
+                        save(SUBPREP, P)
+                        log('Subtitles for %s: confirmed by John' % e_.get('name'))
+                        record('subtitles confirmed', film=e_.get('name'), id=str(b['id']), by='John')
                 elif op in ('first', 'last') and str(b.get('id') or '') in P:   # (John's order for the queue: this one next, or after all the rest)
                     os_ = [x_.get('order', 0) for k_, x_ in P.items() if not k_.startswith('_') and isinstance(x_, dict)] or [0]
                     e_ = P[str(b['id'])]
@@ -3424,7 +3431,7 @@ def make_handler(g):
                                         'all': [{k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'state', 'note', 'chose', 'n', 'miss', 'mins', 'at', 'step', 'stepat',
                                                                        'tried', 'samples', 'sure', 'file', 'origin', 'how', 'kind', 'series', 'cands', 'translated', 'ref_only', 'ref_lang', 'vfile', 'verifying', 'old_vfile',
                                                                        'rcands', 'cur', 'chosen_from', 'ref_file', 'givenfile', 'givenname', 'ref_given',
-                                                                       'speech_tried', 'speech_note', 'ref_byspeech', 'tr_asked', 'tr_tried', 'order')}
+                                                                       'speech_tried', 'speech_note', 'ref_byspeech', 'tr_asked', 'tr_tried', 'order', 'confirmed')}
                                                for x in F], 'speech_now': SPEECH.get('now'),
                                         # (which have a subtitle in another language to translate, and which have it translated: for John's Translate buttons)
                                         'trable': [x['id'] for x in F if x.get('ref_file') and str(x.get('ref_lang') or '').lower()[:2] not in ('', 'en') and os.path.exists(x['ref_file'])],
