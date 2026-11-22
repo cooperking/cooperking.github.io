@@ -1613,6 +1613,11 @@ def make_handler(g):
                                         o_['ccty'] = c_
                                     if t_ and sl0_ in CGFIX_:   # (its own genres as Criterion lists it, not its whole box set's (give_genres))
                                         t_ = [x_ for x_ in t_ if x_ not in CRIT_GENRES] + CGFIX_[sl0_]
+                                    elif t_ and s_:   # (one only ever shown by Criterion in its box set: the set's genres and languages aren't its
+                                        # own (Agnès de ci de là Varda, a documentary series, had the whole Varda set's Comedy, Fantasy, Musical and
+                                        # English Language): its own genres where it has them, else none: John, 22 Nov 2026)
+                                        own_ = [x_ for x_ in (o_.get('genres') or []) if x_ in CRIT_GENRES]
+                                        t_ = [x_ for x_ in t_ if x_ not in CRIT_GENRES and not x_.endswith(' Language')] + own_
                                     if t_:
                                         o_['ctags'] = t_
                                     if s_:   # (each box set once: two spellings of one set's name (its ’ and ') made it twice, each film counted twice in it:
@@ -8279,7 +8284,7 @@ def serve():
     # "there shouldn't be a need for a three hour check")
     threading.Thread(target=lambda: (time.sleep(60), subprep_scan(), subs_exact_all(), subs_namecheck()), daemon=True).start()
     threading.Thread(target=lambda: (time.sleep(240), posters_on()), daemon=True).start()   # (any film whose poster's in its folder but not on it)
-    mk2_ = os.path.expanduser('~/Grifflix/tv-criterion.done')
+    mk2_ = os.path.expanduser('~/Grifflix/tv-criterion-2.done')
     if not os.path.exists(mk2_):   # (once: the site updated, for the TV series now in Criterion's box sets: 22 Nov 2026)
         try:
             open(mk2_, 'w').write(str(int(time.time())))
