@@ -1200,7 +1200,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           .catch(function (e) { say.textContent = 'Not saved: ' + (e.message || e); }); }); };
     var fi = bd.querySelector('[data-spfile]'); if (fi) fi.onchange = function () { var f = fi.files && fi.files[0]; if (!f) return;
       if (f.size > 800000) { say.textContent = 'That file is too big for subtitles.'; return; }
-      f.text().then(function (t) { list.innerHTML = '<li><b>' + esc(f.name) + '</b><span class="when">your file · ' + (t.match(/-->/g) || []).length + ' lines</span>' + two() + '</li>'; say.textContent = '';
+      // (not saved until one of its two buttons is pressed, and it says so: John, 22 Nov 2026, "I uploaded varda copies", and none had come)
+      f.text().then(function (t) { list.innerHTML = '<li><b>' + esc(f.name) + '</b><span class="when">your file · ' + (t.match(/-->/g) || []).length + ' lines</span>' + two() + '</li>'; say.innerHTML = '<b>Not saved yet:</b> press Time it to the film (fitted to your copy on your Mac) or Use as it is.';
         wireTwo(list.querySelector('li'), { srt: t, name: f.name }); }); };
   }
   function spCompare(x, w) {
