@@ -182,19 +182,60 @@ class OpenSubs:
                     out.append((a.get('download_count') or 0, f['file_id'], a.get('language') or ''))
         return [(fid, lang) for _, fid, lang in sorted(out, reverse=True)]
 
+    def out_of_downloads(self):
+        """True while the day's downloads are used up (until OpenSubtitles' reset time)."""
+        if self.cfg.get('remaining') is None or int(self.cfg.get('remaining') or 0) > 0:
+            return False
+        try:
+            import datetime
+            r = str(self.cfg.get('reset') or '')
+            t = datetime.datetime.strptime(r[:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=datetime.timezone.utc).timestamp() if re.match(r'^\d{4}-\d\d-\d\dT', r) else self.cfg.get('out_at', 0) + 86400
+        except ValueError:
+            t = self.cfg.get('out_at', 0) + 86400
+        if time.time() >= t:
+            self.cfg.pop('remaining', None)
+            return False
+        return True
+
     def download(self, file_id):
-        """The subtitle file's bytes (one of John's daily OpenSubtitles downloads)."""
+        """The subtitle file's bytes (one of John's daily OpenSubtitles downloads). Each file kept once downloaded, and given again from
+        there, not downloaded again: his 1,000 a day were used up by the same files fetched over and over (John, 22 Nov 2026, "it said
+        I've used up my 1000 downloads for today"). None asked for while the day's are used up."""
+        cache = os.path.expanduser('~/Grifflix/opensubs-cache')
+        cf = os.path.join(cache, '%d.srt' % int(file_id))
+        if os.path.exists(cf) and os.path.getsize(cf) > 0:
+            with open(cf, 'rb') as f:
+                return f.read()
+        if self.out_of_downloads():
+            raise RuntimeError('OpenSubtitles downloads used up for today (allowed again from %s UTC)' % str(self.cfg.get('reset') or '?')[:16].replace('T', ' '))
         base = 'https://%s/api/v1' % (self.cfg.get('base') or 'api.opensubtitles.com')
-        j = self._req('POST', '/download', {'file_id': int(file_id), 'sub_format': 'srt'}, auth=True, base=base)
+        try:
+            j = self._req('POST', '/download', {'file_id': int(file_id), 'sub_format': 'srt'}, auth=True, base=base)
+        except RuntimeError as e:
+            if re.search(r'allowed|quota|limit', str(e), re.I):   # (used up: none asked for until the reset)
+                self.cfg['remaining'], self.cfg['out_at'] = 0, int(time.time())
+                self.save()
+                raise RuntimeError('OpenSubtitles downloads used up for today: %s' % e)
+            raise
         if j.get('remaining') is not None:
             self.cfg['remaining'] = j.get('remaining')
             self.cfg['reset'] = j.get('reset_time_utc') or j.get('reset_time')
+            if int(j.get('remaining') or 0) <= 0:
+                self.cfg['out_at'] = int(time.time())
             self.save()
         link = j.get('link')
         if not link:
-            raise RuntimeError('OpenSubtitles gave no file (%s)' % (j.get('message') or 'no more downloads today?'))
+            raise RuntimeError('OpenSubtitles downloads used up for today (%s)' % (j.get('message') or 'it gave no file'))
         with urllib.request.urlopen(urllib.request.Request(link, headers={'User-Agent': UA}), timeout=60, context=self.ctx) as r:
-            return r.read()
+            data = r.read()
+        try:
+            os.makedirs(cache, exist_ok=True)
+            with open(cf + '.tmp', 'wb') as f:
+                f.write(data)
+            os.replace(cf + '.tmp', cf)
+        except OSError:
+            pass
+        return data
 
 
 SOURCES = {'bluray': 'bluray', 'blu-ray': 'bluray', 'bdrip': 'bluray', 'brrip': 'bluray', 'bdremux': 'bluray', 'remux': 'bluray',

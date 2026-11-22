@@ -1125,6 +1125,8 @@ def make_handler(g):
                             e.update(note=('OpenSubtitles: %s' % ex)[:200])
                             save(SUBPREP, P)
                             return self.send_json(200, {'wait': 'OpenSubtitles didn’t answer'})
+                        if self.subs_client().out_of_downloads():   # (the day's downloads used up: no film taken up, none marked, till the reset)
+                            return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
                         res = [x for x in res if not x.get('machine') and x.get('kind') in (('', 'episode', 'tvshow') if e.get('kind') == 'episode' else ('', 'movie'))]
                         ex_ = [x for x in res if x.get('exact')]
                         if ex_:   # (made for this very file: taken as it is, no Whisper needed: John, 22 Nov 2026, "get ones with exact timing")
@@ -1150,6 +1152,10 @@ def make_handler(g):
                                     continue
                             except Exception as ex:
                                 log('Subtitles timed by another language, %s: %s' % (e.get('name'), str(ex)[:160]))
+                            if self.subs_client().out_of_downloads():
+                                e.pop('ref_tried2', None)
+                                save(SUBPREP, P)
+                                return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
                         more_ = [{'file_id': x['file_id'], 'name': x.get('name') or ''} for x in res[3:10]]   # (the next ones, fetched by John's Mac one at a time
                         # only if none of the first fits exactly, without a change of speed: John, 21 Nov 2026, "Better to get the right one exactly before fixing")
                         res = res[:3]
@@ -3169,7 +3175,9 @@ def make_handler(g):
             # (and each film tried lately, however it went, with what it found: John, 21 Nov 2026, "I want more details than that")
             recent_ = sorted(({k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'state', 'note', 'chose', 'n', 'miss', 'mins', 'at', 'step', 'stepat', 'tried', 'samples', 'sure', 'file', 'origin')}
                               for x in F if x.get('state') not in ('waiting',)), key=lambda x: -max(x.get('at') or 0, x.get('stepat') or 0))[:25]
-            return self.send_json(200, {'counts': cnt, 'total': len(F), 'paused': bool(P.get('_paused')), 'setup': bool((P.get('_setup') or {}).get('need')), 'now': now_[:3], 'recent': recent_,
+            os_ = g.st.get('opensubs') or {}
+            dl_ = {'left': os_.get('remaining'), 'reset': os_.get('reset'), 'out': self.subs_client().out_of_downloads() if os_.get('key') else False}
+            return self.send_json(200, {'dl': dl_, 'counts': cnt, 'total': len(F), 'paused': bool(P.get('_paused')), 'setup': bool((P.get('_setup') or {}).get('need')), 'now': now_[:3], 'recent': recent_,
                                         'check': pick(('check',)), 'none': pick(('none', 'nomatch', 'failed')), 'done': pick(('done',))[:30],
                                         # (every film, for the admin page's tabs: to do, added as they were, corrected (and how), to check, not
                                         # found: John, 22 Nov 2026, "I need a tab of added, corrected (with details), to do etc. Tidy")
@@ -6203,6 +6211,8 @@ def ref_sub(g, cl, e, iid, path, it):
         try:
             cues = SUBS.parse_srt(SUBS.decode(cl.download(x['file_id'])))
         except Exception:
+            if cl.out_of_downloads():
+                raise
             continue
         share, hit, out, how = SUBS.align_to_ref(ref, cues)
         try:
@@ -6247,6 +6257,9 @@ def subs_exact_all():
     cl = SUBS.OpenSubs(g.st.setdefault('opensubs', {}), lambda: save(SETTINGS, g.st), tls())
     P = load(SUBPREP, {}) or {}
     n = 0
+    if cl.out_of_downloads():
+        log('Subtitles: OpenSubtitles downloads used up for today; looked over once they reset')
+        return
     for iid, e in list(P.items()):
         redo_ = isinstance(e, dict) and e.get('how') == 'by reference' and e.get('ref_v') != 3   # (those timed before lines between were moved by their neighbours, or before
         # the English ones tried were kept to compare and choose from: again)
@@ -6260,6 +6273,9 @@ def subs_exact_all():
                 q = Q.get(iid)
                 if isinstance(q, dict) and (q.get('state') in ('waiting', 'none', 'nomatch', 'failed') or redo_):
                     ok = (not redo_ and exact_sub(g, cl, q, iid, path)) or ref_sub(g, cl, q, iid, path, it)
+                    if cl.out_of_downloads():   # (the day's downloads gone part-way: not counted as tried; the rest after the reset)
+                        log('Subtitles: OpenSubtitles downloads used up for today; the rest of the look-over after they reset')
+                        return
                     q['exact_tried'] = q['ref_tried'] = q['ref_tried2'] = int(time.time())
                     save(SUBPREP, Q)
                     n += bool(ok)
@@ -6282,9 +6298,15 @@ def subs_exact_all():
             if not (path and os.path.exists(path) and isinstance(q, dict) and q.get('state') in ('done', 'check') and not q.get('how')):
                 continue
             prev = {k: q.get(k) for k in ('state', 'note', 'chose', 'file', 'n', 'miss', 'sure', 'samples', 'tried', 'mins', 'at')}
+            if cl.out_of_downloads():
+                break
             q['rechecked2'] = int(time.time())
             if exact_sub(g, cl, q, iid, path) or ref_sub(g, cl, q, iid, path, it):
                 n2 += 1
+            elif cl.out_of_downloads():   # (not looked at after all: again after the reset)
+                q.pop('rechecked2', None)
+                save(SUBPREP, Q)
+                break
             elif q.get('ref_file') and os.path.exists(q['ref_file']):
                 q.update(state='waiting', ref_only=True, prev=prev, order=-1)
                 q2 += 1
