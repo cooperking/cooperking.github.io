@@ -988,6 +988,22 @@ def make_handler(g):
                                      tried=[[str(x[0])[:160], int(x[1] or 0)] for x in (body.get('tried') or []) if isinstance(x, list) and len(x) >= 2][:12])
                             log('Subtitles not made ready for %s: %s' % (e.get('name'), e['note']))
                             record('subtitles not made', film=e.get('name'), id=iid, why=e['note'], tried=body.get('tried'))
+                            # (the likeliest three kept, timed as they'd be, for John to look at and choose one himself: John, 22 Nov 2026)
+                            kept_ = []
+                            for i_, c_ in enumerate((body.get('cands') or [])[:3]):
+                                try:
+                                    t_ = base64.b64decode(str(c_.get('srt64') or '')).decode('utf-8', 'replace')
+                                    if not re.match(r'^[0-9a-f]{32}$', iid) or not t_:
+                                        continue
+                                    fn_ = os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.%d.srt' % (iid, i_))
+                                    os.makedirs(os.path.dirname(fn_), exist_ok=True)
+                                    with open(fn_, 'w', encoding='utf-8') as f_:
+                                        f_.write(t_)
+                                    kept_.append({'i': i_, 'name': str(c_.get('name') or '')[:160], 'n': int(c_.get('n') or 0), 'how': str(c_.get('how') or '')[:120],
+                                                  'miss': c_.get('miss'), 'samples': c_.get('samples') if isinstance(c_.get('samples'), list) else []})
+                                except Exception:
+                                    pass
+                            e['cands'] = kept_
                         save(SUBPREP, P)
                         return self.send_json(200, {'ok': True})
                     if P.get('_paused') or q.get('home') != '1' or not self.subs_ready():
@@ -2973,6 +2989,24 @@ def make_handler(g):
                         n_ += 1
                     save(SUBPREP, P)
                     log('Subtitles: %d films to do again, John asked; their subtitles in Set aside › Subtitles redone' % n_)
+                elif op == 'choose' and str(b.get('id') or '') in P:   # (John's own choice of a subtitle turned down: saved as it'd be timed)
+                    iid_, i_ = str(b['id']), int(b.get('i') or 0)
+                    e_ = P[iid_]
+                    c_ = next((c for c in e_.get('cands') or [] if c.get('i') == i_), None)
+                    fn_ = os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.%d.srt' % (iid_, i_))
+                    if not c_ or not os.path.exists(fn_) or not re.match(r'^[0-9a-f]{32}$', iid_):
+                        return self.send_json(400, {'error': 'That subtitle isn’t kept any more: Try again.'})
+                    it_ = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid_), query={'Fields': 'Path'}) or {}
+                    if not it_.get('Path'):
+                        return self.send_json(400, {'error': 'The film isn’t there.'})
+                    cues_ = SUBS.parse_srt(open(fn_, encoding='utf-8').read())
+                    out_ = self.subs_write(it_['Path'], 'en', cues_)
+                    g.jf.call('POST', '/Items/%s/Refresh' % iid_, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
+                    e_.update(state='done', note='chosen by John: %s (%d lines agreeing)' % (c_.get('how'), c_.get('n') or 0), chose=c_.get('name'), file=out_, at=int(time.time()),
+                              n=c_.get('n'), sure=True, how='chosen', samples=c_.get('samples'))
+                    save(SUBPREP, P)
+                    log('Subtitles chosen by John: %s: %s' % (e_.get('name'), c_.get('name')))
+                    record('subtitles saved', film=e_.get('name'), id=iid_, file=out_, how='chosen by John from those turned down: ' + str(c_.get('how')), chose=c_.get('name'))
                 elif op == 'again' and str(b.get('id') or '') in P:
                     P[str(b['id'])].update(state='waiting', note='')
                     save(SUBPREP, P)
@@ -2993,7 +3027,7 @@ def make_handler(g):
                                         # (every film, for the admin page's tabs: to do, added as they were, corrected (and how), to check, not
                                         # found: John, 22 Nov 2026, "I need a tab of added, corrected (with details), to do etc. Tidy")
                                         'all': [{k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'state', 'note', 'chose', 'n', 'miss', 'mins', 'at', 'step', 'stepat',
-                                                                       'tried', 'samples', 'sure', 'file', 'origin', 'how', 'kind', 'series')} for x in F]})
+                                                                       'tried', 'samples', 'sure', 'file', 'origin', 'how', 'kind', 'series', 'cands')} for x in F]})
 
         def api_waiting(self, me, user, q, b):
             """John's only: what he's ticked off on the admin page's Waiting on you (John, 18 Nov 2026: "I could do with a waiting on you
@@ -6025,13 +6059,13 @@ def subprep_scan_():
     if not libs.get('movies'):
         return
     P = load(SUBPREP, {}) or {}
-    if P.get('_v') not in (4,):   # (once: those found to have "no English subtitles" while subtitles of the right film were thrown away for being under
+    if P.get('_v') not in (5,):   # (once: those found to have "no English subtitles" while subtitles of the right film were thrown away for being under
         # its own title, tried again: 21 Nov 2026; v3: those turned down by the too-strict
         # whole-film check, tried again)
         for k_, v_ in P.items():
             if not k_.startswith('_') and isinstance(v_, dict) and v_.get('state') in ('none', 'nomatch', 'failed'):
                 v_.update(state='waiting', note='')
-        P['_v'] = 4
+        P['_v'] = 5   # (v5: those turned down by a part with few lines heard, The 400 Blows' opening, tried again: 22 Nov 2026)
     films, start = [], 0
     while True:
         r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': libs['movies'], 'Recursive': 'true', 'IncludeItemTypes': 'Movie',
