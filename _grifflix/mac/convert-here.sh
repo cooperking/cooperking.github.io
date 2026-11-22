@@ -306,7 +306,9 @@ args[-1]="$lt"
       fin=1; echo; echo "Grifflix: the film is converted. Putting the file together on this Mac (a minute or so)."
       curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d '{"stage":"finishing: putting the file together on your Mac (a minute or so)"}' "$url/progress" >/dev/null 2>&1
     fi
-    [[ "$t" == <-> ]] && curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d "{\"t\":$((t / 1000000)),\"speed\":\"$sp\"}" "$url/progress" >/dev/null 2>&1
+    [[ "$t" == <-> ]] && ans=$(curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d "{\"t\":$((t / 1000000)),\"speed\":\"$sp\"}" "$url/progress" 2>/dev/null)
+    # (cancelled from the admin page: ffmpeg stopped, its part-made file deleted: John, 22 Nov 2026, "how can I cancel converts on my mac")
+    if [[ "$ans" == *'"cancel"'* ]]; then : > "$lt.cancel"; pkill -TERM -P $$ -f ffmpeg 2>/dev/null; fi   # (its own ffmpeg: a film's name has brackets a pattern would misread)
   done ) &
 reporter=$!
 trap 'kill $reporter 2>/dev/null; rm -f "$prog"; echo; echo "Stopped."; curl -fsS -X POST -H "Content-Type: application/json" -d "{\"ok\":false,\"error\":\"stopped\"}" "$url/done" >/dev/null; exit 1' INT TERM HUP
@@ -323,7 +325,10 @@ if "$FF" -nostdin -y -v error -stats -progress "$prog" "${args[@]}" 2> >(tee "$e
   detach /usr/bin/caffeinate -i /bin/zsh "$HERE/convert-here.sh" copyback "$lt" "$tmp" "$url"
 else
   kill $reporter 2>/dev/null; rm -f "$prog" "$lt"
-  if [[ ! -f "$src" ]]; then   # (the G-Drive gone part-way: the network, or the lid closed): back in the queue, from the start
+  if [[ -f "$lt.cancel" ]]; then
+    rm -f "$lt.cancel" "$errf"; echo "Grifflix: cancelled from the admin page. Nothing was changed."
+    curl -fsS -m 20 -X POST -H 'Content-Type: application/json' -d '{"ok":false,"error":"cancelled"}' "$url/done" >/dev/null 2>&1
+  elif [[ ! -f "$src" ]]; then   # (the G-Drive gone part-way: the network, or the lid closed): back in the queue, from the start
     echo "The G-Drive went part-way through: the film goes back in the queue."; curl -fsS -m 20 -X POST -H 'Content-Type: application/json' -d '{"ok":false,"error":"lost the G-Drive","again":1}' "$url/done" >/dev/null 2>&1
   else
     sleep 1   # (ffmpeg's words written out first)
