@@ -7385,6 +7385,11 @@ def afi_parse(x):
                 if c:
                     h.append(c)
             h = '\n\n'.join(h).strip()
+            # (AFI shows the History shortened, then "More", "Less" and the whole of it: the whole only, not twice: 22 Nov 2026)
+            m_ = re.search(r'\n\s*More\s*\n\s*Less\s*\n', h)
+            if m_:
+                h = h[m_.end():].strip()
+            h = re.sub(r'\n\s*(More|Less)\s*$', '', h).strip()
             if len(h) > 80:
                 out['hist'] = h[:20000]
             break
