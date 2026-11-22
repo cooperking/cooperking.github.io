@@ -1543,6 +1543,25 @@ def make_handler(g):
                                     y_ = i.get('ProductionYear') or 0
                                     fn_ = fold(re.sub(r'\s*\((19|20)\d\d\)\s*$', '', os.path.basename(os.path.dirname(i.get('Path') or '')).strip()))   # (its folder's name too, where the media server named it otherwise: Anthem taken for "Echo Anthem")
                                     d_, c_, t_, s_, sl0_ = next((CT[(n_, y_ + dy)] for n_ in (fold(i.get('Name')), fn_) for dy in (0, 1, -1) if (n_, y_ + dy) in CT), None) or CTT.get(str((i.get('ProviderIds') or {}).get('Tmdb') or '-')) or ('', '', [], [], '')
+                                if not (d_ or t_) and key == 'tv':
+                                    # (a series by its name and year, as a film is (Agnès de ci de là Varda, one of Criterion's films, in The Complete
+                                    # Films of Agnès Varda); or a series that is a box set of Criterion's whole, its episodes Criterion's films (Small
+                                    # Axe: Mangrove, Lovers Rock…): in that set, and its films all held: John, 22 Nov 2026, "hasn't been added")
+                                    y_ = i.get('ProductionYear') or 0
+                                    sn_ = fold(re.sub(r'\s*\((19|20)\d\d\)\s*$', '', i.get('Name') or ''))
+                                    d_, c_, t_, s_, sl0_ = next((CT[(sn_, y_ + dy)] for dy in (0, 1, -1) if (sn_, y_ + dy) in CT), None) or ('', '', [], [], '')
+                                    if not (d_ or t_) and sn_ in SNAME:
+                                        bx_ = SNAME[sn_]
+                                        mem_ = next((v_ for k_, v_ in (ctj_.get('sets') or {}).items() if fold(k_) == sn_), [])
+                                        if mem_:
+                                            s_ = [bx_]
+                                            t_ = sorted(set(x_ for m_ in mem_ for x_ in TG.get(m_, [])))
+                                            OWNED.update(mem_)
+                                            d_ = next((str(f_.get('director') or '')[:160] for f_ in load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or []
+                                                       if str(f_.get('link') or '').endswith('/' + mem_[0])), '')
+                                            if not sp and str(SMETA.get(sn_, ('',))[0]).isdigit():
+                                                sp = int(SMETA[sn_][0])
+                                                o_['spine'] = sp
                                 # (Criterion's own year for its films, shown whatever TMDB dates it: Clean, Shaven is 1993 at Criterion, 1995 on
                                 # TMDB: John, 20 Nov 2026, "keep criterion film years". Only for the film's own Criterion listing, not a set's or an
                                 # anthology's, whose year isn't each film's)
@@ -7665,10 +7684,10 @@ def posters_on(only=None):
                                                               'StartIndex': start, 'Limit': 500, 'EnableImages': 'true'}, timeout=120) or {}
         for it in r.get('Items') or []:
             pth = it.get('Path') or ''
-            fold = os.path.dirname(pth)
-            if not pth or (only is not None and os.path.basename(fold) not in only) or (it.get('ImageTags') or {}).get('Primary'):
+            fdir_ = os.path.dirname(pth)
+            if not pth or (only is not None and os.path.basename(fdir_) not in only) or (it.get('ImageTags') or {}).get('Primary'):
                 continue
-            pic = next((os.path.join(fold, o) for o in ('poster.jpg', 'poster.png') if os.path.exists(os.path.join(fold, o))), None)
+            pic = next((os.path.join(fdir_, o) for o in ('poster.jpg', 'poster.png') if os.path.exists(os.path.join(fdir_, o))), None)
             if not pic:
                 continue
             try:
@@ -8260,6 +8279,13 @@ def serve():
     # "there shouldn't be a need for a three hour check")
     threading.Thread(target=lambda: (time.sleep(60), subprep_scan(), subs_exact_all(), subs_namecheck()), daemon=True).start()
     threading.Thread(target=lambda: (time.sleep(240), posters_on()), daemon=True).start()   # (any film whose poster's in its folder but not on it)
+    mk2_ = os.path.expanduser('~/Grifflix/tv-criterion.done')
+    if not os.path.exists(mk2_):   # (once: the site updated, for the TV series now in Criterion's box sets: 22 Nov 2026)
+        try:
+            open(mk2_, 'w').write(str(int(time.time())))
+            g.publish_soon = time.time() + 300
+        except OSError:
+            pass
     mk_ = os.path.expanduser('~/Grifflix/afi-reread.done')
     if not os.path.exists(mk_):   # (once: the site updated, so every AFI page kept is read again by the better reading: 22 Nov 2026)
         try:
