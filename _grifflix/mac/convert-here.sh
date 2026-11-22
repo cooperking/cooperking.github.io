@@ -242,7 +242,11 @@ if [[ "${1:-}" == "agent" ]]; then
     [[ -d /Volumes/G-Drive ]] || { open "smb://$MINI/G-Drive"; for i in {1..60}; do [[ -d /Volumes/G-Drive ]] && break; sleep 1; done; }
     curl -fsSL -m 60 https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/subprep.py -o "$HERE/subprep.py.new" && mv "$HERE/subprep.py.new" "$HERE/subprep.py"
     /usr/bin/python3 -c 'import json,sys; json.dump(json.load(open(sys.argv[1]))["subjob"], open(sys.argv[2], "w"))' "$sj" "$sj.1" || exit 0
-    PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/bin:$PATH" /usr/bin/caffeinate -i /usr/bin/python3 "$HERE/subprep.py" "$sj.1" "$base" "$key"
+    # (its key read from agent.conf by subprep.py itself, not shown on the command line where any program can see it; and stopped after three
+    # hours, so one that hangs can't hold this Mac up for good: John, 22 Nov 2026)
+    PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/bin:$PATH" /usr/bin/caffeinate -i /usr/bin/python3 "$HERE/subprep.py" "$sj.1" "$base" - &
+    sp_=$!; ( sleep 10800; kill "$sp_" 2>/dev/null ) & wd_=$!
+    wait "$sp_"; kill "$wd_" 2>/dev/null
     echo "$(date '+%Y-%m-%d %H:%M') subtitles made ready ($?)"
     exit 0
   fi
