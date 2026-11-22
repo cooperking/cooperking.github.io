@@ -978,11 +978,18 @@ def make_handler(g):
                                          tried=[[str(x[0])[:160], int(x[1] or 0), bool(x[2])] for x in (body.get('tried') or []) if isinstance(x, list) and len(x) >= 3][:12],
                                          samples=[[float(x[0]), int(x[1] or 0), float(x[2])] for x in (body.get('samples') or []) if isinstance(x, list) and len(x) >= 3][:12],
                                          sure=bool(body.get('sure')))
+                                e.pop('ref_only', None); e.pop('prev', None)
+                                if str(body.get('how') or '').startswith('by the '):   # (timed by a translated subtitle made for this copy, not by Whisper)
+                                    e['how'] = 'translated'
                                 log('Subtitles made ready on John’s Mac: %s: %s (%s lines matched)%s' % (e.get('name'), e['note'], e['n'], '' if body.get('sure') else ': to check'))
                                 record('subtitles saved', film=e.get('name'), id=iid, file=out, how='timed by Whisper on John’s Mac: ' + e['note'], chose=e.get('chose'),
                                        lines_matched=e['n'], sure=bool(body.get('sure')), tried=e.get('tried'))
                             except Exception as ex:
                                 e.update(state='failed', note=('couldn’t be saved: %s' % ex)[:200], at=int(time.time()))
+                        elif e.get('ref_only') and isinstance(e.get('prev'), dict):   # (translated and compared, didn't line up: its Whisper subtitles kept)
+                            e.update(e.pop('prev'))
+                            e.pop('ref_only', None)
+                            log('Subtitles for %s: the translated subtitle didn’t line up; those timed by Whisper kept' % e.get('name'))
                         else:
                             e.update(state='nomatch' if 'matched' in str(body.get('error') or '') else 'failed', note=str(body.get('error') or 'it didn’t work')[:200], at=int(time.time()),
                                      tried=[[str(x[0])[:160], int(x[1] or 0)] for x in (body.get('tried') or []) if isinstance(x, list) and len(x) >= 2][:12])
@@ -1089,6 +1096,7 @@ def make_handler(g):
                                                                'translate': True, 'cands': cands, 'more': more_, 'lang': e.get('lang') or '',
                                                                # (and the one in another language made for this copy, if any, for John's Mac to
                                                                # translate and compare with the English before listening with Whisper)
+                                                               'ref_only': bool(e.get('ref_only')),
                                                                'ref': ({'lang': e.get('ref_lang'), 'srt': open(e['ref_file'], encoding='utf-8').read()}
                                                                        if e.get('ref_file') and os.path.exists(e['ref_file']) else None)}})
                     save(SUBPREP, P)
@@ -5996,6 +6004,33 @@ def subs_exact_all():
             log('Subtitles made for the very file, %s: %s' % (e.get('name'), str(ex)[:160]))
         time.sleep(1.5)
     log('Subtitles made for the very file: %d films and episodes given theirs' % n)
+    # (and those timed by Whisper before a subtitle in another language made for the copy was looked for, looked at again: timed by its lines
+    # here, or else, if there is one, translated on John's Mac and compared, their Whisper subtitles kept meanwhile and kept if that doesn't
+    # line up: John, 22 Nov 2026, "there are a lot of 'what whisper hears' in the admin")
+    n2 = q2 = 0
+    for iid, e in list((load(SUBPREP, {}) or {}).items()):
+        if iid.startswith('_') or not isinstance(e, dict) or e.get('state') not in ('done', 'check') or e.get('how') or e.get('rechecked'):
+            continue
+        try:
+            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
+            path = it.get('Path') or ''
+            Q = load(SUBPREP, {}) or {}
+            q = Q.get(iid)
+            if not (path and os.path.exists(path) and isinstance(q, dict) and q.get('state') in ('done', 'check') and not q.get('how')):
+                continue
+            prev = {k: q.get(k) for k in ('state', 'note', 'chose', 'file', 'n', 'miss', 'sure', 'samples', 'tried', 'mins', 'at')}
+            q['rechecked'] = int(time.time())
+            if exact_sub(g, cl, q, iid, path) or ref_sub(g, cl, q, iid, path, it):
+                n2 += 1
+            elif q.get('ref_file') and os.path.exists(q['ref_file']):
+                q.update(state='waiting', ref_only=True, prev=prev, order=-1)
+                q2 += 1
+            save(SUBPREP, Q)
+        except Exception as ex:
+            log('Subtitles looked at again, %s: %s' % (e.get('name'), str(ex)[:160]))
+        time.sleep(1.5)
+    if n2 or q2:
+        log('Subtitles timed by Whisper, looked at again: %d timed by a subtitle made for the copy; %d for your Mac to translate and compare' % (n2, q2))
 
 
 def subs_namecheck():

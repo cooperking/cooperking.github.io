@@ -1155,6 +1155,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           else if (x.k === 'added') b.push('made for this very copy' + (x.chose && !/^OpenSubtitles file/.test(x.chose) ? ': “' + x.chose + '”' : ''));
           else if (x.k === 'corrected' || x.k === 'check') {
             var nt = String(x.note || '');
+            if (x.how === 'translated') b.push('timed by a subtitle made for this copy, translated and compared line by line'); else if (x.how === 'chosen') b.push('chosen by you'); else
             b.push(x.how === 'by reference' ? 'timed by a subtitle made for this copy' + ((/the (\S+) subtitle’s\)$/.exec(nt) || [])[1] ? ' (' + LN[/the (\S+) subtitle’s\)$/.exec(nt)[1]] || /the (\S+) subtitle’s\)$/.exec(nt)[1] : '') + (/the (\S+) subtitle’s\)$/.exec(nt) ? ')' : '') : 'timed by Whisper on your Mac');
             var mv = /moved ([+-][\d.]+) s/.exec(nt); if (mv) b.push((+mv[1] >= 0 ? 'later' : 'earlier') + ' by ' + Math.abs(+mv[1]).toFixed(1) + ' s');
             var sp = /at ([\d.]+)x speed/.exec(nt); if (sp) b.push('speed ' + sp[1] + '×');
