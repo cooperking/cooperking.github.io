@@ -1113,6 +1113,8 @@ def make_handler(g):
                                                                    'cands': [{'name': 'the subtitles it has (%s)' % os.path.basename(vf_), 'srt': srt_}]}})
                         if e.get('state') not in ('waiting', 'given'):
                             continue
+                        if e.get('state') == 'waiting' and not e.get('speech_tried') and SPEECH['ok'] and not (e.get('givenfile') or e.get('ref_only')):
+                            continue   # (other subtitles, timed by when people speak, tried first on the Mac mini: Whisper only after that)
                         try:
                             it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
                         except Exception:
@@ -3334,7 +3336,8 @@ def make_handler(g):
                                         # found: John, 22 Nov 2026, "I need a tab of added, corrected (with details), to do etc. Tidy")
                                         'all': [{k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'state', 'note', 'chose', 'n', 'miss', 'mins', 'at', 'step', 'stepat',
                                                                        'tried', 'samples', 'sure', 'file', 'origin', 'how', 'kind', 'series', 'cands', 'translated', 'ref_only', 'ref_lang', 'vfile', 'verifying', 'old_vfile',
-                                                                       'rcands', 'cur', 'chosen_from', 'ref_file', 'givenfile', 'givenname', 'ref_given')} for x in F]})
+                                                                       'rcands', 'cur', 'chosen_from', 'ref_file', 'givenfile', 'givenname', 'ref_given',
+                                                                       'speech_tried', 'speech_note', 'ref_byspeech')} for x in F], 'speech_now': SPEECH.get('now')})
 
         def api_waiting(self, me, user, q, b):
             """John's only: what he's ticked off on the admin page's Waiting on you (John, 18 Nov 2026: "I could do with a waiting on you
@@ -6323,6 +6326,164 @@ def subs_compare(g, P, iid, w=''):
     return out
 
 
+SPEECH = {'ok': True, 'now': None}
+
+
+def speech_try(g, cl, e, iid, path, it):
+    """Before Whisper (the last resort): when people speak in the film found (whatever they say), then (1) subtitles in other languages
+    tried against it, any whose lines start when people speak in this copy taken as made for it, and the English timed by it; else (2)
+    the English ones lined up by it directly. True if subtitles were saved; None to try again later (downloads used up). John, 22 Nov 2026,
+    "whisper should be the rarest case - better to find other subtitles in other languages first - whisper only as a last resort"."""
+    ff = next((c for c in ('/Applications/Jellyfin.app/Contents/MacOS/ffmpeg', '/usr/local/bin/ffmpeg', '/opt/homebrew/bin/ffmpeg') if os.path.exists(c)), 'ffmpeg')
+    cf = os.path.join(os.path.expanduser('~/Grifflix/speech'), iid + '.json')
+    sz = os.path.getsize(path)
+    c_ = load(cf, None) or {}
+    if c_.get('size') == sz and c_.get('m'):
+        mask, n = int(c_['m'], 16), int(c_['n'])
+    else:
+        SPEECH['now'] = '%s: listening for when people speak' % e.get('name')
+        mask, n = SUBS.speech_mask(SUBS.speech_levels(path, ff))
+        if not n:
+            e['speech_note'] = 'its sound couldn’t be read'
+            return False
+        os.makedirs(os.path.dirname(cf), exist_ok=True)
+        save(cf, {'size': sz, 'n': n, 'm': '%x' % mask, 'at': int(time.time())})
+    pid = it.get('ProviderIds') or {}
+    org = film_origin(path) or os.path.splitext(str(((load(os.path.expanduser('~/Grifflix/fingerprints.json'), {}) or {}).get(path) or {}).get('name') or ''))[0] or None
+    hint = org or os.path.splitext(os.path.basename(path))[0]
+    def look(lang):
+        if e.get('kind') == 'episode':
+            return cl.search(lang, query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=hint)
+        return cl.search(lang, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint)
+    said = []
+    # (1) in other languages: one made for this copy times the English
+    if not (e.get('ref_file') and os.path.exists(e.get('ref_file') or '')):
+        try:
+            fo = [x for x in look('') if not x.get('machine') and str(x.get('lang') or '').lower() not in ('en', 'eng')]
+        except Exception as ex:
+            fo = []
+            said.append('other languages: %s' % str(ex)[:80])
+        fo.sort(key=lambda x: (not x.get('samename'), -(x.get('like') or 0), -(x.get('downloads') or 0)))
+        for x in fo[:6]:
+            SPEECH['now'] = '%s: trying the %s subtitle %s' % (e.get('name'), x.get('lang'), x.get('name') or '')
+            try:
+                cues = SUBS.parse_srt(SUBS.decode(cl.download(x['file_id'])))
+            except Exception:
+                if cl.out_of_downloads():
+                    return None
+                continue
+            if len(cues) < 50:
+                continue
+            f = SUBS.speech_fit(cues, mask, n, ratios=[1.0], span=300)
+            said.append('%s %s: z %s/%s at %+.1f s' % (x.get('lang'), (x.get('name') or '')[:40], f and f['z'], f and f['second'], (f or {}).get('offset', 0)))
+            if f and f['z'] >= 5 and f['z'] >= 3 * max(f['second'], .5) and abs(f['offset']) <= .4:
+                rf = os.path.join(os.path.expanduser('~/Grifflix/subprep-ref'), '%s.%s.srt' % (iid, x.get('lang') or 'xx'))
+                os.makedirs(os.path.dirname(rf), exist_ok=True)
+                with open(rf, 'w', encoding='utf-8') as fh:
+                    fh.write(SUBS.write_srt(cues))
+                e.update(ref_file=rf, ref_lang=str(x.get('lang') or ''), ref_byspeech=(x.get('name') or '')[:160])
+                log('Subtitles for %s: the %s subtitle “%s” starts its lines when people speak in this copy: made for it' % (e.get('name'), x.get('lang'), x.get('name')))
+                break
+    if e.get('ref_byspeech') and e.get('ref_file') and os.path.exists(e['ref_file']):
+        e.pop('ref_tried2', None)
+        if ref_sub(g, cl, e, iid, path, it):
+            e['note'] = str(e.get('note') or '') + ' (that subtitle found by when people speak)'
+            e['speech_note'] = '; '.join(said)[:600]
+            return True
+        if cl.out_of_downloads():
+            return None
+    # (2) the English ones lined up by when people speak
+    try:
+        en = [x for x in look('en') if not x.get('machine')]
+    except Exception as ex:
+        en = []
+        said.append('English: %s' % str(ex)[:80])
+    dmin = (it.get('RunTimeTicks') or 0) / 6e8
+    def lenfit(nm):
+        nm = str(nm or '').lower()
+        m1 = re.search(r'(\d)\s*h(?:rs?|ours?)?[\s.:]*(\d{1,2})\s*m', nm)
+        m2 = re.search(r'\b(\d{2,3})\s*min', nm)
+        mm = int(m1.group(1)) * 60 + int(m1.group(2)) if m1 else int(m2.group(1)) if m2 else None
+        return 0 if not mm or not dmin else 2 if abs(mm - dmin) <= 4 else -3 if abs(mm - dmin) > 8 else 0
+    en.sort(key=lambda x: -lenfit(x.get('name')))   # (stable: OpenSubtitles' own order otherwise)
+    for x in en[:4]:
+        SPEECH['now'] = '%s: lining up %s by when people speak' % (e.get('name'), x.get('name') or '')
+        try:
+            cues = SUBS.parse_srt(SUBS.decode(cl.download(x['file_id'])))
+        except Exception:
+            if cl.out_of_downloads():
+                return None
+            continue
+        if len(cues) < 50 or (dmin and cues[-1][1] > dmin * 60 + 300):
+            continue
+        f = SUBS.speech_fit(cues, mask, n)
+        said.append('en %s: z %s/%s, %+.1f s at %s×, %d%% on speech' % ((x.get('name') or '')[:40], f and f['z'], f and f['second'], (f or {}).get('offset', 0), round((f or {}).get('ratio', 1), 4), 100 * (f or {}).get('frac', 0)))
+        if f and f['z'] >= 8 and f['z'] >= 3.5 * max(f['second'], .5) and f['frac'] >= .6:
+            out = SUBS.shift_cues(cues, f['ratio'], f['offset'])
+            fn = '%s.Grifflix.en.srt' % os.path.splitext(path)[0]
+            with open(fn + '.tmp', 'w', encoding='utf-8') as fh:
+                fh.write(SUBS.write_srt(out))
+            os.replace(fn + '.tmp', fn)
+            try:
+                g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
+            except Exception:
+                pass
+            sp = '' if abs(f['ratio'] - 1) < 1e-4 else ' at %.4fx speed' % f['ratio']
+            e.update(state='done', how='by speech', chose=x.get('name') or '', file=fn, at=int(time.time()), n=len(out), sure=True,
+                     note='moved %+.1f s%s: lined up by when people speak (%d%% of its lines on speech)' % (f['offset'], sp, round(100 * f['frac'])))
+            e['speech_note'] = '; '.join(said)[:600]
+            log('Subtitles for %s: lined up by when people speak: %s' % (e.get('name'), e['note']))
+            record('subtitles saved', film=e.get('name'), id=iid, file=fn, how='lined up by when people speak', chose=x.get('name'), fit=f)
+            return True
+    e['speech_note'] = '; '.join(said)[:600]
+    return False
+
+
+def keep_speech_first(g):
+    """Each film waiting for English subtitles tried by when people speak, before any goes to Whisper on John's Mac."""
+    time.sleep(150)
+    while True:
+        did = False
+        try:
+            if not (g.st.get('opensubs') or {}).get('key'):
+                SPEECH['ok'] = False
+                time.sleep(3600)
+                continue
+            cl = SUBS.OpenSubs(g.st.setdefault('opensubs', {}), lambda: save(SETTINGS, g.st), tls())
+            if cl.out_of_downloads():
+                time.sleep(900)
+                continue
+            P = load(SUBPREP, {}) or {}
+            todo = sorted(((k, v) for k, v in P.items() if not k.startswith('_') and isinstance(v, dict) and v.get('state') == 'waiting' and not v.get('speech_tried')
+                           and not v.get('givenfile') and not v.get('ref_only')), key=lambda kv: kv[1].get('order', 0))
+            for iid, e in todo[:1]:
+                did = True
+                it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
+                path = it.get('Path') or ''
+                e = dict(e)
+                ok = None
+                if path and os.path.exists(path):
+                    try:
+                        ok = speech_try(g, cl, e, iid, path, it)
+                    except Exception as ex:
+                        ok = False
+                        e['speech_note'] = 'couldn’t: %s' % str(ex)[:160]
+                        log('Subtitles by when people speak, %s: %s' % (e.get('name'), str(ex)[:160]))
+                if ok is None:   # (downloads used up: again after the reset)
+                    break
+                e['speech_tried'] = int(time.time())
+                Q = load(SUBPREP, {}) or {}
+                if isinstance(Q.get(iid), dict) and Q[iid].get('state') == 'waiting':   # (unless something else has taken it meanwhile)
+                    Q[iid] = e
+                    save(SUBPREP, Q)
+                if not ok:
+                    log('Subtitles for %s: none lined up by when people speak; on to Whisper (%s)' % (e.get('name'), str(e.get('speech_note') or '')[:200]))
+        except Exception as ex:
+            log('Subtitles by when people speak: %s' % str(ex)[:200])
+        SPEECH['now'] = None
+        time.sleep(20 if did else 300)
+
+
 def ref_sub(g, cl, e, iid, path, it):
     """No English made for this very file, but one in another language is: its lines' times used to time the English ones found for
     the film (John, 22 Nov 2026, "If there are subtitles in any language from that file but no English they will be useful for timing
@@ -6330,7 +6491,7 @@ def ref_sub(g, cl, e, iid, path, it):
     # (first, one this very file has in it already, or beside it, in another language: timed for this copy by definition (Io Capitano's
     # Italian): John, 22 Nov 2026, "if it has an inbuilt sub in the wrong language, then that should be used for the argos work")
     own_ref = None
-    if e.get('ref_given') and e.get('ref_file') and os.path.exists(e['ref_file']):   # (one John uploaded, in its language: that, before any other)
+    if (e.get('ref_given') or e.get('ref_byspeech')) and e.get('ref_file') and os.path.exists(e['ref_file']):   # (one John uploaded, or one found to start its lines when people speak in this copy: that, before any other)
         rc_ = SUBS.parse_srt(open(e['ref_file'], encoding='utf-8', errors='replace').read())
         if len(rc_) >= 50:
             own_ref = (e.get('ref_lang') or '?', rc_)
@@ -9112,6 +9273,7 @@ def serve():
                 log('  Totally Fucked Up: its cover: %s' % ('on' if posters_on(only={'Totally Fucked Up (1993)'}) else 'on already, or none in its folder'))
                 return
     threading.Thread(target=tfu_rename, daemon=True).start()
+    threading.Thread(target=keep_speech_first, args=(g,), daemon=True).start()   # (other subtitles timed by when people speak, before Whisper)
     try:   # (films already turned down where Whisper heard next to no speech anywhere (Robot Dreams): little or no dialogue, not tried again)
         P_ = load(SUBPREP, {}) or {}
         ch_ = 0

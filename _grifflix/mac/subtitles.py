@@ -855,3 +855,82 @@ def align_to_ref(ref, cues, ratios=RATIOS):
            'between them; the longest stretch with none %d s' % (b, '' if abs(r - 1) < .0005 else ', at %.4fx speed' % r, hit, len(cues),
                                                                   miss[len(miss) // 2] if miss else 0, gap))
     return hit / len(cues), hit, out, how
+
+
+# ---------------------------------------------------------------- when people speak
+# (a subtitle's timing tested against when people speak in the film itself, whatever its language and whatever the words: a subtitle in
+# any language whose lines start when people speak in this copy is made for this copy, and the English can be timed by it; and English
+# ones can be lined up by it directly. Whisper only after that, the last resort: John, 22 Nov 2026, "whisper should be the rarest case -
+# better to find other subtitles in other languages first - whisper only as a last resort")
+STEP = 0.1   # (seconds a frame)
+
+
+def speech_levels(path, ff='ffmpeg', timeout=1800):
+    """The loudness of the film's voices, a tenth of a second at a time (its first soundtrack, the speech band only), by ffmpeg."""
+    cmd = [ff, '-nostdin', '-v', 'error', '-i', path, '-map', '0:a:0', '-ac', '1', '-ar', '8000',
+           '-af', 'highpass=f=300,lowpass=f=3000,asetnsamples=n=800:p=0,astats=metadata=1:reset=1,ametadata=print:key=lavfi.astats.Overall.RMS_level:file=-',
+           '-f', 'null', '-']
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    out = []
+    for l in r.stdout.splitlines():
+        if l.startswith('lavfi.astats.Overall.RMS_level='):
+            v = l.split('=', 1)[1].strip()
+            try:
+                out.append(float(v) if v not in ('-inf', 'inf', 'nan') else -120.0)
+            except ValueError:
+                out.append(-120.0)
+    return out
+
+
+def speech_mask(levels):
+    """(frames when someone's likely speaking, as the bits of one number; how many frames): those louder in the speech band than the
+    film's middle (its quiet stretches, music and effects mostly fall below or are brief)."""
+    if not levels:
+        return 0, 0
+    s = sorted(levels)
+    thr = s[int(len(s) * .55)]
+    m = 0
+    for i, v in enumerate(levels):
+        if v > thr and v > -60:
+            m |= 1 << i
+    return m, len(levels)
+
+
+def cue_mask(cues, n, ratio=1.0, offset=0.0):
+    m = 0
+    for c in cues:
+        a = int(round((c[0] * ratio + offset) / STEP))
+        b = int(round((c[1] * ratio + offset) / STEP))
+        a, b = max(0, a), min(n, b)
+        if b > a:
+            m |= ((1 << (b - a)) - 1) << a
+    return m
+
+
+def speech_fit(cues, mask, n, ratios=None, span=600):
+    """How well a subtitle's lines sit on when people speak: for each speed tried and each shift up to span frames either way, how many
+    of its frames fall on speech. Returns the best: {ratio, offset (s), z (how far above the usual), second (the next best elsewhere,
+    in the same units), frac (share of its frames on speech)}."""
+    best = None
+    for r in ratios or RATIOS:
+        sm = cue_mask(cues, n, r)
+        tot = sm.bit_count()
+        if not tot:
+            continue
+        sc = []
+        for k in range(-span, span + 1):
+            sh = (sm << k) if k >= 0 else (sm >> -k)
+            sc.append((sh & mask).bit_count())
+        mean = sum(sc) / len(sc)
+        sd = (sum((x - mean) ** 2 for x in sc) / len(sc)) ** .5 or 1.0
+        k0 = max(range(len(sc)), key=lambda i: sc[i])
+        far = [sc[i] for i in range(len(sc)) if abs(i - k0) > 15]   # (the best elsewhere, more than 1.5 s away)
+        res = {'ratio': r, 'offset': round((k0 - span) * STEP, 2), 'z': round((sc[k0] - mean) / sd, 2),
+               'second': round(((max(far) if far else mean) - mean) / sd, 2), 'frac': round(sc[k0] / tot, 3)}
+        if not best or res['z'] > best['z']:
+            best = res
+    return best
+
+
+def shift_cues(cues, ratio, offset):
+    return [[c[0] * ratio + offset, c[1] * ratio + offset, c[2]] for c in cues if c[1] * ratio + offset > 0]
