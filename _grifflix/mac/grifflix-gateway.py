@@ -2989,7 +2989,11 @@ def make_handler(g):
             recent_ = sorted(({k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'state', 'note', 'chose', 'n', 'miss', 'mins', 'at', 'step', 'stepat', 'tried', 'samples', 'sure', 'file', 'origin')}
                               for x in F if x.get('state') not in ('waiting',)), key=lambda x: -max(x.get('at') or 0, x.get('stepat') or 0))[:25]
             return self.send_json(200, {'counts': cnt, 'total': len(F), 'paused': bool(P.get('_paused')), 'setup': bool((P.get('_setup') or {}).get('need')), 'now': now_[:3], 'recent': recent_,
-                                        'check': pick(('check',)), 'none': pick(('none', 'nomatch', 'failed')), 'done': pick(('done',))[:30]})
+                                        'check': pick(('check',)), 'none': pick(('none', 'nomatch', 'failed')), 'done': pick(('done',))[:30],
+                                        # (every film, for the admin page's tabs: to do, added as they were, corrected (and how), to check, not
+                                        # found: John, 22 Nov 2026, "I need a tab of added, corrected (with details), to do etc. Tidy")
+                                        'all': [{k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'state', 'note', 'chose', 'n', 'miss', 'mins', 'at', 'step', 'stepat',
+                                                                       'tried', 'samples', 'sure', 'file', 'origin', 'how', 'kind', 'series')} for x in F]})
 
         def api_waiting(self, me, user, q, b):
             """John's only: what he's ticked off on the admin page's Waiting on you (John, 18 Nov 2026: "I could do with a waiting on you
