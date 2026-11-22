@@ -935,323 +935,340 @@ def make_handler(g):
                     want = (g.st.get('macagent') or {}).get('key')
                     if not want or not tok or not hmac.compare_digest(hashlib.sha256(tok.encode()).hexdigest(), want):
                         return self.send_json(403, {'error': 'Not allowed.'})
-                    P = load(SUBPREP, {}) or {}
-                    body = self.body()
-                    if u.path == '/macagent/subfile':   # (one more subtitle, asked for by John's Mac when none so far fits exactly)
-                        if not self.subs_ready() or not str(q.get('file') or '').isdigit():
-                            return self.send_json(400, {'error': 'Which?'})
-                        o_ = g.st.get('opensubs') or {}
-                        if o_.get('remaining') is not None and int(o_.get('remaining') or 0) < 3:
-                            return self.send_json(429, {'error': 'OpenSubtitles downloads used up for today'})
-                        try:
-                            return self.send_json(200, {'srt': SUBS.decode(self.subs_client().download(int(q['file'])))})
-                        except Exception as ex:
-                            return self.send_json(502, {'error': str(ex)[:200]})
-                    if u.path == '/macagent/subprog' and method == 'POST':   # (what John's Mac is doing now, for the admin page: 21 Nov 2026)
-                        e = P.get(str(body.get('id') or ''))
-                        if e:
-                            e.update(step=str(body.get('step') or '')[:200], stepat=int(time.time()))
-                            save(SUBPREP, P)
-                        return self.send_json(200, {'ok': True})
-                    if u.path == '/macagent/subdone' and method == 'POST':
-                        iid = str(body.get('id') or '')
-                        e = P.get(iid)
-                        if not e:
-                            return self.send_json(404, {'error': 'Not a film waiting for subtitles.'})
-                        if body.get('setup'):   # (Whisper not on John's Mac yet: the film back to waiting, the admin page says so)
-                            e.update(state='waiting', note='')
-                            P['_setup'] = {'need': True, 'at': int(time.time())}
-                            save(SUBPREP, P)
-                            return self.send_json(200, {'ok': True})
-                        P.pop('_setup', None)
-                        if body.get('srt64') and not body.get('srt'):   # (sent packed: Cloudflare refused it as text)
+                    with SP_LOCK:   # (one at a time: a word of progress saved over "done" left films looking still on John's Mac: Sound of Falling, 22 Nov 2026)
+                        P = load(SUBPREP, {}) or {}
+                        body = self.body()
+                        if u.path == '/macagent/subfile':   # (one more subtitle, asked for by John's Mac when none so far fits exactly)
+                            if not self.subs_ready() or not str(q.get('file') or '').isdigit():
+                                return self.send_json(400, {'error': 'Which?'})
+                            o_ = g.st.get('opensubs') or {}
+                            if o_.get('remaining') is not None and int(o_.get('remaining') or 0) < 3:
+                                return self.send_json(429, {'error': 'OpenSubtitles downloads used up for today'})
                             try:
-                                body['srt'] = base64.b64decode(str(body['srt64'])).decode('utf-8', 'replace')
-                            except Exception:
-                                pass
-                        tb_ = body.get('translated') if isinstance(body.get('translated'), dict) else None
-                        if tb_ and re.match(r'^[0-9a-f]{32}$', iid):   # (the subtitle made for this copy in another language, translated on John's Mac:
-                            # kept for John to take as the film's English subtitles if he finds it good enough: John, 22 Nov 2026)
-                            try:
-                                t_ = base64.b64decode(str(tb_.get('srt64') or '')).decode('utf-8', 'replace')
-                                cs_ = SUBS.parse_srt(t_)
-                                if len(cs_) >= 20:
-                                    fn_ = os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.tr.srt' % iid)
-                                    os.makedirs(os.path.dirname(fn_), exist_ok=True)
-                                    with open(fn_, 'w', encoding='utf-8') as f_:
-                                        f_.write(t_)
-                                    e['translated'] = {'lang': str(tb_.get('lang') or '')[:12], 'n': len(cs_),
-                                                       'sample': [[round(a_, 1), str(x_)[:120]] for a_, _, x_ in cs_[len(cs_) // 4:len(cs_) // 4 + 8]]}
-                            except Exception:
-                                pass
-                        if body.get('translate_only'):   # (only translated, for the comparison: the film's subtitles as they were)
-                            e['tr_tried'] = int(time.time())
-                            e.pop('tr_given', None)
-                            e.pop('step', None)
-                            save(SUBPREP, P)
-                            log('Subtitles for %s: the %s subtitle that timed them translated on John’s Mac, to compare' % (e.get('name'), e.get('ref_lang')) if e.get('translated') else
-                                'Subtitles for %s: the %s subtitle couldn’t be translated on John’s Mac' % (e.get('name'), e.get('ref_lang')))
-                            return self.send_json(200, {'ok': True})
-                        if isinstance(body.get('evidence'), list) and re.match(r'^[0-9a-f]{32}$', iid):   # (what Whisper heard and matched, for the admin page)
-                            try:
-                                save(os.path.join(os.path.expanduser('~/Grifflix/subprep-evidence'), iid + '.json'), {'at': int(time.time()), 'parts': body['evidence'][:8]})
-                            except Exception:
-                                pass
-                        if e.get('verifying'):   # (the subtitles it had, checked against what's said)
-                            e.pop('verifying', None)
-                            mv_ = re.search(r'moved ([+-][\d.]+) s', str(body.get('how') or ''))
-                            off_ = float(mv_.group(1)) if mv_ else 0.0
-                            sp_ = 'speed' in str(body.get('how') or '')
-                            if body.get('ok') and abs(off_) < .6 and not sp_:
-                                e.update(state='verified', note='checked against what’s said: in time (%s lines matched)' % body.get('n'), n=body.get('n'), at=int(time.time()),
-                                         samples=body.get('samples'), file=e.get('vfile'))
-                                record('subtitles checked', film=e.get('name'), id=iid, file=e.get('vfile'), result='in time', lines=body.get('n'))
-                            elif body.get('ok') and body.get('srt'):
-                                it_ = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
-                                out_ = self.subs_write(it_.get('Path') or '', 'en', SUBS.parse_srt(str(body['srt'])))
-                                old_ = e.get('vfile') or ''
-                                import shutil
-                                if old_ and os.path.abspath(old_) != os.path.abspath(out_) and os.path.exists(old_):
-                                    dest_ = os.path.join(SETASIDE, 'Subtitles checked')
-                                    os.makedirs(dest_, exist_ok=True)
-                                    shutil.move(old_, os.path.join(dest_, time.strftime('%Y%m%d-%H%M ') + os.path.basename(old_)))
-                                g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
-                                e.update(state='done', how='verified-moved', note='its subtitles from before were out: ' + str(body.get('how') or ''), n=body.get('n'),
-                                         file=out_, at=int(time.time()), sure=bool(body.get('sure')), samples=body.get('samples'))
-                                record('subtitles put right', film=e.get('name'), id=iid, was=old_, now=out_, how=body.get('how'))
-                            else:   # (didn't fit at all: looked for others in the usual way, its own kept meanwhile)
-                                e.update(state='waiting', note='its subtitles from before didn’t fit what’s said: others looked for', old_vfile=e.get('vfile'), at=int(time.time()))
-                                record('subtitles didn’t fit', film=e.get('name'), id=iid, file=e.get('vfile'))
-                            save(SUBPREP, P)
-                            return self.send_json(200, {'ok': True})
-                        if body.get('ok') and body.get('srt') and self.subs_ready():
-                            try:
-                                it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
-                                cues = SUBS.parse_srt(str(body['srt']))
-                                out = self.subs_write(it.get('Path') or e.get('path'), 'en', cues)
-                                g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
-                                e.update(state='done' if body.get('sure') else 'check', note=str(body.get('how') or '')[:200], chose=str(body.get('chose') or '')[:200],
-                                         n=int(body.get('n') or 0), miss=body.get('miss'), file=out, at=int(time.time()), mins=body.get('mins'),
-                                         # (all it found, for the admin page: each subtitle tried and how well it fitted, each part of the film
-                                         # listened to and the timing there: John, 21 Nov 2026, "I still need to know what the fix chose to do")
-                                         tried=[[str(x[0])[:160], int(x[1] or 0), bool(x[2])] for x in (body.get('tried') or []) if isinstance(x, list) and len(x) >= 3][:12],
-                                         samples=[[float(x[0]), int(x[1] or 0), float(x[2])] for x in (body.get('samples') or []) if isinstance(x, list) and len(x) >= 3][:12],
-                                         sure=bool(body.get('sure')))
-                                e.pop('ref_only', None); e.pop('prev', None)
-                                ov_ = e.pop('old_vfile', None)   # (the subtitles it had before, that didn't fit: set aside, not deleted)
-                                if ov_ and os.path.exists(ov_) and os.path.abspath(ov_) != os.path.abspath(out):
-                                    import shutil
-                                    os.makedirs(os.path.join(SETASIDE, 'Subtitles checked'), exist_ok=True)
-                                    shutil.move(ov_, os.path.join(SETASIDE, 'Subtitles checked', time.strftime('%Y%m%d-%H%M ') + os.path.basename(ov_)))
-                                    record('subtitles set aside', film=e.get('name'), id=iid, moved_from=ov_, why='replaced by ones that fit')
-                                if str(body.get('how') or '').startswith('by the '):   # (timed by a translated subtitle made for this copy, not by Whisper)
-                                    e['how'] = 'translated'
-                                if e.get('givenfile'):   # (the ones John gave, timed by Whisper)
-                                    e['how'], e['cur'] = 'given', 'g'
-                                    e.pop('givenfile', None)
-                                log('Subtitles made ready on John’s Mac: %s: %s (%s lines matched)%s' % (e.get('name'), e['note'], e['n'], '' if body.get('sure') else ': to check'))
-                                record('subtitles saved', film=e.get('name'), id=iid, file=out, how='timed by Whisper on John’s Mac: ' + e['note'], chose=e.get('chose'),
-                                       lines_matched=e['n'], sure=bool(body.get('sure')), tried=e.get('tried'))
+                                return self.send_json(200, {'srt': SUBS.decode(self.subs_client().download(int(q['file'])))})
                             except Exception as ex:
-                                e.update(state='failed', note=('couldn’t be saved: %s' % ex)[:200], at=int(time.time()))
-                        elif e.get('ref_only') and isinstance(e.get('prev'), dict):   # (translated and compared, didn't line up: its Whisper subtitles kept)
-                            e.update(e.pop('prev'))
-                            e.pop('ref_only', None)
-                            log('Subtitles for %s: the translated subtitle didn’t line up; those timed by Whisper kept' % e.get('name'))
-                        else:
-                            e.update(state='nomatch' if 'matched' in str(body.get('error') or '') else 'failed', note=str(body.get('error') or 'it didn’t work')[:200], at=int(time.time()),
-                                     tried=[[str(x[0])[:160], int(x[1] or 0)] for x in (body.get('tried') or []) if isinstance(x, list) and len(x) >= 2][:12])
-                            log('Subtitles not made ready for %s: %s' % (e.get('name'), e['note']))
-                            record('subtitles not made', film=e.get('name'), id=iid, why=e['note'], tried=body.get('tried'))
-                            # (the likeliest three kept, timed as they'd be, for John to look at and choose one himself: John, 22 Nov 2026)
-                            kept_ = []
-                            for i_, c_ in enumerate((body.get('cands') or [])[:3]):
+                                return self.send_json(502, {'error': str(ex)[:200]})
+                        if u.path == '/macagent/subprog' and method == 'POST':   # (what John's Mac is doing now, for the admin page: 21 Nov 2026)
+                            e = P.get(str(body.get('id') or ''))
+                            if e and e.get('state') == 'given':   # (only while it's still being done there)
+                                e.update(step=str(body.get('step') or '')[:200], stepat=int(time.time()))
+                                save(SUBPREP, P)
+                            return self.send_json(200, {'ok': True})
+                        if u.path == '/macagent/subdone' and method == 'POST':
+                            iid = str(body.get('id') or '')
+                            e = P.get(iid)
+                            if not e:
+                                return self.send_json(404, {'error': 'Not a film waiting for subtitles.'})
+                            if body.get('setup'):   # (Whisper not on John's Mac yet: the film back to waiting, the admin page says so)
+                                e.update(state='waiting', note='')
+                                P['_setup'] = {'need': True, 'at': int(time.time())}
+                                save(SUBPREP, P)
+                                return self.send_json(200, {'ok': True})
+                            P.pop('_setup', None)
+                            if body.get('srt64') and not body.get('srt'):   # (sent packed: Cloudflare refused it as text)
                                 try:
-                                    t_ = base64.b64decode(str(c_.get('srt64') or '')).decode('utf-8', 'replace')
-                                    if not re.match(r'^[0-9a-f]{32}$', iid) or not t_:
-                                        continue
-                                    fn_ = os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.%d.srt' % (iid, i_))
-                                    os.makedirs(os.path.dirname(fn_), exist_ok=True)
-                                    with open(fn_, 'w', encoding='utf-8') as f_:
-                                        f_.write(t_)
-                                    if isinstance(c_.get('evidence'), list):   # (its lines beside what was heard, to compare)
-                                        save(os.path.join(os.path.expanduser('~/Grifflix/subprep-evidence'), '%s.%d.json' % (iid, i_)), {'at': int(time.time()), 'parts': c_['evidence'][:8]})
-                                    kept_.append({'i': i_, 'name': str(c_.get('name') or '')[:160], 'n': int(c_.get('n') or 0), 'how': str(c_.get('how') or '')[:120],
-                                                  'miss': c_.get('miss'), 'samples': c_.get('samples') if isinstance(c_.get('samples'), list) else []})
+                                    body['srt'] = base64.b64decode(str(body['srt64'])).decode('utf-8', 'replace')
                                 except Exception:
                                     pass
-                            e['cands'] = kept_
-                            e.pop('givenfile', None)   # (John's, kept to use as it is: not handed out again by itself)
-                            # (Whisper heard next to no speech in any part listened to: a film with little or no dialogue, not a failure, and not
-                            # tried again and again: John, 22 Nov 2026, "Robot Dreams is a virtually dialogue free film, so failing")
-                            ss_ = [p_ for c_ in kept_ for p_ in (c_.get('samples') or [])]
-                            known_ = bool(ss_) and all(isinstance(p_, list) and len(p_) > 3 and p_[3] is not None for p_ in ss_)
-                            heard_ = [sum(int(p_[3]) for p_ in (c_.get('samples') or [])) for c_ in kept_] if known_ else []
-                            if heard_ and max(heard_) <= 4:
-                                e.update(state='nodialogue', note='Whisper heard little or no speech in the four parts listened to (%d lines in all): little or no dialogue' % max(heard_))
-                                log('Subtitles for %s: little or no dialogue (Whisper heard %d lines in four parts): none needed' % (e.get('name'), max(heard_)))
-                                record('subtitles not needed', film=e.get('name'), id=iid, why=e['note'])
-                        save(SUBPREP, P)
-                        return self.send_json(200, {'ok': True})
-                    if P.get('_paused') or q.get('home') != '1' or not self.subs_ready():
-                        return self.send_json(200, {'wait': 'paused' if P.get('_paused') else 'away'})
-                    o = g.st.get('opensubs') or {}
-                    if o.get('remaining') is not None and int(o.get('remaining') or 0) < 5:
-                        return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
-                    now_ = time.time()
-                    # (first, a quick one: the subtitle in another language a film's English was timed by, translated, so the comparison shows what's
-                    # said in English: John, 22 Nov 2026, "fallen angels needed translations otherwise impossible for me to judge - that should
-                    # always be done for a film where the subtitle used as a basis is not english")
-                    for iid, e in P.items():
-                        if iid.startswith('_') or not isinstance(e, dict) or e.get('state') not in ('done', 'check') or not re.match(r'^[0-9a-f]{32}$', iid):
-                            continue
-                        rf_ = e.get('ref_file') or ''
-                        if not rf_ or not os.path.exists(rf_) or str(e.get('ref_lang') or '').lower()[:2] in ('', 'en'):
-                            continue
-                        if os.path.exists(os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.tr.srt' % iid)):
-                            continue
-                        if now_ - (e.get('tr_tried') or 0) < 7 * 86400 or now_ - (e.get('tr_given') or 0) < 3600:
-                            continue
-                        e['tr_given'] = int(now_)
-                        save(SUBPREP, P)
-                        return self.send_json(200, {'subjob': {'id': iid, 'name': e.get('name'), 'path': '', 'dur': 0, 'translate_only': True, 'cands': [], 'more': [],
-                                                               'lang': e.get('lang') or '', 'ref': {'lang': e.get('ref_lang'), 'srt': open(rf_, encoding='utf-8', errors='replace').read()}}})
-                    for iid, e in sorted(((k, v) for k, v in P.items() if not k.startswith('_') and isinstance(v, dict)), key=lambda kv: (kv[1].get('state') == 'verify', kv[1].get('order', 0))):
-                        if e.get('state') == 'given' and now_ - e.get('at', 0) < 3 * 3600:
-                            continue
-                        if e.get('state') == 'verify':   # (subtitles from before, checked as they are: only once none is waiting)
-                            vf_ = e.get('vfile') or ''
-                            if not os.path.exists(vf_):
-                                e.update(state='gone', note='its subtitles aren’t there now', at=int(now_))
-                                continue
-                            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
-                            if not it.get('Path') or not os.path.exists(it['Path']):
-                                continue
-                            try:
-                                srt_ = SUBS.decode(open(vf_, 'rb').read())
-                            except OSError:
-                                continue
-                            e.update(state='given', verifying=True, at=int(now_), note='')
-                            save(SUBPREP, P)
-                            return self.send_json(200, {'subjob': {'id': iid, 'name': it.get('Name'), 'path': it['Path'], 'dur': (it.get('RunTimeTicks') or 0) / 1e7,
-                                                                   'translate': bool(e.get('translate')), 'lang': e.get('lang') or '', 'verify': True, 'more': [],
-                                                                   'cands': [{'name': 'the subtitles it has (%s)' % os.path.basename(vf_), 'srt': srt_}]}})
-                        if e.get('state') not in ('waiting', 'given'):
-                            continue
-                        if e.get('state') == 'waiting' and not e.get('speech_tried') and SPEECH['ok'] and not (e.get('givenfile') or e.get('ref_only')):
-                            continue   # (other subtitles, timed by when people speak, tried first on the Mac mini: Whisper only after that)
-                        try:
-                            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
-                        except Exception:
-                            it = {}
-                        path = it.get('Path') or ''
-                        if not path or not os.path.exists(path):
-                            e.update(state='failed', note='its file isn’t there', at=int(now_))
-                            continue
-                        gf_ = e.get('givenfile') or ''
-                        if gf_ and os.path.exists(gf_):   # (the subtitles John gave: only those, timed to the film by Whisper on his Mac)
-                            e.update(state='given', at=int(now_), note='')
-                            save(SUBPREP, P)
-                            return self.send_json(200, {'subjob': {'id': iid, 'name': it.get('Name'), 'path': path, 'dur': (it.get('RunTimeTicks') or 0) / 1e7,
-                                                                   'translate': True, 'lang': e.get('lang') or '', 'more': [],
-                                                                   'cands': [{'name': e.get('givenname') or 'the subtitles you gave', 'srt': open(gf_, encoding='utf-8', errors='replace').read()}]}})
-                        pid = it.get('ProviderIds') or {}
-                        try:
-                            mh = SUBS.movie_hash(path)
-                        except OSError:
-                            mh = None
-                        try:
-                            org_ = film_origin(path)   # (the release it was downloaded as: subtitles made for it first)
-                            if e.get('kind') == 'episode':
-                                res = self.subs_client().search('en', mhash=mh, query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'),
-                                                                episode=e.get('episode'), hint=org_ or os.path.basename(path))
-                            else:
-                                res = self.subs_client().search('en', mhash=mh, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'),
-                                                                year=it.get('ProductionYear'), hint=org_ or os.path.basename(path))
-                        except Exception as ex:
-                            e.update(note=('OpenSubtitles: %s' % ex)[:200])
-                            save(SUBPREP, P)
-                            return self.send_json(200, {'wait': 'OpenSubtitles didn’t answer'})
-                        if self.subs_client().out_of_downloads():   # (the day's downloads used up: no film taken up, none marked, till the reset)
-                            return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
-                        res = [x for x in res if not x.get('machine') and x.get('kind') in (('', 'episode', 'tvshow') if e.get('kind') == 'episode' else ('', 'movie'))]
-                        ex_ = [x for x in res if x.get('exact')]
-                        if ex_:   # (made for this very file: taken as it is, no Whisper needed: John, 22 Nov 2026, "get ones with exact timing")
-                            try:
-                                cues_ = SUBS.parse_srt(SUBS.decode(self.subs_client().download(ex_[0]['file_id'])))
-                                if len(cues_) >= 20:
-                                    out_ = self.subs_write(path, 'en', cues_)
-                                    g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
-                                    e.update(state='done', note='made for this very file (OpenSubtitles, by its fingerprint): its timing as it is',
-                                             chose=ex_[0].get('name') or '', file=out_, at=int(now_), sure=True, n=len(cues_), how='exact')
-                                    log('Subtitles made for the very file: %s (%d lines)' % (e.get('name'), len(cues_)))
-                                    record('subtitles saved', film=e.get('name'), id=iid, file=out_, how='made for this very file (OpenSubtitles fingerprint)',
-                                           opensubtitles_file=ex_[0].get('file_id'), release=ex_[0].get('name'), lines=len(cues_))
-                                    save(SUBPREP, P)
-                                    continue
-                            except Exception as ex:
-                                log('Subtitles made for the very file, %s: %s' % (e.get('name'), str(ex)[:160]))
-                        if not e.get('ref_tried2'):   # (a subtitle made for this copy in another language: the English timed by its lines, no Whisper)
-                            e['ref_tried2'] = int(now_)
-                            try:
-                                if ref_sub(g, self.subs_client(), e, iid, path, it):
-                                    e.pop('ref_only', None); e.pop('prev', None)   # (timed by it here: nothing left for his Mac to try)
-                                    save(SUBPREP, P)
-                                    continue
-                            except Exception as ex:
-                                log('Subtitles timed by another language, %s: %s' % (e.get('name'), str(ex)[:160]))
-                            if self.subs_client().out_of_downloads():
-                                e.pop('ref_tried2', None)
+                            tb_ = body.get('translated') if isinstance(body.get('translated'), dict) else None
+                            if tb_ and re.match(r'^[0-9a-f]{32}$', iid):   # (the subtitle made for this copy in another language, translated on John's Mac:
+                                # kept for John to take as the film's English subtitles if he finds it good enough: John, 22 Nov 2026)
+                                try:
+                                    t_ = base64.b64decode(str(tb_.get('srt64') or '')).decode('utf-8', 'replace')
+                                    cs_ = SUBS.parse_srt(t_)
+                                    if len(cs_) >= 20:
+                                        fn_ = os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.tr.srt' % iid)
+                                        os.makedirs(os.path.dirname(fn_), exist_ok=True)
+                                        with open(fn_, 'w', encoding='utf-8') as f_:
+                                            f_.write(t_)
+                                        e['translated'] = {'lang': str(tb_.get('lang') or '')[:12], 'n': len(cs_),
+                                                           'sample': [[round(a_, 1), str(x_)[:120]] for a_, _, x_ in cs_[len(cs_) // 4:len(cs_) // 4 + 8]]}
+                                except Exception:
+                                    pass
+                            if body.get('translate_only'):   # (only translated, for the comparison: the film's subtitles as they were)
+                                e['tr_tried'] = int(time.time())
+                                e.pop('tr_given', None)
+                                e.pop('step', None)
                                 save(SUBPREP, P)
-                                return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
-                        # (the film's own length first: a subtitle named for a cut of its length before others, one named for a longer or shorter
-                        # cut last: Andrei Rublev is the 183-minute version, and "BluRay 3hrs 02mn 59s" was there among the 205-minute ones but
-                        # not tried first: John, 22 Nov 2026, "it's clearly the criterion copy and the 183 minute version")
-                        dmin_ = (it.get('RunTimeTicks') or 0) / 6e8
-                        def lenfit_(nm):
-                            nm = str(nm or '').lower()
-                            m1 = re.search(r'(\d)\s*h(?:rs?|ours?)?[\s.:]*(\d{1,2})\s*m', nm)
-                            m2 = re.search(r'\b(\d{2,3})\s*min', nm)
-                            mm_ = int(m1.group(1)) * 60 + int(m1.group(2)) if m1 else int(m2.group(1)) if m2 else None
-                            if not mm_ or not dmin_:
-                                return 0
-                            return 2 if abs(mm_ - dmin_) <= 4 else -3 if abs(mm_ - dmin_) > 8 else 0
-                        if dmin_:
-                            res = sorted(res, key=lambda x: (not x.get('exact'), -lenfit_(x.get('name'))))   # (stable: OpenSubtitles' own order otherwise)
-                        more_ = [{'file_id': x['file_id'], 'name': x.get('name') or ''} for x in res[3:10]]   # (the next ones, fetched by John's Mac one at a time
-                        # only if none of the first fits exactly, without a change of speed: John, 21 Nov 2026, "Better to get the right one exactly before fixing")
-                        cands, longer_, last_ = [], [], -1
-                        for k_, x in enumerate(res[:8]):
-                            if len(cands) >= 3:
-                                break
-                            last_ = k_
+                                log('Subtitles for %s: the %s subtitle that timed them translated on John’s Mac, to compare' % (e.get('name'), e.get('ref_lang')) if e.get('translated') else
+                                    'Subtitles for %s: the %s subtitle couldn’t be translated on John’s Mac' % (e.get('name'), e.get('ref_lang')))
+                                return self.send_json(200, {'ok': True})
+                            if isinstance(body.get('evidence'), list) and re.match(r'^[0-9a-f]{32}$', iid):   # (what Whisper heard and matched, for the admin page)
+                                try:
+                                    save(os.path.join(os.path.expanduser('~/Grifflix/subprep-evidence'), iid + '.json'), {'at': int(time.time()), 'parts': body['evidence'][:8]})
+                                except Exception:
+                                    pass
+                            if e.get('verifying'):   # (the subtitles it had, checked against what's said)
+                                e.pop('verifying', None)
+                                mv_ = re.search(r'moved ([+-][\d.]+) s', str(body.get('how') or ''))
+                                off_ = float(mv_.group(1)) if mv_ else 0.0
+                                sp_ = 'speed' in str(body.get('how') or '')
+                                if body.get('ok') and abs(off_) < .6 and not sp_:
+                                    e.update(state='verified', note='checked against what’s said: in time (%s lines matched)' % body.get('n'), n=body.get('n'), at=int(time.time()),
+                                             samples=body.get('samples'), file=e.get('vfile'))
+                                    record('subtitles checked', film=e.get('name'), id=iid, file=e.get('vfile'), result='in time', lines=body.get('n'))
+                                elif body.get('ok') and body.get('srt'):
+                                    it_ = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
+                                    out_ = self.subs_write(it_.get('Path') or '', 'en', SUBS.parse_srt(str(body['srt'])))
+                                    old_ = e.get('vfile') or ''
+                                    import shutil
+                                    if old_ and os.path.abspath(old_) != os.path.abspath(out_) and os.path.exists(old_):
+                                        dest_ = os.path.join(SETASIDE, 'Subtitles checked')
+                                        os.makedirs(dest_, exist_ok=True)
+                                        shutil.move(old_, os.path.join(dest_, time.strftime('%Y%m%d-%H%M ') + os.path.basename(old_)))
+                                    g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
+                                    e.update(state='done', how='verified-moved', note='its subtitles from before were out: ' + str(body.get('how') or ''), n=body.get('n'),
+                                             file=out_, at=int(time.time()), sure=bool(body.get('sure')), samples=body.get('samples'))
+                                    record('subtitles put right', film=e.get('name'), id=iid, was=old_, now=out_, how=body.get('how'))
+                                else:   # (didn't fit at all: looked for others in the usual way, its own kept meanwhile)
+                                    e.update(state='waiting', note='its subtitles from before didn’t fit what’s said: others looked for', old_vfile=e.get('vfile'), at=int(time.time()))
+                                    record('subtitles didn’t fit', film=e.get('name'), id=iid, file=e.get('vfile'))
+                                save(SUBPREP, P)
+                                return self.send_json(200, {'ok': True})
+                            if body.get('ok') and body.get('srt') and self.subs_ready():
+                                try:
+                                    it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
+                                    cues = SUBS.parse_srt(str(body['srt']))
+                                    out = self.subs_write(it.get('Path') or e.get('path'), 'en', cues)
+                                    g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
+                                    e.update(state='done' if body.get('sure') else 'check', note=str(body.get('how') or '')[:200], chose=str(body.get('chose') or '')[:200],
+                                             n=int(body.get('n') or 0), miss=body.get('miss'), file=out, at=int(time.time()), mins=body.get('mins'),
+                                             # (all it found, for the admin page: each subtitle tried and how well it fitted, each part of the film
+                                             # listened to and the timing there: John, 21 Nov 2026, "I still need to know what the fix chose to do")
+                                             tried=[[str(x[0])[:160], int(x[1] or 0), bool(x[2])] for x in (body.get('tried') or []) if isinstance(x, list) and len(x) >= 3][:12],
+                                             samples=[[float(x[0]), int(x[1] or 0), float(x[2])] for x in (body.get('samples') or []) if isinstance(x, list) and len(x) >= 3][:12],
+                                             sure=bool(body.get('sure')))
+                                    e.pop('ref_only', None); e.pop('prev', None)
+                                    ov_ = e.pop('old_vfile', None)   # (the subtitles it had before, that didn't fit: set aside, not deleted)
+                                    if ov_ and os.path.exists(ov_) and os.path.abspath(ov_) != os.path.abspath(out):
+                                        import shutil
+                                        os.makedirs(os.path.join(SETASIDE, 'Subtitles checked'), exist_ok=True)
+                                        shutil.move(ov_, os.path.join(SETASIDE, 'Subtitles checked', time.strftime('%Y%m%d-%H%M ') + os.path.basename(ov_)))
+                                        record('subtitles set aside', film=e.get('name'), id=iid, moved_from=ov_, why='replaced by ones that fit')
+                                    if str(body.get('how') or '').startswith('by the '):   # (timed by a translated subtitle made for this copy, not by Whisper)
+                                        e['how'] = 'translated'
+                                    if e.get('givenfile'):   # (the ones John gave, timed by Whisper)
+                                        e['how'], e['cur'] = 'given', 'g'
+                                        e.pop('givenfile', None)
+                                    log('Subtitles made ready on John’s Mac: %s: %s (%s lines matched)%s' % (e.get('name'), e['note'], e['n'], '' if body.get('sure') else ': to check'))
+                                    record('subtitles saved', film=e.get('name'), id=iid, file=out, how='timed by Whisper on John’s Mac: ' + e['note'], chose=e.get('chose'),
+                                           lines_matched=e['n'], sure=bool(body.get('sure')), tried=e.get('tried'))
+                                except Exception as ex:
+                                    e.update(state='failed', note=('couldn’t be saved: %s' % ex)[:200], at=int(time.time()))
+                            elif e.get('ref_only') and isinstance(e.get('prev'), dict):   # (translated and compared, didn't line up: its Whisper subtitles kept)
+                                e.update(e.pop('prev'))
+                                e.pop('ref_only', None)
+                                log('Subtitles for %s: the translated subtitle didn’t line up; those timed by Whisper kept' % e.get('name'))
+                            else:
+                                e.update(state='nomatch' if 'matched' in str(body.get('error') or '') else 'failed', note=str(body.get('error') or 'it didn’t work')[:200], at=int(time.time()),
+                                         tried=[[str(x[0])[:160], int(x[1] or 0)] for x in (body.get('tried') or []) if isinstance(x, list) and len(x) >= 2][:12])
+                                log('Subtitles not made ready for %s: %s' % (e.get('name'), e['note']))
+                                record('subtitles not made', film=e.get('name'), id=iid, why=e['note'], tried=body.get('tried'))
+                                # (the likeliest three kept, timed as they'd be, for John to look at and choose one himself: John, 22 Nov 2026)
+                                kept_ = []
+                                for i_, c_ in enumerate((body.get('cands') or [])[:3]):
+                                    try:
+                                        t_ = base64.b64decode(str(c_.get('srt64') or '')).decode('utf-8', 'replace')
+                                        if not re.match(r'^[0-9a-f]{32}$', iid) or not t_:
+                                            continue
+                                        fn_ = os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.%d.srt' % (iid, i_))
+                                        os.makedirs(os.path.dirname(fn_), exist_ok=True)
+                                        with open(fn_, 'w', encoding='utf-8') as f_:
+                                            f_.write(t_)
+                                        if isinstance(c_.get('evidence'), list):   # (its lines beside what was heard, to compare)
+                                            save(os.path.join(os.path.expanduser('~/Grifflix/subprep-evidence'), '%s.%d.json' % (iid, i_)), {'at': int(time.time()), 'parts': c_['evidence'][:8]})
+                                        kept_.append({'i': i_, 'name': str(c_.get('name') or '')[:160], 'n': int(c_.get('n') or 0), 'how': str(c_.get('how') or '')[:120],
+                                                      'miss': c_.get('miss'), 'samples': c_.get('samples') if isinstance(c_.get('samples'), list) else []})
+                                    except Exception:
+                                        pass
+                                e['cands'] = kept_
+                                e.pop('givenfile', None)   # (John's, kept to use as it is: not handed out again by itself)
+                                # (Whisper heard next to no speech in any part listened to: a film with little or no dialogue, not a failure, and not
+                                # tried again and again: John, 22 Nov 2026, "Robot Dreams is a virtually dialogue free film, so failing")
+                                ss_ = [p_ for c_ in kept_ for p_ in (c_.get('samples') or [])]
+                                known_ = bool(ss_) and all(isinstance(p_, list) and len(p_) > 3 and p_[3] is not None for p_ in ss_)
+                                heard_ = [sum(int(p_[3]) for p_ in (c_.get('samples') or [])) for c_ in kept_] if known_ else []
+                                if heard_ and max(heard_) <= 4:
+                                    e.update(state='nodialogue', note='Whisper heard little or no speech in the four parts listened to (%d lines in all): little or no dialogue' % max(heard_))
+                                    log('Subtitles for %s: little or no dialogue (Whisper heard %d lines in four parts): none needed' % (e.get('name'), max(heard_)))
+                                    record('subtitles not needed', film=e.get('name'), id=iid, why=e['note'])
+                            save(SUBPREP, P)
+                            return self.send_json(200, {'ok': True})
+                        if P.get('_paused') or q.get('home') != '1' or not self.subs_ready():
+                            return self.send_json(200, {'wait': 'paused' if P.get('_paused') else 'away'})
+                        o = g.st.get('opensubs') or {}
+                        if o.get('remaining') is not None and int(o.get('remaining') or 0) < 5:
+                            return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
+                        now_ = time.time()
+                        # (any left as on John's Mac with no word from it for half an hour: finished there if its subtitles were saved since, else
+                        # back to waiting: Sound of Falling showed "part 3 of 4" four hours after it was done)
+                        for k_, x_ in P.items():
+                            if k_.startswith('_') or not isinstance(x_, dict) or x_.get('state') != 'given' or now_ - max(x_.get('stepat') or 0, x_.get('at') or 0) < 1800:
+                                continue
                             try:
-                                t_ = SUBS.decode(self.subs_client().download(x['file_id']))
-                                c_ = SUBS.parse_srt(t_)
-                                if dmin_ and c_ and c_[-1][1] > dmin_ * 60 + 300:   # (lines running on past the film's end: made for a longer cut)
-                                    longer_.append(x.get('name') or '')
+                                p_ = (g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, k_), query={'Fields': 'Path'}) or {}).get('Path') or ''
+                            except Exception:
+                                p_ = ''
+                            f_ = '%s.Grifflix.en.srt' % os.path.splitext(p_)[0] if p_ else ''
+                            x_.pop('step', None); x_.pop('verifying', None)
+                            if f_ and os.path.exists(f_) and os.path.getmtime(f_) > (x_.get('at') or 0):
+                                x_.update(state='done', file=f_, at=int(os.path.getmtime(f_)), note=x_.get('note') or 'timed on John’s Mac (its record was lost: the subtitles kept)')
+                            else:
+                                x_.update(state='waiting', note='')
+                            log('Subtitles for %s: no word from John’s Mac for half an hour: %s' % (x_.get('name'), 'its subtitles were saved, so done' if x_['state'] == 'done' else 'back to waiting'))
+                        # (first, a quick one: the subtitle in another language a film's English was timed by, translated, so the comparison shows what's
+                        # said in English: John, 22 Nov 2026, "fallen angels needed translations otherwise impossible for me to judge - that should
+                        # always be done for a film where the subtitle used as a basis is not english")
+                        for iid, e in P.items():
+                            if iid.startswith('_') or not isinstance(e, dict) or e.get('state') not in ('done', 'check') or not re.match(r'^[0-9a-f]{32}$', iid):
+                                continue
+                            rf_ = e.get('ref_file') or ''
+                            if not rf_ or not os.path.exists(rf_) or str(e.get('ref_lang') or '').lower()[:2] in ('', 'en'):
+                                continue
+                            if os.path.exists(os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.tr.srt' % iid)):
+                                continue
+                            if now_ - (e.get('tr_tried') or 0) < 7 * 86400 or now_ - (e.get('tr_given') or 0) < 3600:
+                                continue
+                            e['tr_given'] = int(now_)
+                            save(SUBPREP, P)
+                            return self.send_json(200, {'subjob': {'id': iid, 'name': e.get('name'), 'path': '', 'dur': 0, 'translate_only': True, 'cands': [], 'more': [],
+                                                                   'lang': e.get('lang') or '', 'ref': {'lang': e.get('ref_lang'), 'srt': open(rf_, encoding='utf-8', errors='replace').read()}}})
+                        for iid, e in sorted(((k, v) for k, v in P.items() if not k.startswith('_') and isinstance(v, dict)), key=lambda kv: (kv[1].get('state') == 'verify', kv[1].get('order', 0))):
+                            if e.get('state') == 'given' and now_ - e.get('at', 0) < 3 * 3600:
+                                continue
+                            if e.get('state') == 'verify':   # (subtitles from before, checked as they are: only once none is waiting)
+                                vf_ = e.get('vfile') or ''
+                                if not os.path.exists(vf_):
+                                    e.update(state='gone', note='its subtitles aren’t there now', at=int(now_))
                                     continue
-                                cands.append({'name': x.get('name') or '', 'exact': bool(x.get('exact')), 'srt': t_})
+                                it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
+                                if not it.get('Path') or not os.path.exists(it['Path']):
+                                    continue
+                                try:
+                                    srt_ = SUBS.decode(open(vf_, 'rb').read())
+                                except OSError:
+                                    continue
+                                e.update(state='given', verifying=True, at=int(now_), note='')
+                                save(SUBPREP, P)
+                                return self.send_json(200, {'subjob': {'id': iid, 'name': it.get('Name'), 'path': it['Path'], 'dur': (it.get('RunTimeTicks') or 0) / 1e7,
+                                                                       'translate': bool(e.get('translate')), 'lang': e.get('lang') or '', 'verify': True, 'more': [],
+                                                                       'cands': [{'name': 'the subtitles it has (%s)' % os.path.basename(vf_), 'srt': srt_}]}})
+                            if e.get('state') not in ('waiting', 'given'):
+                                continue
+                            if e.get('state') == 'waiting' and not e.get('speech_tried') and SPEECH['ok'] and not (e.get('givenfile') or e.get('ref_only')):
+                                continue   # (other subtitles, timed by when people speak, tried first on the Mac mini: Whisper only after that)
+                            try:
+                                it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
+                            except Exception:
+                                it = {}
+                            path = it.get('Path') or ''
+                            if not path or not os.path.exists(path):
+                                e.update(state='failed', note='its file isn’t there', at=int(now_))
+                                continue
+                            gf_ = e.get('givenfile') or ''
+                            if gf_ and os.path.exists(gf_):   # (the subtitles John gave: only those, timed to the film by Whisper on his Mac)
+                                e.update(state='given', at=int(now_), note='')
+                                save(SUBPREP, P)
+                                return self.send_json(200, {'subjob': {'id': iid, 'name': it.get('Name'), 'path': path, 'dur': (it.get('RunTimeTicks') or 0) / 1e7,
+                                                                       'translate': True, 'lang': e.get('lang') or '', 'more': [],
+                                                                       'cands': [{'name': e.get('givenname') or 'the subtitles you gave', 'srt': open(gf_, encoding='utf-8', errors='replace').read()}]}})
+                            pid = it.get('ProviderIds') or {}
+                            try:
+                                mh = SUBS.movie_hash(path)
+                            except OSError:
+                                mh = None
+                            try:
+                                org_ = film_origin(path)   # (the release it was downloaded as: subtitles made for it first)
+                                if e.get('kind') == 'episode':
+                                    res = self.subs_client().search('en', mhash=mh, query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'),
+                                                                    episode=e.get('episode'), hint=org_ or os.path.basename(path))
+                                else:
+                                    res = self.subs_client().search('en', mhash=mh, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'),
+                                                                    year=it.get('ProductionYear'), hint=org_ or os.path.basename(path))
                             except Exception as ex:
-                                if 'allowed' in str(ex).lower() or 'download' in str(ex).lower():
+                                e.update(note=('OpenSubtitles: %s' % ex)[:200])
+                                save(SUBPREP, P)
+                                return self.send_json(200, {'wait': 'OpenSubtitles didn’t answer'})
+                            if self.subs_client().out_of_downloads():   # (the day's downloads used up: no film taken up, none marked, till the reset)
+                                return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
+                            res = [x for x in res if not x.get('machine') and x.get('kind') in (('', 'episode', 'tvshow') if e.get('kind') == 'episode' else ('', 'movie'))]
+                            ex_ = [x for x in res if x.get('exact')]
+                            if ex_:   # (made for this very file: taken as it is, no Whisper needed: John, 22 Nov 2026, "get ones with exact timing")
+                                try:
+                                    cues_ = SUBS.parse_srt(SUBS.decode(self.subs_client().download(ex_[0]['file_id'])))
+                                    if len(cues_) >= 20:
+                                        out_ = self.subs_write(path, 'en', cues_)
+                                        g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
+                                        e.update(state='done', note='made for this very file (OpenSubtitles, by its fingerprint): its timing as it is',
+                                                 chose=ex_[0].get('name') or '', file=out_, at=int(now_), sure=True, n=len(cues_), how='exact')
+                                        log('Subtitles made for the very file: %s (%d lines)' % (e.get('name'), len(cues_)))
+                                        record('subtitles saved', film=e.get('name'), id=iid, file=out_, how='made for this very file (OpenSubtitles fingerprint)',
+                                               opensubtitles_file=ex_[0].get('file_id'), release=ex_[0].get('name'), lines=len(cues_))
+                                        save(SUBPREP, P)
+                                        continue
+                                except Exception as ex:
+                                    log('Subtitles made for the very file, %s: %s' % (e.get('name'), str(ex)[:160]))
+                            if not e.get('ref_tried2'):   # (a subtitle made for this copy in another language: the English timed by its lines, no Whisper)
+                                e['ref_tried2'] = int(now_)
+                                try:
+                                    if ref_sub(g, self.subs_client(), e, iid, path, it):
+                                        e.pop('ref_only', None); e.pop('prev', None)   # (timed by it here: nothing left for his Mac to try)
+                                        save(SUBPREP, P)
+                                        continue
+                                except Exception as ex:
+                                    log('Subtitles timed by another language, %s: %s' % (e.get('name'), str(ex)[:160]))
+                                if self.subs_client().out_of_downloads():
+                                    e.pop('ref_tried2', None)
                                     save(SUBPREP, P)
                                     return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
-                        more_ = [{'file_id': x['file_id'], 'name': x.get('name') or ''} for x in res[last_ + 1:last_ + 8]]   # (the next ones after those taken)
-                        if not cands:
-                            e.update(state='nomatch' if longer_ else 'none', at=int(now_),
-                                     note=('only English subtitles made for a longer cut (%s)' % ', '.join(longer_[:3]))[:200] if longer_ else 'no English subtitles on OpenSubtitles')
-                            continue
-                        e.update(state='given', at=int(now_), note='', origin=org_ or '')
+                            # (the film's own length first: a subtitle named for a cut of its length before others, one named for a longer or shorter
+                            # cut last: Andrei Rublev is the 183-minute version, and "BluRay 3hrs 02mn 59s" was there among the 205-minute ones but
+                            # not tried first: John, 22 Nov 2026, "it's clearly the criterion copy and the 183 minute version")
+                            dmin_ = (it.get('RunTimeTicks') or 0) / 6e8
+                            def lenfit_(nm):
+                                nm = str(nm or '').lower()
+                                m1 = re.search(r'(\d)\s*h(?:rs?|ours?)?[\s.:]*(\d{1,2})\s*m', nm)
+                                m2 = re.search(r'\b(\d{2,3})\s*min', nm)
+                                mm_ = int(m1.group(1)) * 60 + int(m1.group(2)) if m1 else int(m2.group(1)) if m2 else None
+                                if not mm_ or not dmin_:
+                                    return 0
+                                return 2 if abs(mm_ - dmin_) <= 4 else -3 if abs(mm_ - dmin_) > 8 else 0
+                            if dmin_:
+                                res = sorted(res, key=lambda x: (not x.get('exact'), -lenfit_(x.get('name'))))   # (stable: OpenSubtitles' own order otherwise)
+                            more_ = [{'file_id': x['file_id'], 'name': x.get('name') or ''} for x in res[3:10]]   # (the next ones, fetched by John's Mac one at a time
+                            # only if none of the first fits exactly, without a change of speed: John, 21 Nov 2026, "Better to get the right one exactly before fixing")
+                            cands, longer_, last_ = [], [], -1
+                            for k_, x in enumerate(res[:8]):
+                                if len(cands) >= 3:
+                                    break
+                                last_ = k_
+                                try:
+                                    t_ = SUBS.decode(self.subs_client().download(x['file_id']))
+                                    c_ = SUBS.parse_srt(t_)
+                                    if dmin_ and c_ and c_[-1][1] > dmin_ * 60 + 300:   # (lines running on past the film's end: made for a longer cut)
+                                        longer_.append(x.get('name') or '')
+                                        continue
+                                    cands.append({'name': x.get('name') or '', 'exact': bool(x.get('exact')), 'srt': t_})
+                                except Exception as ex:
+                                    if 'allowed' in str(ex).lower() or 'download' in str(ex).lower():
+                                        save(SUBPREP, P)
+                                        return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
+                            more_ = [{'file_id': x['file_id'], 'name': x.get('name') or ''} for x in res[last_ + 1:last_ + 8]]   # (the next ones after those taken)
+                            if not cands:
+                                e.update(state='nomatch' if longer_ else 'none', at=int(now_),
+                                         note=('only English subtitles made for a longer cut (%s)' % ', '.join(longer_[:3]))[:200] if longer_ else 'no English subtitles on OpenSubtitles')
+                                continue
+                            e.update(state='given', at=int(now_), note='', origin=org_ or '')
+                            save(SUBPREP, P)
+                            return self.send_json(200, {'subjob': {'id': iid, 'name': it.get('Name'), 'path': path, 'dur': (it.get('RunTimeTicks') or 0) / 1e7,
+                                                                   'translate': True, 'cands': cands, 'more': more_, 'lang': e.get('lang') or '',
+                                                                   # (and the one in another language made for this copy, if any, for John's Mac to
+                                                                   # translate and compare with the English before listening with Whisper)
+                                                                   'ref_only': bool(e.get('ref_only')),
+                                                                   'ref': ({'lang': e.get('ref_lang'), 'srt': open(e['ref_file'], encoding='utf-8').read()}
+                                                                           if e.get('ref_file') and os.path.exists(e['ref_file']) else None)}})
                         save(SUBPREP, P)
-                        return self.send_json(200, {'subjob': {'id': iid, 'name': it.get('Name'), 'path': path, 'dur': (it.get('RunTimeTicks') or 0) / 1e7,
-                                                               'translate': True, 'cands': cands, 'more': more_, 'lang': e.get('lang') or '',
-                                                               # (and the one in another language made for this copy, if any, for John's Mac to
-                                                               # translate and compare with the English before listening with Whisper)
-                                                               'ref_only': bool(e.get('ref_only')),
-                                                               'ref': ({'lang': e.get('ref_lang'), 'srt': open(e['ref_file'], encoding='utf-8').read()}
-                                                                       if e.get('ref_file') and os.path.exists(e['ref_file']) else None)}})
-                    save(SUBPREP, P)
-                    return self.send_json(200, {'wait': 'none waiting'})
+                        return self.send_json(200, {'wait': 'none waiting'})
                 if u.path == '/macagent/next':   # (John's Mac's helper, asking every minute: the next film queued for it, as a job)
                     tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
                     want = (g.st.get('macagent') or {}).get('key')
@@ -3145,6 +3162,12 @@ def make_handler(g):
             return self.send_json(200, {'films': out})
 
         def api_subprep(self, me, user, q, b):
+            if b:   # (John's changes written one at a time with John's Mac's)
+                with SP_LOCK:
+                    return self.api_subprep_(me, user, q, b)
+            return self.api_subprep_(me, user, q, b)
+
+        def api_subprep_(self, me, user, q, b):
             """John's only: the English subtitles being made ready on his Mac: how many, those to check, those none could be found for;
             POST op pause, resume, look (the list looked over now) or again (one film tried again)."""
             if not me.get('owner'):
@@ -6362,6 +6385,7 @@ def subs_compare(g, P, iid, w=''):
 
 
 SPEECH = {'ok': True, 'now': None}
+SP_LOCK = threading.RLock()   # (the subtitles' record written by one at a time)
 
 
 def speech_try(g, cl, e, iid, path, it):
@@ -6507,10 +6531,11 @@ def keep_speech_first(g):
                 if ok is None:   # (downloads used up: again after the reset)
                     break
                 e['speech_tried'] = int(time.time())
-                Q = load(SUBPREP, {}) or {}
-                if isinstance(Q.get(iid), dict) and Q[iid].get('state') == 'waiting':   # (unless something else has taken it meanwhile)
-                    Q[iid] = e
-                    save(SUBPREP, Q)
+                with SP_LOCK:
+                    Q = load(SUBPREP, {}) or {}
+                    if isinstance(Q.get(iid), dict) and Q[iid].get('state') == 'waiting':   # (unless something else has taken it meanwhile)
+                        Q[iid] = e
+                        save(SUBPREP, Q)
                 if not ok:
                     log('Subtitles for %s: none lined up by when people speak; on to Whisper (%s)' % (e.get('name'), str(e.get('speech_note') or '')[:200]))
         except Exception as ex:
