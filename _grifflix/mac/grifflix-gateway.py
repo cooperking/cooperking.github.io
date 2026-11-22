@@ -980,6 +980,33 @@ def make_handler(g):
                                 save(os.path.join(os.path.expanduser('~/Grifflix/subprep-evidence'), iid + '.json'), {'at': int(time.time()), 'parts': body['evidence'][:8]})
                             except Exception:
                                 pass
+                        if e.get('verifying'):   # (the subtitles it had, checked against what's said)
+                            e.pop('verifying', None)
+                            mv_ = re.search(r'moved ([+-][\d.]+) s', str(body.get('how') or ''))
+                            off_ = float(mv_.group(1)) if mv_ else 0.0
+                            sp_ = 'speed' in str(body.get('how') or '')
+                            if body.get('ok') and abs(off_) < .6 and not sp_:
+                                e.update(state='verified', note='checked against what’s said: in time (%s lines matched)' % body.get('n'), n=body.get('n'), at=int(time.time()),
+                                         samples=body.get('samples'), file=e.get('vfile'))
+                                record('subtitles checked', film=e.get('name'), id=iid, file=e.get('vfile'), result='in time', lines=body.get('n'))
+                            elif body.get('ok') and body.get('srt'):
+                                it_ = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
+                                out_ = self.subs_write(it_.get('Path') or '', 'en', SUBS.parse_srt(str(body['srt'])))
+                                old_ = e.get('vfile') or ''
+                                import shutil
+                                if old_ and os.path.abspath(old_) != os.path.abspath(out_) and os.path.exists(old_):
+                                    dest_ = os.path.join(SETASIDE, 'Subtitles checked')
+                                    os.makedirs(dest_, exist_ok=True)
+                                    shutil.move(old_, os.path.join(dest_, time.strftime('%Y%m%d-%H%M ') + os.path.basename(old_)))
+                                g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
+                                e.update(state='done', how='verified-moved', note='its subtitles from before were out: ' + str(body.get('how') or ''), n=body.get('n'),
+                                         file=out_, at=int(time.time()), sure=bool(body.get('sure')), samples=body.get('samples'))
+                                record('subtitles put right', film=e.get('name'), id=iid, was=old_, now=out_, how=body.get('how'))
+                            else:   # (didn't fit at all: looked for others in the usual way, its own kept meanwhile)
+                                e.update(state='waiting', note='its subtitles from before didn’t fit what’s said: others looked for', old_vfile=e.get('vfile'), at=int(time.time()))
+                                record('subtitles didn’t fit', film=e.get('name'), id=iid, file=e.get('vfile'))
+                            save(SUBPREP, P)
+                            return self.send_json(200, {'ok': True})
                         if body.get('ok') and body.get('srt') and self.subs_ready():
                             try:
                                 it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
@@ -994,6 +1021,12 @@ def make_handler(g):
                                          samples=[[float(x[0]), int(x[1] or 0), float(x[2])] for x in (body.get('samples') or []) if isinstance(x, list) and len(x) >= 3][:12],
                                          sure=bool(body.get('sure')))
                                 e.pop('ref_only', None); e.pop('prev', None)
+                                ov_ = e.pop('old_vfile', None)   # (the subtitles it had before, that didn't fit: set aside, not deleted)
+                                if ov_ and os.path.exists(ov_) and os.path.abspath(ov_) != os.path.abspath(out):
+                                    import shutil
+                                    os.makedirs(os.path.join(SETASIDE, 'Subtitles checked'), exist_ok=True)
+                                    shutil.move(ov_, os.path.join(SETASIDE, 'Subtitles checked', time.strftime('%Y%m%d-%H%M ') + os.path.basename(ov_)))
+                                    record('subtitles set aside', film=e.get('name'), id=iid, moved_from=ov_, why='replaced by ones that fit')
                                 if str(body.get('how') or '').startswith('by the '):   # (timed by a translated subtitle made for this copy, not by Whisper)
                                     e['how'] = 'translated'
                                 log('Subtitles made ready on John’s Mac: %s: %s (%s lines matched)%s' % (e.get('name'), e['note'], e['n'], '' if body.get('sure') else ': to check'))
@@ -1036,9 +1069,26 @@ def make_handler(g):
                     if o.get('remaining') is not None and int(o.get('remaining') or 0) < 5:
                         return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
                     now_ = time.time()
-                    for iid, e in sorted(((k, v) for k, v in P.items() if not k.startswith('_')), key=lambda kv: kv[1].get('order', 0)):
+                    for iid, e in sorted(((k, v) for k, v in P.items() if not k.startswith('_') and isinstance(v, dict)), key=lambda kv: (kv[1].get('state') == 'verify', kv[1].get('order', 0))):
                         if e.get('state') == 'given' and now_ - e.get('at', 0) < 3 * 3600:
                             continue
+                        if e.get('state') == 'verify':   # (subtitles from before, checked as they are: only once none is waiting)
+                            vf_ = e.get('vfile') or ''
+                            if not os.path.exists(vf_):
+                                e.update(state='gone', note='its subtitles aren’t there now', at=int(now_))
+                                continue
+                            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
+                            if not it.get('Path') or not os.path.exists(it['Path']):
+                                continue
+                            try:
+                                srt_ = SUBS.decode(open(vf_, 'rb').read())
+                            except OSError:
+                                continue
+                            e.update(state='given', verifying=True, at=int(now_), note='')
+                            save(SUBPREP, P)
+                            return self.send_json(200, {'subjob': {'id': iid, 'name': it.get('Name'), 'path': it['Path'], 'dur': (it.get('RunTimeTicks') or 0) / 1e7,
+                                                                   'translate': bool(e.get('translate')), 'lang': e.get('lang') or '', 'verify': True, 'more': [],
+                                                                   'cands': [{'name': 'the subtitles it has (%s)' % os.path.basename(vf_), 'srt': srt_}]}})
                         if e.get('state') not in ('waiting', 'given'):
                             continue
                         try:
@@ -3083,7 +3133,7 @@ def make_handler(g):
                                         # (every film, for the admin page's tabs: to do, added as they were, corrected (and how), to check, not
                                         # found: John, 22 Nov 2026, "I need a tab of added, corrected (with details), to do etc. Tidy")
                                         'all': [{k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'state', 'note', 'chose', 'n', 'miss', 'mins', 'at', 'step', 'stepat',
-                                                                       'tried', 'samples', 'sure', 'file', 'origin', 'how', 'kind', 'series', 'cands', 'translated', 'ref_only', 'ref_lang')} for x in F]})
+                                                                       'tried', 'samples', 'sure', 'file', 'origin', 'how', 'kind', 'series', 'cands', 'translated', 'ref_only', 'ref_lang', 'vfile', 'verifying', 'old_vfile')} for x in F]})
 
         def api_waiting(self, me, user, q, b):
             """John's only: what he's ticked off on the admin page's Waiting on you (John, 18 Nov 2026: "I could do with a waiting on you
@@ -6243,6 +6293,17 @@ def subprep_scan_():
                 has_p = bool(d_) and any(re.search(r'\.(eng|en)(\.\d+)?\.(sup|mks)$', n_, re.I) for n_ in os.listdir(d_))
             except OSError:
                 pass
+        # (English subtitles beside it from before any of this (Grifflix's first subtitles, or ones that came with a download): checked against
+        # what's said, on John's Mac when it has nothing else to do, and put right or replaced if they don't fit: John, 22 Nov 2026, "it's
+        # quite likely that there are films with srt subtitles that aren't right from previous attempts before any method. We need to check those")
+        ext_ = [x for x in st if x.get('Type') == 'Subtitle' and x.get('IsExternal') and x.get('IsTextSubtitleStream') and x.get('Path')
+                and ((x.get('Language') or '').lower() in eng or (not x.get('Language') and reads_english(x.get('Path'))))]
+        if ext_ and f['Id'] not in P:
+            fo_ = bool(al) and al not in eng and al not in ('und', 'unk', 'zxx', 'mis', 'xx')
+            P[f['Id']] = {'name': ('%s S%s E%s' % (f.get('SeriesName'), f.get('ParentIndexNumber'), f.get('IndexNumber'))) if ep_ else f.get('Name'),
+                          'year': f.get('ProductionYear') or '', 'lang': al if fo_ else 'en', 'state': 'verify', 'vfile': ext_[0]['Path'], 'translate': fo_,
+                          'order': 1000000 + len(P), 'at': int(time.time())}
+            record('subtitles to check', film=P[f['Id']]['name'], id=f['Id'], file=ext_[0]['Path'], why='English subtitles from before, not yet checked against what’s said')
         if al and al not in eng and al not in ('und', 'unk', 'zxx', 'mis', 'xx'):
             k_ = ('tv ' if ep_ else '') + ('text' if has_t else 'picture' if has_p else 'none')
             tally[k_] = tally.get(k_, 0) + 1

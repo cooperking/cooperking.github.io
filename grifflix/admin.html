@@ -1148,14 +1148,16 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         // (in tabs: to do, added as they came (made for this very file), corrected (moved to fit, and how), to check, not found: John, 22 Nov
         // 2026, "I need a tab of added, corrected (with details), to do etc. Tidy")
         var kindOf = function (x) {
+          if (x.state === 'verify' || x.state === 'verified' || (x.state === 'given' && x.verifying)) return 'existing';
           if (x.state === 'waiting' || x.state === 'given') return 'todo';
           if (x.state === 'check') return 'check';
           if (x.state === 'done') return x.how === 'exact' ? 'added' : 'corrected';
           return 'none';
         };
         var ALL = (j.all || []).map(function (x) { x.k = kindOf(x); return x; });
-        var TABS = [['todo', 'To do'], ['added', 'Added'], ['corrected', 'Corrected'], ['check', 'To check'], ['none', 'Not found']];
-        var TSAY = { todo: 'Not done yet: each in turn, the steps above in order. ⟳ marks one done by Whisper earlier, being looked at again with a subtitle made for its copy.',
+        var TABS = [['todo', 'To do'], ['added', 'Added'], ['corrected', 'Corrected'], ['check', 'To check'], ['none', 'Not found'], ['existing', 'From before']];
+        var TSAY = { existing: 'English subtitles films had before any of this (Grifflix’s first ones, or ones that came with a download), each checked against what’s said on your Mac once nothing else is waiting. ✓ in time, kept. If out, put right (in Corrected); if they don’t fit at all, others looked for, and the old ones set aside once replaced.',
+          todo: 'Not done yet: each in turn, the steps above in order. ⟳ marks one done by Whisper earlier, being looked at again with a subtitle made for its copy.',
           added: '✓ English subtitles made for this very copy, used as they are (step 1).',
           corrected: '✓ English subtitles made for another copy, moved to fit this one: by a subtitle made for this copy (steps 2 and 3), or by Whisper (step 4). Each says which, and by how much.',
           check: '? Saved, but the timing couldn’t be confirmed: worth a look while watching. Compare the dialogue, choose another, or try again.',
@@ -1173,7 +1175,15 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           var nt = String(x.note || ''), mv = /moved ([+-][\d.]+) s/.exec(nt), sp = /at ([\d.]+)x speed/.exec(nt), rl = (/the (\S+) subtitle’s\)$/.exec(nt) || /^by the (\S+) subtitle/.exec(nt) || [])[1];
           var moved = mv ? (Math.abs(+mv[1]) < .05 ? 'already in time' : 'moved ' + secs(mv[1]) + ' ' + (+mv[1] >= 0 ? 'later' : 'earlier')) + (sp ? ' and ' + (+sp[1] > 1 ? 'slowed' : 'sped up') + ' to fit (made for a copy running at another speed)' : '') : '';
           var src = x.chose && !/^OpenSubtitles file|^translated from/.test(x.chose) ? ' Subtitles: “' + x.chose + '”.' : '';
+          if (x.k === 'existing') {
+            var vf = String(x.vfile || '').split('/').pop();
+            if (x.state === 'verified') return '✓ Its subtitles from before (' + vf + ') checked against what’s said: in time' + (x.n ? ', ' + x.n + ' lines matched' : '') + '. Kept.';
+            if (x.state === 'given') return '▶ On your Mac now: checking its subtitles from before (' + vf + ')' + (x.step ? '. ' + x.step : '') + '.';
+            return '… Its subtitles from before (' + vf + ') waiting to be checked against what’s said.';
+          }
+          if (x.how === 'verified-moved') return '✓ Its subtitles from before were out, now put right: ' + (moved || 'retimed') + '. The old file set aside.';
           if (x.k === 'todo') {
+            if (x.old_vfile && !x.ref_only) return (x.state === 'given' ? '▶ On your Mac now' + (x.step ? ': ' + x.step : '') + '. ' : '… ') + 'Its subtitles from before didn’t fit what’s said: others being looked for. The old ones stay until then.';
             if (x.ref_only) return '⟳ Being looked at again on your Mac: a ' + LNAME(x.ref_lang) + ' subtitle made for this copy, translated and compared. Its subtitles timed by Whisper stay meanwhile' + (x.step ? '. Now: ' + x.step : '') + '.';
             return x.state === 'given' ? '▶ On your Mac now' + (x.step ? ': ' + x.step : '') + '.' : '… Waiting its turn.';
           }
