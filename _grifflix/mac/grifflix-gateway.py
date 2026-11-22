@@ -8781,6 +8781,24 @@ def serve():
                 log('  Totally Fucked Up: its cover: %s' % ('on' if posters_on(only={'Totally Fucked Up (1993)'}) else 'on already, or none in its folder'))
                 return
     threading.Thread(target=tfu_rename, daemon=True).start()
+
+    def tfu_match():
+        """Totally Fucked Up's match put back, if it hasn't it: the Mac restarted for an update two minutes after renaming it, before it was
+        (22 Nov 2026). Its title, Totally F***ed Up, and its details from TMDB; its own cover in its folder kept."""
+        time.sleep(240)
+        try:
+            lid = (g.st.get('libraries') or {}).get('movies')
+            r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path,ProviderIds',
+                                                                  'SearchTerm': 'Totally'}, timeout=120) or {}
+            x = next((y for y in r.get('Items') or [] if os.path.basename(os.path.dirname(y.get('Path') or '')) == 'Totally Fucked Up (1993)'), None)
+            if x and not (x.get('ProviderIds') or {}).get('Imdb'):
+                apply_match(g, x['Id'], {'Name': 'Totally F***ed Up', 'ProductionYear': 1994, 'ProviderIds': {'Tmdb': '33560', 'Imdb': 'tt0108366'}, 'SearchProviderName': 'TheMovieDb'})
+                g.forget()
+                g.publish_soon = time.time() + 180
+                log('Totally Fucked Up: its match put back (Totally F***ed Up, TMDB 33560)')
+        except Exception as e:
+            log('Totally Fucked Up, its match: %s' % e)
+    threading.Thread(target=tfu_match, daemon=True).start()
     threading.Thread(target=small_axe_films, args=(g,), daemon=True).start()
     mk_ = os.path.expanduser('~/Grifflix/afi-reread.done')
     if not os.path.exists(mk_):   # (once: the site updated, so every AFI page kept is read again by the better reading: 22 Nov 2026)
