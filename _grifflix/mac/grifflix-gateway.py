@@ -5806,6 +5806,65 @@ def exact_sub(g, cl, e, iid, path):
     return False
 
 
+def ref_sub(g, cl, e, iid, path, it):
+    """No English made for this very file, but one in another language is: its lines' times used to time the English ones found for
+    the film (John, 22 Nov 2026, "If there are subtitles in any language from that file but no English they will be useful for timing
+    the English subtitles"). True if saved."""
+    try:
+        mh = SUBS.movie_hash(path)
+    except OSError:
+        return False
+    if not mh:
+        return False
+    refs = [(fid, lang) for fid, lang in cl.exact_any(mh) if str(lang).lower() not in ('en', 'eng')]
+    if not refs:
+        return False
+    ref = []
+    for fid, lang in refs[:2]:
+        ref = SUBS.parse_srt(SUBS.decode(cl.download(fid)))
+        if len(ref) >= 50:
+            break
+    if len(ref) < 50:
+        return False
+    pid = it.get('ProviderIds') or {}
+    org = film_origin(path)
+    hint = org or os.path.basename(path)
+    if e.get('kind') == 'episode':
+        L = cl.search('en', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=hint)
+    else:
+        L = cl.search('en', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint)
+    L = [x for x in L if not x.get('machine')][:6]
+    best = None
+    for x in L:
+        try:
+            cues = SUBS.parse_srt(SUBS.decode(cl.download(x['file_id'])))
+        except Exception:
+            continue
+        share, hit, out, how = SUBS.align_to_ref(ref, cues)
+        if not best or share > best[0]:
+            best = (share, hit, out, how, x)
+        if share >= .8:
+            break
+    if not best or best[0] < .45 or best[1] < 60:
+        e['ref_note'] = 'a subtitle made for this file in %s, but no English one lined up with it (best %d%%)' % (refs[0][1], round(100 * best[0]) if best else 0)
+        return False
+    share, hit, out, how, x = best
+    fn = '%s.Grifflix.en.srt' % os.path.splitext(path)[0]
+    with open(fn + '.tmp', 'w', encoding='utf-8') as f:
+        f.write(SUBS.write_srt(out))
+    os.replace(fn + '.tmp', fn)
+    try:
+        g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
+    except Exception:
+        pass
+    e.update(state='done' if share >= .6 else 'check', note='%s (%d%% of its lines on the %s subtitle’s)' % (how, round(100 * share), refs[0][1]),
+             chose=x.get('name') or '', file=fn, at=int(time.time()), sure=share >= .6, n=hit, how='by reference')
+    log('Subtitles timed by a %s subtitle made for the very file: %s (%d%% of lines on its lines)' % (refs[0][1], e.get('name'), round(100 * share)))
+    record('subtitles saved', film=e.get('name'), id=iid, file=fn, how=e['note'], english_from=x.get('name'), opensubtitles_file=x.get('file_id'),
+           timed_by_language=refs[0][1], lines_on_reference=hit, share=round(share, 3))
+    return True
+
+
 def subs_exact_all():
     """Each film and episode waiting for English subtitles given the one made for its very file, where OpenSubtitles has one."""
     g = G_REF[0] if G_REF else None
@@ -5815,17 +5874,17 @@ def subs_exact_all():
     P = load(SUBPREP, {}) or {}
     n = 0
     for iid, e in list(P.items()):
-        if iid.startswith('_') or not isinstance(e, dict) or e.get('state') not in ('waiting', 'none', 'nomatch', 'failed') or e.get('exact_tried'):
+        if iid.startswith('_') or not isinstance(e, dict) or e.get('state') not in ('waiting', 'none', 'nomatch', 'failed') or e.get('ref_tried'):
             continue
         try:
-            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
+            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
             path = it.get('Path') or ''
             if path and os.path.exists(path):
                 Q = load(SUBPREP, {}) or {}   # (saved as it goes, over what John's Mac has done meanwhile)
                 q = Q.get(iid)
                 if isinstance(q, dict) and q.get('state') in ('waiting', 'none', 'nomatch', 'failed'):
-                    ok = exact_sub(g, cl, q, iid, path)
-                    q['exact_tried'] = int(time.time())
+                    ok = exact_sub(g, cl, q, iid, path) or ref_sub(g, cl, q, iid, path, it)
+                    q['exact_tried'] = q['ref_tried'] = int(time.time())
                     save(SUBPREP, Q)
                     n += bool(ok)
         except Exception as ex:

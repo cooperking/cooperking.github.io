@@ -680,3 +680,66 @@ def describe(rep):
     if rep.get('parts'):
         bits.append('%d part%s set right on its own' % (rep['parts'], '' if rep['parts'] == 1 else 's'))
     return ('Timed to the film: ' + ', '.join(bits)) if bits else 'Timed to the film: already in time'
+
+
+RATIOS = [1.0, 25 / 23.976, 23.976 / 25, 25 / 24, 24 / 25, 24 / 23.976, 23.976 / 24]
+
+
+def align_to_ref(ref, cues, ratios=RATIOS):
+    """English subtitle lines timed by another subtitle made for this very file, in any language (its lines start when the film's lines
+    are said, whatever the words): the one speed and offset at which most English lines start where its lines do, then each English line
+    that lands on one of its lines given that line's exact times (John, 22 Nov 2026, "If there are subtitles in any language from that file
+    but no English they will be useful for timing the English subtitles"). Returns (share of English lines landing on one, how many,
+    the lines retimed, what was done)."""
+    import bisect
+    from collections import Counter
+    rs = sorted((float(a), float(b)) for a, b, _ in ref)
+    st = [a for a, _ in rs]
+    if len(st) < 20 or len(cues) < 20:
+        return 0.0, 0, cues, ''
+    sample = cues[::max(1, len(cues) // 400)]
+    best = (0, 1.0, 0.0)
+    for r in ratios:
+        h = Counter()
+        for c in sample:
+            for s in st:
+                h[round((s - r * c[0]) * 5)] += 1
+        for k in list(h):
+            n = h[k] + h.get(k - 1, 0) + h.get(k + 1, 0)
+            if n > best[0]:
+                best = (n, r, k / 5.0)
+    _, r, b = best
+
+    def near(t):
+        i = bisect.bisect_left(st, t)
+        c = [j for j in (i - 1, i) if 0 <= j < len(st)]
+        return min(c, key=lambda j: abs(st[j] - t)) if c else None
+    for _ in range(2):   # (fine-tuned on the lines that land within a little over half a second)
+        pr = []
+        for c in cues:
+            j = near(r * c[0] + b)
+            if j is not None and abs(st[j] - (r * c[0] + b)) <= .6:
+                pr.append((c[0], st[j]))
+        if len(pr) < 20:
+            break
+        mx = sum(x for x, _ in pr) / len(pr)
+        my = sum(y for _, y in pr) / len(pr)
+        vx = sum((x - mx) ** 2 for x, _ in pr)
+        if vx <= 0:
+            break
+        r2 = sum((x - mx) * (y - my) for x, y in pr) / vx
+        if abs(r2 / r - 1) > .003:
+            break
+        r, b = r2, my - r2 * mx
+    out, hit = [], 0
+    for s0, e0, t in cues:
+        s1, e1 = r * s0 + b, r * e0 + b
+        j = near(s1)
+        if j is not None and abs(st[j] - s1) <= .3:
+            hit += 1
+            s1 = st[j]
+            if abs(rs[j][1] - e1) <= .6:
+                e1 = rs[j][1]
+        out.append((max(0, s1), max(s1 + .3, e1), t))
+    how = 'timed by a subtitle made for this very file: moved %+.1f s%s, lines on its lines' % (b, '' if abs(r - 1) < .0005 else ', at %.4fx speed' % r)
+    return hit / len(cues), hit, out, how
