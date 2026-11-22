@@ -960,6 +960,21 @@ def make_handler(g):
                                 body['srt'] = base64.b64decode(str(body['srt64'])).decode('utf-8', 'replace')
                             except Exception:
                                 pass
+                        tb_ = body.get('translated') if isinstance(body.get('translated'), dict) else None
+                        if tb_ and re.match(r'^[0-9a-f]{32}$', iid):   # (the subtitle made for this copy in another language, translated on John's Mac:
+                            # kept for John to take as the film's English subtitles if he finds it good enough: John, 22 Nov 2026)
+                            try:
+                                t_ = base64.b64decode(str(tb_.get('srt64') or '')).decode('utf-8', 'replace')
+                                cs_ = SUBS.parse_srt(t_)
+                                if len(cs_) >= 20:
+                                    fn_ = os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.tr.srt' % iid)
+                                    os.makedirs(os.path.dirname(fn_), exist_ok=True)
+                                    with open(fn_, 'w', encoding='utf-8') as f_:
+                                        f_.write(t_)
+                                    e['translated'] = {'lang': str(tb_.get('lang') or '')[:12], 'n': len(cs_),
+                                                       'sample': [[round(a_, 1), str(x_)[:120]] for a_, _, x_ in cs_[len(cs_) // 4:len(cs_) // 4 + 8]]}
+                            except Exception:
+                                pass
                         if isinstance(body.get('evidence'), list) and re.match(r'^[0-9a-f]{32}$', iid):   # (what Whisper heard and matched, for the admin page)
                             try:
                                 save(os.path.join(os.path.expanduser('~/Grifflix/subprep-evidence'), iid + '.json'), {'at': int(time.time()), 'parts': body['evidence'][:8]})
@@ -3013,6 +3028,23 @@ def make_handler(g):
                         n_ += 1
                     save(SUBPREP, P)
                     log('Subtitles: %d films to do again, John asked; their subtitles in Set aside › Subtitles redone' % n_)
+                elif op == 'translated' and str(b.get('id') or '') in P:   # (John takes the translated subtitle made for this copy)
+                    iid_ = str(b['id'])
+                    e_ = P[iid_]
+                    fn_ = os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.tr.srt' % iid_)
+                    if not re.match(r'^[0-9a-f]{32}$', iid_) or not os.path.exists(fn_):
+                        return self.send_json(400, {'error': 'That translation isn’t kept any more.'})
+                    it_ = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid_), query={'Fields': 'Path'}) or {}
+                    if not it_.get('Path'):
+                        return self.send_json(400, {'error': 'The film isn’t there.'})
+                    out_ = self.subs_write(it_['Path'], 'en', SUBS.parse_srt(open(fn_, encoding='utf-8').read()))
+                    g.jf.call('POST', '/Items/%s/Refresh' % iid_, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
+                    lg_ = (e_.get('translated') or {}).get('lang') or ''
+                    e_.update(state='done', note='the %s subtitle made for this copy, machine-translated (Argos), chosen by John' % lg_, chose='translated from %s' % lg_,
+                              file=out_, at=int(time.time()), sure=True, how='machine-translated')
+                    save(SUBPREP, P)
+                    log('Subtitles: the translated %s one taken for %s, John chose' % (lg_, e_.get('name')))
+                    record('subtitles saved', film=e_.get('name'), id=iid_, file=out_, how='the %s subtitle made for this copy, machine-translated, chosen by John' % lg_)
                 elif op == 'choose' and str(b.get('id') or '') in P:   # (John's own choice of a subtitle turned down: saved as it'd be timed)
                     iid_, i_ = str(b['id']), int(b.get('i') or 0)
                     e_ = P[iid_]
@@ -3051,7 +3083,7 @@ def make_handler(g):
                                         # (every film, for the admin page's tabs: to do, added as they were, corrected (and how), to check, not
                                         # found: John, 22 Nov 2026, "I need a tab of added, corrected (with details), to do etc. Tidy")
                                         'all': [{k: x.get(k) for k in ('id', 'name', 'year', 'lang', 'state', 'note', 'chose', 'n', 'miss', 'mins', 'at', 'step', 'stepat',
-                                                                       'tried', 'samples', 'sure', 'file', 'origin', 'how', 'kind', 'series', 'cands')} for x in F]})
+                                                                       'tried', 'samples', 'sure', 'file', 'origin', 'how', 'kind', 'series', 'cands', 'translated')} for x in F]})
 
         def api_waiting(self, me, user, q, b):
             """John's only: what he's ticked off on the admin page's Waiting on you (John, 18 Nov 2026: "I could do with a waiting on you

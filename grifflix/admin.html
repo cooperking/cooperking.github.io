@@ -1084,6 +1084,15 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           '<ul style="margin:4px 0 6px 18px;padding:0">' + parts + '</ul><button class="btn" type="button" data-spchoose="' + x.id + '|' + c.i + '">Use this one</button> <button class="btn" type="button" data-spev="' + x.id + '|' + c.i + '">Compare the dialogue</button><div class="spev" data-for="' + x.id + '|' + c.i + '"></div></div>';
       }).join('') + '</div></details>';
   }
+  // (the subtitle made for this copy in another language, as your Mac translated it: a sample of its lines, and to take it as the film's English
+  // subtitles: John, 22 Nov 2026, "I should also have the option to use the translated version if I think it's good enough")
+  function spTr(x) {
+    var t = x.translated; if (!t || x.how === 'machine-translated') return '';
+    var tm = function (s) { s = Math.round(s); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); };
+    return '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:13px;opacity:.85">The ' + esc(t.lang) + ' subtitle made for this copy, machine-translated</summary><div class="stat" style="margin:6px 0 0;font-size:13px;line-height:1.55">' +
+      t.n + ' lines, timed exactly for this copy, translated into English on your Mac (Argos Translate): plainer than a person’s translation. A sample:<ul style="margin:4px 0 6px 18px;padding:0">' +
+      (t.sample || []).map(function (l) { return '<li>' + tm(l[0]) + ' · ' + esc(l[1]) + '</li>'; }).join('') + '</ul><button class="btn" type="button" data-sptr="' + x.id + '">Use the translated version</button></div></details>';
+  }
   function spWhat(x) {
     var sv = x.file ? '<b>Saved as:</b> ' + esc(String(x.file).split('/').pop()) + '<br>' : '';
     if (x.how === 'exact') return '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:13px;opacity:.85">What it did</summary><div class="stat" style="margin:6px 0 0;font-size:13px;line-height:1.55">' +
@@ -1155,7 +1164,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           else if (x.k === 'added') b.push('made for this very copy' + (x.chose && !/^OpenSubtitles file/.test(x.chose) ? ': “' + x.chose + '”' : ''));
           else if (x.k === 'corrected' || x.k === 'check') {
             var nt = String(x.note || '');
-            if (x.how === 'translated') b.push('timed by a subtitle made for this copy, translated and compared line by line'); else if (x.how === 'chosen') b.push('chosen by you'); else
+            if (x.how === 'machine-translated') b.push('the subtitle made for this copy, machine-translated: chosen by you'); else if (x.how === 'translated') b.push('timed by a subtitle made for this copy, translated and compared line by line'); else if (x.how === 'chosen') b.push('chosen by you'); else
             b.push(x.how === 'by reference' ? 'timed by a subtitle made for this copy' + ((/the (\S+) subtitle’s\)$/.exec(nt) || [])[1] ? ' (' + LN[/the (\S+) subtitle’s\)$/.exec(nt)[1]] || /the (\S+) subtitle’s\)$/.exec(nt)[1] : '') + (/the (\S+) subtitle’s\)$/.exec(nt) ? ')' : '') : 'timed by Whisper on your Mac');
             var mv = /moved ([+-][\d.]+) s/.exec(nt); if (mv) b.push((+mv[1] >= 0 ? 'later' : 'earlier') + ' by ' + Math.abs(+mv[1]).toFixed(1) + ' s');
             var sp = /at ([\d.]+)x speed/.exec(nt); if (sp) b.push('speed ' + sp[1] + '×');
@@ -1171,7 +1180,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           $('#splists').innerHTML = L.length ? L.slice(0, 300).map(function (x) {
             var again = x.k === 'check' || x.k === 'none' || x.k === 'corrected';
             return '<li>' + FL(x.name, x.year, x.id) + ' <small style="opacity:.7">' + langN(x) + '</small><span class="when">' + line(x) + (x.at && x.k !== 'todo' ? ' · ' + new Date(x.at * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') + '</span>' +
-              (x.k === 'todo' ? '' : spWhat(x)) + (x.k === 'none' || x.k === 'check' ? spWhy(x) : '') + (again ? '<span class="state" style="margin-top:4px"><button class="btn" type="button" data-spagain="' + x.id + '">Try again</button></span>' : '') + '</li>';
+              (x.k === 'todo' ? '' : spWhat(x)) + (x.k === 'none' || x.k === 'check' ? spWhy(x) : '') + spTr(x) + (again ? '<span class="state" style="margin-top:4px"><button class="btn" type="button" data-spagain="' + x.id + '">Try again</button></span>' : '') + '</li>';
           }).join('') : '<li>None.</li>';
           wire();
         };
@@ -1199,6 +1208,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           }).catch(function (e) { box.textContent = 'Couldn’t ask: ' + (e.message || e); });
         }; });
         Array.prototype.forEach.call(document.querySelectorAll('[data-spagain]'), function (bt) { bt.onclick = function () { bt.disabled = true; subPrep({ op: 'again', id: bt.dataset.spagain }); }; });
+        Array.prototype.forEach.call(document.querySelectorAll('[data-sptr]'), function (bt) { bt.onclick = function () {
+          if (!confirm('Use the machine-translated subtitles for this film? They replace the English subtitles it has now.')) return;
+          bt.disabled = true; bt.textContent = 'Saving…'; subPrep({ op: 'translated', id: bt.dataset.sptr }); toast('The translated subtitles are now its English subtitles');
+        }; });
         Array.prototype.forEach.call(document.querySelectorAll('[data-spchoose]'), function (bt) { bt.onclick = function () {
           var pr = bt.dataset.spchoose.split('|'); bt.disabled = true; bt.textContent = 'Saving…';
           subPrep({ op: 'choose', id: pr[0], i: +pr[1] }); toast('Saved as its English subtitles: in Corrected');
