@@ -543,7 +543,6 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           <li><b>English named for this very release</b> (uploaded under the name your copy was downloaded as, or its source and group) and of the film’s length: used as it is. <i>Added</i>.</li>
           <li><b>A subtitle in another language made for this copy</b> (by its fingerprint, or uploaded under the name the copy was downloaded as): an English subtitle timed to its lines, on the Mac mini. <i>Corrected</i>.</li>
           <li>If its timing alone doesn’t line it up: <b>that subtitle translated on your Mac</b> and compared line by line with the English ones. <i>Corrected</i>.</li>
-          <li><b>When people speak</b> (only for films none of the above found), found in the film on the Mac mini (not what they say, only when): subtitles in other languages tried against it, any whose lines start when people speak in this copy taken as made for it and the English timed by it; else the English ones lined up by it directly. <i>Corrected</i>.</li>
           <li><b>Whisper on your Mac</b>, only if nothing else fits: four parts of the film listened to, and an English subtitle timed to what’s said. <i>Corrected</i>, or <i>To check</i> if the timing couldn’t be confirmed.</li>
           <li>If nothing fits: <i>Not found</i>, with why, and the closest to choose yourself.</li>
         </ol>
@@ -1284,7 +1283,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
             if (x.givenfile) return (x.state === 'given' ? '▶ On your Mac now: timing the subtitles you gave' + (x.step ? ': ' + x.step : '') : '… The subtitles you gave, waiting to be timed by Whisper on your Mac') + '.';
             if (x.old_vfile && !x.ref_only) return (x.state === 'given' ? '▶ On your Mac now' + (x.step ? ': ' + x.step : '') + '. ' : '… ') + 'Its subtitles from before didn’t fit what’s said: others being looked for. The old ones stay until then.';
             if (x.ref_only) return '⟳ Being looked at again on your Mac: a ' + LNAME(x.ref_lang) + ' subtitle made for this copy, translated and compared. Its subtitles timed by Whisper stay meanwhile' + (x.step ? '. Now: ' + x.step : '') + '.';
-            return x.state === 'given' ? '▶ On your Mac now' + (x.step ? ': ' + x.step : '') + '.' : x.speech_tried ? '… Nothing lined up by when people speak: waiting for Whisper on your Mac, the last resort.' : '… Waiting: subtitles in other languages, and the English ones, tried first against when people speak in it; Whisper only if none fit.';
+            return x.state === 'given' ? '▶ On your Mac now' + (x.step ? ': ' + x.step : '') + '.' : '… Waiting: no subtitle made for this copy found by its files, so Whisper on your Mac, in its turn.';
           }
           if (x.how === 'exact') return '✓ English subtitles made for this very copy, used as they are: nothing moved.';
           if (x.how === 'machine-translated') return '✓ The ' + LNAME(rl || (x.translated || {}).lang) + ' subtitle made for this copy, machine-translated into English on your Mac: chosen by you.';
