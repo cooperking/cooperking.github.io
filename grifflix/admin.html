@@ -939,7 +939,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var found = function () { return L.filter(function (x) { return D[x[0]] && D[x[0]].id; }).length; };
     var save = function (done) { var o = {}; Object.keys(D).forEach(function (t) { if (D[t].id) o[t] = D[t].id; });
       var b = new Blob([JSON.stringify({ v: 2, afi: o, det: X, none: D, at: Date.now() })], { type: 'application/json' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'grifflix-afi.json'; document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 1000);
-      if (done) d.innerHTML = 'Grifflix: done. Read ' + pagesDone + ' of ' + pagesTo + ' films’ pages by their links' + (pagesBad ? ' (' + pagesBad + ' had nothing to read)' : '') + '; and of the ' + L.length + ' with no link, found ' + found() + ' (most aren’t American, or are after 1993: AFI hasn’t them). ' + Object.keys(X).length + ' pages read in all. Saved <b>grifflix-afi.json</b>: choose it in the admin page, Library, AFI Catalog.'; };
+      if (done) d.innerHTML = 'Grifflix: done. Read ' + pagesDone + ' of ' + pagesTo + ' films’ pages by their links' + (pagesBad ? ' (' + pagesBad + ' had nothing to read)' : '') + (pagesHad ? ', and ' + pagesHad + ' more the Mac mini hasn’t got were read before in this browser: they’re in the file, so do choose it' : '') + '; and of the ' + L.length + ' with no link, found ' + found() + ' (most aren’t American, or are after 1993: AFI hasn’t them). ' + Object.keys(X).length + ' pages read in all. Saved <b>grifflix-afi.json</b>: choose it in the admin page, Library, AFI Catalog.'; };
     var stop = false, blocked = false, refused = 0, last = '', wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
     var paint = function (msg) { var n = L.filter(function (x) { return x[0] in D; }).length;
       d.innerHTML = 'Grifflix: ' + (msg || 'looking up') + '<br>' + n + ' of ' + L.length + ' with no link looked up, ' + found() + ' found; ' + Object.keys(X).length + ' pages read. Keep this tab open.' + (last ? '<br><small style="opacity:.7">' + last + '</small>' : '') + '<br><button id="gxasave" style="margin-top:8px">Save what’s done</button> <button id="gxastop" style="margin-top:8px">Stop</button>';
@@ -969,7 +969,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       return Object.keys(R).map(function (k) { return R[k]; });
     };
     /* (each film's own AFI page read, by the link already known: first, before any searching, those whose link is known already: John, 22 Nov 2026, "if we have the direct link the bookmarklet needed to get the data from the site") */
-    var pagesTo = 0, pagesDone = 0, pagesBad = 0;
+    var pagesTo = 0, pagesDone = 0, pagesBad = 0, pagesHad = 0;
     var renderedPage = function (url) { return new Promise(function (done) {   /* (a page that fills itself in: opened in a hidden frame, its words once they show) */
       if (!frame) { frame = document.createElement('iframe'); frame.style.cssText = 'position:fixed;left:-9999px;top:0;width:1200px;height:900px;opacity:0;pointer-events:none'; document.body.appendChild(frame); }
       var t0 = Date.now(), iv = setInterval(function () {
@@ -979,7 +979,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       frame.src = url;
     }); };
     var readPages = async function (list) {
-      var R = list.filter(function (x) { return !(X[x[0]] && /genre|subject|history|production compan/i.test(X[x[0]].x || '')); }); pagesTo += R.length;   /* (one kept with nothing in it read again) */
+      var R = list.filter(function (x) { return !(X[x[0]] && /genre|subject|history|production compan/i.test(X[x[0]].x || '')); }); pagesTo += R.length; pagesHad += list.length - R.length;   /* (read before in this browser, the Mac mini not given them yet: in the file it saves) */   /* (one kept with nothing in it read again) */
       for (var j = 0; j < R.length && !stop; j++) {
         paint('reading each film’s AFI page by its link: ' + pagesDone + ' of ' + pagesTo);
         try {
