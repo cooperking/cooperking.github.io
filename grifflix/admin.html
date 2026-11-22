@@ -211,7 +211,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .spkv dt { color: var(--muted); } .spkv dd { margin: 0; }
 .spvers { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; } .spvers button { font: 13px/1.25 inherit; text-align: left; padding: 6px 10px; border: 1px solid var(--line); background: none; color: var(--fg); cursor: pointer; max-width: 320px; }
 .spvers button[aria-pressed="true"] { background: var(--fg); color: var(--bg, #173a5e); } .spvers small { display: block; opacity: .75; font-size: 11.5px; }
-.spact { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; } .spnote { font-size: 13px; color: var(--muted); margin: 6px 0; }
+.spact { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
+.spchk { list-style: none; padding: 0; margin: 4px 0 12px; font-size: 13px; line-height: 1.45; } .spchk li { padding: 4px 0 4px 22px; position: relative; border: 0 !important; background: none !important; }
+.spchk li::before { position: absolute; left: 0; top: 4px; font-weight: 700; } .spchk li.ok::before { content: '✓'; } .spchk li.no::before { content: '✗'; } .spchk li.old::before { content: '·'; } .spchk li.todo::before { content: '…'; }
+.spchk b { display: block; font-weight: 600; } .spchk span { color: var(--muted); } .spchk small { opacity: .8; } .spchk li.todo { opacity: .6; } .spnote { font-size: 13px; color: var(--muted); margin: 6px 0; }
 .spt td.said i { display: block; color: var(--muted); font-style: italic; } .spt .nil { color: var(--muted); font-style: italic; } .spt tr.gap td { opacity: .75; } .spt td.was { color: var(--muted); } .spt td.okc { text-align: center; }
 .spt td { padding: 4px 8px; vertical-align: top; border-bottom: 1px solid rgba(255,255,255,.08); } .spt td:first-child, .spt td:nth-child(4), .spt td:nth-child(5) { white-space: nowrap; font-variant-numeric: tabular-nums; } .spt tr.off td { color: #f08a4b; }
 .dks { display: grid; gap: 16px; }
@@ -1115,8 +1118,22 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   // (one film opened: what was done, plainly; the versions there are; the dialogue side by side for the one chosen; and to use another: John,
   // 22 Nov 2026, "showing a clear comparison or the ability to choose and see - this should be on anything adjusted, not just rejected")
   var spLN = function (c) { return c || ''; };
+  // (each check done for a film, when, and what it found, so it's plain why it went on to the next: John, 22 Nov 2026, "many say waiting for
+  // whisper but I can't see what checks have been done to prove that we need to get to this step")
+  function spChecks(x) {
+    var C = x.checks || {}, hm = function (t) { var d = new Date(t * 1000); return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); };
+    var S = [['exact', '1. Made for this exact file', x.exact_tried], ['name', '2. Named for this release', x.name_tried], ['ref', '3. In another language, made for this copy', x.ref_tried2], ['whisper', '4. Whisper on your Mac', null]];
+    return '<ol class="spchk" data-kfor="' + x.id + '">' + S.map(function (st) {
+      var c = C[st[0]], found = c && /^Found|^Done/.test(c.r);
+      return '<li class="' + (c ? (found ? 'ok' : 'no') : st[2] ? 'old' : 'todo') + '"><b>' + st[1] + '</b>' +
+        (c ? '<span>' + esc(c.r) + ' <small>' + hm(c.at) + '</small></span>' : st[2] ? '<span>Checked ' + hm(st[2]) + ': nothing found (what it saw wasn’t kept then: Check again, or Do it again, for the details)</span>' : '<span>Not yet</span>') + '</li>';
+    }).join('') + '</ol>';
+  }
   function spBody(x, LNAME) {
-    if (x.k === 'todo') return '<p class="spnote">' + (x.state === 'given' ? 'On your Mac now' + (x.step ? ': ' + esc(x.step) : '') : 'Waiting its turn.') + '</p>' + (x.state === 'waiting' ? '<div class="spact"><button class="btn" type="button" data-spfirst="' + x.id + '">Do next</button><button class="btn" type="button" data-splast="' + x.id + '">Do last</button><button class="btn" type="button" data-spquiet="' + x.id + '">No subtitles needed</button></div>' : '') + spGiveBox(x);
+    return spChecks(x) + spBody0(x, LNAME);
+  }
+  function spBody0(x, LNAME) {
+    if (x.k === 'todo') return '<p class="spnote">' + (x.state === 'given' ? 'On your Mac now' + (x.step ? ': ' + esc(x.step) : '') : 'Waiting its turn.') + '</p>' + (x.state === 'waiting' ? '<div class="spact"><button class="btn" type="button" data-spagain="' + x.id + '">Check again</button><button class="btn" type="button" data-spfirst="' + x.id + '">Do next</button><button class="btn" type="button" data-splast="' + x.id + '">Do last</button><button class="btn" type="button" data-spquiet="' + x.id + '">No subtitles needed</button></div>' : '') + spGiveBox(x);
     var nt = String(x.note || ''), mv = /moved ([+-][\d.]+) s/.exec(nt), sp = /at ([\d.]+)x speed/.exec(nt);
     var by = { exact: 'Made for this very copy (found by its fingerprint): used as it is', 'by reference': 'Lined up with the ' + LNAME(x.ref_lang) + ' subtitle made for this copy',
       translated: 'The ' + LNAME(x.ref_lang) + ' subtitle made for this copy, translated on your Mac and compared line by line', 'machine-translated': 'The ' + LNAME(x.ref_lang || (x.translated || {}).lang) + ' subtitle made for this copy, machine-translated: chosen by you',
@@ -1339,11 +1356,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
             subPrep.open[id] = 1; bt.setAttribute('aria-expanded', 'true'); openRow(x);
           }; });
         };
-        if (!body && Object.keys(subPrep.open).length && subPrep.drawn === subPrep.tab) return;   // (one open: the refresh doesn't redraw under it)
+        if (!body && Object.keys(subPrep.open).length && subPrep.drawn === subPrep.tab) {   // (one open: the refresh doesn't redraw under it, but its checks are kept live)
+          Object.keys(subPrep.open).forEach(function (id) { var x = BYID[id], el = document.querySelector('.spchk[data-kfor="' + id + '"]'); if (x && el) el.outerHTML = spChecks(x); });
+          return;
+        }
         subPrep.drawn = subPrep.tab;
         draw();
       }).catch(function (e) { $('#spsay').textContent = 'Couldn’t ask just now: ' + (e.message || e) + '.'; });
-    if (!body) { clearTimeout(subPrep.t); subPrep.t = setTimeout(function () { subPrep(); }, 60000); }
+    if (!body) { clearTimeout(subPrep.t); subPrep.t = setTimeout(function () { subPrep(); }, document.hidden ? 60000 : 15000); }   // (live while it's looked at)
   }
   subPrep();
   (function () { var b = document.getElementById('splook'); if (b) b.onclick = function () { subPrep({ op: 'look' }); toast('Looking over the films: a minute or two'); setTimeout(function () { subPrep(); }, 90000); };
