@@ -1083,8 +1083,8 @@ def make_handler(g):
                                     continue
                             except Exception as ex:
                                 log('Subtitles made for the very file, %s: %s' % (e.get('name'), str(ex)[:160]))
-                        if not e.get('ref_tried'):   # (a subtitle made for this copy in another language: the English timed by its lines, no Whisper)
-                            e['ref_tried'] = int(now_)
+                        if not e.get('ref_tried2'):   # (a subtitle made for this copy in another language: the English timed by its lines, no Whisper)
+                            e['ref_tried2'] = int(now_)
                             try:
                                 if ref_sub(g, self.subs_client(), e, iid, path, it):
                                     save(SUBPREP, P)
@@ -5900,17 +5900,30 @@ def keep_extras(g):
         time.sleep(1800 if n_ else 6 * 3600)
 
 
+def hashes_for(path):
+    """The file's fingerprint for OpenSubtitles, and its original's too where the converter kept it (Grifflix Originals): a film repackaged or
+    converted has a new fingerprint, and the subtitles made for the copy it was are known by the old one (John, 22 Nov 2026, "I suspect
+    there is a mismatch in finding")."""
+    out = []
+    try:
+        out.append(SUBS.movie_hash(path))
+    except OSError:
+        pass
+    try:
+        for v in ((load(os.path.expanduser('~/Grifflix/convert-state.json'), {}) or {}).get('done') or {}).values():
+            k_ = v.get('kept')
+            if v.get('to') == path and k_ and os.path.exists(k_):
+                out.append(SUBS.movie_hash(k_))
+    except Exception:
+        pass
+    return [h for h in dict.fromkeys(out) if h]
+
+
 def exact_sub(g, cl, e, iid, path):
     """An English subtitle made for this very file (OpenSubtitles knows it by the file's fingerprint), its timing right as it is: taken and
     saved beside it, no Whisper needed (John, 22 Nov 2026, "I have open sub pro so no problem to get them - get ones with exact timing").
     True if saved."""
-    try:
-        mh = SUBS.movie_hash(path)
-    except OSError:
-        return False
-    if not mh:
-        return False
-    ids = [fid for fid, lang in cl.exact_any(mh) if str(lang).lower() in ('en', 'eng')]
+    ids = [fid for mh in hashes_for(path) for fid, lang in cl.exact_any(mh) if str(lang).lower() in ('en', 'eng')]
     for fid in ids[:2]:
         cues = SUBS.parse_srt(SUBS.decode(cl.download(fid)))
         if len(cues) < 20:
@@ -5935,17 +5948,12 @@ def ref_sub(g, cl, e, iid, path, it):
     """No English made for this very file, but one in another language is: its lines' times used to time the English ones found for
     the film (John, 22 Nov 2026, "If there are subtitles in any language from that file but no English they will be useful for timing
     the English subtitles"). True if saved."""
-    try:
-        mh = SUBS.movie_hash(path)
-    except OSError:
-        return False
-    if not mh:
-        return False
-    refs = [(fid, lang) for fid, lang in cl.exact_any(mh) if str(lang).lower() not in ('en', 'eng')]
+    refs = [(fid, lang) for mh in hashes_for(path) for fid, lang in cl.exact_any(mh) if str(lang).lower() not in ('en', 'eng')]
     pid = it.get('ProviderIds') or {}
     org = film_origin(path)
-    hint = org or os.path.basename(path)
-    if not refs and org:
+    hint = org or os.path.splitext(os.path.basename(path))[0]
+    relname = bool(org) or bool(re.search(r'(?i)\b(1080p|720p|2160p|480p|bluray|brrip|bdrip|remux|web-?dl|webrip|dvdrip|x26[45]|h\.?26[45]|hevc|xvid|yts|rarbg)\b', hint))
+    if not refs and relname:   # (the file's own name when it's still a download's, not only one on record)
         # (or one in any language uploaded under the very name this copy was downloaded as: made for it too, whatever its language: John,
         # 22 Nov 2026, "Efforts should be made to find matching foreign subs and timing before whisper is used at all")
         try:
@@ -5953,7 +5961,11 @@ def ref_sub(g, cl, e, iid, path, it):
                 A_ = cl.search('', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=hint)
             else:
                 A_ = cl.search('', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint)
-            refs = [(x['file_id'], x.get('lang') or '?') for x in A_ if x.get('samename') and not x.get('machine') and str(x.get('lang') or '').lower() not in ('en', 'eng')]
+            # (uploaded under this copy's very name; or else of the same release, its source and group the same, as like as can be: each one
+            # still lined up with the English below, so one that isn't this copy's timing is passed over)
+            fo_ = [x for x in A_ if not x.get('machine') and str(x.get('lang') or '').lower() not in ('en', 'eng')]
+            fo_.sort(key=lambda x: (not x.get('samename'), -(x.get('like') or 0)))
+            refs = [(x['file_id'], x.get('lang') or '?') for x in fo_ if x.get('samename') or (x.get('like') or 0) >= 7][:3]
         except Exception:
             refs = []
     if not refs:
@@ -6019,7 +6031,7 @@ def subs_exact_all():
     n = 0
     for iid, e in list(P.items()):
         redo_ = isinstance(e, dict) and e.get('how') == 'by reference' and e.get('ref_v') != 2   # (those timed before lines between were moved by their neighbours: again)
-        if iid.startswith('_') or not isinstance(e, dict) or ((e.get('state') not in ('waiting', 'none', 'nomatch', 'failed') or e.get('ref_tried')) and not redo_):
+        if iid.startswith('_') or not isinstance(e, dict) or ((e.get('state') not in ('waiting', 'none', 'nomatch', 'failed') or e.get('ref_tried2')) and not redo_):
             continue
         try:
             it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
@@ -6029,7 +6041,7 @@ def subs_exact_all():
                 q = Q.get(iid)
                 if isinstance(q, dict) and (q.get('state') in ('waiting', 'none', 'nomatch', 'failed') or redo_):
                     ok = (not redo_ and exact_sub(g, cl, q, iid, path)) or ref_sub(g, cl, q, iid, path, it)
-                    q['exact_tried'] = q['ref_tried'] = int(time.time())
+                    q['exact_tried'] = q['ref_tried'] = q['ref_tried2'] = int(time.time())
                     save(SUBPREP, Q)
                     n += bool(ok)
         except Exception as ex:
@@ -6041,7 +6053,7 @@ def subs_exact_all():
     # line up: John, 22 Nov 2026, "there are a lot of 'what whisper hears' in the admin")
     n2 = q2 = 0
     for iid, e in list((load(SUBPREP, {}) or {}).items()):
-        if iid.startswith('_') or not isinstance(e, dict) or e.get('state') not in ('done', 'check') or e.get('how') or e.get('rechecked'):
+        if iid.startswith('_') or not isinstance(e, dict) or e.get('state') not in ('done', 'check') or e.get('how') or e.get('rechecked2'):
             continue
         try:
             it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
@@ -6051,7 +6063,7 @@ def subs_exact_all():
             if not (path and os.path.exists(path) and isinstance(q, dict) and q.get('state') in ('done', 'check') and not q.get('how')):
                 continue
             prev = {k: q.get(k) for k in ('state', 'note', 'chose', 'file', 'n', 'miss', 'sure', 'samples', 'tried', 'mins', 'at')}
-            q['rechecked'] = int(time.time())
+            q['rechecked2'] = int(time.time())
             if exact_sub(g, cl, q, iid, path) or ref_sub(g, cl, q, iid, path, it):
                 n2 += 1
             elif q.get('ref_file') and os.path.exists(q['ref_file']):
