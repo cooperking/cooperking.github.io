@@ -540,9 +540,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat" style="margin:6px 0 0">For each foreign-language film with no English subtitles, tried in this order, stopping at the first that works:</p>
         <ol class="stat" style="margin:4px 0 8px 18px;padding:0;line-height:1.55">
           <li><b>English subtitles made for this very copy</b> (OpenSubtitles knows the file by its fingerprint): used as they are. <i>Added</i>.</li>
+          <li><b>English named for this very release</b> (uploaded under the name your copy was downloaded as, or its source and group) and of the film’s length: used as it is. <i>Added</i>.</li>
           <li><b>A subtitle in another language made for this copy</b> (by its fingerprint, or uploaded under the name the copy was downloaded as): an English subtitle timed to its lines, on the Mac mini. <i>Corrected</i>.</li>
           <li>If its timing alone doesn’t line it up: <b>that subtitle translated on your Mac</b> and compared line by line with the English ones. <i>Corrected</i>.</li>
-          <li><b>When people speak</b>, found in the film on the Mac mini (not what they say, only when): subtitles in other languages tried against it, any whose lines start when people speak in this copy taken as made for it and the English timed by it; else the English ones lined up by it directly. <i>Corrected</i>.</li>
+          <li><b>When people speak</b> (only for films none of the above found), found in the film on the Mac mini (not what they say, only when): subtitles in other languages tried against it, any whose lines start when people speak in this copy taken as made for it and the English timed by it; else the English ones lined up by it directly. <i>Corrected</i>.</li>
           <li><b>Whisper on your Mac</b>, only if nothing else fits: four parts of the film listened to, and an English subtitle timed to what’s said. <i>Corrected</i>, or <i>To check</i> if the timing couldn’t be confirmed.</li>
           <li>If nothing fits: <i>Not found</i>, with why, and the closest to choose yourself.</li>
         </ol>
@@ -1120,7 +1121,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var nt = String(x.note || ''), mv = /moved ([+-][\d.]+) s/.exec(nt), sp = /at ([\d.]+)x speed/.exec(nt);
     var by = { exact: 'Made for this very copy (found by its fingerprint): used as it is', 'by reference': 'Lined up with the ' + LNAME(x.ref_lang) + ' subtitle made for this copy',
       translated: 'The ' + LNAME(x.ref_lang) + ' subtitle made for this copy, translated on your Mac and compared line by line', 'machine-translated': 'The ' + LNAME(x.ref_lang || (x.translated || {}).lang) + ' subtitle made for this copy, machine-translated: chosen by you',
-      chosen: 'Chosen by you', 'by speech': 'Lined up by when people speak in the film', given: 'Given by you' + (/timed|moved/.test(nt) ? ', timed to the film' : /as they are/.test(nt) ? ', used as they are' : ', timed by Whisper on your Mac'), 'verified-moved': 'Its subtitles from before, put right' }[x.how] || (x.k === 'none' ? 'Nothing fitted the whole film: the closest below, to see and choose' : x.k === 'existing' ? 'Its subtitles from before, checked against what’s said' : 'Timed by Whisper on your Mac, from what’s said in four parts of the film');
+      chosen: 'Chosen by you', 'by name': 'Named for this very release (the name your copy was downloaded as): used as it is', 'by speech': 'Lined up by when people speak in the film', given: 'Given by you' + (/timed|moved/.test(nt) ? ', timed to the film' : /as they are/.test(nt) ? ', used as they are' : ', timed by Whisper on your Mac'), 'verified-moved': 'Its subtitles from before, put right' }[x.how] || (x.k === 'none' ? 'Nothing fitted the whole film: the closest below, to see and choose' : x.k === 'existing' ? 'Its subtitles from before, checked against what’s said' : 'Timed by Whisper on your Mac, from what’s said in four parts of the film');
     var kv = [['Film', FL(x.name, x.year, x.id)], ['Subtitles', x.chose && !/^OpenSubtitles file/.test(x.chose) ? esc(x.chose) : (x.vfile ? esc(String(x.vfile).split('/').pop()) : '')], ['How', esc(by)],
       ['Moved', mv ? (Math.abs(+mv[1]) < .05 ? 'not at all: already in time' : Math.abs(+mv[1]).toFixed(1) + ' s ' + (+mv[1] >= 0 ? 'later' : 'earlier')) + (sp ? ', and ' + (+sp[1] > 1 ? 'slowed' : 'sped up') + ' to ' + sp[1] + '× (made for a copy at another speed)' : '') : (/^moved by part/.test(nt) ? esc(nt.replace(/^moved by part /, 'by a different amount in each part: ')) : '')],
       ['Fit', x.n ? x.n + ' lines on the lines said' + (x.k === 'check' ? ': not enough to be sure' : '') : ''], ['Saved as', x.file ? esc(String(x.file).split('/').pop()) : '']].filter(function (r) { return r[1]; });
@@ -1241,7 +1242,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           if (x.state === 'verify' || x.state === 'verified' || (x.state === 'given' && x.verifying)) return 'existing';
           if (x.state === 'waiting' || x.state === 'given') return 'todo';
           if (x.state === 'check') return 'check';
-          if (x.state === 'done') return x.how === 'exact' ? 'added' : 'corrected';
+          if (x.state === 'done') return x.how === 'exact' || x.how === 'by name' ? 'added' : 'corrected';
           if (x.state === 'nodialogue') return 'quiet';
           return 'none';
         };
@@ -1287,6 +1288,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           if (x.how === 'exact') return '✓ English subtitles made for this very copy, used as they are: nothing moved.';
           if (x.how === 'machine-translated') return '✓ The ' + LNAME(rl || (x.translated || {}).lang) + ' subtitle made for this copy, machine-translated into English on your Mac: chosen by you.';
           if (x.how === 'chosen') return '✓ Chosen by you from those turned down: ' + (moved || 'as timed') + '.' + src;
+          if (x.how === 'by name') return '✓ English named for this very release, used as it is: nothing moved.' + src;
           if (x.how === 'by speech') return (x.k === 'check' ? '? ' : '✓ ') + 'Lined up by when people speak in the film (no Whisper needed): ' + (moved || 'lined up') + '.' + src;
           if (x.how === 'given') return (x.k === 'check' ? '? ' : '✓ ') + 'Subtitles you gave' + (x.chose ? ' (“' + x.chose + '”)' : '') + (/as they are/.test(nt) ? ', used as they are.' : ': ' + (moved || 'timed to the film') + '.');
           if (x.how === 'by reference') return (x.k === 'check' ? '? ' : '✓ ') + 'Timed by the ' + LNAME(rl) + ' subtitle made for this copy: ' + (moved || 'lined up') + ', each line set on its line.' + src;
