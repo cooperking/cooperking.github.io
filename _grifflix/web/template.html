@@ -2861,6 +2861,13 @@ function fits(genre, mood) {
     if (genre && g.indexOf(genre) < 0) return false;
     if (m && m[2] && !g.some(function (x) { return m[2].indexOf(x) >= 0; })) return false;
     if (m && m[0] === 'kids' && g.some(function (x) { return x === 'Horror' || x === 'Thriller'; })) return false;
+    // (animated isn't for children by itself: By Brakhage, avant-garde and animated, was "for kids": John, 22 Nov 2026, "It's not at all".
+    // A family film; or animated with a children's rating (U, PG, G); never one Criterion calls avant-garde, nor one rated for adults)
+    if (m && m[0] === 'kids') {
+      var ct = String(i.cert || '').replace(/^[A-Z]{2}-/, '').toUpperCase(), kidc = /^(U|PG|G|TV-Y7?|TV-G|TV-PG|0|6|7|A|AL|TP|K-?\d)$/.test(ct);
+      if ((i.ctags || []).indexOf('Avant-garde') >= 0 || /^(15|18|R|NC-17|X|R18|TV-MA|16|M)$/.test(ct)) return false;
+      if (g.indexOf('Family') < 0 && ct && !kidc) return false;   // (one with no rating given the benefit: Karel Zeman's)
+    }
     var len = i.mins || (i.secs ? i.secs / 60 : 0);
     if (m && !m[2] && !(len && len <= 90)) return false;
     return true;
