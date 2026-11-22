@@ -209,7 +209,8 @@ src, inp, out = sys.argv[1], sys.argv[2], sys.argv[3]
 try:
     import argostranslate.package, argostranslate.translate
 except ImportError:
-    subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', 'argostranslate'], check=True)
+    # (with the spaCy that still has Python 3.9's ready-made packages: the newest wants 3.10, and the Mac's Whisper runs on 3.9: John, 22 Nov 2026)
+    subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', 'argostranslate', "spacy<3.8; python_version<'3.10'"], check=True)
     import argostranslate.package, argostranslate.translate
 if not any(p.from_code == src and p.to_code == 'en' for p in argostranslate.package.get_installed_packages()):
     argostranslate.package.update_package_index()

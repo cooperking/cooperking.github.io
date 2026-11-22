@@ -124,7 +124,7 @@ if [[ "${1:-}" == "subs-setup" ]]; then   # (once: whisper.cpp and its model, fo
     "$HERE/fw/bin/python3" -m pip install -q --upgrade pip >/dev/null 2>&1
     "$HERE/fw/bin/python3" -m pip install -q faster-whisper || exit 1
     # (and Argos Translate, offline, for subtitles in another language, translated and compared before Whisper listens)
-    "$HERE/fw/bin/python3" -m pip install -q argostranslate || echo "Grifflix: Argos Translate did not install now; it tries again when first needed."
+    "$HERE/fw/bin/python3" -m pip install -q argostranslate "spacy<3.8; python_version<'3.10'" || echo "Grifflix: Argos Translate did not install now; it tries again when first needed."
     echo "Grifflix: getting Whisper's model (about 500 MB, once)…"
     "$HERE/fw/bin/python3" -c "from faster_whisper import WhisperModel; WhisperModel('${GRIFFLIX_FW_MODEL:-small}', device='cpu', compute_type='int8')" || exit 1
     touch "$HERE/whisper/fw-ready"
