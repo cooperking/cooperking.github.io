@@ -195,6 +195,21 @@ class OpenSubs:
         if time.time() >= t:
             self.cfg.pop('remaining', None)
             return False
+        # (and his account asked every 10 minutes meanwhile: downloads he's reset himself, or bought, taken up at once: John, 22 Nov 2026,
+        # "It looks like I have reset my downloads for today")
+        if time.time() - self.cfg.get('out_checked', 0) > 600:
+            self.cfg['out_checked'] = int(time.time())
+            try:
+                u = (self._req('GET', '/infos/user', auth=True).get('data') or {})
+                if u.get('remaining_downloads') is not None:
+                    self.cfg['remaining'] = int(u['remaining_downloads'])
+                    if u.get('allowed_downloads') is not None:
+                        self.cfg['allowed'] = u['allowed_downloads']
+                self.save()
+                if int(self.cfg.get('remaining') or 0) > 0:
+                    return False
+            except Exception:
+                pass
         return True
 
     def download(self, file_id):

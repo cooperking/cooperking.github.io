@@ -1070,6 +1070,15 @@ def make_handler(g):
                                 except Exception:
                                     pass
                             e['cands'] = kept_
+                            # (Whisper heard next to no speech in any part listened to: a film with little or no dialogue, not a failure, and not
+                            # tried again and again: John, 22 Nov 2026, "Robot Dreams is a virtually dialogue free film, so failing")
+                            ss_ = [p_ for c_ in kept_ for p_ in (c_.get('samples') or [])]
+                            known_ = bool(ss_) and all(isinstance(p_, list) and len(p_) > 3 and p_[3] is not None for p_ in ss_)
+                            heard_ = [sum(int(p_[3]) for p_ in (c_.get('samples') or [])) for c_ in kept_] if known_ else []
+                            if heard_ and max(heard_) <= 4:
+                                e.update(state='nodialogue', note='Whisper heard little or no speech in the four parts listened to (%d lines in all): little or no dialogue' % max(heard_))
+                                log('Subtitles for %s: little or no dialogue (Whisper heard %d lines in four parts): none needed' % (e.get('name'), max(heard_)))
+                                record('subtitles not needed', film=e.get('name'), id=iid, why=e['note'])
                         save(SUBPREP, P)
                         return self.send_json(200, {'ok': True})
                     if P.get('_paused') or q.get('home') != '1' or not self.subs_ready():
@@ -3160,6 +3169,10 @@ def make_handler(g):
                     save(SUBPREP, P)
                     log('Subtitles chosen by John: %s: %s' % (e_.get('name'), c_.get('name')))
                     record('subtitles saved', film=e_.get('name'), id=iid_, file=out_, how='chosen by John from those turned down: ' + str(c_.get('how')), chose=c_.get('name'))
+                elif op == 'nodialogue' and str(b.get('id') or '') in P:   # (John: no subtitles needed for this one)
+                    P[str(b['id'])].update(state='nodialogue', note='no subtitles needed: said by John', at=int(time.time()))
+                    save(SUBPREP, P)
+                    log('Subtitles: none needed for %s, John said' % P[str(b['id'])].get('name'))
                 elif op == 'again' and str(b.get('id') or '') in P:
                     P[str(b['id'])].update(state='waiting', note='')
                     save(SUBPREP, P)
@@ -8934,6 +8947,23 @@ def serve():
                 log('  Totally Fucked Up: its cover: %s' % ('on' if posters_on(only={'Totally Fucked Up (1993)'}) else 'on already, or none in its folder'))
                 return
     threading.Thread(target=tfu_rename, daemon=True).start()
+    try:   # (films already turned down where Whisper heard next to no speech anywhere (Robot Dreams): little or no dialogue, not tried again)
+        P_ = load(SUBPREP, {}) or {}
+        ch_ = 0
+        for k_, e_ in P_.items():
+            if isinstance(e_, dict) and e_.get('state') == 'nomatch' and e_.get('cands'):
+                ss_ = [p_ for c_ in e_['cands'] for p_ in (c_.get('samples') or [])]
+                if not ss_ or not all(isinstance(p_, list) and len(p_) > 3 and p_[3] is not None for p_ in ss_):   # (only where how much was heard is known)
+                    continue
+                h_ = [sum(int(p_[3]) for p_ in (c_.get('samples') or [])) for c_ in e_['cands']]
+                if max(h_) <= 4:
+                    e_.update(state='nodialogue', note='Whisper heard little or no speech in the four parts listened to (%d lines in all): little or no dialogue' % max(h_))
+                    ch_ += 1
+                    log('Subtitles for %s: little or no dialogue: none needed' % e_.get('name'))
+        if ch_:
+            save(SUBPREP, P_)
+    except Exception as e:
+        log('Subtitles, films with no dialogue: %s' % e)
 
     def tfu_match():
         """Totally Fucked Up's match put back, if it hasn't it: the Mac restarted for an update two minutes after renaming it, before it was
