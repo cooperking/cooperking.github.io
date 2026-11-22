@@ -926,10 +926,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var found = function () { return L.filter(function (x) { return D[x[0]] && D[x[0]].id; }).length; };
     var save = function (done) { var o = {}; Object.keys(D).forEach(function (t) { if (D[t].id) o[t] = D[t].id; });
       var b = new Blob([JSON.stringify({ v: 2, afi: o, det: X, none: D, at: Date.now() })], { type: 'application/json' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'grifflix-afi.json'; document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 1000);
-      if (done) d.innerHTML = 'Grifflix: done. Found ' + found() + ' of ' + L.length + ' films’ AFI pages, and read ' + Object.keys(X).length + ' pages. Saved <b>grifflix-afi.json</b>: choose it in the admin page, Library, AFI Catalog.'; };
+      if (done) d.innerHTML = 'Grifflix: done. Read ' + pagesDone + ' of ' + pagesTo + ' films’ pages by their links; and of the ' + L.length + ' with no link, found ' + found() + ' (most aren’t American, or are after 1993: AFI hasn’t them). ' + Object.keys(X).length + ' pages read in all. Saved <b>grifflix-afi.json</b>: choose it in the admin page, Library, AFI Catalog.'; };
     var stop = false, blocked = false, refused = 0, last = '', wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
     var paint = function (msg) { var n = L.filter(function (x) { return x[0] in D; }).length;
-      d.innerHTML = 'Grifflix: ' + (msg || 'looking up') + '<br>' + n + ' of ' + L.length + ' looked up, ' + found() + ' found; ' + Object.keys(X).length + ' pages read. Keep this tab open.' + (last ? '<br><small style="opacity:.7">' + last + '</small>' : '') + '<br><button id="gxasave" style="margin-top:8px">Save what’s done</button> <button id="gxastop" style="margin-top:8px">Stop</button>';
+      d.innerHTML = 'Grifflix: ' + (msg || 'looking up') + '<br>' + n + ' of ' + L.length + ' with no link looked up, ' + found() + ' found; ' + Object.keys(X).length + ' pages read. Keep this tab open.' + (last ? '<br><small style="opacity:.7">' + last + '</small>' : '') + '<br><button id="gxasave" style="margin-top:8px">Save what’s done</button> <button id="gxastop" style="margin-top:8px">Stop</button>';
       d.querySelector('#gxasave').onclick = function () { save(false); }; d.querySelector('#gxastop').onclick = function () { stop = true; }; };
     /* (each result on AFI's search page: its page number, its title (the link's own words, or its picture's), and the year in the words around
        it, going no further up the page than the part that holds that one result) */
@@ -955,8 +955,24 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       });
       return Object.keys(R).map(function (k) { return R[k]; });
     };
+    /* (each film's own AFI page read, by the link already known: first, before any searching, those whose link is known already: John, 22 Nov 2026, "if we have the direct link the bookmarklet needed to get the data from the site") */
+    var pagesTo = 0, pagesDone = 0;
+    var readPages = async function (list) {
+      var R = list.filter(function (x) { return !(x[0] in X); }); pagesTo += R.length;
+      for (var j = 0; j < R.length && !stop; j++) {
+        paint('reading each film’s AFI page by its link: ' + pagesDone + ' of ' + pagesTo);
+        try {
+          var r2 = await fetch('/Catalog/moviedetails/' + R[j][1], { credentials: 'include' });
+          if (r2.status === 429 || r2.status === 503) { paint('AFI asked to slow down: waiting a minute…'); await wait(60000); j--; continue; }
+          if (r2.ok) { X[R[j][0]] = { id: R[j][1], x: words(await r2.text()) }; await put(R[j][0], X[R[j][0]]); pagesDone++; }
+        } catch (e) { paint('a page didn’t answer: going on in a moment'); await wait(10000); }
+        await wait(2500 + Math.random() * 1500);
+      }
+    };
     (async function () {
       try { db = await idb(); X = await all(); } catch (e) { X = {}; }
+      await readPages(N || []);
+      if (stop) { paint('stopped. Click the bookmark again to carry on.'); return; }
       var left = L.filter(function (x) { return !(x[0] in D); });
       for (var i = 0; i < left.length && !stop; i++) {
         var x = left[i]; paint();
@@ -989,17 +1005,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         } catch (e) { paint('a page didn’t answer: going on in a moment'); await wait(10000); }
         await wait(2500 + Math.random() * 1500);
       }
-      /* (then each film's own page, those with a page now: those already known and those just found) */
-      var R = (N || []).concat(L.filter(function (x) { return D[x[0]] && D[x[0]].id; }).map(function (x) { return [x[0], D[x[0]].id]; })).filter(function (x) { return !(x[0] in X); });
-      for (var j = 0; j < R.length && !stop; j++) {
-        paint('reading each film’s AFI page (' + (j + 1) + ' of ' + R.length + ')');
-        try {
-          var r2 = await fetch('/Catalog/moviedetails/' + R[j][1], { credentials: 'include' });
-          if (r2.status === 429 || r2.status === 503) { paint('AFI asked to slow down: waiting a minute…'); await wait(60000); j--; continue; }
-          if (r2.ok) { X[R[j][0]] = { id: R[j][1], x: words(await r2.text()) }; await put(R[j][0], X[R[j][0]]); }
-        } catch (e) { paint('a page didn’t answer: going on in a moment'); await wait(10000); }
-        await wait(2500 + Math.random() * 1500);
-      }
+      /* (then the pages of those just found) */
+      await readPages(L.filter(function (x) { return D[x[0]] && D[x[0]].id; }).map(function (x) { return [x[0], D[x[0]].id]; }));
       if (blocked) { d.innerHTML = 'Grifflix: stopped. AFI is refusing its searches: ' + last + '.<br>Do a search on catalog.afi.com yourself (any film), and once its results show, click the bookmark again on that page. What was found so far is kept.<br><button id="gxasave" style="margin-top:8px">Save what’s done</button>'; d.querySelector('#gxasave').onclick = function () { save(false); }; return; }
       if (stop) { paint('stopped. Click the bookmark again to carry on.'); return; }
       save(true);
