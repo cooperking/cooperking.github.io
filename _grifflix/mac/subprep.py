@@ -442,6 +442,17 @@ def main():
     PROG.update(base=base, key=key, id=job['id'])
     say = lambda body: urllib.request.urlopen(urllib.request.Request(base + '/macagent/subdone', data=json.dumps(dict(body, id=job['id'])).encode(),
                                               headers={'Content-Type': 'application/json', 'User-Agent': UA, 'Authorization': 'Bearer ' + key}), timeout=120).read()
+    if job.get('translate_only'):   # (only the subtitle in another language that timed the English, translated, for John to judge the match by:
+        # nothing changed, no listening: John, 22 Nov 2026, "that should always be done for a film where the subtitle used as a basis is not english")
+        work = tempfile.mkdtemp(prefix='grifflix-tr-')
+        try:
+            translated_ref(job, work, job.get('dur') or 0)
+        except Exception as e:
+            prog('Couldn’t translate: %s' % str(e)[:120])
+        finally:
+            shutil.rmtree(work, ignore_errors=True)
+        say({'ok': False, 'translate_only': True, **tr_out()})
+        return
     ff, wcli = tool('ffmpeg'), tool('whisper-cli', 'whisper-cpp', 'main')
     if not (wcli and os.path.exists(MODEL)) and os.access(FW_PY, os.X_OK):
         wcli = 'fw'

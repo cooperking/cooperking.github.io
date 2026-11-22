@@ -984,6 +984,14 @@ def make_handler(g):
                                                        'sample': [[round(a_, 1), str(x_)[:120]] for a_, _, x_ in cs_[len(cs_) // 4:len(cs_) // 4 + 8]]}
                             except Exception:
                                 pass
+                        if body.get('translate_only'):   # (only translated, for the comparison: the film's subtitles as they were)
+                            e['tr_tried'] = int(time.time())
+                            e.pop('tr_given', None)
+                            e.pop('step', None)
+                            save(SUBPREP, P)
+                            log('Subtitles for %s: the %s subtitle that timed them translated on John’s Mac, to compare' % (e.get('name'), e.get('ref_lang')) if e.get('translated') else
+                                'Subtitles for %s: the %s subtitle couldn’t be translated on John’s Mac' % (e.get('name'), e.get('ref_lang')))
+                            return self.send_json(200, {'ok': True})
                         if isinstance(body.get('evidence'), list) and re.match(r'^[0-9a-f]{32}$', iid):   # (what Whisper heard and matched, for the admin page)
                             try:
                                 save(os.path.join(os.path.expanduser('~/Grifflix/subprep-evidence'), iid + '.json'), {'at': int(time.time()), 'parts': body['evidence'][:8]})
@@ -1091,6 +1099,23 @@ def make_handler(g):
                     if o.get('remaining') is not None and int(o.get('remaining') or 0) < 5:
                         return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
                     now_ = time.time()
+                    # (first, a quick one: the subtitle in another language a film's English was timed by, translated, so the comparison shows what's
+                    # said in English: John, 22 Nov 2026, "fallen angels needed translations otherwise impossible for me to judge - that should
+                    # always be done for a film where the subtitle used as a basis is not english")
+                    for iid, e in P.items():
+                        if iid.startswith('_') or not isinstance(e, dict) or e.get('state') not in ('done', 'check') or not re.match(r'^[0-9a-f]{32}$', iid):
+                            continue
+                        rf_ = e.get('ref_file') or ''
+                        if not rf_ or not os.path.exists(rf_) or str(e.get('ref_lang') or '').lower()[:2] in ('', 'en'):
+                            continue
+                        if os.path.exists(os.path.join(os.path.expanduser('~/Grifflix/subprep-cands'), '%s.tr.srt' % iid)):
+                            continue
+                        if now_ - (e.get('tr_tried') or 0) < 7 * 86400 or now_ - (e.get('tr_given') or 0) < 3600:
+                            continue
+                        e['tr_given'] = int(now_)
+                        save(SUBPREP, P)
+                        return self.send_json(200, {'subjob': {'id': iid, 'name': e.get('name'), 'path': '', 'dur': 0, 'translate_only': True, 'cands': [], 'more': [],
+                                                               'lang': e.get('lang') or '', 'ref': {'lang': e.get('ref_lang'), 'srt': open(rf_, encoding='utf-8', errors='replace').read()}}})
                     for iid, e in sorted(((k, v) for k, v in P.items() if not k.startswith('_') and isinstance(v, dict)), key=lambda kv: (kv[1].get('state') == 'verify', kv[1].get('order', 0))):
                         if e.get('state') == 'given' and now_ - e.get('at', 0) < 3 * 3600:
                             continue
