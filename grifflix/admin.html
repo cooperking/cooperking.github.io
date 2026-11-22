@@ -558,7 +558,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           <div class="state"><button class="btn" type="button" id="spcopy">Copy</button></div></div>
         <div class="state"><button class="btn" type="button" id="sppause">Pause</button><button class="btn" type="button" id="splook">Look for films now</button><button class="btn" type="button" id="spredo">Do them all again</button><button class="btn" type="button" id="sptrall" hidden>Translate those not yet</button></div>
         <div class="lbchips" id="sptabs" style="margin:14px 0 8px"></div>
-        <input type="search" id="spq" class="name" placeholder="Find a film" autocomplete="off" style="width:100%;margin:0 0 8px">
+        <div style="display:flex;gap:8px;margin:0 0 8px"><input type="search" id="spq" class="name" placeholder="Find a film" autocomplete="off" style="flex:1;min-width:0">
+          <select id="spsort" aria-label="Order" style="max-width:170px"><option value="">In the usual order</option><option value="new">Newest first</option><option value="old">Oldest first</option><option value="az">A to Z</option><option value="lang">Language</option><option value="year">Year</option></select></div>
         <p class="stat" id="sptabsay" style="margin:0 0 6px"></p>
         <ul class="changes" id="splists"></ul>
       </section>
@@ -1323,11 +1324,17 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         var draw = function () { qn = 0;
           var q = ($('#spq').value || '').trim().toLowerCase();
           var L = ALL.filter(function (x) { return x.k === subPrep.tab && (!q || String(x.name || '').toLowerCase().indexOf(q) >= 0); })
-            .sort(function (a, b) { return subPrep.tab === 'todo' ? (a.state === 'given' ? -1 : 0) - (b.state === 'given' ? -1 : 0) || (a.state === 'verify' ? 1 : 0) - (b.state === 'verify' ? 1 : 0) || (a.order || 0) - (b.order || 0) || String(a.name).localeCompare(String(b.name)) : (b.at || 0) - (a.at || 0); });   // (to do in the queue's own order: the next at the top)
+            .sort(function (a, b) {   // (in the order John chooses, else the queue's for To do and the newest first elsewhere: John, 22 Nov 2026, "I need ordering on the lists")
+              var so = $('#spsort').value, nm = function (x) { return String(x.name || '').replace(/^(the|a|an|le|la|les|il|el|der|die|das) /i, '').toLowerCase(); };
+              if (so === 'az') return nm(a).localeCompare(nm(b));
+              if (so === 'year') return (+a.year || 0) - (+b.year || 0) || nm(a).localeCompare(nm(b));
+              if (so === 'lang') return String(langN(a)).localeCompare(String(langN(b))) || nm(a).localeCompare(nm(b));
+              if (so === 'new' || so === 'old') return (so === 'new' ? -1 : 1) * ((a.at || 0) - (b.at || 0)) || nm(a).localeCompare(nm(b));
+              return subPrep.tab === 'todo' ? (a.state === 'given' ? -1 : 0) - (b.state === 'given' ? -1 : 0) || (a.state === 'verify' ? 1 : 0) - (b.state === 'verify' ? 1 : 0) || (a.order || 0) - (b.order || 0) || String(a.name).localeCompare(String(b.name)) : (b.at || 0) - (a.at || 0); });   // (to do in the queue's own order: the next at the top)
           $('#sptabsay').textContent = TSAY[subPrep.tab] || '';
           $('#splists').innerHTML = L.length ? L.slice(0, 300).map(function (x) {
             var ln = line(x), ic = /^[✓?✗…▶⟳–]/.test(ln) ? ln.charAt(0) : '', st = ic ? ln.slice(1).trim() : ln, op = !!subPrep.open[x.id];
-            if (subPrep.tab === 'todo' && x.state === 'waiting') { qn = (qn || 0) + 1; ic = String(qn); }
+            if (subPrep.tab === 'todo' && x.state === 'waiting' && !$('#spsort').value) { qn = (qn || 0) + 1; ic = String(qn); }   // (its place in the queue, when listed in the queue's order)
             return '<li><button type="button" class="sphead" data-spopen="' + x.id + '" aria-expanded="' + op + '"><span class="ic">' + esc(ic) + '</span><span><span class="nm">' + esc(x.name || '') + (x.year ? ' (' + x.year + ')' : '') + '</span><span class="lg">' + langN(x) + '</span></span>' +
               '<span class="dt">' + (x.at && x.k !== 'todo' ? new Date(x.at * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') + '</span><span class="st">' + esc(st) + '</span></button>' +
               '<div class="spbody"' + (op ? '' : ' hidden') + ' data-bfor="' + x.id + '"></div></li>';
@@ -1349,6 +1356,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         };
         Array.prototype.forEach.call(document.querySelectorAll('[data-sptab]'), function (bt) { bt.onclick = function () { subPrep.tab = bt.dataset.sptab; subPrep.open = {}; Array.prototype.forEach.call(document.querySelectorAll('[data-sptab]'), function (o) { o.setAttribute('aria-pressed', o === bt); }); draw(); }; });
         $('#spq').oninput = draw;
+        try { if (subPrep.sortSet == null) { $('#spsort').value = localStorage.getItem('grifflix-spsort') || ''; subPrep.sortSet = 1; } } catch (e) {}
+        $('#spsort').onchange = function () { try { localStorage.setItem('grifflix-spsort', this.value); } catch (e) {} draw(); };
         var wire = function () {
           Array.prototype.forEach.call(document.querySelectorAll('[data-spopen]'), function (bt) { bt.onclick = function () {
             var id = bt.dataset.spopen, x = BYID[id], bd = document.querySelector('.spbody[data-bfor="' + id + '"]');
