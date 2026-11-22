@@ -7268,28 +7268,49 @@ def afi_parse(x):
     L = [l.strip() for l in str(x or '').split('\n')]
     out = {}
     lab = re.compile(r'^(%s)\s*:\s*(.*)$' % '|'.join('(?P<%s>%s)' % (k, rx) for k, rx in AFI_LABELS), re.I)
+    # (and the credits table's own headings, in capitals with no colon: its companies, the distributor among them (none was found from the
+    # labels alone: John, 22 Nov 2026))
+    head = re.compile(r'^(?:(?P<prod>PRODUCTION COMPAN(?:Y|IES))|(?P<dist>DISTRIBUTION COMPAN(?:Y|IES)))()$')
+    link = lambda l: bool(re.match(r'^(‖[^‖]+‖[\s,;]*)+$', l))
     i = 0
     while i < len(L):
         m = lab.match(L[i])
-        if not m:
+        h_ = None if m else head.match(L[i])
+        if not m and not h_:
             i += 1
             continue
-        k = next(k for k, _ in AFI_LABELS if m.group(k))
-        val, j = [m.group(len(AFI_LABELS) + 2) or ''], i + 1
-        while j < len(L) and not lab.match(L[j]) and not re.match(r'^[A-Z][A-Z &/()\-]{2,}$', L[j]) and len(val) < 40:
-            if not L[j]:   # (a blank line: past the label, waiting for its words; after them, the end)
-                if ''.join(val).strip():
-                    break
+        if m:
+            k = next(k for k, _ in AFI_LABELS if m.group(k))
+            val = [m.group(len(AFI_LABELS) + 2) or '']
+        else:
+            k = 'prod' if h_.group('prod') else 'dist'
+            val = ['']
+        j = i + 1
+        # (its words: each of a list's names on a line of its own, with a blank line between, all taken (only the first was, Way Down
+        # East's one subject of five); words that aren't links, the one line)
+        while j < len(L) and len(val) < 40:
+            l_ = L[j]
+            if not l_:
                 j += 1
                 continue
-            val.append(L[j])
-            j += 1
+            if lab.match(l_) or head.match(l_) or re.match(r'^[A-Z][A-Z &/()\-]{2,}$', l_):
+                break
+            if link(l_):
+                val.append(l_)
+                j += 1
+                continue
+            if not ''.join(val).strip():
+                val.append(l_)
+                j += 1
+            break
         v = ' '.join(val)
         items = [t.strip(' ,;') for t in re.findall(r'‖([^‖]+)‖', v) if t.strip(' ,;')]
         if not items:
             items = [t.strip() for t in re.split(r'\s*[;,]\s*', re.sub(r'‖', '', v)) if t.strip()]
-        if k not in out and items:
-            out[k] = items[:30] if k not in ('rel', 'prem', 'mins') else re.sub(r'\s+', ' ', v.replace('‖', ' ')).strip()[:300]
+        if items and k in ('rel', 'prem', 'mins'):
+            out.setdefault(k, re.sub(r'\s+', ' ', v.replace('‖', ' ')).strip()[:300])
+        elif items:   # (a list met twice, in the summary and in the credits: the names of both, once each)
+            out[k] = list(dict.fromkeys((out.get(k) or []) + items))[:30]
         i = j
     # (its History: the words under the heading History, to the next heading)
     for n, l in enumerate(L):
@@ -7423,7 +7444,8 @@ def dist_tags(g, items):
             o['afi'] = A[imdb[iid]]['id']
         for k_ in ('afig', 'afisub', 'afisubm', 'afiprod', 'afidist', 'afih'):
             o.pop(k_, None)
-        f_ = (AD.get(imdb.get(iid) or '-') or {}).get('f') or {}
+        ad_ = AD.get(imdb.get(iid) or '-') or {}
+        f_ = afi_parse(ad_['x']) if ad_.get('x') else (ad_.get('f') or {})   # (read again each time, so a better reading reaches every page kept)
         for k_, src in (('afig', 'genre'), ('afisub', 'subj'), ('afisubm', 'subjm'), ('afiprod', 'prod'), ('afidist', 'dist'), ('afih', 'hist')):
             if f_.get(src):
                 o[k_] = f_[src]
@@ -8125,6 +8147,13 @@ def serve():
     # (the subtitles list looked over a minute after starting, not first in the three-hourly round behind the covers: John, 21 Nov 2026,
     # "there shouldn't be a need for a three hour check")
     threading.Thread(target=lambda: (time.sleep(60), subprep_scan(), subs_exact_all(), subs_namecheck()), daemon=True).start()
+    mk_ = os.path.expanduser('~/Grifflix/afi-reread.done')
+    if not os.path.exists(mk_):   # (once: the site updated, so every AFI page kept is read again by the better reading: 22 Nov 2026)
+        try:
+            open(mk_, 'w').write(str(int(time.time())))
+            g.publish_soon = time.time() + 300
+        except OSError:
+            pass
     try:   # (the spines set by hand, where criterion.py, for the Google sheet, reads them too)
         f_ = os.path.expanduser('~/Grifflix/criterion-spines-own.json')
         own_ = load(f_, {}) or {}
