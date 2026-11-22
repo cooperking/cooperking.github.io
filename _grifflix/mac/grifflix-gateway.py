@@ -1014,6 +1014,20 @@ def make_handler(g):
                             save(SUBPREP, P)
                             return self.send_json(200, {'wait': 'OpenSubtitles didn’t answer'})
                         res = [x for x in res if not x.get('machine') and x.get('kind') in (('', 'episode', 'tvshow') if e.get('kind') == 'episode' else ('', 'movie'))]
+                        ex_ = [x for x in res if x.get('exact')]
+                        if ex_:   # (made for this very file: taken as it is, no Whisper needed: John, 22 Nov 2026, "get ones with exact timing")
+                            try:
+                                cues_ = SUBS.parse_srt(SUBS.decode(self.subs_client().download(ex_[0]['file_id'])))
+                                if len(cues_) >= 20:
+                                    out_ = self.subs_write(path, 'en', cues_)
+                                    g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
+                                    e.update(state='done', note='made for this very file (OpenSubtitles, by its fingerprint): its timing as it is',
+                                             chose=ex_[0].get('name') or '', file=out_, at=int(now_), sure=True, n=len(cues_), how='exact')
+                                    log('Subtitles made for the very file: %s (%d lines)' % (e.get('name'), len(cues_)))
+                                    save(SUBPREP, P)
+                                    continue
+                            except Exception as ex:
+                                log('Subtitles made for the very file, %s: %s' % (e.get('name'), str(ex)[:160]))
                         more_ = [{'file_id': x['file_id'], 'name': x.get('name') or ''} for x in res[3:10]]   # (the next ones, fetched by John's Mac one at a time
                         # only if none of the first fits exactly, without a change of speed: John, 21 Nov 2026, "Better to get the right one exactly before fixing")
                         res = res[:3]
@@ -5742,6 +5756,64 @@ def keep_extras(g):
         time.sleep(1800 if n_ else 6 * 3600)
 
 
+def exact_sub(g, cl, e, iid, path):
+    """An English subtitle made for this very file (OpenSubtitles knows it by the file's fingerprint), its timing right as it is: taken and
+    saved beside it, no Whisper needed (John, 22 Nov 2026, "I have open sub pro so no problem to get them - get ones with exact timing").
+    True if saved."""
+    try:
+        mh = SUBS.movie_hash(path)
+    except OSError:
+        return False
+    if not mh:
+        return False
+    ids = [fid for fid, lang in cl.exact_any(mh) if str(lang).lower() in ('en', 'eng')]
+    for fid in ids[:2]:
+        cues = SUBS.parse_srt(SUBS.decode(cl.download(fid)))
+        if len(cues) < 20:
+            continue
+        out = '%s.Grifflix.en.srt' % os.path.splitext(path)[0]
+        with open(out + '.tmp', 'w', encoding='utf-8') as f:
+            f.write(SUBS.write_srt(cues))
+        os.replace(out + '.tmp', out)
+        try:
+            g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
+        except Exception:
+            pass
+        e.update(state='done', note='made for this very file (OpenSubtitles, by its fingerprint): its timing as it is', chose='OpenSubtitles file %s' % fid,
+                 file=out, at=int(time.time()), sure=True, n=len(cues), how='exact')
+        log('Subtitles made for the very file: %s (%d lines)' % (e.get('name'), len(cues)))
+        return True
+    return False
+
+
+def subs_exact_all():
+    """Each film and episode waiting for English subtitles given the one made for its very file, where OpenSubtitles has one."""
+    g = G_REF[0] if G_REF else None
+    if not g or not (g.st.get('opensubs') or {}).get('key'):
+        return
+    cl = SUBS.OpenSubs(g.st.setdefault('opensubs', {}), lambda: save(SETTINGS, g.st), tls())
+    P = load(SUBPREP, {}) or {}
+    n = 0
+    for iid, e in list(P.items()):
+        if iid.startswith('_') or not isinstance(e, dict) or e.get('state') not in ('waiting', 'none', 'nomatch', 'failed') or e.get('exact_tried'):
+            continue
+        try:
+            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
+            path = it.get('Path') or ''
+            if path and os.path.exists(path):
+                Q = load(SUBPREP, {}) or {}   # (saved as it goes, over what John's Mac has done meanwhile)
+                q = Q.get(iid)
+                if isinstance(q, dict) and q.get('state') in ('waiting', 'none', 'nomatch', 'failed'):
+                    ok = exact_sub(g, cl, q, iid, path)
+                    q['exact_tried'] = int(time.time())
+                    save(SUBPREP, Q)
+                    n += bool(ok)
+        except Exception as ex:
+            log('Subtitles made for the very file, %s: %s' % (e.get('name'), str(ex)[:160]))
+        time.sleep(1.5)
+    log('Subtitles made for the very file: %d films and episodes given theirs' % n)
+
+
 def subs_namecheck():
     """Once (until ~/Grifflix/subs-namecheck.json is there): for each film and episode waiting for English subtitles, OpenSubtitles
     asked (searches only, none of John's downloads used) which of its English subtitles carry the very name the copy was downloaded as,
@@ -8027,7 +8099,7 @@ def serve():
     threading.Thread(target=keep_covers, daemon=True).start()   # (every Criterion film its cover, hourly)
     # (the subtitles list looked over a minute after starting, not first in the three-hourly round behind the covers: John, 21 Nov 2026,
     # "there shouldn't be a need for a three hour check")
-    threading.Thread(target=lambda: (time.sleep(60), subprep_scan(), subs_namecheck()), daemon=True).start()
+    threading.Thread(target=lambda: (time.sleep(60), subprep_scan(), subs_exact_all(), subs_namecheck()), daemon=True).start()
     try:   # (the spines set by hand, where criterion.py, for the Google sheet, reads them too)
         f_ = os.path.expanduser('~/Grifflix/criterion-spines-own.json')
         own_ = load(f_, {}) or {}
