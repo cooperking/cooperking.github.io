@@ -6441,7 +6441,8 @@ def subs_compare(g, P, iid, w=''):
     return out
 
 
-SPEECH = {'ok': True, 'now': None}
+SPEECH = {'ok': False, 'now': None}   # (off: on real films no subtitle stood out by it (Mandabi, Jour de fête, 22 Nov 2026: about 2 against 2 for the next
+# best, where the test films gave 9), so it only held films back before Whisper; the files' own checks first, then Whisper)
 SP_LOCK = threading.RLock()   # (the subtitles' record written by one at a time)
 
 
@@ -6566,7 +6567,10 @@ def speech_try(g, cl, e, iid, path, it):
 
 
 def keep_speech_first(g):
-    """Each film waiting for English subtitles tried by when people speak, before any goes to Whisper on John's Mac."""
+    """Each film waiting for English subtitles tried by when people speak, before any goes to Whisper on John's Mac (off while SPEECH['ok']
+    is False: see there)."""
+    if not SPEECH['ok']:
+        return
     time.sleep(150)
     while True:
         did = False
