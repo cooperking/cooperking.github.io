@@ -2926,7 +2926,7 @@ def make_handler(g):
             if b and isinstance(b.get('det'), dict):   # (each film's AFI page as read, and what's sorted from it)
                 n_ = 0
                 for k, v in b['det'].items():
-                    if re.match(r'^tt\d{6,10}$', str(k)) and isinstance(v, dict) and v.get('x'):
+                    if re.match(r'^tt\d{6,10}$', str(k)) and isinstance(v, dict) and v.get('x') and 'NARROW RESULTS' not in str(v['x'])[:3000]:
                         x_ = str(v['x'])[:120000]
                         AD[str(k)] = {'id': str(v.get('id') or ''), 'x': x_, 'f': afi_parse(x_), 'at': int(time.time())}
                         n_ += 1
@@ -2950,7 +2950,7 @@ def make_handler(g):
                         continue
                     if (A.get(t) or {}).get('id'):
                         linked += 1
-                        if t not in AD:
+                        if t not in AD or 'NARROW RESULTS' in (AD[t].get('x') or '')[:3000]:   # (or what's kept is AFI's search page, not its)
                             need.append([t, A[t]['id']])
                     else:
                         out.append([t, it.get('Name') or '', y] + ([it['OriginalTitle']] if it.get('OriginalTitle') and it['OriginalTitle'] != it.get('Name') else []))
