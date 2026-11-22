@@ -1117,7 +1117,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   // 22 Nov 2026, "showing a clear comparison or the ability to choose and see - this should be on anything adjusted, not just rejected")
   var spLN = function (c) { return c || ''; };
   function spBody(x, LNAME) {
-    if (x.k === 'todo') return '<p class="spnote">' + (x.state === 'given' ? 'On your Mac now' + (x.step ? ': ' + esc(x.step) : '') : 'Waiting its turn.') + '</p>' + (x.state === 'waiting' ? '<div class="spact"><button class="btn" type="button" data-spquiet="' + x.id + '">No subtitles needed</button></div>' : '') + spGiveBox(x);
+    if (x.k === 'todo') return '<p class="spnote">' + (x.state === 'given' ? 'On your Mac now' + (x.step ? ': ' + esc(x.step) : '') : 'Waiting its turn.') + '</p>' + (x.state === 'waiting' ? '<div class="spact"><button class="btn" type="button" data-spfirst="' + x.id + '">Do next</button><button class="btn" type="button" data-splast="' + x.id + '">Do last</button><button class="btn" type="button" data-spquiet="' + x.id + '">No subtitles needed</button></div>' : '') + spGiveBox(x);
     var nt = String(x.note || ''), mv = /moved ([+-][\d.]+) s/.exec(nt), sp = /at ([\d.]+)x speed/.exec(nt);
     var by = { exact: 'Made for this very copy (found by its fingerprint): used as it is', 'by reference': 'Lined up with the ' + LNAME(x.ref_lang) + ' subtitle made for this copy',
       translated: 'The ' + LNAME(x.ref_lang) + ' subtitle made for this copy, translated on your Mac and compared line by line', 'machine-translated': 'The ' + LNAME(x.ref_lang || (x.translated || {}).lang) + ' subtitle made for this copy, machine-translated: chosen by you',
@@ -1302,13 +1302,15 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         // (one line a film; opened, what was done, its versions and its dialogue side by side; open ones kept open, and not redrawn under you
         // while the list refreshes itself)
         subPrep.open = subPrep.open || {};
-        var draw = function () {
+        var qn = 0;
+        var draw = function () { qn = 0;
           var q = ($('#spq').value || '').trim().toLowerCase();
           var L = ALL.filter(function (x) { return x.k === subPrep.tab && (!q || String(x.name || '').toLowerCase().indexOf(q) >= 0); })
-            .sort(function (a, b) { return subPrep.tab === 'todo' ? (a.state === 'given' ? -1 : 0) - (b.state === 'given' ? -1 : 0) || String(a.name).localeCompare(String(b.name)) : (b.at || 0) - (a.at || 0); });
+            .sort(function (a, b) { return subPrep.tab === 'todo' ? (a.state === 'given' ? -1 : 0) - (b.state === 'given' ? -1 : 0) || (a.state === 'verify' ? 1 : 0) - (b.state === 'verify' ? 1 : 0) || (a.order || 0) - (b.order || 0) || String(a.name).localeCompare(String(b.name)) : (b.at || 0) - (a.at || 0); });   // (to do in the queue's own order: the next at the top)
           $('#sptabsay').textContent = TSAY[subPrep.tab] || '';
           $('#splists').innerHTML = L.length ? L.slice(0, 300).map(function (x) {
             var ln = line(x), ic = /^[✓?✗…▶⟳–]/.test(ln) ? ln.charAt(0) : '', st = ic ? ln.slice(1).trim() : ln, op = !!subPrep.open[x.id];
+            if (subPrep.tab === 'todo' && x.state === 'waiting') { qn = (qn || 0) + 1; ic = String(qn); }
             return '<li><button type="button" class="sphead" data-spopen="' + x.id + '" aria-expanded="' + op + '"><span class="ic">' + esc(ic) + '</span><span><span class="nm">' + esc(x.name || '') + (x.year ? ' (' + x.year + ')' : '') + '</span><span class="lg">' + langN(x) + '</span></span>' +
               '<span class="dt">' + (x.at && x.k !== 'todo' ? new Date(x.at * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') + '</span><span class="st">' + esc(st) + '</span></button>' +
               '<div class="spbody"' + (op ? '' : ' hidden') + ' data-bfor="' + x.id + '"></div></li>';
@@ -1322,6 +1324,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           bd.hidden = false; bd.innerHTML = spBody(x, LNAME);
           if (x.k !== 'todo') spCompare(x, '');
           spGiveWire(x, bd);
+          Array.prototype.forEach.call(bd.querySelectorAll('[data-spfirst],[data-splast]'), function (bt) { bt.onclick = function () { bt.disabled = true; subPrep({ op: bt.dataset.spfirst ? 'first' : 'last', id: bt.dataset.spfirst || bt.dataset.splast }); toast(bt.dataset.spfirst ? 'Next in the queue' : 'Last in the queue'); }; });
           Array.prototype.forEach.call(bd.querySelectorAll('[data-sptrans]'), function (bt) { bt.onclick = function () { bt.disabled = true; subPrep({ op: 'translate', id: bt.dataset.sptrans }); toast('To be translated next on your Mac'); }; });
           Array.prototype.forEach.call(bd.querySelectorAll('[data-spquiet]'), function (bt) { bt.onclick = function () { bt.disabled = true; subPrep({ op: 'nodialogue', id: bt.dataset.spquiet }); toast('No subtitles needed: in Not needed'); }; });
           Array.prototype.forEach.call(bd.querySelectorAll('[data-spagain]'), function (bt) { bt.onclick = function () { bt.disabled = true; subPrep({ op: 'again', id: bt.dataset.spagain }); toast('To be done again, in its turn'); }; });
