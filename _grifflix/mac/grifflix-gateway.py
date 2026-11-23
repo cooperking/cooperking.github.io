@@ -9153,7 +9153,9 @@ def bom_now():
 def a24_now():
     """A film in A24's own list (a24films.com/films, kept with the site as a24-list.json), put in the A24 collection when it comes in,
     as a Criterion film goes in The Criterion Collection (John, 19 Nov 2026: "Misty Green and Tony should have been added to the A24
-    collection correctly but haven't been yet"). Matched by title and year (a year either way); never one John put in A24 CHECKS."""
+    collection correctly but haven't been yet"). Matched by title and year (a year either way). One in A24 CHECKS that A24 lists now is
+    moved back to A24: A24 CHECKS holds only those A24 doesn't list (John, 23 Nov 2026, "all films from the list need adding": Tusk, Life
+    After Beth and 39 more, put in A24 CHECKS on 19 Nov when A24's list as read then hadn't them)."""
     g = G_REF[0] if G_REF else None
     if not g:
         return
@@ -9164,10 +9166,15 @@ def a24_now():
         a24 = next((x for x in sets if (x.get('Name') or '').strip().lower() == 'a24'), None)
         if not a24 or not films:
             return
-        held = set()
+        held, checks = set(), {}
+        chk = next((x for x in sets if (x.get('Name') or '').strip().lower() == 'a24 checks'), None)
         for x in sets:
             if (x.get('Name') or '').strip().lower() in ('a24', 'a24 checks'):
-                held.update(i['Id'] for i in g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': x['Id'], 'Fields': ''}).get('Items', []))
+                ids_ = [i['Id'] for i in g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': x['Id'], 'Fields': ''}).get('Items', [])]
+                if x is chk:
+                    checks = dict.fromkeys(ids_)
+                else:
+                    held.update(ids_)
         want = {}
         for f in films:
             want.setdefault(fold(f.get('t')), []).append(int(f.get('y') or 0))
@@ -9175,7 +9182,13 @@ def a24_now():
         if not libs.get('movies'):
             return
         movies = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': libs['movies'], 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'ProductionYear'}).get('Items', [])
-        add = [m for m in movies if m['Id'] not in held and any(not m.get('ProductionYear') or abs(y - int(m['ProductionYear'])) <= 1 for y in want.get(fold(m.get('Name')), []))]
+        # (its name, or the part after a colon: "Oasis: Supersonic" is A24's Supersonic)
+        names_ = lambda m: [fold(m.get('Name'))] + ([fold((m.get('Name') or '').split(':', 1)[1])] if ':' in (m.get('Name') or '') else [])
+        add = [m for m in movies if m['Id'] not in held and any(not m.get('ProductionYear') or abs(y - int(m['ProductionYear'])) <= 1 for n_ in names_(m) for y in want.get(n_, []))]
+        back = [m for m in add if m['Id'] in checks]
+        if back and chk:   # (A24 lists it now: out of A24 CHECKS, into A24)
+            g.jf.call('DELETE', '/Collections/%s/Items' % chk['Id'], query={'Ids': ','.join(m['Id'] for m in back)})
+            log('A24: back from A24 CHECKS, A24 lists them now: %s' % ', '.join('%s (%s)' % (m.get('Name'), m.get('ProductionYear') or '?') for m in back)[:1500])
         if add:
             g.jf.call('POST', '/Collections/%s/Items' % a24['Id'], query={'Ids': ','.join(m['Id'] for m in add)})
             g.forget()
