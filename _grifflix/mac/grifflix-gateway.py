@@ -1181,7 +1181,7 @@ def make_handler(g):
                             if e.get('state') not in ('waiting', 'given'):
                                 continue
                             try:
-                                it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
+                                it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds,OriginalTitle'}) or {}
                             except Exception:
                                 it = {}
                             path = it.get('Path') or ''
@@ -1207,7 +1207,7 @@ def make_handler(g):
                                     res = self.subs_client().search('en', mhash=mh, query=e.get('series'), parent_tmdb=e.get('series_tmdb'), parent_imdb=e.get('series_imdb'), alt=[e.get('series_orig')], season=e.get('season'),
                                                                     episode=e.get('episode'), hint=org_ or os.path.basename(path), also=True)
                                 else:
-                                    res = self.subs_client().search('en', mhash=mh, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'),
+                                    res = self.subs_client().search('en', mhash=mh, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), alt=[it.get('OriginalTitle')], query=it.get('Name'),
                                                                     year=it.get('ProductionYear'), hint=org_ or os.path.basename(path), also=True)
                             except Exception as ex:
                                 e.update(note=('OpenSubtitles: %s' % ex)[:200])
@@ -1305,7 +1305,7 @@ def make_handler(g):
                                 if e.get('kind') == 'episode':
                                     A_ = self.subs_client().search('', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), parent_imdb=e.get('series_imdb'), alt=[e.get('series_orig')], season=e.get('season'), episode=e.get('episode'), hint=org_ or os.path.basename(path), also=True)
                                 else:
-                                    A_ = self.subs_client().search('', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=org_ or os.path.basename(path), also=True)
+                                    A_ = self.subs_client().search('', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), alt=[it.get('OriginalTitle')], query=it.get('Name'), year=it.get('ProductionYear'), hint=org_ or os.path.basename(path), also=True)
                                 own_ = {'fre': 'fr', 'fra': 'fr', 'ger': 'de', 'deu': 'de', 'spa': 'es', 'ita': 'it', 'jpn': 'ja', 'swe': 'sv', 'rus': 'ru', 'por': 'pt', 'chi': 'zh', 'zho': 'zh', 'kor': 'ko',
                                         'pol': 'pl', 'dut': 'nl', 'nld': 'nl', 'dan': 'da', 'nor': 'no', 'fin': 'fi', 'hun': 'hu', 'cze': 'cs', 'ces': 'cs', 'gre': 'el', 'ell': 'el', 'tur': 'tr',
                                         'per': 'fa', 'fas': 'fa', 'ara': 'ar', 'heb': 'he', 'hin': 'hi', 'rum': 'ro', 'ron': 'ro', 'srp': 'sr', 'hrv': 'hr', 'ben': 'bn'}.get(str(e.get('lang') or '').lower(), str(e.get('lang') or '').lower()[:2])
@@ -3269,14 +3269,14 @@ def make_handler(g):
                 return self.send_json(200, ev_ or {'parts': []})
             if re.match(r'^[0-9a-f]{32}$', str(q.get('search') or '')):   # (English subtitles for one film on OpenSubtitles, for John to give one)
                 iid_ = q['search']
-                it_ = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid_), query={'Fields': 'Path,ProviderIds'}) or {}
+                it_ = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid_), query={'Fields': 'Path,ProviderIds,OriginalTitle'}) or {}
                 pid_ = it_.get('ProviderIds') or {}
                 e_ = P.get(iid_) or {}
                 try:
                     if e_.get('kind') == 'episode':
                         R_ = self.subs_client().search('en', query=e_.get('series'), parent_tmdb=e_.get('series_tmdb'), parent_imdb=e_.get('series_imdb'), alt=[e_.get('series_orig')], season=e_.get('season'), episode=e_.get('episode'), hint=os.path.basename(it_.get('Path') or ''), also=True)
                     else:
-                        R_ = self.subs_client().search('en', tmdb=pid_.get('Tmdb'), imdb=pid_.get('Imdb'), query=it_.get('Name'), year=it_.get('ProductionYear'), hint=os.path.basename(it_.get('Path') or ''), also=True)
+                        R_ = self.subs_client().search('en', tmdb=pid_.get('Tmdb'), imdb=pid_.get('Imdb'), alt=[it_.get('OriginalTitle')], query=it_.get('Name'), year=it_.get('ProductionYear'), hint=os.path.basename(it_.get('Path') or ''), also=True)
                 except Exception as ex:
                     return self.send_json(502, {'error': str(ex)[:200]})
                 return self.send_json(200, {'mins': round((it_.get('RunTimeTicks') or 0) / 6e8), 'results': [{k: x.get(k) for k in ('file_id', 'name', 'downloads', 'exact', 'like', 'hi', 'machine', 'fps', 'source')} for x in R_[:40]]})
@@ -4413,7 +4413,7 @@ def make_handler(g):
                         res = self.subs_client().search(lang, mhash=mh, parent_tmdb=ser.get('Tmdb'), season=it.get('ParentIndexNumber'), episode=it.get('IndexNumber'),
                                                         query=it.get('SeriesName'), hint=os.path.basename(path))
                     else:
-                        res = self.subs_client().search(lang, mhash=mh, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'),
+                        res = self.subs_client().search(lang, mhash=mh, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), alt=[it.get('OriginalTitle')], query=it.get('Name'), year=it.get('ProductionYear'),
                                                         hint=os.path.basename(path))
                 except Exception as e:
                     return self.send_json(502, {'error': str(e)})
@@ -6605,7 +6605,7 @@ def speech_try(g, cl, e, iid, path, it):
     def look(lang):
         if e.get('kind') == 'episode':
             return cl.search(lang, query=e.get('series'), parent_tmdb=e.get('series_tmdb'), parent_imdb=e.get('series_imdb'), alt=[e.get('series_orig')], season=e.get('season'), episode=e.get('episode'), hint=hint)
-        return cl.search(lang, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint)
+        return cl.search(lang, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), alt=[it.get('OriginalTitle')], query=it.get('Name'), year=it.get('ProductionYear'), hint=hint)
     said = []
     # (1) in other languages: one made for this copy times the English
     if not (e.get('ref_file') and os.path.exists(e.get('ref_file') or '')):
@@ -6712,7 +6712,7 @@ def keep_file_checks(g):
                           key=lambda kv: (not kv[1].get('prio'), kv[1].get('order', 0)))
             for iid, e in todo[:1]:
                 did = True
-                it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
+                it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds,OriginalTitle'}) or {}
                 path = it.get('Path') or ''
                 e0 = __import__('copy').deepcopy(e)
                 e = __import__('copy').deepcopy(e)
@@ -6842,7 +6842,7 @@ def keep_speech_first(g):
                            and not v.get('givenfile') and not v.get('ref_only') and v.get('ref_tried2')), key=lambda kv: kv[1].get('order', 0))
             for iid, e in todo[:1]:
                 did = True
-                it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
+                it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds,OriginalTitle'}) or {}
                 path = it.get('Path') or ''
                 e = dict(e)
                 ok = None
@@ -6880,7 +6880,7 @@ def name_sub(g, cl, e, iid, path, it, res=None):
         if e.get('kind') == 'episode':
             res = cl.search('en', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), parent_imdb=e.get('series_imdb'), alt=[e.get('series_orig')], season=e.get('season'), episode=e.get('episode'), hint=hint, also=True)
         else:
-            res = cl.search('en', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint, also=True)
+            res = cl.search('en', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), alt=[it.get('OriginalTitle')], query=it.get('Name'), year=it.get('ProductionYear'), hint=hint, also=True)
     dur = (it.get('RunTimeTicks') or 0) / 1e7
     same_ = [y for y in res if not y.get('machine') and not y.get('exact') and (y.get('samename') or (y.get('like') or 0) >= 8)]
     rel_ = bool(org) or bool(re.search(r'(?i)\b(1080p|720p|2160p|480p|bluray|brrip|bdrip|remux|web-?dl|webrip|dvdrip|x26[45]|h\.?26[45]|hevc|xvid|yts|rarbg)\b', hint))
@@ -6948,7 +6948,7 @@ def ref_sub(g, cl, e, iid, path, it):
             if e.get('kind') == 'episode':
                 A_ = cl.search('', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), parent_imdb=e.get('series_imdb'), alt=[e.get('series_orig')], season=e.get('season'), episode=e.get('episode'), hint=hint, also=True)
             else:
-                A_ = cl.search('', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint, also=True)
+                A_ = cl.search('', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), alt=[it.get('OriginalTitle')], query=it.get('Name'), year=it.get('ProductionYear'), hint=hint, also=True)
             # (uploaded under this copy's very name; or else of the same release, its source and group the same, as like as can be: each one
             # still lined up with the English below, so one that isn't this copy's timing is passed over)
             fo_ = [x for x in A_ if not x.get('machine') and str(x.get('lang') or '').lower() not in ('en', 'eng')]
@@ -6983,7 +6983,7 @@ def ref_sub(g, cl, e, iid, path, it):
     if e.get('kind') == 'episode':
         L = cl.search('en', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), parent_imdb=e.get('series_imdb'), alt=[e.get('series_orig')], season=e.get('season'), episode=e.get('episode'), hint=hint, also=True)
     else:
-        L = cl.search('en', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint, also=True)
+        L = cl.search('en', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), alt=[it.get('OriginalTitle')], query=it.get('Name'), year=it.get('ProductionYear'), hint=hint, also=True)
     L = [x for x in L if not x.get('machine')][:6]
     best = None
     # (each English one tried kept, as it came and as timed, to compare and to choose instead: John, 22 Nov 2026, "showing a clear comparison
@@ -7128,7 +7128,7 @@ def english_by_foreign(g, iid):
     lang = e.get('ref_lang') or '?'
     if len(ref) < 50:
         return False
-    it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
+    it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds,OriginalTitle'}) or {}
     path = it.get('Path') or ''
     if not path or not os.path.exists(path):
         return False
@@ -7139,7 +7139,7 @@ def english_by_foreign(g, iid):
     if e.get('kind') == 'episode':
         L = cl.search('en', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), parent_imdb=e.get('series_imdb'), alt=[e.get('series_orig')], season=e.get('season'), episode=e.get('episode'), hint=hint, also=True)
     else:
-        L = cl.search('en', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint, also=True)
+        L = cl.search('en', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), alt=[it.get('OriginalTitle')], query=it.get('Name'), year=it.get('ProductionYear'), hint=hint, also=True)
     L = [x for x in L if not x.get('machine')][:6]
     best = None
     for x in L:
@@ -7215,7 +7215,7 @@ def subs_exact_all():
         if iid.startswith('_') or not isinstance(e, dict) or e.get('givenfile') or e.get('how') == 'given' or ((e.get('state') not in ('waiting', 'none', 'nomatch', 'failed') or e.get('ref_tried2')) and not redo_):
             continue   # (nor one John gave subtitles for: his stand)
         try:
-            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
+            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds,OriginalTitle'}) or {}
             path = it.get('Path') or ''
             if path and os.path.exists(path):
                 Q = load(SUBPREP, {}) or {}   # (saved as it goes, over what John's Mac has done meanwhile)
@@ -7243,7 +7243,7 @@ def subs_exact_all():
         if iid.startswith('_') or not isinstance(e, dict) or e.get('state') not in ('done', 'check') or e.get('how') or e.get('rechecked2'):
             continue
         try:
-            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
+            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds,OriginalTitle'}) or {}
             path = it.get('Path') or ''
             Q = load(SUBPREP, {}) or {}
             Q0_ = __import__('copy').deepcopy(Q)
@@ -7287,7 +7287,7 @@ def subs_namecheck():
         if iid.startswith('_') or not isinstance(e, dict) or e.get('state') not in ('waiting', 'none', 'nomatch', 'failed'):
             continue
         try:
-            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
+            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds,OriginalTitle'}) or {}
             path = it.get('Path') or ''
             org = film_origin(path)
             name = org or os.path.splitext(os.path.basename(path))[0]
@@ -7301,7 +7301,7 @@ def subs_namecheck():
                 if e.get('kind') == 'episode':
                     L = cl.search('en', mhash=mh, query=e.get('series'), parent_tmdb=e.get('series_tmdb'), parent_imdb=e.get('series_imdb'), alt=[e.get('series_orig')], season=e.get('season'), episode=e.get('episode'), hint=name)
                 else:
-                    L = cl.search('en', mhash=mh, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=name)
+                    L = cl.search('en', mhash=mh, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), alt=[it.get('OriginalTitle')], query=it.get('Name'), year=it.get('ProductionYear'), hint=name)
                 L = [x for x in L if not x.get('machine')]
                 r_.update(found=len(L), same=[x.get('name') or x.get('fname') for x in L if x.get('samename')][:5], exact=sum(1 for x in L if x.get('exact')))
             res[iid] = r_
@@ -9954,6 +9954,25 @@ def serve():
     except Exception as e:
         log('Subtitles, tried again in other languages: %s' % e)
 
+    if not os.path.exists(os.path.expanduser('~/Grifflix/subs-films.done')):   # (once: films searched by their IMDb numbers and own titles too
+        # now: those turned down looked at again from the start, and those machine-translated looked at again for English: John, 23 Nov
+        # 2026, "we need to check what else it missed this way as I can immediately see the correct subtitles are there on open subs")
+        try:
+            with SP_LOCK:
+                P_ = load(SUBPREP, {}) or {}
+                n_f = []
+                for k_, e_ in P_.items():
+                    if isinstance(e_, dict) and e_.get('state') in ('nomatch', 'none'):
+                        e_.update(state='waiting', note='to be tried again: looked for by its IMDb number and own title too')
+                        for f_ in ('exact_tried', 'name_tried', 'ref_tried', 'ref_tried2', 'checks', 'tried', 'cands'):
+                            e_.pop(f_, None)
+                        n_f.append(e_.get('name'))
+                save(SUBPREP, P_)
+            log('Subtitles: looked at again from the start, by IMDb numbers and own titles too: %s' % (', '.join(str(x) for x in n_f) or 'none'))
+        except Exception as e:
+            log('Subtitles, looked at again: %s' % e)
+        threading.Thread(target=english_by_foreign_all, args=(g, 150), daemon=True).start()
+        open(os.path.expanduser('~/Grifflix/subs-films.done'), 'w').write(time.strftime('%Y-%m-%d %H:%M'))
     if not os.path.exists(os.path.expanduser('~/Grifflix/subs-subtitlecat.done')):   # (once: SubtitleCat a new place to look: those with none, and those
         # machine-translated, tried again (the Varda episodes, and Varda by Agnès, whose English is there): John, 23 Nov 2026)
         subs_none_again('SubtitleCat too')
