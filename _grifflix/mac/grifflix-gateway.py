@@ -8392,11 +8392,21 @@ def auto_match(g):
     VID = ('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')
     tried_at = os.path.expanduser('~/Grifflix/match-tried.json')
     tried = load(tried_at, {})
+    if not tried.get('_v2'):   # (once: every film looked at afresh, with titles that begin with the folder's now counted too)
+        tried = {'_v2': 1}
     lid = (g.st.get('libraries') or {}).get('movies')
     if not lid:
         return
-    items = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie',
-                                                               'Fields': 'Path,ProductionYear,ProviderIds,LockedFields,MediaSources'}).get('Items') or []
+    # (a page at a time, and each film's own running time, not its files' full details: all 2,500 at once, with those, timed out every run
+    # from 22 Nov 2026, so nothing was put right for a day; and L'Argent's file, another film half an hour longer, was never looked at again)
+    items, start = [], 0
+    while True:
+        r_ = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'StartIndex': start, 'Limit': 300,
+                                                              'Fields': 'Path,ProductionYear,ProviderIds,LockedFields'}, timeout=180) or {}
+        items += r_.get('Items') or []
+        start += 300
+        if start >= (r_.get('TotalRecordCount') or 0) or not r_.get('Items'):
+            break
     keyed = bool(g.st.get('tmdb_key'))
     fixed, unsure = [], []
     for it in items:
@@ -8435,7 +8445,9 @@ def auto_match(g):
                 cands = {}
                 for y in (year, year - 1, year + 1):
                     for x in (tmdb(g, '/search/movie', query=title, primary_release_year=y) or {}).get('results') or []:
-                        if fold(title) in (fold(x.get('title')), fold(x.get('original_title'))):
+                        # (the folder's title, or one that begins with it, its length deciding: the folder "Birdman (2014)" is Birdman or (The
+                        # Unexpected Virtue of Ignorance), 119 minutes, and was put on The Birdman of that year, 76: 16 Nov 2026)
+                        if any(fold(title) == t_ or (len(fold(title)) >= 5 and t_.startswith(fold(title))) for t_ in (fold(x.get('title')), fold(x.get('original_title')))):
                             cands[x['id']] = x
                 close = []
                 for tid, x in cands.items():
