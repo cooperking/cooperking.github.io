@@ -8148,8 +8148,11 @@ def crit_missing(g):
             by_ty.setdefault((fold(f.get('title')), int(f['year'])), sl)
     owned = set(sl for _, sl in crit_pairs(g))
     try:
-        its = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie,Series', 'Fields': 'Path,ProductionYear'}).get('Items') or []
+        its = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie,Series', 'Fields': 'Path,ProductionYear,ProviderIds'}).get('Items') or []
+        by_t = crit_tmdb_slugs()
         for it in its:
+            if str((it.get('ProviderIds') or {}).get('Tmdb') or '') in by_t:   # (by its TMDB number, whatever year it has here)
+                owned.add(by_t[str(it['ProviderIds']['Tmdb'])])
             sp = spine_of(it.get('Path'), it.get('Type') == 'Series')
             if sp and str(sp).isdigit() and int(sp) in by_spine:
                 owned.add(by_spine[int(sp)])
@@ -8216,6 +8219,23 @@ def give_countries(g):
         g.publish_soon = time.time() + 120
 
 
+def crit_tmdb_slugs():
+    """TMDB's number for each Criterion film → its page's name on criterion.com (criterion-tmdb.json and the list): a film known by its
+    number whatever year it has in Grifflix (The Men Who Tread on the Tiger's Tail is Criterion's 1945 and TMDB's 1952: John, 23 Nov 2026)."""
+    home = os.path.expanduser('~/Grifflix')
+    T = load(os.path.join(home, 'criterion-tmdb.json'), {}) or {}
+    out = {}
+    for f in load(os.path.join(home, 'criterion-list.json'), []) or []:
+        sl = str(f.get('link') or '').replace('https://www.criterion.com/films/', '')
+        if not sl or '/' in sl:
+            continue
+        pk = re.sub(r'[^a-zA-Z0-9]', '', __import__('unicodedata').normalize('NFKD', str(f.get('title') or '')).encode('ascii', 'ignore').decode()).lower() + '|' + re.sub(r'[^0-9]', '', str(f.get('year') or ''))
+        tid = str((T.get(pk) or [0])[0] or '')
+        if tid and tid != '0':
+            out.setdefault(tid, sl)
+    return out
+
+
 def crit_pairs(g):
     """The films of The Criterion Collection, each with its page on criterion.com (from Criterion's list John last gave: its title and
     year, a year either side allowed): [(item id, page)]."""
@@ -8229,12 +8249,13 @@ def crit_pairs(g):
     box = next((x for x in sets if (x.get('Name') or '').strip().lower() == 'the criterion collection'), None)
     if not box:
         return []
-    out = []
-    for it in g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': box['Id'], 'Fields': 'ProductionYear'}).get('Items') or []:
+    out, by_t = [], crit_tmdb_slugs()
+    for it in g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': box['Id'], 'Fields': 'ProductionYear,ProviderIds'}).get('Items') or []:
         if it.get('Type') not in ('Movie', 'Series'):
             continue
         y = it.get('ProductionYear') or 0
-        sl = next((by[(fold(it.get('Name')), y + d)] for d in (0, 1, -1) if (fold(it.get('Name')), y + d) in by), None)
+        sl = next((by[(fold(it.get('Name')), y + d)] for d in (0, 1, -1) if (fold(it.get('Name')), y + d) in by), None) or \
+            by_t.get(str((it.get('ProviderIds') or {}).get('Tmdb') or ''))   # (or by its TMDB number, its year another)
         if sl:
             out.append((it['Id'], sl))
     return out
@@ -8257,6 +8278,12 @@ def crit_year(pick):
             if '/films/' in str(f.get('link') or '') and fold(f.get('title')) == fold(pick.get('Name')) and re.match(r'^\d{4}$', str(f.get('year') or '')) \
                     and (not py or abs(int(f['year']) - py) <= 3):
                 return int(f['year'])
+        # (or the very title years apart, the one Criterion film of that title: made one year and shown later (The Men Who Tread on the
+        # Tiger's Tail, Criterion's 1945, TMDB's 1952): John, 23 Nov 2026)
+        same = [f for f in load(os.path.expanduser('~/Grifflix/criterion-list.json'), []) or [] if '/films/' in str(f.get('link') or '')
+                and fold(f.get('title')) == fold(pick.get('Name')) and re.match(r'^\d{4}$', str(f.get('year') or ''))]
+        if len(same) == 1 and py and abs(int(same[0]['year']) - py) <= 15:
+            return int(same[0]['year'])
     except Exception:
         pass
     return None
@@ -8569,7 +8596,8 @@ def tmdb_once():
     """Once: every row of John's Criterion sheet given its TMDB link at once (John, 17 Nov 2026: "can we run as a job now"); after that only
     a new Criterion film's row, as it's added (covers_now, criterion-covers.py)."""
     home = os.path.expanduser('~/Grifflix')
-    done = os.path.join(home, 'criterion-tmdb-retry.done')   # (again once, with the wider matching, for the 191 not found the first time)
+    done = os.path.join(home, 'criterion-tmdb-retry2.done')   # (again once, with the wider matching, for the 191 not found the first time; and
+    # again with the very title years apart (The Men Who Tread on the Tiger's Tail, Criterion's 1945, TMDB's 1952): John, 23 Nov 2026)
     if os.path.exists(done) or not os.path.exists(os.path.join(home, 'criterion.json')):
         return
     time.sleep(90)
@@ -8582,6 +8610,8 @@ def tmdb_once():
         log('Criterion sheet, every TMDB link: %s' % ' '.join(l.strip() for l in out.strip().splitlines()[-4:])[:400])
         if r.returncode == 0 and ('Added' in out or 'TMDB links: 0 to add' in out):
             open(done, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+            if 'Added' in out:   # (films newly known by their TMDB numbers given their covers, spines and places in the collection)
+                covers_now()
     except Exception as e:
         log('Criterion sheet, every TMDB link:', e)
 
