@@ -9739,6 +9739,41 @@ def folders_fix2_once(g):
     open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
 
 
+def east_is_east_once(g):
+    """Once: the film in "East in East (1999)", matched to East/West (Régis Wargnier's), which is East Is East (1999), its file says so: its
+    match put right, its folder named for it, and out of To check (John, 23 Nov 2026, "East/ West should be East is East")."""
+    mk = os.path.expanduser('~/Grifflix/east-is-east.done')
+    if os.path.exists(mk):
+        return
+    time.sleep(480)
+    try:
+        xs = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path', 'SearchTerm': 'East', 'Limit': 100}, timeout=90) or {}).get('Items') or []
+        x = next((x for x in xs if os.path.basename(os.path.dirname(x.get('Path') or '')) == 'East in East (1999)'), None)
+        if not x:
+            log('East Is East: its folder “East in East (1999)” isn’t in the library')
+            open(mk, 'w').write('not found')
+            return
+        hit = next((r for r in (tmdb(g, '/search/movie', query='East Is East', year='1999') or {}).get('results') or []
+                    if fold(r.get('title')) == fold('East Is East') and (r.get('release_date') or '').startswith('1999')), None)
+        if not hit:
+            log('East Is East: TMDB didn’t find East Is East (1999): left for now')
+            return
+        pick = {'Name': hit['title'], 'ProductionYear': 1999, 'ProviderIds': {'Tmdb': str(hit['id'])}, 'SearchProviderName': 'TheMovieDb'}
+        box = next((b for b in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'BoxSet'}) or {}).get('Items') or []
+                    if (b.get('Name') or '').strip().lower() == 'to check'), None)
+        if box:   # (out of To check first: rename_to puts it back in the collections it's in)
+            g.jf.call('DELETE', '/Collections/%s/Items' % box['Id'], query={'Ids': x['Id']})
+        apply_match(g, x['Id'], pick)
+        time.sleep(20)
+        said = rename_to(g, x['Id'], hit['title'], 1999, pick)
+        log('East Is East: matched (TMDB %s) and its folder %s; out of To check' % (hit['id'], said or 'already right'))
+        g.forget()
+        g.publish_soon = time.time() + 300
+        open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+    except Exception as e:
+        log('East Is East: %s' % str(e)[:200])
+
+
 def renames_follow_once(g):
     """Once: the 15 folders put right on 23 Nov 2026, whose following timed out (the media server's whole library asked for at once):
     each found under its new name, its match put on again (Criterion's years kept: The Men Who Tread on the Tiger's Tail (1945) is TMDB's
@@ -10350,7 +10385,8 @@ def serve():
     threading.Thread(target=subs_by_timing_again, args=(g,), daemon=True).start()
     threading.Thread(target=ep_fill_all, args=(g,), daemon=True).start()
     threading.Thread(target=folders_fix_once, args=(g,), daemon=True).start()
-    threading.Thread(target=folders_fix2_once, args=(g,), daemon=True).start()   # (once: The Most Beautiful's and Babo 73's folders, 23 Nov 2026)   # (once: the folders John asked to have put right, 23 Nov 2026)
+    threading.Thread(target=folders_fix2_once, args=(g,), daemon=True).start()
+    threading.Thread(target=east_is_east_once, args=(g,), daemon=True).start()   # (once: East/West made East Is East, 23 Nov 2026)   # (once: The Most Beautiful's and Babo 73's folders, 23 Nov 2026)   # (once: the folders John asked to have put right, 23 Nov 2026)
     threading.Thread(target=renames_follow_once, args=(g,), daemon=True).start()   # (and those followed, as they weren't then)
     threading.Thread(target=to_check_once, args=(g,), daemon=True).start()
     threading.Thread(target=silent_once, args=(g,), daemon=True).start()   # (once: silent films put in Not needed)   # (once: the films in doubt in a To check collection, John's alone)   # (each episode's series' IMDb number and own title, for the searches)   # (once: those turned down by their words, looked at again by when their lines are said)
