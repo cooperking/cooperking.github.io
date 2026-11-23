@@ -1165,11 +1165,65 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   function spGiveBox(x) {
     return '<details class="spgive" style="margin:10px 0 0"><summary style="cursor:pointer;font-size:13px">Give the subtitles to use</summary>' +
       '<p class="spnote">Choose the right English subtitles from OpenSubtitles, or upload a file of your own (.srt). Then use them as they are, or have them timed to the film: by the subtitle made for this copy if there is one, otherwise by Whisper on your Mac with these alone.</p>' +
-      '<div class="spact"><button class="btn" type="button" data-spsearch="' + x.id + '">List those found (OpenSubtitles, Subdl)</button><label class="btn" style="cursor:pointer">Upload a file<input type="file" accept=".srt,.txt,text/plain" data-spfile="' + x.id + '" hidden></label></div>' +
+      '<div class="spact"><button class="btn" type="button" data-spsearch="' + x.id + '">List those found (OpenSubtitles, Subdl)</button><label class="btn" style="cursor:pointer">Upload a file<input type="file" accept=".srt,.ttml,.dfxp,.xml,.vtt,.txt,text/plain,application/ttml+xml,text/vtt" data-spfile="' + x.id + '" hidden></label></div>' +
       '<p class="spnote" data-gsay="' + x.id + '"></p><ul class="changes" data-gfor="' + x.id + '" style="margin:4px 0 0"></ul>' +
       '<p class="spnote" style="margin-top:14px"><b>Or a subtitle in another language</b> (best of all one made for your copy): the English lined up by it, and it translated into English on your Mac and compared; the translation kept to see beside the dialogue and use if it’s good enough.</p>' +
       '<div class="spact"><select data-glang="' + x.id + '" aria-label="Its language">' + SPLANGS.map(function (l) { return '<option value="' + l[0] + '"' + (l[0] === (SPL2[x.lang] || x.lang) ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') + '</select>' +
-      '<label class="btn" style="cursor:pointer">Upload it<input type="file" accept=".srt,.txt,text/plain" data-spref="' + x.id + '" hidden></label></div></details>';
+      '<label class="btn" style="cursor:pointer">Upload it<input type="file" accept=".srt,.ttml,.dfxp,.xml,.vtt,.txt,text/plain,application/ttml+xml,text/vtt" data-spref="' + x.id + '" hidden></label></div></details>';
+  }
+  // (TTML (the streaming services' own: Amazon's, Netflix's) and WebVTT read as SRT when chosen: the same lines and the same times, to the
+  // millisecond, italics kept; only where a line sits on the screen and colours left out. SRT is what the media server and every player
+  // shows: John, 23 Nov 2026, "I have ttml subtitles for the eternal memory")
+  function spToSrt(t) {
+    t = String(t || '').replace(/^\uFEFF/, '');
+    var pad = function (n, w) { n = String(n); while (n.length < w) n = '0' + n; return n; };
+    var ts = function (v) { var ms = Math.round(Math.max(0, v) * 1000); return pad(Math.floor(ms / 3600000), 2) + ':' + pad(Math.floor(ms / 60000) % 60, 2) + ':' + pad(Math.floor(ms / 1000) % 60, 2) + ',' + pad(ms % 1000, 3); };
+    var out = function (cues) { return cues.filter(function (c) { return c[2].trim() && c[1] > c[0]; }).sort(function (a, b) { return a[0] - b[0]; })
+      .map(function (c, i) { return (i + 1) + '\n' + ts(c[0]) + ' --> ' + ts(c[1]) + '\n' + c[2].trim() + '\n'; }).join('\n'); };
+    if (/^\s*WEBVTT/.test(t)) {
+      var vc = [], sec = function (v) { var q = v.replace(',', '.').split(':').map(Number); return q.length === 3 ? q[0] * 3600 + q[1] * 60 + q[2] : q[0] * 60 + q[1]; };
+      t.replace(/\r/g, '').split(/\n\s*\n/).forEach(function (b) {
+        var m = /((?:\d+:)?\d{1,2}:\d{2}[.,]\d{1,3})\s*-->\s*((?:\d+:)?\d{1,2}:\d{2}[.,]\d{1,3})[^\n]*\n([\s\S]*)/.exec(b);
+        if (m) vc.push([sec(m[1]), sec(m[2]), m[3].replace(/<(?!\/?i>)[^>]+>/g, '')]);
+      });
+      return out(vc);
+    }
+    if (!/<tt[\s>]/.test(t) || !window.DOMParser) return t;
+    var doc = new DOMParser().parseFromString(t, 'application/xml');
+    if (doc.getElementsByTagName('parsererror').length) return '';
+    var TTP = 'http://www.w3.org/ns/ttml#parameter', TTS = 'http://www.w3.org/ns/ttml#styling', tt = doc.documentElement;
+    var at = function (el, ns, n) { return (el.getAttributeNS && el.getAttributeNS(ns, n)) || el.getAttribute((ns === TTP ? 'ttp:' : 'tts:') + n) || ''; };
+    var fr = parseFloat(at(tt, TTP, 'frameRate')), mul = (at(tt, TTP, 'frameRateMultiplier') || '1 1').split(/\s+/).map(Number);
+    var efr = (fr || 30) * ((mul[0] || 1) / (mul[1] || 1)), tick = parseFloat(at(tt, TTP, 'tickRate')) || (fr ? efr : 1);
+    var tm = function (v) { v = String(v || '').trim(); var m; if (!v) return null;
+      if ((m = /^(\d+):(\d{2}):(\d{2})(?:\.(\d+))?$/.exec(v))) return +m[1] * 3600 + +m[2] * 60 + +m[3] + (m[4] ? +('0.' + m[4]) : 0);
+      if ((m = /^(\d+):(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?$/.exec(v))) return +m[1] * 3600 + +m[2] * 60 + +m[3] + (+m[4] + (m[5] ? +('0.' + m[5]) : 0)) / efr;
+      if ((m = /^([\d.]+)(h|ms|m|s|f|t)$/.exec(v))) { var n = +m[1]; return { h: n * 3600, m: n * 60, s: n, ms: n / 1000, f: n / efr, t: n / tick }[m[2]]; }
+      return null; };
+    var ital = {};
+    Array.prototype.forEach.call(doc.getElementsByTagNameNS('*', 'style'), function (st) { if (/italic/i.test(at(st, TTS, 'fontStyle'))) ital[st.getAttribute('xml:id') || st.getAttribute('id')] = 1; });
+    var isItal = function (el) { var fs = at(el, TTS, 'fontStyle'); return fs ? /italic/i.test(fs) : String(el.getAttribute('style') || '').split(/\s+/).some(function (k) { return ital[k]; }); };
+    var text = function (el) { var r = ''; Array.prototype.forEach.call(el.childNodes, function (n) {
+      if (n.nodeType === 3) r += n.nodeValue.replace(/\s+/g, ' ');
+      else if (n.nodeType === 1 && n.localName === 'br') r += '\n';
+      else if (n.nodeType === 1 && n.localName === 'span') { var y = text(n); r += isItal(n) && y.trim() ? '<i>' + y + '</i>' : y; }
+      else if (n.nodeType === 1 && n.localName !== 'metadata') r += text(n); }); return r; };
+    var off = function (el) { var o = 0; for (var q = el.parentNode; q && q.nodeType === 1; q = q.parentNode) o += tm(q.getAttribute('begin')) || 0; return o; };   // (a division that starts later)
+    var cues = [];
+    Array.prototype.forEach.call(doc.getElementsByTagNameNS('*', 'p'), function (p) {
+      var b = tm(p.getAttribute('begin')), e = tm(p.getAttribute('end')), d = tm(p.getAttribute('dur'));
+      if (b == null) return; if (e == null && d != null) e = b + d; if (e == null) return;
+      var o = off(p), tx = text(p).split('\n').map(function (l) { return l.trim(); }).filter(Boolean).join('\n');
+      if (tx && isItal(p)) tx = '<i>' + tx.replace(/<\/?i>/g, '') + '</i>';
+      cues.push([b + o, e + o, tx]);
+    });
+    return out(cues);
+  }
+  function spRead(f) {   // (a chosen subtitle file as SRT, or why not)
+    if (f.size > 8000000) return Promise.reject(new Error('That file is too big for subtitles.'));
+    return f.text().then(function (t0) { var t = spToSrt(t0), n = (t.match(/-->/g) || []).length;
+      if (n < 5) throw new Error('Couldn’t read subtitles from that file: it needs to be .srt, .ttml or .vtt.');
+      return { t: t, n: n, name: f.name.replace(/\.(ttml|dfxp|xml|vtt)$/i, '.srt'), was: /\.(ttml|dfxp|xml)$/i.test(f.name) || /<tt[\s>]/.test(t0.slice(0, 2000)) ? 'TTML' : /^\s*WEBVTT/.test(t0) ? 'WebVTT' : '' }; });
   }
   function spGiveWire(x, bd) {
     var list = bd.querySelector('[data-gfor="' + x.id + '"]'), say = bd.querySelector('[data-gsay="' + x.id + '"]'); if (!list) return;
@@ -1194,18 +1248,16 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       }).catch(function (e) { say.textContent = 'Couldn’t ask: ' + (e.message || e); });
     };
     var rfi = bd.querySelector('[data-spref]'); if (rfi) rfi.onchange = function () { var f = rfi.files && rfi.files[0]; if (!f) return;
-      if (f.size > 800000) { say.textContent = 'That file is too big for subtitles.'; return; }
       var lg = bd.querySelector('[data-glang]').value;
-      f.text().then(function (t) { say.textContent = 'Saving…';
+      spRead(f).then(function (r) { var t = r.t; f = { name: r.name }; say.textContent = 'Saving…';
         fetch(GW + '/api/subprep', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'giveref', id: x.id, lang: lg, srt: t, name: f.name }) })
           .then(function (r) { return r.json().then(function (j) { if (!r.ok || j.error) throw new Error(j.error || r.status); return j; }); })
           .then(function () { toast('Given: tried next, and translated on your Mac'); subPrep(); })
-          .catch(function (e) { say.textContent = 'Not saved: ' + (e.message || e); }); }); };
+          .catch(function (e) { say.textContent = 'Not saved: ' + (e.message || e); }); }).catch(function (e) { say.textContent = e.message || String(e); }); };
     var fi = bd.querySelector('[data-spfile]'); if (fi) fi.onchange = function () { var f = fi.files && fi.files[0]; if (!f) return;
-      if (f.size > 800000) { say.textContent = 'That file is too big for subtitles.'; return; }
       // (not saved until one of its two buttons is pressed, and it says so: John, 22 Nov 2026, "I uploaded varda copies", and none had come)
-      f.text().then(function (t) { list.innerHTML = '<li><b>' + esc(f.name) + '</b><span class="when">your file · ' + (t.match(/-->/g) || []).length + ' lines</span>' + two() + '</li>'; say.innerHTML = '<b>Not saved yet:</b> press Time it to the film (fitted to your copy on your Mac) or Use as it is.';
-        wireTwo(list.querySelector('li'), { srt: t, name: f.name }); }); };
+      spRead(f).then(function (r) { list.innerHTML = '<li><b>' + esc(f.name) + '</b><span class="when">your file' + (r.was ? ' (' + r.was + ', read as SRT: the same lines and times)' : '') + ' · ' + r.n + ' lines</span>' + two() + '</li>'; say.innerHTML = '<b>Not saved yet:</b> press Time it to the film (fitted to your copy on your Mac) or Use as it is.';
+        wireTwo(list.querySelector('li'), { srt: r.t, name: r.name }); }).catch(function (e) { say.textContent = e.message || String(e); }); };
   }
   function spCompare(x, w) {
     var box = document.querySelector('.spcmp[data-cfor="' + x.id + '"]'), vb = document.querySelector('.spvers[data-vfor="' + x.id + '"]'); if (!box) return;
