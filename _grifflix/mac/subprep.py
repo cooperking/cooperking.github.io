@@ -246,6 +246,74 @@ def onset_fit(heard, starts):
     return fits, fits and z >= 5 and min(known) >= 2, h, round(z, 1), pz
 
 
+def onset_search(heard, cues, ratios=RATIOS, span=900):
+    """The timing a subtitle in any language fits the film at by when its lines are said, whatever their words or language (people speak
+    when they speak): each speed tried, the offsets the most heard lines agree on found, fine-tuned and judged as above. The best as
+    (fits, z, sure, lines agreeing, parts' z, speed, offset), or None."""
+    import bisect
+    allh = [h for p in heard for h in p]
+    if len(allh) < 12 or len(cues) < 20:
+        return None
+    starts0 = sorted(c[0] for c in cues)
+    best = None
+    for r in ratios:
+        st = [r * x for x in starts0]
+        diffs = []
+        for h in allh:
+            diffs.extend(h - x for x in st[bisect.bisect_left(st, h - span):bisect.bisect_right(st, h + span)])
+        diffs.sort()
+        peaks, j = [], 0
+        for i in range(len(diffs)):
+            while diffs[i] - diffs[j] > 2.0:
+                j += 1
+            peaks.append((i - j + 1, (diffs[i] + diffs[j]) / 2))
+        peaks.sort(reverse=True)
+        tried = []
+        for _, b0 in peaks:
+            if len(tried) >= 4:
+                break
+            if any(abs(b0 - t) < 3 for t in tried):
+                continue
+            tried.append(b0)
+            bb = max((onset_hits(allh, st, b0 + d / 10), -abs(d), b0 + d / 10) for d in range(-15, 16))[2]
+            for _ in range(2):   # (then to the middle of the lines that agree: each heard line's own distance from its subtitle line's start)
+                ds = []
+                for h in allh:
+                    k = bisect.bisect_left(st, h - bb)
+                    near = min((abs(h - bb - st[k_]), h - bb - st[k_]) for k_ in (k - 1, k) if 0 <= k_ < len(st))
+                    if near[0] <= 1.0:
+                        ds.append(near[1])
+                if ds:
+                    bb += sorted(ds)[len(ds) // 2]
+            rr = r
+            pr = []   # (and the speed fine-tuned on the lines that agree: 25/24 and 25/23.976 differ by seven seconds over two hours)
+            for h in allh:
+                k = bisect.bisect_left(st, h - bb)
+                near = min((abs(h - bb - st[k_]), starts0[k_]) for k_ in (k - 1, k) if 0 <= k_ < len(st))
+                if near[0] <= 1.0:
+                    pr.append((h, near[1]))
+            if len(pr) >= 12:
+                mc = sum(c for _, c in pr) / len(pr); mf = sum(f for f, _ in pr) / len(pr)
+                vc = sum((c - mc) ** 2 for _, c in pr)
+                if vc > 0:
+                    r2 = sum((c - mc) * (f - mf) for f, c in pr) / vc
+                    if abs(r2 / r - 1) < .003:
+                        rr, bb = r2, mf - r2 * mc
+            ok, sure, h, z, pz = onset_fit(heard, [rr * x + bb for x in starts0])
+            known = [x for x in pz if x is not None]
+            # (found with no words to go by, among many timings: so clear, or else three parts or more agreeing well on average.
+            # Tried on John's films: 21 of 25 found at their right timing, and none of 120 wrong films' subtitles taken)
+            ok = bool(ok and (sure or (z >= 4.5 and len(known) >= 3 and sum(known) / len(known) >= 3)))
+            if not best or (ok, z) > (best[0], best[1]):
+                best = (ok, z, sure, h, pz, rr, bb)
+    return best
+
+
+def machine_result(name, lang, srt, how, sure, n):
+    """A subtitle in another language that fits this copy, put into English here: sent back as the film's English subtitles."""
+    return {'fits': True, 'exact': True, 'sure': bool(sure), 'name': name, 'n': n, 'miss': 0.0, 'how': how, 'srt': srt, 'samples': [], 'machine': lang, 'evidence': []}
+
+
 PROG = {}   # (where to say how it's going: set by main)
 
 
@@ -473,11 +541,66 @@ def prepare(job, ff, wcli, work):
         if job.get('ref_only'):   # (one timed by Whisper already, looked at again: kept as it is)
             prog('None lined up with the translated %s subtitle: the one timed by Whisper kept' % ((job.get('ref') or {}).get('lang') or ''))
             return [dict(x, fits=False) for x in res] if res else []
+        # (one made for this very copy (in the file itself, or found by its fingerprint or its release's name): its timing is this copy's,
+        # so it's used, translated, rather than listening: John, 23 Nov 2026, "if we can get a subtitle at all, we'd be better off
+        # translating it than using whisper")
+        if job.get('ref_sure') and TRANSLATED.get('srt'):
+            lg = (job.get('ref') or {}).get('lang') or ''
+            prog('None of the English lined up with the %s subtitle made for this copy: that one used, translated into English here' % lg)
+            return [machine_result(job['ref'].get('name') or 'the %s subtitle made for this copy' % lg, lg, TRANSLATED['srt'],
+                                   'the %s subtitle made for this copy, machine-translated on your Mac' % lg, True, len(parse_srt(TRANSLATED['srt'])))] + (res or [])
         prog('None lined up with the translated %s subtitle: listening with Whisper' % ((job.get('ref') or {}).get('lang') or ''))
     if job.get('ref_only'):
         return []
     heard = listen()
-    return evaluate()
+    res = evaluate()
+    if res and res[0].get('fits'):
+        return res
+    # (none of the English fits what's said: any subtitle in another language that fits the film by when its lines are said, since that's
+    # the same in any language. The English lined up by it, or else it translated into English here: John, 23 Nov 2026, "The main task of
+    # whisper should really be to find any subtitle at all where the sound of the dialogue exactly matches the timing ... if we can get a
+    # subtitle at all, we'd be better off translating it than using whisper")
+    pool = []
+    if job.get('ref') and (job['ref'].get('srt') or '').strip():
+        pool.append(dict(job['ref'], name=job['ref'].get('name') or 'the %s subtitle made for this copy' % job['ref'].get('lang')))
+    pool += [dict(x) for x in job.get('fmore') or []]
+    parts = [[sg[0] for sg in segs] for _, segs in heard]
+    best = None
+    for fc in pool[:5]:
+        if not fc.get('srt') and fc.get('file_id'):
+            try:
+                req = urllib.request.Request(PROG['base'] + '/macagent/subfile?file=%s' % fc['file_id'], headers={'User-Agent': UA, 'Authorization': 'Bearer ' + PROG['key']})
+                fc['srt'] = json.loads(urllib.request.urlopen(req, timeout=120).read() or b'{}').get('srt') or ''
+            except Exception as e_:
+                prog('Couldn’t get the %s subtitle: %s' % (fc.get('lang'), str(e_)[:100]))
+                continue
+        cues = parse_srt(fc.get('srt') or '')
+        if len(cues) < 50:
+            continue
+        prog('No English fits: trying the %s subtitle “%s” by when its lines are said' % (fc.get('lang'), (fc.get('name') or '')[:60]))
+        f_ = onset_search(parts, cues)
+        if f_ and f_[0] and (not best or f_[1] > best[0][1]):
+            best = (f_, fc, cues)
+    if not best:
+        return res
+    (ok, z, sure, h, pz, r, b), fc, cues = best
+    lg = fc.get('lang') or ''
+    how_ = 'moved %+.1f s%s, by when its lines are said (%d of %d heard lines begin with one of its lines)' % (b, '' if abs(r - 1) < .00005 else ', at %.4fx speed' % r, h, sum(len(p_) for p_ in parts))
+    TRANSLATED.clear()
+    heard_w = heard
+    heard = translated_ref({'ref': {'lang': lg, 'srt': write_srt([(r * a + b, r * e + b, t) for a, e, t in cues])}}, work, dur)
+    if heard and job.get('cands'):   # (the English lined up by it: a person's translation before a machine's)
+        res2 = evaluate()
+        if res2 and res2[0].get('fits'):
+            for x in res2:
+                x['how'] = 'by the %s subtitle “%s”, which fits this copy (%s), translated: %s' % (lg, (fc.get('name') or '')[:60], how_, x['how'])
+            return res2
+    heard = heard_w
+    if not TRANSLATED.get('srt'):
+        prog('The %s subtitle “%s” fits this copy, but couldn’t be translated here' % (lg, (fc.get('name') or '')[:60]))
+        return res
+    return [machine_result(fc.get('name') or '', lg, TRANSLATED['srt'], 'the %s subtitle “%s”, which fits this copy: %s; machine-translated on your Mac' % (lg, (fc.get('name') or '')[:60], how_),
+                           sure, len(parse_srt(TRANSLATED['srt'])))] + (res or [])
 
 
 def tr_out():
@@ -544,7 +667,7 @@ def main():
     # (sent packed, base64, not as text: Cloudflare in front of the Mac mini refused a whole film's dialogue as plain text, 403: Io Capitano,
     # John, 21 Nov 2026)
     import base64
-    say({'ok': True, 'evidence': best.get('evidence') or [], 'srt64': base64.b64encode(best['srt'].encode('utf-8')).decode(), 'sure': best['sure'], 'how': best['how'], 'n': best['n'], 'miss': best['miss'], 'chose': best['name'],
+    say({'ok': True, 'evidence': best.get('evidence') or [], 'srt64': base64.b64encode(best['srt'].encode('utf-8')).decode(), 'sure': best['sure'], 'how': best['how'], 'n': best['n'], 'miss': best['miss'], 'chose': best['name'], 'machine': best.get('machine') or '',
          'samples': best['samples'], 'mins': round((time.time() - t0) / 60, 1), 'tried': [[x['name'], x['n'], x['sure']] for x in res], **tr_out()})
 
 

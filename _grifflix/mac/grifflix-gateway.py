@@ -1060,6 +1060,11 @@ def make_handler(g):
                                         record('subtitles set aside', film=e.get('name'), id=iid, moved_from=ov_, why='replaced by ones that fit')
                                     if str(body.get('how') or '').startswith('by the '):   # (timed by a translated subtitle made for this copy, not by Whisper)
                                         e['how'] = 'translated'
+                                        lr_ = re.match(r'by the (\S+) subtitle', str(body.get('how') or ''))
+                                        if lr_ and not e.get('ref_lang'):
+                                            e['ref_lang'] = lr_.group(1)
+                                    if body.get('machine'):   # (no English fitted: one in another language that fits this copy, translated on John's Mac)
+                                        e['how'], e['ref_lang'] = 'machine', str(body['machine'])[:12]
                                     chk(e, 'whisper', 'Done on your Mac: %s, %s lines matched what’s said%s' % (str(body.get('chose') or '')[:60], body.get('n'), '' if body.get('sure') else ' (not enough to be sure: to check)'))
                                     if e.get('givenfile'):   # (the ones John gave, timed by Whisper)
                                         e['how'], e['cur'] = 'given', 'g'
@@ -1289,19 +1294,51 @@ def make_handler(g):
                                         save(SUBPREP, P)
                                         return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
                             more_ = [{'file_id': x['file_id'], 'name': x.get('name') or ''} for x in res[last_ + 1:last_ + 8]]   # (the next ones after those taken)
-                            if not cands:
+                            # (and those in other languages, the film's own first, for John's Mac to try by when their lines are said if no English
+                            # fits: the English lined up by the one that fits, or else it translated there. Fetched only if needed. John, 23 Nov
+                            # 2026, "if we can get a subtitle at all, we'd be better off translating it than using whisper")
+                            fmore_ = []
+                            try:
+                                if e.get('kind') == 'episode':
+                                    A_ = self.subs_client().search('', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=org_ or os.path.basename(path))
+                                else:
+                                    A_ = self.subs_client().search('', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=org_ or os.path.basename(path))
+                                own_ = {'fre': 'fr', 'fra': 'fr', 'ger': 'de', 'deu': 'de', 'spa': 'es', 'ita': 'it', 'jpn': 'ja', 'swe': 'sv', 'rus': 'ru', 'por': 'pt', 'chi': 'zh', 'zho': 'zh', 'kor': 'ko',
+                                        'pol': 'pl', 'dut': 'nl', 'nld': 'nl', 'dan': 'da', 'nor': 'no', 'fin': 'fi', 'hun': 'hu', 'cze': 'cs', 'ces': 'cs', 'gre': 'el', 'ell': 'el', 'tur': 'tr',
+                                        'per': 'fa', 'fas': 'fa', 'ara': 'ar', 'heb': 'he', 'hin': 'hi', 'rum': 'ro', 'ron': 'ro', 'srp': 'sr', 'hrv': 'hr', 'ben': 'bn'}.get(str(e.get('lang') or '').lower(), str(e.get('lang') or '').lower()[:2])
+                                lg_ = lambda x: re.split(r'[-_]', str(x.get('lang') or '').lower())[0]
+                                fo_ = [x for x in A_ if x.get('file_id') and not x.get('machine') and lg_(x) not in ('en', 'eng', '')]
+                                fo_.sort(key=lambda x: (lg_(x) != own_, not x.get('samename'), -lenfit_(x.get('name')), -(x.get('like') or 0), -(x.get('downloads') or 0)))
+                                seen_ = set()
+                                for x in fo_:   # (one a language, the four likeliest)
+                                    if lg_(x) in seen_ and len(fo_) > 4:
+                                        continue
+                                    seen_.add(lg_(x))
+                                    fmore_.append({'file_id': x['file_id'], 'name': x.get('name') or '', 'lang': lg_(x)})
+                                    if len(fmore_) >= 4:
+                                        break
+                            except Exception:
+                                fmore_ = []
+                            has_ref_ = bool(e.get('ref_file') and os.path.exists(e['ref_file']))
+                            if not cands and not fmore_ and not has_ref_:
                                 e.update(state='nomatch' if longer_ else 'none', at=int(now_),
-                                         note=('only English subtitles made for a longer cut (%s)' % ', '.join(longer_[:3]))[:200] if longer_ else 'no English subtitles on OpenSubtitles')
+                                         note=('only English subtitles made for a longer cut (%s)' % ', '.join(longer_[:3]))[:200] if longer_ else 'no subtitles on OpenSubtitles in English or any other language')
                                 continue
                             e.pop('prio', None)
-                            chk(e, 'whisper', 'Given to your Mac at %s: Whisper listens to four parts and tries %d English subtitle%s against what’s said' % (time.strftime('%H:%M'), len(cands), '' if len(cands) == 1 else 's'))
+                            if not cands and has_ref_ and e.get('ref_sure'):
+                                chk(e, 'whisper', 'Given to your Mac at %s: no English subtitles, so the %s one made for this copy translated into English there (no listening)' % (time.strftime('%H:%M'), e.get('ref_lang')))
+                            elif not cands:
+                                chk(e, 'whisper', 'Given to your Mac at %s: no English subtitles, so Whisper listens to four parts to find which of %d in other languages fits by when its lines are said, and that one is translated into English there' % (time.strftime('%H:%M'), len(fmore_) + has_ref_))
+                            else:
+                                chk(e, 'whisper', 'Given to your Mac at %s: Whisper listens to four parts and tries %d English subtitle%s against what’s said%s' % (time.strftime('%H:%M'), len(cands), '' if len(cands) == 1 else 's',
+                                    '; if none fits, %d in other languages by when their lines are said, the one that fits translated' % (len(fmore_) + has_ref_) if fmore_ or has_ref_ else ''))
                             e.update(state='given', at=int(now_), note='', origin=org_ or '')
                             save(SUBPREP, P)
                             return self.send_json(200, {'subjob': {'id': iid, 'name': it.get('Name'), 'path': path, 'dur': (it.get('RunTimeTicks') or 0) / 1e7,
                                                                    'translate': True, 'cands': cands, 'more': more_, 'lang': e.get('lang') or '',
                                                                    # (and the one in another language made for this copy, if any, for John's Mac to
                                                                    # translate and compare with the English before listening with Whisper)
-                                                                   'ref_only': bool(e.get('ref_only')),
+                                                                   'ref_only': bool(e.get('ref_only')), 'ref_sure': bool(e.get('ref_sure')), 'fmore': fmore_,
                                                                    'ref': ({'lang': e.get('ref_lang'), 'srt': open(e['ref_file'], encoding='utf-8').read()}
                                                                            if e.get('ref_file') and os.path.exists(e['ref_file']) else None)}})
                         save(SUBPREP, P)
@@ -6846,8 +6883,12 @@ def ref_sub(g, cl, e, iid, path, it):
         rc_ = SUBS.parse_srt(open(e['ref_file'], encoding='utf-8', errors='replace').read())
         if len(rc_) >= 50:
             own_ref = (e.get('ref_lang') or '?', rc_)
-    own_ref = own_ref or own_foreign_sub(g, iid, path)
+    sure_ = False   # (its timing surely this copy's: in the file itself, made for it by its fingerprint, or uploaded under its very name)
+    if not own_ref:
+        own_ref = own_foreign_sub(g, iid, path)
+        sure_ = bool(own_ref)
     refs = [] if own_ref else [(fid, lang) for mh in hashes_for(path) for fid, lang in cl.exact_any(mh) if str(lang).lower() not in ('en', 'eng')]
+    sure_ = sure_ or bool(refs)
     pid = it.get('ProviderIds') or {}
     org = film_origin(path) or os.path.splitext(str(((load(os.path.expanduser('~/Grifflix/fingerprints.json'), {}) or {}).get(path) or {}).get('name') or ''))[0] or None
     hint = org or os.path.splitext(os.path.basename(path))[0]
@@ -6865,6 +6906,7 @@ def ref_sub(g, cl, e, iid, path, it):
             fo_ = [x for x in A_ if not x.get('machine') and str(x.get('lang') or '').lower() not in ('en', 'eng')]
             fo_.sort(key=lambda x: (not x.get('samename'), -(x.get('like') or 0)))
             refs = [(x['file_id'], x.get('lang') or '?') for x in fo_ if x.get('samename') or (x.get('like') or 0) >= 7][:3]
+            sure_ = bool(fo_ and fo_[0].get('samename'))
         except Exception:
             refs = []
     src_ = ('the %s subtitle you gave' if e.get('ref_given') else 'the %s subtitle in the file itself') if own_ref else 'a %s subtitle made for this copy'
@@ -6887,7 +6929,7 @@ def ref_sub(g, cl, e, iid, path, it):
         os.makedirs(os.path.dirname(save_txt), exist_ok=True)
         with open(save_txt, 'w', encoding='utf-8') as f_:
             f_.write(SUBS.write_srt(ref))
-        e['ref_file'], e['ref_lang'] = save_txt, str(refs[0][1])
+        e['ref_file'], e['ref_lang'], e['ref_sure'] = save_txt, str(refs[0][1]), bool(sure_)
     except Exception:
         pass
     if e.get('kind') == 'episode':
@@ -9680,6 +9722,21 @@ def serve():
             log('Subtitles: %d turned down to be tried again, those of the film’s own length first' % n_l)
     except Exception as e:
         log('Subtitles, tried again by length: %s' % e)
+
+    try:   # (once: those with no English subtitles anywhere tried again, now that one in another language that fits can be translated)
+        mk_f = os.path.expanduser('~/Grifflix/subs-foreign.done')
+        if not os.path.exists(mk_f):
+            P_ = load(SUBPREP, {}) or {}
+            n_f = 0
+            for k_, e_ in P_.items():
+                if isinstance(e_, dict) and e_.get('state') == 'none':
+                    e_.update(state='waiting', note='to be tried again: subtitles in other languages, the one that fits translated')
+                    n_f += 1
+            save(SUBPREP, P_)
+            open(mk_f, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+            log('Subtitles: %d with no English subtitles to be tried again, with those in other languages' % n_f)
+    except Exception as e:
+        log('Subtitles, tried again in other languages: %s' % e)
 
     def tfu_match():
         """Totally Fucked Up's match put back, if it hasn't it: the Mac restarted for an update two minutes after renaming it, before it was
