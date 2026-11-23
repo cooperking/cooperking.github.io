@@ -94,13 +94,17 @@ class SubDL:
                 p['film_name'] = query
         else:
             p['type'] = 'movie'
-            if imdb:
-                p['imdb_id'] = 'tt%07d' % int(re.sub(r'\D', '', str(imdb)) or 0)
-            elif tmdb:
-                p['tmdb_id'] = tmdb
-            else:
-                p.update(film_name=query, year=year)
-        j = self._get(p)
+        # (by its IMDb number, then its TMDB number, then its title and year: Subdl "can't find" some by their number, Varda by Agnès by its
+        # IMDb one, 23 Nov 2026)
+        tries = [{}] if episode else [x for x in ({'imdb_id': 'tt%07d' % int(re.sub(r'\D', '', str(imdb)) or 0)} if imdb else None,
+                                                  {'tmdb_id': tmdb} if tmdb else None, {'film_name': query, 'year': year} if query else None) if x]
+        j = {}
+        for t_ in tries:
+            j = self._get(dict(p, **t_))
+            if j and (j.get('subtitles') or j.get('results')):
+                break
+        if episode and not j and query and parent_tmdb:   # (an episode: by the series' name if its number isn't known there)
+            j = self._get(dict({k: v for k, v in p.items() if k != 'tmdb_id'}, film_name=query))
         r0 = (j.get('results') or [{}])[0] if j else {}
         out = []
         for x in (j.get('subtitles') or []) if j else []:
