@@ -200,6 +200,52 @@ def fit(pairs, ratios=RATIOS, width=1.2):
     return best
 
 
+# (by when the lines are said, not their words: a heard line beginning within a second of a subtitle line, at this timing, against the same
+# at timings 5½ seconds to two minutes off. Whisper's English and a subtitle's are two translations, seldom in the same words, but the right
+# subtitle's lines begin when people speak: John, 23 Nov 2026, "the chances of the wording being exactly right on the timing is very very
+# small". Jour de fête, Downpour and Sambizanga, turned down by their words, all fit so through the whole film)
+ONSET_SHIFTS = [d / 2 for d in list(range(-240, -10)) + list(range(11, 241))]
+
+
+def onset_hits(heard, starts, delta=0.0, w=1.0):
+    """How many of the heard lines (their start times) begin within w seconds of a subtitle line's start, the subtitles moved by delta."""
+    import bisect
+    n = 0
+    for h in heard:
+        x = h - delta
+        i = bisect.bisect_left(starts, x)
+        if (i < len(starts) and starts[i] - x <= w) or (i > 0 and x - starts[i - 1] <= w):
+            n += 1
+    return n
+
+
+def onset_z(heard, starts):
+    """(heard lines beginning with a subtitle line at this timing, how far above chance: the same counted at timings well off it)."""
+    nl = [onset_hits(heard, starts, d) for d in ONSET_SHIFTS]
+    mu = sum(nl) / len(nl)
+    sd = (sum((x - mu) ** 2 for x in nl) / len(nl)) ** .5
+    h = onset_hits(heard, starts)
+    return h, (h - mu) / max(sd, 1.0)
+
+
+def onset_fit(heard, starts):
+    """Whether a subtitle fits the whole film by when its lines are said: well above chance over all, and every part listened to with
+    eight or more lines heard above chance too (another cut fails where it differs). (fits, sure, lines agreeing, z over all, each part's z)."""
+    allh = [h for p in heard for h in p]
+    if len(allh) < 12:
+        return False, False, 0, 0.0, []
+    h, z = onset_z(allh, starts)
+    pz = [round(onset_z(p, starts)[1], 1) if len(p) >= 8 else None for p in heard]
+    known = [x for x in pz if x is not None]
+    fits = z >= 4 and len(known) >= 2 and min(known) >= 1.5
+    # (and no part fitting clearly better a few seconds or more either way: a cut with a scene longer or shorter there)
+    for p in (p for p in heard if len(p) >= 8) if fits else []:
+        h0 = onset_hits(p, starts)
+        if max(onset_hits(p, starts, d / 4) for d in range(-480, 481) if abs(d) > 8) > h0 * 1.25 + 2:
+            fits = False
+    return fits, fits and z >= 5 and min(known) >= 2, h, round(z, 1), pz
+
+
 PROG = {}   # (where to say how it's going: set by main)
 
 
@@ -346,10 +392,16 @@ def prepare(job, ff, wcli, work):
                 not any(w[3] >= 25 and w[1] < max(3, .1 * w[3]) for w in wins)   # (a part with plenty heard: a tenth of it agreeing at least, as
                 # the right subtitle's do even when Whisper's translation is loose (Menashe, Yiddish, an eighth); at a wrong speed, a twentieth)
             sure = fits and n >= 12 and miss <= .6
+            # (or else by when its lines are said, whatever their words, every part agreeing, and no part's words preferring another timing)
+            tfits, tsure, th, tz, tpz = onset_fit([[sg[0] for sg in segs] for _, segs in heard], sorted(r * c[0] + b for c in cues))
+            timed = bool(tfits and not fits and not any(w[4] is not None for w in wins))
             moved = [[r * a + b, r * e + b, t] for a, e, t in cues]
             how = 'moved %+.1f s%s' % (b, '' if abs(r - 1) < .00005 else ', at %.4fx speed' % r)
-            return {'_ci': cand_i, '_r': r, '_b': b, 'fits': bool(fits), 'exact': abs(r - 1) < .003, 'name': cand.get('name') or '', 'n': n, 'miss': round(miss, 2), 'sure': bool(sure), 'how': how, 'srt': write_srt(moved),
-                    'samples': [[round(w[0]), w[1], w[2], w[3], w[4]] for w in wins]}
+            if timed:
+                fits, sure = True, tsure
+                how += ', by when its lines are said (%d of %d heard lines begin with one of its lines)' % (th, sum(len(s_) for _, s_ in heard))
+            return {'_ci': cand_i, '_r': r, '_b': b, 'fits': bool(fits), 'exact': abs(r - 1) < .003, 'name': cand.get('name') or '', 'n': max(n, th) if timed else n, 'miss': round(miss, 2), 'sure': bool(sure), 'how': how, 'srt': write_srt(moved),
+                    'samples': [[round(w[0]), w[1], w[2], w[3], w[4]] for w in wins], 'timed': [th, tz, tpz]}
 
         # (each subtitle first as it is, at its own speed: the right one fits with only an offset. Only if none of them, nor the next ones fetched
         # one at a time, fits so, the best fitted by a change of speed (made for another copy): John, 21 Nov 2026, "before retiming for frame rate,

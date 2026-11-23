@@ -6678,6 +6678,63 @@ def keep_file_checks(g):
         time.sleep(5 if did else 120)
 
 
+def subs_by_timing_again(g):
+    """Once: the films turned down because the words of what Whisper heard didn't match the subtitles' looked at again by when their lines
+    are said, from what was heard and the likeliest three kept for each: one that fits the whole film so saved (in To check unless it's
+    clear), no listening again. John, 23 Nov 2026, "the chances of the wording being exactly right on the timing is very very small": Jour
+    de fête's subtitle, a different translation from Whisper's, lined up through the whole film and was turned down."""
+    mk = os.path.expanduser('~/Grifflix/subs-timing.done')
+    if os.path.exists(mk):
+        return
+    time.sleep(120)
+    cdir, edir, n_ = os.path.expanduser('~/Grifflix/subprep-cands'), os.path.expanduser('~/Grifflix/subprep-evidence'), 0
+    try:
+        P = load(SUBPREP, {}) or {}
+        for iid, e in list(P.items()):
+            if not re.match(r'^[0-9a-f]{32}$', iid) or not isinstance(e, dict) or e.get('state') != 'nomatch' or not e.get('cands'):
+                continue
+            best = None
+            for c in e.get('cands') or []:
+                fn, ev = os.path.join(cdir, '%s.%s.srt' % (iid, c.get('i'))), load(os.path.join(edir, '%s.%s.json' % (iid, c.get('i'))), None)
+                if not isinstance(ev, dict) or not os.path.exists(fn):
+                    continue
+                heard = [[float(r[0]) for r in (p_.get('rows') or []) if isinstance(r, list) and len(r) > 1 and str(r[1]).strip()] for p_ in ev.get('parts') or []]
+                cues = SUBS.parse_srt(open(fn, encoding='utf-8', errors='replace').read())
+                ok, sure, h, z, pz = SUBS.onset_fit(heard, sorted(c_[0] for c_ in cues))
+                if ok and (not best or z > best[3]):
+                    best = (c, cues, sure, z, h, sum(len(x) for x in heard))
+            if not best:
+                continue
+            c, cues, sure, z, h, nh = best
+            it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
+            path = it.get('Path') or ''
+            if not path or not os.path.exists(path):
+                continue
+            out = '%s.Grifflix.en.srt' % os.path.splitext(path)[0]
+            with SP_LOCK:   # (only if nothing else has taken it up meanwhile)
+                e0 = (load(SUBPREP, {}) or {}).get(iid)
+                if not isinstance(e0, dict) or e0.get('state') != 'nomatch':
+                    continue
+                with open(out + '.tmp', 'w', encoding='utf-8') as f:
+                    f.write(SUBS.write_srt(cues))
+                os.replace(out + '.tmp', out)
+                e1 = __import__('copy').deepcopy(e0)
+                say_ = '%s, by when its lines are said (%d of %d heard lines begin with one of its lines)' % (c.get('how') or 'as timed', h, nh)
+                e1.update(state='done' if sure else 'check', note=say_[:200], chose=c.get('name') or '', file=out, at=int(time.time()), n=h, sure=bool(sure),
+                          cur=str(c.get('i')), samples=c.get('samples'), timed=True)
+                e1.pop('how', None)
+                chk(e1, 'whisper', 'Done on the Mac mini, looked at again by when its lines are said, not their words: %s fits the whole film%s' % (c.get('name') or 'one', '' if sure else ' (to check)'))
+                subprep_commit({iid: e0}, {iid: e1})
+            g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
+            n_ += 1
+            log('Subtitles for %s: by when its lines are said, %s fits the whole film (%s)' % (e.get('name'), c.get('name'), 'done' if sure else 'to check'))
+            record('subtitles saved', film=e.get('name'), id=iid, file=out, how='turned down by its words, fitting by when its lines are said', chose=c.get('name'), lines=h, sure=bool(sure))
+        open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+        log('Subtitles: those turned down looked at again by when their lines are said: %d now fit' % n_)
+    except Exception as ex:
+        log('Subtitles, looked at again by when their lines are said: %s' % str(ex)[:200])
+
+
 def keep_speech_first(g):
     """Each film waiting for English subtitles tried by when people speak, before any goes to Whisper on John's Mac (off while SPEECH['ok']
     is False: see there)."""
@@ -9590,6 +9647,7 @@ def serve():
     except Exception:
         pass
     threading.Thread(target=keep_speech_first, args=(g,), daemon=True).start()
+    threading.Thread(target=subs_by_timing_again, args=(g,), daemon=True).start()   # (once: those turned down by their words, looked at again by when their lines are said)
     threading.Thread(target=keep_file_checks, args=(g,), daemon=True).start()   # (each waiting film's files checked here as soon as it's waiting)   # (other subtitles timed by when people speak, before Whisper)
     try:   # (films already turned down where Whisper heard next to no speech anywhere (Robot Dreams): little or no dialogue, not tried again)
         P_ = load(SUBPREP, {}) or {}
