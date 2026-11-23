@@ -148,6 +148,105 @@ class SubDL:
         return raw
 
 
+LANGWORDS = {   # (the commonest short words of each language: a subtitle's own language read from its words, not from a site's label)
+    'en': 'the and you that was for are with his they this have not but what all were when your can said there one would out who'.split(),
+    'fr': 'le la les des est une pas que qui dans pour vous sur avec mais tout nous elle sont cette comme bien ici'.split(),
+    'es': 'el los las una que por con para pero esta como todo muy hay aqui eso esto bien ella usted'.split(),
+    'it': 'il che non per una sono della come questo anche nel gli tutto bene cosa ancora sei lei mio'.split(),
+    'pt': 'que não uma para com por mas isso como você tem mais muito ela está bem aqui então seu'.split(),
+    'de': 'der die und das ist nicht ich ein eine sie mit sich auf den dem auch wie was aber noch'.split(),
+    'nl': 'het een van dat niet ik je en de zijn wat maar voor met hij zij ook nog hier'.split(),
+    'sv': 'och det att jag inte en som har på med för vad han hon är var kan ska'.split(),
+    'da': 'og det at jeg ikke en som har på med for hvad han hun er var kan skal'.split(),
+    'pl': 'nie się jest jak tak że co to na do ale mnie jestem już'.split(),
+    'ro': 'nu este că și pe la cu pentru ce dar mai sunt asta'.split(),
+    'tr': 've bir bu da ne için ama çok ben sen var değil'.split(),
+}
+
+
+def guess_lang(text):
+    """A subtitle's language from its own words (two letters), or '' if it can't be told."""
+    t = re.sub(r'<[^>]+>|\{[^}]+\}|\d{2}:\d{2}:\d{2}[,.]\d+|-->', ' ', text or '')[:60000]
+    for lg, rx in (('ko', r'[\uac00-\ud7a3]'), ('ja', r'[\u3040-\u30ff]'), ('zh', r'[\u4e00-\u9fff]'), ('th', r'[\u0e00-\u0e7f]'), ('ar', r'[\u0600-\u06ff]'),
+                   ('he', r'[\u0590-\u05ff]'), ('el', r'[\u0370-\u03ff]'), ('ru', r'[\u0400-\u04ff]'), ('hi', r'[\u0900-\u097f]')):
+        if len(re.findall(rx, t)) > 200:
+            return lg
+    ws = re.findall(r"[a-zàâäãåáçéèêëíìîïñóòôöõúùûüæøœßšžčřłąęőű']+", t.lower())
+    if len(ws) < 50:
+        return ''
+    sc = {lg: sum(1 for w in ws if w in set(L)) for lg, L in LANGWORDS.items()}
+    best = max(sc, key=sc.get)
+    return best if sc[best] >= .08 * len(ws) else ''
+
+
+class SubtitleCat:
+    """SubtitleCat (subtitlecat.com): subtitles people uploaded, each with the site's own machine translations into other languages. Only
+    the original upload is taken (its "-orig" file), its language read from its words, then checked against the film and translated here if
+    need be: John, 23 Nov 2026, "I'd rather we took the original upload from subtitlecat and checked and translated it ourself if
+    necessary". A last place to look, read as a browser would (it has no search service of its own): the Varda episodes were on it alone."""
+    BASE = 'https://www.subtitlecat.com'
+
+    def __init__(self, ctx=None):
+        self.ctx = ctx
+
+    def _get(self, path):
+        r = urllib.request.Request(self.BASE + path, headers={'User-Agent': 'Mozilla/5.0 (compatible; Grifflix/1.0)'})
+        with urllib.request.urlopen(r, timeout=40, context=self.ctx) as res:
+            return res.read()
+
+    @staticmethod
+    def fold(t):
+        import unicodedata
+        return re.sub(r'[^a-z0-9]+', ' ', unicodedata.normalize('NFKD', str(t or '')).encode('ascii', 'ignore').decode().lower()).strip()
+
+    def search(self, queries, year=None, season=None, episode=None):
+        """Uploads for a film (by its titles, its year near) or an episode (its season and number in the name): [{page, name}]."""
+        out, seen = [], set()
+        for q in queries:
+            fq = self.fold(re.sub(r'\(\d{4}\)', '', q or ''))
+            words = [w for w in fq.split() if len(w) >= 3 or w.isdigit()]
+            if not words:
+                continue
+            try:
+                h = self._get('/index.php?search=' + urllib.parse.quote_plus(fq)).decode('utf-8', 'replace')
+            except Exception:
+                continue
+            for href in re.findall(r'href="/?(subs/\d+/[^"]+?\.html)"', h):
+                name = urllib.parse.unquote(href.rsplit('/', 1)[-1][:-5])
+                fn = self.fold(name)
+                if href in seen or sum(1 for w in words if w in fn.split()) < max(1, round(.6 * len(words))):
+                    continue
+                if episode:
+                    if not re.search(r's0*%d\s*e0*%d(?!\d)|\b0*%dx0*%d\b|episode\s*0*%d(?!\d)' % (int(season or 1), int(episode), int(season or 1), int(episode), int(episode)), fn):
+                        continue
+                elif year:
+                    ys = [int(y) for y in re.findall(r'\b(19\d\d|20\d\d)\b', fn)]
+                    if ys and not any(abs(y - int(year)) <= 1 for y in ys):
+                        continue
+                seen.add(href)
+                out.append({'page': '/' + href, 'name': name})
+        return out[:8]
+
+    def original(self, page):
+        """The original upload on a page: (its text, its language as read from its words), kept once fetched; None if there's none."""
+        import hashlib
+        cache = os.path.expanduser('~/Grifflix/subtitlecat-cache')
+        cf = os.path.join(cache, hashlib.sha1(page.encode()).hexdigest() + '.srt')
+        if os.path.exists(cf) and os.path.getsize(cf) > 0:
+            raw = open(cf, 'rb').read()
+        else:
+            h = self._get(page).decode('utf-8', 'replace')
+            m = re.search(r"translate_from_server_folder\('[\w-]+', '([^']+-orig\.srt)', '(/subs/\d+/)'\)", h)
+            if not m:
+                return None
+            raw = self._get(m.group(2) + urllib.parse.quote(m.group(1)))
+            os.makedirs(cache, exist_ok=True)
+            with open(cf, 'wb') as f:
+                f.write(raw)
+        text = decode(raw)
+        return text, guess_lang(text)
+
+
 class OpenSubs:
     """The OpenSubtitles service, with John's own key and account (kept on the Mac in the gateway's settings)."""
 

@@ -1321,10 +1321,21 @@ def make_handler(g):
                                         break
                             except Exception:
                                 fmore_ = []
+                            if not cands or e.get('tried'):   # (SubtitleCat's original uploads, the last place looked: English to time,
+                                # others to time and translate on John's Mac)
+                                for x in subtitlecat_for(g, e, iid, it, path):
+                                    c_ = SUBS.parse_srt(x['srt'])
+                                    if dmin_ and c_ and c_[-1][1] > dmin_ * 60 + 300:
+                                        longer_.append(x['name'])
+                                        continue
+                                    if x['lang'] == 'en' and len(cands) < 4:
+                                        cands.append({'name': x['name'], 'exact': False, 'srt': x['srt']})
+                                    elif x['lang'] and x['lang'] != 'en' and len(fmore_) < 6:
+                                        fmore_.append({'name': x['name'], 'lang': x['lang'], 'srt': x['srt']})
                             has_ref_ = bool(e.get('ref_file') and os.path.exists(e['ref_file']))
                             if not cands and not fmore_ and not has_ref_:
                                 e.update(state='nomatch' if longer_ else 'none', at=int(now_),
-                                         note=('only English subtitles made for a longer cut (%s)' % ', '.join(longer_[:3]))[:200] if longer_ else 'no subtitles on OpenSubtitles%s in English or any other language' % (' or Subdl' if SUBS.SUBDL.get('key') else ''))
+                                         note=('only English subtitles made for a longer cut (%s)' % ', '.join(longer_[:3]))[:200] if longer_ else 'no subtitles on OpenSubtitles%s or SubtitleCat in English or any other language' % (', Subdl' if SUBS.SUBDL.get('key') else ''))
                                 continue
                             e.pop('prio', None)
                             if not cands and has_ref_ and e.get('ref_sure'):
@@ -7021,6 +7032,34 @@ def ref_sub(g, cl, e, iid, path, it):
     return True
 
 
+def subtitlecat_for(g, e, iid, it, path, want=None):
+    """SubtitleCat's original uploads for a film or episode, the last place looked: [{name, lang, srt}] (want 'en': English only). Its
+    own machine translations never taken: John, 23 Nov 2026, "I'd rather we took the original upload from subtitlecat and checked and
+    translated it ourself if necessary"."""
+    try:
+        sc = SUBS.SubtitleCat(tls())
+        if e.get('kind') == 'episode':
+            R = sc.search([e.get('series'), os.path.basename(os.path.dirname(os.path.dirname(path)))], season=e.get('season'), episode=e.get('episode'))
+        else:
+            ot = (g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'OriginalTitle'}) or {}).get('OriginalTitle')
+            R = sc.search([it.get('Name'), ot, os.path.basename(os.path.dirname(path))], year=it.get('ProductionYear'))
+        out, seen = [], set()
+        for x in R[:6]:
+            o = sc.original(x['page'])
+            if not o or len(SUBS.parse_srt(o[0])) < 50 or (want and o[1] != want):
+                continue
+            k = (o[1], len(o[0]) // 500)   # (the same upload twice under two names: once)
+            if k in seen:
+                continue
+            seen.add(k)
+            out.append({'name': 'SubtitleCat: %s' % x['name'], 'lang': o[1] or '', 'srt': o[0]})
+        log('SubtitleCat, %s: %d original upload%s%s' % (e.get('name'), len(out), '' if len(out) == 1 else 's', ' (%s)' % ', '.join(sorted(set(x['lang'] or '?' for x in out))) if out else ''))
+        return out
+    except Exception as ex:
+        log('SubtitleCat, %s: %s' % (e.get('name'), str(ex)[:160]))
+        return []
+
+
 def english_by_foreign(g, iid):
     """A film whose subtitles were machine-translated from one in another language that fits this copy: English ones (OpenSubtitles,
     Subdl) lined up by that one's timing, line by line (each English line set on the line it lands on: no words needed), and one that
@@ -7060,6 +7099,12 @@ def english_by_foreign(g, iid):
             best = (share, hit, out, how, x)
         if share >= .8:
             break
+    if not best or best[0] < .45 or best[1] < 60:   # (then SubtitleCat's English uploads, the last place looked)
+        for x in subtitlecat_for(g, e, iid, it, path, want='en'):
+            share, hit, out, how = SUBS.align_to_ref(ref, SUBS.parse_srt(x['srt']))
+            L.append(x)
+            if not best or share > best[0]:
+                best = (share, hit, out, how, x)
     if not best or best[0] < .45 or best[1] < 60:
         log('Subtitles for %s: none of %d English lined up with the %s subtitle that fits%s: its machine translation kept' % (e.get('name'), len(L), lang, ' (best %d%% of lines)' % round(100 * best[0]) if best else ''))
         return False
@@ -9853,6 +9898,12 @@ def serve():
     except Exception as e:
         log('Subtitles, tried again in other languages: %s' % e)
 
+    if not os.path.exists(os.path.expanduser('~/Grifflix/subs-subtitlecat.done')):   # (once: SubtitleCat a new place to look: those with none, and those
+        # machine-translated, tried again (the Varda episodes, and Varda by Agnès, whose English is there): John, 23 Nov 2026)
+        subs_none_again('SubtitleCat too')
+        threading.Thread(target=english_by_foreign_all, args=(g, 120), daemon=True).start()
+        open(os.path.expanduser('~/Grifflix/subs-subtitlecat.done'), 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+        open(os.path.expanduser('~/Grifflix/subs-machine-en.done'), 'w').write(time.strftime('%Y-%m-%d %H:%M'))
     if not os.path.exists(os.path.expanduser('~/Grifflix/subs-machine-en.done')):   # (once: those machine-translated so far, English looked for)
         threading.Thread(target=english_by_foreign_all, args=(g, 90), daemon=True).start()
         open(os.path.expanduser('~/Grifflix/subs-machine-en.done'), 'w').write(time.strftime('%Y-%m-%d %H:%M'))
