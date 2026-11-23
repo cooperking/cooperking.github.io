@@ -48,7 +48,7 @@ ARRANGE = {'The Criterion Collection': {
     'series': ['The Underground Railroad', 'Tanner 88', 'Fishing with John']}}
 # Collections for John alone: on his own page and his admin page, never in the site's files, to members or to visitors (John, 19 Nov
 # 2026, "put everything not listed on the website in a new collection A24 CHECKS, keep it hidden apart from to me")
-OWNER_ONLY_SETS = ('a24 checks',)
+OWNER_ONLY_SETS = ('a24 checks', 'to check')   # (and To check: films whose file is in doubt, John's alone: John, 23 Nov 2026, "can you put ones you doubt in a to check collection")
 
 
 def owner_only_set(name):
@@ -9549,6 +9549,87 @@ def loose_to_folders(g, quiet=False):
     return done
 
 
+TO_CHECK = [   # (each film's folder, and why it's in doubt: from the lengths of all 2,512 films against their matches, 23 Nov 2026)
+    ("L'Argent (1983)", "the file is another film: the Korean Money (2019), 115 minutes; Bresson's runs 85"),
+    ('East in East (1999)', 'the file is East Is East (1999), 97 minutes, taken for East/West (121); the folder is misspelt too'),
+    ('Outlaws (2017)', 'the file runs 94 minutes, taken for the Korean The Outlaws (121): another Outlaws?'),
+    ('Weekend (2011)', 'the file runs 97 minutes (Andrew Haigh’s?), taken for a Weekend of 121'),
+    ("The Men Who Tread on the Tiger's Tail (1952)", 'a second, small copy (0.3 GB) of the one in its 1945 folder: Duplicates, to set aside'),
+    ('Una meravigliosa domenica (1948)', 'a second copy of One Wonderful Sunday (1947): Duplicates, to set aside'),
+    ('The Heiress (1949)', 'the file runs 40 minutes of 115: only part of it?'),
+    ('The Ring (1927)', 'the file runs 52 minutes of 116: only part of it?'),
+    ('Rich And Strange (1931)', 'the file runs 54 minutes of 83: only part of it?'),
+    ("David Byrne's American Utopia (2020)", 'the file runs 55 minutes of 105: only part of it?'),
+    ('The Farmers Wife (1928)', 'the file runs 59 minutes of 112: only part of it?'),
+    ('The Joyless Street (1925)', 'the file runs 61 minutes of 155: a short version, or only part?'),
+    ('Christ Stopped At Eboli (1979)', 'the file runs 62 minutes; the film runs 150 (220 on TV): one part only?'),
+    ('The Brood (1979)', 'the file runs 63 minutes of 92: only part of it?'),
+    ('The Inland Sea (1991)', 'the file runs 29 minutes of 56: only part of it?'),
+    ('My Voyage to Italy (1999)', 'the file runs 118 minutes of 246: one of its two parts?'),
+    ('By Brakhage - An Anthology, Volume One (2003)', 'the file runs 111 minutes of 243: one of its discs?'),
+    ('Not a Pretty Picture (1976)', 'the file runs 103 minutes against 83: another film, or another cut?'),
+    ('Police Story 2 (1988)', 'the file runs 122 minutes against 105: another cut?'),
+    ('Porgy & Bess (1959)', 'the file runs 115 minutes against 138: shortened?'),
+    ('Stage Door Canteen (1943)', 'the file runs 112 minutes against 132: shortened?'),
+    ('Juno And The Paycock (1930)', 'the file runs 76 minutes against 94: shortened?'),
+    ('The First Omen (2024)', 'the file runs 92 minutes against 119: only part of it?'),
+]
+
+
+def to_check_once(g):
+    """Once: a To check collection, John's alone, with each film whose file is in doubt (the wrong film, a second copy, a file far shorter
+    or longer than its film), its description saying why for each: John, 23 Nov 2026, "can you put ones you doubt in a to check
+    collection". Taken out of it, a film stays out."""
+    mk = os.path.expanduser('~/Grifflix/to-check-1.done')
+    if os.path.exists(mk):
+        return
+    time.sleep(200)
+    import unicodedata
+    nf = lambda t: unicodedata.normalize('NFC', t or '')
+    try:
+        movies = [l for v in g.jf.call('GET', '/Library/VirtualFolders') or [] if (v.get('CollectionType') or '') == 'movies' for l in v.get('Locations') or []]
+        items, start = [], 0
+        while True:
+            r_ = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path', 'StartIndex': start, 'Limit': 300}, timeout=180) or {}
+            items += r_.get('Items') or []
+            start += 300
+            if start >= (r_.get('TotalRecordCount') or 0) or not r_.get('Items'):
+                break
+        by_folder = {}
+        for it in items:
+            p_ = it.get('Path') or ''
+            for root in movies:
+                if p_.startswith(root.rstrip('/') + '/'):
+                    by_folder.setdefault(nf(p_[len(root.rstrip('/')) + 1:].split('/')[0]), it)
+        ids, lines, missing = [], [], []
+        for fo, why in TO_CHECK:
+            it = by_folder.get(nf(fo))
+            if not it:
+                missing.append(fo)
+                continue
+            ids.append(it['Id'])
+            lines.append('%s: %s.' % (it.get('Name') or fo, why))
+        sets = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'BoxSet'}) or {}).get('Items') or []
+        box = next((x for x in sets if (x.get('Name') or '').strip().lower() == 'to check'), None)
+        if box:
+            g.jf.call('POST', '/Collections/%s/Items' % box['Id'], query={'Ids': ','.join(ids)})
+            cid = box['Id']
+        else:
+            cid = ((g.jf.call('POST', '/Collections', query={'Name': 'To check', 'IsLocked': 'true', 'Ids': ','.join(ids)}) or {}).get('Id') or '')
+        if cid:
+            full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, cid)) or {}
+            full['Overview'] = ('Films whose file is in doubt, only you see this: the wrong film, a second copy, or a file far shorter or longer than '
+                                'its film. Take each out once it’s put right.\n\n' + '\n'.join(lines))[:4000]
+            full['LockedFields'] = sorted(set((full.get('LockedFields') or []) + ['Overview']))
+            g.jf.call('POST', '/Items/%s' % cid, full)
+        log('To check (only John sees it): %d films put in%s' % (len(ids), '; not found: ' + ', '.join(missing) if missing else ''))
+        g.forget()
+        g.publish_soon = time.time() + 120
+        open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+    except Exception as e:
+        log('To check: %s' % str(e)[:200])
+
+
 def renames_follow_once(g):
     """Once: the 15 folders put right on 23 Nov 2026, whose following timed out (the media server's whole library asked for at once):
     each found under its new name, its match put on again (Criterion's years kept: The Men Who Tread on the Tiger's Tail (1945) is TMDB's
@@ -10146,7 +10227,8 @@ def serve():
     threading.Thread(target=subs_by_timing_again, args=(g,), daemon=True).start()
     threading.Thread(target=ep_fill_all, args=(g,), daemon=True).start()
     threading.Thread(target=folders_fix_once, args=(g,), daemon=True).start()   # (once: the folders John asked to have put right, 23 Nov 2026)
-    threading.Thread(target=renames_follow_once, args=(g,), daemon=True).start()   # (and those followed, as they weren't then)   # (each episode's series' IMDb number and own title, for the searches)   # (once: those turned down by their words, looked at again by when their lines are said)
+    threading.Thread(target=renames_follow_once, args=(g,), daemon=True).start()   # (and those followed, as they weren't then)
+    threading.Thread(target=to_check_once, args=(g,), daemon=True).start()   # (once: the films in doubt in a To check collection, John's alone)   # (each episode's series' IMDb number and own title, for the searches)   # (once: those turned down by their words, looked at again by when their lines are said)
     threading.Thread(target=keep_file_checks, args=(g,), daemon=True).start()   # (each waiting film's files checked here as soon as it's waiting)   # (other subtitles timed by when people speak, before Whisper)
     try:   # (films already turned down where Whisper heard next to no speech anywhere (Robot Dreams): little or no dialogue, not tried again)
         P_ = load(SUBPREP, {}) or {}
