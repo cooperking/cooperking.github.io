@@ -64,7 +64,7 @@ def films():
     lid = (S.get('libraries') or {}).get('movies')
     while lid:
         r = jf('GET', '/Users/%s/Items' % S['jf_user_id'], ParentId=lid, Recursive='true', IncludeItemTypes='Movie',
-               Fields='Path,MediaSources,ProductionYear', StartIndex=start, Limit=500)
+               Fields='Path,MediaSources,ProductionYear,ProviderIds', StartIndex=start, Limit=500)
         for it in g(r, 'Items') or []:
             p = g(it, 'Path') or ''
             rel = os.path.relpath(p, MOVIES)
@@ -76,6 +76,7 @@ def films():
             ms = (g(it, 'MediaSources') or [{}])[0]
             v = next((s for s in g(ms, 'MediaStreams') or [] if g(s, 'Type') == 'Video'), {})
             out.append({'id': g(it, 'Id'), 'name': g(it, 'Name') or '', 'year': g(it, 'ProductionYear'), 'path': p, 'folder': parts[0],
+                        'tmdb': str((g(it, 'ProviderIds') or {}).get('Tmdb') or ''),
                         'h': g(v, 'Height') or 0, 'codec': g(v, 'Codec') or '?', 'bits': g(v, 'BitDepth') or 8,
                         'mbps': round((g(ms, 'Bitrate') or 0) / 1e6, 1), 'gb': round((g(ms, 'Size') or 0) / 1e9, 2),
                         'mins': round((g(ms, 'RunTimeTicks') or 0) / 6e8)})
@@ -119,6 +120,39 @@ def note(t):   # (every run kept, not only the last: Demon Pond set aside on 20 
         pass
 
 
+TITLES = {}
+
+
+def tmdb_titles(tid):
+    """Every title TMDB knows a film by (its own, its original, each country's and language's), as keys: a copy whose folder has one of them
+    is a copy, not another film (John, 23 Nov 2026, "Why isn't the duplicate highlighted": Una meravigliosa domenica, One Wonderful Sunday's
+    Italian title, was listed as Not copies)."""
+    if tid in TITLES:
+        return TITLES[tid]
+    k, out = S.get('tmdb_key') or '', set()
+    if k and re.match(r'^\d+$', tid or ''):
+        import ssl
+        try:
+            import certifi
+            ctx = ssl.create_default_context(cafile=certifi.where())
+        except ImportError:
+            ctx = ssl.create_default_context()
+        h, q = {'Accept': 'application/json', 'User-Agent': 'Grifflix'}, {'append_to_response': 'alternative_titles,translations'}
+        if k.startswith('eyJ'):
+            h['Authorization'] = 'Bearer ' + k
+        else:
+            q['api_key'] = k
+        try:
+            d = json.loads(urllib.request.urlopen(urllib.request.Request('https://api.themoviedb.org/3/movie/%s?%s' % (tid, urllib.parse.urlencode(q)), headers=h), timeout=30, context=ctx).read())
+            ts = [d.get('title'), d.get('original_title')] + [x.get('title') for x in (d.get('alternative_titles') or {}).get('titles') or []] + \
+                 [(x.get('data') or {}).get('title') for x in (d.get('translations') or {}).get('translations') or []]
+            out = set(key(t) for t in ts if t and key(t))
+        except Exception:
+            pass
+    TITLES[tid] = out
+    return out
+
+
 def find():
     F = films()
     groups = collections.defaultdict(list)
@@ -136,6 +170,11 @@ def find():
         alike = lambda a, b: a == b or (min(len(a), len(b)) >= 4 and (a in b or b in a)) or difflib.SequenceMatcher(None, a, b).ratio() >= .9
         if odd and all(alike(title(v[0]), title(f)) for f in v[1:]):
             odd = []
+        tids = set(f.get('tmdb') or '' for f in v)
+        if odd and len(tids) == 1 and '' not in tids:   # (the folder has another of its titles: its own language's, another country's)
+            names = tmdb_titles(next(iter(tids)))
+            if names and all(any(title(f) == n_ or difflib.SequenceMatcher(None, title(f), n_).ratio() >= .9 for n_ in names) for f in odd):
+                odd = []
         if odd or (lengths and max(lengths) - min(lengths) > 8):
             wrong.append(v)
         else:
