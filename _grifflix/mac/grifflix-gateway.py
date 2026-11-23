@@ -9441,19 +9441,29 @@ def rename_to(g, iid, name, year, pick=None):
             time.sleep(30)
             try:
                 found = {}
-                for typ in (('Series,Season,Episode',) if kind == 'Series' else ('Movie',)):
-                    r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': typ, 'Fields': 'Path'}) or {}
-                    for x in r.get('Items') or []:
-                        rp = os.path.realpath(x.get('Path') or '')
-                        if rp in want:
-                            found[want[rp]] = x['Id']
+                # (a film looked for by its name, not the whole library listed: that timed out every time on 23 Nov 2026, and the 15 folders
+                # put right that day had nothing follow them; a series a page at a time)
+                if kind == 'Series':
+                    xs, st_ = [], 0
+                    while True:
+                        r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Series,Season,Episode', 'Fields': 'Path', 'StartIndex': st_, 'Limit': 500}, timeout=180) or {}
+                        xs += r.get('Items') or []
+                        st_ += 500
+                        if st_ >= (r.get('TotalRecordCount') or 0) or not r.get('Items'):
+                            break
+                else:
+                    xs = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path', 'SearchTerm': name, 'Limit': 50}, timeout=90) or {}).get('Items') or []
+                for x in xs:
+                    rp = os.path.realpath(x.get('Path') or '')
+                    if rp in want:
+                        found[want[rp]] = x['Id']
                 top = found.get(iid)
                 if not top:
                     continue
                 m = {o: n for o, n in found.items() if o != n}
                 if pick:
-                    try:
-                        g.jf.call('POST', '/Items/RemoteSearch/Apply/%s' % top, pick, {'replaceAllImages': 'true'})
+                    try:   # (its own pictures in its folder (Criterion's covers) kept: apply_match takes only the details then)
+                        apply_match(g, top, pick)
                     except Exception:
                         pass
                 for b_ in sets:
@@ -9537,6 +9547,49 @@ def loose_to_folders(g, quiet=False):
         except Exception:
             pass
     return done
+
+
+def renames_follow_once(g):
+    """Once: the 15 folders put right on 23 Nov 2026, whose following timed out (the media server's whole library asked for at once):
+    each found under its new name, its match put on again (Criterion's years kept: The Men Who Tread on the Tiger's Tail (1945) is TMDB's
+    1952 film), and calendars, hearts, lists, places and its subtitles moved from its old id."""
+    mk = os.path.expanduser('~/Grifflix/renames-follow-1.done')
+    if os.path.exists(mk):
+        return
+    time.sleep(300)
+    R = [["e9348c6ce3b57fc717bd8ba4568fae1d", "The Men Who Tread on the Tiger's Tail (1945)", "36916"], ["1fcd85f99539e639f656878921941125", "Sanshiro Sugata (1943)", "35022"],
+         ["52f5ac7c2dabe5e342febf5f930f3dd4", "Capricious Summer (1968)", "47189"], ["a39c2880ed82daaa57420fa4507620a3", "Wings (1966)", "50013"],
+         ["60a000be80dc1ce1f5393cea66844c22", "Viridiana (1961)", "4497"], ["a81c49f0f8739977f47381f6b49690c7", "Prisoners of the Land (1939)", "335367"],
+         ["82e413928ef659d463bbca142ef7744d", "Muna Moto (1975)", "257803"], ["de2fc1e7bf9704fea619aca4f968fdc8", "Fårö Document (1970)", "304081"],
+         ["f80207400f816990952fae96a73e90a2", "The Golden Coach (1953)", "56167"], ["18c2dfd6c3703e66291708bc24a284bf", "Dry Summer (1964)", "58897"],
+         ["0bf773a3e78e069556eaa979f4662734", "Europa '51 (1952)", "41464"], ["5aca41f0b1f230407078364aa78eec03", "Pigsty (1969)", "48688"],
+         ["79f8aaf4aee707a6b82584fa5f0fc08a", "Love Meetings (1964)", "42733"], ["7ec901f6ff3c1c044dce735496e0540d", "The Gospel According to St. Matthew (1964)", "24192"],
+         ["9aae15ea1f4c0f1a7da6a549ba28773c", "Uncle Yanco (1968)", "277677"]]
+    import unicodedata
+    nf = lambda t: unicodedata.normalize('NFC', t or '')
+    m, said = {}, []
+    for old, folder, tid in R:
+        title = re.sub(r'\s*\(\d{4}\)$', '', folder)
+        try:
+            xs = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path,ProductionYear', 'SearchTerm': title, 'Limit': 50}, timeout=90) or {}).get('Items') or []
+            x = next((x for x in xs if nf(os.path.basename(os.path.dirname(x.get('Path') or ''))) == nf(folder)), None)
+            if not x:
+                said.append('%s: not found under its new name yet' % folder)
+                continue
+            d_ = tmdb(g, '/movie/%s' % tid) or {}
+            apply_match(g, x['Id'], {'Name': d_.get('title') or title, 'ProductionYear': int((d_.get('release_date') or '0')[:4] or 0) or None,
+                                     'ProviderIds': {'Tmdb': tid}, 'SearchProviderName': 'TheMovieDb'})
+            if x['Id'] != old:
+                m[old] = x['Id']
+            said.append(folder)
+            time.sleep(5)
+        except Exception as e:
+            said.append('%s: %s' % (folder, str(e)[:100]))
+    n = g.remap(m) if m else 0
+    log('The folders put right on 23 Nov followed: %s (%d calendars, hearts and places moved)' % ('; '.join(said)[:2500], n))
+    g.publish_soon = time.time() + 300
+    if not any('not found' in x for x in said):
+        open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
 
 
 def folders_fix_once(g):
@@ -10092,7 +10145,8 @@ def serve():
     threading.Thread(target=keep_speech_first, args=(g,), daemon=True).start()
     threading.Thread(target=subs_by_timing_again, args=(g,), daemon=True).start()
     threading.Thread(target=ep_fill_all, args=(g,), daemon=True).start()
-    threading.Thread(target=folders_fix_once, args=(g,), daemon=True).start()   # (once: the folders John asked to have put right, 23 Nov 2026)   # (each episode's series' IMDb number and own title, for the searches)   # (once: those turned down by their words, looked at again by when their lines are said)
+    threading.Thread(target=folders_fix_once, args=(g,), daemon=True).start()   # (once: the folders John asked to have put right, 23 Nov 2026)
+    threading.Thread(target=renames_follow_once, args=(g,), daemon=True).start()   # (and those followed, as they weren't then)   # (each episode's series' IMDb number and own title, for the searches)   # (once: those turned down by their words, looked at again by when their lines are said)
     threading.Thread(target=keep_file_checks, args=(g,), daemon=True).start()   # (each waiting film's files checked here as soon as it's waiting)   # (other subtitles timed by when people speak, before Whisper)
     try:   # (films already turned down where Whisper heard next to no speech anywhere (Robot Dreams): little or no dialogue, not tried again)
         P_ = load(SUBPREP, {}) or {}
