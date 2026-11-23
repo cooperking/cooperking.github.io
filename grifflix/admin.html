@@ -404,7 +404,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   <div id="app" hidden>
     <div class="top"><button type="button" class="reload" id="reload" aria-label="Reload" title="Reload" onclick="location.reload()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><h1>Grifflix <em>admin</em></h1><p class="sub" id="hello"></p></div>
     <nav class="tabs" id="tabs" role="tablist" aria-label="Admin">
-      <button type="button" role="tab" data-go="updates">Home</button><button type="button" role="tab" data-go="downloads">Downloads</button><button type="button" role="tab" data-go="convert">Conversions</button><button type="button" role="tab" data-go="library">Library</button><button type="button" role="tab" data-go="criterion">Criterion</button><button type="button" role="tab" data-go="a24">A24</button><button type="button" role="tab" data-go="calendar">Calendar</button><button type="button" role="tab" data-go="members">Members</button><button type="button" role="tab" data-go="mac">Mac mini</button><button type="button" role="tab" data-go="dupes" id="dupetab" hidden>Copies</button>
+      <button type="button" role="tab" data-go="updates">Home</button><button type="button" role="tab" data-go="downloads">Downloads</button><button type="button" role="tab" data-go="convert">Conversions</button><button type="button" role="tab" data-go="library">Library</button><button type="button" role="tab" data-go="criterion">Criterion</button><button type="button" role="tab" data-go="a24">A24</button><button type="button" role="tab" data-go="tocheck">To check</button><button type="button" role="tab" data-go="calendar">Calendar</button><button type="button" role="tab" data-go="members">Members</button><button type="button" role="tab" data-go="mac">Mac mini</button><button type="button" role="tab" data-go="dupes" id="dupetab" hidden>Copies</button>
     </nav>
     <nav class="subtabs" id="subtabs" aria-label="In this tab" hidden></nav>
     <div class="cards">
@@ -745,12 +745,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         </ol>
         <p class="stat" id="tagstate" style="font-weight:600"></p>
       </section>
-      <section class="card" data-tab="library">
-        <div class="kicker">Library</div>
+      <section class="card" data-tab="tocheck">
+        <div class="kicker">To check</div>
         <h2>To <em>check</em></h2>
-        <p class="stat">Films whose file is in doubt: the wrong film, a second copy, or a file far shorter or longer than its film (only part of it?). Each one’s reason is in the collection’s description. Only you see this collection. Take a film out of it once it’s put right.</p>
+        <p class="stat">Films whose file is in doubt: the wrong film, a second copy, or a file far shorter or longer than its film (only part of it?), each with why. Only you see this collection. Take a film out of it once it’s put right (in the collection on the draft) and it goes from here too.</p>
         <div class="state"><a class="btn primary" id="tcopen" href="#" target="_blank" rel="noopener" hidden>Open To check</a><a class="btn" id="tcdraft" href="#" target="_blank" rel="noopener" hidden>On the draft</a></div>
         <p class="stat" id="tcsay">Looking on the Mac mini…</p>
+        <div id="tclist"></div>
       </section>
       <section class="card" data-tab="a24">
         <div class="kicker">A24</div>
@@ -1956,8 +1957,17 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   function a24Look() {   // (A24 CHECKS: John's own collection, from the Mac, linked from here: John, 19 Nov 2026)
     fetch(GW + '/api/collections', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('The Mac mini didn’t answer.')); }).then(function (j) {
       var t = (j.collections || []).filter(function (x) { return /^to check$/i.test(x.name || ''); })[0];   // (To check, John's own too: John, 23 Nov 2026)
-      if (t) { $('#tcopen').href = '/grifflix/#collection/' + t.id; $('#tcdraft').href = '/grifflix/draft/#collection/' + t.id; $('#tcopen').hidden = $('#tcdraft').hidden = false;
-        $('#tcsay').textContent = (t.children || 0) + ' film' + (t.children === 1 ? '' : 's') + ' in it.'; }
+      if (t) { $('#tcopen').href = SITE + '#collection/' + t.id; $('#tcdraft').href = SITE + 'draft/#collection/' + t.id; $('#tcopen').hidden = $('#tcdraft').hidden = false;
+        $('#tcsay').textContent = (t.children || 0) + ' film' + (t.children === 1 ? '' : 's') + ' in it.';
+        // (each film with why, read from the collection's description, on a tab of its own: John, 23 Nov 2026, "where is my to check tab?")
+        fetch(GW + '/api/collection?id=' + encodeURIComponent(t.id), { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('The Mac mini didn’t answer.')); }).then(function (c) {
+          var lines = String(c.overview || '').split('\n'), items = c.items || [];
+          var why = function (n) { var l = lines.filter(function (x) { return n && x.indexOf(n + ': ') === 0; })[0]; return l ? l.slice(n.length + 2).replace(/\.$/, '') : ''; };
+          $('#tcsay').textContent = items.length + ' film' + (items.length === 1 ? '' : 's') + ' in it.';
+          $('#tclist').innerHTML = items.length ? items.map(function (it) {
+            return '<div class="mrow cb"><span class="y">' + esc(String(it.year || '')) + '</span><span>' + flA(it.id, it.name || '?') + (why(it.name) ? '<br><small class="d">' + esc(why(it.name)) + '</small>' : '') + '</span><span></span></div>';
+          }).join('') : '<p class="stat">Nothing in it: every film has been put right.</p>';
+        }).catch(function (e) { $('#tclist').innerHTML = '<p class="stat">Couldn’t read the films in it: ' + esc(e.message) + '</p>'; }); }
       else $('#tcsay').textContent = 'Not made yet: the Mac mini makes it a few minutes after its next restart.';
       var c = (j.collections || []).filter(function (x) { return /^a24 checks$/i.test(x.name || ''); })[0];
       if (!c) { $('#a24say').textContent = 'There’s no A24 CHECKS collection yet: it’s made when you Allow “Move films from one collection to another” on the Home tab.'; return; }
@@ -3929,7 +3939,7 @@ var feats = function (doc) {
   (function () {   // ---- the tabs: one group of cards at a time, the last one chosen kept (and #themes etc. in the address)
     // (each kind of thing in a tab of its own, so nothing needs scrolling for: John, 18 Nov 2026, "Can you tidy up admin putting everything
     // into clear findable tabs, so I don't have to always scroll to find things"; the old tabs' names lead to the new)
-    var TABS = ['updates', 'downloads', 'convert', 'library', 'criterion', 'a24', 'calendar', 'members', 'mac', 'dupes'], OLD = { films: 'library', themes: 'calendar', requests: 'downloads' };
+    var TABS = ['updates', 'downloads', 'convert', 'library', 'criterion', 'a24', 'tocheck', 'calendar', 'members', 'mac', 'dupes'], OLD = { films: 'library', themes: 'calendar', requests: 'downloads' };
     function show(t, push) {
       t = OLD[t] || t;
       if (TABS.indexOf(t) < 0) t = 'updates';
