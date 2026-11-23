@@ -366,10 +366,21 @@ class OpenSubs:
                             ask(dict({'languages': lang, 'query': q_}, **se_ep))
                         except RuntimeError:
                             pass
-        elif tmdb or imdb:
-            ask({'languages': lang, 'tmdb_id': tmdb} if tmdb else {'languages': lang, 'imdb_id': re.sub(r'\D', '', imdb or '')})
-        if query and len(found) < 5 and not episode:
-            ask({'languages': lang, 'query': query, 'year': year})
+        else:   # (a film: by its TMDB number and by its IMDb number, each, not one or the other (OpenSubtitles files some under one only);
+            # then by its English title and its own, with its year: John, 23 Nov 2026, "we need to check what else it missed this way")
+            if tmdb:
+                ask({'languages': lang, 'tmdb_id': tmdb})
+            if imdb and re.sub(r'\D', '', imdb or '').lstrip('0'):
+                try:
+                    ask({'languages': lang, 'imdb_id': re.sub(r'\D', '', imdb or '').lstrip('0')})
+                except RuntimeError:
+                    pass
+            for q_ in [query] + [a_ for a_ in (alt or []) if a_ and a_ != query]:
+                if q_ and len(found) < 5:
+                    try:
+                        ask({'languages': lang, 'query': q_, 'year': year})
+                    except RuntimeError:
+                        pass
         # (and by the name the film was downloaded as: a subtitle is very often uploaded under the very name of the copy it was made for:
         # John, 21 Nov 2026, "the subtitle filename is highly likely to be the same name as the" film's)
         if hint and re.search(r'(19|20)\d\d', hint) and not episode:
@@ -409,6 +420,8 @@ class OpenSubs:
                 if (parent_tmdb and x.get('ptmdb') and str(x['ptmdb']) == str(parent_tmdb)) or \
                    (parent_imdb and x.get('pimdb') and re.sub(r'\D', '', x['pimdb']).lstrip('0') == re.sub(r'\D', '', str(parent_imdb)).lstrip('0')):
                     return True   # (this series' own, by its number: whatever the episode is called)
+            if not episode and imdb and x.get('imdb') and re.sub(r'\D', '', str(x['imdb'])).lstrip('0') == re.sub(r'\D', '', str(imdb)).lstrip('0'):
+                return True   # (this film by its IMDb number, whatever TMDB number OpenSubtitles has it under)
             if tmdb and x.get('tmdb') and str(x['tmdb']) != str(tmdb) and not episode:
                 return False
             if x.get('kind') and x['kind'] != want_kind and x['kind'] != 'tvshow':
@@ -419,8 +432,11 @@ class OpenSubs:
             if not episode and ((tmdb and x.get('tmdb') and str(x['tmdb']) == str(tmdb)) or
                                 (imdb and x.get('imdb') and re.sub(r'\D', '', str(x['imdb'])).lstrip('0') == re.sub(r'\D', '', str(imdb)).lstrip('0'))):
                 return True
+            if not episode and year and str(x.get('year') or '').isdigit() and abs(int(x['year']) - int(year)) > 1:
+                return False   # (found by its title: another film of the name, of another year (L'Herbier's L'Argent of 1928, not Bresson's))
             q_ = flat(query)
-            return not q_ or not x.get('title') or q_ in flat(x['title']) or flat(x['title']) in q_
+            qs_ = [flat(a_) for a_ in [query] + list(alt or []) if a_]
+            return not q_ or not x.get('title') or any(a_ in flat(x['title']) or flat(x['title']) in a_ for a_ in qs_)
         out = [x for x in out if ours(x)]
         rel = lambda t: re.sub(r'\.(srt|sub|ass|ssa|vtt|mkv|mp4|avi|m4v|mov)$', '', (t or '').strip(), flags=re.I)
         same = lambda a, b: bool(a and b) and re.sub(r'[^a-z0-9]', '', rel(a).lower()) == re.sub(r'[^a-z0-9]', '', rel(b).lower())
