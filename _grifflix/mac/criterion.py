@@ -160,6 +160,15 @@ def tmdb_find(title, year):
     hit = look(title, True) or (look(short, True) if short != title else None)
     if hit:
         return hit
+    if y:   # (the very title, years apart: a film made one year and shown years later, Criterion giving the year it was made and TMDB the year
+        # it came out (The Men Who Tread on the Tiger's Tail, 1945 and 1952; Ivan the Terrible, Part II, 1946 and 1958): only if it's the one
+        # film of that title within fifteen years: John, 23 Nov 2026)
+        for kind, path, yk, tk, dk in KINDS:
+            res = (tmdb_get(path, query=title, include_adult='false') or {}).get('results') or []
+            same = [r for r in res[:20] if want in (key(r.get(tk) or ''), key(r.get('original_' + tk) or ''))
+                    and int((r.get(dk) or '0')[:4] or 0) and abs(int((r.get(dk) or '0')[:4]) - y) <= 15]
+            if len(same) == 1:
+                return same[0]['id'], kind
     if not y or re.search(r'\b(trilogy|films|collection|complete|essential|masterpieces|set|cinema project|stories|by)\b', title, re.I):   # (a box set: TMDB's collection of it, close enough)
         res = (tmdb_get('/search/collection', query=re.sub(r'\b(the complete|the essential|films? by|two films|three films|trilogy)\b', '', title, flags=re.I).strip() or title) or {}).get('results') or []
         best = max(res[:8], key=lambda r: difflib.SequenceMatcher(None, want, key(r.get('name') or '')).ratio(), default=None)
