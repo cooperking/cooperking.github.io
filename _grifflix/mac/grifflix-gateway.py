@@ -952,13 +952,13 @@ def make_handler(g):
                         P = load(SUBPREP, {}) or {}
                         body = self.body()
                         if u.path == '/macagent/subfile':   # (one more subtitle, asked for by John's Mac when none so far fits exactly)
-                            if not self.subs_ready() or not str(q.get('file') or '').isdigit():
+                            if not self.subs_ready() or not re.match(r'^(\d+|sd:/?[\w./#-]+)$', str(q.get('file') or '')):
                                 return self.send_json(400, {'error': 'Which?'})
                             o_ = g.st.get('opensubs') or {}
                             if o_.get('remaining') is not None and int(o_.get('remaining') or 0) < 3:
                                 return self.send_json(429, {'error': 'OpenSubtitles downloads used up for today'})
                             try:
-                                return self.send_json(200, {'srt': SUBS.decode(self.subs_client().download(int(q['file'])))})
+                                return self.send_json(200, {'srt': SUBS.decode(self.subs_client().download(q['file'] if str(q['file']).startswith('sd:') else int(q['file'])))})
                             except Exception as ex:
                                 return self.send_json(502, {'error': str(ex)[:200]})
                         if u.path == '/macagent/subprog' and method == 'POST':   # (what John's Mac is doing now, for the admin page: 21 Nov 2026)
@@ -1202,10 +1202,10 @@ def make_handler(g):
                                 org_ = film_origin(path)   # (the release it was downloaded as: subtitles made for it first)
                                 if e.get('kind') == 'episode':
                                     res = self.subs_client().search('en', mhash=mh, query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'),
-                                                                    episode=e.get('episode'), hint=org_ or os.path.basename(path))
+                                                                    episode=e.get('episode'), hint=org_ or os.path.basename(path), also=True)
                                 else:
                                     res = self.subs_client().search('en', mhash=mh, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'),
-                                                                    year=it.get('ProductionYear'), hint=org_ or os.path.basename(path))
+                                                                    year=it.get('ProductionYear'), hint=org_ or os.path.basename(path), also=True)
                             except Exception as ex:
                                 e.update(note=('OpenSubtitles: %s' % ex)[:200])
                                 save(SUBPREP, P)
@@ -1300,9 +1300,9 @@ def make_handler(g):
                             fmore_ = []
                             try:
                                 if e.get('kind') == 'episode':
-                                    A_ = self.subs_client().search('', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=org_ or os.path.basename(path))
+                                    A_ = self.subs_client().search('', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=org_ or os.path.basename(path), also=True)
                                 else:
-                                    A_ = self.subs_client().search('', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=org_ or os.path.basename(path))
+                                    A_ = self.subs_client().search('', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=org_ or os.path.basename(path), also=True)
                                 own_ = {'fre': 'fr', 'fra': 'fr', 'ger': 'de', 'deu': 'de', 'spa': 'es', 'ita': 'it', 'jpn': 'ja', 'swe': 'sv', 'rus': 'ru', 'por': 'pt', 'chi': 'zh', 'zho': 'zh', 'kor': 'ko',
                                         'pol': 'pl', 'dut': 'nl', 'nld': 'nl', 'dan': 'da', 'nor': 'no', 'fin': 'fi', 'hun': 'hu', 'cze': 'cs', 'ces': 'cs', 'gre': 'el', 'ell': 'el', 'tur': 'tr',
                                         'per': 'fa', 'fas': 'fa', 'ara': 'ar', 'heb': 'he', 'hin': 'hi', 'rum': 'ro', 'ron': 'ro', 'srp': 'sr', 'hrv': 'hr', 'ben': 'bn'}.get(str(e.get('lang') or '').lower(), str(e.get('lang') or '').lower()[:2])
@@ -1322,7 +1322,7 @@ def make_handler(g):
                             has_ref_ = bool(e.get('ref_file') and os.path.exists(e['ref_file']))
                             if not cands and not fmore_ and not has_ref_:
                                 e.update(state='nomatch' if longer_ else 'none', at=int(now_),
-                                         note=('only English subtitles made for a longer cut (%s)' % ', '.join(longer_[:3]))[:200] if longer_ else 'no subtitles on OpenSubtitles in English or any other language')
+                                         note=('only English subtitles made for a longer cut (%s)' % ', '.join(longer_[:3]))[:200] if longer_ else 'no subtitles on OpenSubtitles%s in English or any other language' % (' or Subdl' if SUBS.SUBDL.get('key') else ''))
                                 continue
                             e.pop('prio', None)
                             if not cands and has_ref_ and e.get('ref_sure'):
@@ -3033,6 +3033,7 @@ def make_handler(g):
 
         def subs_client(self):
             o = g.st.setdefault('opensubs', {})
+            SUBS.SUBDL['key'] = (g.st.get('subdl') or {}).get('key') or ''   # (Subdl too, when John has given its key: a second place to look)
             return SUBS.OpenSubs(o, lambda: save(SETTINGS, g.st), tls())
 
         def api_tmdbfind(self, me, user, q, b):
@@ -3259,12 +3260,12 @@ def make_handler(g):
                 e_ = P.get(iid_) or {}
                 try:
                     if e_.get('kind') == 'episode':
-                        R_ = self.subs_client().search('en', query=e_.get('series'), parent_tmdb=e_.get('series_tmdb'), season=e_.get('season'), episode=e_.get('episode'), hint=os.path.basename(it_.get('Path') or ''))
+                        R_ = self.subs_client().search('en', query=e_.get('series'), parent_tmdb=e_.get('series_tmdb'), season=e_.get('season'), episode=e_.get('episode'), hint=os.path.basename(it_.get('Path') or ''), also=True)
                     else:
-                        R_ = self.subs_client().search('en', tmdb=pid_.get('Tmdb'), imdb=pid_.get('Imdb'), query=it_.get('Name'), year=it_.get('ProductionYear'), hint=os.path.basename(it_.get('Path') or ''))
+                        R_ = self.subs_client().search('en', tmdb=pid_.get('Tmdb'), imdb=pid_.get('Imdb'), query=it_.get('Name'), year=it_.get('ProductionYear'), hint=os.path.basename(it_.get('Path') or ''), also=True)
                 except Exception as ex:
                     return self.send_json(502, {'error': str(ex)[:200]})
-                return self.send_json(200, {'mins': round((it_.get('RunTimeTicks') or 0) / 6e8), 'results': [{k: x.get(k) for k in ('file_id', 'name', 'downloads', 'exact', 'like', 'hi', 'machine', 'fps')} for x in R_[:40]]})
+                return self.send_json(200, {'mins': round((it_.get('RunTimeTicks') or 0) / 6e8), 'results': [{k: x.get(k) for k in ('file_id', 'name', 'downloads', 'exact', 'like', 'hi', 'machine', 'fps', 'source')} for x in R_[:40]]})
             if re.match(r'^[0-9a-f]{32}$', str(q.get('compare') or '')):
                 return self.send_json(200, subs_compare(g, P, q['compare'], str(q.get('with') or '')))
             if b:
@@ -3356,7 +3357,8 @@ def make_handler(g):
                             txt_ = str(b['srt'])[:900000]
                             nm_ = str(b.get('name') or 'a file you gave')[:160]
                         else:
-                            txt_ = SUBS.decode(self.subs_client().download(int(b.get('file_id') or 0)))
+                            fi_ = str(b.get('file_id') or '0')
+                            txt_ = SUBS.decode(self.subs_client().download(fi_ if fi_.startswith('sd:') else int(fi_)))
                             nm_ = str(b.get('name') or 'chosen by you')[:160]
                         cues_ = SUBS.parse_srt(txt_)
                     except Exception as ex:
@@ -4337,6 +4339,18 @@ def make_handler(g):
             if not self.subs_ready():
                 return self.send_json(503, {'error': 'Update the Mac first (Update everything).'})
             o = g.st.setdefault('opensubs', {})
+            if b and str(b.get('subdl') or '').strip():   # (Subdl's API key, from his own Subdl account: tried before it's kept)
+                k_ = str(b['subdl']).strip()
+                try:
+                    SUBS.SubDL(k_, tls()).search('en', imdb='tt0111161')
+                except Exception as e:
+                    return self.send_json(400, {'error': 'Subdl didn’t take that key: %s' % str(e)[:160]})
+                g.st['subdl'] = {'key': k_, 'at': int(time.time())}
+                SUBS.SUBDL['key'] = k_
+                save(SETTINGS, g.st)
+                log('Subtitles: Subdl set up, a second place to look')
+                return self.send_json(200, {'ready': bool(o.get('token') or (o.get('key') and o.get('user') and o.get('pass'))), 'user': o.get('user') or '',
+                                            'keyset': bool(o.get('key')), 'remaining': o.get('remaining'), 'allowed': o.get('allowed'), 'subdl': True})
             if b:
                 for k in ('key', 'user', 'pass'):
                     if str(b.get(k) or '').strip():
@@ -4348,7 +4362,7 @@ def make_handler(g):
                     save(SETTINGS, g.st)
                     return self.send_json(400, {'error': str(e)})
             return self.send_json(200, {'ready': bool(o.get('token') or (o.get('key') and o.get('user') and o.get('pass'))), 'user': o.get('user') or '',
-                                        'keyset': bool(o.get('key')), 'remaining': o.get('remaining'), 'allowed': o.get('allowed')})
+                                        'keyset': bool(o.get('key')), 'remaining': o.get('remaining'), 'allowed': o.get('allowed'), 'subdl': bool((g.st.get('subdl') or {}).get('key'))})
 
         def api_subs(self, me, user, q, b):
             """Subtitles: find them for a film (GET id, lang), add one (POST op=add), move one earlier or later (POST op=shift),
@@ -6830,16 +6844,16 @@ def name_sub(g, cl, e, iid, path, it, res=None):
     hint = org or os.path.splitext(os.path.basename(path))[0]
     if res is None:
         if e.get('kind') == 'episode':
-            res = cl.search('en', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=hint)
+            res = cl.search('en', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=hint, also=True)
         else:
-            res = cl.search('en', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint)
+            res = cl.search('en', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint, also=True)
     dur = (it.get('RunTimeTicks') or 0) / 1e7
     same_ = [y for y in res if not y.get('machine') and not y.get('exact') and (y.get('samename') or (y.get('like') or 0) >= 8)]
     rel_ = bool(org) or bool(re.search(r'(?i)\b(1080p|720p|2160p|480p|bluray|brrip|bdrip|remux|web-?dl|webrip|dvdrip|x26[45]|h\.?26[45]|hevc|xvid|yts|rarbg)\b', hint))
     if not rel_:
         chk(e, 'name', 'Its download name isn’t known (converted before names were kept), so none could be matched by it: %d English on OpenSubtitles' % len(res))
     elif not same_:
-        chk(e, 'name', 'None of the %d English subtitles on OpenSubtitles is named for its release (“%s”)' % (len(res), hint[:80]))
+        chk(e, 'name', 'None of the %d English subtitles on OpenSubtitles%s is named for its release (“%s”)' % (len(res), ' and Subdl' if SUBS.SUBDL.get('key') else '', hint[:80]))
     tried_ = []
     for x in same_[:3]:
         try:
@@ -6865,7 +6879,7 @@ def name_sub(g, cl, e, iid, path, it, res=None):
         e.update(state='done', how='by name', note='named for this very release (%s): used as it is' % ('the same name' if x.get('samename') else 'the same source and group'),
                  chose=x.get('name') or '', file=fn, at=int(time.time()), n=len(cues), sure=True)
         log('Subtitles for %s: English named for this very release, used as they are: %s' % (e.get('name'), x.get('name')))
-        record('subtitles saved', film=e.get('name'), id=iid, file=fn, how='named for this very release', chose=x.get('name'), opensubtitles_file=x.get('file_id'))
+        record('subtitles saved', film=e.get('name'), id=iid, file=fn, how='named for this very release', chose=x.get('name'), opensubtitles_file=x.get('file_id'), source=x.get('source') or 'OpenSubtitles')
         return True
     if same_:
         chk(e, 'name', '%d named for its release, none usable: %s' % (len(same_), '; '.join(tried_) or 'they couldn’t be read'))
@@ -6898,9 +6912,9 @@ def ref_sub(g, cl, e, iid, path, it):
         # 22 Nov 2026, "Efforts should be made to find matching foreign subs and timing before whisper is used at all")
         try:
             if e.get('kind') == 'episode':
-                A_ = cl.search('', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=hint)
+                A_ = cl.search('', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=hint, also=True)
             else:
-                A_ = cl.search('', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint)
+                A_ = cl.search('', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint, also=True)
             # (uploaded under this copy's very name; or else of the same release, its source and group the same, as like as can be: each one
             # still lined up with the English below, so one that isn't this copy's timing is passed over)
             fo_ = [x for x in A_ if not x.get('machine') and str(x.get('lang') or '').lower() not in ('en', 'eng')]
@@ -9571,6 +9585,8 @@ def keep_converting():
 
 def serve():
     g = Gateway()
+    if SUBS:
+        SUBS.SUBDL['key'] = (g.st.get('subdl') or {}).get('key') or ''   # (Subdl, a second place to look for subtitles, with John's key)
     G_REF.append(g)   # (for what runs on its own: covers_now's synopses)
     # (looks for duplicates left running by the gateway before this one (they only read the drive): stopped, so they don't pile up and starve
     # the media server; nine at once on 21 Nov 2026, load 85, and the site couldn't update)

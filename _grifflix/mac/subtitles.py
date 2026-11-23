@@ -44,6 +44,108 @@ def movie_hash(path):
 
 # ---------------------------------------------------------------- OpenSubtitles
 
+SUBDL = {}   # (John's Subdl API key, set by the gateway from its settings)
+SDLANG = {'english': 'en', 'french': 'fr', 'spanish': 'es', 'german': 'de', 'italian': 'it', 'portuguese': 'pt', 'brazillian portuguese': 'pb', 'brazilian portuguese': 'pb',
+          'dutch': 'nl', 'swedish': 'sv', 'danish': 'da', 'norwegian': 'no', 'finnish': 'fi', 'russian': 'ru', 'polish': 'pl', 'czech': 'cs', 'hungarian': 'hu',
+          'romanian': 'ro', 'greek': 'el', 'turkish': 'tr', 'arabic': 'ar', 'hebrew': 'he', 'farsi_persian': 'fa', 'persian': 'fa', 'japanese': 'ja', 'korean': 'ko',
+          'chinese bg code': 'zh', 'chinese': 'zh', 'big 5 code': 'zh', 'vietnamese': 'vi', 'thai': 'th', 'indonesian': 'id', 'malay': 'ms', 'bengali': 'bn', 'hindi': 'hi',
+          'serbian': 'sr', 'croatian': 'hr', 'bulgarian': 'bg', 'ukrainian': 'uk', 'slovenian': 'sl', 'slovak': 'sk', 'estonian': 'et', 'icelandic': 'is'}
+
+
+class SubDL:
+    """Subdl (subdl.com), where Subscene's library went: a second place to look for subtitles when OpenSubtitles has none, or none that
+    fits (John, 23 Nov 2026, "Can the subtitles search be expanded beyond open subtitles when nothing is found?"). Its API key is John's
+    own, from his Subdl account. Results look like OpenSubtitles' ones, their file ids "sd:" and Subdl's link."""
+    API = 'https://api.subdl.com/api/v1/subtitles'
+    DL = 'https://dl.subdl.com'
+
+    def __init__(self, key, ctx=None):
+        self.key, self.ctx = key, ctx
+
+    def _get(self, params):
+        url = self.API + '?' + urllib.parse.urlencode(dict({'api_key': self.key, 'subs_per_page': 30}, **{k: v for k, v in params.items() if v not in (None, '')}))
+        r = urllib.request.Request(url, headers={'User-Agent': UA, 'Accept': 'application/json'})
+        try:
+            with urllib.request.urlopen(r, timeout=40, context=self.ctx) as res:
+                j = json.loads(res.read() or b'{}')
+        except urllib.error.HTTPError as e:
+            try:
+                j = json.loads(e.read() or b'{}')
+            except Exception:
+                j = {}
+            raise RuntimeError('Subdl: %s' % (j.get('message') or j.get('error') or 'HTTP %d' % e.code))
+        if not j.get('status'):
+            msg = str(j.get('error') or j.get('message') or '')
+            if re.search(r'not ?found|no (subtitles|results)|can.t find', msg, re.I) or not msg:
+                return {}
+            raise RuntimeError('Subdl: %s' % msg)
+        return j
+
+    def search(self, lang='', tmdb=None, imdb=None, query=None, year=None, parent_tmdb=None, season=None, episode=None):
+        """Subtitles for a film or an episode, in one language (two letters) or every language (''): [{file_id, name, lang, ...}]."""
+        p = {'languages': (lang or '').upper()[:2] or None}
+        if episode:
+            p.update(type='tv', season_number=season, episode_number=episode)
+            if parent_tmdb:
+                p['tmdb_id'] = parent_tmdb
+            else:
+                p['film_name'] = query
+        else:
+            p['type'] = 'movie'
+            if imdb:
+                p['imdb_id'] = 'tt%07d' % int(re.sub(r'\D', '', str(imdb)) or 0)
+            elif tmdb:
+                p['tmdb_id'] = tmdb
+            else:
+                p.update(film_name=query, year=year)
+        j = self._get(p)
+        r0 = (j.get('results') or [{}])[0] if j else {}
+        out = []
+        for x in (j.get('subtitles') or []) if j else []:
+            if not x.get('url'):
+                continue
+            if episode and x.get('episode') not in (None, episode, str(episode)) and not x.get('full_season'):
+                continue
+            lg = str(x.get('language') or '').lower()
+            lg = lg if re.match(r'^[a-z]{2}$', lg) else SDLANG.get(str(x.get('lang') or '').lower(), str(x.get('lang') or '')[:2].lower())
+            out.append({'file_id': 'sd:%s' % x['url'] + ('#S%02dE%02d' % (int(season or 0), int(episode)) if episode and x.get('full_season') else ''), 'name': x.get('release_name') or x.get('name') or '', 'fname': x.get('name') or '', 'lang': lg,
+                        'kind': 'episode' if episode else 'movie', 'tmdb': r0.get('tmdb_id') or '', 'imdb': str(r0.get('imdb_id') or ''), 'title': r0.get('name') or '',
+                        'year': r0.get('year') or '', 'exact': False, 'downloads': 0, 'hi': bool(x.get('hi')), 'fps': 0, 'trusted': False, 'machine': False,
+                        'by': x.get('author') or '', 'source': 'Subdl', 'season': season, 'episode': episode})
+        return out
+
+    def download(self, file_id):
+        """The subtitle file's bytes: Subdl gives each as a zip, its .srt taken out (an episode's own from a season's). Kept once fetched."""
+        import hashlib, io, zipfile
+        url = str(file_id)[3:] if str(file_id).startswith('sd:') else str(file_id)
+        cache = os.path.expanduser('~/Grifflix/subdl-cache')
+        cf = os.path.join(cache, hashlib.sha1(url.encode()).hexdigest() + '.srt')
+        url, _, ep = url.partition('#')   # (a whole season's: this episode's file in it)
+        if os.path.exists(cf) and os.path.getsize(cf) > 0:
+            with open(cf, 'rb') as f:
+                return f.read()
+        r = urllib.request.Request(self.DL + (url if url.startswith('/') else '/' + url), headers={'User-Agent': UA})
+        with urllib.request.urlopen(r, timeout=60, context=self.ctx) as res:
+            raw = res.read()
+        if raw[:2] == b'PK':
+            z = zipfile.ZipFile(io.BytesIO(raw))
+            names = [n for n in z.namelist() if n.lower().endswith('.srt')]
+            if not names:
+                raise RuntimeError('Subdl: no .srt in it')
+            if ep:
+                m_ = re.match(r'S(\d+)E(\d+)', ep)
+                se_, en_ = int(m_.group(1)), int(m_.group(2))
+                mine = [n for n in names if re.search(r'(?i)s0*%d\s*e0*%d(?!\d)|\b0*%dx0*%d(?!\d)|\be(?:p|pisode)?\s*0*%d(?!\d)' % (se_, en_, se_, en_, en_), os.path.basename(n))]
+                if not mine:
+                    raise RuntimeError('Subdl: episode %d not in the season’s file' % en_)
+                names = mine
+            raw = max((z.read(n) for n in names), key=len)
+        os.makedirs(cache, exist_ok=True)
+        with open(cf, 'wb') as f:
+            f.write(raw)
+        return raw
+
+
 class OpenSubs:
     """The OpenSubtitles service, with John's own key and account (kept on the Mac in the gateway's settings)."""
 
@@ -87,8 +189,9 @@ class OpenSubs:
         self.save()
         return self.cfg['token']
 
-    def search(self, lang, mhash=None, tmdb=None, imdb=None, query=None, year=None, parent_tmdb=None, season=None, episode=None, hint=''):
-        """Subtitles for a film or an episode in one language: those made for this very file first."""
+    def search(self, lang, mhash=None, tmdb=None, imdb=None, query=None, year=None, parent_tmdb=None, season=None, episode=None, hint='', also=False):
+        """Subtitles for a film or an episode in one language: those made for this very file first. And Subdl's too, with John's key
+        there, when OpenSubtitles has fewer than three, or always if also."""
         if not self.cfg.get('key'):
             raise RuntimeError('Subtitles aren’t set up yet: John adds his OpenSubtitles details on the admin page.')
         found, order = {}, []
@@ -134,6 +237,12 @@ class OpenSubs:
             except RuntimeError:
                 pass
         out = [found[f] for f in order]
+        if SUBDL.get('key') and (also or len(out) < 3):   # (a second place to look: John, 23 Nov 2026, "Can the subtitles search be expanded
+            # beyond open subtitles when nothing is found?")
+            try:
+                out += SubDL(SUBDL['key'], self.ctx).search(lang, tmdb=tmdb, imdb=imdb, query=query, year=year, parent_tmdb=parent_tmdb, season=season, episode=episode)
+            except Exception:
+                pass
         # (only this film's: a title search also finds others with the word in them, a TV episode among them (John, 13 Nov
         # 2026: "Medium S01E15" for Fantasia). Kept: made for this file; the same film by its TMDB number; or, with no number,
         # the same kind (film or episode) and a title that matches)
@@ -216,6 +325,8 @@ class OpenSubs:
         """The subtitle file's bytes (one of John's daily OpenSubtitles downloads). Each file kept once downloaded, and given again from
         there, not downloaded again: his 1,000 a day were used up by the same files fetched over and over (John, 22 Nov 2026, "it said
         I've used up my 1000 downloads for today"). None asked for while the day's are used up."""
+        if str(file_id).startswith('sd:'):   # (one of Subdl's)
+            return SubDL(SUBDL.get('key') or '', self.ctx).download(file_id)
         cache = os.path.expanduser('~/Grifflix/opensubs-cache')
         cf = os.path.join(cache, '%d.srt' % int(file_id))
         if os.path.exists(cf) and os.path.getsize(cf) > 0:

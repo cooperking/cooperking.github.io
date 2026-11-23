@@ -613,6 +613,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           <input type="password" id="ospass" class="name" placeholder="OpenSubtitles password" autocomplete="new-password">
         </div>
         <div class="state"><button class="btn primary" id="osgo" type="button">Save</button></div>
+        <p class="stat" id="sdsay" style="margin-top:16px"><b>Subdl</b>, a second place to look when OpenSubtitles has none that fits (Subscene’s old library is there). It needs your own free Subdl account’s API key: sign in at subdl.com, and its API page in your account gives it.</p>
+        <div class="state"><input type="text" id="sdkey" class="name" placeholder="Subdl API key" autocomplete="off" spellcheck="false" style="flex:1 1 260px"><button class="btn primary" id="sdgo" type="button">Save</button></div>
       </section>
       
       <section class="card" data-tab="calendar">
@@ -1163,7 +1165,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   function spGiveBox(x) {
     return '<details class="spgive" style="margin:10px 0 0"><summary style="cursor:pointer;font-size:13px">Give the subtitles to use</summary>' +
       '<p class="spnote">Choose the right English subtitles from OpenSubtitles, or upload a file of your own (.srt). Then use them as they are, or have them timed to the film: by the subtitle made for this copy if there is one, otherwise by Whisper on your Mac with these alone.</p>' +
-      '<div class="spact"><button class="btn" type="button" data-spsearch="' + x.id + '">List those on OpenSubtitles</button><label class="btn" style="cursor:pointer">Upload a file<input type="file" accept=".srt,.txt,text/plain" data-spfile="' + x.id + '" hidden></label></div>' +
+      '<div class="spact"><button class="btn" type="button" data-spsearch="' + x.id + '">List those found (OpenSubtitles, Subdl)</button><label class="btn" style="cursor:pointer">Upload a file<input type="file" accept=".srt,.txt,text/plain" data-spfile="' + x.id + '" hidden></label></div>' +
       '<p class="spnote" data-gsay="' + x.id + '"></p><ul class="changes" data-gfor="' + x.id + '" style="margin:4px 0 0"></ul>' +
       '<p class="spnote" style="margin-top:14px"><b>Or a subtitle in another language</b> (best of all one made for your copy): the English lined up by it, and it translated into English on your Mac and compared; the translation kept to see beside the dialogue and use if it’s good enough.</p>' +
       '<div class="spact"><select data-glang="' + x.id + '" aria-label="Its language">' + SPLANGS.map(function (l) { return '<option value="' + l[0] + '"' + (l[0] === (SPL2[x.lang] || x.lang) ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') + '</select>' +
@@ -1180,14 +1182,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var wireTwo = function (li, body) { li.querySelector('[data-gtime]').onclick = function () { send(Object.assign({ op: 'give', id: x.id, mode: 'time' }, body), this); };
       li.querySelector('[data-gasis]').onclick = function () { send(Object.assign({ op: 'give', id: x.id, mode: 'asis' }, body), this); }; };
     var sb = bd.querySelector('[data-spsearch]'); if (sb) sb.onclick = function () {
-      say.textContent = 'Asking OpenSubtitles…'; list.innerHTML = '';
+      say.textContent = 'Asking OpenSubtitles and Subdl…'; list.innerHTML = '';
       fetch(GW + '/api/subprep?search=' + x.id, { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
         if (j.error) throw new Error(j.error);
         var R = j.results || [];
         var len = function (nm) { nm = String(nm || '').toLowerCase(); var a = /(\d)\s*h(?:rs?|ours?)?[\s.:]*(\d{1,2})\s*m/.exec(nm), c = /\b(\d{2,3})\s*min/.exec(nm); return a ? +a[1] * 60 + +a[2] : c ? +c[1] : 0; };
-        say.textContent = R.length ? R.length + ' found. The film runs ' + j.mins + ' minutes: a length in a name that differs is another cut.' : 'None found on OpenSubtitles.';
+        say.textContent = R.length ? R.length + ' found. The film runs ' + j.mins + ' minutes: a length in a name that differs is another cut.' : 'None found on OpenSubtitles' + (window.GRIF_SUBDL ? ' or Subdl.' : '. (Add your Subdl key in Subtitles, in time, on the Library tab, to look there too.)');
         list.innerHTML = R.map(function (r, k) { var L = len(r.name), d = L && j.mins ? L - j.mins : null;
-          return '<li data-gk="' + k + '"><b>' + esc(r.name || 'Subtitles') + '</b><span class="when">' + [r.exact ? 'made for this very file' : r.like >= 5 ? 'like your copy' : '', L ? L + ' min' + (Math.abs(d) <= 4 ? ' (this length)' : ' (another cut?)') : '', r.downloads ? Number(r.downloads).toLocaleString() + ' downloads' : '', r.hi ? 'for the hard of hearing' : '', r.machine ? 'machine translated' : ''].filter(Boolean).join(' · ') + '</span>' + two() + '</li>'; }).join('');
+          return '<li data-gk="' + k + '"><b>' + esc(r.name || 'Subtitles') + '</b><span class="when">' + [r.source === 'Subdl' ? 'from Subdl' : '', r.exact ? 'made for this very file' : r.like >= 5 ? 'like your copy' : '', L ? L + ' min' + (Math.abs(d) <= 4 ? ' (this length)' : ' (another cut?)') : '', r.downloads ? Number(r.downloads).toLocaleString() + ' downloads' : '', r.hi ? 'for the hard of hearing' : '', r.machine ? 'machine translated' : ''].filter(Boolean).join(' · ') + '</span>' + two() + '</li>'; }).join('');
         Array.prototype.forEach.call(list.querySelectorAll('[data-gk]'), function (li) { var r = R[+li.dataset.gk]; wireTwo(li, { file_id: r.file_id, name: r.name }); });
       }).catch(function (e) { say.textContent = 'Couldn’t ask: ' + (e.message || e); });
     };
@@ -3051,6 +3053,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   $('#pngo').onclick = pnLook;
   // (OpenSubtitles: John's key and account, kept on the Mac; John, 13 Nov 2026)
   function osPaint(r) {
+    window.GRIF_SUBDL = !!(r && r.subdl);
+    if (r.subdl) { $('#sdsay').innerHTML = '<b>Subdl</b>: set up, a second place to look when OpenSubtitles has none that fits (English and other languages). Save another key to change it.'; $('#sdkey').placeholder = 'Subdl API key (saved: leave empty to keep it)'; }
     if (r.ready) $('#ossay').innerHTML = 'Set up with OpenSubtitles as <b>' + esc(r.user) + '</b>' + (r.remaining != null ? ': ' + r.remaining + (r.allowed ? ' of ' + r.allowed : '') + ' downloads left today (shared by everyone)' : '') + '. Members find subtitles in the player: the subtitles button, then <b>Find subtitles…</b>. To change the account, fill in the boxes again.';
     if (r.user) $('#osuser').value = r.user;
     $('#oskey').placeholder = r.keyset ? 'API key (saved: leave empty to keep it)' : 'API key';
@@ -3064,6 +3068,15 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       body: JSON.stringify({ key: $('#oskey').value.trim(), user: $('#osuser').value.trim(), pass: $('#ospass').value }) })
       .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'Couldn’t save that.'); return j; }); })
       .then(function (r) { $('#oskey').value = ''; $('#ospass').value = ''; osPaint(r); toast('Saved: OpenSubtitles is working'); })
+      .catch(function (e) { toast(e.message || 'Couldn’t save that.'); })
+      .then(function () { b.disabled = false; b.textContent = 'Save'; });
+  };
+  $('#sdgo').onclick = function () {   // (Subdl: a second place to look for subtitles, with John's own key: John, 23 Nov 2026)
+    var k = $('#sdkey').value.trim(), b = $('#sdgo'); if (!k) return toast('Paste your Subdl API key first.'); if (!GW) return toast('The Mac mini isn’t answering.');
+    b.disabled = true; b.textContent = 'Checking…';
+    fetch(GW + '/api/subsetup', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ subdl: k }) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'Couldn’t save that.'); return j; }); })
+      .then(function (r) { $('#sdkey').value = ''; osPaint(r); toast('Saved: Subdl is working'); })
       .catch(function (e) { toast(e.message || 'Couldn’t save that.'); })
       .then(function () { b.disabled = false; b.textContent = 'Save'; });
   };
