@@ -76,9 +76,11 @@ class SubDL:
             raise RuntimeError('Subdl: %s' % (j.get('message') or j.get('error') or 'HTTP %d' % e.code))
         if not j.get('status'):
             msg = str(j.get('error') or j.get('message') or '')
+            SUBDL['last'] = 'nothing: %s' % (msg or 'no message')[:120]
             if re.search(r'not ?found|no (subtitles|results)|can.t find', msg, re.I) or not msg:
                 return {}
             raise RuntimeError('Subdl: %s' % msg)
+        SUBDL['last'] = '%d subtitle%s' % (len(j.get('subtitles') or []), '' if len(j.get('subtitles') or []) == 1 else 's')
         return j
 
     def search(self, lang='', tmdb=None, imdb=None, query=None, year=None, parent_tmdb=None, season=None, episode=None):
@@ -240,9 +242,17 @@ class OpenSubs:
         if SUBDL.get('key') and (also or len(out) < 3):   # (a second place to look: John, 23 Nov 2026, "Can the subtitles search be expanded
             # beyond open subtitles when nothing is found?")
             try:
-                out += SubDL(SUBDL['key'], self.ctx).search(lang, tmdb=tmdb, imdb=imdb, query=query, year=year, parent_tmdb=parent_tmdb, season=season, episode=episode)
-            except Exception:
-                pass
+                sd_ = SubDL(SUBDL['key'], self.ctx).search(lang, tmdb=tmdb, imdb=imdb, query=query, year=year, parent_tmdb=parent_tmdb, season=season, episode=episode)
+                out += sd_
+                said_ = '%d kept of %s' % (len(sd_), SUBDL.get('last') or '?')
+            except Exception as e_:
+                said_ = 'failed: %s' % str(e_)[:160]
+            if SUBDL.get('log'):   # (what Subdl gave, in the Mac mini's log: whether it's finding anything)
+                try:
+                    SUBDL['log']('Subdl, %s %s%s: %s' % ('English' if (lang or '').lower().startswith('en') else 'any language' if not lang else lang,
+                                                       query or imdb or tmdb or parent_tmdb or '', ' S%sE%s' % (season, episode) if episode else '', said_))
+                except Exception:
+                    pass
         # (only this film's: a title search also finds others with the word in them, a TV episode among them (John, 13 Nov
         # 2026: "Medium S01E15" for Fantasia). Kept: made for this file; the same film by its TMDB number; or, with no number,
         # the same kind (film or episode) and a title that matches)

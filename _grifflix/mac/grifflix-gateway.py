@@ -9685,6 +9685,7 @@ def serve():
     g = Gateway()
     if SUBS:
         SUBS.SUBDL['key'] = (g.st.get('subdl') or {}).get('key') or ''   # (Subdl, a second place to look for subtitles, with John's key)
+        SUBS.SUBDL['log'] = log
     G_REF.append(g)   # (for what runs on its own: covers_now's synopses)
     # (looks for duplicates left running by the gateway before this one (they only read the drive): stopped, so they don't pile up and starve
     # the media server; nine at once on 21 Nov 2026, load 85, and the site couldn't update)
