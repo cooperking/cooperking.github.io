@@ -1262,6 +1262,11 @@ def make_handler(g):
                                     e.pop('name_tried', None)
                                     save(SUBPREP, P)
                                     return self.send_json(200, {'wait': 'OpenSubtitles downloads used up for today'})
+                            if e.get('state') == 'waiting' and e.get('kind') != 'episode' and not e.get('givenfile') and silent_film(g, iid, it):
+                                e.update(state='nodialogue', note=SILENT_NOTE, at=int(now_))   # (a silent film: not listened to on John's Mac)
+                                chk(e, 'whisper', 'Not needed: a silent film, no speech to time subtitles by')
+                                save(SUBPREP, P)
+                                continue
                             if not e.get('ref_tried2'):   # (a subtitle made for this copy in another language: the English timed by its lines, no Whisper)
                                 e['ref_tried2'] = int(now_)
                                 try:
@@ -6742,6 +6747,11 @@ def keep_file_checks(g):
                         if not ok and not e.get('name_tried'):
                             ok = name_sub(g, cl, e, iid, path, it)
                             e['name_tried'] = int(time.time())
+                        if not ok and e.get('kind') != 'episode' and silent_film(g, iid, it):   # (a silent film: nothing to time any other by)
+                            e.update(state='nodialogue', note=SILENT_NOTE, at=int(time.time()))
+                            e['ref_tried2'] = int(time.time())
+                            chk(e, 'ref', 'A silent film: no subtitle can be timed by its speech, so no more looked for')
+                            ok = True
                         if not ok and not e.get('ref_tried2'):
                             ok = ref_sub(g, cl, e, iid, path, it)
                             e['ref_tried2'] = int(time.time())
@@ -7048,6 +7058,40 @@ def ref_sub(g, cl, e, iid, path, it):
     record('subtitles saved', film=e.get('name'), id=iid, file=fn, how=e['note'], english_from=x.get('name'), opensubtitles_file=x.get('file_id'),
            timed_by_language=refs[0][1], lines_on_reference=hit, share=round(share, 3))
     return True
+
+
+SILENT_AT = os.path.expanduser('~/Grifflix/silent-films.json')   # (TMDB's word on each film, kept: tmdb number -> true or false)
+
+
+def silent_film(g, iid, it=None):
+    """Whether a film is a silent one: Criterion calls it Silent, its genres or tags in the media server say so, TMDB tags it a silent film,
+    or it's from 1927 or before. A silent film has no speech to time subtitles by: only one made for its very file, or named for its very
+    release, can be taken; else none is needed. John, 23 Nov 2026, "we should also have a way of knowing that a silent film won't have
+    subtitles"."""
+    try:
+        if 'Silent' in ((load(os.path.expanduser('~/Grifflix/criterion-genres-given.json'), {}) or {}).get(iid) or []):
+            return True
+        full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Genres,Tags,ProviderIds,ProductionYear'}) or {}
+        if any(re.search(r'\bsilent\b', str(x), re.I) for x in (full.get('Genres') or []) + (full.get('Tags') or [])):
+            return True
+        if 1888 < int(full.get('ProductionYear') or (it or {}).get('ProductionYear') or 0) <= 1927:
+            return True
+        tid = str((full.get('ProviderIds') or {}).get('Tmdb') or '')
+        if tid and full.get('Type') == 'Movie':
+            S = load(SILENT_AT, {}) or {}
+            if tid not in S:
+                kw = tmdb(g, '/movie/%s/keywords' % tid)
+                if kw is None:
+                    return False
+                S[tid] = any(re.search(r'\bsilent (film|movie)\b', str(k.get('name') or ''), re.I) for k in kw.get('keywords') or [])
+                save(SILENT_AT, S)
+            return bool(S[tid])
+    except Exception:
+        pass
+    return False
+
+
+SILENT_NOTE = 'a silent film: no speech to time subtitles by, and none made for this very file or named for its release'
 
 
 def ep_fill(g, e, iid, cache=None):
@@ -9576,6 +9620,31 @@ TO_CHECK = [   # (each film's folder, and why it's in doubt: from the lengths of
 ]
 
 
+def silent_once(g):
+    """Once: the films waiting for subtitles, turned down or with none found, that are silent films, put in Not needed (Limite, Joyless
+    Street, La chambre...)."""
+    mk = os.path.expanduser('~/Grifflix/silent-once.done')
+    if os.path.exists(mk):
+        return
+    time.sleep(150)
+    try:
+        P = load(SUBPREP, {}) or {}
+        names = []
+        for iid, e in list(P.items()):
+            if isinstance(e, dict) and e.get('kind') != 'episode' and e.get('state') in ('waiting', 'nomatch', 'none') and not e.get('givenfile') and silent_film(g, iid):
+                e1 = __import__('copy').deepcopy(e)
+                e1.update(state='nodialogue', note=SILENT_NOTE, at=int(time.time()))
+                chk(e1, 'whisper', 'Not needed: a silent film, no speech to time subtitles by')
+                with SP_LOCK:
+                    if ((load(SUBPREP, {}) or {}).get(iid) or {}).get('state') == e.get('state'):
+                        subprep_commit({iid: e}, {iid: e1})
+                        names.append(e.get('name'))
+        log('Subtitles: silent films put in Not needed: %s' % (', '.join(str(x) for x in names) or 'none'))
+        open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+    except Exception as ex:
+        log('Subtitles, silent films: %s' % str(ex)[:200])
+
+
 def to_check_once(g):
     """Once: a To check collection, John's alone, with each film whose file is in doubt (the wrong film, a second copy, a file far shorter
     or longer than its film), its description saying why for each: John, 23 Nov 2026, "can you put ones you doubt in a to check
@@ -10228,7 +10297,8 @@ def serve():
     threading.Thread(target=ep_fill_all, args=(g,), daemon=True).start()
     threading.Thread(target=folders_fix_once, args=(g,), daemon=True).start()   # (once: the folders John asked to have put right, 23 Nov 2026)
     threading.Thread(target=renames_follow_once, args=(g,), daemon=True).start()   # (and those followed, as they weren't then)
-    threading.Thread(target=to_check_once, args=(g,), daemon=True).start()   # (once: the films in doubt in a To check collection, John's alone)   # (each episode's series' IMDb number and own title, for the searches)   # (once: those turned down by their words, looked at again by when their lines are said)
+    threading.Thread(target=to_check_once, args=(g,), daemon=True).start()
+    threading.Thread(target=silent_once, args=(g,), daemon=True).start()   # (once: silent films put in Not needed)   # (once: the films in doubt in a To check collection, John's alone)   # (each episode's series' IMDb number and own title, for the searches)   # (once: those turned down by their words, looked at again by when their lines are said)
     threading.Thread(target=keep_file_checks, args=(g,), daemon=True).start()   # (each waiting film's files checked here as soon as it's waiting)   # (other subtitles timed by when people speak, before Whisper)
     try:   # (films already turned down where Whisper heard next to no speech anywhere (Robot Dreams): little or no dialogue, not tried again)
         P_ = load(SUBPREP, {}) or {}
@@ -10277,6 +10347,11 @@ def serve():
     except Exception as e:
         log('Subtitles, tried again in other languages: %s' % e)
 
+    if not os.path.exists(os.path.expanduser('~/Grifflix/subs-machine-en3.done')):   # (once more: those machine-translated looked at again for English,
+        # SubtitleCat's now read in full (its .ass files, its look-alike letters) and an episode's parts found however named: Fanny and Alexander's
+        # TV version's English PART3 and PART4: John, 23 Nov 2026)
+        threading.Thread(target=english_by_foreign_all, args=(g, 200), daemon=True).start()
+        open(os.path.expanduser('~/Grifflix/subs-machine-en3.done'), 'w').write(time.strftime('%Y-%m-%d %H:%M'))
     if not os.path.exists(os.path.expanduser('~/Grifflix/subs-films.done')):   # (once: films searched by their IMDb numbers and own titles too
         # now: those turned down looked at again from the start, and those machine-translated looked at again for English: John, 23 Nov
         # 2026, "we need to check what else it missed this way as I can immediately see the correct subtitles are there on open subs")

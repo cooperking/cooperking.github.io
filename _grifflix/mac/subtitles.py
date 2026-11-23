@@ -173,6 +173,54 @@ LANGWORDS = {   # (the commonest short words of each language: a subtitle's own 
 }
 
 
+HOMO = str.maketrans({'Α': 'A', 'Β': 'B', 'Ε': 'E', 'Ζ': 'Z', 'Η': 'H', 'Ι': 'I', 'Κ': 'K', 'Μ': 'M', 'Ν': 'N', 'Ο': 'O', 'Ρ': 'P', 'Τ': 'T', 'Υ': 'Y', 'Χ': 'X',
+                      'ο': 'o', 'ν': 'v', 'α': 'a', 'ι': 'i', 'κ': 'k', 'ρ': 'p', 'τ': 't', 'υ': 'u', 'χ': 'x', 'ε': 'e',
+                      'А': 'A', 'В': 'B', 'Е': 'E', 'К': 'K', 'М': 'M', 'Н': 'H', 'О': 'O', 'Р': 'P', 'С': 'C', 'Т': 'T', 'Х': 'X', 'І': 'I', 'Ј': 'J', 'Ѕ': 'S',
+                      'а': 'a', 'е': 'e', 'о': 'o', 'р': 'p', 'с': 'c', 'у': 'y', 'х': 'x', 'і': 'i', 'ј': 'j', 'ѕ': 's'})
+
+
+def unhomoglyph(text):
+    """Greek and Cyrillic letters that look Latin, put inside Latin words (as some uploads do, "NOΤ", "Mοther"), made Latin again; a word
+    of Greek or Cyrillic left as it is. Fanny and Alexander's English for its TV version read as Greek: 23 Nov 2026."""
+    def fix(m):
+        w = m.group(0)
+        lat = sum(1 for ch in w if 'a' <= ch.lower() <= 'z')
+        return w.translate(HOMO) if lat and lat * 2 >= len(w) else w
+    return re.sub(r'[^\W\d_]+', fix, text or '')
+
+
+def ass_to_srt(text):
+    """An Advanced SubStation (.ass/.ssa) file's lines as SRT: their times, their words, the styling taken out."""
+    fields, cues = None, []
+    for line in (text or '').replace('\r', '').split('\n'):
+        if line.startswith('Format:') and fields is None and 'Start' in line and 'Text' in line:
+            fields = [f.strip().lower() for f in line[7:].split(',')]
+        elif line.startswith('Dialogue:'):
+            fl = fields or ['layer', 'start', 'end', 'style', 'name', 'marginl', 'marginr', 'marginv', 'effect', 'text']
+            parts = line[9:].split(',', len(fl) - 1)
+            if len(parts) < len(fl):
+                continue
+            d = dict(zip(fl, parts))
+            def t_(v):
+                m = re.match(r'\s*(\d+):(\d\d):(\d\d)[.:](\d+)', v or '')
+                return int(m.group(1)) * 3600 + int(m.group(2)) * 60 + int(m.group(3)) + int(m.group(4).ljust(3, '0')[:3]) / 1000 if m else None
+            a, e = t_(d.get('start')), t_(d.get('end'))
+            tx = re.sub(r'\{[^}]*\}', '', d.get('text') or '').replace('\\N', '\n').replace('\\n', '\n').replace('\\h', ' ').strip()
+            if a is not None and e is not None and tx:
+                cues.append((a, e, tx))
+    cues.sort()
+    return write_srt(cues)
+
+
+def part_mark(name, episode, season=None):
+    """Whether a release's name says it's this episode, however it's written: S01E01, 1x01, E01, Episode 1, Part 1, Del 1, PART1."""
+    n = re.sub(r'[^a-z0-9]+', ' ', str(name or '').lower())
+    e_ = int(episode)
+    pats = [r'\bs0*%d\s*e0*%d(?!\d)' % (int(season or 1), e_), r'\b0*%dx0*%d\b' % (int(season or 1), e_),
+            r'\b(?:e|ep|episode|part|pt|del|deel|teil|parte|partie|chapter|ch|vol|volume|disc|cd)\s*0*%d(?!\d)' % e_]
+    return any(re.search(p_, n) for p_ in pats)
+
+
 def guess_lang(text):
     """A subtitle's language from its own words (two letters), or '' if it can't be told."""
     t = re.sub(r'<[^>]+>|\{[^}]+\}|\d{2}:\d{2}:\d{2}[,.]\d+|-->', ' ', text or '')[:60000]
@@ -226,7 +274,8 @@ class SubtitleCat:
                 if href in seen or sum(1 for w in words if w in fn.split()) < max(1, round(.6 * len(words))):
                     continue
                 if episode:
-                    m_ = re.search(r's0*%d\s*e0*%d(?!\d)|\b0*%dx0*%d\b|episode\s*0*%d(?!\d)' % (int(season or 1), int(episode), int(season or 1), int(episode), int(episode)), fn)
+                    m_ = re.search(r's0*%d\s*e0*%d(?!\d)|\b0*%dx0*%d\b|\b(?:e|ep|episode|part|pt|del|deel|teil|parte|partie|chapter|ch|vol|volume|disc|cd)\s*0*%d(?!\d)'
+                                   % (int(season or 1), int(episode), int(season or 1), int(episode), int(episode)), fn)
                     if not m_:
                         continue
                     # (the series' own name before the episode's number: "The Trial Pyaar Kaanoon Dhokha S01E02 Scenes From a Marriage" is another show's
@@ -272,6 +321,9 @@ class SubtitleCat:
             with open(cf, 'wb') as f:
                 f.write(raw)
         text = decode(raw)
+        if re.search(r'^\[Script Info\]|^Dialogue:', text[:5000], re.M):   # (Advanced SubStation: as SRT)
+            text = ass_to_srt(text)
+        text = unhomoglyph(text)
         return text, guess_lang(text)
 
 
@@ -376,6 +428,16 @@ class OpenSubs:
                             ask(dict({'languages': lang, 'query': q_}, **se_ep))
                         except RuntimeError:
                             pass
+            if not any(not x_.get('exact') and (not lang or str(x_.get('lang') or '').lower()[:2] == lang[:2].lower()) and part_mark(x_.get('name'), episode, season)
+                       for x_ in found.values()):
+                # (and as a film of the series' name, its parts named for the episode: a TV version's English filed under the film,
+                # "Fanny.And.Alexander.1982.TV.Version.PART1": John, 23 Nov 2026, "we need to widen the search further")
+                for q_ in [query] + list(alt or []):
+                    if q_:
+                        try:
+                            ask({'languages': lang, 'query': q_})
+                        except RuntimeError:
+                            pass
         else:   # (a film: by its TMDB number and by its IMDb number, each, not one or the other (OpenSubtitles files some under one only);
             # then by its English title and its own, with its year: John, 23 Nov 2026, "we need to check what else it missed this way")
             if tmdb:
@@ -420,6 +482,9 @@ class OpenSubs:
         flat = lambda t: re.sub(r'[^a-z0-9]', '', (t or '').lower())
         want_kind = 'episode' if episode else 'movie'
         def ours(x):   # (made for this file too: a wrongly tagged upload can carry this file's fingerprint and another film's lines)
+            if episode and not x.get('exact') and x.get('kind') == 'movie':   # (filed as a film: only one named for this episode, of the series' name)
+                return part_mark(x.get('name'), episode, season) and any(flat(a_) and flat(a_) in flat(x.get('title'))   # (the series' whole name: not Alexander (2004))
+                                                                        for a_ in [query] + list(alt or []) if a_)
             if episode and not x.get('exact'):   # (an episode of another series of the same name (HBO's of 2021), or another episode: not this one's)
                 if parent_tmdb and x.get('ptmdb') and str(x['ptmdb']) != str(parent_tmdb):
                     return False
