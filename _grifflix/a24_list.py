@@ -5,6 +5,10 @@
 
 Each film: its title (t), year (y), directors (d), A24's status (s), its address on A24's site (u) and the still A24 shows for it (img).
 A list that comes back much shorter than the one kept (A24's page changed, or didn't load) is not saved: the old one stays.
+
+Read from A24's own data, the list its films page loads as it's scrolled (api.a24films.com), every page of it: the page read by scrolling
+stopped short or skipped films (145 on 19 Nov 2026 where A24 lists 188), and its stills were sometimes the film before's. The page itself
+is read only if A24's data can't be (John, 23 Nov 2026: "all films from the list need adding, and any missing added to the missing list").
 """
 import json
 import os
@@ -44,10 +48,59 @@ STILL = r"""() => {
 }"""
 
 
+API = 'https://api.a24films.com/api/web/v1/films/?sort=-release_date&page=%d'
+MONTHS = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split()
+
+
+def status(f):
+    """A24's word for where a film is, as its page shows it: Coming Jan 29, Now Playing, Rent Or Buy."""
+    ph = (f.get('live_phase') or '').lower()
+    if ph == 'trailer':
+        if f.get('release_date_display_override'):
+            return 'Coming ' + f['release_date_display_override']
+        d = (f.get('release_date') or '')[:10]
+        return 'Coming %s %d' % (MONTHS[int(d[5:7]) - 1], int(d[8:10])) if len(d) == 10 else 'Coming Soon'
+    return 'Now Playing' if ph == 'theatrical' else 'Rent Or Buy'
+
+
+def from_api():
+    """Every film in A24's own data, page after page, as its films page has them."""
+    import urllib.request
+    out, n = [], 1
+    while n < 40:
+        req = urllib.request.Request(API % n, headers={'User-Agent': 'Mozilla/5.0 (Grifflix)', 'Accept': 'application/json', 'Origin': 'https://a24films.com'})
+        d = json.loads(urllib.request.urlopen(req, timeout=60).read().decode('utf-8'))
+        for f in d.get('results') or []:
+            if (f.get('title_type') or 'film') != 'film' or not f.get('slug') or not f.get('display_name'):
+                continue
+            art = f.get('static_art') if isinstance(f.get('static_art'), dict) else {}
+            out.append({'t': f['display_name'].strip(), 'y': int(f.get('year') or (f.get('release_date') or '0')[:4] or 0), 'd': list(f.get('directors') or []),
+                        's': status(f), 'u': f['slug'], 'img': art.get('src') or ''})
+        if not d.get('next'):
+            break
+        n += 1
+    return out
+
+
 def main():
-    from playwright.sync_api import sync_playwright
     old = json.load(open(OUT, encoding='utf-8')) if os.path.exists(OUT) else {'films': []}
     oldimg = {f.get('u'): f.get('img') for f in old.get('films') or [] if f.get('img')}
+    try:
+        films = from_api()
+        for f in films:
+            if not f['img'] and oldimg.get(f['u']):
+                f['img'] = oldimg[f['u']]
+            if not f['img']:
+                del f['img']
+        print('A24’s own data: %d films' % len(films))
+    except Exception as e:
+        print('A24’s own data couldn’t be read (%s): its page read instead' % e)
+        films = from_page(oldimg)
+    return save(old, films)
+
+
+def from_page(oldimg):
+    from playwright.sync_api import sync_playwright
     with sync_playwright() as pw:
         px = os.environ.get('HTTPS_PROXY') if os.environ.get('A24_PROXY') else None   # (a test here: through its proxy)
         b = pw.chromium.launch(executable_path=os.environ.get('A24_CHROMIUM') or None, proxy={'server': px} if px else None)
@@ -83,6 +136,10 @@ def main():
             if src or oldimg.get(f['u']):
                 f['img'] = src or oldimg[f['u']]
         b.close()
+    return films
+
+
+def save(old, films):
     have = len(old.get('films') or [])
     if len(films) < max(60, have * .8):
         print('A24’s list came back with %d films (%d kept before): not saved.' % (len(films), have))
