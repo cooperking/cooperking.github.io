@@ -83,7 +83,7 @@ class SubDL:
         SUBDL['last'] = '%d subtitle%s' % (len(j.get('subtitles') or []), '' if len(j.get('subtitles') or []) == 1 else 's')
         return j
 
-    def search(self, lang='', tmdb=None, imdb=None, query=None, year=None, parent_tmdb=None, season=None, episode=None):
+    def search(self, lang='', tmdb=None, imdb=None, query=None, year=None, parent_tmdb=None, season=None, episode=None, parent_imdb=None, alt=None):
         """Subtitles for a film or an episode, in one language (two letters) or every language (''): [{file_id, name, lang, ...}]."""
         p = {'languages': (lang or '').upper()[:2] or None}
         if episode:
@@ -103,8 +103,13 @@ class SubDL:
             j = self._get(dict(p, **t_))
             if j and (j.get('subtitles') or j.get('results')):
                 break
-        if episode and not j and query and parent_tmdb:   # (an episode: by the series' name if its number isn't known there)
-            j = self._get(dict({k: v for k, v in p.items() if k != 'tmdb_id'}, film_name=query))
+        if episode and not (j and j.get('subtitles')):   # (an episode: by the series' IMDb number, then its names, if its TMDB number finds none)
+            base_ = {k: v for k, v in p.items() if k not in ('tmdb_id', 'film_name')}
+            for t_ in ([{'imdb_id': 'tt%07d' % int(re.sub(r'\D', '', str(parent_imdb)) or 0)}] if parent_imdb else []) + \
+                      [{'film_name': q_} for q_ in ([query] if parent_tmdb else []) + list(alt or []) if q_]:
+                j = self._get(dict(base_, **t_))
+                if j and j.get('subtitles'):
+                    break
         r0 = (j.get('results') or [{}])[0] if j else {}
         out = []
         for x in (j.get('subtitles') or []) if j else []:
@@ -221,7 +226,16 @@ class SubtitleCat:
                 if href in seen or sum(1 for w in words if w in fn.split()) < max(1, round(.6 * len(words))):
                     continue
                 if episode:
-                    if not re.search(r's0*%d\s*e0*%d(?!\d)|\b0*%dx0*%d\b|episode\s*0*%d(?!\d)' % (int(season or 1), int(episode), int(season or 1), int(episode), int(episode)), fn):
+                    m_ = re.search(r's0*%d\s*e0*%d(?!\d)|\b0*%dx0*%d\b|episode\s*0*%d(?!\d)' % (int(season or 1), int(episode), int(season or 1), int(episode), int(episode)), fn)
+                    if not m_:
+                        continue
+                    # (the series' own name before the episode's number: "The Trial Pyaar Kaanoon Dhokha S01E02 Scenes From a Marriage" is another show's
+                    # episode of that title, taken for Bergman's: 23 Nov 2026)
+                    head_ = fn[:m_.start()].split()
+                    if sum(1 for w in words if w in head_) < max(1, round(.6 * len(words))):
+                        continue
+                    ys = [int(y) for y in re.findall(r'\b(19\d\d|20\d\d)\b', fn)]   # (and of this series' years: not HBO's Scenes from a Marriage of 2021)
+                    if year and ys and not any(int(year) - 1 <= y <= int(year) + 15 for y in ys):
                         continue
                 elif year:
                     ys = [int(y) for y in re.findall(r'\b(19\d\d|20\d\d)\b', fn)]
@@ -294,7 +308,8 @@ class OpenSubs:
         self.save()
         return self.cfg['token']
 
-    def search(self, lang, mhash=None, tmdb=None, imdb=None, query=None, year=None, parent_tmdb=None, season=None, episode=None, hint='', also=False):
+    def search(self, lang, mhash=None, tmdb=None, imdb=None, query=None, year=None, parent_tmdb=None, season=None, episode=None, hint='', also=False,
+               parent_imdb=None, alt=None):
         """Subtitles for a film or an episode in one language: those made for this very file first. And Subdl's too, with John's key
         there, when OpenSubtitles has fewer than three, or always if also."""
         if not self.cfg.get('key'):
@@ -320,7 +335,9 @@ class OpenSubs:
                                   'exact': exact, 'downloads': a.get('download_count') or 0, 'hi': bool(a.get('hearing_impaired')),
                                   'fps': a.get('fps') or 0, 'trusted': bool(a.get('from_trusted')),
                                   'machine': bool(a.get('machine_translated') or a.get('ai_translated')),
-                                  'by': ((a.get('uploader') or {}).get('name') or ''), 'title': fd.get('title') or '', 'year': fd.get('year') or ''}
+                                  'by': ((a.get('uploader') or {}).get('name') or ''), 'title': fd.get('title') or '', 'year': fd.get('year') or '',
+                                  'ptmdb': str(fd.get('parent_tmdb_id') or ''), 'pimdb': str(fd.get('parent_imdb_id') or ''),
+                                  'se': fd.get('season_number'), 'ep': fd.get('episode_number')}
                     order.append(fid)
         ep = {'parent_tmdb_id': parent_tmdb, 'season_number': season, 'episode_number': episode} if episode else {}
         if mhash:
@@ -328,11 +345,30 @@ class OpenSubs:
                 ask(dict({'moviehash': mhash, 'languages': lang}, **ep))
             except RuntimeError:
                 pass
-        if episode and parent_tmdb:
-            ask(dict({'languages': lang}, **ep))
+        if episode:   # (an episode: by its series' TMDB number, else its IMDb number, else by the series' titles, its English one and its
+            # own (Scener ur ett äktenskap): Bergman's Scenes from a Marriage had none by its TMDB number: John, 23 Nov 2026, "It's impossible
+            # that Scenes from a Marriage S1 E2 (1973) has no subtitles")
+            se_ep = {'season_number': season, 'episode_number': episode}
+            by_id = ([dict(se_ep, parent_tmdb_id=parent_tmdb)] if parent_tmdb else []) + \
+                    ([dict(se_ep, parent_imdb_id=re.sub(r'\D', '', str(parent_imdb)).lstrip('0'))] if parent_imdb else [])
+            for p_ in by_id:
+                if any(not x_.get('exact') for x_ in found.values()):
+                    break
+                try:
+                    ask(dict({'languages': lang}, **p_))
+                except RuntimeError:
+                    pass
+            if not any(not x_.get('exact') for x_ in found.values()):   # (by its names only if by its numbers none: each name tried, the
+                # wrong series' ones left out below)
+                for q_ in [query] + list(alt or []):
+                    if q_:
+                        try:
+                            ask(dict({'languages': lang, 'query': q_}, **se_ep))
+                        except RuntimeError:
+                            pass
         elif tmdb or imdb:
             ask({'languages': lang, 'tmdb_id': tmdb} if tmdb else {'languages': lang, 'imdb_id': re.sub(r'\D', '', imdb or '')})
-        if query and len(found) < 5:
+        if query and len(found) < 5 and not episode:
             ask({'languages': lang, 'query': query, 'year': year})
         # (and by the name the film was downloaded as: a subtitle is very often uploaded under the very name of the copy it was made for:
         # John, 21 Nov 2026, "the subtitle filename is highly likely to be the same name as the" film's)
@@ -345,7 +381,8 @@ class OpenSubs:
         if SUBDL.get('key') and (also or len(out) < 3):   # (a second place to look: John, 23 Nov 2026, "Can the subtitles search be expanded
             # beyond open subtitles when nothing is found?")
             try:
-                sd_ = SubDL(SUBDL['key'], self.ctx).search(lang, tmdb=tmdb, imdb=imdb, query=query, year=year, parent_tmdb=parent_tmdb, season=season, episode=episode)
+                sd_ = SubDL(SUBDL['key'], self.ctx).search(lang, tmdb=tmdb, imdb=imdb, query=query, year=year, parent_tmdb=parent_tmdb, season=season, episode=episode,
+                                                           parent_imdb=parent_imdb, alt=alt)
                 out += sd_
                 said_ = '%d kept of %s' % (len(sd_), SUBDL.get('last') or '?')
             except Exception as e_:
@@ -362,6 +399,16 @@ class OpenSubs:
         flat = lambda t: re.sub(r'[^a-z0-9]', '', (t or '').lower())
         want_kind = 'episode' if episode else 'movie'
         def ours(x):   # (made for this file too: a wrongly tagged upload can carry this file's fingerprint and another film's lines)
+            if episode and not x.get('exact'):   # (an episode of another series of the same name (HBO's of 2021), or another episode: not this one's)
+                if parent_tmdb and x.get('ptmdb') and str(x['ptmdb']) != str(parent_tmdb):
+                    return False
+                if parent_imdb and x.get('pimdb') and re.sub(r'\D', '', x['pimdb']).lstrip('0') != re.sub(r'\D', '', str(parent_imdb)).lstrip('0'):
+                    return False
+                if (x.get('ep') not in (None, '') and str(x['ep']) != str(episode)) or (x.get('se') not in (None, '') and season and str(x['se']) != str(season)):
+                    return False
+                if (parent_tmdb and x.get('ptmdb') and str(x['ptmdb']) == str(parent_tmdb)) or \
+                   (parent_imdb and x.get('pimdb') and re.sub(r'\D', '', x['pimdb']).lstrip('0') == re.sub(r'\D', '', str(parent_imdb)).lstrip('0')):
+                    return True   # (this series' own, by its number: whatever the episode is called)
             if tmdb and x.get('tmdb') and str(x['tmdb']) != str(tmdb) and not episode:
                 return False
             if x.get('kind') and x['kind'] != want_kind and x['kind'] != 'tvshow':

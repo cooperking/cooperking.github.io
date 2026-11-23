@@ -1188,6 +1188,7 @@ def make_handler(g):
                             if not path or not os.path.exists(path):
                                 e.update(state='failed', note='its file isn’t there', at=int(now_))
                                 continue
+                            ep_fill(g, e, iid)   # (an episode: its series' IMDb number and own title, for the searches)
                             gf_ = e.get('givenfile') or ''
                             if gf_ and os.path.exists(gf_):   # (the subtitles John gave: only those, timed to the film by Whisper on his Mac)
                                 e.update(state='given', at=int(now_), note='')
@@ -1203,7 +1204,7 @@ def make_handler(g):
                             try:
                                 org_ = film_origin(path)   # (the release it was downloaded as: subtitles made for it first)
                                 if e.get('kind') == 'episode':
-                                    res = self.subs_client().search('en', mhash=mh, query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'),
+                                    res = self.subs_client().search('en', mhash=mh, query=e.get('series'), parent_tmdb=e.get('series_tmdb'), parent_imdb=e.get('series_imdb'), alt=[e.get('series_orig')], season=e.get('season'),
                                                                     episode=e.get('episode'), hint=org_ or os.path.basename(path), also=True)
                                 else:
                                     res = self.subs_client().search('en', mhash=mh, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'),
@@ -1302,7 +1303,7 @@ def make_handler(g):
                             fmore_ = []
                             try:
                                 if e.get('kind') == 'episode':
-                                    A_ = self.subs_client().search('', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=org_ or os.path.basename(path), also=True)
+                                    A_ = self.subs_client().search('', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), parent_imdb=e.get('series_imdb'), alt=[e.get('series_orig')], season=e.get('season'), episode=e.get('episode'), hint=org_ or os.path.basename(path), also=True)
                                 else:
                                     A_ = self.subs_client().search('', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=org_ or os.path.basename(path), also=True)
                                 own_ = {'fre': 'fr', 'fra': 'fr', 'ger': 'de', 'deu': 'de', 'spa': 'es', 'ita': 'it', 'jpn': 'ja', 'swe': 'sv', 'rus': 'ru', 'por': 'pt', 'chi': 'zh', 'zho': 'zh', 'kor': 'ko',
@@ -3273,7 +3274,7 @@ def make_handler(g):
                 e_ = P.get(iid_) or {}
                 try:
                     if e_.get('kind') == 'episode':
-                        R_ = self.subs_client().search('en', query=e_.get('series'), parent_tmdb=e_.get('series_tmdb'), season=e_.get('season'), episode=e_.get('episode'), hint=os.path.basename(it_.get('Path') or ''), also=True)
+                        R_ = self.subs_client().search('en', query=e_.get('series'), parent_tmdb=e_.get('series_tmdb'), parent_imdb=e_.get('series_imdb'), alt=[e_.get('series_orig')], season=e_.get('season'), episode=e_.get('episode'), hint=os.path.basename(it_.get('Path') or ''), also=True)
                     else:
                         R_ = self.subs_client().search('en', tmdb=pid_.get('Tmdb'), imdb=pid_.get('Imdb'), query=it_.get('Name'), year=it_.get('ProductionYear'), hint=os.path.basename(it_.get('Path') or ''), also=True)
                 except Exception as ex:
@@ -6603,7 +6604,7 @@ def speech_try(g, cl, e, iid, path, it):
     hint = org or os.path.splitext(os.path.basename(path))[0]
     def look(lang):
         if e.get('kind') == 'episode':
-            return cl.search(lang, query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=hint)
+            return cl.search(lang, query=e.get('series'), parent_tmdb=e.get('series_tmdb'), parent_imdb=e.get('series_imdb'), alt=[e.get('series_orig')], season=e.get('season'), episode=e.get('episode'), hint=hint)
         return cl.search(lang, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint)
     said = []
     # (1) in other languages: one made for this copy times the English
@@ -6715,6 +6716,7 @@ def keep_file_checks(g):
                 path = it.get('Path') or ''
                 e0 = __import__('copy').deepcopy(e)
                 e = __import__('copy').deepcopy(e)
+                ep_fill(g, e, iid)
                 ok = False
                 if path and os.path.exists(path):
                     try:
@@ -6876,7 +6878,7 @@ def name_sub(g, cl, e, iid, path, it, res=None):
     hint = org or os.path.splitext(os.path.basename(path))[0]
     if res is None:
         if e.get('kind') == 'episode':
-            res = cl.search('en', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=hint, also=True)
+            res = cl.search('en', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), parent_imdb=e.get('series_imdb'), alt=[e.get('series_orig')], season=e.get('season'), episode=e.get('episode'), hint=hint, also=True)
         else:
             res = cl.search('en', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint, also=True)
     dur = (it.get('RunTimeTicks') or 0) / 1e7
@@ -6944,7 +6946,7 @@ def ref_sub(g, cl, e, iid, path, it):
         # 22 Nov 2026, "Efforts should be made to find matching foreign subs and timing before whisper is used at all")
         try:
             if e.get('kind') == 'episode':
-                A_ = cl.search('', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=hint, also=True)
+                A_ = cl.search('', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), parent_imdb=e.get('series_imdb'), alt=[e.get('series_orig')], season=e.get('season'), episode=e.get('episode'), hint=hint, also=True)
             else:
                 A_ = cl.search('', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint, also=True)
             # (uploaded under this copy's very name; or else of the same release, its source and group the same, as like as can be: each one
@@ -6979,7 +6981,7 @@ def ref_sub(g, cl, e, iid, path, it):
     except Exception:
         pass
     if e.get('kind') == 'episode':
-        L = cl.search('en', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=hint, also=True)
+        L = cl.search('en', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), parent_imdb=e.get('series_imdb'), alt=[e.get('series_orig')], season=e.get('season'), episode=e.get('episode'), hint=hint, also=True)
     else:
         L = cl.search('en', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint, also=True)
     L = [x for x in L if not x.get('machine')][:6]
@@ -7032,6 +7034,58 @@ def ref_sub(g, cl, e, iid, path, it):
     return True
 
 
+def ep_fill(g, e, iid, cache=None):
+    """An episode's series' IMDb number and own title (Scener ur ett äktenskap), kept on its record, for the subtitle searches: by its
+    TMDB number alone OpenSubtitles had none for Bergman's Scenes from a Marriage (John, 23 Nov 2026). True if it changed."""
+    if e.get('kind') != 'episode' or ('series_imdb' in e and 'series_orig' in e):
+        return False
+    try:
+        x = ((g.jf.call('GET', '/Items', query={'Ids': iid, 'Fields': 'SeriesId'}) or {}).get('Items') or [{}])[0]
+        sid = x.get('SeriesId') or ''
+        if cache is not None and sid in cache:
+            sr = cache[sid]
+        else:
+            sr = ((g.jf.call('GET', '/Items', query={'Ids': sid, 'Fields': 'ProviderIds,OriginalTitle'}) or {}).get('Items') or [{}])[0] if sid else {}
+            if cache is not None:
+                cache[sid] = sr
+        e['series_imdb'] = (sr.get('ProviderIds') or {}).get('Imdb') or ''
+        ot = sr.get('OriginalTitle') or ''
+        e['series_orig'] = ot if ot and ot != sr.get('Name') else ''
+        return True
+    except Exception:
+        return False
+
+
+def ep_fill_all(g):
+    """Each episode's record given its series' IMDb number and own title; and, once, the episodes turned down or with none found looked
+    at again from the start, since their searches went by the series' TMDB number alone (and another show's episode was taken for one)."""
+    time.sleep(60)
+    try:
+        cache = {}
+        P = load(SUBPREP, {}) or {}
+        for iid, e in list(P.items()):
+            if isinstance(e, dict) and e.get('kind') == 'episode' and not ('series_imdb' in e and 'series_orig' in e):
+                e1 = __import__('copy').deepcopy(e)
+                if ep_fill(g, e1, iid, cache):
+                    subprep_commit({iid: e}, {iid: e1})
+        mk = os.path.expanduser('~/Grifflix/subs-episodes.done')
+        if not os.path.exists(mk):
+            n = 0
+            with SP_LOCK:
+                P = load(SUBPREP, {}) or {}
+                for iid, e in P.items():
+                    if isinstance(e, dict) and e.get('kind') == 'episode' and e.get('state') in ('nomatch', 'none'):
+                        e.update(state='waiting', note='to be tried again: episodes looked for by their series\u2019 IMDb number and own title too')
+                        for k in ('exact_tried', 'name_tried', 'ref_tried', 'ref_tried2', 'checks', 'tried', 'cands'):
+                            e.pop(k, None)
+                        n += 1
+                save(SUBPREP, P)
+            open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+            log('Subtitles: %d episodes looked at again from the start, by their series\u2019 IMDb numbers and own titles too' % n)
+    except Exception as ex:
+        log('Subtitles, the episodes\u2019 series: %s' % str(ex)[:200])
+
+
 def subtitlecat_for(g, e, iid, it, path, want=None):
     """SubtitleCat's original uploads for a film or episode, the last place looked: [{name, lang, srt}] (want 'en': English only). Its
     own machine translations never taken: John, 23 Nov 2026, "I'd rather we took the original upload from subtitlecat and checked and
@@ -7039,7 +7093,8 @@ def subtitlecat_for(g, e, iid, it, path, want=None):
     try:
         sc = SUBS.SubtitleCat(tls())
         if e.get('kind') == 'episode':
-            R = sc.search([e.get('series'), os.path.basename(os.path.dirname(os.path.dirname(path)))], season=e.get('season'), episode=e.get('episode'))
+            R = sc.search([e.get('series'), e.get('series_orig'), os.path.basename(os.path.dirname(os.path.dirname(path)))], season=e.get('season'), episode=e.get('episode'),
+                          year=e.get('year') or (re.findall(r'\((\d{4})\)', os.path.basename(os.path.dirname(os.path.dirname(path)))) or [None])[0])
         else:
             ot = (g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'OriginalTitle'}) or {}).get('OriginalTitle')
             R = sc.search([it.get('Name'), ot, os.path.basename(os.path.dirname(path))], year=it.get('ProductionYear'))
@@ -7082,7 +7137,7 @@ def english_by_foreign(g, iid):
     cl = SUBS.OpenSubs(g.st.setdefault('opensubs', {}), lambda: save(SETTINGS, g.st), tls())
     hint = film_origin(path) or os.path.basename(path)
     if e.get('kind') == 'episode':
-        L = cl.search('en', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=hint, also=True)
+        L = cl.search('en', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), parent_imdb=e.get('series_imdb'), alt=[e.get('series_orig')], season=e.get('season'), episode=e.get('episode'), hint=hint, also=True)
     else:
         L = cl.search('en', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint, also=True)
     L = [x for x in L if not x.get('machine')][:6]
@@ -7244,7 +7299,7 @@ def subs_namecheck():
                 except OSError:
                     mh = None
                 if e.get('kind') == 'episode':
-                    L = cl.search('en', mhash=mh, query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=name)
+                    L = cl.search('en', mhash=mh, query=e.get('series'), parent_tmdb=e.get('series_tmdb'), parent_imdb=e.get('series_imdb'), alt=[e.get('series_orig')], season=e.get('season'), episode=e.get('episode'), hint=name)
                 else:
                     L = cl.search('en', mhash=mh, tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=name)
                 L = [x for x in L if not x.get('machine')]
@@ -9849,7 +9904,8 @@ def serve():
     except Exception:
         pass
     threading.Thread(target=keep_speech_first, args=(g,), daemon=True).start()
-    threading.Thread(target=subs_by_timing_again, args=(g,), daemon=True).start()   # (once: those turned down by their words, looked at again by when their lines are said)
+    threading.Thread(target=subs_by_timing_again, args=(g,), daemon=True).start()
+    threading.Thread(target=ep_fill_all, args=(g,), daemon=True).start()   # (each episode's series' IMDb number and own title, for the searches)   # (once: those turned down by their words, looked at again by when their lines are said)
     threading.Thread(target=keep_file_checks, args=(g,), daemon=True).start()   # (each waiting film's files checked here as soon as it's waiting)   # (other subtitles timed by when people speak, before Whisper)
     try:   # (films already turned down where Whisper heard next to no speech anywhere (Robot Dreams): little or no dialogue, not tried again)
         P_ = load(SUBPREP, {}) or {}
