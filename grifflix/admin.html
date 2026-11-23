@@ -751,6 +751,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat">Films whose file is in doubt: the wrong film, a second copy, or a file far shorter or longer than its film (only part of it?), each with why. Only you see this collection. Take a film out of it once it’s put right (in the collection on the draft) and it goes from here too.</p>
         <div class="state"><a class="btn primary" id="tcopen" href="#" target="_blank" rel="noopener" hidden>Open To check</a><a class="btn" id="tcdraft" href="#" target="_blank" rel="noopener" hidden>On the draft</a></div>
         <p class="stat" id="tcsay">Looking on the Mac mini…</p>
+        <div class="state" id="tcpickbar" hidden><button class="btn primary" type="button" id="tcgo" disabled>Open ticked in tabs</button><button class="btn" type="button" id="tcall">Tick all</button></div>
         <div id="tclist"></div>
       </section>
       <section class="card" data-tab="a24">
@@ -1964,9 +1965,30 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           var lines = String(c.overview || '').split('\n'), items = c.items || [];
           var why = function (n) { var l = lines.filter(function (x) { return n && x.indexOf(n + ': ') === 0; })[0]; return l ? l.slice(n.length + 2).replace(/\.$/, '') : ''; };
           $('#tcsay').textContent = items.length + ' film' + (items.length === 1 ? '' : 's') + ' in it.';
+          // (each with a tick, and the ticked ones opened on the draft each in a tab of its own, to check side by side: John, 23 Nov 2026,
+          // "put a selector next to the to check so I can open in the tab")
+          var picked = {}; try { (JSON.parse(localStorage.getItem('grifflix-tc-picks') || '[]') || []).forEach(function (i) { picked[i] = 1; }); } catch (e) {}
           $('#tclist').innerHTML = items.length ? items.map(function (it) {
-            return '<div class="mrow cb"><span class="y">' + esc(String(it.year || '')) + '</span><span>' + flA(it.id, it.name || '?') + (why(it.name) ? '<br><small class="d">' + esc(why(it.name)) + '</small>' : '') + '</span><span></span></div>';
+            return '<label class="mrow cb pk' + (picked[it.id] ? ' on' : '') + '"><input type="checkbox" class="cbpick tcpick" data-id="' + esc(it.id) + '"' + (picked[it.id] ? ' checked' : '') + ' aria-label="Tick ' + esc(it.name || '') + '"><span class="y">' + esc(String(it.year || '')) + '</span><span>' + flA(it.id, it.name || '?') + (why(it.name) ? '<br><small class="d">' + esc(why(it.name)) + '</small>' : '') + '</span><span class="s"></span></label>';
           }).join('') : '<p class="stat">Nothing in it: every film has been put right.</p>';
+          var boxes = [].slice.call(document.querySelectorAll('#tclist .tcpick'));
+          var sync = function () {
+            var on = boxes.filter(function (b) { return b.checked; });
+            boxes.forEach(function (b) { b.closest('label').classList.toggle('on', b.checked); });
+            $('#tcgo').disabled = !on.length;
+            $('#tcgo').textContent = on.length ? 'Open ' + on.length + ' ticked in tabs' : 'Open ticked in tabs';
+            $('#tcall').textContent = on.length === boxes.length ? 'Untick all' : 'Tick all';
+            try { localStorage.setItem('grifflix-tc-picks', JSON.stringify(on.map(function (b) { return b.dataset.id; }))); } catch (e) {}
+          };
+          $('#tcpickbar').hidden = !boxes.length;
+          boxes.forEach(function (b) { b.onchange = sync; });
+          $('#tcall').onclick = function () { var all = boxes.every(function (b) { return b.checked; }); boxes.forEach(function (b) { b.checked = !all; }); sync(); };
+          $('#tcgo').onclick = function () {
+            var on = boxes.filter(function (b) { return b.checked; }), stopped = 0;
+            on.forEach(function (b) { var w = window.open(SITE + 'draft/#film/' + b.dataset.id, 'grifflix-check-' + b.dataset.id); if (!w) stopped++; });
+            if (stopped) toast('Your browser opened ' + (on.length - stopped) + ' of ' + on.length + ': allow pop-ups for this page (in the address bar), then press again.');
+          };
+          sync();
         }).catch(function (e) { $('#tclist').innerHTML = '<p class="stat">Couldn’t read the films in it: ' + esc(e.message) + '</p>'; }); }
       else $('#tcsay').textContent = 'Not made yet: the Mac mini makes it a few minutes after its next restart.';
       var c = (j.collections || []).filter(function (x) { return /^a24 checks$/i.test(x.name || ''); })[0];
