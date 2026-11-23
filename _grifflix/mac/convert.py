@@ -119,7 +119,7 @@ def now(state, **x):
     """The admin page's Conversions card: converting (how far), paused (why), waiting for the night, or finished."""
     try:
         tmp = NOW + '.tmp'
-        json.dump(dict(RUN, state=state, at=int(time.time()), pid=os.getpid(), selfupdate=True, **x), open(tmp, 'w'))
+        json.dump(dict(RUN, state=state, at=int(time.time()), pid=os.getpid(), selfupdate=True, remuxonly=True, **x), open(tmp, 'w'))
         os.replace(tmp, NOW)
     except OSError:
         pass
@@ -147,6 +147,7 @@ def load_json(path):
         return {}
 
 
+MOVED = 'its file was moved or renamed while it was being made: done again under its new name'
 SHRINK = 'to make smaller'   # (a file that plays, much bigger than it need be: converted once, compactly, at the end of the queue)
 REPACK = 'to repackage'   # (a film whose picture plays as it is, put in an MP4 with sound every device plays: the picture copied, not converted)
 
@@ -704,6 +705,8 @@ def convert(item, ffmpeg, ffprobe, st):
                         show()
                 if k % 4 == 0:   # (how far it's got: every 20 seconds)
                     show(why_ if paused else '')
+                if k % 12 == 0 and not os.path.exists(src):   # (its folder renamed meanwhile (Rozmarné léto to Capricious Summer, 23 Nov 2026): stopped, done again under its new name)
+                    raise RuntimeError(MOVED)
                 if mac_converting():   # (stopped and cleared, not paused: John, 18 Nov 2026)
                     raise MacBusy()
                 why_ = 'someone is watching' if watching() else 'a film is downloading' if item.get('mode') == 'remux' and not item.get('fetched') and not item.get('new') and not item.get('redo') and downloading() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() and not item.get('urgent') else '')
@@ -778,6 +781,10 @@ def convert(item, ffmpeg, ffprobe, st):
                 log('  (picture subtitles list: %s)' % e)
         if keep_pics:
             log('  a picture subtitle couldn’t be saved on its own: the original kept, so it isn’t lost')
+    if not os.path.exists(src):   # (moved or renamed while it was being made: the new file not put where the old one was)
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        raise RuntimeError(MOVED)
     if (s.get('keep_originals') or unsure or keep_pics) and not item.get('redo'):   # (unsure of the language, or a picture subtitle not saved: the original kept, whatever the setting)
         keep_at = os.path.join(os.path.dirname(root.rstrip('/')), 'Grifflix Originals', os.path.basename(root.rstrip('/')), os.path.relpath(src, root))
         os.makedirs(os.path.dirname(keep_at), exist_ok=True)
@@ -941,6 +948,51 @@ def claimed(iid):
         return time.time() - float(json.load(open(CLAIMS)).get(iid, 0)) < 1800   # (renewed by the gateway with every word from John's Mac: lapses half an hour after the last)
     except (OSError, ValueError):
         return False
+
+
+TOMAC_MAX = 3   # (films the Mac mini has handed to John's Mac waiting in its queue at once: more handed over as those are taken up)
+
+
+def to_mac(slow):
+    """The Mac mini repackages only, the picture copied as it is (minutes): a film whose picture must be made again (made 1080p, from a
+    format not every device plays, made smaller) is handed to John's Mac, whose hardware does it in a fraction of the time, put at the end
+    of its queue, a few at a time, so his own choices aren't buried. One handed over and taken off his queue by John, or passed over there,
+    isn't handed over again for a week. John, 23 Nov 2026, "the mac mini shouldn't be taking on conversion jobs like this": Rozmarné léto,
+    4K made 1080p here, 23% after nine hours."""
+    qf = os.path.join(HOME, 'mac-queue.json')
+    try:
+        Q = json.load(open(qf))
+    except (OSError, ValueError):
+        Q = []
+    Q = Q if isinstance(Q, list) else []
+    try:
+        passed = set(y.get('id') for y in json.load(open(qf + '.passed')) or [] if time.time() - y.get('at', 0) < 3 * 86400)
+    except (OSError, ValueError, AttributeError, TypeError):
+        passed = set()
+    sent = st.setdefault('tomac', {})
+    waiting, added = sum(1 for x in Q if x.get('from') == 'mini'), []
+    for x in slow:
+        if waiting + len(added) >= TOMAC_MAX:
+            break
+        if x['id'] in passed or any(y.get('id') == x['id'] for y in Q) or time.time() - sent.get(x['id'], 0) < 7 * 86400 or not os.path.exists(x['path']):
+            continue
+        added.append(dict({'id': x['id'], 'name': x['name'], 'at': int(time.time()), 'from': 'mini', 'why': (x.get('why') or '')[:160]},
+                          **({'force': True} if x.get('mode') == 'shrink' else {})))
+    if added:
+        try:   # (read again just before writing: John may have queued one meanwhile)
+            Q = json.load(open(qf))
+            Q = Q if isinstance(Q, list) else []
+        except (OSError, ValueError):
+            Q = []
+        ids_ = set(y.get('id') for y in Q)
+        tmp = qf + '.tmp'
+        json.dump(Q + [y for y in added if y['id'] not in ids_], open(tmp, 'w'))
+        os.replace(tmp, qf)
+        for y in added:
+            sent[y['id']] = int(time.time())
+        save_state(st)
+        log('  handed to John’s Mac to convert (the Mac mini only repackages): %s' % ', '.join(y['name'] for y in added))
+    return added
 
 
 SKIPWHY = {}   # (why one was passed over, said as it is, not "this or that": John, 20 Nov 2026, Wild at Heart "failed, but I don't see any message")
@@ -1259,6 +1311,7 @@ log('starting: %d to convert' % len(items))
 RUN['total'] = len(items)
 follow_up(st)
 rest, n = redos(), -1
+REGATHER = [time.time()]
 rest += [i for i in items if i['id'] not in set(x['id'] for x in rest)]   # (a film both made again and planned: once)
 looked = time.time()
 while rest:
@@ -1307,11 +1360,35 @@ while rest:
         now('waiting', why='the rest are being converted on John’s Mac')
         time.sleep(120)
         continue
+    slow = [x for x in free if x.get('mode') != 'remux']
+    if slow:
+        try:
+            to_mac(slow)
+        except Exception as e:
+            log('  couldn’t hand films to John’s Mac:', e)
+        free = [x for x in free if x.get('mode') == 'remux']
+        if not free:   # (only films for John's Mac left: a whole look again every half hour, for films to repackage since)
+            if time.time() - REGATHER[0] > 1800:
+                REGATHER[0] = time.time()
+                try:
+                    have = set(x['id'] for x in rest)
+                    more = [i for i in fresh(gather(), st) if i['id'] not in have and i['id'] not in st['done'] and i['id'] not in st['failed'] and i.get('mode') == 'remux']
+                    if more:
+                        log('%d more to repackage' % len(more))
+                        rest = more + rest
+                        RUN['total'] = RUN.get('total', 0) + len(more)
+                        continue
+                except Exception as e:
+                    log('  couldn’t look for more to repackage:', e)
+            RUN['next'] = []
+            now('waiting', why='the rest are for John’s Mac to convert: the Mac mini only repackages')
+            time.sleep(120)
+            continue
     it = free[0]
     rest.remove(it)
     n += 1
     RUN['n'] = n
-    RUN['next'] = [{'id': x['id'], 'name': x['name'], 'why': x['why'], 'gb': x['gb'], 'mins': x['mins'], 'mode': x.get('mode')} for x in [it] + rest[:11]]   # (what's coming, for the admin page)
+    RUN['next'] = [{'id': x['id'], 'name': x['name'], 'why': x['why'], 'gb': x['gb'], 'mins': x['mins'], 'mode': x.get('mode')} for x in [it] + [y for y in rest if y.get('mode') == 'remux'][:11]]   # (what's coming, for the admin page: what the Mac mini itself does)
     RUN['left'] = {'remux': sum(1 for x in [it] + rest if x.get('mode') == 'remux'), 'convert': sum(1 for x in [it] + rest if x.get('mode') != 'remux')}
     # (no waiting for the night: it converts whenever nothing is playing and John's Mac isn't converting, below: John, 12 Nov 2026, "That 2am
     # 8am rule was changed to any time not in use"; the night wait itself taken out: John, 20 Nov 2026, "the mac now just converts whenever
@@ -1343,7 +1420,9 @@ while rest:
             except Exception:
                 pass
     except RuntimeError as e:
-        if it.get('mode') == 'remux' and 'skipped by John' not in str(e):   # (a picture an MP4 can't hold as it is: converted instead, in its turn, not given up on)
+        if MOVED in str(e):
+            log('  %s: %s' % (it['name'], MOVED))
+        elif it.get('mode') == 'remux' and 'skipped by John' not in str(e):   # (a picture an MP4 can't hold as it is: converted instead, in its turn, not given up on)
             log('  couldn’t repackage', it['name'], '(%s): it will be converted instead' % str(e)[:160])
             it['mode'] = 'convert'
             it['why'] = 'format (couldn’t be repackaged as it is)'
