@@ -4349,6 +4349,7 @@ def make_handler(g):
                 SUBS.SUBDL['key'] = k_
                 save(SETTINGS, g.st)
                 log('Subtitles: Subdl set up, a second place to look')
+                subs_none_again('Subdl too')
                 return self.send_json(200, {'ready': bool(o.get('token') or (o.get('key') and o.get('user') and o.get('pass'))), 'user': o.get('user') or '',
                                             'keyset': bool(o.get('key')), 'remaining': o.get('remaining'), 'allowed': o.get('allowed'), 'subdl': True})
             if b:
@@ -6727,6 +6728,23 @@ def keep_file_checks(g):
         except Exception as ex:
             log('Subtitles, the files’ checks: %s' % str(ex)[:200])
         time.sleep(5 if did else 120)
+
+
+def subs_none_again(why):
+    """Those with no subtitles found anywhere tried again, now there's somewhere new to look."""
+    try:
+        with SP_LOCK:
+            P_ = load(SUBPREP, {}) or {}
+            n_ = 0
+            for k_, e_ in P_.items():
+                if isinstance(e_, dict) and e_.get('state') == 'none':
+                    e_.update(state='waiting', note='to be tried again: %s' % why)
+                    n_ += 1
+            if n_:
+                save(SUBPREP, P_)
+        log('Subtitles: %d with none found anywhere to be tried again (%s)' % (n_, why))
+    except Exception as ex:
+        log('Subtitles, tried again: %s' % ex)
 
 
 def subs_by_timing_again(g):
@@ -9753,6 +9771,11 @@ def serve():
             log('Subtitles: %d with no English subtitles to be tried again, with those in other languages' % n_f)
     except Exception as e:
         log('Subtitles, tried again in other languages: %s' % e)
+
+    if (g.st.get('subdl') or {}).get('key') and not os.path.exists(os.path.expanduser('~/Grifflix/subs-subdl.done')):   # (once: Subdl set up after
+        # those with none anywhere were last looked at: John, 23 Nov 2026, the Varda episodes marked none at 09:18, his key added at 09:39)
+        subs_none_again('Subdl too')
+        open(os.path.expanduser('~/Grifflix/subs-subdl.done'), 'w').write(time.strftime('%Y-%m-%d %H:%M'))
 
     def tfu_match():
         """Totally Fucked Up's match put back, if it hasn't it: the Mac restarted for an update two minutes after renaming it, before it was

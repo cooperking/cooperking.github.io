@@ -566,6 +566,7 @@ def prepare(job, ff, wcli, work):
     pool += [dict(x) for x in job.get('fmore') or []]
     parts = [[sg[0] for sg in segs] for _, segs in heard]
     best = None
+    own_lang = LANG2.get(str(job.get('lang') or '').lower(), str(job.get('lang') or '').lower())[:2]
     for fc in pool[:5]:
         if not fc.get('srt') and fc.get('file_id'):
             try:
@@ -579,11 +580,14 @@ def prepare(job, ff, wcli, work):
             continue
         prog('No English fits: trying the %s subtitle “%s” by when its lines are said' % (fc.get('lang'), (fc.get('name') or '')[:60]))
         f_ = onset_search(parts, cues)
-        if f_ and f_[0] and (not best or f_[1] > best[0][1]):
-            best = (f_, fc, cues)
+        # (of those that fit, one in the film's own language before any other: translated from what's said, not from another
+        # translation (The Eternal Memory, Spanish, was put into English from a Korean subtitle: 23 Nov 2026))
+        own_ = str(fc.get('lang') or '')[:2].lower() == own_lang
+        if f_ and f_[0] and (not best or (own_, f_[1]) > (best[3], best[0][1])):
+            best = (f_, fc, cues, own_)
     if not best:
         return res
-    (ok, z, sure, h, pz, r, b), fc, cues = best
+    (ok, z, sure, h, pz, r, b), fc, cues, _ = best
     lg = fc.get('lang') or ''
     how_ = 'moved %+.1f s%s, by when its lines are said (%d of %d heard lines begin with one of its lines)' % (b, '' if abs(r - 1) < .00005 else ', at %.4fx speed' % r, h, sum(len(p_) for p_ in parts))
     TRANSLATED.clear()
