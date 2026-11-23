@@ -13469,7 +13469,7 @@
    "sound": [
     "Melancholy",
     "Bittersweet",
-    "Mellow"
+    "Romantic"
    ],
    "claude": [
     "Bittersweet",
@@ -25100,8 +25100,8 @@
    "moodFrom": "Claude (researched)",
    "sound": [
     "Romantic",
-    "Joyful",
-    "Playful"
+    "Playful",
+    "Joyful"
    ],
    "claude": [
     "Dreamy",
@@ -26491,7 +26491,7 @@
    "moodMix": [
     [
      "Bittersweet",
-     41
+     42
     ],
     [
      "Romantic",
@@ -26509,7 +26509,7 @@
      [
       [
        "Bittersweet",
-       41
+       42
       ],
       [
        "Romantic",
@@ -27437,7 +27437,7 @@
       ],
       [
        "Joyful",
-       22
+       23
       ]
      ]
     ]
@@ -29752,7 +29752,7 @@
    "moodMix": [
     [
      "Dreamy",
-     92
+     93
     ],
     [
      "Mellow",
@@ -29770,7 +29770,7 @@
      [
       [
        "Dreamy",
-       92
+       93
       ],
       [
        "Mellow",
@@ -29868,6 +29868,142 @@
     "indie folk",
     "pop",
     "rock"
+   ],
+   "check": true
+  },
+  "5XAoSMs4PY590w0QOhKAnC": {
+   "n": 287,
+   "title": "Being Special",
+   "artist": "Sophia Kennedy",
+   "moods": [
+    "Mellow",
+    "Melancholy"
+   ],
+   "moodMix": [
+    [
+     "Mellow",
+     20
+    ],
+    [
+     "Melancholy",
+     20
+    ],
+    [
+     "Dark",
+     13
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Mellow",
+       20
+      ],
+      [
+       "Melancholy",
+       20
+      ],
+      [
+       "Dark",
+       13
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Mellow",
+    "Melancholy",
+    "Dark"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Neofolk",
+    "Neofolk",
+    "Alternative Rock"
+   ],
+   "genres": [
+    "Electronic",
+    "Pop"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Electronic",
+     36
+    ],
+    [
+     "Pop",
+     29
+    ],
+    [
+     "Indie",
+     25
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Pop",
+       47
+      ],
+      [
+       "Electronic",
+       41
+      ],
+      [
+       "Indie",
+       11
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Indie",
+       51
+      ],
+      [
+       "Electronic",
+       38
+      ],
+      [
+       "Pop",
+       11
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Rock",
+       39
+      ],
+      [
+       "Indie",
+       21
+      ],
+      [
+       "Electronic",
+       19
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "electronic",
+    "indie pop",
+    "pop"
    ],
    "check": true
   }
