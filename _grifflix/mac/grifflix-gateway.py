@@ -601,6 +601,22 @@ class Gateway:
             old.update(m)
             self.store.touch()
         self.forget()
+        try:   # (and its subtitles' record, and the files kept for it (the ones tried, what was heard), under its new id)
+            with SP_LOCK:
+                P_ = load(SUBPREP, {}) or {}
+                ch_ = False
+                for o_, n_ in m.items():
+                    if o_ in P_ and n_ not in P_:
+                        P_[n_] = P_.pop(o_); ch_ = True
+                if ch_:
+                    save(SUBPREP, P_)
+            for d_ in ('subprep-cands', 'subprep-evidence', 'subprep-ref'):
+                dd_ = os.path.expanduser('~/Grifflix/' + d_)
+                for f_ in (os.listdir(dd_) if os.path.isdir(dd_) else []):
+                    if f_[:32] in m and re.match(r'^[0-9a-f]{32}', f_):
+                        os.replace(os.path.join(dd_, f_), os.path.join(dd_, m[f_[:32]] + f_[32:]))
+        except Exception as e:
+            log('Subtitles, following new ids: %s' % e)
         return n
 
     def now_id(self, iid):
@@ -9463,6 +9479,130 @@ def rename_to(g, iid, name, year, pick=None):
     return 'renamed to “%s”' % new
 
 
+def loose_to_folders(g, quiet=False):
+    """Films put straight into the Movies folder, with no folder of their own, each given one, named "Title (Year)" (the film it's matched
+    to, Criterion's year for its films), any files beside it of the same name (its subtitles) moved in with it. Only once a quarter of an
+    hour has passed since it last changed (not one still being copied in), and never over a folder already there. John, 23 Nov 2026, "some
+    films were added but folders are wrong - can you correct?": Chafed Elbows, No More Excuses and The Joke (1969 ) sat loose."""
+    VIDS = ('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')
+    roots = [l for v in g.jf.call('GET', '/Library/VirtualFolders') or [] if (v.get('CollectionType') or '') == 'movies' for l in v.get('Locations') or []]
+    done = []
+    for root in roots:
+        try:
+            names = [n for n in os.listdir(root) if not n.startswith('.') and n.lower().endswith(VIDS) and os.path.isfile(os.path.join(root, n))]
+        except OSError:
+            continue
+        if not names:
+            continue
+        byp = {}
+        try:
+            r_ = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path,ProviderIds,ProductionYear'}, timeout=180) or {}
+            byp = {os.path.realpath(x.get('Path') or ''): x for x in r_.get('Items') or []}
+        except Exception:
+            pass
+        for n in names:
+            src = os.path.join(root, n)
+            try:
+                if time.time() - os.path.getmtime(src) < 900:
+                    continue
+            except OSError:
+                continue
+            stem, ext = os.path.splitext(n)
+            it = byp.get(os.path.realpath(src)) or {}
+            tid = str((it.get('ProviderIds') or {}).get('Tmdb') or '')
+            if tid and it.get('Name'):
+                title, year = it['Name'], crit_year({'Name': it['Name'], 'ProductionYear': it.get('ProductionYear'), 'ProviderIds': {'Tmdb': tid}}) or it.get('ProductionYear')
+            else:   # (not matched: its own name, "Title (Year)" or a release's "Title.Year.…")
+                m_ = re.match(r'^(.*?)[\s.]*\(\s*((?:19|20)\d\d)\s*\)', stem) or re.match(r'^(.*?)[\s.]+((?:19|20)\d\d)\b', stem)
+                title, year = (m_.group(1).replace('.', ' ').strip(), m_.group(2)) if m_ else (stem.strip(), None)
+            new = re.sub(r'[/:\\]', '-', '%s (%s)' % (title, year) if year else title).strip(' .')
+            dest = os.path.join(root, new)
+            if os.path.exists(dest):
+                if not quiet:
+                    log('Loose in Movies, left as it is: %s (a folder “%s” is there already)' % (n, new))
+                continue
+            try:
+                os.makedirs(dest)
+                for side in os.listdir(root):   # (it, and its subtitles and the like named as it is)
+                    sp = os.path.join(root, side)
+                    if os.path.isfile(sp) and (side == n or (side.startswith(stem + '.') and not side.lower().endswith(VIDS))):
+                        os.rename(sp, os.path.join(dest, new + side[len(stem):]))
+                done.append('%s → %s/' % (n, new))
+            except OSError as e:
+                log('Loose in Movies, %s: %s' % (n, e))
+    if done:
+        log('Films put in folders of their own: %s' % '; '.join(done)[:1500])
+        try:
+            g.jf.call('POST', '/Library/Refresh')
+        except Exception:
+            pass
+    return done
+
+
+def folders_fix_once(g):
+    """Once: the folders of films come in on 21-23 Nov named otherwise than the film they are (their own language's title, a Criterion film
+    without Criterion's year, one with no year) renamed to it, each through rename_to, so its files, collections, calendars, hearts and
+    places follow it, its subtitles too. John, 23 Nov 2026, "some films were added but folders are wrong - can you correct?". Left as they
+    are: Totally Fucked Up (named so on purpose), Ivan the Terrible, Part II (Criterion's name), and those whose folder has Criterion's own
+    title (Le Jour Se Leve, Redes, A Report on the Party and Guests)."""
+    mk = os.path.expanduser('~/Grifflix/folders-fix-1.done')
+    if os.path.exists(mk):
+        return
+    time.sleep(240)
+    FIX = {"The Men Who Tread on Tiger's Tails": ("The Men Who Tread on the Tiger's Tail", '36916'),
+           'Sugata Sanshiro (1943)': None, 'Rozmarné léto (1967)': None, 'Krylya (1966)': None, 'Viridiana (1962)': None,
+           'Prisioneros de la tierra (1939)': None, 'The Child Of Another (1975)': None, 'Faro Document (1970)': None,
+           'The Golden Coach (1952)': None, 'Dry Summer (1963)': None, "Europe '51 (1952)": None, 'Porcile (1969)': None,
+           'Love Meetings (1965)': None, 'Il vangelo secondo Matteo (1965)': None, 'Uncle Yanco (1967)': None}
+    import unicodedata
+    nf = lambda t: unicodedata.normalize('NFC', t or '')
+    said = []
+    try:
+        loose_to_folders(g)
+        movies = [l for v in g.jf.call('GET', '/Library/VirtualFolders') or [] if (v.get('CollectionType') or '') == 'movies' for l in v.get('Locations') or []]
+        items, start = [], 0
+        while True:
+            r_ = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path,ProviderIds,ProductionYear', 'StartIndex': start, 'Limit': 300}, timeout=180) or {}
+            items += r_.get('Items') or []
+            start += 300
+            if start >= (r_.get('TotalRecordCount') or 0) or not r_.get('Items'):
+                break
+        by_folder = {}
+        for it in items:
+            p_ = it.get('Path') or ''
+            for root in movies:
+                if p_.startswith(root.rstrip('/') + '/'):
+                    by_folder.setdefault(nf(p_[len(root.rstrip('/')) + 1:].split('/')[0]), it)
+        for fo, over in FIX.items():
+            it = by_folder.get(nf(fo))
+            if not it:
+                said.append('%s: not found' % fo)
+                continue
+            tid = over[1] if over else str((it.get('ProviderIds') or {}).get('Tmdb') or '')
+            name = over[0] if over else it.get('Name')
+            if not tid or not name:
+                said.append('%s: not matched, left' % fo)
+                continue
+            pick = {'Name': name, 'ProductionYear': it.get('ProductionYear'), 'ProviderIds': {'Tmdb': tid}, 'SearchProviderName': 'TheMovieDb'}
+            if over:   # (its year from TMDB, for one not matched yet)
+                d_ = tmdb(g, '/movie/%s' % tid) or {}
+                pick['ProductionYear'] = int((d_.get('release_date') or '0')[:4] or 0) or None
+                try:
+                    apply_match(g, it['Id'], pick)
+                except Exception as e:
+                    log('  %s: its match: %s' % (fo, e))
+            year = crit_year(pick) or pick.get('ProductionYear')
+            try:
+                said.append('%s: %s' % (fo, rename_to(g, it['Id'], name, year, pick) or 'already right'))
+            except Exception as e:
+                said.append('%s: %s' % (fo, str(e)[:120]))
+            time.sleep(90)   # (one at a time: each followed by the media server before the next)
+        log('Folders put right (John asked, 23 Nov): %s' % '; '.join(said)[:3000])
+    except Exception as e:
+        log('Folders put right: %s' % str(e)[:200])
+    open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+
+
 FETCH_SEEN = {}   # (the download in progress: how much had come when, for its speed now and whether it has stalled)
 
 
@@ -9728,6 +9868,10 @@ def keep_scanning(g):
                     give_synopses(g)
                 except Exception as e:
                     log('Criterion synopses:', e)
+        try:   # (a film put straight into the Movies folder given a folder of its own: John, 23 Nov 2026)
+            loose_to_folders(g, quiet=True)
+        except Exception as e:
+            log('Loose in Movies: %s' % e)
         try:
             roots = [l for v in g.jf.call('GET', '/Library/VirtualFolders') or [] if (v.get('CollectionType') or '') in ('movies', 'tvshows')
                      for l in v.get('Locations') or []]
@@ -9947,7 +10091,8 @@ def serve():
         pass
     threading.Thread(target=keep_speech_first, args=(g,), daemon=True).start()
     threading.Thread(target=subs_by_timing_again, args=(g,), daemon=True).start()
-    threading.Thread(target=ep_fill_all, args=(g,), daemon=True).start()   # (each episode's series' IMDb number and own title, for the searches)   # (once: those turned down by their words, looked at again by when their lines are said)
+    threading.Thread(target=ep_fill_all, args=(g,), daemon=True).start()
+    threading.Thread(target=folders_fix_once, args=(g,), daemon=True).start()   # (once: the folders John asked to have put right, 23 Nov 2026)   # (each episode's series' IMDb number and own title, for the searches)   # (once: those turned down by their words, looked at again by when their lines are said)
     threading.Thread(target=keep_file_checks, args=(g,), daemon=True).start()   # (each waiting film's files checked here as soon as it's waiting)   # (other subtitles timed by when people speak, before Whisper)
     try:   # (films already turned down where Whisper heard next to no speech anywhere (Robot Dreams): little or no dialogue, not tried again)
         P_ = load(SUBPREP, {}) or {}
