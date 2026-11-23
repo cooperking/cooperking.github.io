@@ -1065,6 +1065,8 @@ def make_handler(g):
                                             e['ref_lang'] = lr_.group(1)
                                     if body.get('machine'):   # (no English fitted: one in another language that fits this copy, translated on John's Mac)
                                         e['how'], e['ref_lang'] = 'machine', str(body['machine'])[:12]
+                                        # (and English lined up by that one's timing looked for next, to take its place if one lines up)
+                                        threading.Thread(target=lambda i_=iid: (time.sleep(5), english_by_foreign(g, i_)), daemon=True).start()
                                     chk(e, 'whisper', 'Done on your Mac: %s, %s lines matched what’s said%s' % (str(body.get('chose') or '')[:60], body.get('n'), '' if body.get('sure') else ' (not enough to be sure: to check)'))
                                     if e.get('givenfile'):   # (the ones John gave, timed by Whisper)
                                         e['how'], e['cur'] = 'given', 'g'
@@ -4350,6 +4352,7 @@ def make_handler(g):
                 save(SETTINGS, g.st)
                 log('Subtitles: Subdl set up, a second place to look')
                 subs_none_again('Subdl too')
+                threading.Thread(target=english_by_foreign_all, args=(g, 5), daemon=True).start()
                 return self.send_json(200, {'ready': bool(o.get('token') or (o.get('key') and o.get('user') and o.get('pass'))), 'user': o.get('user') or '',
                                             'keyset': bool(o.get('key')), 'remaining': o.get('remaining'), 'allowed': o.get('allowed'), 'subdl': True})
             if b:
@@ -6965,9 +6968,9 @@ def ref_sub(g, cl, e, iid, path, it):
     except Exception:
         pass
     if e.get('kind') == 'episode':
-        L = cl.search('en', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=hint)
+        L = cl.search('en', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=hint, also=True)
     else:
-        L = cl.search('en', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint)
+        L = cl.search('en', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint, also=True)
     L = [x for x in L if not x.get('machine')][:6]
     best = None
     # (each English one tried kept, as it came and as timed, to compare and to choose instead: John, 22 Nov 2026, "showing a clear comparison
@@ -7016,6 +7019,83 @@ def ref_sub(g, cl, e, iid, path, it):
     record('subtitles saved', film=e.get('name'), id=iid, file=fn, how=e['note'], english_from=x.get('name'), opensubtitles_file=x.get('file_id'),
            timed_by_language=refs[0][1], lines_on_reference=hit, share=round(share, 3))
     return True
+
+
+def english_by_foreign(g, iid):
+    """A film whose subtitles were machine-translated from one in another language that fits this copy: English ones (OpenSubtitles,
+    Subdl) lined up by that one's timing, line by line (each English line set on the line it lands on: no words needed), and one that
+    lines up taken instead of the machine's translation (John, 23 Nov 2026, "before machine translation, has it not been possible to
+    find a subtitle that now matches the line-up based on the korean sub?"). True if one was."""
+    P = load(SUBPREP, {}) or {}
+    e = P.get(iid)
+    if not isinstance(e, dict) or e.get('how') != 'machine' or not e.get('file') or not os.path.exists(e['file']):
+        return False
+    ref = SUBS.parse_srt(open(e['file'], encoding='utf-8', errors='replace').read())   # (the translation keeps the foreign one's own times)
+    lang = e.get('ref_lang') or '?'
+    if len(ref) < 50:
+        return False
+    it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path,ProviderIds'}) or {}
+    path = it.get('Path') or ''
+    if not path or not os.path.exists(path):
+        return False
+    pid = it.get('ProviderIds') or {}
+    SUBS.SUBDL['key'] = (g.st.get('subdl') or {}).get('key') or ''
+    cl = SUBS.OpenSubs(g.st.setdefault('opensubs', {}), lambda: save(SETTINGS, g.st), tls())
+    hint = film_origin(path) or os.path.basename(path)
+    if e.get('kind') == 'episode':
+        L = cl.search('en', query=e.get('series'), parent_tmdb=e.get('series_tmdb'), season=e.get('season'), episode=e.get('episode'), hint=hint, also=True)
+    else:
+        L = cl.search('en', tmdb=pid.get('Tmdb'), imdb=pid.get('Imdb'), query=it.get('Name'), year=it.get('ProductionYear'), hint=hint, also=True)
+    L = [x for x in L if not x.get('machine')][:6]
+    best = None
+    for x in L:
+        try:
+            cues = SUBS.parse_srt(SUBS.decode(cl.download(x['file_id'])))
+        except Exception:
+            if cl.out_of_downloads():
+                break
+            continue
+        share, hit, out, how = SUBS.align_to_ref(ref, cues)
+        if not best or share > best[0]:
+            best = (share, hit, out, how, x)
+        if share >= .8:
+            break
+    if not best or best[0] < .45 or best[1] < 60:
+        log('Subtitles for %s: none of %d English lined up with the %s subtitle that fits%s: its machine translation kept' % (e.get('name'), len(L), lang, ' (best %d%% of lines)' % round(100 * best[0]) if best else ''))
+        return False
+    share, hit, out, how, x = best
+    with SP_LOCK:   # (only if it's still the machine's translation)
+        e0 = (load(SUBPREP, {}) or {}).get(iid)
+        if not isinstance(e0, dict) or e0.get('how') != 'machine':
+            return False
+        fn = e0['file']
+        with open(fn + '.tmp', 'w', encoding='utf-8') as f:
+            f.write(SUBS.write_srt(out))
+        os.replace(fn + '.tmp', fn)
+        e1 = __import__('copy').deepcopy(e0)
+        e1.update(state='done' if share >= .6 else 'check', note='%s (the %s subtitle’s)' % (how, lang), chose=x.get('name') or '', at=int(time.time()), sure=share >= .6,
+                  n=hit, how='by reference', ref_v=3, machine_before=True)
+        chk(e1, 'ref', 'Found: the English “%s” lined up with the %s subtitle that fits this copy, %d%% of its lines (instead of a machine translation)' % ((x.get('name') or '')[:60], lang, round(100 * share)))
+        subprep_commit({iid: e0}, {iid: e1})
+    try:
+        g.jf.call('POST', '/Items/%s/Refresh' % iid, query={'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'None'})
+    except Exception:
+        pass
+    log('Subtitles for %s: English “%s” lined up with the %s subtitle that fits (%d%% of lines on its lines), instead of its machine translation' % (e.get('name'), x.get('name'), lang, round(100 * share)))
+    record('subtitles saved', film=e.get('name'), id=iid, file=fn, how='English lined up with the %s subtitle that fits this copy, instead of its machine translation' % lang,
+           english_from=x.get('name'), source=x.get('source') or 'OpenSubtitles', share=round(share, 3), lines_on_reference=hit)
+    return True
+
+
+def english_by_foreign_all(g, wait=0):
+    """Each film machine-translated so far looked at again for English to line up by the subtitle that fits (once Subdl is there too)."""
+    time.sleep(wait)
+    try:
+        for iid, e in list((load(SUBPREP, {}) or {}).items()):
+            if isinstance(e, dict) and e.get('how') == 'machine':
+                english_by_foreign(g, iid)
+    except Exception as ex:
+        log('Subtitles, English lined up by the subtitle that fits: %s' % str(ex)[:200])
 
 
 def subs_exact_all():
@@ -9772,6 +9852,9 @@ def serve():
     except Exception as e:
         log('Subtitles, tried again in other languages: %s' % e)
 
+    if not os.path.exists(os.path.expanduser('~/Grifflix/subs-machine-en.done')):   # (once: those machine-translated so far, English looked for)
+        threading.Thread(target=english_by_foreign_all, args=(g, 90), daemon=True).start()
+        open(os.path.expanduser('~/Grifflix/subs-machine-en.done'), 'w').write(time.strftime('%Y-%m-%d %H:%M'))
     if (g.st.get('subdl') or {}).get('key') and not os.path.exists(os.path.expanduser('~/Grifflix/subs-subdl.done')):   # (once: Subdl set up after
         # those with none anywhere were last looked at: John, 23 Nov 2026, the Varda episodes marked none at 09:18, his key added at 09:39)
         subs_none_again('Subdl too')
