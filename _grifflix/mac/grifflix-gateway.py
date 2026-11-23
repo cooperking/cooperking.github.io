@@ -9437,7 +9437,8 @@ def rename_to(g, iid, name, year, pick=None):
     libs = [os.path.realpath(l).rstrip('/') for v in g.jf.call('GET', '/Library/VirtualFolders') or [] for l in v.get('Locations') or []]
     if os.path.realpath(folder).rstrip('/') in libs:
         return 'it isn’t in a folder of its own, so its files keep their names'
-    if kind == 'Movie' and any(n.lower().endswith(VIDS) and os.path.join(folder, n) != path and 'sample' not in n.lower() for n in os.listdir(folder)):
+    # (the Mac's hidden "._" companions of a film copied from another drive aren't films: East Is East's kept its folder misnamed, 23 Nov 2026)
+    if kind == 'Movie' and any(n.lower().endswith(VIDS) and not n.startswith('.') and os.path.join(folder, n) != path and 'sample' not in n.lower() for n in os.listdir(folder)):
         return 'its folder has other films in it, so it keeps its name'
     oldname = os.path.basename(folder.rstrip('/'))
     target = os.path.join(os.path.dirname(folder.rstrip('/')), new)
@@ -9742,7 +9743,7 @@ def folders_fix2_once(g):
 def east_is_east_once(g):
     """Once: the film in "East in East (1999)", matched to East/West (Régis Wargnier's), which is East Is East (1999), its file says so: its
     match put right, its folder named for it, and out of To check (John, 23 Nov 2026, "East/ West should be East is East")."""
-    mk = os.path.expanduser('~/Grifflix/east-is-east.done')
+    mk = os.path.expanduser('~/Grifflix/east-is-east-2.done')   # (again: its folder kept its name the first time, a hidden "._" file taken for another film)
     if os.path.exists(mk):
         return
     time.sleep(480)
@@ -9763,8 +9764,9 @@ def east_is_east_once(g):
                     if (b.get('Name') or '').strip().lower() == 'to check'), None)
         if box:   # (out of To check first: rename_to puts it back in the collections it's in)
             g.jf.call('DELETE', '/Collections/%s/Items' % box['Id'], query={'Ids': x['Id']})
-        apply_match(g, x['Id'], pick)
-        time.sleep(20)
+        if str(((g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, x['Id'])) or {}).get('ProviderIds') or {}).get('Tmdb') or '') != str(hit['id']):
+            apply_match(g, x['Id'], pick)
+            time.sleep(20)
         said = rename_to(g, x['Id'], hit['title'], 1999, pick)
         log('East Is East: matched (TMDB %s) and its folder %s; out of To check' % (hit['id'], said or 'already right'))
         g.forget()
