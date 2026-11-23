@@ -745,6 +745,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         </ol>
         <p class="stat" id="tagstate" style="font-weight:600"></p>
       </section>
+      <section class="card" data-tab="library">
+        <div class="kicker">Library</div>
+        <h2>To <em>check</em></h2>
+        <p class="stat">Films whose file is in doubt: the wrong film, a second copy, or a file far shorter or longer than its film (only part of it?). Each one’s reason is in the collection’s description. Only you see this collection. Take a film out of it once it’s put right.</p>
+        <div class="state"><a class="btn primary" id="tcopen" href="#" target="_blank" rel="noopener" hidden>Open To check</a><a class="btn" id="tcdraft" href="#" target="_blank" rel="noopener" hidden>On the draft</a></div>
+        <p class="stat" id="tcsay">Looking on the Mac mini…</p>
+      </section>
       <section class="card" data-tab="a24">
         <div class="kicker">A24</div>
         <h2>A24 CHECKS</h2>
@@ -1947,6 +1954,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   })();
   function a24Look() {   // (A24 CHECKS: John's own collection, from the Mac, linked from here: John, 19 Nov 2026)
     fetch(GW + '/api/collections', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('The Mac mini didn’t answer.')); }).then(function (j) {
+      var t = (j.collections || []).filter(function (x) { return /^to check$/i.test(x.name || ''); })[0];   // (To check, John's own too: John, 23 Nov 2026)
+      if (t) { $('#tcopen').href = '/grifflix/#collection/' + t.id; $('#tcdraft').href = '/grifflix/draft/#collection/' + t.id; $('#tcopen').hidden = $('#tcdraft').hidden = false;
+        $('#tcsay').textContent = (t.children || 0) + ' film' + (t.children === 1 ? '' : 's') + ' in it.'; }
+      else $('#tcsay').textContent = 'Not made yet: the Mac mini makes it a few minutes after its next restart.';
       var c = (j.collections || []).filter(function (x) { return /^a24 checks$/i.test(x.name || ''); })[0];
       if (!c) { $('#a24say').textContent = 'There’s no A24 CHECKS collection yet: it’s made when you Allow “Move films from one collection to another” on the Home tab.'; return; }
       $('#a24open').href = '/grifflix/#collection/' + c.id; $('#a24draft').href = '/grifflix/draft/#collection/' + c.id; $('#a24open').hidden = $('#a24draft').hidden = false;
