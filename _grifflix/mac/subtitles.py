@@ -237,9 +237,19 @@ class SubtitleCat:
                     ys = [int(y) for y in re.findall(r'\b(19\d\d|20\d\d)\b', fn)]   # (and of this series' years: not HBO's Scenes from a Marriage of 2021)
                     if year and ys and not any(int(year) - 1 <= y <= int(year) + 15 for y in ys):
                         continue
-                elif year:
+                else:   # (a film: not a series' episode of that title, and the title at the name's start (after a year, if it starts with one): an
+                    # episode of Astrid et Raphaëlle called La Chambre was taken for Akerman's La chambre: 23 Nov 2026)
+                    if re.search(r'\bs\d{1,2}\s*e\d{1,3}\b|\b\d{1,2}x\d{2}\b|\bepisode\b', fn):
+                        continue
+                    toks = fn.split()
+                    toks = toks[1:] if toks and re.match(r'^(19|20)\d\d$', toks[0]) else toks
+                    # (the very title, then a year, a release's words or nothing: not La chambre secrète, nor La Chambre Bleue, for La chambre)
+                    nj, tj = ''.join(toks), fq.replace(' ', '')
+                    rest = nj[len(tj):] if nj.startswith(tj) else None
+                    if rest is None or (rest and not re.match(r'(19|20)\d\d|1080|720|2160|480|576|4k|uhd|blu|bd|br|remux|web|hdtv|dvd|xvid|x26|h26|hevc|avc|criterion|eng|english|en$|srt|subs?|extended|director|uncut|restored|remaster|complete|french|spanish|german|italian|ita|fre|fra|spa|esp|ger|deu|dut|swe|vostfr|track|cd\d|part', rest)):
+                        continue
                     ys = [int(y) for y in re.findall(r'\b(19\d\d|20\d\d)\b', fn)]
-                    if ys and not any(abs(y - int(year)) <= 1 for y in ys):
+                    if year and ys and not any(abs(y - int(year)) <= 1 for y in ys):
                         continue
                 seen.add(href)
                 out.append({'page': '/' + href, 'name': name})
