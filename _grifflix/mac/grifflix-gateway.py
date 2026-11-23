@@ -9569,6 +9569,15 @@ def loose_to_folders(g, quiet=False):
             else:   # (not matched: its own name, "Title (Year)" or a release's "Title.Year.…")
                 m_ = re.match(r'^(.*?)[\s.]*\(\s*((?:19|20)\d\d)\s*\)', stem) or re.match(r'^(.*?)[\s.]+((?:19|20)\d\d)\b', stem)
                 title, year = (m_.group(1).replace('.', ' ').strip(), m_.group(2)) if m_ else (stem.strip(), None)
+                if not year:   # (no year in its name (Babo 73.mp4, 23 Nov 2026): TMDB's, when only one film has that very title)
+                    try:
+                        key_ = lambda t: re.sub(r'[^a-z0-9]', '', (t or '').lower())
+                        same = [x for x in (tmdb(g, '/search/movie', query=title) or {}).get('results') or []
+                                if key_(title) in (key_(x.get('title')), key_(x.get('original_title'))) and (x.get('release_date') or '')[:4]]
+                        if len(same) == 1:
+                            year = same[0]['release_date'][:4]
+                    except Exception:
+                        pass
             new = re.sub(r'[/:\\]', '-', '%s (%s)' % (title, year) if year else title).strip(' .')
             dest = os.path.join(root, new)
             if os.path.exists(dest):
@@ -9697,6 +9706,37 @@ def to_check_once(g):
         open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
     except Exception as e:
         log('To check: %s' % str(e)[:200])
+
+
+def folders_fix2_once(g):
+    """Once: The Most Beautiful's folder, named "Akira Kurosawa - The Most Beautiful (1944)", and Babo 73's, given a folder without its year
+    (it came in loose, before the media server had it), renamed to the film, through rename_to, so all that's kept for it follows (John,
+    23 Nov 2026, "A folder is called Akira Kurosawa - The Most Beautiful (1944) for some reason. Babo 73 has been added but needs putting in
+    the right folder"). Not while the converter is at either."""
+    mk = os.path.expanduser('~/Grifflix/folders-fix-2.done')
+    if os.path.exists(mk):
+        return
+    time.sleep(420)
+    import unicodedata
+    nf = lambda t: unicodedata.normalize('NFC', t or '')
+    said = []
+    for folder, term, name, year in (('Akira Kurosawa - The Most Beautiful (1944)', 'Beautiful', 'The Most Beautiful', 1944), ('Babo 73', 'Babo', 'Babo 73', 1964)):
+        try:
+            xs = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path', 'SearchTerm': term, 'Limit': 50}, timeout=90) or {}).get('Items') or []
+            x = next((x for x in xs if nf(os.path.basename(os.path.dirname(x.get('Path') or ''))) == nf(folder)), None)
+            if not x:
+                said.append('%s: not found' % folder)
+                continue
+            for _ in range(240):   # (the converter at it: waited for, up to two hours)
+                cur = load(os.path.expanduser('~/Grifflix/convert-now.json'), None) or {}
+                if not (cur.get('id') == x['Id'] and cur.get('state') in ('converting', 'paused') and conv_alive(cur)):
+                    break
+                time.sleep(30)
+            said.append('%s → %s (%s): %s' % (folder, name, year, rename_to(g, x['Id'], name, year)))
+        except Exception as e:
+            said.append('%s: %s' % (folder, str(e)[:160]))
+    log('Folders put right: ' + '; '.join(said))
+    open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
 
 
 def renames_follow_once(g):
@@ -10153,6 +10193,20 @@ def keep_converting():
             script = os.path.join(home, 'convert.py')
             cur = load(os.path.join(home, 'convert-now.json'), None) or {}
             alive = bool(conv_alive(cur))
+            # (a converter from before the Mac mini only repackaged, making a film's picture again itself (hours here): stopped, its half-made
+            # file cleared, and started again below, the new one handing the film to John's Mac: John, 23 Nov 2026, "the mac mini shouldn't be
+            # taking on conversion jobs like this", Rozmarné léto, 4K made 1080p, 23% after nine hours)
+            if alive and not cur.get('remuxonly') and cur.get('state') == 'converting' and 'go' in [str(a) for a in cur.get('args') or []] \
+                    and re.match(r'(bigger than 1080p|format \(|to make smaller)', str(cur.get('why') or '')):
+                pid_ = conv_alive(cur)
+                os.kill(pid_, 15)
+                for _ in range(60):
+                    time.sleep(1)
+                    if not conv_alive(cur):
+                        break
+                log('The converter: %s, being converted on the Mac mini itself (%s, %s%%), stopped: the Mac mini only repackages now, and the '
+                    'new converter hands it to John’s Mac' % (cur.get('name'), cur.get('why'), cur.get('pct', 0)))
+                alive = bool(conv_alive(cur))
             recently_done = cur.get('state') == 'finished' and time.time() - (cur.get('at') or 0) < 12 * 3600 and not load(os.path.join(home, 'convert-new.json'), [])   # (films just brought in: started for them)
             if os.path.exists(script) and not alive and not recently_done:
                 import subprocess
@@ -10295,7 +10349,8 @@ def serve():
     threading.Thread(target=keep_speech_first, args=(g,), daemon=True).start()
     threading.Thread(target=subs_by_timing_again, args=(g,), daemon=True).start()
     threading.Thread(target=ep_fill_all, args=(g,), daemon=True).start()
-    threading.Thread(target=folders_fix_once, args=(g,), daemon=True).start()   # (once: the folders John asked to have put right, 23 Nov 2026)
+    threading.Thread(target=folders_fix_once, args=(g,), daemon=True).start()
+    threading.Thread(target=folders_fix2_once, args=(g,), daemon=True).start()   # (once: The Most Beautiful's and Babo 73's folders, 23 Nov 2026)   # (once: the folders John asked to have put right, 23 Nov 2026)
     threading.Thread(target=renames_follow_once, args=(g,), daemon=True).start()   # (and those followed, as they weren't then)
     threading.Thread(target=to_check_once, args=(g,), daemon=True).start()
     threading.Thread(target=silent_once, args=(g,), daemon=True).start()   # (once: silent films put in Not needed)   # (once: the films in doubt in a To check collection, John's alone)   # (each episode's series' IMDb number and own title, for the searches)   # (once: those turned down by their words, looked at again by when their lines are said)
