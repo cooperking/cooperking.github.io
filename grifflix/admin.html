@@ -694,6 +694,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       <!-- (the Criterion tab tidied, a part each: the box sets, each folded to a line; the covers, the synopses and the genres as short
            steps of their own: John, 19 Nov 2026, "Criterion tab in admin needs tidying") -->
       <section class="card" data-tab="criterion">
+        <div class="kicker">Releases</div>
+        <h2>Criterion’s own <em>release?</em></h2>
+        <p class="stat">Each film in The Criterion Collection looked at for Criterion’s logo at its start (its first 100 seconds), as you’d see it when it plays. The Mac mini learns what the logo looks like from the films whose file names say Criterion, then looks for it in every film, while nobody’s watching. Only you see this, here and on each film’s page. Say so on any it got wrong: your word stands.</p>
+        <p class="stat" id="crsay">Looking on the Mac mini…</p>
+        <div class="state" id="crtabs"></div>
+        <div id="crlist"></div>
+      </section>
+      <section class="card" data-tab="criterion">
         <div class="kicker">Box sets</div>
         <h2>Box sets <em>to finish</em></h2>
         <p class="stat" id="cbnote">From Criterion’s own list of each set; it keeps up as films come in.</p>
@@ -1956,6 +1964,34 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       }).join('');
     }).catch(function (e) { $('#a24miss').innerHTML = $('#cbmiss').innerHTML = '<p class="stat">Couldn’t read the lists: ' + esc(e.message) + '</p>'; });
   })();
+  // (which of the Criterion Collection's films are Criterion's own release, by its logo at the start: John's alone: John, 24 Nov 2026,
+  // "is there a way to get a record of what are and what aren't" ... "mark it on the film, but only I should be able to see it - and I'd like a list")
+  var CR = { tab: 'no', n: 100 };
+  function crLook() {
+    fetch(GW + '/api/critrel', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { if (r.status === 404) throw new Error('old'); return r.ok ? r.json() : Promise.reject(new Error('The Mac mini didn’t answer.')); }).then(crDraw)
+      .catch(function (e) { $('#crsay').textContent = e.message === 'old' ? 'The Mac mini takes its update within a few minutes.' : e.message; });
+  }
+  function crDraw(j) {
+    CR.j = j; var F = j.films || [], pr = j.progress || {}, by = { no: [], yes: [], unread: [], todo: [] };
+    F.forEach(function (f) { (by[f.v] || by.todo).push(f); });
+    $('#crsay').textContent = (pr.of ? (pr.running ? 'Looking: ' + (pr.done || 0) + ' of ' + pr.of + ' films' + (pr.paused ? ' (paused: ' + pr.paused + ')' : '') + '. ' : 'All ' + pr.of + ' looked at. ') : '') +
+      (pr.known ? 'Criterion’s logo learnt from ' + pr.known + ' films named Criterion' + (pr.logos ? '' : ' (not learnt yet: too few looked at so far)') + '.' : F.length ? '' : 'Starting a quarter of an hour after the Mac mini’s next restart.');
+    var T = [['no', 'Not Criterion’s?'], ['yes', 'Criterion’s'], ['unread', 'Couldn’t look'], ['todo', 'Not looked at yet']].filter(function (t) { return by[t[0]].length || t[0] === 'no'; });
+    $('#crtabs').innerHTML = T.map(function (t) { return '<button class="btn' + (CR.tab === t[0] ? ' primary' : '') + '" type="button" data-crt="' + t[0] + '">' + t[1] + ' (' + by[t[0]].length + ')</button>'; }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-crt]'), function (b) { b.onclick = function () { CR.tab = b.dataset.crt; CR.n = 100; crDraw(CR.j); }; });
+    var L = (by[CR.tab] || []).slice().sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
+    $('#crlist').innerHTML = (L.length ? L.slice(0, CR.n).map(function (f) {
+      return '<div class="mrow cb"><span class="y">' + esc(String(f.year || '')) + '</span><span>' + flA(f.id, f.name || '?') + '<br><small class="d">' + esc(f.how || '') + (f.by === 'John' ? ' · by you' : '') + '</small></span><span class="state" style="margin:0;justify-content:flex-end">' +
+        (f.v !== 'yes' || f.by !== 'John' ? '<button class="btn" type="button" data-crv="yes" data-id="' + f.id + '">It is</button>' : '') + (f.v !== 'no' || f.by !== 'John' ? '<button class="btn" type="button" data-crv="no" data-id="' + f.id + '">It isn’t</button>' : '') +
+        (f.by === 'John' ? '<button class="btn" type="button" data-crv="" data-id="' + f.id + '">Look again</button>' : '') + '</span></div>';
+    }).join('') : '<p class="stat">None.</p>') + (L.length > CR.n ? '<div class="state"><button class="btn" type="button" id="crmore">Show ' + Math.min(100, L.length - CR.n) + ' more</button></div>' : '');
+    if ($('#crmore')) $('#crmore').onclick = function () { CR.n += 100; crDraw(CR.j); };
+    Array.prototype.forEach.call(document.querySelectorAll('[data-crv]'), function (b) { b.onclick = function () {
+      b.disabled = true;
+      fetch(GW + '/api/critrel', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ id: b.dataset.id, v: b.dataset.crv }) })
+        .then(function (r) { return r.json(); }).then(crDraw).catch(function () { b.disabled = false; toast('The Mac mini didn’t answer.'); });
+    }; });
+  }
   function a24Look() {   // (A24 CHECKS: John's own collection, from the Mac, linked from here: John, 19 Nov 2026)
     fetch(GW + '/api/collections', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('The Mac mini didn’t answer.')); }).then(function (j) {
       var t = (j.collections || []).filter(function (x) { return /^to check$/i.test(x.name || ''); })[0];   // (To check, John's own too: John, 23 Nov 2026)
@@ -4035,7 +4071,7 @@ var feats = function (doc) {
     fetch('/grifflix/config.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (c) {
       var gw = String(c.gateway || '').replace(/\/$/, ''), t0 = Date.now();
       if (!gw) { $('#machead').textContent = 'Not connected'; return; }
-      GW = gw; saLoad(); a24Look(); convert(); fetching(); software(); dlLook(); hhLoad(); autoState(); lbAuto(); originals().then(orLine).catch(function () {});
+      GW = gw; saLoad(); a24Look(); crLook(); convert(); fetching(); software(); dlLook(); hhLoad(); autoState(); lbAuto(); originals().then(orLine).catch(function () {});
       return fetch(gw + '/api/me', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (me) {
         var L = me.libraries || {};
         $('#machead').innerHTML = 'Answering <em>(' + (Date.now() - t0) + ' ms)</em>';
