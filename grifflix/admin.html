@@ -716,6 +716,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <h2>Criterion’s films you <em>haven’t got</em></h2>
         <p class="stat" id="cmfsay">Every film on Criterion’s own list that isn’t in Grifflix and isn’t in one of its box sets (those are under Box sets to finish), by spine number. Looked for when you open this tab.</p>
         <div class="state"><input type="search" id="cmfq" placeholder="Find a title, director or country" style="flex:1 1 220px"><button class="btn" id="cmfcsv" type="button" hidden>Download (CSV)</button></div>
+        <div class="state" id="cmfbar" hidden><button class="btn primary" type="button" id="cmftext">Select as text</button><button class="btn" type="button" id="cmfall">Tick all shown</button><span class="stat" id="cmfn" style="margin:0"></span></div>
+        <pre id="cmfbox" hidden style="white-space:pre-wrap;user-select:text;-webkit-user-select:text;max-height:320px;overflow:auto;margin:10px 0;padding:10px 12px;border:1px solid var(--line, rgba(255,255,255,.2));border-radius:8px;font:14px/1.5 ui-monospace,Menlo,monospace"></pre>
+        <div class="state" id="cmfsort" hidden style="margin-top:6px"></div>
         <div class="mlist" id="cmflist"></div>
       </section>
       <section class="card" data-tab="criterion">
@@ -2001,18 +2004,46 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   }
   // (Criterion's films not in any box set that Grifflix hasn't: John, 24 Nov 2026, "can I get a list of what I'm missing from the criterion
   // collection that isn't in the box sets too")
-  var CMF = { rows: null };
+  var CMF = { rows: null, sort: 'spine', dir: 1, pick: {} };
   function cmfLook() {
     if (CMF.busy) return; CMF.busy = 1; $('#cmflist').innerHTML = '<p class="stat">Looking on the Mac mini (half a minute or so)…</p>';
     fetch(GW + '/api/criterionmissing?films=1', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error(r.status === 404 ? 'The Mac mini takes its update within a few minutes.' : 'The Mac mini didn’t answer.')); })
       .then(function (j) { CMF.rows = j.films || []; CMF.busy = 0; cmfDraw(); }).catch(function (e) { CMF.busy = 0; $('#cmflist').innerHTML = '<p class="stat">' + esc(e.message) + '</p>'; });
   }
-  function cmfDraw() {
-    var q = ($('#cmfq').value || '').trim().toLowerCase(), R = (CMF.rows || []).filter(function (r) { return !q || r.join(' ').toLowerCase().indexOf(q) >= 0; });
-    $('#cmfsay').textContent = (CMF.rows || []).length + ' of Criterion’s films not in any of its box sets aren’t in Grifflix' + (q ? ' (' + R.length + ' found)' : '') + '. By spine number; each links to its page on criterion.com.';
-    $('#cmfcsv').hidden = !(CMF.rows || []).length;
-    $('#cmflist').innerHTML = R.length ? R.map(function (r) { return '<div class="mrow"><span class="y">' + esc(r[0] ? 'No. ' + r[0] : '') + '</span><b><a href="' + esc(r[5]) + '" target="_blank" rel="noopener">' + esc(r[1]) + '</a></b><span class="d">' + esc([r[2], r[3]].filter(Boolean).join(' · ')) + '</span><span class="s">' + esc(r[4]) + '</span></div>'; }).join('') : '<p class="stat">' + (CMF.rows ? 'None.' : '') + '</p>';
+  // (sortable, each with a tick, and the ticked ones (or all shown) as plain lines, "Title Year", selected for his Search Tab Opener: John,
+  // 24 Nov 2026, "can the list be sortable" ... "Make the list selectable, so I can open in my Search Tab Opener")
+  var CMFK = { spine: 0, title: 1, year: 2, director: 3, country: 4 };
+  function cmfShown() {
+    var q = ($('#cmfq').value || '').trim().toLowerCase(), k = CMFK[CMF.sort], d = CMF.dir;
+    var R = (CMF.rows || []).map(function (r, i) { return { r: r, i: i }; }).filter(function (x) { return !q || x.r.join(' ').toLowerCase().indexOf(q) >= 0; });
+    var num = function (v) { return /^\d+$/.test(v) ? +v : null; };
+    R.sort(function (a, b) { var x = a.r[k] || '', y = b.r[k] || '', nx = num(x), ny = num(y);
+      if (!x !== !y) return x ? -1 : 1;   // (those without one last, whichever way)
+      if (nx != null && ny != null) return d * (nx - ny) || a.r[1].localeCompare(b.r[1]);
+      return d * String(x).replace(/^(the|a|an)\s+/i, '').localeCompare(String(y).replace(/^(the|a|an)\s+/i, '')) || a.r[1].localeCompare(b.r[1]); });
+    return R;
   }
+  function cmfDraw() {
+    var R = cmfShown(), q = ($('#cmfq').value || '').trim(), np = Object.keys(CMF.pick).length;
+    $('#cmfsay').textContent = (CMF.rows || []).length + ' of Criterion’s films not in any of its box sets aren’t in Grifflix' + (q ? ' (' + R.length + ' found)' : '') + '. Each links to its page on criterion.com.';
+    $('#cmfcsv').hidden = $('#cmfbar').hidden = $('#cmfsort').hidden = !(CMF.rows || []).length;
+    $('#cmfn').textContent = np ? np + ' ticked' : 'none ticked: Select as text takes all shown';
+    $('#cmfsort').innerHTML = '<span class="stat" style="margin:0">Sort by</span>' + [['spine', 'Spine'], ['title', 'Title'], ['year', 'Year'], ['director', 'Director'], ['country', 'Country']].map(function (c) {
+      var on = CMF.sort === c[0]; return '<button class="btn' + (on ? ' primary' : '') + '" type="button" data-cmfs="' + c[0] + '">' + c[1] + (on ? (CMF.dir > 0 ? ' ↑' : ' ↓') : '') + '</button>'; }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-cmfs]'), function (b) { b.onclick = function () { if (CMF.sort === b.dataset.cmfs) CMF.dir = -CMF.dir; else { CMF.sort = b.dataset.cmfs; CMF.dir = 1; } cmfDraw(); }; });
+    $('#cmflist').innerHTML = R.length ? R.map(function (x) { var r = x.r, on = !!CMF.pick[x.i];
+      return '<label class="mrow cb pk' + (on ? ' on' : '') + '" style="grid-template-columns:22px 70px minmax(0,1fr) minmax(0,.8fr) auto"><input type="checkbox" class="cbpick cmfpick" data-i="' + x.i + '"' + (on ? ' checked' : '') + '><span class="y">' + esc(r[0] ? 'No. ' + r[0] : '') + '</span><b><a href="' + esc(r[5]) + '" target="_blank" rel="noopener">' + esc(r[1]) + '</a></b><span class="d">' + esc([r[2], r[3]].filter(Boolean).join(' · ')) + '</span><span class="s">' + esc(r[4]) + '</span></label>'; }).join('') : '<p class="stat">' + (CMF.rows ? 'None.' : '') + '</p>';
+    Array.prototype.forEach.call(document.querySelectorAll('.cmfpick'), function (c) { c.onchange = function () { if (c.checked) CMF.pick[c.dataset.i] = 1; else delete CMF.pick[c.dataset.i]; c.closest('label').classList.toggle('on', c.checked); var n_ = Object.keys(CMF.pick).length; $('#cmfn').textContent = n_ ? n_ + ' ticked' : 'none ticked: Select as text takes all shown'; }; });
+  }
+  $('#cmftext').onclick = function () {
+    var R = cmfShown(), P = R.filter(function (x) { return CMF.pick[x.i]; }); if (!P.length) P = R;
+    // (ordinary page text, selected: an extension reading what's selected on the page sees it, as it can't inside a text box)
+    var box = $('#cmfbox'); box.textContent = P.map(function (x) { return x.r[1] + (x.r[2] ? ' ' + x.r[2] : ''); }).join('\n'); box.hidden = false;
+    try { var sel = window.getSelection(); sel.removeAllRanges(); var rg = document.createRange(); rg.selectNodeContents(box); sel.addRange(rg); } catch (e) {}
+    box.scrollIntoView({ block: 'nearest' });
+    toast(P.length + ' film' + (P.length === 1 ? '' : 's') + ' selected: open them with your Search Tab Opener');
+  };
+  $('#cmfall').onclick = function () { var R = cmfShown(), all = R.every(function (x) { return CMF.pick[x.i]; }); R.forEach(function (x) { if (all) delete CMF.pick[x.i]; else CMF.pick[x.i] = 1; }); $('#cmfall').textContent = all ? 'Tick all shown' : 'Untick all shown'; cmfDraw(); };
   $('#cmfq').addEventListener('input', function () { if (CMF.rows) cmfDraw(); });
   $('#cmfcsv').onclick = function () {
     var c = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
