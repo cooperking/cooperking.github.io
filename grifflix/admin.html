@@ -2542,11 +2542,15 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var Q = j.queue || [], ago = j.seen ? Math.round((Date.now() / 1000 - j.seen) / 60) : null;
       // (Library's "Queued for your Mac ✓" as the Mac's own queue says, not as this page last pressed: a film that dropped out could never be
       // queued again: John, 20 Nov 2026, "I can't queue again, as it won't let me as it says it's in the queue")
-      var mq_ = {}; Q.forEach(function (x) { mq_[x.id] = 1; });
-      if (Object.keys(mq_).sort().join() !== Object.keys(LB.MQ).sort().join()) { LB.MQ = mq_; if (LB.all && typeof lbDraw === 'function') try { lbDraw(); } catch (e) {} }
+      var mq_ = {}; Q.forEach(function (x) { mq_[x.id] = 1; }); (j.now || []).forEach(function (x) { mq_[x.id] = 'now'; });
+      var key_ = function (o) { return Object.keys(o).sort().map(function (k) { return k + o[k]; }).join(); };
+      if (key_(mq_) !== key_(LB.MQ)) { LB.MQ = mq_; if (LB.all && typeof lbDraw === 'function') try { lbDraw(); } catch (e) {} }
       var st = !j.setup ? 'Your Mac isn’t set up to take films yet.' : ago == null ? 'Your Mac hasn’t checked in since the Mac mini last restarted.' : ago <= 3 ? 'Your Mac is on' + (j.home ? ' and at home: it takes the next film within a minute.' : ', but not at home: films wait until it is.') : 'Your Mac last checked in ' + (ago < 120 ? ago + ' min' : Math.round(ago / 60) + ' hours') + ' ago (off or asleep): films wait until it’s on.';
+      // (in the order your Mac takes them, numbered, after what it's making now: John, 24 Nov 2026, "the queue isn't clear")
+      var nowL = (j.now || []).map(function (x) { var pc = x.dur ? Math.min(100, x.t / x.dur * 100) : 0; return FL(x.name, null, x.id) + ' <span class="when" style="display:inline">· ' + esc(x.state === 'converting' ? 'converting, ' + pc.toFixed(0) + '%' : x.state === 'copying' ? 'made: copying to the Mac mini' : x.state === 'checking' ? 'made: being put in place' : x.state === 'waiting' ? 'about to start' : 'starting') + '</span>'; });
       $('#cvq').innerHTML = '<p class="stat" style="margin:14px 0 6px"><b>Queued for your Mac</b> (' + Q.length + ') · ' + esc(st) + '</p>' +
-        (Q.length ? '<ul class="changes">' + Q.map(function (x, i) { return '<li>' + FL(x.name, null, x.id) + (x.from === 'mini' ? '<span class="stat" style="display:block;margin-top:2px">From the Mac mini, which only repackages' + (x.why ? ': ' + esc(x.why) : '') + '</span>' : '') + '<span class="state" style="margin-top:4px">' + (i ? '<button class="btn" type="button" data-cqf="' + x.id + '" data-n="' + esc(x.name) + '">First</button>' : '') + '<button class="btn" type="button" data-cqr="' + x.id + '" data-n="' + esc(x.name) + '">Take off</button></span></li>'; }).join('') + '</ul>' : '<p class="stat" style="margin:0 0 6px">Queue films from their Edit panel (Queue for my Mac), from any device.</p>') +
+        (nowL.length ? '<p class="stat" style="margin:0 0 8px">Now: ' + nowL.join('; ') + (Q.length ? '. Then, in this order:' : '') + '</p>' : '') +
+        (Q.length ? '<ul class="changes">' + Q.map(function (x, i) { return '<li><span class="when" style="display:inline;margin-right:6px">' + (i + 1) + '.</span>' + FL(x.name, null, x.id) + (x.from === 'mini' ? '<span class="stat" style="display:block;margin-top:2px">From the Mac mini, which only repackages' + (x.why ? ': ' + esc(x.why) : '') + '</span>' : '') + '<span class="state" style="margin-top:4px">' + (i ? '<button class="btn" type="button" data-cqf="' + x.id + '" data-n="' + esc(x.name) + '">First</button>' : '') + '<button class="btn" type="button" data-cqr="' + x.id + '" data-n="' + esc(x.name) + '">Take off</button></span></li>'; }).join('') + '</ul>' : '<p class="stat" style="margin:0 0 6px">Queue films from their Edit panel (Queue for my Mac), from any device.</p>') +
         // (those passed over, with why: they left the queue with nothing said: John, 20 Nov 2026, Wild at Heart "failed, but I don't see any message")
         ((j.passed || []).length ? '<p class="stat" style="margin:14px 0 6px"><b>Passed over</b> (' + j.passed.length + ') · <button class="sfx" type="button" id="cqpclr" style="background:none;border:0;color:inherit;text-decoration:underline;cursor:pointer;padding:0;font:inherit">Clear</button></p><ul class="changes">' +
           j.passed.map(function (x) { return '<li>' + FL(x.name, null, x.id) + '<span class="stat" style="display:block;margin-top:2px">' + esc(when(x.at * 1000)) + ': ' + esc(x.why) + '</span></li>'; }).join('') + '</ul>' : '') +
@@ -3041,7 +3045,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var rp = x.why && /^to repackage/.test(x.why), todo = x.why && (!x.conv || x.rp);
     var mac = x.hdrt ? !/only/.test(x.hdrt) : (LB.f === 'big' || (todo && !rp)), force = x.hdrt || LB.f === 'big' || /^to make smaller/.test(x.why || '');
     var h = rp && todo && LB.f !== 'big' ? '<button type="button" class="lbnext" data-lbnext="' + x.id + '" data-n="' + esc(x.n) + '" title="The Mac mini repackages it next: minutes">Do next</button>' : '';
-    if (mac) h += LB.MQ[x.id] ? '<button type="button" class="lbnext" data-lbmacoff="' + x.id + '" data-n="' + esc(x.n) + '">Queued for your Mac ✓ · Take off</button>'
+    if (mac) h += LB.MQ[x.id] === 'now' ? '<button type="button" class="lbnext" disabled>Being made on your Mac now</button>' : LB.MQ[x.id] ? '<button type="button" class="lbnext" data-lbmacoff="' + x.id + '" data-n="' + esc(x.n) + '">Queued for your Mac ✓ · Take off</button>'
       : '<button type="button" class="lbnext" data-lbmac="' + x.id + '" data-first="1"' + (force ? ' data-force="1"' : '') + ' data-n="' + esc(x.n) + '">Next on my Mac</button>' +
         '<button type="button" class="lbnext" data-lbmac="' + x.id + '"' + (force ? ' data-force="1"' : '') + ' data-n="' + esc(x.n) + '">Queue for my Mac</button>';
     return h;
@@ -3079,13 +3083,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       if (off && !confirm('Take ' + b.dataset.n + ' off your Mac’s queue?')) return;
       b.disabled = true;
       fetch(GW + '/api/macqueue', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: off ? 'remove' : b.dataset.first ? 'first' : 'add', id: id, name: b.dataset.n, force: b.dataset.force ? 1 : undefined }) })
-        .then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || 'The Mac mini didn’t answer.'); return j; }); }).then(function (j) {
           if (off) delete LB.MQ[id]; else LB.MQ[id] = 1;
           var Q = (j.queue || []).map(function (x) { return x.id; }), at = Q.indexOf(id) + 1;
           toast(off ? b.dataset.n + ': off your Mac’s queue' : b.dataset.n + ': number ' + at + ' of ' + Q.length + ' for your Mac' + (j.seen ? '' : ' (set your Mac up to take them: Conversions)'));
           lbDraw();
           if (typeof cvQueue === 'function') cvQueue();
-        }).catch(function () { b.disabled = false; toast('The Mac mini didn’t answer.'); });
+        }).catch(function (e) { b.disabled = false; toast(b.dataset.n + ': ' + (e.message || 'The Mac mini didn’t answer.')); if (typeof cvQueue === 'function') cvQueue(); });
     }; });
     Array.prototype.forEach.call(document.querySelectorAll('[data-lbnext]'), function (b) { b.onclick = function () {
       if (b.dataset.force && !confirm('Make ' + b.dataset.n + ' smaller next? It’s converted at the careful setting (hours), and kept only if it comes out much smaller.')) return;
