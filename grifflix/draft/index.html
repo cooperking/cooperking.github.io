@@ -2676,7 +2676,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '9c008f63463e' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '97dc98413dde' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -7535,6 +7535,8 @@ function profile() {
     setTimeout(function () { so.focus(); }, 60); return;
   }
   var admin = ME.owner ? '<a class="pill adminpill" href="/grifflix/admin.html">Admin</a>' : '';
+  // (edit mode switched on and off from here: John, 24 Nov 2026, "can you put a button for edit mode on my profile"; the draft's always on)
+  if (ME.owner && !TV) admin += BUILD.draft ? '<button class="pill" id="editmode" disabled>Editing on (the draft)</button>' : '<button class="pill' + (editMode() ? ' on' : '') + '" id="editmode" aria-pressed="' + editMode() + '">Edit mode' + (editMode() ? ' · on' : '') + '</button>';
   openSheet('<div class="form prof" style="position:relative"><div class="profhead"><span class="chiplabel">Profile</span>' + admin + '</div>' +
     '<h2 class="profname">' + esc(ME.name || 'You') + '</h2>' +
     (ME.libraries ? '<div class="chips" style="margin-top:6px">' + ['movies', 'tv'].map(function (k) { return '<span>' + (ME.libraries[k] || 0) + ' ' + { movies: 'films', tv: 'series' }[k] + '</span>'; }).join('') + '</div>' : '') +
@@ -7617,6 +7619,11 @@ function drawAccount() {
   $('#musgo').onclick = function () { TMUS.on = !TMUS.on; store.set('grifflix-music', TMUS.on ? 'on' : 'off'); if (!TMUS.on) musicHush(); muteBtn(); toast(TMUS.on ? 'Theme music on' : 'Theme music off'); drawAccount(); };
   $('#tvcode').onclick = function () { var b = this; if (DEMO) return toast('Not in the demo.'); wcall({ op: 'tvcode' }).then(function (j) { b.outerHTML = '<span class="tvcode">' + j.code + '</span><span class="profp"> for ' + j.minutes + ' minutes, once</span>'; }).catch(oops); };
   hhSec(); pkSec();
+  if ($('#editmode') && !BUILD.draft) $('#editmode').onclick = function () {
+    var on = !editMode(); store.set('grifflix-edit', on ? '1' : '');
+    editBadge(); closeSheet(); toast(on ? 'Edit mode on: edit buttons on every film' : 'Edit mode off');
+    if (typeof route === 'function') route();
+  };
   $('#signout').onclick = function () {
     var b = this; if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Tap again to sign out'; return; }
     wcall({ op: 'signout' }).catch(function () {}).then(function () { store.set('grifflix-member', null); location.replace(location.pathname); });
