@@ -696,13 +696,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       <section class="card" data-tab="criterion">
         <div class="kicker">Releases</div>
         <h2>Criterion’s own <em>release?</em></h2>
-        <p class="stat">Each film in The Criterion Collection looked at for Criterion’s logo at its start (its first 30 seconds), as you’d see it when it plays. The Mac mini learns what the logo looks like from the films whose file names say Criterion, then looks for it in every film, while nobody’s watching. Only you see this, here and on each film’s page. Say so on any it got wrong: your word stands.</p>
+        <p class="stat">Each film in The Criterion Collection looked at for Criterion’s logo at its start (its first 30 seconds), as you’d see it when it plays, while nobody’s watching. It looks for the logo as in your pictures of it, and for the Criterion Channel’s opening as in the films you’ve said are from the Channel. Only you see this, here and on each film’s page. Say so on any it got wrong: your word stands.</p>
         <p class="stat" id="crsay">Looking on the Mac mini…</p>
         <p class="stat" style="margin-top:14px"><b>Your pictures of the logo.</b> A screenshot of each version of Criterion’s logo (from your logo history video, or a film) teaches the Mac mini exactly what to look for. The whole screen, as it plays.</p>
         <div class="state"><label class="btn" for="crpic">Give pictures of the logo</label><input type="file" id="crpic" accept="image/*" multiple hidden><label class="btn" for="crvid">Give a video of the logo</label><input type="file" id="crvid" accept="video/*,.mkv,.mp4,.m4v,.mov,.webm" hidden></div>
         <p class="stat">A video this browser can’t play (an MKV in Safari): put it in the G-Drive’s <b>Grifflix/Criterion logo</b> folder and the Mac mini reads it itself, within ten minutes.</p>
         <p class="stat" id="crvsay" hidden></p>
         <div class="state" id="crgiven" style="gap:8px"></div>
+        <div id="crpicks" hidden></div>
         <div class="state" id="crtabs"></div>
         <div id="crlist"></div>
       </section>
@@ -2040,27 +2041,51 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     };
     v.onerror = function () { say.textContent = 'This browser can’t play ' + f.name + ': put it in the G-Drive’s Grifflix/Criterion logo folder instead, and the Mac mini reads it itself within ten minutes (or open this page in Chrome, which plays most MKVs).'; URL.revokeObjectURL(u); };
   };
+  // (a video's pictures, each to be used as the logo or not: John, 24 Nov 2026, "the main logo starts halfway through so that's the one to learn")
+  function crPicks(src) {
+    var box = $('#crpicks'); box.hidden = false; box.innerHTML = '<p class="stat">Getting the pictures of ' + esc(src) + '…</p>';
+    fetch(GW + '/api/critrel?pics=' + encodeURIComponent(src), { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('The Mac mini didn’t answer.')); }).then(function (j) {
+      var P = j.pics || [], mm = function (t) { t = +t || 0; return Math.floor(t / 60) + ':' + ('0' + Math.floor(t % 60)).slice(-2); };
+      box.innerHTML = '<p class="stat"><b>' + esc(src) + '</b>: tap a picture to use it or leave it out (faded). Only the logo’s own pictures: not titles, words or black.</p>' +
+        '<div class="state"><button class="btn" type="button" data-cpall="1">Use all</button><button class="btn" type="button" data-cpall="0">Use none</button><button class="btn primary" type="button" id="cpsave">Save</button><button class="btn" type="button" id="cpshut">Close</button></div>' +
+        '<div id="cpgrid" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">' + P.map(function (x, i) { return '<button type="button" data-cpi="' + i + '" style="padding:0;border:1px solid var(--line, rgba(255,255,255,.2));background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;color:inherit;opacity:' + (x.off ? '.3' : '1') + '"><canvas width="32" height="18" style="width:96px;height:54px;image-rendering:pixelated"></canvas><small>' + mm(x.t) + '</small></button>'; }).join('') + '</div>';
+      Array.prototype.forEach.call(box.querySelectorAll('[data-cpi]'), function (b) {
+        var x = P[+b.dataset.cpi], c = b.querySelector('canvas').getContext('2d'), im = c.createImageData(32, 18), g = atob(x.px);
+        for (var k = 0; k < 576; k++) { var q = g.charCodeAt(k); im.data[4 * k] = im.data[4 * k + 1] = im.data[4 * k + 2] = q; im.data[4 * k + 3] = 255; }
+        c.putImageData(im, 0, 0);
+        b.onclick = function () { x.off = !x.off; b.style.opacity = x.off ? '.3' : '1'; };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll('[data-cpall]'), function (b) { b.onclick = function () { P.forEach(function (x, i) { x.off = b.dataset.cpall !== '1'; box.querySelector('[data-cpi="' + i + '"]').style.opacity = x.off ? '.3' : '1'; }); }; });
+      $('#cpshut').onclick = function () { box.hidden = true; box.innerHTML = ''; };
+      $('#cpsave').onclick = function () {
+        this.disabled = true;
+        fetch(GW + '/api/critrel', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'logouse', src: src, on: P.filter(function (x) { return !x.off; }).map(function (x) { return x.t; }) }) })
+          .then(function (r) { return r.json(); }).then(function (j2) { box.hidden = true; box.innerHTML = ''; toast('Saved: the Mac mini learns from those now'); crDraw(j2); }).catch(function () { $('#cpsave').disabled = false; toast('The Mac mini didn’t answer.'); });
+      };
+    }).catch(function (e) { box.innerHTML = '<p class="stat">' + esc(e.message) + '</p>'; });
+  }
   function crDraw(j) {
     CR.j = j;
     var GV = j.given || [];
     $('#crgiven').innerHTML = GV.map(function (x) { return '<span style="display:inline-flex;flex-direction:column;gap:4px;align-items:center"><img alt="" src="' + esc(x.prev || '') + '" style="width:128px;height:72px;object-fit:cover;border:1px solid var(--line, rgba(255,255,255,.2))"><button class="btn" type="button" data-crgdel="' + x.n + '" style="padding:4px 10px">Take back</button></span>'; }).join('') +
-      (j.videos || []).map(function (vn) { return '<span class="stat" style="margin:0">' + esc(vn) + ': ' + ((j.vidn || {})[vn] || 0) + ' pictures <button class="btn" type="button" data-crvdel="' + esc(vn) + '" style="padding:4px 10px">Take back</button></span>'; }).join('');
+      (j.videos || []).map(function (vn) { var on = (j.vidon || {})[vn], all = (j.vidn || {})[vn] || 0; return '<span class="stat" style="margin:0">' + esc(vn) + ': ' + (on != null && on !== all ? on + ' of ' + all + ' pictures used' : all + ' pictures') + ' <button class="btn" type="button" data-crvpick="' + esc(vn) + '" style="padding:4px 10px">Choose which</button><button class="btn" type="button" data-crvdel="' + esc(vn) + '" style="padding:4px 10px">Take back</button></span>'; }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-crvpick]'), function (b) { b.onclick = function () { crPicks(b.dataset.crvpick); }; });
     Array.prototype.forEach.call(document.querySelectorAll('[data-crvdel]'), function (b) { b.onclick = function () {
       b.disabled = true; fetch(GW + '/api/critrel', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'logodel', src: b.dataset.crvdel }) }).then(function (r) { return r.json(); }).then(crDraw).catch(function () { b.disabled = false; });
     }; });
     Array.prototype.forEach.call(document.querySelectorAll('[data-crgdel]'), function (b) { b.onclick = function () {
       b.disabled = true; fetch(GW + '/api/critrel', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'logodel', n: +b.dataset.crgdel }) }).then(function (r) { return r.json(); }).then(crDraw).catch(function () { b.disabled = false; });
-    }; }); var F = j.films || [], pr = j.progress || {}, by = { no: [], yes: [], unread: [], todo: [] };
+    }; }); var F = j.films || [], pr = j.progress || {}, by = { no: [], yes: [], channel: [], unread: [], todo: [] };
     F.forEach(function (f) { (by[f.v] || by.todo).push(f); });
     $('#crsay').textContent = (pr.of ? (pr.running ? 'Looking: ' + (pr.done || 0) + ' of ' + pr.of + ' films' + (pr.paused ? ' (paused: ' + pr.paused + ')' : '') + '. ' : 'All ' + pr.of + ' looked at. ') : '') +
-      (pr.known ? 'Criterion’s logo learnt from ' + pr.known + ' films named Criterion' + (pr.logos ? '' : ' (not learnt yet: too few looked at so far)') + '.' : F.length ? '' : 'Starting a quarter of an hour after the Mac mini’s next restart.');
-    var T = [['no', 'Not Criterion’s?'], ['yes', 'Criterion’s'], ['unread', 'Couldn’t look'], ['todo', 'Not looked at yet']].filter(function (t) { return by[t[0]].length || t[0] === 'no'; });
+      (pr.mine ? 'Looking for Criterion’s logo as in ' + pr.mine + ' of your pictures of it' + (pr.chans ? ', and the Criterion Channel’s opening.' : '.') : pr.known ? 'Criterion’s logo learnt from ' + pr.known + ' films named Criterion' + (pr.logos ? '' : ' (not learnt yet: too few looked at so far)') + '.' : F.length ? '' : 'Starting three minutes after the Mac mini’s next restart.');
+    var T = [['no', 'Not Criterion’s?'], ['yes', 'Criterion’s'], ['channel', 'Criterion Channel'], ['unread', 'Couldn’t look'], ['todo', 'Not looked at yet']].filter(function (t) { return by[t[0]].length || t[0] === 'no'; });
     $('#crtabs').innerHTML = T.map(function (t) { return '<button class="btn' + (CR.tab === t[0] ? ' primary' : '') + '" type="button" data-crt="' + t[0] + '">' + t[1] + ' (' + by[t[0]].length + ')</button>'; }).join('');
     Array.prototype.forEach.call(document.querySelectorAll('[data-crt]'), function (b) { b.onclick = function () { CR.tab = b.dataset.crt; CR.n = 100; crDraw(CR.j); }; });
     var L = (by[CR.tab] || []).slice().sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
     $('#crlist').innerHTML = (L.length ? L.slice(0, CR.n).map(function (f) {
       return '<div class="mrow cb"><span class="y">' + esc(String(f.year || '')) + '</span><span>' + flA(f.id, f.name || '?') + '<br><small class="d">' + esc(f.how || '') + (f.by === 'John' ? ' · by you' : '') + '</small></span><span class="state" style="margin:0;justify-content:flex-end">' +
-        (f.v !== 'yes' || f.by !== 'John' ? '<button class="btn" type="button" data-crv="yes" data-id="' + f.id + '">It is</button>' : '') + (f.v !== 'no' || f.by !== 'John' ? '<button class="btn" type="button" data-crv="no" data-id="' + f.id + '">It isn’t</button>' : '') +
+        (f.v !== 'yes' || f.by !== 'John' ? '<button class="btn" type="button" data-crv="yes" data-id="' + f.id + '">It is</button>' : '') + (f.v !== 'no' || f.by !== 'John' ? '<button class="btn" type="button" data-crv="no" data-id="' + f.id + '">It isn’t</button>' : '') + (f.v !== 'channel' || f.by !== 'John' ? '<button class="btn" type="button" data-crv="channel" data-id="' + f.id + '">Criterion Channel</button>' : '') +
         (f.by === 'John' ? '<button class="btn" type="button" data-crv="" data-id="' + f.id + '">Look again</button>' : '') + '</span></div>';
     }).join('') : '<p class="stat">None.</p>') + (L.length > CR.n ? '<div class="state"><button class="btn" type="button" id="crmore">Show ' + Math.min(100, L.length - CR.n) + ' more</button></div>' : '');
     if ($('#crmore')) $('#crmore').onclick = function () { CR.n += 100; crDraw(CR.j); };

@@ -3668,9 +3668,17 @@ def make_handler(g):
             rf = os.path.join(CRL, 'result.json')
             R = load(rf, {}) or {}
             gf = os.path.join(CRL, 'given.json')
-            if b and b.get('op') in ('logo', 'logodel', 'logos'):   # (his own pictures of the logo: given, or one taken back)
+            if q.get('pics'):   # (a video's pictures, to choose which are the logo: John, 24 Nov 2026, "the main logo starts halfway through")
+                src_ = str(q.get('pics'))
+                return self.send_json(200, {'src': src_, 'pics': [{'t': x.get('t'), 'px': x.get('px'), 'off': bool(x.get('off'))} for x in load(gf, []) or [] if x.get('src') == src_]})
+            if b and b.get('op') in ('logo', 'logodel', 'logos', 'logouse'):   # (his own pictures of the logo: given, or one taken back)
                 G_ = load(gf, []) or []
-                if b['op'] == 'logos':   # (a video's pictures, some hundreds at a time)
+                if b['op'] == 'logouse':   # (which of a video's pictures are the logo: those he's chosen)
+                    on_ = set(round(float(t_), 1) for t_ in (b.get('on') or []) if isinstance(t_, (int, float)))
+                    for x in G_:
+                        if x.get('src') == str(b.get('src') or ''):
+                            x['off'] = round(float(x.get('t') or 0), 1) not in on_
+                elif b['op'] == 'logos':   # (a video's pictures, some hundreds at a time)
                     src = str(b.get('src') or 'video')[:80]
                     for x in (b.get('pics') or [])[:400]:
                         try:
@@ -3699,19 +3707,21 @@ def make_handler(g):
                 if CRL_STATE.get('films'):
                     threading.Thread(target=crl_classify, args=(g,), daemon=True).start()
                 record('Criterion logo pictures given by John', count=len(G_))
-            if b and b.get('op') not in ('logo', 'logodel', 'logos'):
+            if b and b.get('op') not in ('logo', 'logodel', 'logos', 'logouse'):
                 iid, v = str(b.get('id') or ''), str(b.get('v') or '')
                 if iid not in R:
                     return self.send_json(404, {'error': 'That film isn’t on the list.'})
-                if v in ('yes', 'no'):
-                    R[iid].update(v=v, how='you said so' if v == 'yes' else 'you said it isn’t', by='John')
+                if v in ('yes', 'no', 'channel'):
+                    R[iid].update(v=v, how={'yes': 'you said so', 'no': 'you said it isn’t', 'channel': 'you said it’s from the Criterion Channel'}[v], by='John')
                 else:
                     R[iid].pop('by', None); R[iid].update(v='todo', how='looked at again soon')
                 save(rf, R)
                 record('Criterion release, said by John', film=R[iid].get('name'), id=iid, v=v or 'taken back')
                 if CRL_STATE.get('films') and not CRL_STATE.get('running'):
                     threading.Thread(target=crl_classify, args=(g,), daemon=True).start()
-            return self.send_json(200, {'films': [dict(e, id=k) for k, e in R.items()], 'progress': {k: CRL_STATE.get(k) for k in ('done', 'of', 'running', 'paused', 'logos', 'known')},
+            G2_ = load(gf, []) or []
+            return self.send_json(200, {'films': [dict(e, id=k) for k, e in R.items()], 'progress': {k: CRL_STATE.get(k) for k in ('done', 'of', 'running', 'paused', 'logos', 'known', 'mine', 'chans')},
+                                        'vidon': {s_: sum(1 for x in G2_ if x.get('src') == s_ and not x.get('off')) for s_ in set(x.get('src') for x in G2_ if x.get('src'))},
                                         'given': [{'name': x.get('name'), 'prev': x.get('prev'), 'at': x.get('at'), 'n': n_} for n_, x in enumerate(load(gf, []) or []) if not x.get('src')],
                                         'videos': sorted(set(x.get('src') for x in load(gf, []) or [] if x.get('src'))),
                                         'vidn': {s_: sum(1 for x in load(gf, []) or [] if x.get('src') == s_) for s_ in set(x.get('src') for x in load(gf, []) or [] if x.get('src'))}})
@@ -9374,8 +9384,14 @@ CRL = os.path.expanduser('~/Grifflix/critlogo')
 CRL_SECS = 30   # (the logo, where there is one, within the first 15 seconds: 30 to be safe: John, 24 Nov 2026)
 # (each picture kept small (32 x 18, grey) and compared as it is, not as a rough outline: the outlines took one studio's logo on a dark
 # ground for another's, Intimate Relations' for Criterion's, and missed a seventh of the real ones: 24 Nov 2026)
-CRL_W, CRL_H, CRL_V = 32, 18, 2
+# (read again (3): the pictures between others were left undecoded to be quicker, and some films' openings came out smeared (Exotica's): 24 Nov)
+CRL_W, CRL_H, CRL_V = 32, 18, 3
 CRL_T = float(os.environ.get('GRIFFLIX_CRL_T') or .9)   # (how alike two pictures must be, 1 being the same)
+# (against John's own pictures of the logo: the ring of Criterion's logo, as it plays in his films (Homicide, Secrets & Lies), .85 to .9 like
+# them, and nothing else in his logo history video above .7; in two of a film's pictures at least, the logo being on the screen for seconds)
+CRL_TG = float(os.environ.get('GRIFFLIX_CRL_TG') or .8)
+CRL_HITS = 2
+CRL_CH = .85   # (the Criterion Channel's opening, learnt from a film of his that has it: as alike as this)
 CRL_SHARE, CRL_NEG = .2, 2   # (a logo picture: in a fifth of the films named Criterion at least, and in fewer than 2 films outside)
 CRL_STATE = {}
 CRL_NAME = re.compile(r'(?i)(criterion|(^|[._ \-\[(])CC([._ \-\])]|$))')
@@ -9410,9 +9426,13 @@ def crl_alike(a, b):
 
 
 def crl_match(fv, logo):
-    """Whether a picture (its full and small forms) is one of the logo's."""
+    """Whether a picture (its full and small forms) is one of the logo's (each logo picture with how alike it must be, CRL_T if not said)."""
     v, sm = fv
-    return any(crl_alike(sm, l[1]) >= CRL_T - .05 and crl_alike(v, l[0]) >= CRL_T for l in logo)
+    for l in logo:
+        t_ = l[5] if len(l) > 5 else CRL_T
+        if crl_alike(sm, l[1]) >= t_ - .05 and crl_alike(v, l[0]) >= t_:
+            return True
+    return False
 
 
 def crl_ffmpeg(g):
@@ -9433,11 +9453,12 @@ def crl_frames(ff, path, logo=None):
     recognised")."""
     import subprocess
     sz = CRL_W * CRL_H
-    # (the pictures between others (B-frames) not decoded, nor the smoothing filter: two or three times quicker, and two pictures a second need
-    # no more (a film took 100 seconds on the Mac mini, 1,400 of them over a day: 24 Nov 2026); each tried plainer if a copy won't have it)
-    fast = ['-skip_frame', 'bidir', '-skip_loop_filter', 'all']
+    # (the smoothing filter left out: quicker, and nothing a picture 32 across shows; each tried plainer if a copy won't have it. The pictures
+    # between others (B-frames) were left undecoded too, and in some films those are what the next ones are made from: Exotica's opening came
+    # out smeared, its logo in one picture of twenty: 24 Nov 2026)
+    fast = ['-skip_loop_filter', 'all']
     for opt in (['-hwaccel', 'videotoolbox'] + fast, fast, []):
-        out, n, hit = [], 0, False
+        out, n, hit, seen = [], 0, False, 0
         try:
             p = subprocess.Popen([ff, '-nostdin', '-v', 'error'] + opt + ['-t', str(CRL_SECS), '-i', path, '-an', '-sn', '-dn', '-vf',
                                   'fps=2,scale=%d:%d:flags=area,format=gray' % (CRL_W, CRL_H), '-f', 'rawvideo', '-'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
@@ -9455,8 +9476,10 @@ def crl_frames(ff, path, logo=None):
                     continue
                 out.append([round((n - 1) / 2.0, 1), base64.b64encode(px).decode()])
                 if logo and crl_match((v, crl_small(v)), logo):
-                    hit = True
-                    break
+                    seen += 1
+                    if seen >= CRL_HITS:
+                        hit = True
+                        break
         finally:
             try:
                 p.kill()
@@ -9541,7 +9564,7 @@ def crl_vectors(H, ids):
     """Each film's pictures made comparable: {id: [(seconds, (full, small)), ...]}."""
     out = {}
     for i in ids:
-        fr = (H.get(i) or {}).get('f') or []
+        fr = ((H.get(i) or {}).get('f') or []) if (H.get(i) or {}).get('v') == CRL_V else []
         L = []
         for t, b in fr:
             v = crl_vec(base64.b64decode(b))
@@ -9561,12 +9584,14 @@ def crl_learn(H, pos, neg):
     # most like it learnt too, as they look in a film (John, 24 Nov 2026, "I could have give you the pictures to learn from if you'd have said"))
     given, vid = [], []
     for gp in load(os.path.join(CRL, 'given.json'), []) or []:
+        if gp.get('off'):   # (one of a video's he's left out: John, 24 Nov 2026, "the main logo starts halfway through so that's the one to learn")
+            continue
         try:
             v = crl_vec(base64.b64decode(gp.get('px') or ''))
         except Exception:
             v = None
         if v is not None:
-            (vid if gp.get('src') else given).append((v, crl_small(v), 0, 'given: ' + str(gp.get('src') or gp.get('name') or ''), gp.get('t') or 0))
+            (vid if gp.get('src') else given).append((v, crl_small(v), 0, 'given: ' + str(gp.get('src') or gp.get('name') or ''), gp.get('t') or 0, CRL_TG))
     # (the pictures of his logo history video (John, 24 Nov 2026, "I need to load an mp4 of the logos history"): each a picture of the logo,
     # unless films outside the Criterion Collection have it too (a title card, a black screen with words))
     for vv in vid:
@@ -9602,20 +9627,53 @@ def crl_learn(H, pos, neg):
     return logo
 
 
+def crl_chan(H, ids, logo, neg):
+    """The Criterion Channel's own opening (a film from the Channel, not a disc: John, 24 Nov 2026, "Lynch/Oz logo is from the Criterion
+    Channel, so that should be noted"): learnt from the films he's said are from it, the first scene of each (from its first picture until the
+    picture changes to something else, a distributor's logo, 12 seconds at most), less Criterion's own logo and what films outside have."""
+    V = crl_vectors(H, [i for i in ids if (H.get(i) or {}).get('f')])
+    N = [x for x in crl_vectors(H, [i for i in neg if (H.get(i) or {}).get('f')]).values()]
+    out = []
+    for i in ids:
+        prev, t0 = None, None
+        for t, fv in V.get(i) or []:
+            t0 = t if t0 is None else t0
+            if t - t0 > 12 or (prev is not None and crl_alike(fv[0], prev) < .5):
+                break
+            prev = fv[0]
+            if crl_match(fv, logo) or any(crl_alike(fv[0], c[0]) >= .97 for c in out):
+                continue
+            c = (fv[0], fv[1], 0, i, t, CRL_CH)
+            if sum(1 for fs in N if any(crl_match(x[1], [c]) for x in fs)) < 1:
+                out.append(c)
+    return out
+
+
 def crl_classify(g):
     """Each film of the Criterion Collection looked at: Criterion's logo found at its start, or its name says Criterion, or neither."""
-    H = crl_hashes()
+    H = {k: v for k, v in crl_hashes().items() if v.get('v') == CRL_V}   # (those read the old way: not looked at yet, till read again)
     R = load(os.path.join(CRL, 'result.json'), {}) or {}
     films = CRL_STATE.get('films') or {}
+    # (Lynch/Oz: from the Criterion Channel, John said: 24 Nov 2026)
+    lo_ = os.path.join(CRL, 'lynch-oz-channel.done')
+    if '00716627af6057ededf9ddd4710415b9' in R and not os.path.exists(lo_):
+        R['00716627af6057ededf9ddd4710415b9'].update(v='channel', how='you said it’s from the Criterion Channel', by='John')
+        save(lo_, {'at': int(time.time())})
     pos = [i for i, f in films.items() if f.get('crit') and any(CRL_NAME.search(n or '') for n in crl_names(f.get('path')))]
     neg = [i for i, f in films.items() if not f.get('crit')]
     # (and those John has said are, or aren't: each version of the logo over the years (John, 24 Nov 2026, "The Criterion Collection Logo
     # History") learnt from a film of his that has it)
-    pos += [i for i, e in R.items() if e.get('by') == 'John' and e.get('v') == 'yes' and i in films and i not in pos]
+    yes_ = [i for i, e in R.items() if e.get('by') == 'John' and e.get('v') == 'yes' and i in films]
     neg += [i for i, e in R.items() if e.get('by') == 'John' and e.get('v') == 'no' and i in films and i not in neg]
-    key = '%s|%s' % (sorted(i for i in pos if (H.get(i) or {}).get('f')), sorted(i for i in neg if (H.get(i) or {}).get('f')))
+    chan = [i for i, e in R.items() if e.get('by') == 'John' and e.get('v') == 'channel' and i in films]
+    # (his own pictures of the logo, once given, are what's looked for, and the films he's said are: no longer what the films named Criterion
+    # share, which may be the Criterion Channel's opening (a "CRITERION" copy of Lynch/Oz has it) or Janus Films' logo)
+    mine = sum(1 for x in load(os.path.join(CRL, 'given.json'), []) or [] if not x.get('off'))
+    pos = yes_ if mine else pos + [i for i in yes_ if i not in pos]
+    key = '%s|%s|%s|%d' % (sorted(i for i in pos if (H.get(i) or {}).get('f')), sorted(i for i in neg if (H.get(i) or {}).get('f')), sorted(i for i in chan if (H.get(i) or {}).get('f')), mine)
     if CRL_STATE.get('logokey') != key:   # (learnt again only when what it's learnt from has changed)
         CRL_STATE['logo'], CRL_STATE['logokey'] = crl_learn(H, pos, neg), key
+        CRL_STATE['chan'] = crl_chan(H, chan, CRL_STATE['logo'], neg)
         try:   # (the logo's pictures kept, to be looked at)
             save(os.path.join(CRL, 'logo.json'), [{'pic': base64.b64encode(bytes(max(0, min(255, int(128 + 600 * x))) for x in l[0])).decode(), 'share': l[2],
                                                     'film': (films.get(l[3]) or {}).get('name'), 't': l[4]} for l in CRL_STATE['logo']])
@@ -9633,10 +9691,14 @@ def crl_classify(g):
             e.update(v=old.get('v'), how=old.get('how'), by='John')
         else:
             fr = (H.get(i) or {}).get('f')
-            hit = next((t for t, fv in (V.get(i) or []) if t <= CRL_SECS and crl_match(fv, logo)), None)
+            hits = [t for t, fv in (V.get(i) or []) if t <= CRL_SECS and crl_match(fv, logo)]
+            ch_ = CRL_STATE.get('chan') or []
+            chits = [t for t, fv in (V.get(i) or []) if t <= CRL_SECS and crl_match(fv, ch_)] if ch_ and len(hits) < CRL_HITS else []
             named = any(CRL_NAME.search(n or '') for n in crl_names(f.get('path')))
-            if hit is not None:
-                e.update(v='yes', how='Criterion’s logo at %d:%02d' % (int(hit) // 60, int(hit) % 60))
+            if len(hits) >= CRL_HITS:
+                e.update(v='yes', how='Criterion’s logo at %d:%02d' % (int(hits[0]) // 60, int(hits[0]) % 60))
+            elif len(chits) >= CRL_HITS:
+                e.update(v='channel', how='the Criterion Channel’s opening at %d:%02d' % (int(chits[0]) // 60, int(chits[0]) % 60))
             elif named:
                 e.update(v='yes', how='its file’s name says Criterion (no logo seen at its start)')
             elif fr is None and i in H:
@@ -9647,12 +9709,13 @@ def crl_classify(g):
                 e.update(v='no', how='no Criterion logo in its first %d seconds' % CRL_SECS)
         out[i] = e
     save(os.path.join(CRL, 'result.json'), out)
-    CRL_STATE['logos'], CRL_STATE['known'] = len(logo), len(pos)
+    CRL_STATE['logos'], CRL_STATE['known'], CRL_STATE['mine'], CRL_STATE['chans'] = len(logo), len(pos), mine, len(CRL_STATE.get('chan') or [])
     n = {}
     for e in out.values():
         n[e['v']] = n.get(e['v'], 0) + 1
-    log('Criterion releases: %d films; Criterion’s logo learnt from %d named Criterion (%d picture%s of it); %s' % (
-        len(out), len(pos), len(logo), '' if len(logo) == 1 else 's', ', '.join('%s %d' % (k, v) for k, v in sorted(n.items()))))
+    log('Criterion releases: %d films; Criterion’s logo %s (%d picture%s of it), the Channel’s opening %d; %s' % (
+        len(out), ('from %d of your pictures' % mine) if mine else ('learnt from %d named Criterion' % len(pos)), len(logo), '' if len(logo) == 1 else 's',
+        len(CRL_STATE.get('chan') or []), ', '.join('%s %d' % (k, v) for k, v in sorted(n.items()))))
     return out
 
 
@@ -9661,12 +9724,27 @@ def crl_scan(g):
     and some films outside it, for what isn't Criterion's; the record made again as it goes."""
     time.sleep(180)   # (after the gateway's own start-up work; was 15 minutes, and each update's restart put it back)
     os.makedirs(os.path.join(CRL, 'h'), exist_ok=True)
+    # (of his logo history video, only the main logo, the ring that makes the C (2:11 to 2:53 of it, less the words at 2:40): John, 24 Nov
+    # 2026, "the main logo starts halfway through so that's the one to learn"; he can choose others on the admin page)
+    ml_ = os.path.join(CRL, 'main-logo-1.done')
+    if not os.path.exists(ml_):
+        try:
+            G_ = load(os.path.join(CRL, 'given.json'), []) or []
+            for x in G_:
+                if 'Logo History' in str(x.get('src') or ''):
+                    t_ = float(x.get('t') or 0)
+                    x['off'] = not (131.5 <= t_ <= 173.5 and t_ != 160)
+            save(os.path.join(CRL, 'given.json'), G_)
+            save(ml_, {'at': int(time.time()), 'on': sum(1 for x in G_ if x.get('src') and not x.get('off'))})
+            log('Criterion logo: of the logo history video, the main logo’s %d pictures used' % sum(1 for x in G_ if x.get('src') and not x.get('off')))
+        except Exception as e:
+            log('Criterion logo: %s' % str(e)[:160])
     while True:
         try:
             ff = crl_ffmpeg(g)
             if not ff:
                 log('Criterion releases: no ffmpeg found'); return
-            sets = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'BoxSet'}) or {}).get('Items') or []
+            sets = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'BoxSet'}, timeout=180) or {}).get('Items') or []
             crit = next((x for x in sets if (x.get('Name') or '').strip().lower() == 'the criterion collection'), None)
             if not crit:
                 time.sleep(3600); continue
@@ -9681,6 +9759,7 @@ def crl_scan(g):
             CRL_STATE['films'] = films
             if crl_videos_in(ff):
                 CRL_STATE['logokey'] = None
+            crl_classify(g)   # (what it knows, at once, and the logo learnt before reading: not after the first hundred)
             H = crl_hashes()
             todo = []
             for i, f in films.items():
@@ -9700,7 +9779,7 @@ def crl_scan(g):
                     CRL_STATE['paused'] = 'someone is watching'
                     time.sleep(60)
                 CRL_STATE['paused'] = ''
-                fr = crl_frames(ff, films[i]['path'], CRL_STATE.get('logo'))
+                fr = crl_frames(ff, films[i]['path'], (CRL_STATE.get('logo') or []) + (CRL_STATE.get('chan') or []))
                 H[i] = {'s': sz, 'f': fr, 'at': int(time.time()), 'v': CRL_V}
                 save(os.path.join(CRL, 'h', i + '.json'), H[i])   # (at once: a restart loses nothing)
                 n_ += 1
@@ -9713,7 +9792,11 @@ def crl_scan(g):
             CRL_STATE['running'] = False
             crl_classify(g)
         except Exception as e:
-            log('Criterion releases: %s' % str(e)[:200])
+            # (the media server slow to answer (just after a restart, while it's busy): tried again in ten minutes, not the next morning)
+            log('Criterion releases: %s: trying again in ten minutes' % str(e)[:200])
+            CRL_STATE['running'] = False
+            time.sleep(600)
+            continue
         for _ in range(36):   # (films come in: looked at again a few times a day; a video of the logo looked for every ten minutes meanwhile)
             time.sleep(600)
             try:
