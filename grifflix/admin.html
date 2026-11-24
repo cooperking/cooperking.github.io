@@ -714,9 +714,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       <section class="card" data-tab="criterion">
         <div class="kicker">Films</div>
         <h2>Criterion’s films you <em>haven’t got</em></h2>
-        <p class="stat" id="cmfsay">Every film on Criterion’s own list that isn’t in Grifflix and isn’t in one of its box sets (those are under Box sets to finish), by spine number. Looked for when you open this tab.</p>
+        <p class="stat" id="cmfsay">Every film on Criterion’s own list that isn’t in Grifflix and isn’t in one of its box sets (those are under Box sets to finish). Kept up to date by the Mac mini as films come in.</p>
         <div class="state"><input type="search" id="cmfq" placeholder="Find a title, director or country" style="flex:1 1 220px"><button class="btn" id="cmfcsv" type="button" hidden>Download (CSV)</button></div>
-        <div class="state" id="cmfbar" hidden><button class="btn primary" type="button" id="cmftext">Select as text</button><button class="btn" type="button" id="cmfall">Tick all shown</button><span class="stat" id="cmfn" style="margin:0"></span></div>
+        <div class="state" id="cmfbar" hidden><button class="btn primary" type="button" id="cmfsto">Search Tab Opener</button><button class="btn" type="button" id="cmftext">Select as text</button><button class="btn" type="button" id="cmfall">Tick all shown</button><span class="stat" id="cmfn" style="margin:0"></span></div>
         <pre id="cmfbox" hidden style="white-space:pre-wrap;user-select:text;-webkit-user-select:text;max-height:320px;overflow:auto;margin:10px 0;padding:10px 12px;border:1px solid var(--line, rgba(255,255,255,.2));border-radius:8px;font:14px/1.5 ui-monospace,Menlo,monospace"></pre>
         <div class="state" id="cmfsort" hidden style="margin-top:6px"></div>
         <div class="mlist" id="cmflist"></div>
@@ -2006,9 +2006,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   // collection that isn't in the box sets too")
   var CMF = { rows: null, sort: 'spine', dir: 1, pick: {} };
   function cmfLook() {
-    if (CMF.busy) return; CMF.busy = 1; $('#cmflist').innerHTML = '<p class="stat">Looking on the Mac mini (half a minute or so)…</p>';
+    if (CMF.busy) return; CMF.busy = 1; if (!CMF.rows) $('#cmflist').innerHTML = '<p class="stat">Looking…</p>';
     fetch(GW + '/api/criterionmissing?films=1', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error(r.status === 404 ? 'The Mac mini takes its update within a few minutes.' : 'The Mac mini didn’t answer.')); })
-      .then(function (j) { CMF.rows = j.films || []; CMF.busy = 0; cmfDraw(); }).catch(function (e) { CMF.busy = 0; $('#cmflist').innerHTML = '<p class="stat">' + esc(e.message) + '</p>'; });
+      .then(function (j) { CMF.rows = j.films || []; CMF.at = j.at; CMF.busy = 0; cmfDraw(); }).catch(function (e) { CMF.busy = 0; $('#cmflist').innerHTML = '<p class="stat">' + esc(e.message) + '</p>'; });
   }
   // (sortable, each with a tick, and the ticked ones (or all shown) as plain lines, "Title Year", selected for his Search Tab Opener: John,
   // 24 Nov 2026, "can the list be sortable" ... "Make the list selectable, so I can open in my Search Tab Opener")
@@ -2025,16 +2025,44 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   }
   function cmfDraw() {
     var R = cmfShown(), q = ($('#cmfq').value || '').trim(), np = Object.keys(CMF.pick).length;
-    $('#cmfsay').textContent = (CMF.rows || []).length + ' of Criterion’s films not in any of its box sets aren’t in Grifflix' + (q ? ' (' + R.length + ' found)' : '') + '. Each links to its page on criterion.com.';
+    $('#cmfsay').textContent = (CMF.rows || []).length + ' of Criterion’s films not in any of its box sets aren’t in Grifflix' + (q ? ' (' + R.length + ' found)' : '') + '. Each links to its page on criterion.com.' + (CMF.at ? ' As of ' + new Date(CMF.at * 1000).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' }) + ': kept up to date as films come in.' : '');
     $('#cmfcsv').hidden = $('#cmfbar').hidden = $('#cmfsort').hidden = !(CMF.rows || []).length;
-    $('#cmfn').textContent = np ? np + ' ticked' : 'none ticked: Select as text takes all shown';
+    $('#cmfn').textContent = np ? np + ' ticked' : 'none ticked: Search Tab Opener and Select as text take all shown';
     $('#cmfsort').innerHTML = '<span class="stat" style="margin:0">Sort by</span>' + [['spine', 'Spine'], ['title', 'Title'], ['year', 'Year'], ['director', 'Director'], ['country', 'Country']].map(function (c) {
       var on = CMF.sort === c[0]; return '<button class="btn' + (on ? ' primary' : '') + '" type="button" data-cmfs="' + c[0] + '">' + c[1] + (on ? (CMF.dir > 0 ? ' ↑' : ' ↓') : '') + '</button>'; }).join('');
     Array.prototype.forEach.call(document.querySelectorAll('[data-cmfs]'), function (b) { b.onclick = function () { if (CMF.sort === b.dataset.cmfs) CMF.dir = -CMF.dir; else { CMF.sort = b.dataset.cmfs; CMF.dir = 1; } cmfDraw(); }; });
     $('#cmflist').innerHTML = R.length ? R.map(function (x) { var r = x.r, on = !!CMF.pick[x.i];
       return '<label class="mrow cb pk' + (on ? ' on' : '') + '" style="grid-template-columns:22px 70px minmax(0,1fr) minmax(0,.8fr) auto"><input type="checkbox" class="cbpick cmfpick" data-i="' + x.i + '"' + (on ? ' checked' : '') + '><span class="y">' + esc(r[0] ? 'No. ' + r[0] : '') + '</span><b><a href="' + esc(r[5]) + '" target="_blank" rel="noopener">' + esc(r[1]) + '</a></b><span class="d">' + esc([r[2], r[3]].filter(Boolean).join(' · ')) + '</span><span class="s">' + esc(r[4]) + '</span></label>'; }).join('') : '<p class="stat">' + (CMF.rows ? 'None.' : '') + '</p>';
-    Array.prototype.forEach.call(document.querySelectorAll('.cmfpick'), function (c) { c.onchange = function () { if (c.checked) CMF.pick[c.dataset.i] = 1; else delete CMF.pick[c.dataset.i]; c.closest('label').classList.toggle('on', c.checked); var n_ = Object.keys(CMF.pick).length; $('#cmfn').textContent = n_ ? n_ + ' ticked' : 'none ticked: Select as text takes all shown'; }; });
+    Array.prototype.forEach.call(document.querySelectorAll('.cmfpick'), function (c) { c.onchange = function () { if (c.checked) CMF.pick[c.dataset.i] = 1; else delete CMF.pick[c.dataset.i]; c.closest('label').classList.toggle('on', c.checked); var n_ = Object.keys(CMF.pick).length; $('#cmfn').textContent = n_ ? n_ + ' ticked' : 'none ticked: Search Tab Opener and Select as text take all shown'; cmfStoPrep(); }; });
+    if (CMF.rows) cmfStoPrep();
   }
+  // (the ticked films, or all shown, opened in his Search Tab Opener as the box sets' list is, in its shape (Box set, Set spine, Film, Year,
+  // Spine) so his settings there work for both: John, 24 Nov 2026, "there should be a search tab opener button I can click on the missing
+  // films tab, like in the box sets tab")
+  var CSTO = { url: '', csv: '', name: '', n: 0 };
+  function cmfStoPrep() {
+    var R = cmfShown(), P = R.filter(function (x) { return CMF.pick[x.i]; }), ch = P.length; if (!ch) P = R;
+    var rows = [['Box set', 'Set spine', 'Film', 'Year', 'Spine', 'Director', 'Country']].concat(P.map(function (x) { var r = x.r; return ['', '', r[1], r[2], r[0], r[3], r[4]]; }));
+    var csv = '\ufeff' + rows.map(function (r) { return r.map(function (c) { c = String(c == null ? '' : c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\r\n');
+    var nm = (ch ? 'Criterion films chosen ' : 'Criterion films missing ') + new Date().toISOString().slice(0, 10), base = 'https://cooperking.github.io/search-tab-opener/#from=grifflix&name=' + encodeURIComponent(nm);
+    var b64 = btoa(unescape(encodeURIComponent(csv)));
+    CSTO = { url: base + (b64.length < 24000 ? '&csv=' + encodeURIComponent('data:text/csv;base64,' + b64) : ''), csv: csv, name: nm, n: P.length, ch: ch };
+    if (typeof CompressionStream === 'undefined') return;
+    var mine = CSTO;
+    new Response(new Blob([csv]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer().then(function (ab) {
+      var u = new Uint8Array(ab), bin = ''; for (var i = 0; i < u.length; i += 8192) bin += String.fromCharCode.apply(null, u.subarray(i, i + 8192));
+      if (CSTO === mine) mine.url = base + '&csvz=' + btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }).catch(function () {});
+  }
+  $('#cmfsto').onclick = function () {
+    if (!CSTO.n) { cmfStoPrep(); if (!CSTO.n) return toast('The list isn’t here yet'); }
+    var o = CSTO, w;
+    if (navigator.standalone && /iPhone|iPad|iPod/.test(navigator.userAgent)) { location.href = 'x-safari-' + o.url; toast(o.n + ' film' + (o.n === 1 ? '' : 's') + (o.ch ? ' chosen' : '') + ' opened in Safari'); return; }
+    w = window.open(o.url, '_blank');
+    var hand = function (e) { if (e.origin !== 'https://cooperking.github.io' || !e.data || e.data.type !== 'sto-ready' || !w || e.source !== w) return; window.removeEventListener('message', hand); w.postMessage({ type: 'sto-csv', csv: o.csv, name: o.name }, 'https://cooperking.github.io'); };
+    window.addEventListener('message', hand); setTimeout(function () { window.removeEventListener('message', hand); }, 60000);
+    toast(o.n + ' film' + (o.n === 1 ? '' : 's') + (o.ch ? ' chosen' : '') + ' to your Search Tab Opener');
+  };
   $('#cmftext').onclick = function () {
     var R = cmfShown(), P = R.filter(function (x) { return CMF.pick[x.i]; }); if (!P.length) P = R;
     // (ordinary page text, selected: an extension reading what's selected on the page sees it, as it can't inside a text box)

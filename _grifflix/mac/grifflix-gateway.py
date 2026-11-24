@@ -2778,8 +2778,12 @@ def make_handler(g):
                             MSHEET.update(state='failed', error=str(e)[:200], at=int(time.time()))
                     threading.Thread(target=mk, daemon=True).start()
                 return self.send_json(200, dict(links, sheetjob='making'))
-            if q.get('films'):   # (and Criterion's films not in any box set that Grifflix hasn't: John, 24 Nov 2026)
-                return self.send_json(200, {'films': crit_missing_films(g)})
+            if q.get('films'):   # (and Criterion's films not in any box set that Grifflix hasn't: John, 24 Nov 2026; kept ready, not worked out each time)
+                kept = load(CMF_AT, None)
+                if not kept or q.get('fresh'):
+                    crit_missing_now()
+                    kept = load(CMF_AT, None) or {}
+                return self.send_json(200, {'films': kept.get('films') or [], 'at': kept.get('at')})
             return self.send_json(200, dict(links, rows=crit_missing(g)))
 
         def api_bin(self, me, user, q, b):
@@ -8363,10 +8367,33 @@ def crit_missing_films(g):
         if re.match(r'^\d{4}$', str(f.get('year') or '')):
             by_ty.setdefault((fold(f.get('title')), int(f['year'])), sl)
     owned = crit_owned(g, by_spine, by_ty)
+    # (an entry that is itself a set of films (Scorsese Shorts, The Kennedy Films of Robert Drew & Associates), had here as its films: not
+    # missing (John, 24 Nov 2026, "the list is also including box sets, such as The Kennedy Films and Scorsese shorts that I already have"))
+    have_sets = set(fold(nm) for nm, mem in (ct.get('sets') or {}).items() if any(sl in owned for sl in mem))
+    try:
+        have_sets.update(fold(x.get('Name')) for x in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'BoxSet'}, timeout=60) or {}).get('Items') or [])
+    except Exception:
+        pass
     rows = [[str(f.get('spine') or ''), str(f.get('title') or ''), str(f.get('year') or ''), str(f.get('director') or ''), str(f.get('country') or ''), str(f.get('link') or '')]
-            for sl, f in films.items() if sl not in owned and sl not in in_sets]
+            for sl, f in films.items() if sl not in owned and sl not in in_sets and fold(f.get('title')) not in have_sets]
     rows.sort(key=lambda r: (0, int(r[0])) if r[0].isdigit() else (1, 0))
     return rows
+
+
+CMF_AT = os.path.expanduser('~/Grifflix/criterion-missing-films.json')
+
+
+def crit_missing_now():
+    """The list kept ready, worked out after the library changes and when the gateway starts, so the admin page has it at once (John, 24 Nov
+    2026, "it shouldn't have to load from the library each time")."""
+    g = G_REF[0] if G_REF else None
+    if not g:
+        return
+    try:
+        rows = crit_missing_films(g)
+        save(CMF_AT, {'at': int(time.time()), 'films': rows})
+    except Exception as e:
+        log('Criterion films missing: %s' % str(e)[:160])
 
 
 def crit_owned(g, by_spine, by_ty):
@@ -8523,7 +8550,7 @@ def new_follow_up(paths=()):
     def run():
         NEW_FU['t'] = None
         only_, NEW_FU['folders'] = NEW_FU['folders'], set()
-        for f in (lambda: covers_now(only_ or None), a24_now, bom_now, subprep_scan, set_covers_now):   # (new foreign films on the subtitles list then, not hours later)
+        for f in (lambda: covers_now(only_ or None), a24_now, bom_now, subprep_scan, set_covers_now, crit_missing_now):   # (new foreign films on the subtitles list then, not hours later)
             try:
                 f()
             except Exception as e:
@@ -8544,7 +8571,7 @@ def after_fixes():
     def run():
         AFTER_FIX[0] = None
         SCAN_NOW.set()
-        for f in (covers_now, a24_now, bom_now, set_covers_now):
+        for f in (covers_now, a24_now, bom_now, set_covers_now, crit_missing_now):
             try:
                 time.sleep(60)
                 f()
@@ -10827,6 +10854,7 @@ def serve():
     threading.Timer(420, bom_now).start()   # (any film come in while it was off: its distributor, or streaming service: 20 Nov 2026)
     threading.Timer(200, a24_now).start()
     threading.Timer(420, set_covers_now).start()
+    threading.Timer(300, crit_missing_now).start()   # (the Criterion films missing, kept ready: 24 Nov 2026)
     threading.Thread(target=crl_scan, args=(g,), daemon=True).start()   # (which Criterion films are Criterion's own release: 24 Nov 2026)   # (and the box set covers on the films released only in a set: 24 Nov 2026)   # (and once each start: any A24 film come in before this, Tony and Misty Green, put in)   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
     threading.Thread(target=fanny_series, args=(g,), daemon=True).start()
     threading.Thread(target=keep_disk_health, daemon=True).start()
