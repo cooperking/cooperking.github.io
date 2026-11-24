@@ -9355,6 +9355,20 @@ def crl_frames(ff, path):
     return out
 
 
+def crl_hashes():
+    """Every film's fingerprints, each kept in a file of its own (critlogo/h/<id>.json), so each is saved the moment it's looked at."""
+    H, d = {}, os.path.join(CRL, 'h')
+    try:
+        for n in os.listdir(d):
+            if n.endswith('.json'):
+                v = load(os.path.join(d, n), None)
+                if isinstance(v, dict):
+                    H[n[:-5]] = v
+    except OSError:
+        pass
+    return H
+
+
 def crl_names(path):
     """What a film's file has been called: its own name now, and what it came in as (the record of every change)."""
     names = [os.path.basename(path or ''), os.path.basename(os.path.dirname(path or ''))]
@@ -9390,7 +9404,7 @@ def crl_learn(H, pos, neg):
 
 def crl_classify(g):
     """Each film of the Criterion Collection looked at: Criterion's logo found at its start, or its name says Criterion, or neither."""
-    H = load(os.path.join(CRL, 'hashes.json'), {}) or {}
+    H = crl_hashes()
     R = load(os.path.join(CRL, 'result.json'), {}) or {}
     films = CRL_STATE.get('films') or {}
     pos = [i for i, f in films.items() if f.get('crit') and any(CRL_NAME.search(n or '') for n in crl_names(f.get('path')))]
@@ -9436,8 +9450,8 @@ def crl_classify(g):
 def crl_scan(g):
     """In the background, when nobody's watching: each Criterion Collection film's start looked at once (again only if its file changes),
     and some films outside it, for what isn't Criterion's; the record made again as it goes."""
-    time.sleep(900)
-    os.makedirs(CRL, exist_ok=True)
+    time.sleep(180)   # (after the gateway's own start-up work; was 15 minutes, and each update's restart put it back)
+    os.makedirs(os.path.join(CRL, 'h'), exist_ok=True)
     while True:
         try:
             ff = crl_ffmpeg(g)
@@ -9456,8 +9470,7 @@ def crl_scan(g):
                 for x in sorted((x for x in allm if x['Id'] not in films), key=lambda x: hashlib.md5(x['Id'].encode()).hexdigest())[:150]:
                     films[x['Id']] = {'name': x.get('Name'), 'year': x.get('ProductionYear'), 'path': x.get('Path') or '', 'crit': False}
             CRL_STATE['films'] = films
-            hf = os.path.join(CRL, 'hashes.json')
-            H = load(hf, {}) or {}
+            H = crl_hashes()
             todo = []
             for i, f in films.items():
                 try:
@@ -9476,13 +9489,11 @@ def crl_scan(g):
                 CRL_STATE['paused'] = ''
                 fr = crl_frames(ff, films[i]['path'])
                 H[i] = {'s': sz, 'f': fr, 'at': int(time.time())}
+                save(os.path.join(CRL, 'h', i + '.json'), H[i])   # (at once: a restart loses nothing)
                 n_ += 1
                 CRL_STATE['done'] = CRL_STATE.get('done', 0) + 1
-                if n_ % 10 == 0:
-                    save(hf, H)
                 if n_ % 150 == 0:
                     crl_classify(g)
-            save(hf, H)
             CRL_STATE['running'] = False
             crl_classify(g)
         except Exception as e:
