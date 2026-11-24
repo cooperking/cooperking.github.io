@@ -1203,6 +1203,16 @@ def make_handler(g):
                             if e.get('state') == 'verify':   # (subtitles from before, checked as they are: only once none is waiting)
                                 vf_ = e.get('vfile') or ''
                                 if not os.path.exists(vf_):
+                                    # (the film itself gone from under that id (its folder renamed: a new id, with its own entry): this one taken off,
+                                    # not left under Not found: John, 24 Nov 2026, Totally F***ed Up there twice, once "not found")
+                                    try:
+                                        there_ = bool((g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}).get('Id'))
+                                    except Exception as ex_:
+                                        there_ = not re.search(r': (400|404) ', str(ex_))
+                                    if not there_:
+                                        P.pop(iid, None)
+                                        save(SUBPREP, P)
+                                        continue
                                     e.update(state='gone', note='its subtitles aren’t there now', at=int(now_))
                                     continue
                                 it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
@@ -9812,6 +9822,36 @@ def folders_fix2_once(g):
     open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
 
 
+def subprep_gone_once(g):
+    """Once: entries on the subtitles list for films no longer under that id (their folder renamed since, the film a new item with its own
+    entry), taken off: they showed under Not found (John, 24 Nov 2026: Totally F***ed Up, renamed on 22 Nov)."""
+    mk = os.path.expanduser('~/Grifflix/subprep-gone-1.done')
+    if os.path.exists(mk):
+        return
+    time.sleep(240)
+    try:
+        P = load(SUBPREP, {}) or {}
+        off = []
+        for iid, e in list(P.items()):
+            if iid.startswith('_') or not isinstance(e, dict) or e.get('state') not in ('gone', 'none', 'nomatch', 'failed', 'waiting', 'check'):
+                continue
+            try:
+                it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
+            except Exception as ex:
+                if not re.search(r': (400|404) ', str(ex)):
+                    continue
+                it = {}
+            if not it.get('Id'):
+                off.append('%s (%s)' % (e.get('name'), e.get('state')))
+                P.pop(iid, None)
+        if off:
+            save(SUBPREP, P)
+        log('Subtitles: %d on the list for a film no longer there under its id, taken off%s' % (len(off), (': ' + ', '.join(off))[:800] if off else ''))
+        open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+    except Exception as ex:
+        log('Subtitles, films no longer there: %s' % str(ex)[:200])
+
+
 def east_is_east_once(g):
     """Once: the film in "East in East (1999)", matched to East/West (Régis Wargnier's), which is East Is East (1999), its file says so: its
     match put right, its folder named for it, and out of To check (John, 23 Nov 2026, "East/ West should be East is East")."""
@@ -10461,6 +10501,7 @@ def serve():
     threading.Thread(target=folders_fix_once, args=(g,), daemon=True).start()
     threading.Thread(target=folders_fix2_once, args=(g,), daemon=True).start()
     threading.Thread(target=east_is_east_once, args=(g,), daemon=True).start()
+    threading.Thread(target=subprep_gone_once, args=(g,), daemon=True).start()   # (once: subtitle entries for films renamed since, taken off: 24 Nov 2026)
     try:   # (once: La Bola Negra, made 2 h 30 of 2 h 39 on John's Mac on 23 Nov and turned down, made again: 24 Nov 2026)
         mk_ = os.path.expanduser('~/Grifflix/labolanegra-again.done')
         if not os.path.exists(mk_):

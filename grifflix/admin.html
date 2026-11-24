@@ -1332,7 +1332,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         // (in tabs: to do, added as they came (made for this very file), corrected (moved to fit, and how), to check, not found: John, 22 Nov
         // 2026, "I need a tab of added, corrected (with details), to do etc. Tidy")
         var kindOf = function (x) {
-          if (x.state === 'verify' || x.state === 'verified' || (x.state === 'given' && x.verifying)) return 'existing';
+          if (x.state === 'verify' || x.state === 'verified' || x.state === 'gone' || (x.state === 'given' && x.verifying)) return 'existing';
           if (x.state === 'waiting' || x.state === 'given') return 'todo';
           if (x.state === 'check') return 'check';
           if (x.state === 'done') return x.how === 'exact' || x.how === 'by name' ? 'added' : 'corrected';
@@ -1367,6 +1367,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           var src = x.chose && !/^OpenSubtitles file|^translated from/.test(x.chose) ? ' Subtitles: “' + x.chose + '”.' : '';
           if (x.k === 'existing') {
             var vf = String(x.vfile || '').split('/').pop();
+            if (x.state === 'gone') return '· Its subtitles from before (' + vf + ') aren’t there now (moved or renamed): nothing to check.';
             if (x.state === 'verified') return '✓ Its subtitles from before (' + vf + ') checked against what’s said: in time' + (x.n ? ', ' + x.n + ' lines matched' : '') + '. Kept.';
             if (x.state === 'given') return '▶ On your Mac now: checking its subtitles from before (' + vf + ')' + (x.step ? '. ' + x.step : '') + '.';
             return '… Its subtitles from before (' + vf + ') waiting to be checked against what’s said.';
