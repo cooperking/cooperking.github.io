@@ -2676,7 +2676,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: false, v: '08747684f35e' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: false, v: '97dc98413dde' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6039,7 +6039,9 @@ function collectionView(id, into) {
       // the ability to edit collections properly, as well as search within them")
       '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find in this collection" aria-label="Find in this collection" autocomplete="off"><span class="sp"></span>' + sfBar() + '</div>' +
       '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>');
-    var editing = false, fq = '', openSet = null, cv0 = store.get('grifflix-clist'), cmode = cv0 === 'covers' ? 'covers' : 'list', csets = cv0 === 'sets' || store.get('grifflix-csets') === '1', clist = cmode === 'list';   // (List or Covers, for the films and for the box sets alike: John, 18 Nov 2026, "you should be able to see box sets in list or covers, not just list")
+    var editing = false, fq = '', openSet = null, cv0 = store.get('grifflix-clist'), cmode = cv0 === 'covers' ? 'covers' : 'list', csets = cv0 === 'sets' || store.get('grifflix-csets') === '1', clist = cmode === 'list';
+    if (S.wantSet && /criterion/i.test(c.name || '')) { openSet = S.wantSet; csets = true; }   // (a box set asked for from a film's page: shown open)
+    S.wantSet = null;   // (List or Covers, for the films and for the box sets alike: John, 18 Nov 2026, "you should be able to see box sets in list or covers, not just list")
     var fits = function (i) { return !fq || sScore(i, fq) > 0; };   // (as the Search box finds things: John, 20 Nov 2026)
     var draw = function () {
       if (A24 && !editing) return a24Draw($('#cgrid'), c.items.filter(fits), fq);
@@ -6803,7 +6805,9 @@ function shBrand() {   // GRIFFLIX over a pop-up, just where the bar's is (the b
   // (the pop-up's own words start below the logo and its words, never under them: John, 9 Nov 2026: "profile pop up on computer
   // causes words to be on top of each other - be careful of clashes"); what scrolls up passes under a strip, not through them
   var nr = nav.getBoundingClientRect(), barB = Math.max(r.bottom, nr.bottom, br ? br.bottom : 0), barR = Math.max(r.right, nr.right), f = $('#sheetIn > .form');
-  if (f && !f.classList.contains('tcal') && !TV && !document.documentElement.classList.contains('phone')) {
+  // (on a phone too: a film's Edit page started under the bar there, its top out of sight: John, 24 Nov 2026, "Edit page for films shows under
+  // the top bar so you can't see all of it")
+  if (f && !f.classList.contains('tcal') && !TV) {
     f.style.removeProperty('padding-top'); var fr = f.getBoundingClientRect(), pt = parseFloat(getComputedStyle(f).paddingTop) || 0;
     if (fr.top + pt < barB + 14 && fr.left < barR && fr.right > r.left) f.style.setProperty('padding-top', Math.round(pt + barB + 14 - (fr.top + pt)) + 'px', 'important');
   }
@@ -6972,16 +6976,28 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
       $('#tmbox').innerHTML = '<div class="xblock" style="margin:0 0 22px"><h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">Convert on your Mac</h4>' +
         '<p class="ov" style="margin:0 0 10px;font-size:14px">' + esc(/^to make smaller/.test(cv) ? 'It’s bigger than it needs to be' + (cv.match(/\(([^)]*)\)/) ? ' (' + cv.match(/\(([^)]*)\)/)[1] + ')' : '') + ': it can be made smaller'
           : /^to repackage/.test(cv) ? 'It needs repackaging ' + cv.replace(/^to repackage\s*/, '') : 'It needs converting (' + cv.replace(/^to /, '') + ')') + '. This Mac does it much faster than the Mac mini, which checks it and puts it in place.</p>' +
-        '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">' + (onMac ? '<button class="pill" id="thismac">Convert on this Mac</button>' : '') + '<button class="pill" id="queuemac">Queue for my Mac</button></div><div id="tmprog" style="margin-top:10px"></div></div>';
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">' + (onMac ? '<button class="pill" id="thismac">Convert on this Mac</button>' : '') + '<span id="qmbtns" style="display:contents"></span></div><p class="ov" id="qmsay" style="margin:8px 0 0;font-size:13px"></p><div id="tmprog" style="margin-top:10px"></div></div>';
       wireThisMac();
-      $('#queuemac').onclick = function () {
-        var b = this; b.disabled = true;
-        mac('macqueue', { op: 'add', id: it.id, name: showName(it) }).then(function (r) {
-          var n = (r.queue || []).length, at = (r.queue || []).map(function (x) { return x.id; }).indexOf(it.id) + 1;
-          b.textContent = 'Queued for your Mac ✓';
-          toast(r.setup ? showName(it) + ': number ' + at + ' of ' + n + ' for your Mac. It starts when your Mac is on and at home.' : 'Queued. Set your Mac up to take queued films: admin page, Conversions, On your Mac.');
-        }).catch(function (e) { b.disabled = false; toast(e.status === 404 ? 'The Mac mini needs its update first (within 15 minutes).' : e.message || 'The Mac mini didn’t answer'); });
+      // (its place on his Mac's queue, said, with Next on my Mac and Take off, not only Queue for my Mac: John, 24 Nov 2026, "I can queue things
+      // for my mac but not easily cancel things from the queue")
+      var mq = j.macq || {};
+      var qDraw = function () {
+        var at = mq.at || 0;
+        $('#qmsay').textContent = mq.job ? 'Being made on your Mac now (' + mq.job + ').' : at ? 'Number ' + at + ' of ' + mq.of + ' on your Mac’s queue: it starts when your Mac is on and at home.' : '';
+        $('#qmbtns').innerHTML = mq.job ? '' : (at === 1 ? '' : '<button class="pill" id="qmfirst">Next on my Mac</button>') + (at ? '<button class="pill" id="qmoff">Take off the queue</button>' : '<button class="pill" id="queuemac">Queue for my Mac</button>');
+        [['qmfirst', 'first'], ['queuemac', 'add'], ['qmoff', 'remove']].forEach(function (c) {
+          var b = $('#' + c[0]); if (!b) return;
+          b.onclick = function () {
+            b.disabled = true;
+            mac('macqueue', { op: c[1], id: it.id, name: showName(it) }).then(function (r) {
+              var Q = (r.queue || []).map(function (x) { return x.id; }); mq.at = Q.indexOf(it.id) + 1; mq.of = Q.length;
+              qDraw();
+              toast(c[1] === 'remove' ? showName(it) + ': off your Mac’s queue' : r.setup ? showName(it) + ': number ' + mq.at + ' of ' + mq.of + ' for your Mac. It starts when your Mac is on and at home.' : 'Queued. Set your Mac up to take queued films: admin page, Conversions, On your Mac.');
+            }).catch(function (e) { b.disabled = false; toast(e.status === 404 ? 'The Mac mini needs its update first (within 15 minutes).' : e.message || 'The Mac mini didn’t answer'); });
+          };
+        });
       };
+      qDraw();
     }
   }).catch(function (e) { $('#finfo').textContent = e.status === 404 ? 'Press Update everything first (the Mac mini needs its update).' : (e.message || 'Couldn’t reach the Mac mini'); });
   var wireThisMac = function () {
@@ -7110,6 +7126,7 @@ function tvFit() {   // a TV: a film's pop-up all on the screen, its description
   (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function () { requestAnimationFrame(go); });
 }
 function typeName(it) { return { movie: 'Film', series: 'Series', episode: it.series || 'Episode', video: 'Home video', photo: 'Photo' }[it.type] || ''; }
+function crSay(c) { return c.v === 'yes' ? 'Criterion’s own ✓ (' + c.how + ')' : c.v === 'no' ? 'Not Criterion’s? (' + c.how + ')' : 'Couldn’t be looked at'; }   // (Criterion's own release or not, said: John's alone)
 function bodyHTML(it, ctx) {
   var meta = [];
   if (it.type === 'episode') meta.push('Series ' + (it.season || 0) + ', episode ' + (it.ep || 0) + ' · ' + esc(it.name));
@@ -7156,8 +7173,9 @@ function bodyHTML(it, ctx) {
     if (NOTES) h += '<button class="pill" id="aaddpl">+ Playlist</button><button class="pill" id="aaddcal">+ My calendar</button>';
     if (editMode() && it.type !== 'video') h += '<button class="pill" id="acoll">Edit collections</button>';
     // (John's: the Mac mini to do this one next, when it needs anything: John, 13 Nov 2026, "a convert now option to films if I need them sooner")
-    if (editMode() && it.conv) h += '<button class="pill" id="aconv" title="' + esc('The Mac mini will ' + it.conv.replace(/^to /, '')) + '"' + (it.convNow || it.convNext ? ' disabled' : '') + '>' +
-      (it.convNow ? 'Converting now' : it.convNext ? 'Next for the Mac mini ✓' : /^to make smaller/.test(it.conv) ? 'Make smaller next' : 'Convert next') + '</button>';
+    // (the Mac mini's own next: repackaging only (minutes); converting is John's Mac's, from Convert on your Mac below: 24 Nov 2026)
+    if (editMode() && it.conv && /^to repackage/.test(it.conv)) h += '<button class="pill" id="aconv" title="' + esc('The Mac mini will ' + it.conv.replace(/^to /, '')) + '"' + (it.convNow || it.convNext ? ' disabled' : '') + '>' +
+      (it.convNow ? 'Repackaging now' : it.convNext ? 'Next for the Mac mini ✓' : 'Repackage next') + '</button>';
     if (ME && ME.downloads && !TV && !isSeries) h += '<button class="pill" id="adown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5M5 21h14"/></svg>Download</button>';
   }
   if (!it.ext && shareDayOf(it)) h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button>';
@@ -7172,6 +7190,13 @@ function bodyHTML(it, ctx) {
     var inC = LIB.collections.filter(function (cid) { return (LIB.sets[cid] || []).indexOf(it.id) >= 0 && LIB.items[cid]; });
     if (inC.length) h += '<div class="incoll"><span>In</span>' + inC.map(function (cid) { return '<a href="#collection/' + cid + '" data-incoll="' + cid + '">' + esc(LIB.items[cid].name) + '</a>'; }).join('') + '</div>';
   }
+  // (the Criterion box sets it's part of, each opening that set: John, 24 Nov 2026, "Can a film show what set it is a part of")
+  if (!PUBLIC && it.cset && it.cset.length) h += '<div class="incoll"><span>Box set' + (it.cset.length > 1 ? 's' : '') + '</span>' + it.cset.map(function (b, n) {
+    var sp_ = (it.csetsp || [])[n]; return '<a href="#" data-inset="' + esc(b) + '">' + esc(b) + (sp_ ? ' · No. ' + esc(String(sp_)) : '') + '</a>'; }).join('') + '</div>';
+  // (Criterion's own release or not, by its logo at the start, for John alone: John, 24 Nov 2026, "mark it on the film, but only I should be
+  // able to see it"; his word on it with It is / It isn't)
+  if (!PUBLIC && ME && ME.owner && it.crel) h += '<div class="incoll" id="crelrow"><span>Release</span><b style="font-weight:400" id="crelsay">' + esc(crSay(it.crel) + (it.crel.by ? ' · by you' : '')) + '</b>' +
+    '<a href="#" data-crelv="yes">It is</a><a href="#" data-crelv="no">It isn’t</a></div>';
   if (isSeries && it.episodes) {
     var seasons = {}; it.episodes.forEach(function (e) { (seasons[e.season || 0] = seasons[e.season || 0] || []).push(e); });
     var keys = Object.keys(seasons).sort(function (a, b) { return a - b; }), cur = ctx.season || (it.next ? (it.episodes.filter(function (e) { return e.id === it.next; })[0] || {}).season : keys[0]) || keys[0];
@@ -7241,11 +7266,29 @@ function wireBody(it, ctx) {
       if (SHEETBACK.length) { sheetBack(); forgetItem(it.id); } else closeSheet();
     }).catch(function (e) { b.disabled = false; delete b.dataset.sure; b.textContent = it.type === 'series' ? 'Delete the series' : 'Delete'; toast(e.message || 'Couldn’t reach the Mac mini'); });
   });
+  // (a collection or box set on its page: the film closed and that collection shown, not left behind the film: John, 24 Nov 2026,
+  // "Clicking on any collection should take you to it (close the film and take you to the collection)")
+  $$('[data-incoll], [data-inset]', $('#sheetIn')).forEach(function (a) { a.onclick = function (e) {
+    e.preventDefault();
+    var cid = a.dataset.incoll;
+    if (a.dataset.inset) { cid = (LIB.collections || []).filter(function (c) { return LIB.items[c] && /^the criterion collection$/i.test(LIB.items[c].name || ''); })[0]; S.wantSet = a.dataset.inset; }
+    if (!cid) return;
+    SHEETBACK.length = 0; closeSheet();
+    if (location.hash === '#collection/' + cid) route(); else location.hash = '#collection/' + cid;
+  }; });
+  $$('[data-crelv]', $('#sheetIn')).forEach(function (a) { a.onclick = function (e) {
+    e.preventDefault();
+    mac('critrel', { id: it.id, v: a.dataset.crelv }).then(function (j) {
+      var f = (j.films || []).filter(function (x) { return x.id === it.id; })[0];
+      if (f) { it.crel = { v: f.v, how: f.how, by: f.by }; var w = $('#crelsay'); if (w) w.textContent = crSay(it.crel) + (f.by ? ' · by you' : ''); }
+      toast(a.dataset.crelv === 'yes' ? 'Noted: Criterion’s own release' : 'Noted: not Criterion’s release');
+    }).catch(function (er) { toast(er.message || 'The Mac mini didn’t answer'); });
+  }; });
   on('aconv', function () {
     var b = $('#aconv'); b.disabled = true; b.textContent = 'Putting it next…';
-    mac('convert', { op: 'up', id: it.id, name: it.name }).then(function () { b.textContent = 'Next to convert ✓'; it.convNext = true;
+    mac('convert', { op: 'up', id: it.id, name: it.name }).then(function () { b.textContent = 'Next for the Mac mini ✓'; it.convNext = true;
       toast(it.name + ' is next for the Mac mini (' + it.conv.replace(/^to /, '') + '), after the one it’s on'); })
-      .catch(function (e) { b.disabled = false; b.textContent = 'Convert next'; toast(e.message || 'Couldn’t reach the Mac mini'); });
+      .catch(function (e) { b.disabled = false; b.textContent = 'Repackage next'; toast(e.message || 'Couldn’t reach the Mac mini'); });
   });
   TVP.offer(it);
   on('atrailer', function () { trailer(it); });
@@ -7492,6 +7535,8 @@ function profile() {
     setTimeout(function () { so.focus(); }, 60); return;
   }
   var admin = ME.owner ? '<a class="pill adminpill" href="/grifflix/admin.html">Admin</a>' : '';
+  // (edit mode switched on and off from here: John, 24 Nov 2026, "can you put a button for edit mode on my profile"; the draft's always on)
+  if (ME.owner && !TV) admin += BUILD.draft ? '<button class="pill" id="editmode" disabled>Editing on (the draft)</button>' : '<button class="pill' + (editMode() ? ' on' : '') + '" id="editmode" aria-pressed="' + editMode() + '">Edit mode' + (editMode() ? ' · on' : '') + '</button>';
   openSheet('<div class="form prof" style="position:relative"><div class="profhead"><span class="chiplabel">Profile</span>' + admin + '</div>' +
     '<h2 class="profname">' + esc(ME.name || 'You') + '</h2>' +
     (ME.libraries ? '<div class="chips" style="margin-top:6px">' + ['movies', 'tv'].map(function (k) { return '<span>' + (ME.libraries[k] || 0) + ' ' + { movies: 'films', tv: 'series' }[k] + '</span>'; }).join('') + '</div>' : '') +
@@ -7574,6 +7619,11 @@ function drawAccount() {
   $('#musgo').onclick = function () { TMUS.on = !TMUS.on; store.set('grifflix-music', TMUS.on ? 'on' : 'off'); if (!TMUS.on) musicHush(); muteBtn(); toast(TMUS.on ? 'Theme music on' : 'Theme music off'); drawAccount(); };
   $('#tvcode').onclick = function () { var b = this; if (DEMO) return toast('Not in the demo.'); wcall({ op: 'tvcode' }).then(function (j) { b.outerHTML = '<span class="tvcode">' + j.code + '</span><span class="profp"> for ' + j.minutes + ' minutes, once</span>'; }).catch(oops); };
   hhSec(); pkSec();
+  if ($('#editmode') && !BUILD.draft) $('#editmode').onclick = function () {
+    var on = !editMode(); store.set('grifflix-edit', on ? '1' : '');
+    editBadge(); closeSheet(); toast(on ? 'Edit mode on: edit buttons on every film' : 'Edit mode off');
+    if (typeof route === 'function') route();
+  };
   $('#signout').onclick = function () {
     var b = this; if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Tap again to sign out'; return; }
     wcall({ op: 'signout' }).catch(function () {}).then(function () { store.set('grifflix-member', null); location.replace(location.pathname); });
