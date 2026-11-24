@@ -965,6 +965,9 @@ def make_handler(g):
                     with open(os.path.expanduser('~/Grifflix/mac-report.txt'), 'wb') as f_:
                         f_.write(raw_[:200000])
                     MACAGENT['report'] = int(time.time())
+                    # (any word from John's Mac is its checking in: while it converts it doesn't ask for a film, and the admin page said "off or
+                    # asleep" with it converting: John, 24 Nov 2026, "Why so long? My mac has been on the whole time")
+                    MACAGENT['seen'] = int(time.time())
                     return self.send_json(200, {'ok': True})
                 if u.path == '/macagent/copying':   # (John's Mac's helper: the films it made that the Mac mini is still waiting for, to copy over)
                     tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
@@ -1517,6 +1520,7 @@ def make_handler(g):
                         return self.send_json(200, {'ok': True, 'cancel': True})
                     if len(parts) > 3 and parts[3] == 'progress':   # (how far John's Mac has got, every few seconds: for the film's Edit panel)
                         job['t'], job['speed'], job['state'], job['seen'] = float(body.get('t') or 0), str(body.get('speed') or '')[:12], 'converting', time.time()
+                        MACAGENT['seen'], MACAGENT['home'] = int(time.time()), True   # (converting: on, and reaching the G-Drive)
                         if time.time() - job.get('saved', 0) > 30:
                             job['saved'] = time.time()
                             convjobs_save()
