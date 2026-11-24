@@ -38,7 +38,7 @@ upload() {
   b=${url%/convjob/*}; t=${url:t}; k=$(sed -n 's/^key=//p' "$HERE/agent.conf" 2>/dev/null)
   total=$(stat -f %z "$lt" 2>/dev/null) || return 1
   for host in "http://$MINI:8098" "$b"; do
-    have=$(curl -fsS -m 20 --connect-timeout 5 -H "Authorization: Bearer $k" "$host/macagent/upload?job=$t" 2>/dev/null | sed -n 's/.*"size": *\([0-9]*\).*/\1/p')
+    have=$(curl -fsS -m 20 --connect-timeout 5 -H "Authorization: Bearer $k" "$host/macagent/upload?job=$t&total=$total" 2>/dev/null | sed -n 's/.*"size": *\([0-9]*\).*/\1/p')
     [[ -n "$have" ]] || continue
     [[ "$host" == http://* ]] && mb=200 || mb=48
     while (( have < total )); do

@@ -1204,6 +1204,30 @@ def leftovers():
                         n += 1
                     except OSError:
                         pass
+    # (and those left in Grifflix Converting by a converting stopped part way (Romeo and Juliet's, 6 GB, from 12 Nov; Rozmarné léto's, 23 Nov),
+    # a day old and no film from John's Mac on its way into them: John, 24 Nov 2026, La Bola Negra couldn't be copied over one of them)
+    try:
+        live = set()
+        for j in (json.load(open(os.path.join(HOME, 'convert-jobs.json'))) or {}).values():
+            if not j.get('ended') and (j.get('plan') or {}).get('tmp'):
+                live.update((j['plan']['tmp'], j['plan']['tmp'] + '.uploading'))
+    except (OSError, ValueError, AttributeError):
+        live = None   # (not known: nothing cleared)
+    gone = []
+    for root in set(os.path.join(os.path.dirname(r.rstrip('/')), 'Grifflix Converting') for vf_ in call('GET', '/Library/VirtualFolders') or [] for r in g(vf_, 'Locations', [])):
+        if live is None or not os.path.isdir(root):
+            continue
+        for f in os.listdir(root):
+            fp = os.path.join(root, f)
+            try:
+                if '.grifflix-converting.' in f and fp not in live and time.time() - os.path.getmtime(fp) > 86400 and os.path.isfile(fp):
+                    sz = os.path.getsize(fp)
+                    os.remove(fp)
+                    gone.append('%s (%.1f GB)' % (f, sz / 1e9))
+            except OSError:
+                pass
+    if gone:
+        log('half-made files from before cleared from Grifflix Converting: ' + ', '.join(gone))
     if n:
         log('%d half-made file%s from before taken out of the libraries' % (n, '' if n == 1 else 's'))
         try:
