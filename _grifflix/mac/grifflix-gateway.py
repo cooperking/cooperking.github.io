@@ -3607,6 +3607,18 @@ def make_handler(g):
             if not me.get('owner'):
                 return self.send_json(403, {'error': 'Only John.'})
             Q = load(MACQ, []) or []
+            # (a film being made on John's Mac now isn't on its queue too, nor queued again while it's made: The Last Black Man in San Francisco
+            # was converting and at the bottom of the queue at once: John, 24 Nov 2026, "the queue isn't clear")
+            live_ = {}
+            for j_ in sorted(CONVJOBS.values(), key=lambda j_: j_.get('at', 0)):
+                if j_.get('mac') and not j_.get('ended') and j_.get('state') in ('waiting', 'started', 'converting', 'copying', 'checking'):
+                    live_[j_['id']] = {'id': j_['id'], 'name': j_['plan']['item'].get('name') or '', 'state': j_.get('state'), 't': j_.get('t') or 0,
+                                       'dur': j_['plan'].get('dur') or 0, 'stage': str(j_.get('stage') or '')[:160]}
+            if any(x.get('id') in live_ for x in Q):
+                Q = [x for x in Q if x.get('id') not in live_]
+                save(MACQ, Q)
+            if b and str(b.get('op') or '') in ('add', 'first') and str(b.get('id') or '') in live_:
+                return self.send_json(409, {'error': 'It’s being made on your Mac now (%s).' % live_[str(b.get('id'))]['state'], 'queue': Q, 'now': list(live_.values())})
             if b:
                 op, iid = str(b.get('op') or ''), str(b.get('id') or '')
                 if op == 'key':   # (a new key for his Mac's helper: the old one stops working)
@@ -3633,7 +3645,7 @@ def make_handler(g):
                 log('Queue for John’s Mac: %s %s' % ({'add': 'added', 'first': 'put first', 'remove': 'taken off'}.get(op, op), b.get('name') or iid))
             a = g.st.get('macagent') or {}
             P_ = [y for y in (load(MACQ + '.passed', []) or []) if time.time() - y.get('at', 0) < 3 * 86400]
-            return self.send_json(200, {'queue': Q, 'passed': P_, 'setup': bool(a.get('key')), 'worked': bool(a.get('key') and (a.get('worked') or MACAGENT.get('seen') or any(v.get('mac') for v in list(CONVJOBS.values())))), 'seen': MACAGENT.get('seen'), 'home': MACAGENT.get('home')})
+            return self.send_json(200, {'queue': Q, 'now': list(live_.values()), 'passed': P_, 'setup': bool(a.get('key')), 'worked': bool(a.get('key') and (a.get('worked') or MACAGENT.get('seen') or any(v.get('mac') for v in list(CONVJOBS.values())))), 'seen': MACAGENT.get('seen'), 'home': MACAGENT.get('home')})
 
         def api_fileinfo(self, me, user, q, b):
             """John's only: a film's file as it is, for its Edit panel (John, 16 Nov 2026: "I need to see file format details in the edit
