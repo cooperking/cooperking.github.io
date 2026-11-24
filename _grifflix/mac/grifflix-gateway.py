@@ -8464,7 +8464,7 @@ def new_follow_up(paths=()):
     def run():
         NEW_FU['t'] = None
         only_, NEW_FU['folders'] = NEW_FU['folders'], set()
-        for f in (lambda: covers_now(only_ or None), a24_now, bom_now, subprep_scan):   # (new foreign films on the subtitles list then, not hours later)
+        for f in (lambda: covers_now(only_ or None), a24_now, bom_now, subprep_scan, set_covers_now):   # (new foreign films on the subtitles list then, not hours later)
             try:
                 f()
             except Exception as e:
@@ -8485,7 +8485,7 @@ def after_fixes():
     def run():
         AFTER_FIX[0] = None
         SCAN_NOW.set()
-        for f in (covers_now, a24_now, bom_now):
+        for f in (covers_now, a24_now, bom_now, set_covers_now):
             try:
                 time.sleep(60)
                 f()
@@ -9243,6 +9243,64 @@ def bom_now():
         BOM_LOCK.release()
 
 
+def set_covers_now():
+    """A Criterion film released only in a box set that gives it no cover of its own (the Frampton films, the W. C. Fields shorts, Scorsese's
+    shorts): the set's Criterion cover made its own poster, in its folder and in the media server, so it has it everywhere, not only in The
+    Criterion Collection's view (John, 21 Nov 2026, "just use the box set cover"; 24 Nov 2026, "Manual of Arms is part of the Frampton
+    collection. Doesn't have right image"). The site's own list says which; the poster before kept in pictures-before."""
+    g = G_REF[0] if G_REF else None
+    if not g:
+        return
+    import shutil
+    try:
+        with urllib.request.urlopen(urllib.request.Request('https://cooperking.github.io/grifflix/data/library.json', headers={'User-Agent': 'Grifflix gateway'}), timeout=120, context=tls()) as r_:
+            items = (json.loads(r_.read().decode('utf-8')).get('items') or {})
+    except Exception as e:
+        log('Box set covers: the site’s list couldn’t be read: %s' % str(e)[:160])
+        return
+    df = os.path.expanduser('~/Grifflix/set-covers.json')
+    done = load(df, {}) or {}
+    put = []
+    for iid, i in items.items():
+        c, sp, im, f = i.get('cset') or [], i.get('csetsp') or [], i.get('csetimg') or [], i.get('csetfimg') or []
+        url = next((im[n] for n in range(len(c)) if n < len(im) and im[n] and not (n < len(f) and f[n]) and i.get('spine')
+                    and str(sp[n] if n < len(sp) else '') == str(i.get('spine'))), '')
+        if not url or done.get(iid) == url:
+            continue
+        url = re.sub(r'_(small|thumbnail)\.', '_large.', url)
+        try:
+            it = jf_has(g, iid)
+            pth = it.get('Path') or ''
+            if not pth or not os.path.exists(pth) or os.path.realpath(os.path.dirname(pth)) in [os.path.realpath(l) for v in g.jf.call('GET', '/Library/VirtualFolders') or [] for l in v.get('Locations') or []]:
+                continue   # (not in a folder of its own: a poster there would be every loose film's)
+            with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Grifflix)'}), timeout=60, context=tls()) as r_:
+                pic = r_.read()
+            if len(pic) < 5000 or pic[:2] != b'\xff\xd8':
+                continue
+            dest = os.path.join(os.path.dirname(pth), 'poster.jpg')
+            if os.path.exists(dest) and os.path.getsize(dest) == len(pic):
+                done[iid] = url
+                continue
+            keep = os.path.join(APP_DIR, 'pictures-before', 'setcover-%s-%d' % (iid, time.time()))
+            for o in ('poster.jpg', 'poster.png', 'folder.jpg', 'cover.jpg'):
+                if os.path.exists(os.path.join(os.path.dirname(pth), o)):
+                    os.makedirs(keep, exist_ok=True)
+                    shutil.move(os.path.join(os.path.dirname(pth), o), os.path.join(keep, o))
+            with open(dest, 'wb') as f_:
+                f_.write(pic)
+            g.jf.raw('POST', '/Items/%s/Images/Primary' % iid, base64.b64encode(pic), 'image/jpeg')
+            done[iid] = url
+            put.append('%s (%s)' % (i.get('name'), c[0] if c else '?'))
+            record('box set cover put on', film=i.get('name'), id=iid, set=', '.join(c), picture=url)
+        except Exception as e:
+            log('Box set cover, %s: %s' % (i.get('name'), str(e)[:160]))
+    save(df, done)
+    if put:
+        log('Box set covers made their films’ posters: %s' % '; '.join(put)[:1500])
+        g.forget()
+        g.publish_soon = time.time() + 120
+
+
 def a24_now():
     """A film in A24's own list (a24films.com/films, kept with the site as a24-list.json), put in the A24 collection when it comes in,
     as a Criterion film goes in The Criterion Collection (John, 19 Nov 2026: "Misty Green and Tony should have been added to the A24
@@ -9881,6 +9939,41 @@ def subprep_gone_once(g):
         log('Subtitles, films no longer there: %s' % str(ex)[:200])
 
 
+def nineteen84_once(g):
+    """Once: the film in "1984 (1984)", Michael Radford's (Criterion's 1984), matched to Class of 1984 (1982): matched to TMDB's Nineteen
+    Eighty-Four, and named 1984 as Criterion and its folder name it (John, 24 Nov 2026, "1984 is called class of 1984 for some reason")."""
+    mk = os.path.expanduser('~/Grifflix/nineteen84.done')
+    if os.path.exists(mk):
+        return
+    time.sleep(360)
+    try:
+        xs = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path', 'SearchTerm': '1984', 'Limit': 100}, timeout=90) or {}).get('Items') or []
+        x = next((x for x in xs if os.path.basename(os.path.dirname(x.get('Path') or '')) == '1984 (1984)'), None)
+        if not x:
+            log('1984: its folder “1984 (1984)” isn’t in the library')
+            open(mk, 'w').write('not found')
+            return
+        hit = next((r for r in (tmdb(g, '/search/movie', query='Nineteen Eighty-Four', year='1984') or {}).get('results') or []
+                    if (r.get('release_date') or '').startswith('1984') and fold(r.get('title')) in (fold('Nineteen Eighty-Four'), fold('1984'))), None)
+        if not hit:
+            log('1984: TMDB didn’t find Nineteen Eighty-Four (1984): left for now')
+            return
+        apply_match(g, x['Id'], {'Name': '1984', 'ProductionYear': 1984, 'ProviderIds': {'Tmdb': str(hit['id'])}, 'SearchProviderName': 'TheMovieDb'})
+        time.sleep(20)
+        full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, x['Id'])) or {}
+        if full.get('Name') != '1984':
+            full['Name'] = '1984'
+            full['LockedFields'] = sorted(set((full.get('LockedFields') or []) + ['Name']))
+            g.jf.call('POST', '/Items/%s' % x['Id'], full)
+        log('1984: matched to TMDB %s (Nineteen Eighty-Four, 1984), named 1984' % hit['id'])
+        record('rematched', film='1984', id=x['Id'], tmdb=str(hit['id']), was='Class of 1984 (1982)', by='John (24 Nov 2026)')
+        g.forget()
+        g.publish_soon = time.time() + 300
+        open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+    except Exception as e:
+        log('1984: %s' % str(e)[:200])
+
+
 def east_is_east_once(g):
     """Once: the film in "East in East (1999)", matched to East/West (Régis Wargnier's), which is East Is East (1999), its file says so: its
     match put right, its folder named for it, and out of To check (John, 23 Nov 2026, "East/ West should be East is East")."""
@@ -10457,7 +10550,8 @@ def serve():
         open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
     threading.Thread(target=covers_once, daemon=True).start()
     threading.Timer(420, bom_now).start()   # (any film come in while it was off: its distributor, or streaming service: 20 Nov 2026)
-    threading.Timer(200, a24_now).start()   # (and once each start: any A24 film come in before this, Tony and Misty Green, put in)   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
+    threading.Timer(200, a24_now).start()
+    threading.Timer(420, set_covers_now).start()   # (and the box set covers on the films released only in a set: 24 Nov 2026)   # (and once each start: any A24 film come in before this, Tony and Misty Green, put in)   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
     threading.Thread(target=fanny_series, args=(g,), daemon=True).start()
     threading.Thread(target=keep_disk_health, daemon=True).start()
     threading.Thread(target=keep_backup, args=(g,), daemon=True).start()
@@ -10530,6 +10624,7 @@ def serve():
     threading.Thread(target=folders_fix_once, args=(g,), daemon=True).start()
     threading.Thread(target=folders_fix2_once, args=(g,), daemon=True).start()
     threading.Thread(target=east_is_east_once, args=(g,), daemon=True).start()
+    threading.Thread(target=nineteen84_once, args=(g,), daemon=True).start()   # (once: 1984, matched to Class of 1984: 24 Nov 2026)
     threading.Thread(target=subprep_gone_once, args=(g,), daemon=True).start()   # (once: subtitle entries for films renamed since, taken off: 24 Nov 2026)
     try:   # (once: La Bola Negra, made 2 h 30 of 2 h 39 on John's Mac on 23 Nov and turned down, made again: 24 Nov 2026)
         mk_ = os.path.expanduser('~/Grifflix/labolanegra-again.done')
