@@ -9468,6 +9468,55 @@ def crl_frames(ff, path, logo=None):
     return None
 
 
+CRL_IN = os.path.join(os.environ.get('GRIFFLIX_MEDIA') or '/Volumes/G-Drive/Grifflix', 'Criterion logo')
+
+
+def crl_videos_in(ff):
+    """A video of the logo put in the G-Drive's "Criterion logo" folder (one the browser can't play, an MKV in Safari): read here, two
+    pictures a second, the flat and repeated ones left out, and given as his pictures of the logo (John, 24 Nov 2026, "sorry it was actually an
+    mkv"). Each once (again if it changes). True if any were added."""
+    import subprocess
+    try:
+        os.makedirs(CRL_IN, exist_ok=True)
+        names = [n for n in os.listdir(CRL_IN) if not n.startswith('.') and os.path.splitext(n)[1].lower() in ('.mkv', '.mp4', '.m4v', '.mov', '.webm', '.avi', '.ts')]
+    except OSError:
+        return False
+    df = os.path.join(CRL, 'videos-read.json')
+    done = load(df, {}) or {}
+    added = False
+    for n in names:
+        fp = os.path.join(CRL_IN, n)
+        try:
+            key = '%d' % os.path.getsize(fp)
+            if done.get(n) == key or time.time() - os.path.getmtime(fp) < 120:   # (read already, or still being copied in)
+                continue
+        except OSError:
+            continue
+        sz = CRL_W * CRL_H
+        try:
+            r = subprocess.run([ff, '-nostdin', '-v', 'error', '-i', fp, '-an', '-sn', '-dn', '-vf', 'fps=2,scale=%d:%d:flags=area,format=gray' % (CRL_W, CRL_H),
+                                '-f', 'rawvideo', '-'], capture_output=True, timeout=1800)
+        except Exception as e:
+            log('Criterion logo video %s: %s' % (n, str(e)[:120]))
+            continue
+        raw, pics, last = r.stdout or b'', [], None
+        for k in range(len(raw) // sz):
+            px = raw[k * sz:(k + 1) * sz]
+            v = crl_vec(px)
+            if v is None or (last is not None and crl_alike(v, last) >= .97):
+                continue
+            last = v
+            pics.append({'src': n, 't': k / 2.0, 'px': base64.b64encode(px).decode(), 'at': int(time.time())})
+        G_ = [x for x in (load(os.path.join(CRL, 'given.json'), []) or []) if x.get('src') != n] + pics
+        save(os.path.join(CRL, 'given.json'), G_)
+        done[n] = key
+        save(df, done)
+        log('Criterion logo video %s: %d pictures of it given' % (n, len(pics)))
+        record('Criterion logo pictures from a video', video=n, pictures=len(pics))
+        added = added or bool(pics)
+    return added
+
+
 def crl_hashes():
     """Every film's fingerprints, each kept in a file of its own (critlogo/h/<id>.json), so each is saved the moment it's looked at."""
     H, d = {}, os.path.join(CRL, 'h')
@@ -9630,6 +9679,8 @@ def crl_scan(g):
                 for x in sorted((x for x in allm if x['Id'] not in films), key=lambda x: hashlib.md5(x['Id'].encode()).hexdigest())[:150]:
                     films[x['Id']] = {'name': x.get('Name'), 'year': x.get('ProductionYear'), 'path': x.get('Path') or '', 'crit': False}
             CRL_STATE['films'] = films
+            if crl_videos_in(ff):
+                CRL_STATE['logokey'] = None
             H = crl_hashes()
             todo = []
             for i, f in films.items():
@@ -9654,13 +9705,24 @@ def crl_scan(g):
                 save(os.path.join(CRL, 'h', i + '.json'), H[i])   # (at once: a restart loses nothing)
                 n_ += 1
                 CRL_STATE['done'] = CRL_STATE.get('done', 0) + 1
+                if n_ % 20 == 0 and crl_videos_in(ff):   # (a video of the logo put in its folder meanwhile: learnt from now)
+                    CRL_STATE['logokey'] = None
+                    crl_classify(g)
                 if n_ % 100 == 0 or i == first2 or (not CRL_STATE.get('logo') and i == todo[-1][1]):
                     crl_classify(g)   # (every hundred, and once the logo can be learnt, before the rest)
             CRL_STATE['running'] = False
             crl_classify(g)
         except Exception as e:
             log('Criterion releases: %s' % str(e)[:200])
-        time.sleep(6 * 3600)   # (films come in: looked at again a few times a day)
+        for _ in range(36):   # (films come in: looked at again a few times a day; a video of the logo looked for every ten minutes meanwhile)
+            time.sleep(600)
+            try:
+                ff_ = crl_ffmpeg(g)
+                if ff_ and crl_videos_in(ff_) and CRL_STATE.get('films'):
+                    CRL_STATE['logokey'] = None
+                    crl_classify(g)
+            except Exception as e:
+                log('Criterion logo video: %s' % str(e)[:160])
 
 
 def set_covers_now():

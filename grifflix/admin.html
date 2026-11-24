@@ -699,7 +699,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat">Each film in The Criterion Collection looked at for Criterion’s logo at its start (its first 30 seconds), as you’d see it when it plays. The Mac mini learns what the logo looks like from the films whose file names say Criterion, then looks for it in every film, while nobody’s watching. Only you see this, here and on each film’s page. Say so on any it got wrong: your word stands.</p>
         <p class="stat" id="crsay">Looking on the Mac mini…</p>
         <p class="stat" style="margin-top:14px"><b>Your pictures of the logo.</b> A screenshot of each version of Criterion’s logo (from your logo history video, or a film) teaches the Mac mini exactly what to look for. The whole screen, as it plays.</p>
-        <div class="state"><label class="btn" for="crpic">Give pictures of the logo</label><input type="file" id="crpic" accept="image/*" multiple hidden><label class="btn" for="crvid">Give a video of the logo (an MP4)</label><input type="file" id="crvid" accept="video/*" hidden></div>
+        <div class="state"><label class="btn" for="crpic">Give pictures of the logo</label><input type="file" id="crpic" accept="image/*" multiple hidden><label class="btn" for="crvid">Give a video of the logo</label><input type="file" id="crvid" accept="video/*,.mkv,.mp4,.m4v,.mov,.webm" hidden></div>
+        <p class="stat">A video this browser can’t play (an MKV in Safari): put it in the G-Drive’s <b>Grifflix/Criterion logo</b> folder and the Mac mini reads it itself, within ten minutes.</p>
         <p class="stat" id="crvsay" hidden></p>
         <div class="state" id="crgiven" style="gap:8px"></div>
         <div class="state" id="crtabs"></div>
@@ -2037,7 +2038,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       grab(); say.textContent = 'Reading ' + f.name + ': ' + Math.floor(t / 60) + ':' + ('0' + Math.floor(t % 60)).slice(-2) + ' of ' + Math.floor(v.duration / 60) + ':' + ('0' + Math.floor(v.duration % 60)).slice(-2) + ', ' + pics.length + ' pictures';
       t += .5; if (t < v.duration) v.currentTime = t; else send();
     };
-    v.onerror = function () { say.textContent = 'This browser can’t play that video: try an MP4 (H.264).'; URL.revokeObjectURL(u); };
+    v.onerror = function () { say.textContent = 'This browser can’t play ' + f.name + ': put it in the G-Drive’s Grifflix/Criterion logo folder instead, and the Mac mini reads it itself within ten minutes (or open this page in Chrome, which plays most MKVs).'; URL.revokeObjectURL(u); };
   };
   function crDraw(j) {
     CR.j = j;
