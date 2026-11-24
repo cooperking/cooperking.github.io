@@ -3667,7 +3667,28 @@ def make_handler(g):
                 return self.send_json(403, {'error': 'Only John.'})
             rf = os.path.join(CRL, 'result.json')
             R = load(rf, {}) or {}
-            if b:
+            gf = os.path.join(CRL, 'given.json')
+            if b and b.get('op') in ('logo', 'logodel'):   # (his own pictures of the logo: given, or one taken back)
+                G_ = load(gf, []) or []
+                if b['op'] == 'logo':
+                    try:
+                        px = base64.b64decode(str(b.get('px') or ''))
+                    except Exception:
+                        px = b''
+                    if len(px) != CRL_W * CRL_H or crl_vec(px) is None:
+                        return self.send_json(400, {'error': 'That picture couldn’t be used (all one colour?).'})
+                    G_.append({'name': str(b.get('name') or 'picture')[:80], 'px': base64.b64encode(px).decode(), 'prev': str(b.get('prev') or '')[:60000], 'at': int(time.time())})
+                else:
+                    n_ = b.get('n')
+                    if isinstance(n_, int) and 0 <= n_ < len(G_):
+                        G_.pop(n_)
+                os.makedirs(CRL, exist_ok=True)
+                save(gf, G_)
+                CRL_STATE['logokey'] = None   # (learnt again with them)
+                if CRL_STATE.get('films'):
+                    threading.Thread(target=crl_classify, args=(g,), daemon=True).start()
+                record('Criterion logo pictures given by John', count=len(G_))
+            if b and b.get('op') not in ('logo', 'logodel'):
                 iid, v = str(b.get('id') or ''), str(b.get('v') or '')
                 if iid not in R:
                     return self.send_json(404, {'error': 'That film isn’t on the list.'})
@@ -3679,7 +3700,8 @@ def make_handler(g):
                 record('Criterion release, said by John', film=R[iid].get('name'), id=iid, v=v or 'taken back')
                 if CRL_STATE.get('films') and not CRL_STATE.get('running'):
                     threading.Thread(target=crl_classify, args=(g,), daemon=True).start()
-            return self.send_json(200, {'films': [dict(e, id=k) for k, e in R.items()], 'progress': {k: CRL_STATE.get(k) for k in ('done', 'of', 'running', 'paused', 'logos', 'known')}})
+            return self.send_json(200, {'films': [dict(e, id=k) for k, e in R.items()], 'progress': {k: CRL_STATE.get(k) for k in ('done', 'of', 'running', 'paused', 'logos', 'known')},
+                                        'given': [{'name': x.get('name'), 'prev': x.get('prev'), 'at': x.get('at')} for x in load(gf, []) or []]})
 
         def api_fileinfo(self, me, user, q, b):
             """John's only: a film's file as it is, for its Edit panel (John, 16 Nov 2026: "I need to see file format details in the edit
@@ -9473,8 +9495,24 @@ def crl_learn(H, pos, neg):
     V = crl_vectors(H, [i for i in pos + neg if (H.get(i) or {}).get('f')])
     P = {i: [x for x in V[i] if x[0] <= 25] for i in pos if V.get(i)}
     N = [V[i] for i in neg if V.get(i)]
+    # (John's own pictures of the logo, each version of it (from his logo history video): each used as it is, and the pictures in his films
+    # most like it learnt too, as they look in a film (John, 24 Nov 2026, "I could have give you the pictures to learn from if you'd have said"))
+    given = []
+    for gp in load(os.path.join(CRL, 'given.json'), []) or []:
+        try:
+            v = crl_vec(base64.b64decode(gp.get('px') or ''))
+        except Exception:
+            v = None
+        if v is not None:
+            given.append((v, crl_small(v), 0, 'given: ' + str(gp.get('name') or ''), 0))
+    from_given = []
+    for gv in given:
+        for i_, fs in P.items():
+            best = max(fs, key=lambda x: crl_alike(x[1][0], gv[0]), default=None)
+            if best and crl_alike(best[1][0], gv[0]) >= .75:
+                from_given.append((best[1][0], best[1][1], 0, i_, best[0]))
     if len(P) < 4:
-        return []
+        return given + from_given
     need = max(2, int(round(len(P) * CRL_SHARE)))
     cand, ids = [], list(P)
     for a in ids:
@@ -9482,7 +9520,10 @@ def crl_learn(H, pos, neg):
             sup = 1 + sum(1 for b in ids if b != a and any(crl_match(fv, [(x[1][0], x[1][1])]) for x in P[b]))
             if sup >= need:
                 cand.append((sup, a, t, fv))
-    logo = []
+    logo = list(given)
+    for fg in from_given:   # (those found by his pictures: kept unless films outside the collection have them too)
+        if not any(crl_alike(fg[0], l[0]) >= .97 for l in logo) and sum(1 for fs in N if any(crl_match(x[1], [fg]) for x in fs)) < CRL_NEG:
+            logo.append(fg)
     for sup, a, t, fv in sorted(cand, key=lambda x: -x[0]):
         if any(crl_alike(fv[0], l[0]) >= .97 for l in logo):
             continue

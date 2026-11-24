@@ -698,6 +698,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <h2>Criterion’s own <em>release?</em></h2>
         <p class="stat">Each film in The Criterion Collection looked at for Criterion’s logo at its start (its first 30 seconds), as you’d see it when it plays. The Mac mini learns what the logo looks like from the films whose file names say Criterion, then looks for it in every film, while nobody’s watching. Only you see this, here and on each film’s page. Say so on any it got wrong: your word stands.</p>
         <p class="stat" id="crsay">Looking on the Mac mini…</p>
+        <p class="stat" style="margin-top:14px"><b>Your pictures of the logo.</b> A screenshot of each version of Criterion’s logo (from your logo history video, or a film) teaches the Mac mini exactly what to look for. The whole screen, as it plays.</p>
+        <div class="state"><label class="btn" for="crpic">Give pictures of the logo</label><input type="file" id="crpic" accept="image/*" multiple hidden></div>
+        <div class="state" id="crgiven" style="gap:8px"></div>
         <div class="state" id="crtabs"></div>
         <div id="crlist"></div>
       </section>
@@ -1981,8 +1984,32 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     fetch(GW + '/api/critrel', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { if (r.status === 404) throw new Error('old'); return r.ok ? r.json() : Promise.reject(new Error('The Mac mini didn’t answer.')); }).then(crDraw)
       .catch(function (e) { $('#crsay').textContent = e.message === 'old' ? 'The Mac mini takes its update within a few minutes.' : e.message; });
   }
+  // (his own pictures of each version of the logo, each made small and grey here, as the Mac mini keeps a film's pictures, and sent: John,
+  // 24 Nov 2026, "I could have give you the pictures to learn from if you'd have said")
+  $('#crpic').onchange = function () {
+    var files = [].slice.call(this.files || []); this.value = ''; if (!files.length) return;
+    var one = function () {
+      var f = files.shift(); if (!f) { toast('Pictures given: the Mac mini learns from them now'); return crLook(); }
+      var im = new Image(), u = URL.createObjectURL(f);
+      im.onload = function () {
+        var c = document.createElement('canvas'); c.width = 320; c.height = 180; var x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(im, 0, 0, 320, 180);
+        var prev = c.toDataURL('image/jpeg', .7), s2 = document.createElement('canvas'); s2.width = 32; s2.height = 18; var y = s2.getContext('2d'); y.imageSmoothingQuality = 'high'; y.drawImage(c, 0, 0, 32, 18);
+        var d = y.getImageData(0, 0, 32, 18).data, g = ''; for (var i = 0; i < d.length; i += 4) g += String.fromCharCode(Math.round(.299 * d[i] + .587 * d[i + 1] + .114 * d[i + 2]));
+        URL.revokeObjectURL(u);
+        fetch(GW + '/api/critrel', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'logo', name: f.name, px: btoa(g), prev: prev }) })
+          .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'The Mac mini didn’t answer.'); }); }).then(one).catch(function (e) { toast(f.name + ': ' + e.message); one(); });
+      };
+      im.onerror = function () { toast(f.name + ': not a picture'); one(); }; im.src = u;
+    };
+    one();
+  };
   function crDraw(j) {
-    CR.j = j; var F = j.films || [], pr = j.progress || {}, by = { no: [], yes: [], unread: [], todo: [] };
+    CR.j = j;
+    var GV = j.given || [];
+    $('#crgiven').innerHTML = GV.map(function (x, n) { return '<span style="display:inline-flex;flex-direction:column;gap:4px;align-items:center"><img alt="" src="' + esc(x.prev || '') + '" style="width:128px;height:72px;object-fit:cover;border:1px solid var(--line, rgba(255,255,255,.2))"><button class="btn" type="button" data-crgdel="' + n + '" style="padding:4px 10px">Take back</button></span>'; }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-crgdel]'), function (b) { b.onclick = function () {
+      b.disabled = true; fetch(GW + '/api/critrel', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'logodel', n: +b.dataset.crgdel }) }).then(function (r) { return r.json(); }).then(crDraw).catch(function () { b.disabled = false; });
+    }; }); var F = j.films || [], pr = j.progress || {}, by = { no: [], yes: [], unread: [], todo: [] };
     F.forEach(function (f) { (by[f.v] || by.todo).push(f); });
     $('#crsay').textContent = (pr.of ? (pr.running ? 'Looking: ' + (pr.done || 0) + ' of ' + pr.of + ' films' + (pr.paused ? ' (paused: ' + pr.paused + ')' : '') + '. ' : 'All ' + pr.of + ' looked at. ') : '') +
       (pr.known ? 'Criterion’s logo learnt from ' + pr.known + ' films named Criterion' + (pr.logos ? '' : ' (not learnt yet: too few looked at so far)') + '.' : F.length ? '' : 'Starting a quarter of an hour after the Mac mini’s next restart.');
