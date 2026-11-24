@@ -9305,11 +9305,11 @@ def bom_now():
 # ---------------------------------------------------------------- which of the Criterion Collection's films are Criterion's own release
 # (John, 24 Nov 2026: "Quite a few of my criterion collection films may not actually be the criterion release - I can only tell by seeing the
 # logo at the start play - is there a way to get a record of what are and what aren't" ... "mark it on the film, but only I should be able to
-# see it - and I'd like a list"). The start of each film looked at, as he does: its first 100 seconds, two pictures a second, each made a
+# see it - and I'd like a list"). The start of each film looked at, as he does: its first minute, two pictures a second, each made a
 # small fingerprint (16 x 16, how light changes across it). Criterion's logo is learnt from the films whose own file names say Criterion
 # (the frames most of them share, and the films outside the Criterion Collection don't), then looked for in every one.
 CRL = os.path.expanduser('~/Grifflix/critlogo')
-CRL_SECS, CRL_D = 100, 26   # (how far in it looks; how many of the 256 marks may differ for two pictures to be the same)
+CRL_SECS, CRL_D = 60, 26   # (how far in it looks; how many of the 256 marks may differ for two pictures to be the same)
 CRL_STATE = {}
 CRL_NAME = re.compile(r'(?i)(criterion|(^|[._ \-\[(])CC([._ \-\])]|$))')
 
@@ -9329,9 +9329,12 @@ def crl_ffmpeg(g):
 def crl_frames(ff, path):
     """The film's first CRL_SECS seconds as fingerprints: [[seconds, hex], ...], plain dark or flat pictures left out; None if unread."""
     import subprocess
-    for hw in (['-hwaccel', 'videotoolbox'], []):
+    # (the pictures between others (B-frames) not decoded, nor the smoothing filter: two or three times quicker, and two pictures a second need
+    # no more (a film took 100 seconds on the Mac mini, 1,400 of them over a day: 24 Nov 2026); each tried plainer if a copy won't have it)
+    fast = ['-skip_frame', 'bidir', '-skip_loop_filter', 'all']
+    for opt in (['-hwaccel', 'videotoolbox'] + fast, fast, []):
         try:
-            r = subprocess.run([ff, '-nostdin', '-v', 'error'] + hw + ['-t', str(CRL_SECS), '-i', path, '-an', '-sn', '-dn', '-vf',
+            r = subprocess.run([ff, '-nostdin', '-v', 'error'] + opt + ['-t', str(CRL_SECS), '-i', path, '-an', '-sn', '-dn', '-vf',
                                 'fps=2,scale=17:16:flags=area,format=gray', '-f', 'rawvideo', '-'], capture_output=True, timeout=600)
         except Exception:
             continue
@@ -9477,9 +9480,11 @@ def crl_scan(g):
                     sz = os.path.getsize(f['path'])
                 except OSError:
                     continue
-                if (H.get(i) or {}).get('s') != sz:
-                    todo.append((not f['crit'], i, sz))
+                if (H.get(i) or {}).get('s') != sz:   # (those named Criterion first, then those outside the collection: the logo learnt early)
+                    named = f['crit'] and any(CRL_NAME.search(n or '') for n in crl_names(f['path']))
+                    todo.append((0 if named else 1 if not f['crit'] else 2, i, sz))
             todo.sort()
+            first2 = next((t[1] for t in todo if t[0] == 2), None)
             CRL_STATE.update(of=len(films), done=len(films) - len(todo), running=bool(todo))
             n_ = 0
             for _, i, sz in todo:
@@ -9492,8 +9497,8 @@ def crl_scan(g):
                 save(os.path.join(CRL, 'h', i + '.json'), H[i])   # (at once: a restart loses nothing)
                 n_ += 1
                 CRL_STATE['done'] = CRL_STATE.get('done', 0) + 1
-                if n_ % 150 == 0:
-                    crl_classify(g)
+                if n_ % 100 == 0 or i == first2:
+                    crl_classify(g)   # (every hundred, and once the logo can be learnt, before the rest)
             CRL_STATE['running'] = False
             crl_classify(g)
         except Exception as e:
