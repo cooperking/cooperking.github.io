@@ -9462,12 +9462,16 @@ def crl_frames(ff, path, logo=None):
     # (the smoothing filter left out: quicker, and nothing a picture 32 across shows; each tried plainer if a copy won't have it. The pictures
     # between others (B-frames) were left undecoded too, and in some films those are what the next ones are made from: Exotica's opening came
     # out smeared, its logo in one picture of twenty: 24 Nov 2026)
-    fast = ['-skip_loop_filter', 'all']
+    fast = ['-skip_loop_filter', 'all', '-threads', '2']
+    # (as a background job, the Mac's lowest call on its processors and the drive (taskpolicy -b), so the media server, downloads and the
+    # converter come first: the Mac mini stopped answering while it read: John, 24 Nov 2026, "it can only be because it's got overloaded")
+    bg = ['/usr/sbin/taskpolicy', '-b'] if os.path.exists('/usr/sbin/taskpolicy') else []
     for opt in (['-hwaccel', 'videotoolbox'] + fast, fast, []):
         out, n, hit, seen = [], 0, False, 0
         try:
-            p = subprocess.Popen([ff, '-nostdin', '-v', 'error'] + opt + ['-t', str(CRL_SECS), '-i', path, '-an', '-sn', '-dn', '-vf',
-                                  'fps=2,' + CRL_VF, '-f', 'rawvideo', '-'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            p = subprocess.Popen(bg + [ff, '-nostdin', '-v', 'error'] + opt + ['-t', str(CRL_SECS), '-i', path, '-an', '-sn', '-dn', '-vf',
+                                  'fps=2,' + CRL_VF, '-f', 'rawvideo', '-'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                                 preexec_fn=lambda: os.nice(15))
         except Exception:
             continue
         t0 = time.time()
@@ -9686,7 +9690,6 @@ def crl_classify(g):
         except Exception:
             pass
     logo = CRL_STATE['logo']
-    V = crl_vectors(H, [i for i, f in films.items() if f.get('crit')])
     out = {}
     for i, f in films.items():
         if not f.get('crit'):
@@ -9697,9 +9700,10 @@ def crl_classify(g):
             e.update(v=old.get('v'), how=old.get('how'), by='John')
         else:
             fr = (H.get(i) or {}).get('f')
-            hits = [t for t, fv in (V.get(i) or []) if t <= CRL_SECS and crl_match(fv, logo)]
+            Vi = crl_vectors(H, [i]).get(i) or []   # (one film's at a time: all of them at once took hundreds of megabytes)
+            hits = [t for t, fv in Vi if t <= CRL_SECS and crl_match(fv, logo)]
             ch_ = CRL_STATE.get('chan') or []
-            chits = [t for t, fv in (V.get(i) or []) if t <= CRL_SECS and crl_match(fv, ch_)] if ch_ and len(hits) < CRL_HITS else []
+            chits = [t for t, fv in Vi if t <= CRL_SECS and crl_match(fv, ch_)] if ch_ and len(hits) < CRL_HITS else []
             named = any(CRL_NAME.search(n or '') for n in crl_names(f.get('path')))
             if len(hits) >= CRL_HITS:
                 e.update(v='yes', how='Criterion’s logo at %d:%02d' % (int(hits[0]) // 60, int(hits[0]) % 60))
@@ -9785,6 +9789,7 @@ def crl_scan(g):
                 fr = crl_frames(ff, films[i]['path'], (CRL_STATE.get('logo') or []) + (CRL_STATE.get('chan') or []))
                 H[i] = {'s': sz, 'f': fr, 'at': int(time.time()), 'v': CRL_V}
                 save(os.path.join(CRL, 'h', i + '.json'), H[i])   # (at once: a restart loses nothing)
+                time.sleep(5)   # (a rest between films: the drive and the processors free for everything else)
                 n_ += 1
                 CRL_STATE['done'] = CRL_STATE.get('done', 0) + 1
                 if n_ % 20 == 0 and crl_videos_in(ff):   # (a video of the logo put in its folder meanwhile: learnt from now)
