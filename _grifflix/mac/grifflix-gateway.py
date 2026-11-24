@@ -1206,9 +1206,9 @@ def make_handler(g):
                                     # (the film itself gone from under that id (its folder renamed: a new id, with its own entry): this one taken off,
                                     # not left under Not found: John, 24 Nov 2026, Totally F***ed Up there twice, once "not found")
                                     try:
-                                        there_ = bool((g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}).get('Id'))
-                                    except Exception as ex_:
-                                        there_ = not re.search(r': (400|404) ', str(ex_))
+                                        there_ = bool(jf_has(g, iid).get('Id'))
+                                    except Exception:
+                                        there_ = True
                                     if not there_:
                                         P.pop(iid, None)
                                         save(SUBPREP, P)
@@ -3329,7 +3329,11 @@ def make_handler(g):
                 return self.send_json(200, ev_ or {'parts': []})
             if re.match(r'^[0-9a-f]{32}$', str(q.get('search') or '')):   # (English subtitles for one film on OpenSubtitles, for John to give one)
                 iid_ = q['search']
-                it_ = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid_), query={'Fields': 'Path,ProviderIds,OriginalTitle'}) or {}
+                it_ = jf_has(g, iid_, 'Path,ProviderIds,OriginalTitle')
+                if not it_.get('Id'):   # (a film no longer under this id (renamed since: it has its own entry now): taken off, and said so)
+                    if P.pop(iid_, None) is not None:
+                        save(SUBPREP, P)
+                    return self.send_json(410, {'error': 'That film isn’t in the library under this entry any more (renamed or replaced since): it’s been taken off the list. Reload the page.'})
                 pid_ = it_.get('ProviderIds') or {}
                 e_ = P.get(iid_) or {}
                 try:
@@ -9822,10 +9826,17 @@ def folders_fix2_once(g):
     open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
 
 
+def jf_has(g, iid, fields='Path'):
+    """A film or episode by its id, {} if the media server no longer has it: asked for by id it answers 500, "Error processing request",
+    for one it hasn't (Totally F***ed Up's id from before its folder was renamed, 24 Nov 2026), so it's asked for in a list of one."""
+    r_ = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Ids': iid, 'Fields': fields}) or {}
+    return (r_.get('Items') or [{}])[0]
+
+
 def subprep_gone_once(g):
     """Once: entries on the subtitles list for films no longer under that id (their folder renamed since, the film a new item with its own
     entry), taken off: they showed under Not found (John, 24 Nov 2026: Totally F***ed Up, renamed on 22 Nov)."""
-    mk = os.path.expanduser('~/Grifflix/subprep-gone-1.done')
+    mk = os.path.expanduser('~/Grifflix/subprep-gone-2.done')   # (again: the first looked by id, which the media server answers with an error)
     if os.path.exists(mk):
         return
     time.sleep(240)
@@ -9836,11 +9847,9 @@ def subprep_gone_once(g):
             if iid.startswith('_') or not isinstance(e, dict) or e.get('state') not in ('gone', 'none', 'nomatch', 'failed', 'waiting', 'check'):
                 continue
             try:
-                it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'Path'}) or {}
-            except Exception as ex:
-                if not re.search(r': (400|404) ', str(ex)):
-                    continue
-                it = {}
+                it = jf_has(g, iid)
+            except Exception:
+                continue
             if not it.get('Id'):
                 off.append('%s (%s)' % (e.get('name'), e.get('state')))
                 P.pop(iid, None)
