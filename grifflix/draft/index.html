@@ -2676,7 +2676,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'c15b8466e6be' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'ff77598e01e8' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6039,7 +6039,9 @@ function collectionView(id, into) {
       // the ability to edit collections properly, as well as search within them")
       '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find in this collection" aria-label="Find in this collection" autocomplete="off"><span class="sp"></span>' + sfBar() + '</div>' +
       '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>');
-    var editing = false, fq = '', openSet = null, cv0 = store.get('grifflix-clist'), cmode = cv0 === 'covers' ? 'covers' : 'list', csets = cv0 === 'sets' || store.get('grifflix-csets') === '1', clist = cmode === 'list';   // (List or Covers, for the films and for the box sets alike: John, 18 Nov 2026, "you should be able to see box sets in list or covers, not just list")
+    var editing = false, fq = '', openSet = null, cv0 = store.get('grifflix-clist'), cmode = cv0 === 'covers' ? 'covers' : 'list', csets = cv0 === 'sets' || store.get('grifflix-csets') === '1', clist = cmode === 'list';
+    if (S.wantSet && /criterion/i.test(c.name || '')) { openSet = S.wantSet; csets = true; }   // (a box set asked for from a film's page: shown open)
+    S.wantSet = null;   // (List or Covers, for the films and for the box sets alike: John, 18 Nov 2026, "you should be able to see box sets in list or covers, not just list")
     var fits = function (i) { return !fq || sScore(i, fq) > 0; };   // (as the Search box finds things: John, 20 Nov 2026)
     var draw = function () {
       if (A24 && !editing) return a24Draw($('#cgrid'), c.items.filter(fits), fq);
@@ -6803,7 +6805,9 @@ function shBrand() {   // GRIFFLIX over a pop-up, just where the bar's is (the b
   // (the pop-up's own words start below the logo and its words, never under them: John, 9 Nov 2026: "profile pop up on computer
   // causes words to be on top of each other - be careful of clashes"); what scrolls up passes under a strip, not through them
   var nr = nav.getBoundingClientRect(), barB = Math.max(r.bottom, nr.bottom, br ? br.bottom : 0), barR = Math.max(r.right, nr.right), f = $('#sheetIn > .form');
-  if (f && !f.classList.contains('tcal') && !TV && !document.documentElement.classList.contains('phone')) {
+  // (on a phone too: a film's Edit page started under the bar there, its top out of sight: John, 24 Nov 2026, "Edit page for films shows under
+  // the top bar so you can't see all of it")
+  if (f && !f.classList.contains('tcal') && !TV) {
     f.style.removeProperty('padding-top'); var fr = f.getBoundingClientRect(), pt = parseFloat(getComputedStyle(f).paddingTop) || 0;
     if (fr.top + pt < barB + 14 && fr.left < barR && fr.right > r.left) f.style.setProperty('padding-top', Math.round(pt + barB + 14 - (fr.top + pt)) + 'px', 'important');
   }
@@ -7185,6 +7189,9 @@ function bodyHTML(it, ctx) {
     var inC = LIB.collections.filter(function (cid) { return (LIB.sets[cid] || []).indexOf(it.id) >= 0 && LIB.items[cid]; });
     if (inC.length) h += '<div class="incoll"><span>In</span>' + inC.map(function (cid) { return '<a href="#collection/' + cid + '" data-incoll="' + cid + '">' + esc(LIB.items[cid].name) + '</a>'; }).join('') + '</div>';
   }
+  // (the Criterion box sets it's part of, each opening that set: John, 24 Nov 2026, "Can a film show what set it is a part of")
+  if (!PUBLIC && it.cset && it.cset.length) h += '<div class="incoll"><span>Box set' + (it.cset.length > 1 ? 's' : '') + '</span>' + it.cset.map(function (b, n) {
+    var sp_ = (it.csetsp || [])[n]; return '<a href="#" data-inset="' + esc(b) + '">' + esc(b) + (sp_ ? ' · No. ' + esc(String(sp_)) : '') + '</a>'; }).join('') + '</div>';
   if (isSeries && it.episodes) {
     var seasons = {}; it.episodes.forEach(function (e) { (seasons[e.season || 0] = seasons[e.season || 0] || []).push(e); });
     var keys = Object.keys(seasons).sort(function (a, b) { return a - b; }), cur = ctx.season || (it.next ? (it.episodes.filter(function (e) { return e.id === it.next; })[0] || {}).season : keys[0]) || keys[0];
@@ -7254,6 +7261,16 @@ function wireBody(it, ctx) {
       if (SHEETBACK.length) { sheetBack(); forgetItem(it.id); } else closeSheet();
     }).catch(function (e) { b.disabled = false; delete b.dataset.sure; b.textContent = it.type === 'series' ? 'Delete the series' : 'Delete'; toast(e.message || 'Couldn’t reach the Mac mini'); });
   });
+  // (a collection or box set on its page: the film closed and that collection shown, not left behind the film: John, 24 Nov 2026,
+  // "Clicking on any collection should take you to it (close the film and take you to the collection)")
+  $$('[data-incoll], [data-inset]', $('#sheetIn')).forEach(function (a) { a.onclick = function (e) {
+    e.preventDefault();
+    var cid = a.dataset.incoll;
+    if (a.dataset.inset) { cid = (LIB.collections || []).filter(function (c) { return LIB.items[c] && /^the criterion collection$/i.test(LIB.items[c].name || ''); })[0]; S.wantSet = a.dataset.inset; }
+    if (!cid) return;
+    SHEETBACK.length = 0; closeSheet();
+    if (location.hash === '#collection/' + cid) route(); else location.hash = '#collection/' + cid;
+  }; });
   on('aconv', function () {
     var b = $('#aconv'); b.disabled = true; b.textContent = 'Putting it next…';
     mac('convert', { op: 'up', id: it.id, name: it.name }).then(function () { b.textContent = 'Next for the Mac mini ✓'; it.convNext = true;
