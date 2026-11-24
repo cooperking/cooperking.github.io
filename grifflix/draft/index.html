@@ -2676,7 +2676,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'ff77598e01e8' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '9c008f63463e' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -7126,6 +7126,7 @@ function tvFit() {   // a TV: a film's pop-up all on the screen, its description
   (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function () { requestAnimationFrame(go); });
 }
 function typeName(it) { return { movie: 'Film', series: 'Series', episode: it.series || 'Episode', video: 'Home video', photo: 'Photo' }[it.type] || ''; }
+function crSay(c) { return c.v === 'yes' ? 'Criterion’s own ✓ (' + c.how + ')' : c.v === 'no' ? 'Not Criterion’s? (' + c.how + ')' : 'Couldn’t be looked at'; }   // (Criterion's own release or not, said: John's alone)
 function bodyHTML(it, ctx) {
   var meta = [];
   if (it.type === 'episode') meta.push('Series ' + (it.season || 0) + ', episode ' + (it.ep || 0) + ' · ' + esc(it.name));
@@ -7192,6 +7193,10 @@ function bodyHTML(it, ctx) {
   // (the Criterion box sets it's part of, each opening that set: John, 24 Nov 2026, "Can a film show what set it is a part of")
   if (!PUBLIC && it.cset && it.cset.length) h += '<div class="incoll"><span>Box set' + (it.cset.length > 1 ? 's' : '') + '</span>' + it.cset.map(function (b, n) {
     var sp_ = (it.csetsp || [])[n]; return '<a href="#" data-inset="' + esc(b) + '">' + esc(b) + (sp_ ? ' · No. ' + esc(String(sp_)) : '') + '</a>'; }).join('') + '</div>';
+  // (Criterion's own release or not, by its logo at the start, for John alone: John, 24 Nov 2026, "mark it on the film, but only I should be
+  // able to see it"; his word on it with It is / It isn't)
+  if (!PUBLIC && ME && ME.owner && it.crel) h += '<div class="incoll" id="crelrow"><span>Release</span><b style="font-weight:400" id="crelsay">' + esc(crSay(it.crel) + (it.crel.by ? ' · by you' : '')) + '</b>' +
+    '<a href="#" data-crelv="yes">It is</a><a href="#" data-crelv="no">It isn’t</a></div>';
   if (isSeries && it.episodes) {
     var seasons = {}; it.episodes.forEach(function (e) { (seasons[e.season || 0] = seasons[e.season || 0] || []).push(e); });
     var keys = Object.keys(seasons).sort(function (a, b) { return a - b; }), cur = ctx.season || (it.next ? (it.episodes.filter(function (e) { return e.id === it.next; })[0] || {}).season : keys[0]) || keys[0];
@@ -7270,6 +7275,14 @@ function wireBody(it, ctx) {
     if (!cid) return;
     SHEETBACK.length = 0; closeSheet();
     if (location.hash === '#collection/' + cid) route(); else location.hash = '#collection/' + cid;
+  }; });
+  $$('[data-crelv]', $('#sheetIn')).forEach(function (a) { a.onclick = function (e) {
+    e.preventDefault();
+    mac('critrel', { id: it.id, v: a.dataset.crelv }).then(function (j) {
+      var f = (j.films || []).filter(function (x) { return x.id === it.id; })[0];
+      if (f) { it.crel = { v: f.v, how: f.how, by: f.by }; var w = $('#crelsay'); if (w) w.textContent = crSay(it.crel) + (f.by ? ' · by you' : ''); }
+      toast(a.dataset.crelv === 'yes' ? 'Noted: Criterion’s own release' : 'Noted: not Criterion’s release');
+    }).catch(function (er) { toast(er.message || 'The Mac mini didn’t answer'); });
   }; });
   on('aconv', function () {
     var b = $('#aconv'); b.disabled = true; b.textContent = 'Putting it next…';

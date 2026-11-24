@@ -1683,6 +1683,9 @@ def make_handler(g):
             o.update(afi_of(str((it.get('ProviderIds') or {}).get('Imdb') or '')))   # (AFI's details, for members only: never in the site's own files)
             if me.get('owner') and it.get('Type') in ('Movie', 'Episode'):   # (John, 13 Nov 2026: "a convert now option to films if I need them sooner")
                 o['conv'] = conv_why(ms)
+                cr_ = (load(os.path.join(CRL, 'result.json'), {}) or {}).get(it['Id'])   # (Criterion's own release or not: John's alone)
+                if cr_ and cr_.get('v') in ('yes', 'no', 'unread'):
+                    o['crel'] = {'v': cr_['v'], 'how': cr_.get('how') or '', 'by': cr_.get('by') or ''}
                 P = load(os.path.expanduser('~/Grifflix/convert-priority.json'), {}) or {}
                 o['convNext'] = any(x.get('id') == it['Id'] for x in P.get('pins') or [])
                 now_ = load(os.path.expanduser('~/Grifflix/convert-now.json'), {}) or {}
@@ -3650,6 +3653,27 @@ def make_handler(g):
             a = g.st.get('macagent') or {}
             P_ = [y for y in (load(MACQ + '.passed', []) or []) if time.time() - y.get('at', 0) < 3 * 86400]
             return self.send_json(200, {'queue': Q, 'now': list(live_.values()), 'passed': P_, 'setup': bool(a.get('key')), 'worked': bool(a.get('key') and (a.get('worked') or MACAGENT.get('seen') or any(v.get('mac') for v in list(CONVJOBS.values())))), 'seen': MACAGENT.get('seen'), 'home': MACAGENT.get('home')})
+
+        def api_critrel(self, me, user, q, b):
+            """John's only: which of the Criterion Collection's films are Criterion's own release (its logo at the start), the list and how
+            far the looking has got; POST {id, v: yes|no|''}: his own word on one (or taken back)."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            rf = os.path.join(CRL, 'result.json')
+            R = load(rf, {}) or {}
+            if b:
+                iid, v = str(b.get('id') or ''), str(b.get('v') or '')
+                if iid not in R:
+                    return self.send_json(404, {'error': 'That film isn’t on the list.'})
+                if v in ('yes', 'no'):
+                    R[iid].update(v=v, how='you said so' if v == 'yes' else 'you said it isn’t', by='John')
+                else:
+                    R[iid].pop('by', None); R[iid].update(v='todo', how='looked at again soon')
+                save(rf, R)
+                record('Criterion release, said by John', film=R[iid].get('name'), id=iid, v=v or 'taken back')
+                if CRL_STATE.get('films') and not CRL_STATE.get('running'):
+                    threading.Thread(target=crl_classify, args=(g,), daemon=True).start()
+            return self.send_json(200, {'films': [dict(e, id=k) for k, e in R.items()], 'progress': {k: CRL_STATE.get(k) for k in ('done', 'of', 'running', 'paused', 'logos', 'known')}})
 
         def api_fileinfo(self, me, user, q, b):
             """John's only: a film's file as it is, for its Edit panel (John, 16 Nov 2026: "I need to see file format details in the edit
@@ -9243,6 +9267,194 @@ def bom_now():
         BOM_LOCK.release()
 
 
+# ---------------------------------------------------------------- which of the Criterion Collection's films are Criterion's own release
+# (John, 24 Nov 2026: "Quite a few of my criterion collection films may not actually be the criterion release - I can only tell by seeing the
+# logo at the start play - is there a way to get a record of what are and what aren't" ... "mark it on the film, but only I should be able to
+# see it - and I'd like a list"). The start of each film looked at, as he does: its first 100 seconds, two pictures a second, each made a
+# small fingerprint (16 x 16, how light changes across it). Criterion's logo is learnt from the films whose own file names say Criterion
+# (the frames most of them share, and the films outside the Criterion Collection don't), then looked for in every one.
+CRL = os.path.expanduser('~/Grifflix/critlogo')
+CRL_SECS, CRL_D = 100, 26   # (how far in it looks; how many of the 256 marks may differ for two pictures to be the same)
+CRL_STATE = {}
+CRL_NAME = re.compile(r'(?i)(criterion|(^|[._ \-\[(])CC([._ \-\])]|$))')
+
+
+def crl_ffmpeg(g):
+    cands = []
+    try:
+        enc = g.jf.call('GET', '/System/Configuration/encoding') or {}
+        cands += [enc.get('EncoderAppPath'), enc.get('EncoderAppPathDisplay')]
+    except Exception:
+        pass
+    import shutil
+    cands += ['/Applications/Jellyfin.app/Contents/MacOS/ffmpeg', '/usr/local/bin/ffmpeg', '/opt/homebrew/bin/ffmpeg', shutil.which('ffmpeg')]
+    return next((c for c in cands if c and os.path.exists(c)), None)
+
+
+def crl_frames(ff, path):
+    """The film's first CRL_SECS seconds as fingerprints: [[seconds, hex], ...], plain dark or flat pictures left out; None if unread."""
+    import subprocess
+    for hw in (['-hwaccel', 'videotoolbox'], []):
+        try:
+            r = subprocess.run([ff, '-nostdin', '-v', 'error'] + hw + ['-t', str(CRL_SECS), '-i', path, '-an', '-sn', '-dn', '-vf',
+                                'fps=2,scale=17:16:flags=area,format=gray', '-f', 'rawvideo', '-'], capture_output=True, timeout=600)
+        except Exception:
+            continue
+        raw = r.stdout or b''
+        if len(raw) >= 272 * 20:
+            break
+    else:
+        return None
+    out = []
+    for n in range(len(raw) // 272):
+        px = raw[n * 272:(n + 1) * 272]
+        mean = sum(px) / 272.0
+        if (sum((v - mean) ** 2 for v in px) / 272.0) ** .5 < 7:   # (black, or one flat colour: everywhere, says nothing)
+            continue
+        bits = 0
+        for row in range(16):
+            o = row * 17
+            for col in range(16):
+                bits = (bits << 1) | (1 if px[o + col] > px[o + col + 1] else 0)
+        out.append([round(n / 2.0, 1), '%064x' % bits])
+    return out
+
+
+def crl_names(path):
+    """What a film's file has been called: its own name now, and what it came in as (the record of every change)."""
+    names = [os.path.basename(path or ''), os.path.basename(os.path.dirname(path or ''))]
+    return names
+
+
+def crl_learn(H, pos, neg):
+    """Criterion's logo, as the pictures shared by the films whose names say Criterion and not by films outside the Criterion Collection:
+    a list of fingerprints (ints)."""
+    P = {i: [int(h, 16) for t, h in (H.get(i) or {}).get('f') or [] if t <= 60] for i in pos if (H.get(i) or {}).get('f')}
+    N = [[int(h, 16) for t, h in (H.get(i) or {}).get('f') or []] for i in neg if (H.get(i) or {}).get('f')]
+    if len(P) < 4:
+        return []
+    need = max(2, int(len(P) * .06))
+    cand = []
+    ids = list(P)
+    for a in ids:
+        for c in P[a]:
+            sup = sum(1 for b in ids if b != a and any(((c ^ d).bit_count() <= CRL_D) for d in P[b]))
+            if sup >= need:
+                cand.append((sup, c))
+    logo = []
+    for sup, c in sorted(cand, reverse=True):
+        if any((c ^ l).bit_count() <= CRL_D // 2 for l in logo):
+            continue
+        if sum(1 for fs in N if any((c ^ d).bit_count() <= CRL_D for d in fs)) >= max(2, len(N) * .03):
+            continue   # (in films outside the Criterion Collection too: a studio's logo, a warning, not Criterion's)
+        logo.append(c)
+        if len(logo) >= 300:
+            break
+    return logo
+
+
+def crl_classify(g):
+    """Each film of the Criterion Collection looked at: Criterion's logo found at its start, or its name says Criterion, or neither."""
+    H = load(os.path.join(CRL, 'hashes.json'), {}) or {}
+    R = load(os.path.join(CRL, 'result.json'), {}) or {}
+    films = CRL_STATE.get('films') or {}
+    pos = [i for i, f in films.items() if f.get('crit') and any(CRL_NAME.search(n or '') for n in crl_names(f.get('path')))]
+    neg = [i for i, f in films.items() if not f.get('crit')]
+    # (and those John has said are, or aren't: each version of the logo over the years (John, 24 Nov 2026, "The Criterion Collection Logo
+    # History") learnt from a film of his that has it)
+    pos += [i for i, e in R.items() if e.get('by') == 'John' and e.get('v') == 'yes' and i in films and i not in pos]
+    neg += [i for i, e in R.items() if e.get('by') == 'John' and e.get('v') == 'no' and i in films and i not in neg]
+    logo = crl_learn(H, pos, neg)
+    out = {}
+    for i, f in films.items():
+        if not f.get('crit'):
+            continue
+        old = R.get(i) or {}
+        e = {'name': f.get('name'), 'year': f.get('year'), 'path': f.get('path')}
+        if old.get('by') == 'John':   # (John's own word on it stands)
+            e.update(v=old.get('v'), how=old.get('how'), by='John')
+        else:
+            fr = (H.get(i) or {}).get('f')
+            hit = next((t for t, h in (fr or []) if any(((int(h, 16) ^ l).bit_count() <= CRL_D) for l in logo)), None)
+            named = any(CRL_NAME.search(n or '') for n in crl_names(f.get('path')))
+            if hit is not None:
+                e.update(v='yes', how='Criterion’s logo at %d:%02d' % (int(hit) // 60, int(hit) % 60))
+            elif named:
+                e.update(v='yes', how='its file’s name says Criterion (no logo seen at its start)')
+            elif fr is None and i in H:
+                e.update(v='unread', how='its start couldn’t be read')
+            elif i not in H:
+                e.update(v='todo', how='not looked at yet')
+            else:
+                e.update(v='no', how='no Criterion logo in its first %d seconds' % CRL_SECS)
+        out[i] = e
+    save(os.path.join(CRL, 'result.json'), out)
+    CRL_STATE['logos'], CRL_STATE['known'] = len(logo), len(pos)
+    n = {}
+    for e in out.values():
+        n[e['v']] = n.get(e['v'], 0) + 1
+    log('Criterion releases: %d films; Criterion’s logo learnt from %d named Criterion (%d picture%s of it); %s' % (
+        len(out), len(pos), len(logo), '' if len(logo) == 1 else 's', ', '.join('%s %d' % (k, v) for k, v in sorted(n.items()))))
+    return out
+
+
+def crl_scan(g):
+    """In the background, when nobody's watching: each Criterion Collection film's start looked at once (again only if its file changes),
+    and some films outside it, for what isn't Criterion's; the record made again as it goes."""
+    time.sleep(900)
+    os.makedirs(CRL, exist_ok=True)
+    while True:
+        try:
+            ff = crl_ffmpeg(g)
+            if not ff:
+                log('Criterion releases: no ffmpeg found'); return
+            sets = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'BoxSet'}) or {}).get('Items') or []
+            crit = next((x for x in sets if (x.get('Name') or '').strip().lower() == 'the criterion collection'), None)
+            if not crit:
+                time.sleep(3600); continue
+            films = {}
+            for x in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': crit['Id'], 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path,ProductionYear'}, timeout=180) or {}).get('Items') or []:
+                films[x['Id']] = {'name': x.get('Name'), 'year': x.get('ProductionYear'), 'path': x.get('Path') or '', 'crit': True}
+            lid = (g.st.get('libraries') or {}).get('movies')
+            if lid:   # (and 150 outside it, the same ones each time, for the pictures every film has)
+                allm = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path,ProductionYear'}, timeout=180) or {}).get('Items') or []
+                for x in sorted((x for x in allm if x['Id'] not in films), key=lambda x: hashlib.md5(x['Id'].encode()).hexdigest())[:150]:
+                    films[x['Id']] = {'name': x.get('Name'), 'year': x.get('ProductionYear'), 'path': x.get('Path') or '', 'crit': False}
+            CRL_STATE['films'] = films
+            hf = os.path.join(CRL, 'hashes.json')
+            H = load(hf, {}) or {}
+            todo = []
+            for i, f in films.items():
+                try:
+                    sz = os.path.getsize(f['path'])
+                except OSError:
+                    continue
+                if (H.get(i) or {}).get('s') != sz:
+                    todo.append((not f['crit'], i, sz))
+            todo.sort()
+            CRL_STATE.update(of=len(films), done=len(films) - len(todo), running=bool(todo))
+            n_ = 0
+            for _, i, sz in todo:
+                while someone_watching(g):
+                    CRL_STATE['paused'] = 'someone is watching'
+                    time.sleep(60)
+                CRL_STATE['paused'] = ''
+                fr = crl_frames(ff, films[i]['path'])
+                H[i] = {'s': sz, 'f': fr, 'at': int(time.time())}
+                n_ += 1
+                CRL_STATE['done'] = CRL_STATE.get('done', 0) + 1
+                if n_ % 10 == 0:
+                    save(hf, H)
+                if n_ % 150 == 0:
+                    crl_classify(g)
+            save(hf, H)
+            CRL_STATE['running'] = False
+            crl_classify(g)
+        except Exception as e:
+            log('Criterion releases: %s' % str(e)[:200])
+        time.sleep(6 * 3600)   # (films come in: looked at again a few times a day)
+
+
 def set_covers_now():
     """A Criterion film released only in a box set that gives it no cover of its own (the Frampton films, the W. C. Fields shorts, Scorsese's
     shorts): the set's Criterion cover made its own poster, in its folder and in the media server, so it has it everywhere, not only in The
@@ -10551,7 +10763,8 @@ def serve():
     threading.Thread(target=covers_once, daemon=True).start()
     threading.Timer(420, bom_now).start()   # (any film come in while it was off: its distributor, or streaming service: 20 Nov 2026)
     threading.Timer(200, a24_now).start()
-    threading.Timer(420, set_covers_now).start()   # (and the box set covers on the films released only in a set: 24 Nov 2026)   # (and once each start: any A24 film come in before this, Tony and Misty Green, put in)   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
+    threading.Timer(420, set_covers_now).start()
+    threading.Thread(target=crl_scan, args=(g,), daemon=True).start()   # (which Criterion films are Criterion's own release: 24 Nov 2026)   # (and the box set covers on the films released only in a set: 24 Nov 2026)   # (and once each start: any A24 film come in before this, Tony and Misty Green, put in)   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
     threading.Thread(target=fanny_series, args=(g,), daemon=True).start()
     threading.Thread(target=keep_disk_health, daemon=True).start()
     threading.Thread(target=keep_backup, args=(g,), daemon=True).start()
