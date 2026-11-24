@@ -3034,6 +3034,18 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     a.download = 'Grifflix library ' + new Date().toISOString().slice(0, 10) + '.csv'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
     toast('Downloaded ' + all.length + ' films: in Google Sheets, File › Import › Upload');
   }
+  // (each film's buttons: Do next only where the Mac mini does the work, repackaging (minutes); converting is your Mac's (the Mac mini only
+  // repackages: 23 Nov 2026), so those have Next on my Mac and Queue for my Mac, and once queued, Take off: John, 24 Nov 2026, "I can queue
+  // things for my mac but not easily cancel things from the queue. Why do only some films have the do next option?")
+  function lbButtons(x) {
+    var rp = x.why && /^to repackage/.test(x.why), todo = x.why && (!x.conv || x.rp);
+    var mac = x.hdrt ? !/only/.test(x.hdrt) : (LB.f === 'big' || (todo && !rp)), force = x.hdrt || LB.f === 'big' || /^to make smaller/.test(x.why || '');
+    var h = rp && todo && LB.f !== 'big' ? '<button type="button" class="lbnext" data-lbnext="' + x.id + '" data-n="' + esc(x.n) + '" title="The Mac mini repackages it next: minutes">Do next</button>' : '';
+    if (mac) h += LB.MQ[x.id] ? '<button type="button" class="lbnext" data-lbmacoff="' + x.id + '" data-n="' + esc(x.n) + '">Queued for your Mac ✓ · Take off</button>'
+      : '<button type="button" class="lbnext" data-lbmac="' + x.id + '" data-first="1"' + (force ? ' data-force="1"' : '') + ' data-n="' + esc(x.n) + '">Next on my Mac</button>' +
+        '<button type="button" class="lbnext" data-lbmac="' + x.id + '"' + (force ? ' data-force="1"' : '') + ' data-n="' + esc(x.n) + '">Queue for my Mac</button>';
+    return h;
+  }
   function lbDraw() {
     // (and what's waiting: to repackage (the MKVs), and to convert, to choose what's done next: John, 12 Nov 2026, "I can't see the mkv to prioritise them")
     var isRp = function (x) { return /^to repackage/.test(x.why || ''); }, isSh = function (x) { return /^to make smaller/.test(x.why || ''); }, isCv = function (x) { return !!x.why && !isRp(x) && !isSh(x); };
@@ -3058,19 +3070,20 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         (x.ps ? '<span class="why2">Picture subtitles (' + esc(x.ps) + '): ' + (x.why ? 'saved beside the film when it’s converted (an MP4 can’t hold them), to be turned into text later' : 'in this file') + '</span>' : '') +
         // (the largest: any of them made smaller next, whatever the converter would have said: John, 16 Nov 2026, "I need a tab for the largest
         // files, so that I can convert them")
-        (x.hdrt ? (/only/.test(x.hdrt) ? '' : '<button type="button" class="lbnext" data-lbmac="' + x.id + '" data-force="1" data-n="' + esc(x.n) + '">' + (LB.MQ[x.id] ? 'Queued for your Mac ✓' : 'Queue for my Mac') + '</button>') : (LB.f === 'big' ? '<button type="button" class="lbnext" data-lbnext="' + x.id + '" data-force="1" data-n="' + esc(x.n) + '">Make smaller next</button>' :
-        x.why && (!x.conv || x.rp) ? '<button type="button" class="lbnext" data-lbnext="' + x.id + '" data-n="' + esc(x.n) + '">' + (/^to make smaller/.test(x.why) ? 'Make smaller next' : 'Do next') + '</button>' : '') +
-        // (or on John's own Mac, far faster, queued from here: John, 18 Nov 2026, "how can I queue things on my mac to convert?")
-        (LB.f === 'big' || (x.why && (!x.conv || x.rp)) ? '<button type="button" class="lbnext" data-lbmac="' + x.id + '"' + (LB.f === 'big' ? ' data-force="1"' : '') + ' data-n="' + esc(x.n) + '">' + (LB.MQ[x.id] ? 'Queued for your Mac ✓' : 'Queue for my Mac') + '</button>' : '')) + '</span></li>';
+        lbButtons(x) + '</span></li>';
     }).join('') || '<li>None.</li>';
     LB.cur = L; lbCount();
     $('#lbmore').style.display = L.length <= LB.n ? 'none' : ''; $('#lbmore').textContent = 'Load more (' + (L.length - LB.n) + ' more)'; $('#lbmore').onclick = function () { LB.n += 50; lbDraw(); };
-    Array.prototype.forEach.call(document.querySelectorAll('[data-lbmac]'), function (b) { if (LB.MQ[b.dataset.lbmac]) b.disabled = true; b.onclick = function () {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-lbmac],[data-lbmacoff]'), function (b) { b.onclick = function () {
+      var off = !!b.dataset.lbmacoff, id = b.dataset.lbmac || b.dataset.lbmacoff;
+      if (off && !confirm('Take ' + b.dataset.n + ' off your Mac’s queue?')) return;
       b.disabled = true;
-      fetch(GW + '/api/macqueue', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'add', id: b.dataset.lbmac, name: b.dataset.n, force: b.dataset.force ? 1 : undefined }) })
+      fetch(GW + '/api/macqueue', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: off ? 'remove' : b.dataset.first ? 'first' : 'add', id: id, name: b.dataset.n, force: b.dataset.force ? 1 : undefined }) })
         .then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
-          LB.MQ[b.dataset.lbmac] = 1; b.textContent = 'Queued for your Mac ✓';
-          var n = (j.queue || []).length; toast(b.dataset.n + ': number ' + n + ' for your Mac' + (j.seen ? '' : ' (set your Mac up to take them: Conversions)'));
+          if (off) delete LB.MQ[id]; else LB.MQ[id] = 1;
+          var Q = (j.queue || []).map(function (x) { return x.id; }), at = Q.indexOf(id) + 1;
+          toast(off ? b.dataset.n + ': off your Mac’s queue' : b.dataset.n + ': number ' + at + ' of ' + Q.length + ' for your Mac' + (j.seen ? '' : ' (set your Mac up to take them: Conversions)'));
+          lbDraw();
           if (typeof cvQueue === 'function') cvQueue();
         }).catch(function () { b.disabled = false; toast('The Mac mini didn’t answer.'); });
     }; });

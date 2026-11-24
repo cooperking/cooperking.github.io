@@ -3659,7 +3659,11 @@ def make_handler(g):
                     'subs': [{'lang': x.get('Language'), 'codec': x.get('Codec'), 'external': bool(x.get('IsExternal')), 'forced': bool(x.get('IsForced')),
                               'title': x.get('Title') or x.get('DisplayTitle')} for x in st if x.get('Type') == 'Subtitle'],
                     'convert': conv_why(ms) or ''})
-            return self.send_json(200, {'sources': out})
+            # (where it is in John's Mac's queue, or being made there: its Edit panel says so, and offers Take off / Next on my Mac:
+            # John, 24 Nov 2026, "I can queue things for my mac but not easily cancel things from the queue")
+            Q_ = [x.get('id') for x in (load(MACQ, []) or [])]
+            busy_ = next((j.get('state') for j in CONVJOBS.values() if j.get('id') == iid and j.get('mac') and not j.get('ended') and j.get('state') in ('waiting', 'started', 'converting', 'copying', 'checking')), None)
+            return self.send_json(200, {'sources': out, 'macq': {'at': Q_.index(iid) + 1 if iid in Q_ else 0, 'of': len(Q_), 'job': busy_}})
 
         def api_convertjobs(self, me, user, q, b):
             """John's only: every film being converted on his Mac now, and those finished in the last hour, for the admin page from anywhere
