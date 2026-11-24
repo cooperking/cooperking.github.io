@@ -712,6 +712,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="cbdock" id="cbdock" hidden><b id="cbdockn"></b><button class="btn" type="button" id="cbdclear">Clear all</button><button class="btn" type="button" id="cbdsto">Search Tab Opener</button><button class="btn" type="button" id="cbdcsv">Download</button></div>
       </section>
       <section class="card" data-tab="criterion">
+        <div class="kicker">Films</div>
+        <h2>Criterion’s films you <em>haven’t got</em></h2>
+        <p class="stat" id="cmfsay">Every film on Criterion’s own list that isn’t in Grifflix and isn’t in one of its box sets (those are under Box sets to finish), by spine number. Looked for when you open this tab.</p>
+        <div class="state"><input type="search" id="cmfq" placeholder="Find a title, director or country" style="flex:1 1 220px"><button class="btn" id="cmfcsv" type="button" hidden>Download (CSV)</button></div>
+        <div class="mlist" id="cmflist"></div>
+      </section>
+      <section class="card" data-tab="criterion">
         <div class="kicker">Special features</div>
         <h2>Special features <em>to get</em></h2>
         <p class="stat" id="cfnote">Each box set’s special features, as Criterion lists them, that aren’t among the extras of its films here.</p>
@@ -1992,6 +1999,26 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         .then(function (r) { return r.json(); }).then(crDraw).catch(function () { b.disabled = false; toast('The Mac mini didn’t answer.'); });
     }; });
   }
+  // (Criterion's films not in any box set that Grifflix hasn't: John, 24 Nov 2026, "can I get a list of what I'm missing from the criterion
+  // collection that isn't in the box sets too")
+  var CMF = { rows: null };
+  function cmfLook() {
+    if (CMF.busy) return; CMF.busy = 1; $('#cmflist').innerHTML = '<p class="stat">Looking on the Mac mini (half a minute or so)…</p>';
+    fetch(GW + '/api/criterionmissing?films=1', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error(r.status === 404 ? 'The Mac mini takes its update within a few minutes.' : 'The Mac mini didn’t answer.')); })
+      .then(function (j) { CMF.rows = j.films || []; CMF.busy = 0; cmfDraw(); }).catch(function (e) { CMF.busy = 0; $('#cmflist').innerHTML = '<p class="stat">' + esc(e.message) + '</p>'; });
+  }
+  function cmfDraw() {
+    var q = ($('#cmfq').value || '').trim().toLowerCase(), R = (CMF.rows || []).filter(function (r) { return !q || r.join(' ').toLowerCase().indexOf(q) >= 0; });
+    $('#cmfsay').textContent = (CMF.rows || []).length + ' of Criterion’s films not in any of its box sets aren’t in Grifflix' + (q ? ' (' + R.length + ' found)' : '') + '. By spine number; each links to its page on criterion.com.';
+    $('#cmfcsv').hidden = !(CMF.rows || []).length;
+    $('#cmflist').innerHTML = R.length ? R.map(function (r) { return '<div class="mrow"><span class="y">' + esc(r[0] ? 'No. ' + r[0] : '') + '</span><b><a href="' + esc(r[5]) + '" target="_blank" rel="noopener">' + esc(r[1]) + '</a></b><span class="d">' + esc([r[2], r[3]].filter(Boolean).join(' · ')) + '</span><span class="s">' + esc(r[4]) + '</span></div>'; }).join('') : '<p class="stat">' + (CMF.rows ? 'None.' : '') + '</p>';
+  }
+  $('#cmfq').addEventListener('input', function () { if (CMF.rows) cmfDraw(); });
+  $('#cmfcsv').onclick = function () {
+    var c = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var csv = ['Spine,Title,Year,Director,Country,Criterion page'].concat((CMF.rows || []).map(function (r) { return r.map(c).join(','); })).join('\n');
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'criterion-films-missing.csv'; document.body.appendChild(a); a.click(); a.remove();
+  };
   function a24Look() {   // (A24 CHECKS: John's own collection, from the Mac, linked from here: John, 19 Nov 2026)
     fetch(GW + '/api/collections', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('The Mac mini didn’t answer.')); }).then(function (j) {
       var t = (j.collections || []).filter(function (x) { return /^to check$/i.test(x.name || ''); })[0];   // (To check, John's own too: John, 23 Nov 2026)
@@ -4030,6 +4057,7 @@ var feats = function (doc) {
       [].forEach.call(st.querySelectorAll('[data-sub]'), function (b) { b.onclick = function () { store.set('grifflix-adminsub-' + t, b.dataset.sub); show(t); }; });
       [].forEach.call(document.querySelectorAll('#tabs [data-go]'), function (b) { var on = b.dataset.go === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
       store.set('grifflix-admintab', t);
+      if (t === 'criterion' && GW && typeof cmfLook === 'function' && !CMF.rows) cmfLook();
       if (push) { try { history.replaceState(null, '', '#' + t); } catch (e) {} }
       dispatchEvent(new Event('resize'));   // (the theme explorer's preview, sized now it can be seen)
     }
@@ -4071,7 +4099,7 @@ var feats = function (doc) {
     fetch('/grifflix/config.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (c) {
       var gw = String(c.gateway || '').replace(/\/$/, ''), t0 = Date.now();
       if (!gw) { $('#machead').textContent = 'Not connected'; return; }
-      GW = gw; saLoad(); a24Look(); crLook(); convert(); fetching(); software(); dlLook(); hhLoad(); autoState(); lbAuto(); originals().then(orLine).catch(function () {});
+      GW = gw; saLoad(); a24Look(); crLook(); if (store.get('grifflix-admintab') === 'criterion') cmfLook(); convert(); fetching(); software(); dlLook(); hhLoad(); autoState(); lbAuto(); originals().then(orLine).catch(function () {});
       return fetch(gw + '/api/me', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (me) {
         var L = me.libraries || {};
         $('#machead').innerHTML = 'Answering <em>(' + (Date.now() - t0) + ' ms)</em>';
