@@ -9393,7 +9393,9 @@ CRL_VF = ("scale=w='if(gte(dar,16/9),320,round(90*dar)*2)':h='if(gte(dar,16/9),r
 CRL_T = float(os.environ.get('GRIFFLIX_CRL_T') or .9)   # (how alike two pictures must be, 1 being the same)
 # (against John's own pictures of the logo: the ring of Criterion's logo, as it plays in his films (Homicide, Secrets & Lies), .85 to .9 like
 # them, and nothing else in his logo history video above .7; in two of a film's pictures at least, the logo being on the screen for seconds)
-CRL_TG = float(os.environ.get('GRIFFLIX_CRL_TG') or .8)
+# (.85, once each film kept its own shape: the logo's ring .867 at the least in the first 30 films with it, .88 to .91 at its best; Eddington's
+# own small ring .83: 24 Nov 2026)
+CRL_TG = float(os.environ.get('GRIFFLIX_CRL_TG') or .85)
 CRL_HITS = 3   # (three: Eddington has a small ring of its own, 23 seconds in, like it in two pictures; the logo is in twenty)
 CRL_CH = .85   # (the Criterion Channel's opening, learnt from a film of his that has it: as alike as this)
 CRL_SHARE, CRL_NEG = .2, 2   # (a logo picture: in a fifth of the films named Criterion at least, and in fewer than 2 films outside)
