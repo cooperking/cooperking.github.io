@@ -9305,11 +9305,11 @@ def bom_now():
 # ---------------------------------------------------------------- which of the Criterion Collection's films are Criterion's own release
 # (John, 24 Nov 2026: "Quite a few of my criterion collection films may not actually be the criterion release - I can only tell by seeing the
 # logo at the start play - is there a way to get a record of what are and what aren't" ... "mark it on the film, but only I should be able to
-# see it - and I'd like a list"). The start of each film looked at, as he does: its first minute, two pictures a second, each made a
+# see it - and I'd like a list"). The start of each film looked at, as he does: its first 30 seconds, two pictures a second, each made a
 # small fingerprint (16 x 16, how light changes across it). Criterion's logo is learnt from the films whose own file names say Criterion
 # (the frames most of them share, and the films outside the Criterion Collection don't), then looked for in every one.
 CRL = os.path.expanduser('~/Grifflix/critlogo')
-CRL_SECS, CRL_D = 60, 26   # (how far in it looks; how many of the 256 marks may differ for two pictures to be the same)
+CRL_SECS, CRL_D = 30, 26   # (the logo, where there is one, within the first 15 seconds: 30 to be safe: John, 24 Nov 2026)   # (how far in it looks; how many of the 256 marks may differ for two pictures to be the same)
 CRL_STATE = {}
 CRL_NAME = re.compile(r'(?i)(criterion|(^|[._ \-\[(])CC([._ \-\])]|$))')
 
@@ -9326,36 +9326,48 @@ def crl_ffmpeg(g):
     return next((c for c in cands if c and os.path.exists(c)), None)
 
 
-def crl_frames(ff, path):
-    """The film's first CRL_SECS seconds as fingerprints: [[seconds, hex], ...], plain dark or flat pictures left out; None if unread."""
+def crl_frames(ff, path, logo=None):
+    """The film's first CRL_SECS seconds as fingerprints: [[seconds, hex], ...], plain dark or flat pictures left out; None if unread. With
+    the logo known, it stops reading the moment it sees it (John, 24 Nov 2026, "it also can stop reading once the logo is recognised")."""
     import subprocess
     # (the pictures between others (B-frames) not decoded, nor the smoothing filter: two or three times quicker, and two pictures a second need
     # no more (a film took 100 seconds on the Mac mini, 1,400 of them over a day: 24 Nov 2026); each tried plainer if a copy won't have it)
     fast = ['-skip_frame', 'bidir', '-skip_loop_filter', 'all']
     for opt in (['-hwaccel', 'videotoolbox'] + fast, fast, []):
+        out, n, hit = [], 0, False
         try:
-            r = subprocess.run([ff, '-nostdin', '-v', 'error'] + opt + ['-t', str(CRL_SECS), '-i', path, '-an', '-sn', '-dn', '-vf',
-                                'fps=2,scale=17:16:flags=area,format=gray', '-f', 'rawvideo', '-'], capture_output=True, timeout=600)
+            p = subprocess.Popen([ff, '-nostdin', '-v', 'error'] + opt + ['-t', str(CRL_SECS), '-i', path, '-an', '-sn', '-dn', '-vf',
+                                  'fps=2,scale=17:16:flags=area,format=gray', '-f', 'rawvideo', '-'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         except Exception:
             continue
-        raw = r.stdout or b''
-        if len(raw) >= 272 * 20:
-            break
-    else:
-        return None
-    out = []
-    for n in range(len(raw) // 272):
-        px = raw[n * 272:(n + 1) * 272]
-        mean = sum(px) / 272.0
-        if (sum((v - mean) ** 2 for v in px) / 272.0) ** .5 < 7:   # (black, or one flat colour: everywhere, says nothing)
-            continue
-        bits = 0
-        for row in range(16):
-            o = row * 17
-            for col in range(16):
-                bits = (bits << 1) | (1 if px[o + col] > px[o + col + 1] else 0)
-        out.append([round(n / 2.0, 1), '%064x' % bits])
-    return out
+        t0 = time.time()
+        try:
+            while time.time() - t0 < 600:
+                px = p.stdout.read(272)
+                if len(px) < 272:
+                    break
+                n += 1
+                mean = sum(px) / 272.0
+                if (sum((v - mean) ** 2 for v in px) / 272.0) ** .5 < 7:   # (black, or one flat colour: everywhere, says nothing)
+                    continue
+                bits = 0
+                for row in range(16):
+                    o = row * 17
+                    for col in range(16):
+                        bits = (bits << 1) | (1 if px[o + col] > px[o + col + 1] else 0)
+                out.append([round((n - 1) / 2.0, 1), '%064x' % bits])
+                if logo and any((bits ^ l).bit_count() <= CRL_D for l in logo):
+                    hit = True
+                    break
+        finally:
+            try:
+                p.kill()
+            except Exception:
+                pass
+            p.wait()
+        if hit or n >= 20:
+            return out
+    return None
 
 
 def crl_hashes():
@@ -9381,8 +9393,8 @@ def crl_names(path):
 def crl_learn(H, pos, neg):
     """Criterion's logo, as the pictures shared by the films whose names say Criterion and not by films outside the Criterion Collection:
     a list of fingerprints (ints)."""
-    P = {i: [int(h, 16) for t, h in (H.get(i) or {}).get('f') or [] if t <= 60] for i in pos if (H.get(i) or {}).get('f')}
-    N = [[int(h, 16) for t, h in (H.get(i) or {}).get('f') or []] for i in neg if (H.get(i) or {}).get('f')]
+    P = {i: [int(h, 16) for t, h in (H.get(i) or {}).get('f') or [] if t <= CRL_SECS] for i in pos if (H.get(i) or {}).get('f')}
+    N = [[int(h, 16) for t, h in (H.get(i) or {}).get('f') or [] if t <= CRL_SECS] for i in neg if (H.get(i) or {}).get('f')]
     if len(P) < 4:
         return []
     need = max(2, int(len(P) * .06))
@@ -9427,7 +9439,7 @@ def crl_classify(g):
             e.update(v=old.get('v'), how=old.get('how'), by='John')
         else:
             fr = (H.get(i) or {}).get('f')
-            hit = next((t for t, h in (fr or []) if any(((int(h, 16) ^ l).bit_count() <= CRL_D) for l in logo)), None)
+            hit = next((t for t, h in (fr or []) if t <= CRL_SECS and any(((int(h, 16) ^ l).bit_count() <= CRL_D) for l in logo)), None)
             named = any(CRL_NAME.search(n or '') for n in crl_names(f.get('path')))
             if hit is not None:
                 e.update(v='yes', how='Criterion’s logo at %d:%02d' % (int(hit) // 60, int(hit) % 60))
@@ -9441,7 +9453,7 @@ def crl_classify(g):
                 e.update(v='no', how='no Criterion logo in its first %d seconds' % CRL_SECS)
         out[i] = e
     save(os.path.join(CRL, 'result.json'), out)
-    CRL_STATE['logos'], CRL_STATE['known'] = len(logo), len(pos)
+    CRL_STATE['logos'], CRL_STATE['known'], CRL_STATE['logo'] = len(logo), len(pos), logo
     n = {}
     for e in out.values():
         n[e['v']] = n.get(e['v'], 0) + 1
@@ -9492,7 +9504,7 @@ def crl_scan(g):
                     CRL_STATE['paused'] = 'someone is watching'
                     time.sleep(60)
                 CRL_STATE['paused'] = ''
-                fr = crl_frames(ff, films[i]['path'])
+                fr = crl_frames(ff, films[i]['path'], CRL_STATE.get('logo'))
                 H[i] = {'s': sz, 'f': fr, 'at': int(time.time())}
                 save(os.path.join(CRL, 'h', i + '.json'), H[i])   # (at once: a restart loses nothing)
                 n_ += 1
