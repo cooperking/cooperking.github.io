@@ -971,13 +971,18 @@ def to_mac(slow):
         passed = set()
     sent = st.setdefault('tomac', {})
     waiting, added = sum(1 for x in Q if x.get('from') == 'mini'), []
+    try:   # (one John asked to have done next: first on his Mac's queue, whatever's waiting)
+        pins = set(x.get('id') for x in prio()['pins'])
+    except Exception:
+        pins = set()
+    slow = [x for x in slow if x['id'] in pins] + [x for x in slow if x['id'] not in pins]
     for x in slow:
-        if waiting + len(added) >= TOMAC_MAX:
+        if waiting + len(added) >= TOMAC_MAX and x['id'] not in pins:
             break
         if x['id'] in passed or any(y.get('id') == x['id'] for y in Q) or time.time() - sent.get(x['id'], 0) < 7 * 86400 or not os.path.exists(x['path']):
             continue
         added.append(dict({'id': x['id'], 'name': x['name'], 'at': int(time.time()), 'from': 'mini', 'why': (x.get('why') or '')[:160]},
-                          **({'force': True} if x.get('mode') == 'shrink' else {})))
+                          **({'force': True} if x.get('mode') == 'shrink' else {}), **({'first': True} if x['id'] in pins else {})))
     if added:
         try:   # (read again just before writing: John may have queued one meanwhile)
             Q = json.load(open(qf))
@@ -985,8 +990,12 @@ def to_mac(slow):
         except (OSError, ValueError):
             Q = []
         ids_ = set(y.get('id') for y in Q)
+        new_ = [y for y in added if y['id'] not in ids_]
         tmp = qf + '.tmp'
-        json.dump(Q + [y for y in added if y['id'] not in ids_], open(tmp, 'w'))
+        first_ = [y for y in new_ if y.get('first')]
+        for y in new_:
+            y.pop('first', None)
+        json.dump(first_ + Q + [y for y in new_ if y not in first_], open(tmp, 'w'))
         os.replace(tmp, qf)
         for y in added:
             sent[y['id']] = int(time.time())

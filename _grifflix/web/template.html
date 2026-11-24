@@ -6972,16 +6972,28 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
       $('#tmbox').innerHTML = '<div class="xblock" style="margin:0 0 22px"><h4 style="font:500 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--fg-2);margin:0 0 8px">Convert on your Mac</h4>' +
         '<p class="ov" style="margin:0 0 10px;font-size:14px">' + esc(/^to make smaller/.test(cv) ? 'It’s bigger than it needs to be' + (cv.match(/\(([^)]*)\)/) ? ' (' + cv.match(/\(([^)]*)\)/)[1] + ')' : '') + ': it can be made smaller'
           : /^to repackage/.test(cv) ? 'It needs repackaging ' + cv.replace(/^to repackage\s*/, '') : 'It needs converting (' + cv.replace(/^to /, '') + ')') + '. This Mac does it much faster than the Mac mini, which checks it and puts it in place.</p>' +
-        '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">' + (onMac ? '<button class="pill" id="thismac">Convert on this Mac</button>' : '') + '<button class="pill" id="queuemac">Queue for my Mac</button></div><div id="tmprog" style="margin-top:10px"></div></div>';
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">' + (onMac ? '<button class="pill" id="thismac">Convert on this Mac</button>' : '') + '<span id="qmbtns" style="display:contents"></span></div><p class="ov" id="qmsay" style="margin:8px 0 0;font-size:13px"></p><div id="tmprog" style="margin-top:10px"></div></div>';
       wireThisMac();
-      $('#queuemac').onclick = function () {
-        var b = this; b.disabled = true;
-        mac('macqueue', { op: 'add', id: it.id, name: showName(it) }).then(function (r) {
-          var n = (r.queue || []).length, at = (r.queue || []).map(function (x) { return x.id; }).indexOf(it.id) + 1;
-          b.textContent = 'Queued for your Mac ✓';
-          toast(r.setup ? showName(it) + ': number ' + at + ' of ' + n + ' for your Mac. It starts when your Mac is on and at home.' : 'Queued. Set your Mac up to take queued films: admin page, Conversions, On your Mac.');
-        }).catch(function (e) { b.disabled = false; toast(e.status === 404 ? 'The Mac mini needs its update first (within 15 minutes).' : e.message || 'The Mac mini didn’t answer'); });
+      // (its place on his Mac's queue, said, with Next on my Mac and Take off, not only Queue for my Mac: John, 24 Nov 2026, "I can queue things
+      // for my mac but not easily cancel things from the queue")
+      var mq = j.macq || {};
+      var qDraw = function () {
+        var at = mq.at || 0;
+        $('#qmsay').textContent = mq.job ? 'Being made on your Mac now (' + mq.job + ').' : at ? 'Number ' + at + ' of ' + mq.of + ' on your Mac’s queue: it starts when your Mac is on and at home.' : '';
+        $('#qmbtns').innerHTML = mq.job ? '' : (at === 1 ? '' : '<button class="pill" id="qmfirst">Next on my Mac</button>') + (at ? '<button class="pill" id="qmoff">Take off the queue</button>' : '<button class="pill" id="queuemac">Queue for my Mac</button>');
+        [['qmfirst', 'first'], ['queuemac', 'add'], ['qmoff', 'remove']].forEach(function (c) {
+          var b = $('#' + c[0]); if (!b) return;
+          b.onclick = function () {
+            b.disabled = true;
+            mac('macqueue', { op: c[1], id: it.id, name: showName(it) }).then(function (r) {
+              var Q = (r.queue || []).map(function (x) { return x.id; }); mq.at = Q.indexOf(it.id) + 1; mq.of = Q.length;
+              qDraw();
+              toast(c[1] === 'remove' ? showName(it) + ': off your Mac’s queue' : r.setup ? showName(it) + ': number ' + mq.at + ' of ' + mq.of + ' for your Mac. It starts when your Mac is on and at home.' : 'Queued. Set your Mac up to take queued films: admin page, Conversions, On your Mac.');
+            }).catch(function (e) { b.disabled = false; toast(e.status === 404 ? 'The Mac mini needs its update first (within 15 minutes).' : e.message || 'The Mac mini didn’t answer'); });
+          };
+        });
       };
+      qDraw();
     }
   }).catch(function (e) { $('#finfo').textContent = e.status === 404 ? 'Press Update everything first (the Mac mini needs its update).' : (e.message || 'Couldn’t reach the Mac mini'); });
   var wireThisMac = function () {
@@ -7156,8 +7168,9 @@ function bodyHTML(it, ctx) {
     if (NOTES) h += '<button class="pill" id="aaddpl">+ Playlist</button><button class="pill" id="aaddcal">+ My calendar</button>';
     if (editMode() && it.type !== 'video') h += '<button class="pill" id="acoll">Edit collections</button>';
     // (John's: the Mac mini to do this one next, when it needs anything: John, 13 Nov 2026, "a convert now option to films if I need them sooner")
-    if (editMode() && it.conv) h += '<button class="pill" id="aconv" title="' + esc('The Mac mini will ' + it.conv.replace(/^to /, '')) + '"' + (it.convNow || it.convNext ? ' disabled' : '') + '>' +
-      (it.convNow ? 'Converting now' : it.convNext ? 'Next for the Mac mini ✓' : /^to make smaller/.test(it.conv) ? 'Make smaller next' : 'Convert next') + '</button>';
+    // (the Mac mini's own next: repackaging only (minutes); converting is John's Mac's, from Convert on your Mac below: 24 Nov 2026)
+    if (editMode() && it.conv && /^to repackage/.test(it.conv)) h += '<button class="pill" id="aconv" title="' + esc('The Mac mini will ' + it.conv.replace(/^to /, '')) + '"' + (it.convNow || it.convNext ? ' disabled' : '') + '>' +
+      (it.convNow ? 'Repackaging now' : it.convNext ? 'Next for the Mac mini ✓' : 'Repackage next') + '</button>';
     if (ME && ME.downloads && !TV && !isSeries) h += '<button class="pill" id="adown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5M5 21h14"/></svg>Download</button>';
   }
   if (!it.ext && shareDayOf(it)) h += '<button class="ico" id="ashare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button>';
@@ -7243,9 +7256,9 @@ function wireBody(it, ctx) {
   });
   on('aconv', function () {
     var b = $('#aconv'); b.disabled = true; b.textContent = 'Putting it next…';
-    mac('convert', { op: 'up', id: it.id, name: it.name }).then(function () { b.textContent = 'Next to convert ✓'; it.convNext = true;
+    mac('convert', { op: 'up', id: it.id, name: it.name }).then(function () { b.textContent = 'Next for the Mac mini ✓'; it.convNext = true;
       toast(it.name + ' is next for the Mac mini (' + it.conv.replace(/^to /, '') + '), after the one it’s on'); })
-      .catch(function (e) { b.disabled = false; b.textContent = 'Convert next'; toast(e.message || 'Couldn’t reach the Mac mini'); });
+      .catch(function (e) { b.disabled = false; b.textContent = 'Repackage next'; toast(e.message || 'Couldn’t reach the Mac mini'); });
   });
   TVP.offer(it);
   on('atrailer', function () { trailer(it); });
