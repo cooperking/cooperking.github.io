@@ -321,7 +321,16 @@ trap 'kill $reporter 2>/dev/null; rm -f "$prog"; echo; echo "Stopped."; curl -fs
 errf=$(mktemp)
 if "$FF" -nostdin -y -v error -stats -progress "$prog" "${args[@]}" 2> >(tee "$errf" >&2); then
   rm -f "$errf"
-  kill $reporter 2>/dev/null; rm -f "$prog"
+  kill $reporter 2>/dev/null
+  # (made only so far: the film read over the network, which went a moment, and ffmpeg took that for its end (La Bola Negra, 2 h 30 of 2 h 39,
+  # 23 Nov 2026): not copied over, and made again: John, 24 Nov 2026, "we need to make sure that never happens")
+  te=$(grep '^out_time_us=' "$prog" 2>/dev/null | tail -1 | cut -d= -f2); rm -f "$prog"
+  if [[ "$te" == <-> && "$dur" == <-> ]] && (( dur > 0 && te / 1000000 < dur - (dur / 100 > 8 ? dur / 100 : 8) )); then
+    got=$(( te / 1000000 )); rm -f "$lt"; trap - INT TERM HUP
+    echo "It stopped at $(( got / 60 )) of $(( dur / 60 )) minutes (the G-Drive's connection went a moment?): not copied, made again."
+    curl -fsS -m 20 -X POST -H 'Content-Type: application/json' -d "{\"ok\":false,\"error\":\"stopped at $(( got / 60 )) of $(( dur / 60 )) min\",\"short\":$got}" "$url/done" >/dev/null 2>&1
+    exit 0
+  fi
   trap - INT TERM HUP
   echo "Made. Copying it to the G-Drive by itself (this window can be closed); the Mac mini then checks it and puts it in place."
   curl -fsS -m 10 -X POST -H 'Content-Type: application/json' -d '{"stage":"copying to the G-Drive","copying":1}' "$url/progress" >/dev/null 2>&1

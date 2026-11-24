@@ -1529,10 +1529,15 @@ def make_handler(g):
                                     rj = {}
                                 job['state'] = 'failed' if rj.get('error') else 'done'
                                 job['error'] = str(rj.get('error') or '')[:200]
+                                m_ = re.match(r'the new file is (\d+) s long, the original (\d+) s', str(rj.get('error') or ''))
+                                if m_ and int(m_.group(1)) < int(m_.group(2)):   # (made short: read only so far, the network gone a moment: made again)
+                                    short_again(job, int(m_.group(1)), int(m_.group(2)))
                                 CONV_NOW.set()
                             else:
                                 log('Not converted on John’s Mac: %s (%s)' % (job['plan']['item'].get('name'), str(body.get('error') or '')[:200]))
-                                if body.get('again') and not job.get('cancel'):   # (the G-Drive went part-way: back at the front of its queue)
+                                if body.get('short') and not job.get('cancel'):   # (John's Mac read only part of it: made again, unless it stops there each time)
+                                    short_again(job, int(body.get('short') or 0), int(job['plan'].get('dur') or 0))
+                                elif body.get('again') and not job.get('cancel'):   # (the G-Drive went part-way: back at the front of its queue)
                                     macq_again(job, time.time(), str(body.get('error') or ''))
                                 try:
                                     os.remove(job['plan']['tmp'])
@@ -7977,6 +7982,30 @@ def macq_again(j, now, why):
     convjobs_save()
 
 
+def short_again(job, got, want):
+    """A film made on John's Mac shorter than it is (La Bola Negra: 2 h 30 of 2 h 39, John's Mac reading it over the network, which went a
+    moment and ffmpeg took for its end: John, 24 Nov 2026, "we need to make sure that never happens"): back at the front of its queue, made
+    again. Stopped at the same place twice (within a minute), the file itself is damaged there: not made again, and said so."""
+    f = os.path.expanduser('~/Grifflix/convert-short.json')
+    S = load(f, {}) or {}
+    name, iid = job['plan']['item'].get('name') or '?', job['id']
+    was = [x for x in S.get(iid) or [] if time.time() - x.get('at', 0) < 30 * 86400]
+    hm = lambda t: '%d:%02d' % (t // 3600, t % 3600 // 60)
+    if any(abs(x.get('got', 0) - got) <= 60 for x in was) or len(was) >= 3:
+        job['state'], job['error'] = 'failed', ('stopped at %s of %s again: the film’s file seems damaged there, so it’s left as it is: replace it with another copy'
+                                                % (hm(got), hm(want)))[:200]
+        log('Converted on John’s Mac: %s: %s' % (name, job['error']))
+        try:
+            record('conversion stopped at the same place twice', film=name, id=iid, at_s=got, of_s=want)
+        except Exception:
+            pass
+    else:
+        S[iid] = was + [{'got': got, 'want': want, 'at': int(time.time())}]
+        save(f, S)
+        macq_again(job, time.time(), 'made %s of %s only (its reading stopped early: the network?): made again' % (hm(got), hm(want)))
+    convjobs_save()
+
+
 def convjobs_save():
     try:
         save(CONVJOBS_AT, {k: v for k, v in CONVJOBS.items() if time.time() - v.get('at', 0) < 86400})
@@ -10431,7 +10460,16 @@ def serve():
     threading.Thread(target=ep_fill_all, args=(g,), daemon=True).start()
     threading.Thread(target=folders_fix_once, args=(g,), daemon=True).start()
     threading.Thread(target=folders_fix2_once, args=(g,), daemon=True).start()
-    threading.Thread(target=east_is_east_once, args=(g,), daemon=True).start()   # (once: East/West made East Is East, 23 Nov 2026)   # (once: The Most Beautiful's and Babo 73's folders, 23 Nov 2026)   # (once: the folders John asked to have put right, 23 Nov 2026)
+    threading.Thread(target=east_is_east_once, args=(g,), daemon=True).start()
+    try:   # (once: La Bola Negra, made 2 h 30 of 2 h 39 on John's Mac on 23 Nov and turned down, made again: 24 Nov 2026)
+        mk_ = os.path.expanduser('~/Grifflix/labolanegra-again.done')
+        if not os.path.exists(mk_):
+            j_ = next((j for j in sorted(CONVJOBS.values(), key=lambda j: -j.get('at', 0)) if j.get('id') == '99909cfc3934c33ceed2b0ca75afba83'), None)
+            if j_ and j_.get('state') == 'failed':
+                short_again(j_, 9001, 9562)
+            open(mk_, 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+    except Exception as e:
+        log('La Bola Negra again: %s' % e)   # (once: East/West made East Is East, 23 Nov 2026)   # (once: The Most Beautiful's and Babo 73's folders, 23 Nov 2026)   # (once: the folders John asked to have put right, 23 Nov 2026)
     threading.Thread(target=renames_follow_once, args=(g,), daemon=True).start()   # (and those followed, as they weren't then)
     threading.Thread(target=to_check_once, args=(g,), daemon=True).start()
     threading.Thread(target=silent_once, args=(g,), daemon=True).start()   # (once: silent films put in Not needed)   # (once: the films in doubt in a To check collection, John's alone)   # (each episode's series' IMDb number and own title, for the searches)   # (once: those turned down by their words, looked at again by when their lines are said)
