@@ -851,8 +851,26 @@ def make_handler(g):
                     dst = job['plan']['tmp'] + '.uploading'
                     cur = os.path.getsize(dst) if os.path.exists(dst) else 0
                     if method == 'GET':
-                        if os.path.exists(job['plan']['tmp']):
-                            return self.send_json(200, {'size': os.path.getsize(job['plan']['tmp']), 'whole': True})
+                        tmp_ = job['plan']['tmp']
+                        if os.path.exists(tmp_):
+                            # (a file there from before this job (the Mac mini's own half-made one, from when it converted: La Bola Negra's, 96 MB of
+                            # 21 Nov) isn't this film from John's Mac: taken for its start, every piece sent was refused, and the film stayed on his
+                            # Mac: John, 24 Nov 2026, "made, but couldn't copy to the G-Drive". Cleared, and the film sent from the start)
+                            sz_, want_ = os.path.getsize(tmp_), int(q.get('total') or 0) if str(q.get('total') or '').isdigit() else 0
+                            if job.get('got') or (want_ and sz_ == want_) or (not want_ and os.path.getmtime(tmp_) >= job['at']):
+                                return self.send_json(200, {'size': sz_, 'whole': True})
+                            try:
+                                os.remove(tmp_)
+                                log('From John’s Mac: %s: a half-made file from before (%.2f GB) where it goes, cleared' % (job['plan']['item'].get('name'), sz_ / 1e9))
+                            except OSError as e:
+                                return self.send_json(409, {'error': 'A file from before is where it goes, and can’t be cleared: %s' % e})
+                        if cur and not job.get('up'):   # (part of a film sent for an earlier job (converted again since: other bytes) never carried on from)
+                            try:
+                                os.remove(dst)
+                                log('From John’s Mac: %s: part of an earlier sending (%.2f GB) cleared, sent from the start' % (job['plan']['item'].get('name'), cur / 1e9))
+                                cur = 0
+                            except OSError as e:
+                                return self.send_json(409, {'error': 'Part of an earlier sending can’t be cleared: %s' % e})
                         return self.send_json(200, {'size': cur - cur % 1048576})   # (from a whole MiB, to carry on from)
                     if method != 'PUT':
                         return self.send_json(405, {'error': 'PUT or GET.'})
@@ -863,7 +881,12 @@ def make_handler(g):
                     if n < 0 or n > 300 * 1048576 or off > cur or total <= 0 or off + n > total:
                         self.close_connection = True
                         return self.send_json(409, {'error': 'Not from there.', 'size': cur - cur % 1048576})
-                    with open(dst, 'r+b' if os.path.exists(dst) else 'wb') as f_:
+                    if not job.get('up'):   # (this job's own sending from here on: only this one's carried on from)
+                        if off:
+                            self.close_connection = True
+                            return self.send_json(409, {'error': 'Not from there.', 'size': 0})
+                        job['up'] = True
+                    with open(dst, 'r+b' if (os.path.exists(dst) and off) else 'wb') as f_:
                         f_.seek(off)
                         f_.truncate(off)
                         left = n
@@ -878,6 +901,7 @@ def make_handler(g):
                     job['stage'] = 'copying to the Mac mini: %d%% of %.1f GB' % (size * 100 // total, total / 1e9)
                     if size >= total:
                         os.replace(dst, job['plan']['tmp'])
+                        job['got'] = True
                         job['stage'] = 'on the G-Drive: the Mac mini checking it'
                         log('From John’s Mac: %s, %.1f GB, on the G-Drive' % (job['plan']['item'].get('name'), total / 1e9))
                     convjobs_save()
@@ -7885,6 +7909,12 @@ def mac_job(iid, force=False):
         return 500, {'error': 'The Mac mini couldn’t plan it: ' + (r.stderr or '').strip()[-200:]}
     if plan.get('error'):
         return 400, {'error': plan['error']}
+    try:   # (a half-made file left where it will go, from the Mac mini's own converting before: cleared, or it's taken for John's film)
+        if plan.get('tmp') and os.path.exists(plan['tmp']):
+            os.remove(plan['tmp'])
+            log('To be converted on John’s Mac: %s: a half-made file from before cleared' % plan['item'].get('name'))
+    except OSError:
+        pass
     tok = secrets.token_urlsafe(18)
     CONVJOBS[tok] = {'plan': plan, 'at': time.time(), 'id': iid, 'state': 'waiting'}
     convjobs_save()
