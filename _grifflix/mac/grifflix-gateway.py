@@ -3668,9 +3668,20 @@ def make_handler(g):
             rf = os.path.join(CRL, 'result.json')
             R = load(rf, {}) or {}
             gf = os.path.join(CRL, 'given.json')
-            if b and b.get('op') in ('logo', 'logodel'):   # (his own pictures of the logo: given, or one taken back)
+            if b and b.get('op') in ('logo', 'logodel', 'logos'):   # (his own pictures of the logo: given, or one taken back)
                 G_ = load(gf, []) or []
-                if b['op'] == 'logo':
+                if b['op'] == 'logos':   # (a video's pictures, some hundreds at a time)
+                    src = str(b.get('src') or 'video')[:80]
+                    for x in (b.get('pics') or [])[:400]:
+                        try:
+                            px = base64.b64decode(str(x.get('px') or ''))
+                        except Exception:
+                            continue
+                        if len(px) == CRL_W * CRL_H and crl_vec(px) is not None:
+                            G_.append({'src': src, 't': x.get('t'), 'px': base64.b64encode(px).decode(), 'at': int(time.time())})
+                elif b['op'] == 'logodel' and b.get('src'):
+                    G_ = [x for x in G_ if x.get('src') != str(b['src'])]
+                elif b['op'] == 'logo':
                     try:
                         px = base64.b64decode(str(b.get('px') or ''))
                     except Exception:
@@ -3688,7 +3699,7 @@ def make_handler(g):
                 if CRL_STATE.get('films'):
                     threading.Thread(target=crl_classify, args=(g,), daemon=True).start()
                 record('Criterion logo pictures given by John', count=len(G_))
-            if b and b.get('op') not in ('logo', 'logodel'):
+            if b and b.get('op') not in ('logo', 'logodel', 'logos'):
                 iid, v = str(b.get('id') or ''), str(b.get('v') or '')
                 if iid not in R:
                     return self.send_json(404, {'error': 'That film isn’t on the list.'})
@@ -3701,7 +3712,9 @@ def make_handler(g):
                 if CRL_STATE.get('films') and not CRL_STATE.get('running'):
                     threading.Thread(target=crl_classify, args=(g,), daemon=True).start()
             return self.send_json(200, {'films': [dict(e, id=k) for k, e in R.items()], 'progress': {k: CRL_STATE.get(k) for k in ('done', 'of', 'running', 'paused', 'logos', 'known')},
-                                        'given': [{'name': x.get('name'), 'prev': x.get('prev'), 'at': x.get('at')} for x in load(gf, []) or []]})
+                                        'given': [{'name': x.get('name'), 'prev': x.get('prev'), 'at': x.get('at'), 'n': n_} for n_, x in enumerate(load(gf, []) or []) if not x.get('src')],
+                                        'videos': sorted(set(x.get('src') for x in load(gf, []) or [] if x.get('src'))),
+                                        'vidn': {s_: sum(1 for x in load(gf, []) or [] if x.get('src') == s_) for s_ in set(x.get('src') for x in load(gf, []) or [] if x.get('src'))}})
 
         def api_fileinfo(self, me, user, q, b):
             """John's only: a film's file as it is, for its Edit panel (John, 16 Nov 2026: "I need to see file format details in the edit
@@ -9497,16 +9510,21 @@ def crl_learn(H, pos, neg):
     N = [V[i] for i in neg if V.get(i)]
     # (John's own pictures of the logo, each version of it (from his logo history video): each used as it is, and the pictures in his films
     # most like it learnt too, as they look in a film (John, 24 Nov 2026, "I could have give you the pictures to learn from if you'd have said"))
-    given = []
+    given, vid = [], []
     for gp in load(os.path.join(CRL, 'given.json'), []) or []:
         try:
             v = crl_vec(base64.b64decode(gp.get('px') or ''))
         except Exception:
             v = None
         if v is not None:
-            given.append((v, crl_small(v), 0, 'given: ' + str(gp.get('name') or ''), 0))
+            (vid if gp.get('src') else given).append((v, crl_small(v), 0, 'given: ' + str(gp.get('src') or gp.get('name') or ''), gp.get('t') or 0))
+    # (the pictures of his logo history video (John, 24 Nov 2026, "I need to load an mp4 of the logos history"): each a picture of the logo,
+    # unless films outside the Criterion Collection have it too (a title card, a black screen with words))
+    for vv in vid:
+        if not any(crl_alike(vv[0], l[0]) >= .97 for l in given) and sum(1 for fs in N if any(crl_match(x[1], [vv]) for x in fs)) < CRL_NEG:
+            given.append(vv)
     from_given = []
-    for gv in given:
+    for gv in [x for x in given if not str(x[3]).startswith('given: ') or x[4] == 0][:40]:
         for i_, fs in P.items():
             best = max(fs, key=lambda x: crl_alike(x[1][0], gv[0]), default=None)
             if best and crl_alike(best[1][0], gv[0]) >= .75:
