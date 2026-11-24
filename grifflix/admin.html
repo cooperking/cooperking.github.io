@@ -699,7 +699,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat">Each film in The Criterion Collection looked at for Criterion’s logo at its start (its first 30 seconds), as you’d see it when it plays. The Mac mini learns what the logo looks like from the films whose file names say Criterion, then looks for it in every film, while nobody’s watching. Only you see this, here and on each film’s page. Say so on any it got wrong: your word stands.</p>
         <p class="stat" id="crsay">Looking on the Mac mini…</p>
         <p class="stat" style="margin-top:14px"><b>Your pictures of the logo.</b> A screenshot of each version of Criterion’s logo (from your logo history video, or a film) teaches the Mac mini exactly what to look for. The whole screen, as it plays.</p>
-        <div class="state"><label class="btn" for="crpic">Give pictures of the logo</label><input type="file" id="crpic" accept="image/*" multiple hidden></div>
+        <div class="state"><label class="btn" for="crpic">Give pictures of the logo</label><input type="file" id="crpic" accept="image/*" multiple hidden><label class="btn" for="crvid">Give a video of the logo (an MP4)</label><input type="file" id="crvid" accept="video/*" hidden></div>
+        <p class="stat" id="crvsay" hidden></p>
         <div class="state" id="crgiven" style="gap:8px"></div>
         <div class="state" id="crtabs"></div>
         <div id="crlist"></div>
@@ -2003,10 +2004,49 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     };
     one();
   };
+  // (a video of the logo's history, gone through here, two pictures a second, the flat and repeated ones left out, and sent: John, 24 Nov 2026,
+  // "I need to load an mp4 of the logos history")
+  $('#crvid').onchange = function () {
+    var f = (this.files || [])[0]; this.value = ''; if (!f) return;
+    var v = document.createElement('video'), u = URL.createObjectURL(f), say = $('#crvsay'); v.muted = true; v.preload = 'auto'; v.playsInline = true; v.src = u;
+    var c = document.createElement('canvas'); c.width = 320; c.height = 180; var x = c.getContext('2d'); x.imageSmoothingQuality = 'high';
+    var s2 = document.createElement('canvas'); s2.width = 32; s2.height = 18; var y = s2.getContext('2d'); y.imageSmoothingQuality = 'high';
+    var pics = [], last = null, t = 0;
+    say.hidden = false; say.textContent = 'Reading ' + f.name + '…';
+    var norm = function (g) { var n = g.length, m = 0, i; for (i = 0; i < n; i++) m += g[i]; m /= n; var d = [], ss = 0; for (i = 0; i < n; i++) { d.push(g[i] - m); ss += (g[i] - m) * (g[i] - m); } if (ss / n < 49) return null; var k = Math.sqrt(ss); return d.map(function (q) { return q / k; }); };
+    var grab = function () {
+      x.drawImage(v, 0, 0, 320, 180); y.drawImage(c, 0, 0, 32, 18);
+      var d = y.getImageData(0, 0, 32, 18).data, g = [], i; for (i = 0; i < d.length; i += 4) g.push(Math.round(.299 * d[i] + .587 * d[i + 1] + .114 * d[i + 2]));
+      var nv = norm(g); if (!nv) return;
+      if (last) { var dot = 0; for (i = 0; i < nv.length; i++) dot += nv[i] * last[i]; if (dot >= .97) return; }   // (the same as the one before)
+      last = nv; pics.push({ t: Math.round(t * 10) / 10, px: btoa(String.fromCharCode.apply(null, g)) });
+    };
+    var send = function () {
+      URL.revokeObjectURL(u);
+      if (!pics.length) { say.textContent = 'Nothing in that video could be used.'; return; }
+      var parts = []; for (var i = 0; i < pics.length; i += 300) parts.push(pics.slice(i, i + 300));
+      var next = function () {
+        var p = parts.shift(); if (!p) { say.textContent = pics.length + ' pictures from ' + f.name + ' given: the Mac mini learns from them now.'; return crLook(); }
+        fetch(GW + '/api/critrel', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'logos', src: f.name, pics: p }) })
+          .then(function (r) { if (!r.ok) throw new Error('The Mac mini didn’t answer.'); return r.json(); }).then(next).catch(function (e) { say.textContent = e.message; });
+      };
+      say.textContent = 'Sending ' + pics.length + ' pictures…'; next();
+    };
+    v.onloadedmetadata = function () { t = 0; v.currentTime = 0; };
+    v.onseeked = function () {
+      grab(); say.textContent = 'Reading ' + f.name + ': ' + Math.floor(t / 60) + ':' + ('0' + Math.floor(t % 60)).slice(-2) + ' of ' + Math.floor(v.duration / 60) + ':' + ('0' + Math.floor(v.duration % 60)).slice(-2) + ', ' + pics.length + ' pictures';
+      t += .5; if (t < v.duration) v.currentTime = t; else send();
+    };
+    v.onerror = function () { say.textContent = 'This browser can’t play that video: try an MP4 (H.264).'; URL.revokeObjectURL(u); };
+  };
   function crDraw(j) {
     CR.j = j;
     var GV = j.given || [];
-    $('#crgiven').innerHTML = GV.map(function (x, n) { return '<span style="display:inline-flex;flex-direction:column;gap:4px;align-items:center"><img alt="" src="' + esc(x.prev || '') + '" style="width:128px;height:72px;object-fit:cover;border:1px solid var(--line, rgba(255,255,255,.2))"><button class="btn" type="button" data-crgdel="' + n + '" style="padding:4px 10px">Take back</button></span>'; }).join('');
+    $('#crgiven').innerHTML = GV.map(function (x) { return '<span style="display:inline-flex;flex-direction:column;gap:4px;align-items:center"><img alt="" src="' + esc(x.prev || '') + '" style="width:128px;height:72px;object-fit:cover;border:1px solid var(--line, rgba(255,255,255,.2))"><button class="btn" type="button" data-crgdel="' + x.n + '" style="padding:4px 10px">Take back</button></span>'; }).join('') +
+      (j.videos || []).map(function (vn) { return '<span class="stat" style="margin:0">' + esc(vn) + ': ' + ((j.vidn || {})[vn] || 0) + ' pictures <button class="btn" type="button" data-crvdel="' + esc(vn) + '" style="padding:4px 10px">Take back</button></span>'; }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-crvdel]'), function (b) { b.onclick = function () {
+      b.disabled = true; fetch(GW + '/api/critrel', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'logodel', src: b.dataset.crvdel }) }).then(function (r) { return r.json(); }).then(crDraw).catch(function () { b.disabled = false; });
+    }; });
     Array.prototype.forEach.call(document.querySelectorAll('[data-crgdel]'), function (b) { b.onclick = function () {
       b.disabled = true; fetch(GW + '/api/critrel', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'logodel', n: +b.dataset.crgdel }) }).then(function (r) { return r.json(); }).then(crDraw).catch(function () { b.disabled = false; });
     }; }); var F = j.films || [], pr = j.progress || {}, by = { no: [], yes: [], unread: [], todo: [] };
