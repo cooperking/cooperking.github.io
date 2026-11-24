@@ -1987,6 +1987,11 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     fetch(GW + '/api/critrel', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { if (r.status === 404) throw new Error('old'); return r.ok ? r.json() : Promise.reject(new Error('The Mac mini didn’t answer.')); }).then(crDraw)
       .catch(function (e) { $('#crsay').textContent = e.message === 'old' ? 'The Mac mini takes its update within a few minutes.' : e.message; });
   }
+  // (a picture drawn in its own shape, black round it, as the Mac mini fits a film's: a squarer or wider one not stretched)
+  function crFit(x, src, w, h) {
+    x.fillStyle = '#000'; x.fillRect(0, 0, 320, 180); if (!w || !h) { x.drawImage(src, 0, 0, 320, 180); return; }
+    var k = Math.min(320 / w, 180 / h), dw = w * k, dh = h * k; x.drawImage(src, (320 - dw) / 2, (180 - dh) / 2, dw, dh);
+  }
   // (his own pictures of each version of the logo, each made small and grey here, as the Mac mini keeps a film's pictures, and sent: John,
   // 24 Nov 2026, "I could have give you the pictures to learn from if you'd have said")
   $('#crpic').onchange = function () {
@@ -1995,7 +2000,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var f = files.shift(); if (!f) { toast('Pictures given: the Mac mini learns from them now'); return crLook(); }
       var im = new Image(), u = URL.createObjectURL(f);
       im.onload = function () {
-        var c = document.createElement('canvas'); c.width = 320; c.height = 180; var x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(im, 0, 0, 320, 180);
+        var c = document.createElement('canvas'); c.width = 320; c.height = 180; var x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; crFit(x, im, im.naturalWidth, im.naturalHeight);
         var prev = c.toDataURL('image/jpeg', .7), s2 = document.createElement('canvas'); s2.width = 32; s2.height = 18; var y = s2.getContext('2d'); y.imageSmoothingQuality = 'high'; y.drawImage(c, 0, 0, 32, 18);
         var d = y.getImageData(0, 0, 32, 18).data, g = ''; for (var i = 0; i < d.length; i += 4) g += String.fromCharCode(Math.round(.299 * d[i] + .587 * d[i + 1] + .114 * d[i + 2]));
         URL.revokeObjectURL(u);
@@ -2017,7 +2022,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     say.hidden = false; say.textContent = 'Reading ' + f.name + '…';
     var norm = function (g) { var n = g.length, m = 0, i; for (i = 0; i < n; i++) m += g[i]; m /= n; var d = [], ss = 0; for (i = 0; i < n; i++) { d.push(g[i] - m); ss += (g[i] - m) * (g[i] - m); } if (ss / n < 49) return null; var k = Math.sqrt(ss); return d.map(function (q) { return q / k; }); };
     var grab = function () {
-      x.drawImage(v, 0, 0, 320, 180); y.drawImage(c, 0, 0, 32, 18);
+      crFit(x, v, v.videoWidth, v.videoHeight); y.drawImage(c, 0, 0, 32, 18);
       var d = y.getImageData(0, 0, 32, 18).data, g = [], i; for (i = 0; i < d.length; i += 4) g.push(Math.round(.299 * d[i] + .587 * d[i + 1] + .114 * d[i + 2]));
       var nv = norm(g); if (!nv) return;
       if (last) { var dot = 0; for (i = 0; i < nv.length; i++) dot += nv[i] * last[i]; if (dot >= .97) return; }   // (the same as the one before)

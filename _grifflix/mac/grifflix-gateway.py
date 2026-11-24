@@ -9384,13 +9384,17 @@ CRL = os.path.expanduser('~/Grifflix/critlogo')
 CRL_SECS = 30   # (the logo, where there is one, within the first 15 seconds: 30 to be safe: John, 24 Nov 2026)
 # (each picture kept small (32 x 18, grey) and compared as it is, not as a rough outline: the outlines took one studio's logo on a dark
 # ground for another's, Intimate Relations' for Criterion's, and missed a seventh of the real ones: 24 Nov 2026)
-# (read again (3): the pictures between others were left undecoded to be quicker, and some films' openings came out smeared (Exotica's): 24 Nov)
-CRL_W, CRL_H, CRL_V = 32, 18, 3
+# (read again (3): the pictures between others were left undecoded to be quicker, and some films' openings came out smeared (Exotica's): 24 Nov;
+# (4): each kept its own shape, its black bars put back, as on the screen: a widescreen film kept without them had the logo's ring squeezed
+# tall (Short Cuts, Carlos, Tess), a squarer one stretched wide (Touki Bouki, Odd Man Out, Black Orpheus, M), .7 like it, not .85 to .9)
+CRL_W, CRL_H, CRL_V = 32, 18, 4
+CRL_VF = ("scale=w='if(gte(dar,16/9),320,round(90*dar)*2)':h='if(gte(dar,16/9),round(160/dar)*2,180)':flags=area,"
+          "pad=320:180:(ow-iw)/2:(oh-ih)/2,scale=32:18:flags=area,format=gray")   # (fitted ten times the size first: the ring not shifted by half a picture's dot)
 CRL_T = float(os.environ.get('GRIFFLIX_CRL_T') or .9)   # (how alike two pictures must be, 1 being the same)
 # (against John's own pictures of the logo: the ring of Criterion's logo, as it plays in his films (Homicide, Secrets & Lies), .85 to .9 like
 # them, and nothing else in his logo history video above .7; in two of a film's pictures at least, the logo being on the screen for seconds)
 CRL_TG = float(os.environ.get('GRIFFLIX_CRL_TG') or .8)
-CRL_HITS = 2
+CRL_HITS = 3   # (three: Eddington has a small ring of its own, 23 seconds in, like it in two pictures; the logo is in twenty)
 CRL_CH = .85   # (the Criterion Channel's opening, learnt from a film of his that has it: as alike as this)
 CRL_SHARE, CRL_NEG = .2, 2   # (a logo picture: in a fifth of the films named Criterion at least, and in fewer than 2 films outside)
 CRL_STATE = {}
@@ -9461,7 +9465,7 @@ def crl_frames(ff, path, logo=None):
         out, n, hit, seen = [], 0, False, 0
         try:
             p = subprocess.Popen([ff, '-nostdin', '-v', 'error'] + opt + ['-t', str(CRL_SECS), '-i', path, '-an', '-sn', '-dn', '-vf',
-                                  'fps=2,scale=%d:%d:flags=area,format=gray' % (CRL_W, CRL_H), '-f', 'rawvideo', '-'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+                                  'fps=2,' + CRL_VF, '-f', 'rawvideo', '-'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         except Exception:
             continue
         t0 = time.time()
@@ -9517,7 +9521,7 @@ def crl_videos_in(ff):
             continue
         sz = CRL_W * CRL_H
         try:
-            r = subprocess.run([ff, '-nostdin', '-v', 'error', '-i', fp, '-an', '-sn', '-dn', '-vf', 'fps=2,scale=%d:%d:flags=area,format=gray' % (CRL_W, CRL_H),
+            r = subprocess.run([ff, '-nostdin', '-v', 'error', '-i', fp, '-an', '-sn', '-dn', '-vf', 'fps=2,' + CRL_VF,
                                 '-f', 'rawvideo', '-'], capture_output=True, timeout=1800)
         except Exception as e:
             log('Criterion logo video %s: %s' % (n, str(e)[:120]))
