@@ -9726,8 +9726,8 @@ def crl_classify(g):
 
 
 def crl_scan(g):
-    """In the background, when nobody's watching: each Criterion Collection film's start looked at once (again only if its file changes),
-    and some films outside it, for what isn't Criterion's; the record made again as it goes."""
+    """In the background, when nobody's watching: each Criterion Collection film's start looked at once (again only if its file changes);
+    the record made again as it goes."""
     time.sleep(180)   # (after the gateway's own start-up work; was 15 minutes, and each update's restart put it back)
     os.makedirs(os.path.join(CRL, 'h'), exist_ok=True)
     # (of his logo history video, only the main logo, the ring that makes the C (2:11 to 2:53 of it, less the words at 2:40): John, 24 Nov
@@ -9757,11 +9757,8 @@ def crl_scan(g):
             films = {}
             for x in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': crit['Id'], 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path,ProductionYear'}, timeout=180) or {}).get('Items') or []:
                 films[x['Id']] = {'name': x.get('Name'), 'year': x.get('ProductionYear'), 'path': x.get('Path') or '', 'crit': True}
-            lid = (g.st.get('libraries') or {}).get('movies')
-            if lid:   # (and 150 outside it, the same ones each time, for the pictures every film has)
-                allm = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path,ProductionYear'}, timeout=180) or {}).get('Items') or []
-                for x in sorted((x for x in allm if x['Id'] not in films), key=lambda x: hashlib.md5(x['Id'].encode()).hexdigest())[:150]:
-                    films[x['Id']] = {'name': x.get('Name'), 'year': x.get('ProductionYear'), 'path': x.get('Path') or '', 'crit': False}
+            # (only The Criterion Collection's films: no longer 150 outside it as well, for what isn't the logo, now his own pictures say what it
+            # is: John, 24 Nov 2026, "I only need you to test what's in the criterion collection. It makes no sense to test anything else")
             CRL_STATE['films'] = films
             if crl_videos_in(ff):
                 CRL_STATE['logokey'] = None
