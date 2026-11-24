@@ -2778,6 +2778,8 @@ def make_handler(g):
                             MSHEET.update(state='failed', error=str(e)[:200], at=int(time.time()))
                     threading.Thread(target=mk, daemon=True).start()
                 return self.send_json(200, dict(links, sheetjob='making'))
+            if q.get('films'):   # (and Criterion's films not in any box set that Grifflix hasn't: John, 24 Nov 2026)
+                return self.send_json(200, {'films': crit_missing_films(g)})
             return self.send_json(200, dict(links, rows=crit_missing(g)))
 
         def api_bin(self, me, user, q, b):
@@ -8323,23 +8325,7 @@ def crit_missing(g):
             by_spine.setdefault(int(f['spine']), sl)
         if re.match(r'^\d{4}$', str(f.get('year') or '')):
             by_ty.setdefault((fold(f.get('title')), int(f['year'])), sl)
-    owned = set(sl for _, sl in crit_pairs(g))
-    try:
-        its = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie,Series', 'Fields': 'Path,ProductionYear,ProviderIds'}).get('Items') or []
-        by_t = crit_tmdb_slugs()
-        for it in its:
-            if str((it.get('ProviderIds') or {}).get('Tmdb') or '') in by_t:   # (by its TMDB number, whatever year it has here)
-                owned.add(by_t[str(it['ProviderIds']['Tmdb'])])
-            sp = spine_of(it.get('Path'), it.get('Type') == 'Series')
-            if sp and str(sp).isdigit() and int(sp) in by_spine:
-                owned.add(by_spine[int(sp)])
-            y = it.get('ProductionYear') or 0
-            for d in (0, 1, -1):
-                if (fold(it.get('Name')), y + d) in by_ty:
-                    owned.add(by_ty[(fold(it.get('Name')), y + d)])
-                    break
-    except Exception as e:
-        log('Criterion missing:', e)
+    owned = crit_owned(g, by_spine, by_ty)
     rows = []
     sp_of = ct.get('setspine') or {}
     def order(kv):
@@ -8355,6 +8341,55 @@ def crit_missing(g):
             nm2 = set_nm.get(fold(nm)) or next((set_nm[c] for c in difflib.get_close_matches(fold(nm), list(set_nm), 1, .75)), None) or nm
             rows.append([nm2, sp, t, y, fsp, link])
     return rows
+
+
+def crit_missing_films(g):
+    """Criterion's films on its own list that aren't in Grifflix and aren't in any of its box sets (those are listed with their sets): one
+    row each, [spine, title, year, director, country, page], by spine (John, 24 Nov 2026, "can I get a list of what I'm missing from the
+    criterion collection that isn't in the box sets too")."""
+    home = os.path.expanduser('~/Grifflix')
+    ct = load(os.path.join(home, 'criterion-tags.json'), {}) or {}
+    lst = load(os.path.join(home, 'criterion-list.json'), []) or []
+    in_sets = set(sl for mem in (ct.get('sets') or {}).values() for sl in mem)
+    films, by_spine, by_ty = {}, {}, {}
+    for f in lst:
+        link = str(f.get('link') or '')
+        if '/films/' not in link:
+            continue
+        sl = link.replace('https://www.criterion.com/films/', '')
+        films[sl] = f
+        if str(f.get('spine') or '').isdigit():
+            by_spine.setdefault(int(f['spine']), sl)
+        if re.match(r'^\d{4}$', str(f.get('year') or '')):
+            by_ty.setdefault((fold(f.get('title')), int(f['year'])), sl)
+    owned = crit_owned(g, by_spine, by_ty)
+    rows = [[str(f.get('spine') or ''), str(f.get('title') or ''), str(f.get('year') or ''), str(f.get('director') or ''), str(f.get('country') or ''), str(f.get('link') or '')]
+            for sl, f in films.items() if sl not in owned and sl not in in_sets]
+    rows.sort(key=lambda r: (0, int(r[0])) if r[0].isdigit() else (1, 0))
+    return rows
+
+
+def crit_owned(g, by_spine, by_ty):
+    """The Criterion pages of the films Grifflix has: by Criterion's list matched to them, by TMDB number, by spine in a folder's name, and
+    by title and year (a year either side)."""
+    owned = set(sl for _, sl in crit_pairs(g))
+    try:
+        its = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie,Series', 'Fields': 'Path,ProductionYear,ProviderIds'}, timeout=180).get('Items') or []
+        by_t = crit_tmdb_slugs()
+        for it in its:
+            if str((it.get('ProviderIds') or {}).get('Tmdb') or '') in by_t:   # (by its TMDB number, whatever year it has here)
+                owned.add(by_t[str(it['ProviderIds']['Tmdb'])])
+            sp = spine_of(it.get('Path'), it.get('Type') == 'Series')
+            if sp and str(sp).isdigit() and int(sp) in by_spine:
+                owned.add(by_spine[int(sp)])
+            y = it.get('ProductionYear') or 0
+            for d in (0, 1, -1):
+                if (fold(it.get('Name')), y + d) in by_ty:
+                    owned.add(by_ty[(fold(it.get('Name')), y + d)])
+                    break
+    except Exception as e:
+        log('Criterion missing:', e)
+    return owned
 
 
 def give_countries(g):
