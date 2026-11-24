@@ -8712,7 +8712,7 @@
    "sound": [
     "Energetic",
     "Dark",
-    "Bittersweet"
+    "Uplifting"
    ],
    "claude": [
     "Dark",
@@ -13469,7 +13469,7 @@
    "sound": [
     "Melancholy",
     "Bittersweet",
-    "Romantic"
+    "Mellow"
    ],
    "claude": [
     "Bittersweet",
@@ -26015,7 +26015,7 @@
       ],
       [
        "Romantic",
-       14
+       13
       ]
      ]
     ]
@@ -26491,7 +26491,7 @@
    "moodMix": [
     [
      "Bittersweet",
-     42
+     41
     ],
     [
      "Romantic",
@@ -26509,7 +26509,7 @@
      [
       [
        "Bittersweet",
-       42
+       41
       ],
       [
        "Romantic",
@@ -26607,7 +26607,7 @@
     ],
     [
      "Uplifting",
-     16
+     15
     ]
    ],
    "moodEvidence": [
@@ -26625,7 +26625,7 @@
       ],
       [
        "Uplifting",
-       16
+       15
       ]
      ]
     ]
@@ -26864,7 +26864,7 @@
    "moodMix": [
     [
      "Energetic",
-     52
+     53
     ],
     [
      "Joyful",
@@ -26882,7 +26882,7 @@
      [
       [
        "Energetic",
-       52
+       53
       ],
       [
        "Joyful",
@@ -29244,7 +29244,7 @@
    "moodMix": [
     [
      "Mellow",
-     42
+     43
     ],
     [
      "Melancholy",
@@ -29262,7 +29262,7 @@
      [
       [
        "Mellow",
-       42
+       43
       ],
       [
        "Melancholy",
@@ -30004,6 +30004,141 @@
     "electronic",
     "indie pop",
     "pop"
+   ],
+   "check": true
+  },
+  "63z2sCDrIqqZEJte0jUS3X": {
+   "n": 288,
+   "title": "Trashcan",
+   "artist": "Delta Spirit",
+   "moods": [
+    "Bittersweet"
+   ],
+   "moodMix": [
+    [
+     "Bittersweet",
+     41
+    ],
+    [
+     "Romantic",
+     12
+    ],
+    [
+     "Uplifting",
+     11
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Bittersweet",
+       41
+      ],
+      [
+       "Romantic",
+       12
+      ],
+      [
+       "Uplifting",
+       11
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Bittersweet",
+    "Romantic",
+    "Uplifting"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Indie Rock",
+    "Alternative Rock",
+    "Brit Pop"
+   ],
+   "genres": [
+    "Indie"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Indie",
+     56
+    ],
+    [
+     "Folk",
+     23
+    ],
+    [
+     "Rock",
+     12
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Indie",
+       50
+      ],
+      [
+       "Folk",
+       35
+      ],
+      [
+       "Rock",
+       15
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Indie",
+       65
+      ],
+      [
+       "Folk",
+       18
+      ],
+      [
+       "Rock",
+       12
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Indie",
+       58
+      ],
+      [
+       "Pop",
+       30
+      ],
+      [
+       "Rock",
+       7
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "americana",
+    "folk rock",
+    "indie rock",
+    "rock"
    ],
    "check": true
   }
