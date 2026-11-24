@@ -7126,7 +7126,7 @@ function tvFit() {   // a TV: a film's pop-up all on the screen, its description
   (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function () { requestAnimationFrame(go); });
 }
 function typeName(it) { return { movie: 'Film', series: 'Series', episode: it.series || 'Episode', video: 'Home video', photo: 'Photo' }[it.type] || ''; }
-function crSay(c) { return c.v === 'yes' ? 'Criterion’s own ✓ (' + c.how + ')' : c.v === 'no' ? 'Not Criterion’s? (' + c.how + ')' : 'Couldn’t be looked at'; }   // (Criterion's own release or not, said: John's alone)
+function crSay(c) { return c.v === 'yes' ? 'Criterion’s own ✓ (' + c.how + ')' : c.v === 'channel' ? 'From the Criterion Channel (' + c.how + ')' : c.v === 'no' ? 'Not Criterion’s? (' + c.how + ')' : c.v === 'todo' ? 'Not looked at yet' : 'Couldn’t be looked at'; }   // (Criterion's own release or not, said: John's alone)
 function bodyHTML(it, ctx) {
   var meta = [];
   if (it.type === 'episode') meta.push('Series ' + (it.season || 0) + ', episode ' + (it.ep || 0) + ' · ' + esc(it.name));
@@ -7196,7 +7196,7 @@ function bodyHTML(it, ctx) {
   // (Criterion's own release or not, by its logo at the start, for John alone: John, 24 Nov 2026, "mark it on the film, but only I should be
   // able to see it"; his word on it with It is / It isn't)
   if (!PUBLIC && ME && ME.owner && it.crel) h += '<div class="incoll" id="crelrow"><span>Release</span><b style="font-weight:400" id="crelsay">' + esc(crSay(it.crel) + (it.crel.by ? ' · by you' : '')) + '</b>' +
-    '<a href="#" data-crelv="yes">It is</a><a href="#" data-crelv="no">It isn’t</a></div>';
+    '<a href="#" data-crelv="yes">It is</a><a href="#" data-crelv="no">It isn’t</a><a href="#" data-crelv="channel">Criterion Channel</a></div>';
   if (isSeries && it.episodes) {
     var seasons = {}; it.episodes.forEach(function (e) { (seasons[e.season || 0] = seasons[e.season || 0] || []).push(e); });
     var keys = Object.keys(seasons).sort(function (a, b) { return a - b; }), cur = ctx.season || (it.next ? (it.episodes.filter(function (e) { return e.id === it.next; })[0] || {}).season : keys[0]) || keys[0];
@@ -7281,7 +7281,7 @@ function wireBody(it, ctx) {
     mac('critrel', { id: it.id, v: a.dataset.crelv }).then(function (j) {
       var f = (j.films || []).filter(function (x) { return x.id === it.id; })[0];
       if (f) { it.crel = { v: f.v, how: f.how, by: f.by }; var w = $('#crelsay'); if (w) w.textContent = crSay(it.crel) + (f.by ? ' · by you' : ''); }
-      toast(a.dataset.crelv === 'yes' ? 'Noted: Criterion’s own release' : 'Noted: not Criterion’s release');
+      toast(a.dataset.crelv === 'yes' ? 'Noted: Criterion’s own release' : a.dataset.crelv === 'channel' ? 'Noted: from the Criterion Channel' : 'Noted: not Criterion’s release');
     }).catch(function (er) { toast(er.message || 'The Mac mini didn’t answer'); });
   }; });
   on('aconv', function () {
