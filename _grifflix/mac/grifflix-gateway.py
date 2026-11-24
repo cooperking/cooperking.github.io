@@ -9336,9 +9336,48 @@ def bom_now():
 # small fingerprint (16 x 16, how light changes across it). Criterion's logo is learnt from the films whose own file names say Criterion
 # (the frames most of them share, and the films outside the Criterion Collection don't), then looked for in every one.
 CRL = os.path.expanduser('~/Grifflix/critlogo')
-CRL_SECS, CRL_D = 30, 26   # (the logo, where there is one, within the first 15 seconds: 30 to be safe: John, 24 Nov 2026)   # (how far in it looks; how many of the 256 marks may differ for two pictures to be the same)
+CRL_SECS = 30   # (the logo, where there is one, within the first 15 seconds: 30 to be safe: John, 24 Nov 2026)
+# (each picture kept small (32 x 18, grey) and compared as it is, not as a rough outline: the outlines took one studio's logo on a dark
+# ground for another's, Intimate Relations' for Criterion's, and missed a seventh of the real ones: 24 Nov 2026)
+CRL_W, CRL_H, CRL_V = 32, 18, 2
+CRL_T = float(os.environ.get('GRIFFLIX_CRL_T') or .9)   # (how alike two pictures must be, 1 being the same)
+CRL_SHARE, CRL_NEG = .2, 2   # (a logo picture: in a fifth of the films named Criterion at least, and in fewer than 2 films outside)
 CRL_STATE = {}
 CRL_NAME = re.compile(r'(?i)(criterion|(^|[._ \-\[(])CC([._ \-\])]|$))')
+
+
+def crl_vec(b):
+    """A picture's pixels made comparable: its own average taken away and its contrast evened (a flat or black one: None)."""
+    n = len(b)
+    m = sum(b) / float(n)
+    d = [v - m for v in b]
+    ss = sum(x * x for x in d)
+    if ss / n < 49:   # (black, or one flat colour: everywhere, says nothing)
+        return None
+    k = ss ** .5
+    return [x / k for x in d]
+
+
+def crl_small(v):
+    """The same picture at half the size, for a quick first look before the full comparison."""
+    out = []
+    for r in range(0, CRL_H, 2):
+        for c in range(0, CRL_W, 2):
+            out.append(v[r * CRL_W + c] + v[r * CRL_W + c + 1] + v[(r + 1) * CRL_W + c] + v[(r + 1) * CRL_W + c + 1])
+    k = sum(x * x for x in out) ** .5 or 1
+    return [x / k for x in out]
+
+
+def crl_alike(a, b):
+    """How alike two pictures are, 1 the same, 0 nothing alike (their correlation)."""
+    import operator
+    return sum(map(operator.mul, a, b))
+
+
+def crl_match(fv, logo):
+    """Whether a picture (its full and small forms) is one of the logo's."""
+    v, sm = fv
+    return any(crl_alike(sm, l[1]) >= CRL_T - .05 and crl_alike(v, l[0]) >= CRL_T for l in logo)
 
 
 def crl_ffmpeg(g):
@@ -9354,9 +9393,11 @@ def crl_ffmpeg(g):
 
 
 def crl_frames(ff, path, logo=None):
-    """The film's first CRL_SECS seconds as fingerprints: [[seconds, hex], ...], plain dark or flat pictures left out; None if unread. With
-    the logo known, it stops reading the moment it sees it (John, 24 Nov 2026, "it also can stop reading once the logo is recognised")."""
+    """The film's first CRL_SECS seconds, two pictures a second, each kept small and grey: [[seconds, base64], ...], flat ones left out; None
+    if unread. With the logo known, it stops reading the moment it sees it (John, 24 Nov 2026, "it also can stop reading once the logo is
+    recognised")."""
     import subprocess
+    sz = CRL_W * CRL_H
     # (the pictures between others (B-frames) not decoded, nor the smoothing filter: two or three times quicker, and two pictures a second need
     # no more (a film took 100 seconds on the Mac mini, 1,400 of them over a day: 24 Nov 2026); each tried plainer if a copy won't have it)
     fast = ['-skip_frame', 'bidir', '-skip_loop_filter', 'all']
@@ -9364,26 +9405,21 @@ def crl_frames(ff, path, logo=None):
         out, n, hit = [], 0, False
         try:
             p = subprocess.Popen([ff, '-nostdin', '-v', 'error'] + opt + ['-t', str(CRL_SECS), '-i', path, '-an', '-sn', '-dn', '-vf',
-                                  'fps=2,scale=17:16:flags=area,format=gray', '-f', 'rawvideo', '-'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+                                  'fps=2,scale=%d:%d:flags=area,format=gray' % (CRL_W, CRL_H), '-f', 'rawvideo', '-'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         except Exception:
             continue
         t0 = time.time()
         try:
             while time.time() - t0 < 600:
-                px = p.stdout.read(272)
-                if len(px) < 272:
+                px = p.stdout.read(sz)
+                if len(px) < sz:
                     break
                 n += 1
-                mean = sum(px) / 272.0
-                if (sum((v - mean) ** 2 for v in px) / 272.0) ** .5 < 7:   # (black, or one flat colour: everywhere, says nothing)
+                v = crl_vec(px)
+                if v is None:
                     continue
-                bits = 0
-                for row in range(16):
-                    o = row * 17
-                    for col in range(16):
-                        bits = (bits << 1) | (1 if px[o + col] > px[o + col + 1] else 0)
-                out.append([round((n - 1) / 2.0, 1), '%064x' % bits])
-                if logo and any((bits ^ l).bit_count() <= CRL_D for l in logo):
+                out.append([round((n - 1) / 2.0, 1), base64.b64encode(px).decode()])
+                if logo and crl_match((v, crl_small(v)), logo):
                     hit = True
                     break
         finally:
@@ -9417,29 +9453,43 @@ def crl_names(path):
     return names
 
 
+def crl_vectors(H, ids):
+    """Each film's pictures made comparable: {id: [(seconds, (full, small)), ...]}."""
+    out = {}
+    for i in ids:
+        fr = (H.get(i) or {}).get('f') or []
+        L = []
+        for t, b in fr:
+            v = crl_vec(base64.b64decode(b))
+            if v is not None:
+                L.append((t, (v, crl_small(v))))
+        out[i] = L
+    return out
+
+
 def crl_learn(H, pos, neg):
-    """Criterion's logo, as the pictures shared by the films whose names say Criterion and not by films outside the Criterion Collection:
-    a list of fingerprints (ints)."""
-    P = {i: [int(h, 16) for t, h in (H.get(i) or {}).get('f') or [] if t <= CRL_SECS] for i in pos if (H.get(i) or {}).get('f')}
-    N = [[int(h, 16) for t, h in (H.get(i) or {}).get('f') or [] if t <= CRL_SECS] for i in neg if (H.get(i) or {}).get('f')]
+    """Criterion's logo: the pictures shared by at least a fifth of the films whose names say Criterion (and those John has said are), and by
+    fewer than two films outside the Criterion Collection: [(full, small, how many share it, film, seconds), ...]."""
+    V = crl_vectors(H, [i for i in pos + neg if (H.get(i) or {}).get('f')])
+    P = {i: [x for x in V[i] if x[0] <= 25] for i in pos if V.get(i)}
+    N = [V[i] for i in neg if V.get(i)]
     if len(P) < 4:
         return []
-    need = max(2, int(len(P) * .06))
-    cand = []
-    ids = list(P)
+    need = max(2, int(round(len(P) * CRL_SHARE)))
+    cand, ids = [], list(P)
     for a in ids:
-        for c in P[a]:
-            sup = sum(1 for b in ids if b != a and any(((c ^ d).bit_count() <= CRL_D) for d in P[b]))
+        for t, fv in P[a]:
+            sup = 1 + sum(1 for b in ids if b != a and any(crl_match(fv, [(x[1][0], x[1][1])]) for x in P[b]))
             if sup >= need:
-                cand.append((sup, c))
+                cand.append((sup, a, t, fv))
     logo = []
-    for sup, c in sorted(cand, reverse=True):
-        if any((c ^ l).bit_count() <= CRL_D // 2 for l in logo):
+    for sup, a, t, fv in sorted(cand, key=lambda x: -x[0]):
+        if any(crl_alike(fv[0], l[0]) >= .97 for l in logo):
             continue
-        if sum(1 for fs in N if any((c ^ d).bit_count() <= CRL_D for d in fs)) >= max(2, len(N) * .03):
+        if sum(1 for fs in N if any(crl_match(x[1], [fv]) for x in fs)) >= CRL_NEG:
             continue   # (in films outside the Criterion Collection too: a studio's logo, a warning, not Criterion's)
-        logo.append(c)
-        if len(logo) >= 300:
+        logo.append((fv[0], fv[1], sup, a, t))
+        if len(logo) >= 200:
             break
     return logo
 
@@ -9455,7 +9505,16 @@ def crl_classify(g):
     # History") learnt from a film of his that has it)
     pos += [i for i, e in R.items() if e.get('by') == 'John' and e.get('v') == 'yes' and i in films and i not in pos]
     neg += [i for i, e in R.items() if e.get('by') == 'John' and e.get('v') == 'no' and i in films and i not in neg]
-    logo = crl_learn(H, pos, neg)
+    key = '%s|%s' % (sorted(i for i in pos if (H.get(i) or {}).get('f')), sorted(i for i in neg if (H.get(i) or {}).get('f')))
+    if CRL_STATE.get('logokey') != key:   # (learnt again only when what it's learnt from has changed)
+        CRL_STATE['logo'], CRL_STATE['logokey'] = crl_learn(H, pos, neg), key
+        try:   # (the logo's pictures kept, to be looked at)
+            save(os.path.join(CRL, 'logo.json'), [{'pic': base64.b64encode(bytes(max(0, min(255, int(128 + 600 * x))) for x in l[0])).decode(), 'share': l[2],
+                                                    'film': (films.get(l[3]) or {}).get('name'), 't': l[4]} for l in CRL_STATE['logo']])
+        except Exception:
+            pass
+    logo = CRL_STATE['logo']
+    V = crl_vectors(H, [i for i, f in films.items() if f.get('crit')])
     out = {}
     for i, f in films.items():
         if not f.get('crit'):
@@ -9466,7 +9525,7 @@ def crl_classify(g):
             e.update(v=old.get('v'), how=old.get('how'), by='John')
         else:
             fr = (H.get(i) or {}).get('f')
-            hit = next((t for t, h in (fr or []) if t <= CRL_SECS and any(((int(h, 16) ^ l).bit_count() <= CRL_D) for l in logo)), None)
+            hit = next((t for t, fv in (V.get(i) or []) if t <= CRL_SECS and crl_match(fv, logo)), None)
             named = any(CRL_NAME.search(n or '') for n in crl_names(f.get('path')))
             if hit is not None:
                 e.update(v='yes', how='Criterion’s logo at %d:%02d' % (int(hit) // 60, int(hit) % 60))
@@ -9480,7 +9539,7 @@ def crl_classify(g):
                 e.update(v='no', how='no Criterion logo in its first %d seconds' % CRL_SECS)
         out[i] = e
     save(os.path.join(CRL, 'result.json'), out)
-    CRL_STATE['logos'], CRL_STATE['known'], CRL_STATE['logo'] = len(logo), len(pos), logo
+    CRL_STATE['logos'], CRL_STATE['known'] = len(logo), len(pos)
     n = {}
     for e in out.values():
         n[e['v']] = n.get(e['v'], 0) + 1
@@ -9519,7 +9578,7 @@ def crl_scan(g):
                     sz = os.path.getsize(f['path'])
                 except OSError:
                     continue
-                if (H.get(i) or {}).get('s') != sz:   # (those named Criterion first, then those outside the collection: the logo learnt early)
+                if (H.get(i) or {}).get('s') != sz or (H.get(i) or {}).get('v') != CRL_V:   # (those named Criterion first, then those outside: the logo learnt early)
                     named = f['crit'] and any(CRL_NAME.search(n or '') for n in crl_names(f['path']))
                     todo.append((0 if named else 1 if not f['crit'] else 2, i, sz))
             todo.sort()
@@ -9532,11 +9591,11 @@ def crl_scan(g):
                     time.sleep(60)
                 CRL_STATE['paused'] = ''
                 fr = crl_frames(ff, films[i]['path'], CRL_STATE.get('logo'))
-                H[i] = {'s': sz, 'f': fr, 'at': int(time.time())}
+                H[i] = {'s': sz, 'f': fr, 'at': int(time.time()), 'v': CRL_V}
                 save(os.path.join(CRL, 'h', i + '.json'), H[i])   # (at once: a restart loses nothing)
                 n_ += 1
                 CRL_STATE['done'] = CRL_STATE.get('done', 0) + 1
-                if n_ % 100 == 0 or i == first2:
+                if n_ % 100 == 0 or i == first2 or (not CRL_STATE.get('logo') and i == todo[-1][1]):
                     crl_classify(g)   # (every hundred, and once the logo can be learnt, before the rest)
             CRL_STATE['running'] = False
             crl_classify(g)
