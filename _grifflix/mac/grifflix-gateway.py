@@ -994,6 +994,26 @@ def make_handler(g):
                     self.end_headers()
                     self.wfile.write(body_)
                     return
+                if u.path in ('/macagent/logonext', '/macagent/logodone'):   # (John's Mac's helper: the Criterion logo check, the opening of each
+                    # film read there (logocheck.py), not on the Mac mini, slowed for heat all day and once turned off by it: John, 25 Nov 2026,
+                    # "Run the logo check on your Mac")
+                    tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
+                    want = (g.st.get('macagent') or {}).get('key')
+                    if not want or not tok or not hmac.compare_digest(hashlib.sha256(tok.encode()).hexdigest(), want):
+                        return self.send_json(403, {'error': 'Not allowed.'})
+                    MACAGENT['seen'] = int(time.time()); macagent_note()
+                    watch_ = someone_watching(g)
+                    if u.path == '/macagent/logodone':
+                        if method != 'POST':
+                            return self.send_json(405, {'error': 'POST'})
+                        r_ = crl_mac_done(self.body())
+                        r_.update(stop=watch_, wait=600 if watch_ else 0)   # (someone's started watching: no more read till they've finished)
+                        return self.send_json(200, r_)
+                    why_ = ('someone is watching' if watch_ else 'paused by you' if (g.st.get('macagent') or {}).get('paused') else
+                            'not at home' if q.get('home') != '1' else '')
+                    if why_:
+                        return self.send_json(200, {'films': [], 'wait': 600, 'why': why_})
+                    return self.send_json(200, crl_mac_next(int(q.get('n')) if str(q.get('n') or '').isdigit() else 8))
                 if u.path == '/macagent/subnext':
                     self._subnext = True
                 if u.path in ('/macagent/subnext', '/macagent/subdone', '/macagent/subprog', '/macagent/subfile'):   # (John's Mac's helper: English subtitles made ready, a film at a time,
@@ -3777,7 +3797,7 @@ def make_handler(g):
                         'subs': {'at': SUBASK.get('at'), 'said': SUBASK.get('said')}},
                 'mini': {'conv': {'alive': bool(conv_alive(cur)), 'state': cur.get('state'), 'id': cur.get('id'), 'name': cur.get('name'), 'pct': cur.get('pct'), 'why': cur.get('why'),
                                   'since': cur.get('since'), 'at': cur.get('at'), 'next': [x for x in cur.get('next') or [] if x.get('id') not in done_][:8], 'left': cur.get('left')},
-                         'crl': {k: CRL_STATE.get(k) for k in ('done', 'of', 'running', 'paused')},
+                         'crl': {k: CRL_STATE.get(k) for k in ('done', 'of', 'running', 'paused', 'onmac')},
                          'health': hl}})
 
         def api_critrel(self, me, user, q, b):
@@ -3840,7 +3860,7 @@ def make_handler(g):
                 if CRL_STATE.get('films') and not CRL_STATE.get('running'):
                     threading.Thread(target=crl_classify, args=(g,), daemon=True).start()
             G2_ = load(gf, []) or []
-            return self.send_json(200, {'films': [dict(e, id=k) for k, e in R.items()], 'progress': {k: CRL_STATE.get(k) for k in ('done', 'of', 'running', 'paused', 'logos', 'known', 'mine', 'chans')},
+            return self.send_json(200, {'films': [dict(e, id=k) for k, e in R.items()], 'progress': {k: CRL_STATE.get(k) for k in ('done', 'of', 'running', 'paused', 'onmac', 'logos', 'known', 'mine', 'chans')},
                                         'vidon': {s_: sum(1 for x in G2_ if x.get('src') == s_ and not x.get('off')) for s_ in set(x.get('src') for x in G2_ if x.get('src'))},
                                         'given': [{'name': x.get('name'), 'prev': x.get('prev'), 'at': x.get('at'), 'n': n_} for n_, x in enumerate(load(gf, []) or []) if not x.get('src')],
                                         'videos': sorted(set(x.get('src') for x in load(gf, []) or [] if x.get('src'))),
@@ -9944,6 +9964,76 @@ def crl_classify(g):
     return out
 
 
+CRL_LOCK = threading.Lock()
+CRL_MAC_FOR = 1800   # (John's Mac counted as reading them for half an hour after it last asked: off, asleep or away longer, the Mac mini reads them)
+
+
+def crl_mac_on():
+    """John's Mac is reading the films' openings (it's asked for some in the last half hour)."""
+    return time.time() - (CRL_STATE.get('macat') or 0) < CRL_MAC_FOR
+
+
+def crl_mac_next(n):
+    """The next few Criterion films for John's Mac to read the opening of, and how to read them (as the Mac mini would: one place says how):
+    {films: [{id, path, s, name}], secs, vf, w, h, left, wait}."""
+    with CRL_LOCK:
+        now_ = time.time()
+        films, todo = CRL_STATE.get('films') or {}, CRL_STATE.get('todo')
+        if todo is None:   # (the Mac mini hasn't listed them yet, just after a restart)
+            return {'films': [], 'wait': 600, 'why': 'not listed yet'}
+        CRL_STATE['macat'] = now_
+        done_, skip_, cl_ = CRL_STATE.setdefault('macdone', set()), CRL_STATE.setdefault('macskip', set()), CRL_STATE.setdefault('claims', {})
+        out = []
+        for i, sz in todo:
+            if i in done_ or i in skip_ or i == CRL_STATE.get('reading') or now_ - cl_.get(i, 0) < 1200 or i not in films:
+                continue
+            cl_[i] = now_
+            out.append({'id': i, 'path': films[i]['path'], 's': sz, 'name': films[i].get('name')})
+            if len(out) >= max(1, min(n, 20)):
+                break
+        left = sum(1 for i, _ in todo if i not in done_ and i not in skip_)
+        return {'films': out, 'secs': CRL_SECS, 'vf': 'fps=2,' + CRL_VF, 'w': CRL_W, 'h': CRL_H, 'left': left, 'wait': 0 if out else 3600}
+
+
+def crl_mac_done(b):
+    """One film's opening as John's Mac read it: its pictures (each CRL_W x CRL_H, grey, two a second, one after another) kept as the Mac
+    mini's own would be. One it couldn't find or read: left for the Mac mini to read itself."""
+    i = str(b.get('id') or '')
+    with CRL_LOCK:
+        films = CRL_STATE.get('films') or {}
+        if not re.match(r'^[0-9a-f]{32}$', i) or i not in films:
+            return {'ok': False, 'error': 'Not one of the Criterion Collection’s films.'}
+        CRL_STATE.setdefault('claims', {}).pop(i, None)
+        sz_ = dict(CRL_STATE.get('todo') or []).get(i)
+        if b.get('missing') or b.get('bad') or sz_ is None:   # (not on the G-Drive as John's Mac sees it, or it couldn't read it there)
+            CRL_STATE.setdefault('macskip', set()).add(i)
+            if b.get('missing') or b.get('bad'):
+                log('Criterion releases: %s couldn’t be read on John’s Mac (%s): left for the Mac mini' % (films[i].get('name'), 'not found' if b.get('missing') else 'unreadable'))
+            return {'ok': True}
+    try:
+        px = base64.b64decode(str(b.get('px64') or ''))
+    except Exception:
+        px = b''
+    one = CRL_W * CRL_H
+    n = len(px) // one
+    if n < 20:
+        with CRL_LOCK:
+            CRL_STATE.setdefault('macskip', set()).add(i)
+        return {'ok': True}
+    fr = []
+    for k in range(min(n, CRL_SECS * 2 + 2)):
+        p_ = px[k * one:(k + 1) * one]
+        if crl_vec(p_) is not None:   # (black, or one flat colour, left out as the Mac mini leaves them)
+            fr.append([round(k / 2.0, 1), base64.b64encode(p_).decode()])
+    save(os.path.join(CRL, 'h', i + '.json'), {'s': sz_, 'f': fr, 'at': int(time.time()), 'v': CRL_V, 'on': 'mac'})
+    with CRL_LOCK:
+        if i not in CRL_STATE.setdefault('macdone', set()):
+            CRL_STATE['macdone'].add(i)
+            CRL_STATE['done'] = CRL_STATE.get('done', 0) + 1
+            CRL_STATE['macnew'] = CRL_STATE.get('macnew', 0) + 1
+    return {'ok': True}
+
+
 def crl_scan(g):
     """In the background, when nobody's watching: each Criterion Collection film's start looked at once (again only if its file changes);
     the record made again as it goes."""
@@ -9994,10 +10084,25 @@ def crl_scan(g):
                     todo.append((0 if named else 1 if not f['crit'] else 2, i, sz))
             todo.sort()
             first2 = next((t[1] for t in todo if t[0] == 2), None)
+            with CRL_LOCK:   # (the list John's Mac takes them from too)
+                CRL_STATE.update(todo=[(t[1], t[2]) for t in todo], macdone=set(), macskip=set(), claims={})
             CRL_STATE.update(of=len(films), done=len(films) - len(todo), running=bool(todo))
             n_ = 0
             for _, i, sz in todo:
+                gone_ = False
                 while True:   # (and while the Mac is hot: it can wait, the media server and the converter can't)
+                    if i in CRL_STATE['macdone']:   # (read on John's Mac)
+                        gone_ = True
+                        break
+                    if crl_mac_on() and i not in CRL_STATE['macskip']:   # (John's Mac reading them: left to it, the Mac mini only matching
+                        # what it sends, every hundred: John, 25 Nov 2026, "Run the logo check on your Mac")
+                        CRL_STATE.update(paused='', onmac=True)
+                        if CRL_STATE.get('macnew', 0) >= 100:
+                            CRL_STATE['macnew'] = 0
+                            crl_classify(g)
+                        time.sleep(30)
+                        continue
+                    CRL_STATE['onmac'] = False
                     if someone_watching(g):
                         CRL_STATE['paused'] = 'someone is watching'
                         time.sleep(60)
@@ -10008,8 +10113,14 @@ def crl_scan(g):
                         time.sleep(300)
                         continue
                     break
+                if gone_:
+                    continue
                 CRL_STATE['paused'] = ''
-                fr = crl_frames(ff, films[i]['path'], (CRL_STATE.get('logo') or []) + (CRL_STATE.get('chan') or []))
+                CRL_STATE['reading'] = i
+                try:
+                    fr = crl_frames(ff, films[i]['path'], (CRL_STATE.get('logo') or []) + (CRL_STATE.get('chan') or []))
+                finally:
+                    CRL_STATE['reading'] = None
                 H[i] = {'s': sz, 'f': fr, 'at': int(time.time()), 'v': CRL_V}
                 save(os.path.join(CRL, 'h', i + '.json'), H[i])   # (at once: a restart loses nothing)
                 time.sleep(5)   # (a rest between films: the drive and the processors free for everything else)
@@ -10020,7 +10131,7 @@ def crl_scan(g):
                     crl_classify(g)
                 if n_ % 100 == 0 or i == first2 or (not CRL_STATE.get('logo') and i == todo[-1][1]):
                     crl_classify(g)   # (every hundred, and once the logo can be learnt, before the rest)
-            CRL_STATE['running'] = False
+            CRL_STATE.update(running=False, onmac=False, macnew=0)
             crl_classify(g)
         except Exception as e:
             # (the media server slow to answer (just after a restart, while it's busy): tried again in ten minutes, not the next morning)
