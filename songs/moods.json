@@ -2692,7 +2692,7 @@
    "sound": [
     "Melancholy",
     "Romantic",
-    "Dark"
+    "Bittersweet"
    ],
    "claude": [
     "Bittersweet",
@@ -7478,8 +7478,8 @@
    "moodFrom": "Claude",
    "sound": [
     "Melancholy",
-    "Dreamy",
-    "Mellow"
+    "Mellow",
+    "Dreamy"
    ],
    "claude": [
     "Melancholy",
@@ -9081,7 +9081,7 @@
     "pop",
     "pop rap"
    ],
-   "checkWhy": "Energetic, but the audio sounds calmer than 86% of the songs",
+   "checkWhy": "Energetic, but the audio sounds calmer than 87% of the songs",
    "check": true
   },
   "6nkMHXkhmvCzxtvewoOEJT": {
@@ -11123,7 +11123,7 @@
    "sound": [
     "Mellow",
     "Playful",
-    "Dreamy"
+    "Romantic"
    ],
    "claude": [
     "Playful"
@@ -17832,8 +17832,8 @@
    ],
    "moodFrom": "Claude",
    "sound": [
-    "Energetic",
     "Joyful",
+    "Energetic",
     "Romantic"
    ],
    "claude": [
@@ -18142,8 +18142,8 @@
    ],
    "moodFrom": "Claude",
    "sound": [
-    "Dreamy",
     "Mellow",
+    "Dreamy",
     "Melancholy"
    ],
    "claude": [
@@ -18458,8 +18458,8 @@
    ],
    "moodFrom": "Claude (researched)",
    "sound": [
-    "Dreamy",
     "Romantic",
+    "Dreamy",
     "Mellow"
    ],
    "claude": [
@@ -18548,8 +18548,8 @@
    ],
    "moodFrom": "Claude (researched)",
    "sound": [
-    "Dreamy",
     "Uplifting",
+    "Dreamy",
     "Mellow"
    ],
    "claude": [
@@ -21023,7 +21023,7 @@
    "sound": [
     "Melancholy",
     "Mellow",
-    "Dreamy"
+    "Bittersweet"
    ],
    "claude": [
     "Joyful",
@@ -22829,7 +22829,7 @@
    "sound": [
     "Uplifting",
     "Dreamy",
-    "Playful"
+    "Joyful"
    ],
    "claude": [
     "Joyful",
@@ -24581,7 +24581,7 @@
    "sound": [
     "Mellow",
     "Melancholy",
-    "Uplifting"
+    "Dreamy"
    ],
    "claude": [
     "Mellow",
@@ -26015,7 +26015,7 @@
       ],
       [
        "Romantic",
-       13
+       14
       ]
      ]
     ]
@@ -26130,15 +26130,15 @@
    "moodMix": [
     [
      "Dark",
-     67
+     68
     ],
     [
      "Melancholy",
      9
     ],
     [
-     "Dreamy",
-     7
+     "Bittersweet",
+     6
     ]
    ],
    "moodEvidence": [
@@ -26148,15 +26148,15 @@
      [
       [
        "Dark",
-       67
+       68
       ],
       [
        "Melancholy",
        9
       ],
       [
-       "Dreamy",
-       7
+       "Bittersweet",
+       6
       ]
      ]
     ]
@@ -26165,7 +26165,7 @@
    "sound": [
     "Dark",
     "Melancholy",
-    "Dreamy"
+    "Bittersweet"
    ],
    "listeners": "none",
    "styles": [
@@ -26270,7 +26270,7 @@
    "moodMix": [
     [
      "Joyful",
-     45
+     46
     ],
     [
      "Playful",
@@ -26278,7 +26278,7 @@
     ],
     [
      "Dreamy",
-     13
+     12
     ]
    ],
    "moodEvidence": [
@@ -26288,7 +26288,7 @@
      [
       [
        "Joyful",
-       45
+       46
       ],
       [
        "Playful",
@@ -26296,7 +26296,7 @@
       ],
       [
        "Dreamy",
-       13
+       12
       ]
      ]
     ]
@@ -26345,7 +26345,7 @@
        9
       ],
       [
-       "Pop",
+       "Electronic",
        5
       ]
      ]
@@ -26491,7 +26491,7 @@
    "moodMix": [
     [
      "Bittersweet",
-     41
+     42
     ],
     [
      "Romantic",
@@ -26509,7 +26509,7 @@
      [
       [
        "Bittersweet",
-       41
+       42
       ],
       [
        "Romantic",
@@ -26864,7 +26864,7 @@
    "moodMix": [
     [
      "Energetic",
-     53
+     52
     ],
     [
      "Joyful",
@@ -26882,7 +26882,7 @@
      [
       [
        "Energetic",
-       53
+       52
       ],
       [
        "Joyful",
@@ -27123,7 +27123,7 @@
     ],
     [
      "Playful",
-     18
+     19
     ]
    ],
    "moodEvidence": [
@@ -27141,7 +27141,7 @@
       ],
       [
        "Playful",
-       18
+       19
       ]
      ]
     ]
@@ -27924,7 +27924,7 @@
    "moodMix": [
     [
      "Romantic",
-     23
+     24
     ],
     [
      "Mellow",
@@ -27942,7 +27942,7 @@
      [
       [
        "Romantic",
-       23
+       24
       ],
       [
        "Mellow",
@@ -28319,7 +28319,7 @@
     ],
     [
      "Dreamy",
-     17
+     16
     ]
    ],
    "moodEvidence": [
@@ -28337,7 +28337,7 @@
       ],
       [
        "Dreamy",
-       17
+       16
       ]
      ]
     ]
@@ -28436,20 +28436,21 @@
    "title": "A Little Respect",
    "artist": "Erasure",
    "moods": [
-    "Dreamy"
+    "Dreamy",
+    "Joyful"
    ],
    "moodMix": [
     [
      "Dreamy",
-     36
+     33
     ],
     [
      "Joyful",
-     17
+     18
     ],
     [
      "Energetic",
-     14
+     15
     ]
    ],
    "moodEvidence": [
@@ -28459,15 +28460,15 @@
      [
       [
        "Dreamy",
-       36
+       33
       ],
       [
        "Joyful",
-       17
+       18
       ],
       [
        "Energetic",
-       14
+       15
       ]
      ]
     ]
@@ -29244,11 +29245,11 @@
    "moodMix": [
     [
      "Mellow",
-     43
+     42
     ],
     [
      "Melancholy",
-     28
+     27
     ],
     [
      "Romantic",
@@ -29262,11 +29263,11 @@
      [
       [
        "Mellow",
-       43
+       42
       ],
       [
        "Melancholy",
-       28
+       27
       ],
       [
        "Romantic",
@@ -29352,7 +29353,7 @@
     ],
     [
      "Playful",
-     14
+     13
     ]
    ],
    "moodEvidence": [
@@ -29370,7 +29371,7 @@
       ],
       [
        "Playful",
-       14
+       13
       ]
      ]
     ]
@@ -29752,11 +29753,11 @@
    "moodMix": [
     [
      "Dreamy",
-     93
+     89
     ],
     [
      "Mellow",
-     6
+     9
     ],
     [
      "Dark",
@@ -29770,11 +29771,11 @@
      [
       [
        "Dreamy",
-       93
+       89
       ],
       [
        "Mellow",
-       6
+       9
       ],
       [
        "Dark",
@@ -30138,6 +30139,128 @@
     "americana",
     "folk rock",
     "indie rock",
+    "rock"
+   ],
+   "check": true
+  },
+  "51HBi6GcB0p3MdLwAUjfSz": {
+   "n": 289,
+   "title": "Schmetterling",
+   "artist": "Cari Cari",
+   "moods": [
+    "Dreamy"
+   ],
+   "moodMix": [
+    [
+     "Dreamy",
+     99
+    ],
+    [
+     "Dark",
+     0
+    ],
+    [
+     "Uplifting",
+     0
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Dreamy",
+       99
+      ],
+      [
+       "Dark",
+       0
+      ],
+      [
+       "Uplifting",
+       0
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Dreamy",
+    "Dark",
+    "Uplifting"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Trance",
+    "Ambient",
+    "Techno"
+   ],
+   "genres": [
+    "Rock"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Rock",
+     47
+    ],
+    [
+     "Indie",
+     24
+    ],
+    [
+     "Electronic",
+     20
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Rock",
+       58
+      ],
+      [
+       "Indie",
+       25
+      ],
+      [
+       "Pop",
+       17
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Rock",
+       61
+      ],
+      [
+       "Indie",
+       39
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Electronic",
+       100
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "indie rock",
+    "pop rock",
     "rock"
    ],
    "check": true
