@@ -499,7 +499,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           <ul class="changes" style="margin-top:8px">
             <li><b>One queue</b>: everything there is to do (films to repackage, and films whose picture has to be made again) is on your Mac’s queue. Films that have just come in go to the top (after any you’ve put first). A film you queue goes after those, before the backlog. The backlog follows: first every film that doesn’t play everywhere yet (an MKV or other file that isn’t an MP4, or a format not every device plays), then the rest; each in order of the space it saves, the largest first.</li>
             <li><b>Your Mac</b> takes the top film whenever it’s on, at home and not paused, one at a time. Films you queue yourself get a full conversion, made smaller, as you set. A film that only needs repackaging gets a full conversion only if that makes it clearly smaller (its picture at least one and a half times the converted rate; never HEVC): otherwise a simple repackaging, the picture untouched. Each film on the queue says which.</li>
-            <li><b>The Mac mini</b> takes only simple repackagings from the queue, only once your Mac has been off (or away) for 10 minutes, and only while nothing is playing. If your Mac comes on part way through, it stops, and the film goes back to the top. A language you put right is its own job (minutes), done whenever your Mac isn’t converting.</li>
+            <li><b>The Mac mini</b> does the simple repackagings on the queue itself, whenever nothing is playing, your Mac on or not: minutes each, as the film never leaves the drive (on your Mac, 25 to 30, copying it over the network both ways). Your Mac takes the conversions meanwhile, in the queue’s order, and the repackagings too if the Mac mini’s converter isn’t running. A language you put right is the Mac mini’s own job too.</li>
             <li><b>Downloads</b> come in one at a time. Each goes onto the G-Drive once the film before it is repackaged.</li>
             <li><b>In the background</b>, when nothing else needs the Mac mini, the Criterion logo check reads your films’ openings. It waits while someone is watching or the Mac mini is hot.</li>
           </ul>
@@ -2795,7 +2795,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     if (x.from !== 'mini') return 'Queued by you · full conversion on your Mac (made smaller)';
     var pre = x.new ? 'Just came in · ' : '';
     if (x.kind === 'remux' && x.big) return pre + 'Full conversion on your Mac, to make it smaller (' + x.big + ' Mbps now; only repackaged if the Mac mini takes it while your Mac is off)';
-    if (x.kind === 'remux') return pre + 'Simple repackaging, the picture untouched' + (x.why ? ': ' + rnWhy(x.why) : '');
+    if (x.kind === 'remux') return pre + 'Simple repackaging on the Mac mini, the picture untouched' + (x.why ? ': ' + rnWhy(x.why) : '');
     return pre + 'Full conversion on your Mac' + (x.why ? ': ' + rnWhy(x.why) : '');
   }
   function rnLook() {
@@ -2846,7 +2846,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var stale = C.at && now - C.at > 600 && (C.state === 'converting' || C.state === 'paused'), cv;
     if (!C.alive) cv = 'Repackaging: not running just now. It’s started again within 10 minutes.';
     else if (stale) cv = 'Repackaging ' + FL(C.name, null, C.id) + ': not heard from since ' + hm(C.at) + '. If it’s stuck, it’s stopped and started again after 45 minutes.';
-    else if (C.state === 'converting') cv = '<b>Now:</b> repackaging ' + FL(C.name, null, C.id) + ' <span class="when" style="display:inline">· ' + Math.floor(C.pct || 0) + '%' + (C.since ? ', started ' + hm(C.since) : '') + '</span>' + line('Your Mac is off, so the Mac mini takes the simple repackagings from the queue.') + bar(C.pct || 0);
+    else if (C.state === 'converting') cv = '<b>Now:</b> repackaging ' + FL(C.name, null, C.id) + ' <span class="when" style="display:inline">· ' + Math.floor(C.pct || 0) + '%' + (C.since ? ', started ' + hm(C.since) : '') + '</span>' + line('The Mac mini does the simple repackagings itself, while your Mac does the conversions.') + bar(C.pct || 0);
     else if (C.state === 'paused') cv = '<b>Paused:</b> ' + FL(C.name, null, C.id) + ' at ' + Math.floor(C.pct || 0) + '%: ' + esc(C.why || '') + '.';
     else if (C.state === 'waiting') { var wy = String(C.why || '');
       var nx0 = (C.next || [])[0];

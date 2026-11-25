@@ -842,7 +842,7 @@ def convert(item, ffmpeg, ffprobe, st):
                     show(why_ if paused else '')
                 if k % 12 == 0 and not os.path.exists(src):   # (its folder renamed meanwhile (Rozmarné léto to Capricious Summer, 23 Nov 2026): stopped, done again under its new name)
                     raise RuntimeError(MOVED)
-                if mac_converting():   # (stopped and cleared, not paused: John, 18 Nov 2026)
+                if mac_converting() and not remux:   # (stopped and cleared, not paused: John, 18 Nov 2026; a repackaging carries on: 25 Nov 2026)
                     raise MacBusy()
                 why_ = 'someone is watching' if watching() else 'a film is downloading' if item.get('mode') == 'remux' and not item.get('fetched') and not item.get('new') and not item.get('redo') and downloading() else ('it’s past %d am: on again at %d am' % (NIGHT[1], NIGHT[0]) if not night() and not item.get('urgent') else '')
                 if why_ and not paused:
@@ -1245,10 +1245,8 @@ def mini_wait(redo=False):
     while nothing is playing"); a language he put right, whenever his Mac isn't converting."""
     if watching():
         return 'someone is watching'
-    if redo:
-        return 'your Mac is converting' if mac_converting() else ''
-    if not mac_off():
-        return 'your Mac is on: it works through the queue, and the Mac mini only takes simple repackaging while your Mac is off'
+    # (and whether John's Mac is on or not: a simple repackaging takes minutes here, where the film never leaves the drive, and 25 to 30 on
+    # his Mac, which copies it over the network both ways; his Mac takes the conversions meanwhile: John, 25 Nov 2026, "option 1 is fine")
     return ''
 
 

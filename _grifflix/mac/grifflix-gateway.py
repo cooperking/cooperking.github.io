@@ -1474,9 +1474,13 @@ def make_handler(g):
                         if MACPLAN.get('t') and MACPLAN['t'].is_alive():
                             return self.send_json(200, {'wait': 'planning', 'name': MACPLAN.get('name')})
                         Q = load(MACQ, []) or []
-                        if not Q:
-                            return self.send_json(200, {'wait': 'empty'})
-                        x = Q.pop(0)
+                        # (the simple repackagings left to the Mac mini, which does them in minutes with the film never leaving the drive, while
+                        # its converter runs; John's Mac takes the conversions meanwhile, in the queue's order: John, 25 Nov 2026, "option 1 is fine")
+                        mini_on = bool(conv_alive(load(os.path.expanduser('~/Grifflix/convert-now.json'), {}) or {}))
+                        at_ = next((i_ for i_, y in enumerate(Q) if not (mini_on and y.get('from') == 'mini' and y.get('kind') == 'remux')), None)
+                        if at_ is None:
+                            return self.send_json(200, {'wait': 'empty' if not Q else 'the Mac mini is repackaging the rest'})
+                        x = Q.pop(at_)
                         save(MACQ, Q)
                         save(MACQ + '.planning', x)   # (kept till it's a job: a restart meanwhile puts it back, not loses it: John, 20 Nov 2026,
                         # "I queued films for my mac but nothing happened": Wild at Heart and News from Home taken off the queue and gone)
