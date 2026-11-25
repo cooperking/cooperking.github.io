@@ -4571,7 +4571,10 @@ def make_handler(g):
                 # the mac mini for grifflix, so happy to clear out space - do a check through")
                 import subprocess
                 path = os.path.realpath(os.path.expanduser(q.get('path') or '~'))
-                if not (path == '/' or path == os.path.expanduser('~') or path.startswith(os.path.expanduser('~') + '/') or path.split('/')[1:2] in (['Applications'], ['Library'], ['private'], ['Users'])):
+                # (and the G-Drive, where the films are: John, 25 Nov 2026, "Why have I only got G-Drive 179 GB free if my entire collection takes
+                # up less than 7tb?")
+                if not (path == '/' or path == os.path.expanduser('~') or path.startswith(os.path.expanduser('~') + '/') or path.split('/')[1:2] in (['Applications'], ['Library'], ['private'], ['Users'])
+                        or path == '/Volumes/G-Drive' or path.startswith('/Volumes/G-Drive/')):
                     return self.send_json(403, {'error': 'Not a folder that can be measured.'})
                 try:
                     r = subprocess.run(['du', '-k', '-x', '-d', '1', path], capture_output=True, text=True, timeout=600)
