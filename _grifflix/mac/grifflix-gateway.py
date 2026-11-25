@@ -4577,7 +4577,9 @@ def make_handler(g):
                         or path == '/Volumes/G-Drive' or path.startswith('/Volumes/G-Drive/')):
                     return self.send_json(403, {'error': 'Not a folder that can be measured.'})
                 try:
-                    r = subprocess.run(['du', '-k', '-x', '-d', '1', path], capture_output=True, text=True, timeout=600)
+                    # (each file too, two folders down, with files=1: what's in the films' folders besides the films)
+                    dep_ = q.get('d') if q.get('d') in ('1', '2', '3') else '1'
+                    r = subprocess.run(['du', '-k', '-x'] + (['-a'] if q.get('files') == '1' else []) + ['-d', dep_, path], capture_output=True, text=True, timeout=600)
                 except subprocess.TimeoutExpired:
                     return self.send_json(504, {'error': 'Took too long to measure.'})
                 rows = []
@@ -4591,7 +4593,8 @@ def make_handler(g):
                     snaps = subprocess.run(['tmutil', 'listlocalsnapshots', '/'], capture_output=True, text=True, timeout=30).stdout.strip()[:2000]
                 except Exception:
                     pass
-                return self.send_json(200, {'path': path, 'folders': rows[:40], 'snapshots': snaps, 'unreadable': len([l for l in (r.stderr or '').splitlines() if 'denied' in l.lower() or 'not permitted' in l.lower()])})
+                n_ = min(int(q.get('n')) if str(q.get('n') or '').isdigit() else 40, 40000)
+                return self.send_json(200, {'path': path, 'folders': rows[:n_], 'rows': len(rows), 'snapshots': snaps, 'unreadable': len([l for l in (r.stderr or '').splitlines() if 'denied' in l.lower() or 'not permitted' in l.lower()])})
             if what == 'jf':   # (the media server's own answers, asked only; e.g. /Items/<id>, /Library/VirtualFolders)
                 path = q.get('path') or ''
                 if not re.match(r'^/(Items|Users/[0-9a-f]{32}/Items|Library/VirtualFolders|System/Info|Sessions|ScheduledTasks|Shows|Search/Hints)', path):
