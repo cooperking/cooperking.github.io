@@ -3329,6 +3329,15 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     else if (x.w > 1928 || x.h > 1088) { q = 'convert'; why = 'bigger than 1080p (' + x.w + '×' + x.h + ')'; }
     else if (x.mbps && x.mbps > thr) { q = 'convert'; why = 'bigger than ' + res + ' needs (' + x.mbps + ' Mbps; ' + thr.toFixed(1) + ' is plenty)'; }
     else why = bpp == null ? 'no rate known' : 'good ' + res;
+    // (one Grifflix converted itself, said so, and from what: a poor copy to begin with, or made worse by converting: John, 25 Nov 2026, "The
+    // Replace section of the Library shows films that the mac has converted itself")
+    if (q === 'replace' && x.conv && !x.rp) {
+      var wv = x.was, wb = null, by = 'converted by Grifflix' + (x.conv_where === 'mac' ? ' on your Mac' : '') + (x.conv_at ? ' (' + new Date(x.conv_at * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ')' : '');
+      if (wv && wv.w && wv.h && wv.mbps) { var we = /HEVC|VP9/i.test(wv.v || '') ? 1.6 : /AV1/i.test(wv.v || '') ? 2 : /H\.264/.test(wv.v || '') ? 1 : .6; wb = wv.mbps * 1e6 * we / (wv.w * wv.h * 24); }
+      why += ' · ' + by + (wb == null ? ', at a rate too low for its picture (since put right): it was probably a better copy before; replace it'
+        : wb >= .035 ? ' from ' + wv.v + ' at ' + wv.mbps + ' Mbps, a good copy: made worse by converting, its original deleted; replace it'
+        : ' from ' + wv.v + ' at ' + wv.mbps + ' Mbps, already a poor copy');
+    }
     return { q: q, res: res, why: why, bpp: bpp == null ? 1 : bpp };
   }
   function lbRows(L) {   // (for a spreadsheet: one row a film)
