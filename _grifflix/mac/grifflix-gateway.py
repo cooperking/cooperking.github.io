@@ -11026,6 +11026,105 @@ def keep_scanning(g):
         SCAN_NOW.clear()
 
 
+HEALTH = os.path.expanduser('~/Grifflix/health')
+
+
+def health_run(cmd, t=60):
+    import subprocess
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=t).stdout or ''
+    except Exception as e:
+        return 'couldn’t: %s' % str(e)[:120]
+
+
+def why_it_stopped():
+    """After the Mac mini starts: why it stopped before, as the Mac itself recorded it (the shutdown cause it notes at each start, its
+    power log, any crash report), and its own settings for starting again, kept in health/last-boot.json and said in the log. It turned
+    itself off at about 23:50 on 24 Nov 2026 and didn't start again till John did (John, "looks like it had totally turned off and didn't
+    restart which is a worry")."""
+    out = {'at': int(time.time())}
+    m = re.search(r'sec = (\d+)', health_run(['sysctl', '-n', 'kern.boottime']))
+    out['boot'] = int(m.group(1)) if m else None
+    os.makedirs(HEALTH, exist_ok=True)
+    lf = os.path.join(HEALTH, 'last-boot.json')
+    if out['boot'] and (load(lf, {}) or {}).get('boot') == out['boot']:
+        return   # (this start's already looked into)
+    out['cause'] = [l.strip()[-200:] for l in health_run(['log', 'show', '--last', '%dm' % max(10, (time.time() - (out['boot'] or time.time())) // 60 + 10),
+                                                      '--style', 'compact', '--predicate', 'eventMessage CONTAINS[c] "shutdown cause"'], 240).splitlines()
+                    if 'cause' in l.lower()][-5:]
+    out['power'] = [l.strip()[:240] for l in health_run(['pmset', '-g', 'log'], 180).splitlines()
+                    if re.search(r'(?i)shutdown cause|previous shutdown|thermal|panic|\b(Sleep|Wake|DarkWake|Start)\s', l)][-40:]
+    reps = []
+    for d in ('/Library/Logs/DiagnosticReports', os.path.expanduser('~/Library/Logs/DiagnosticReports')):
+        try:
+            for n in os.listdir(d):
+                fp = os.path.join(d, n)
+                if time.time() - os.path.getmtime(fp) < 2 * 86400 and re.search(r'(?i)panic|shutdown|stall|hang|jetsam|reset|watchdog|thermal', n):
+                    try:
+                        head = open(fp, errors='replace').read(2500)
+                    except OSError:
+                        head = '(couldn’t be read)'
+                    reps.append({'name': n, 'at': int(os.path.getmtime(fp)), 'head': head})
+        except OSError:
+            pass
+    out['reports'] = sorted(reps, key=lambda x: -x['at'])[:8]
+    out['settings'] = [l.strip() for l in health_run(['pmset', '-g']).splitlines()][:40]
+    out['therm'] = health_run(['pmset', '-g', 'therm']).strip()[:600]
+    save(lf, out)
+    try:   # (and each start kept, a few weeks of them)
+        H_ = load(os.path.join(HEALTH, 'boots.json'), []) or []
+        save(os.path.join(HEALTH, 'boots.json'), (H_ + [{k: out[k] for k in ('at', 'boot', 'cause')} | {'reports': [r['name'] for r in out['reports']]}])[-60:])
+    except Exception:
+        pass
+    ar = next((l for l in out['settings'] if l.startswith('autorestart')), 'autorestart: not said')
+    log('The Mac mini started at %s; before that: %s; crash reports: %s; %s' % (
+        time.strftime('%d %b %H:%M', time.localtime(out['boot'])) if out['boot'] else '?', '; '.join(out['cause']) or 'no shutdown cause found',
+        ', '.join(r['name'] for r in out['reports']) or 'none', ar))
+    record('The Mac mini started again', cause=out['cause'], reports=[r['name'] for r in out['reports']], autorestart=ar)
+
+
+def health_watch():
+    """Every five minutes, how hard the Mac mini is working (its load, free memory, swap, whether it's slowed itself for heat, and what's
+    using it most), a week of it kept in health/<day>.jsonl, so that if it stops again what came before shows; under strain, said in the
+    log."""
+    time.sleep(90)
+    try:
+        why_it_stopped()
+    except Exception as e:
+        log('Why the Mac mini stopped: %s' % str(e)[:160])
+    ncpu = os.cpu_count() or 4
+    warned = 0
+    while True:
+        try:
+            s_ = {'at': int(time.time()), 'load': [round(x, 1) for x in os.getloadavg()]}
+            m = re.search(r'free percentage:\s*(\d+)', health_run(['memory_pressure'], 40))
+            s_['memfree'] = int(m.group(1)) if m else None
+            m = re.search(r'used = ([\d.]+)M', health_run(['sysctl', '-n', 'vm.swapusage'], 20))
+            s_['swapmb'] = round(float(m.group(1))) if m else None
+            th = health_run(['pmset', '-g', 'therm'], 20)
+            m = re.search(r'CPU_Speed_Limit\s*=\s*(\d+)', th)
+            s_['cpulimit'] = int(m.group(1)) if m else None
+            s_['thermal'] = bool(re.search(r'(?i)thermal warning level\s*[:=]?\s*\d|warning level set', th)) and 'No thermal warning' not in th
+            s_['top'] = [' '.join(l.split()[:2] + [os.path.basename(' '.join(l.split()[2:]))[:40]]) for l in health_run(['ps', '-axro', 'pcpu=,pmem=,comm='], 20).splitlines()[:6]]
+            fp = os.path.join(HEALTH, time.strftime('%Y-%m-%d') + '.jsonl')
+            os.makedirs(HEALTH, exist_ok=True)
+            with open(fp, 'a') as f_:
+                f_.write(json.dumps(s_) + '\n')
+            for n in os.listdir(HEALTH):
+                if n.endswith('.jsonl') and time.time() - os.path.getmtime(os.path.join(HEALTH, n)) > 8 * 86400:
+                    os.remove(os.path.join(HEALTH, n))
+            strain = [w for w, c in (('load %.0f on %d cores' % (s_['load'][0], ncpu), s_['load'][0] > 3 * ncpu),
+                                     ('%s%% memory free' % s_['memfree'], s_['memfree'] is not None and s_['memfree'] < 10),
+                                     ('slowed for heat (%s%%)' % s_['cpulimit'], s_['cpulimit'] is not None and s_['cpulimit'] < 100),
+                                     ('a heat warning', s_['thermal'])) if c]
+            if strain and time.time() - warned > 1800:
+                warned = time.time()
+                log('The Mac mini under strain: %s; busiest: %s' % (', '.join(strain), '; '.join(s_['top'][:3])))
+        except Exception as e:
+            log('Watching the Mac mini: %s' % str(e)[:160])
+        time.sleep(300)
+
+
 def keep_converting():
     """The converter kept going: started again if it isn't running (after the Mac restarts, or if the restart after Update everything
     didn't take), unless it finished everything in the last 12 hours; any time the Mac isn't in use, pausing while anyone watches
@@ -11238,6 +11337,7 @@ def serve():
     threading.Thread(target=renames_follow_once, args=(g,), daemon=True).start()   # (and those followed, as they weren't then)
     threading.Thread(target=to_check_once, args=(g,), daemon=True).start()
     threading.Thread(target=silent_once, args=(g,), daemon=True).start()   # (once: silent films put in Not needed)   # (once: the films in doubt in a To check collection, John's alone)   # (each episode's series' IMDb number and own title, for the searches)   # (once: those turned down by their words, looked at again by when their lines are said)
+    threading.Thread(target=health_watch, daemon=True).start()   # (why it stopped, and how hard it's working: 25 Nov 2026)
     threading.Thread(target=keep_file_checks, args=(g,), daemon=True).start()   # (each waiting film's files checked here as soon as it's waiting)   # (other subtitles timed by when people speak, before Whisper)
     try:   # (films already turned down where Whisper heard next to no speech anywhere (Robot Dreams): little or no dialogue, not tried again)
         P_ = load(SUBPREP, {}) or {}
