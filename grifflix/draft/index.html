@@ -2679,7 +2679,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'c402103193f5' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '30fc3cc076b7' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -2816,11 +2816,20 @@ function featHTML(list, names, title, mine) {
 }
 function extraName(i) { return String(i.name || '').replace(/-[A-Za-z0-9]+$/, '').replace(/[._]+/g, ' ').trim(); }
 function library() {
-  if (!LIBP) LIBP = getJSON(DATA + 'library.json').then(function (L) {
+  var take = function (L) {
     var tag = function (it) { land(it); var t = it.tags || {}; if (it.poster && t.poster) PICTAG[it.poster + 'Primary'] = t.poster; if (it.backdrop && t.backdrop) PICTAG[it.backdrop + 'Backdrop'] = t.backdrop; if (it.thumb && t.thumb) PICTAG[it.thumb + 'Thumb'] = t.thumb; };
     Object.keys(L.items).forEach(function (k) { tag(L.items[k]); });
-    L.tag = tag; LIB = L; return L;
-  }).catch(function (e) { LIBP = null; throw e; });
+    L.tag = tag; LIB = L; library.at = Date.now(); return L;
+  };
+  // (a page left open (a Fire Stick's stays loaded for days): the site's list of films looked at again once it's half an hour old, so a
+  // film come in since is in its collections and lists; a moment's wait for it, else the list it has: John, 25 Nov 2026, You Can See
+  // Everything "is in the A24 collection but not on the a24 list")
+  if (LIBP && LIB && Date.now() - (library.at || 0) > 18e5) {
+    if (!library.fresh) library.fresh = getJSON(DATA + 'library.json', 1).then(function (L) { library.fresh = null; LIBP = Promise.resolve(take(L)); return LIB; },
+      function () { library.fresh = null; library.at = Date.now() - 12e5; return LIB; });   // (not reached: tried again in ten minutes)
+    return Promise.race([library.fresh, new Promise(function (ok) { setTimeout(function () { ok(LIB); }, 4000); })]);
+  }
+  if (!LIBP) LIBP = getJSON(DATA + 'library.json').then(take).catch(function (e) { LIBP = null; throw e; });
   return LIBP;
 }
 function mac(path, body) {   // the Mac mini: playing, and a member's own things
@@ -8032,15 +8041,27 @@ $('#pclose').onclick = function () { stopPlayer(); };
 })();
 (function () {   // the picture's own box sized to the film's shape and centred, black around it: the Fire TV's browser view stretches a film to
   // fill its box whatever it's told (object-fit), so a 2.35:1 film came out too tall (John, 11 Nov 2026: "the aspect ratio was wrong")
-  var v = P.v, fit = function () {
+  // (the film's shape not known for a moment, as when the Fire TV takes up a film again after a pause, or the screen not measured: the last
+  // fit kept, never the whole box, which the Fire TV stretches the film to: John, 25 Nov 2026, You Can See Everything distorted after a pause,
+  // "Stopping and starting fixed it"; and it's put back as the film plays, in case anything's undone it)
+  var v = P.v, last = '', fit = function () {
     var w = v.videoWidth, h = v.videoHeight, W = P.el.clientWidth, H = P.el.clientHeight;
-    if (!w || !h || !W || !H) { v.style.cssText = ''; return; }
+    if (!w || !h || !W || !H) { if (!last) v.style.cssText = ''; return; }
     var k = Math.min(W / w, H / h), bw = Math.round(w * k), bh = Math.round(h * k);
-    v.style.cssText = 'inset:auto;left:' + Math.round((W - bw) / 2) + 'px;top:' + Math.round((H - bh) / 2) + 'px;width:' + bw + 'px;height:' + bh + 'px';
+    var css = 'inset:auto;left:' + Math.round((W - bw) / 2) + 'px;top:' + Math.round((H - bh) / 2) + 'px;width:' + bw + 'px;height:' + bh + 'px';
+    if (css !== last || v.style.width !== bw + 'px') { v.style.cssText = css; last = css; }
   };
-  ['loadedmetadata', 'resize', 'playing'].forEach(function (e) { v.addEventListener(e, fit); });
+  ['loadedmetadata', 'resize', 'playing', 'play', 'canplay', 'seeked'].forEach(function (e) { v.addEventListener(e, fit); });
   window.addEventListener('resize', fit); document.addEventListener('fullscreenchange', fit); document.addEventListener('webkitfullscreenchange', fit);
-  v.addEventListener('emptied', function () { v.style.cssText = ''; });
+  var tk = 0; v.addEventListener('timeupdate', function () { var n = Date.now(); if (n - tk > 2000) { tk = n; fit(); } });   // (every couple of seconds as it plays)
+  // (back from a long pause: the box set a hair narrower, then right again, so the Fire TV draws the film to it afresh)
+  var pausedAt = 0; v.addEventListener('pause', function () { pausedAt = Date.now(); });
+  v.addEventListener('playing', function () {
+    if (pausedAt && Date.now() - pausedAt > 15000 && last) { var s0 = last; v.style.cssText = s0.replace(/width:(\d+)px/, function (m, n) { return 'width:' + (n - 2) + 'px'; });
+      requestAnimationFrame(function () { requestAnimationFrame(function () { v.style.cssText = s0; }); }); }
+    pausedAt = 0;
+  });
+  v.addEventListener('emptied', function () { v.style.cssText = ''; last = ''; });
   P.fit = fit;
 })();
 P.v.addEventListener('ended', function () { saveProgress(); if (P.queue.length) { var n = P.queue.shift(); play(n, P.queue); } else stopPlayer(); });
@@ -8681,6 +8702,13 @@ function moveFocus(dir) {
     var score = main + Math.abs(side) * 2.2;
     if (score < bestScore) { bestScore = score; best = el; }
   });
+  // (nothing further along this line: on to the next of the same row of buttons, where it's wrapped onto the line below (or back up to the
+  // one before), as they're read: John, 25 Nov 2026, "Carry on from 1:01:40" so wide on the Fire Stick that "From the start" went below it, and
+  // right went nowhere)
+  if (!best && (dir === 'left' || dir === 'right') && cur.parentElement) {
+    var sib = all.filter(function (el) { return el.parentElement === cur.parentElement; }), si = sib.indexOf(cur);
+    best = sib[si + (dir === 'right' ? 1 : -1)] || null;
+  }
   if (best) { best.focus({ preventScroll: true }); best.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); return true; }
   return false;
 }
