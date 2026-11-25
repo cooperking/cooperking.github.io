@@ -1649,7 +1649,7 @@ def leftovers():
         except Exception:
             pass
 RESCUE = os.path.join(HOME, 'originals-rescue.json')   # (each original in Grifflix Originals looked at, and what came of it)
-RESCUE_V = 1
+RESCUE_V = 2   # (2: an episode matched by its name or SxxEyy, in a folder of several: Scenes from a Marriage's, Dekalog's sixth)
 RESCUE_MORE = [False, 0]   # (cut short by someone watching: carried on between films; when last tried)
 VIDX = ('.mkv', '.mp4', '.m4v', '.avi', '.mov', '.ts', '.m2ts', '.wmv', '.mpg', '.mpeg', '.webm', '.vob')
 
@@ -1709,7 +1709,7 @@ def rescue_originals():
                     save_rescue(R, freed, gone, said)
                     return
                 iid, rec = kept_by.get(fp, (None, None))
-                name = (rec or {}).get('name') or os.path.basename(d)
+                name = (rec or {}).get('name') or os.path.splitext(f)[0]
                 rec_ = {'s': sz, 'v': RESCUE_V, 'at': int(time.time()), 'name': name}
                 if fp in asked:
                     R[fp] = dict(rec_, kept='its soundtrack’s language is for you to check (the admin page asks)')
@@ -1727,7 +1727,12 @@ def rescue_originals():
                                and os.path.getsize(os.path.join(fd_, y)) > 3e8]
                     except OSError:
                         vs_ = []
-                    film = vs_[0] if len(vs_) == 1 else None
+                    # (in a folder of several (a series' season): the one of the same name, else the same episode, S01E06)
+                    same_ = [v for v in vs_ if os.path.splitext(os.path.basename(v))[0].lower() == os.path.splitext(f)[0].lower()]
+                    ep_ = re.search(r'(?i)s\d{1,2}e\d{1,3}', f)
+                    if not same_ and ep_:
+                        same_ = [v for v in vs_ if ep_.group(0).lower() in os.path.basename(v).lower()]
+                    film = same_[0] if len(same_) == 1 else vs_[0] if len(vs_) == 1 else None
                 if not film:
                     R[fp] = dict(rec_, kept='its film couldn’t be found')
                     said.append('%s: kept, its film couldn’t be found' % name)
