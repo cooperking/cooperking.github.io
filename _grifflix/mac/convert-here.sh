@@ -279,6 +279,18 @@ args=("${(@f)$(osascript -l JavaScript -e "JSON.parse($.NSString.stringWithConte
 if [[ "${args[*]}" == *zscale* ]] && ! "$FF" -hide_banner -filters 2>/dev/null | grep -q ' zscale '; then
   fail "This film is HDR, and this Mac's ffmpeg can't turn HDR colours into ordinary ones (it has no zscale). Get the full ffmpeg from osxexperts.net into ~/bin (or: brew install ffmpeg), then queue it again." "HDR: this Mac's ffmpeg has no zscale (get the osxexperts.net ffmpeg, or brew install ffmpeg)"
 fi
+# (a film being made smaller is made at a quality, not a set rate (John, 25 Nov 2026, "go with your recommendation"): tried on a moment of
+# test picture first, and if this Mac's encoder won't take a quality, made at the set rate instead, as before)
+if [[ "${args[*]}" == *-q:v* ]]; then
+  qv=${args[$(( ${args[(i)-q:v]} + 1 ))]}
+  mr=(); (( ${args[(i)-maxrate]} <= ${#args} )) && mr=(-maxrate ${args[$(( ${args[(i)-maxrate]} + 1 ))]} -bufsize ${args[$(( ${args[(i)-bufsize]} + 1 ))]})
+  if ! "$FF" -hide_banner -nostdin -v error -f lavfi -i testsrc2=size=1280x720:rate=24 -t 2 -c:v h264_videotoolbox -q:v "$qv" -allow_sw 1 "${mr[@]}" -f null - 2>/dev/null; then
+    echo "Grifflix: this Mac's encoder won't make it at a quality: at the set rate instead."
+    args=("${(@f)$(osascript -l JavaScript -e "JSON.parse($.NSString.stringWithContentsOfFileEncodingError('$job', 4, null).js).args_rate.join('\n')")}")
+  else
+    echo "Grifflix: made smaller at quality $qv (as small as its picture allows)."
+  fi
+fi
 echo "Converting $name on this Mac."
 # (each step told to the Mac mini, so the film's Edit panel says where it's got to, and a stall shows: John, 17 Nov 2026, "it got stuck and I
 # shut the terminal - nothing is happening", "it still says converting")

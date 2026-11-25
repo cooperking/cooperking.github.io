@@ -234,6 +234,17 @@ def shrinks(ms):
     return round(mbps, 1) if mbps >= 1.5 * top else 0
 
 
+NOSHRINK_F = os.path.join(os.path.expanduser('~/Grifflix'), 'convert-noshrink.json')
+
+
+def noshrink():
+    """Films made smaller once that saved too little (the original kept): never made smaller again, only repackaged if they need it."""
+    try:
+        return json.load(open(NOSHRINK_F)) or {}
+    except (OSError, ValueError):
+        return {}
+
+
 REREAD = set()   # (films the media server was asked to read again, this run: once each)
 VIDEO = ('.mkv', '.mp4', '.m4v', '.avi', '.mov', '.ts', '.m2ts', '.webm', '.wmv', '.mpg', '.mpeg', '.flv', '.vob')
 
@@ -241,6 +252,7 @@ VIDEO = ('.mkv', '.mp4', '.m4v', '.avi', '.mov', '.ts', '.m2ts', '.webm', '.wmv'
 def gather():
     libs = s.get('libraries', {})
     out = []
+    NS_ = noshrink()
     for lib, types in (('movies', 'Movie'), ('tv', 'Episode')):
         if not libs.get(lib):
             continue
@@ -262,11 +274,13 @@ def gather():
                         log('  %s: the media server had no details of its file (read while being copied in?): asked to read it again' % g(it, 'Name'))
                     except Exception:
                         pass
+                if w and w.startswith(SHRINK) and g(it, 'Id') in NS_:   # (made smaller once, and it saved too little: left as it is)
+                    w = None
                 if w and g(it, 'Path') and os.path.exists(g(it, 'Path')):
                     name = g(it, 'Name') if types == 'Movie' else '%s S%02dE%02d' % (g(it, 'SeriesName'), g(it, 'ParentIndexNumber', 0), g(it, 'IndexNumber', 0))
                     out.append({'id': g(it, 'Id'), 'name': name, 'year': g(it, 'ProductionYear', ''), 'lib': lib, 'why': w, 'mode': 'remux' if w.startswith(REPACK) else 'shrink' if w.startswith(SHRINK) else 'convert',
                                 'path': g(it, 'Path'), 'mins': round((g(it, 'RunTimeTicks') or 0) / 6e8), 'rating': g(it, 'CommunityRating') or 0,
-                                'gb': round(os.path.getsize(g(it, 'Path')) / 1e9, 1), 'added': g(it, 'DateCreated') or '', 'big': shrinks(ms) if w.startswith(REPACK) else 0})
+                                'gb': round(os.path.getsize(g(it, 'Path')) / 1e9, 1), 'added': g(it, 'DateCreated') or '', 'big': shrinks(ms) if w.startswith(REPACK) and g(it, 'Id') not in NS_ else 0})
             start += 300
             if start >= g(r, 'TotalRecordCount', 0):
                 break
@@ -747,6 +761,12 @@ def convert(item, ffmpeg, ffprobe, st):
     if item.get('mode') == 'shrink' and os.path.getsize(tmp) > os.path.getsize(src) * 0.75:   # (made smaller only if it really is: else the original stays)
         a_, b_ = os.path.getsize(src) / 1e9, os.path.getsize(tmp) / 1e9
         os.remove(tmp)
+        try:   # (and remembered: never made smaller again, so it doesn't come back to the queue each week to be made for nothing)
+            ns_ = noshrink()
+            ns_[item['id']] = {'name': item.get('name'), 'at': int(time.time()), 'was_gb': round(a_, 1), 'made_gb': round(b_, 1)}
+            json.dump(ns_, open(NOSHRINK_F, 'w'))
+        except Exception:
+            pass
         raise RuntimeError('made smaller, it saved too little (%.1f GB → %.1f GB): the original kept as it is' % (a_, b_))
     new_dur = float((probe(ffprobe, tmp).get('format') or {}).get('duration') or 0)
     if abs(new_dur - dur) > max(3, dur * .01):
@@ -1136,7 +1156,7 @@ if CMD in ('plan', 'finish'):   # (John's "Convert on this Mac", 16 Nov 2026: th
         found = [i for i in fresh(gather(), st) if i['id'] == sys.argv[2]]
         # (one queued for John's Mac: made smaller, never only repackaged, which there frees nothing and copies the whole film over the
         # network twice: Disclosure Day, 40.6 GB, at 0.6x: John, 18 Nov 2026, "I'm going to save space by converting the bigger files on my mac")
-        if 'force' in sys.argv[3:] and (not found or found[0].get('mode') == 'remux'):
+        if 'force' in sys.argv[3:] and (not found or found[0].get('mode') == 'remux') and sys.argv[2] not in noshrink():
             f = shrink_item(sys.argv[2], mac=True)
             found = [f] if f else []   # (HDR: made on John's Mac, its colours tone-mapped (convert); Dolby Vision alone passed over)
         if not found:
