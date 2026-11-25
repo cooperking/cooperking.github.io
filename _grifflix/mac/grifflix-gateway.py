@@ -2721,7 +2721,10 @@ def make_handler(g):
                                  'recent': [{'id': x.get('id'), 'name': x.get('name'), 'at': x.get('at'), 'mins': x.get('mins'), 'why': x.get('why'),
                                              'before': x.get('before') or look(x.get('kept')), 'after': x.get('after') or look(x.get('to'))} for x in rows],
                                  'disks': disks(),
-                                 'next': [x for x in (cur or {}).get('next') or [] if x.get('id') not in done],   # (one already made, here or on John's Mac, off the list at once: John, 17 Nov 2026) 'left': (cur or {}).get('left'), 'pins': [x for x in P['pins'] if x.get('id') not in (st.get('done') or {}) and x.get('id') not in (st.get('failed') or {})], 'remux_first': P['remux_first'], 'log': tail,
+                                 # (one already made, here or on John's Mac, off the list at once: John, 17 Nov 2026; what's left, his pins, repackage-first
+                                 # and its last lines had been swallowed by that comment since, and weren't sent: 25 Nov 2026)
+                                 'next': [x for x in (cur or {}).get('next') or [] if x.get('id') not in done],
+                                 'left': (cur or {}).get('left'), 'pins': [x for x in P['pins'] if x.get('id') not in (st.get('done') or {}) and x.get('id') not in (st.get('failed') or {})], 'remux_first': P['remux_first'], 'log': tail,
                                  'ask': [dict(v, id=k, chosen=(P.get('langs') or {}).get(k)) for k, v in (st.get('ask') or {}).items()]})
 
         def api_sound(self, me, user, q, b):
@@ -3659,6 +3662,40 @@ def make_handler(g):
             a = g.st.get('macagent') or {}
             P_ = [y for y in (load(MACQ + '.passed', []) or []) if time.time() - y.get('at', 0) < 3 * 86400]
             return self.send_json(200, {'queue': Q, 'now': list(live_.values()), 'passed': P_, 'setup': bool(a.get('key')), 'worked': bool(a.get('key') and (a.get('worked') or MACAGENT.get('seen') or any(v.get('mac') for v in list(CONVJOBS.values())))), 'seen': MACAGENT.get('seen'), 'home': MACAGENT.get('home')})
+
+        def api_now(self, me, user, q, b):
+            """John's only: what's happening right now, on his Mac and on the Mac mini, and in what order, in one look: what each is doing,
+            what's next and who put it there, what the Mac mini does in the background, and whether it's hot (John, 25 Nov 2026, "I would like it
+            to be much clearer what's happening on the mac, the mac mini and the order of things")."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            home = os.path.expanduser('~/Grifflix')
+            live_ = []
+            for j_ in sorted(list(CONVJOBS.values()), key=lambda j_: j_.get('at', 0)):
+                if j_.get('mac') and not j_.get('ended') and j_.get('state') in ('waiting', 'started', 'converting', 'copying', 'checking'):
+                    it_ = (j_.get('plan') or {}).get('item') or {}
+                    live_.append({'id': j_.get('id'), 'name': it_.get('name') or '', 'state': j_.get('state'), 't': j_.get('t') or 0, 'dur': (j_.get('plan') or {}).get('dur') or 0,
+                                  'speed': str(j_.get('speed') or ''), 'stage': str(j_.get('stage') or '')[:160], 'why': str(it_.get('why') or '')[:160], 'at': j_.get('at')})
+            ids_ = set(x['id'] for x in live_)
+            Q = [x for x in load(MACQ, []) or [] if x.get('id') not in ids_]
+            cur = load(os.path.join(home, 'convert-now.json'), {}) or {}
+            done_ = (load(os.path.join(home, 'convert-state.json'), {}) or {}).get('done') or {}   # (those made since its list was written: off it)
+            hl = {}
+            try:
+                with open(os.path.join(HEALTH, time.strftime('%Y-%m-%d') + '.log')) as f_:
+                    hl = json.loads((f_.read().strip().splitlines() or ['{}'])[-1])
+            except Exception:
+                pass
+            a = g.st.get('macagent') or {}
+            return self.send_json(200, {
+                'at': int(time.time()),
+                'mac': {'setup': bool(a.get('key')), 'seen': MACAGENT.get('seen'), 'home': MACAGENT.get('home'), 'now': live_,
+                        'queue': [{'id': x.get('id'), 'name': x.get('name'), 'from': x.get('from') or 'you', 'why': x.get('why') or '', 'at': x.get('at'), 'first': bool(x.get('first'))} for x in Q],
+                        'subs': {'at': SUBASK.get('at'), 'said': SUBASK.get('said')}},
+                'mini': {'conv': {'alive': bool(conv_alive(cur)), 'state': cur.get('state'), 'id': cur.get('id'), 'name': cur.get('name'), 'pct': cur.get('pct'), 'why': cur.get('why'),
+                                  'since': cur.get('since'), 'at': cur.get('at'), 'next': [x for x in cur.get('next') or [] if x.get('id') not in done_][:8], 'left': cur.get('left')},
+                         'crl': {k: CRL_STATE.get(k) for k in ('done', 'of', 'running', 'paused')},
+                         'health': hl}})
 
         def api_critrel(self, me, user, q, b):
             """John's only: which of the Criterion Collection's films are Criterion's own release (its logo at the start), the list and how

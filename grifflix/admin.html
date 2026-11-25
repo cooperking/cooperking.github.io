@@ -483,6 +483,25 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           <div class="state" style="margin-top:8px"><button class="btn" type="button" id="tbauto" disabled>…</button></div>
         </details>
       </section>
+      <!-- (what's happening now on John's Mac and on the Mac mini, and in what order, in one place: John, 25 Nov 2026, "I would like it to be
+           much clearer what's happening on the mac, the mac mini and the order of things") -->
+      <section class="card" data-tab="convert" id="rncard">
+        <div class="kicker">Right now</div>
+        <h2>What’s <em>happening</em></h2>
+        <p class="stat" id="rnsay">Looking…</p>
+        <h3 style="margin:22px 0 4px;font-size:17px">Your Mac</h3>
+        <div id="rnmac"></div>
+        <h3 style="margin:26px 0 4px;font-size:17px">The Mac mini</h3>
+        <div id="rnmini"></div>
+        <details style="margin:20px 0 0"><summary style="cursor:pointer;opacity:.8">How the order works</summary>
+          <ul class="changes" style="margin-top:8px">
+            <li><b>Your Mac</b> takes the top film on its queue whenever it’s on and at home, one at a time. A film you queue goes to the end (Next on my Mac puts it at the top). The Mac mini adds its own, three at a time: films whose picture has to be made again, which only your Mac can do quickly. As each is done it adds another.</li>
+            <li><b>The Mac mini</b> only repackages (a few minutes a film): films that have just come in first, then any you’ve pinned, then the rest. It waits while someone is watching, and while your Mac is converting, as both use the G-Drive and each slows the other.</li>
+            <li><b>Downloads</b> come in one at a time. Each goes onto the G-Drive once the film before it is repackaged.</li>
+            <li><b>In the background</b>, when nothing else needs the Mac mini, the Criterion logo check reads your films’ openings. It waits while someone is watching or the Mac mini is hot.</li>
+          </ul>
+        </details>
+      </section>
       <section class="card" data-tab="convert">
         <div class="kicker">Conversions</div>
         <h2 id="cvhead">Looking…</h2>
@@ -2751,6 +2770,90 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     }).catch(function () { cmT = setTimeout(cvMac, 60000); });
   }
   setTimeout(cvMac, 2500);
+  // ---- right now: what each Mac is doing, what's next and who put it there, in one place, looked at again every 15 seconds (John, 25 Nov 2026,
+  // "I would like it to be much clearer what's happening on the mac, the mac mini and the order of things")
+  var rnT = 0;
+  function rnWhy(w) {
+    w = String(w || ''); var m = /format \(([^)]*)\)/.exec(w);
+    if (/10-bit/.test(w)) return 'its picture is 10-bit, which most TVs can’t play';
+    if (m) return 'its picture is ' + m[1].toUpperCase() + ', which not every TV plays';
+    if (/bigger than 1080p/.test(w)) return 'it’s bigger than 1080p: made 1080p';
+    if (/to make smaller/.test(w)) return 'to make it smaller';
+    if (/MKV file/.test(w)) return 'an MKV: made an MP4, the picture kept as it is';
+    if (/^just brought in/.test(w)) return 'just came in: it goes next';
+    var LG = { spa: 'Spanish', ita: 'Italian', bul: 'Bulgarian', fre: 'French', fra: 'French', ger: 'German', deu: 'German', rus: 'Russian', jpn: 'Japanese', por: 'Portuguese', pol: 'Polish', hun: 'Hungarian', cze: 'Czech', ces: 'Czech', tur: 'Turkish', chi: 'Chinese', zho: 'Chinese', kor: 'Korean', swe: 'Swedish', dut: 'Dutch', nld: 'Dutch' };
+    m = /^English first \(it was ([a-z]+)\)/.exec(w); if (m) return 'to make its English soundtrack the first (it was ' + (LG[m[1]] || m[1]) + ')';
+    return w;
+  }
+  function rnLook() {
+    clearTimeout(rnT); if (!TOKEN) return; if (!GW) { rnT = setTimeout(rnLook, 3000); return; }
+    var get = function (p) { return fetch(GW + '/api/' + p, { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { if (r.status === 404) throw new Error('old'); if (!r.ok) throw new Error('no'); return r.json(); }); };
+    Promise.all([get('now'), get('fetching').catch(function () { return null; })]).then(function (r) { rnDraw(r[0], r[1]); rnT = setTimeout(rnLook, document.hidden ? 60000 : 15000); })
+      .catch(function (e) { $('#rnsay').textContent = e && e.message === 'old' ? 'This comes with the Mac mini’s next update, within a few minutes.' : 'The Mac mini didn’t answer: trying again.'; rnT = setTimeout(rnLook, 30000); });
+  }
+  function rnDraw(j, f) {
+    var now = Date.now() / 1000, M = j.mac || {}, I = j.mini || {}, C = I.conv || {}, L = C.left || {};
+    var hm = function (t) { return new Date(t * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); };
+    var mm = function (s) { s = Math.max(0, Math.round(s)); return s >= 3600 ? Math.floor(s / 3600) + ' h ' + Math.round(s % 3600 / 60) + ' min' : Math.max(1, Math.round(s / 60)) + ' min'; };
+    var bar = function (pc, c) { return '<div class="cvbar" style="margin-top:6px"><span style="width:' + Math.max(0, Math.min(100, pc)).toFixed(1) + '%' + (c ? ';background:' + c : '') + '"></span></div>'; };
+    var line = function (t) { return '<span class="stat" style="display:block;margin:2px 0 0">' + t + '</span>'; };
+    // your Mac: on or not, what it's making, then its queue in order, each with who put it there and why
+    var ago = M.seen ? (now - M.seen) / 60 : null, on = ago != null && ago <= 3;
+    var mst = !M.setup ? 'Not set up to take films (Set up your Mac, under Conversions).' : on ? (M.home === false ? 'On, but away from home: films wait till it’s back.' : 'On and at home.') :
+      ago == null ? 'Not heard from since the Mac mini last started.' : 'Off or asleep: last heard from at ' + hm(M.seen) + '. Films wait till it’s on.';
+    var nowL = (M.now || []).map(function (x) {
+      var pc = x.dur ? Math.min(100, x.t / x.dur * 100) : 0, sp = parseFloat(x.speed) || 0, cm = /(\d+)% of ([\d.]+) GB/.exec(x.stage || '');
+      var say = x.state === 'converting' ? (pc >= 99.5 ? 'converted: being put together' : 'converting, ' + pc.toFixed(0) + '%' + (sp && x.dur ? ', about ' + mm((x.dur - x.t) / sp) + ' to go' : ''))
+        : x.state === 'copying' ? (cm ? 'made: copying back to the Mac mini, ' + cm[1] + '% of ' + cm[2] + ' GB' : 'made: ' + (x.stage || 'copying back to the Mac mini'))
+        : x.state === 'checking' ? 'made: the Mac mini is putting it in place' : x.state === 'waiting' ? 'about to start' : 'starting';
+      return '<li><b>Now:</b> ' + FL(x.name, null, x.id) + ' <span class="when" style="display:inline">· ' + esc(say) + '</span>' + (x.why ? line(esc(rnWhy(x.why))) : '') +
+        (x.state === 'converting' && pc < 99.5 ? bar(pc) : cm ? bar(+cm[1], '#3c9a5f') : '') + '</li>';
+    });
+    var Q = M.queue || [], miniQ = Q.filter(function (x) { return x.from === 'mini'; }).length;
+    var qL = Q.map(function (x, i) {
+      return '<li><span class="when" style="display:inline;margin-right:6px">' + (i + 1) + '.</span>' + FL(x.name, null, x.id) +
+        line(x.from === 'mini' ? 'Added by the Mac mini' + (x.why ? ': ' + esc(rnWhy(x.why)) : '') + (x.at ? ' (' + hm(x.at) + ')' : '') : 'Queued by you' + (x.at ? ' at ' + hm(x.at) : '') + (x.first ? ', to go first' : '')) + '</li>';
+    });
+    var more = Math.max(0, (L.convert || 0) - miniQ - (M.now || []).length);
+    var subs = M.subs && M.subs.at && now - M.subs.at < 7200 ? String(M.subs.said || '') : '';
+    $('#rnmac').innerHTML = '<p class="stat" style="margin:0 0 8px">' + esc(mst) + '</p>' +
+      (nowL.length ? '<ul class="changes">' + nowL.join('') + '</ul>' : M.setup ? '<p class="stat" style="margin:0 0 8px">Nothing being made on it now.</p>' : '') +
+      (qL.length ? '<p class="stat" style="margin:12px 0 4px"><b>Then, in this order</b> (' + qL.length + ')</p><ul class="changes">' + qL.join('') + '</ul>' : '<p class="stat" style="margin:8px 0">Nothing queued.</p>') +
+      (more ? '<p class="stat" style="margin:10px 0 0">After these, the Mac mini has about <b>' + more + '</b> more films whose picture has to be made again: it adds them three at a time, at the end, as your Mac finishes each.</p>' : '') +
+      (subs ? '<p class="stat" style="margin:10px 0 0">Subtitles for foreign-language films (made on your Mac): ' + esc(/^given: /.test(subs) ? 'working on ' + subs.slice(7) : /^nothing: /.test(subs) ? subs.slice(9) : subs) + ' (asked ' + hm(M.subs.at) + ').</p>' : '');
+    // the Mac mini: its repackaging now and next, the downloads, what it does in the background, and whether it's hot
+    var stale = C.at && now - C.at > 600 && (C.state === 'converting' || C.state === 'paused'), cv;
+    if (!C.alive) cv = 'Repackaging: not running just now. It’s started again within 10 minutes.';
+    else if (stale) cv = 'Repackaging ' + FL(C.name, null, C.id) + ': not heard from since ' + hm(C.at) + '. If it’s stuck, it’s stopped and started again after 45 minutes.';
+    else if (C.state === 'converting') cv = '<b>Now:</b> repackaging ' + FL(C.name, null, C.id) + ' <span class="when" style="display:inline">· ' + Math.floor(C.pct || 0) + '%' + (C.since ? ', started ' + hm(C.since) : '') + '</span>' + bar(C.pct || 0);
+    else if (C.state === 'paused') cv = '<b>Paused:</b> ' + FL(C.name, null, C.id) + ' at ' + Math.floor(C.pct || 0) + '%: ' + esc(C.why || '') + '.';
+    else if (C.state === 'waiting') { var wy = String(C.why || '');
+      cv = /your Mac is converting/.test(wy) ? '<b>Waiting:</b> your Mac is converting, and both use the G-Drive, so the Mac mini’s repackaging waits while it does.' :
+        /watching/.test(wy) ? '<b>Waiting:</b> someone is watching. It carries on when they stop.' : /only repackages|John’s Mac/.test(wy) ? '<b>Nothing to do itself:</b> what’s left needs your Mac.' : '<b>Waiting:</b> ' + esc(wy) + '.'; }
+    else if (C.state === 'finished') cv = 'Everything repackaged.';
+    else cv = 'Repackaging: ' + esc(C.state || 'starting') + '.';
+    var nx = (C.next || []).filter(function (x) { return !(C.state === 'converting' && x.id === C.id); }).slice(0, 5);
+    var dl = '';
+    if (f && f.setup !== false) {
+      var fn = f.now, w = f.waiting || [], seen = {}, wn = [];
+      w.forEach(function (x) { if (x.to && !seen[x.to]) { seen[x.to] = 1; wn.push(x.to); } });
+      dl = fn && (f.hold || fn.moving) ? '<b>Downloaded:</b> ' + esc(fn.to) + ' · ' + (fn.moving ? 'going onto the G-Drive now' : 'goes onto the G-Drive once ' + esc(f.hold) + ' is repackaged')
+        : fn ? '<b>Downloading:</b> ' + esc(fn.to) + ' <span class="when" style="display:inline">· ' + Math.floor(fn.pct || 0) + '%' + (fn.size ? ' of ' + (fn.size / 1e9).toFixed(1) + ' GB' : '') + '</span>' + bar(fn.pct || 0, '#3c9a5f')
+        : f.running && f.hold ? '<b>Downloads wait</b> while ' + esc(f.hold) + ' is repackaged.' : 'Nothing downloading.';
+      if (wn.length) dl += line('Then, in this order: ' + wn.slice(0, 4).map(esc).join(', ') + (wn.length > 4 ? ', and ' + (wn.length - 4) + ' more' : '') + '.');
+    }
+    var R = I.crl || {}, H = I.health || {}, hot = H.cpulimit && H.cpulimit < 100;
+    var nf = function (n) { return Number(n || 0).toLocaleString('en-GB'); };
+    var bg = R.of ? 'Criterion logo check: ' + nf(R.done) + ' of ' + nf(R.of) + ' films read' + (R.paused ? ' · waiting, as ' + esc(R.paused) : R.running ? '' : ' · all read') + '.' : '';
+    var hl = H.at ? (hot ? '<b style="color:#f08a4b">Hot:</b> it’s slowed itself to ' + H.cpulimit + '% to cool down.' : 'Temperature: fine.') + (H.memfree != null ? ' ' + H.memfree + '% of its memory free.' : '') + ' <span class="when" style="display:inline">(' + hm(H.at) + ')</span>' : '';
+    $('#rnmini').innerHTML = '<ul class="changes"><li>' + cv + '</li></ul>' +
+      (nx.length ? '<p class="stat" style="margin:12px 0 4px"><b>Next to repackage, in this order</b>' + (L.remux ? ' (' + nf(L.remux) + ' in all)' : '') + '</p><ul class="changes">' +
+        nx.map(function (x, i) { return '<li><span class="when" style="display:inline;margin-right:6px">' + (i + 1) + '.</span>' + FL(x.name, x.year, x.id) + line(esc(rnWhy(x.why))) + '</li>'; }).join('') + '</ul>' : '') +
+      (dl ? '<p class="stat" style="margin:14px 0 4px"><b>Downloads</b></p><ul class="changes"><li>' + dl + '</li></ul>' : '') +
+      (bg || hl ? '<p class="stat" style="margin:14px 0 4px"><b>In the background</b></p><ul class="changes">' + (bg ? '<li>' + bg + '</li>' : '') + (hl ? '<li>' + hl + '</li>' : '') + '</ul>' : '');
+    $('#rnsay').textContent = 'As of ' + hm(j.at || now) + ': looked at again every 15 seconds while this page is open.';
+  }
+  setTimeout(rnLook, 2600);
   // ---- films queued for John's Mac, which takes them up by itself while it's on and at home; its helper set up once (John, 18 Nov 2026:
   // "Is it possible to switch on convert on my Mac remotely?")
   var cqT = 0;
