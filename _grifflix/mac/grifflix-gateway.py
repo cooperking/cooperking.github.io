@@ -2345,6 +2345,41 @@ def make_handler(g):
                         'a': ', '.join(sorted(set('%s %s' % ((x.get('Codec') or '?').upper(), {1: 'mono', 2: 'stereo', 6: '5.1', 8: '7.1'}.get(x.get('Channels') or 0, '%sch' % (x.get('Channels') or '?'))) for x in au[:4])))}}
             ids = set(it['Id'] for it in quick)
             cache = {k: v for k, v in cache.items() if k in ids}
+            # (each film's extras (its Extras, Featurettes... folders) counted with it: John, 25 Nov 2026, "Extras are a legitimate part of the
+            # library so should be included in space"; each folder's size kept, measured again only when its folder changes)
+            xc_ = (load(cache_at, {}) or {}).get('x') or {}
+            xn_, xseen_ = {}, set()
+
+            def extras_b(path):
+                d_ = os.path.dirname(path or '')
+                if not d_ or d_ in xseen_ or os.path.basename(d_) in ('Movies', 'TV'):
+                    return 0
+                xseen_.add(d_)
+                tot_ = 0
+                try:
+                    subs_ = [e for e in os.scandir(d_) if e.is_dir() and e.name.lower() in XDIRS]
+                except OSError:
+                    return 0
+                for e in subs_:
+                    try:
+                        mt_ = e.stat().st_mtime
+                    except OSError:
+                        continue
+                    c0_ = xc_.get(e.path)
+                    if c0_ and c0_[0] == mt_:
+                        b_ = c0_[1]
+                    else:
+                        b_ = 0
+                        for r_, _, ns_ in os.walk(e.path):
+                            for n_ in ns_:
+                                if not n_.startswith('.'):
+                                    try:
+                                        b_ += os.path.getsize(os.path.join(r_, n_))
+                                    except OSError:
+                                        pass
+                    xn_[e.path] = [mt_, b_]
+                    tot_ += b_
+                return tot_
             rows = []
             for it in quick:
                 c_ = cache.get(it['Id'])
@@ -2357,10 +2392,14 @@ def make_handler(g):
                 o.update({'conv': bool(cv), 'was': (cv or {}).get('before'), 'rp': bool(cv) and str(cv.get('why') or '').startswith('to repackage'),
                           'conv_at': (cv or {}).get('at'), 'conv_where': (cv or {}).get('where') or '',
                           'why': c_.get('w0') if not cv or str(cv.get('why') or '').startswith('to repackage') else ''})
+                if not o.get('tv'):
+                    xb_ = extras_b(c_.get('p'))
+                    if xb_:
+                        o['xgb'] = round(xb_ / 1e9, 2)
                 rows.append(o)
             out = {'films': rows, 'at': int(time.time()), 'read': len(need)}
             try:
-                save(cache_at, {'rows': cache})
+                save(cache_at, {'rows': cache, 'x': xn_})
                 save(os.path.expanduser('~/Grifflix/library-view.json'), out)
             except OSError as e:
                 log('Couldn’t keep the library:', e)
@@ -11756,6 +11795,52 @@ def serve():
             log('Subtitles: %d turned down to be tried again, those of the film’s own length first' % n_l)
     except Exception as e:
         log('Subtitles, tried again by length: %s' % e)
+
+    try:   # (once: what the Movies folder held besides the films and their extras, deleted: John, 25 Nov 2026, "delete all of those"
+        # (Dead Ringers' hidden 17.7 GB copy, not the 2 GB one played; Better Watch Out, only ever a .rar, gone altogether: his own choices)
+        mk_lo = os.path.expanduser('~/Grifflix/leftovers-1.done')
+        M_ = '/Volumes/G-Drive/Grifflix/Movies/'
+        if not os.path.exists(mk_lo) and os.path.isdir(M_):
+            SA_ = "Sister Act (1992)/Sister Act (1992) 1080p BluRay H264 DolbyD 5.1 + nickarad.mp4"
+            # (each: the file, its size in GB (so nothing else of that name goes), the film that stays beside it (there and whole first))
+            LO_ = [("Dead Ringers (1988)/...mkv", 17.7, "Dead Ringers (1988)/Dead.Ringers.1988.1080p.BluRay.x264-[YTS.AM].mp4"),
+                   ("Guillermo del Toro's Pinocchio (2022)/...mkv", 7.1, "Guillermo del Toro's Pinocchio (2022)/Guillermo del Toro's Pinocchio (2022).mkv"),
+                   ("An Unmarried Woman (1978)/...mkv", 5.5, "An Unmarried Woman (1978)/An Unmarried Woman (1978).mp4"),
+                   ("Sister Act (1992)/Unconfirmed 317293.crdownload", 0.4, SA_),
+                   ("Sister Act (1992)/Unconfirmed 503388.crdownload", 2.6, SA_)]
+            freed_, said_ = 0, []
+            for f_, gb_, keep_ in LO_:
+                fp_, kp_ = M_ + f_, M_ + keep_
+                try:
+                    sz_ = os.path.getsize(fp_)
+                except OSError:
+                    said_.append('%s: not there' % f_); continue
+                if abs(sz_ / 1e9 - gb_) > .06 or not os.path.isfile(kp_) or os.path.getsize(kp_) < 5e8:
+                    said_.append('%s: left (not as expected)' % f_); continue
+                try:
+                    os.remove(fp_)
+                    freed_ += sz_
+                    said_.append('%s: deleted (%.1f GB)' % (f_, sz_ / 1e9))
+                except OSError as e:
+                    said_.append('%s: couldn’t (%s)' % (f_, str(e)[:80]))
+            bw_ = M_ + 'Better Watch Out (2017)'   # (the whole folder: the .rar, an Extras folder with only a note, the Mac's hidden files)
+            try:
+                fs_ = [(os.path.join(r_, n_), os.path.getsize(os.path.join(r_, n_))) for r_, _, ns_ in os.walk(bw_) for n_ in ns_]
+                odd_ = [f for f, _ in fs_ if not (f.endswith('.rar') or f.endswith('files.txt') or os.path.basename(f).startswith('.'))]
+                if fs_ and not odd_ and sum(z for _, z in fs_) < 2e9:
+                    import shutil
+                    shutil.rmtree(bw_)
+                    freed_ += sum(z for _, z in fs_)
+                    said_.append('Better Watch Out (2017): deleted (%.1f GB, it was only a .rar)' % (sum(z for _, z in fs_) / 1e9))
+                elif fs_:
+                    said_.append('Better Watch Out (2017): left (something else in it: %s)' % ', '.join(os.path.basename(x) for x in odd_[:3]))
+            except OSError as e:
+                said_.append('Better Watch Out (2017): couldn’t (%s)' % str(e)[:80])
+            open(mk_lo, 'w').write(time.strftime('%Y-%m-%d %H:%M') + '\n' + '\n'.join(said_) + '\n')
+            log('Leftovers in Movies (John, 25 Nov): %.1f GB freed. %s' % (freed_ / 1e9, '; '.join(said_)))
+            record('Leftovers deleted from Movies', freed_gb=round(freed_ / 1e9, 1), what=said_)
+    except Exception as e:
+        log('Leftovers in Movies: %s' % e)
 
     try:   # (once: those with no English subtitles anywhere tried again, now that one in another language that fits can be translated)
         mk_f = os.path.expanduser('~/Grifflix/subs-foreign.done')
