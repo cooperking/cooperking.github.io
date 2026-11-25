@@ -1509,9 +1509,11 @@ def make_handler(g):
                         job['state'], job['seen'] = 'started', time.time()
                         convjobs_save()
                         # (a film being made smaller: at a quality, with the set rate to fall back on where this Mac's encoder won't take one)
-                        q_ = VT_Q if (pl.get('item') or {}).get('mode') == 'shrink' else None
-                        return self.send_json(200, {'name': pl['item'].get('name'), 'src': pl['src'], 'tmp': pl['tmp'], 'dur': pl['dur'], 'args': vt_args(pl['cmd'], q_),
-                                                    'args_rate': vt_args(pl['cmd']) if q_ else []})
+                        # (every film whose picture is made again, not only those made smaller: at a set rate the hardware encoder starved
+                        # compact films, graded Replace after: 25 Nov 2026)
+                        aq_, ar_ = vt_args(pl['cmd'], VT_Q), vt_args(pl['cmd'])
+                        return self.send_json(200, {'name': pl['item'].get('name'), 'src': pl['src'], 'tmp': pl['tmp'], 'dur': pl['dur'], 'args': aq_,
+                                                    'args_rate': ar_ if aq_ != ar_ else []})
                     body = self.body()
                     if job.get('state') == 'lost' and job.get('again') and len(parts) > 3 and parts[3] == 'progress':   # (not lost after all: on again)
                         Q = [x for x in (load(MACQ, []) or []) if x.get('id') != job['id']]
@@ -2250,7 +2252,13 @@ def make_handler(g):
             if not lid:
                 return self.send_json(200, {'films': []})
             st = load(os.path.expanduser('~/Grifflix/convert-state.json'), {})
-            made = {os.path.normcase(x.get('to') or ''): x for x in (st.get('done') or {}).values()}
+            made, made_n = {}, {}
+            for x in conv_history():   # (every film made, oldest first: the latest for each file)
+                if x.get('to'):
+                    made[os.path.normcase(x['to'])] = x
+                elif x.get('name'):
+                    made_n[x['name']] = x
+            made.update({os.path.normcase(x.get('to') or ''): x for x in (st.get('done') or {}).values()})
             # (each film's details kept, and only those whose file changed read again (the media server's Etag): reading every film's
             # file details took minutes on the old Mac)
             cache_at = os.path.expanduser('~/Grifflix/library-cache.json')
@@ -2295,11 +2303,12 @@ def make_handler(g):
                 c_ = cache.get(it['Id'])
                 if not c_:
                     continue
-                cv = made.get(os.path.normcase(c_.get('p') or ''))
+                cv = made.get(os.path.normcase(c_.get('p') or '')) or made_n.get((c_.get('r') or {}).get('n') or '')
                 o = dict(c_['r'])
                 # (a film only repackaged keeps what's still to do, making it smaller included: its picture is as it was
                 # (John, 13 Nov 2026: Obsession, nearly 30 GB, couldn't be made smaller); one converted here is done)
                 o.update({'conv': bool(cv), 'was': (cv or {}).get('before'), 'rp': bool(cv) and str(cv.get('why') or '').startswith('to repackage'),
+                          'conv_at': (cv or {}).get('at'), 'conv_where': (cv or {}).get('where') or '',
                           'why': c_.get('w0') if not cv or str(cv.get('why') or '').startswith('to repackage') else ''})
                 rows.append(o)
             out = {'films': rows, 'at': int(time.time()), 'read': len(need)}
@@ -8118,6 +8127,39 @@ def cant_play_why(vc, bits, hevc_dev=False, vp9_dev=False):
     return {'short': '%s: %s' % (name, dev),
             'say': 'Its picture is %s, and %s. Grifflix doesn’t convert films while they play: the Mac mini can’t keep up.' % (name, dev),
             'on': on}
+
+
+def conv_history():
+    """Every film the converter made, here or on John's Mac (convert-history.jsonl, never cut short), and, from before it was kept, John's
+    Mac's from the gateway's own log (name and day only): oldest first."""
+    out = []
+    hf = os.path.expanduser('~/Grifflix/convert-history.jsonl')
+    try:
+        if not os.path.exists(hf + '.from-log'):   # (once: John's Mac's conversions before the history was kept, from the log)
+            seen_, back = set(), []
+            with open(os.path.join(APP_DIR, 'gateway.log'), encoding='utf-8', errors='replace') as f_:
+                for l_ in f_:
+                    m_ = re.match(r'^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d) Converted on John’s Mac(?:, put in place now)?: (.+?): \{"ok": true', l_)
+                    if m_ and m_.group(2) not in seen_:
+                        seen_.add(m_.group(2))
+                        back.append({'name': m_.group(2), 'at': int(time.mktime(time.strptime(m_.group(1), '%Y-%m-%d %H:%M:%S'))), 'where': 'mac', 'from_log': True})
+            with open(hf, 'a', encoding='utf-8') as f_:
+                for x in back:
+                    f_.write(json.dumps(x, ensure_ascii=False) + '\n')
+            save(hf + '.from-log', {'at': int(time.time()), 'n': len(back)})
+            log('Conversions: %d of John’s Mac’s from before the history was kept, from the log' % len(back))
+    except Exception as e:
+        log('Conversions from the log: %s' % str(e)[:160])
+    try:
+        with open(hf, encoding='utf-8') as f_:
+            for l_ in f_:
+                try:
+                    out.append(json.loads(l_))
+                except ValueError:
+                    pass
+    except OSError:
+        pass
+    return out
 
 
 def mac_job(iid, force=False):

@@ -615,7 +615,12 @@ def convert(item, ffmpeg, ffprobe, st):
     # original had: much smaller with no difference to see (John, 12 Nov 2026); slower to make, so done once and never again)
     oh = min(int(v.get('height') or 1080), MAX_H)
     top = 6000 if oh >= 900 else 3500 if oh >= 600 else 2000
-    cap = int(max(1200, min(top, src_kbps if src_kbps > 0 else top)))
+    # (H.264 needs about 1.6 times the rate of HEVC or VP9 for the same picture, twice AV1's: an efficient picture held to its own rate came
+    # out worse, and compact films converted on John's Mac (Days of Being Wild, Marty Supreme, the 1930s VP9 films) were graded Replace
+    # after: John, 25 Nov 2026, "The Replace section of the Library shows films that the mac has converted itself")
+    vc_ = (v.get('codec_name') or '').lower()
+    eff_ = 2.0 if vc_ == 'av1' else 1.6 if vc_ in ('hevc', 'h265', 'vp9') else 1.0
+    cap = int(max(1200, min(top, src_kbps * eff_ if src_kbps > 0 else top)))
     cmd += ['-map_metadata', '0', '-map_chapters', '0']
     if remux:   # (the picture copied as it is; HEVC labelled hvc1, as Apple's devices need, not hev1)
         cmd += ['-c:v', 'copy', '-disposition:v:0', 'default'] + (['-tag:v', 'hvc1'] if v.get('codec_name') == 'hevc' else [])
@@ -860,6 +865,11 @@ def convert(item, ffmpeg, ffprobe, st):
     st['done'][item['id']] = {'name': item['name'], 'from': src, 'to': dst, 'kept': keep_at, 'at': int(time.time()), 'mins': round(mins),
                               'why': item['why'], 'before': before, 'after': brief(probe(ffprobe, dst), dst),
                               'chose': (lang_name(main_a) + (': ' + chose if chose else '')) if main_a and len(audio) > 1 else ''}
+    try:   # (and in the history of every film made, never cut short: the Library says which Grifflix made, and from what: 25 Nov 2026)
+        with open(os.path.join(HOME, 'convert-history.jsonl'), 'a', encoding='utf-8') as f_:
+            f_.write(json.dumps(dict(st['done'][item['id']], id=item['id'], where='mac' if item.get('premade') else 'mini', mode=item.get('mode') or ''), ensure_ascii=False) + '\n')
+    except Exception:
+        pass
     if unsure:   # (told on the admin page, with each language to change it to)
         st.setdefault('ask', {})[item['id']] = {'name': item['name'], 'year': item.get('year'), 'to': dst, 'kept': keep_at, 'chose': lang_name(main_a), 'why': chose,
             'options': list(dict.fromkeys(lang_name(a) for a in audio if not commentary(a))), 'at': int(time.time())}
