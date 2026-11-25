@@ -1508,7 +1508,10 @@ def make_handler(g):
                             return self.send_json(404, {'error': 'That job is cancelled or finished.' if job.get('cancel') or job.get('state') == 'cancelled' else 'That job is finished: press Convert on this Mac again.'})
                         job['state'], job['seen'] = 'started', time.time()
                         convjobs_save()
-                        return self.send_json(200, {'name': pl['item'].get('name'), 'src': pl['src'], 'tmp': pl['tmp'], 'dur': pl['dur'], 'args': vt_args(pl['cmd'])})
+                        # (a film being made smaller: at a quality, with the set rate to fall back on where this Mac's encoder won't take one)
+                        q_ = VT_Q if (pl.get('item') or {}).get('mode') == 'shrink' else None
+                        return self.send_json(200, {'name': pl['item'].get('name'), 'src': pl['src'], 'tmp': pl['tmp'], 'dur': pl['dur'], 'args': vt_args(pl['cmd'], q_),
+                                                    'args_rate': vt_args(pl['cmd']) if q_ else []})
                     body = self.body()
                     if job.get('state') == 'lost' and job.get('again') and len(parts) > 3 and parts[3] == 'progress':   # (not lost after all: on again)
                         Q = [x for x in (load(MACQ, []) or []) if x.get('id') != job['id']]
@@ -8238,9 +8241,14 @@ except Exception:
     pass
 
 
-def vt_args(cmd):
+VT_Q = int(os.environ.get('GRIFFLIX_VT_Q') or 60)   # (the hardware encoder's quality for making a film smaller, 1 to 100: 25 Nov 2026)
+
+
+def vt_args(cmd, q=None):
     """The Mac mini's ffmpeg plan for a film, for a Mac with Apple's video hardware: the slow careful x264 encoder swapped for the
-    hardware one at the same rate, everything else (the language first, every soundtrack, the subtitles) as planned."""
+    hardware one at the same rate, everything else (the language first, every soundtrack, the subtitles) as planned. With q, a film being
+    made smaller: at a quality, not a set rate, each film as small as its picture allows, never above the rate it had (John, 25 Nov 2026,
+    "I also think we could be making things smaller when we do make them smaller" ... "go with your recommendation")."""
     out, i, rate = [], 0, None
     if '-maxrate' in cmd:
         rate = cmd[cmd.index('-maxrate') + 1]
@@ -8250,7 +8258,7 @@ def vt_args(cmd):
             i += 2
             continue
         if a == '-c:v' and i + 1 < len(cmd) and cmd[i + 1] == 'libx264':
-            out += ['-c:v', 'h264_videotoolbox', '-b:v', rate or '6000k', '-allow_sw', '1']
+            out += ['-c:v', 'h264_videotoolbox'] + (['-q:v', str(q)] if q else ['-b:v', rate or '6000k']) + ['-allow_sw', '1']
             i += 2
             continue
         out.append(a)
