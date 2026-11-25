@@ -1142,6 +1142,13 @@ def job_claimed(iid):
         return False
 
 
+def plays_first(x):
+    """Whether a film doesn't play everywhere yet, as it is: not an MP4 (an MKV, an AVI), or in a format not every device plays. Those go first
+    on the queue, then the rest by the space each saves (John, 25 Nov 2026, "the aim should be at least to get everything to play first, so all
+    mkvs, then we need to make sure that it is ordered by what will save the most space next")."""
+    return os.path.splitext(x.get('path') or '')[1].lower() not in ('.mp4', '.m4v', '.mov') or str(x.get('why') or '').startswith('format')
+
+
 def to_mac(items):
     """Everything there is to do, on the one queue, which John's Mac works through (John, 25 Nov 2026, "as the conversions don't run on my
     mac mini when my mac is on, and my mac is on most of the time, there's really no point in the queue being in two places. Queue everything
@@ -1163,7 +1170,8 @@ def to_mac(items):
     for x in items:
         if x.get('redo') or x['id'] in have or x['id'] in passed or time.time() - sent.get(x['id'], 0) < 7 * 86400 or not os.path.exists(x['path']):
             continue   # (a language John put right is the Mac mini's own: minutes, and only it can)
-        e = dict({'id': x['id'], 'name': x['name'], 'at': int(time.time()), 'from': 'mini', 'why': (x.get('why') or '')[:160], 'kind': x.get('mode') or 'convert', 'save': x.get('save') or 0},
+        e = dict({'id': x['id'], 'name': x['name'], 'at': int(time.time()), 'from': 'mini', 'why': (x.get('why') or '')[:160], 'kind': x.get('mode') or 'convert', 'save': x.get('save') or 0,
+                  'play': plays_first(x)},
                  **({'force': True} if x.get('mode') == 'shrink' else {}), **({'big': x['big']} if x.get('mode') == 'remux' and x.get('big') else {}))
         if x['id'] in pins or x.get('fetched') or x.get('urgent') or x.get('new'):
             e['new'] = True
@@ -1188,9 +1196,9 @@ def to_mac(items):
         if y.get('from') != 'mini' or y.get('id') not in now_:
             continue
         x = now_[y['id']]
-        k_, w_, sv_ = x.get('mode') or 'convert', (x.get('why') or '')[:160], x.get('save') or 0
-        if y.get('kind') != k_ or y.get('why') != w_ or y.get('save') != sv_ or (y.get('big') or 0) != big_.get(y['id'], 0):
-            y.update(kind=k_, why=w_, save=sv_)
+        k_, w_, sv_, pl_ = x.get('mode') or 'convert', (x.get('why') or '')[:160], x.get('save') or 0, plays_first(x)
+        if y.get('kind') != k_ or y.get('why') != w_ or y.get('save') != sv_ or (y.get('big') or 0) != big_.get(y['id'], 0) or y.get('play') != pl_:
+            y.update(kind=k_, why=w_, save=sv_, play=pl_)
             if big_.get(y['id']):
                 y['big'] = big_[y['id']]
             else:
@@ -1203,10 +1211,11 @@ def to_mac(items):
         return []
     mids = set(y['id'] for y in moved)
     Q = [y for y in Q if y.get('id') not in mids]
-    # (the backlog in order of the space it saves, the largest first; John's own, those just come in and those put first stay at the top)
+    # (the backlog: first those that don't play everywhere yet (an MKV, a format not every device plays), then the rest, each in order of the
+    # space it saves, the largest first; John's own, those just come in and those put first stay at the top)
     keep_ = lambda y: y.get('from') != 'mini' or y.get('new') or y.get('first')
     head_ = [y for y in Q if keep_(y)]
-    tail_ = sorted([y for y in Q if not keep_(y)] + end, key=lambda y: -(y.get('save') or 0))
+    tail_ = sorted([y for y in Q if not keep_(y)] + end, key=lambda y: (0 if y.get('play') else 1, -(y.get('save') or 0)))   # (those that don't play everywhere yet first)
     k = next((i for i, y in enumerate(head_) if not y.get('first')), len(head_))   # (after any John put first)
     Q = head_[:k] + top + moved + head_[k:] + tail_
     queue_write(Q)
