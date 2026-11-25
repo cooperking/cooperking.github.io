@@ -11838,9 +11838,43 @@ def serve():
                 said_.append('Better Watch Out (2017): couldn’t (%s)' % str(e)[:80])
             open(mk_lo, 'w').write(time.strftime('%Y-%m-%d %H:%M') + '\n' + '\n'.join(said_) + '\n')
             log('Leftovers in Movies (John, 25 Nov): %.1f GB freed. %s' % (freed_ / 1e9, '; '.join(said_)))
-            record('Leftovers deleted from Movies', freed_gb=round(freed_ / 1e9, 1), what=said_)
+            record('Leftovers deleted from Movies', freed_gb=round(freed_ / 1e9, 1), items=said_)
     except Exception as e:
         log('Leftovers in Movies: %s' % e)
+
+    try:   # (once more, for Better Watch Out: the Mac's hidden "._" files go by themselves when the file beside them is deleted, on the
+        # G-Drive's kind of disk, and the first try stopped at one already gone: each file and folder deleted, any gone already passed over)
+        mk_bw = os.path.expanduser('~/Grifflix/leftovers-2.done')
+        bw_ = '/Volumes/G-Drive/Grifflix/Movies/Better Watch Out (2017)'
+        if not os.path.exists(mk_bw) and os.path.isdir('/Volumes/G-Drive/Grifflix/Movies'):
+            said_ = 'not there'
+            if os.path.isdir(bw_):
+                fs_ = []
+                for r_, _, ns_ in os.walk(bw_):
+                    for n_ in ns_:
+                        try:
+                            fs_.append((os.path.join(r_, n_), os.path.getsize(os.path.join(r_, n_))))
+                        except OSError:
+                            pass
+                odd_ = [f for f, _ in fs_ if not (f.endswith('.rar') or f.endswith('files.txt') or os.path.basename(f).startswith('.'))]
+                if odd_ or sum(z for _, z in fs_) > 2e9:
+                    said_ = 'left (something else in it: %s)' % ', '.join(os.path.basename(x) for x in odd_[:3])
+                else:
+                    for r_, ds_, ns_ in os.walk(bw_, topdown=False):
+                        for n_ in ns_:
+                            try:
+                                os.remove(os.path.join(r_, n_))
+                            except FileNotFoundError:
+                                pass
+                        try:
+                            os.rmdir(r_)
+                        except FileNotFoundError:
+                            pass
+                    said_ = 'deleted (%.1f GB, it was only a .rar)' % (sum(z for _, z in fs_) / 1e9) if not os.path.exists(bw_) else 'partly deleted: %s' % os.listdir(bw_)[:4]
+            open(mk_bw, 'w').write(time.strftime('%Y-%m-%d %H:%M ') + said_ + '\n')
+            log('Leftovers in Movies (John, 25 Nov): Better Watch Out (2017): %s' % said_)
+    except Exception as e:
+        log('Leftovers in Movies, Better Watch Out: %s' % e)
 
     try:   # (once: those with no English subtitles anywhere tried again, now that one in another language that fits can be translated)
         mk_f = os.path.expanduser('~/Grifflix/subs-foreign.done')
