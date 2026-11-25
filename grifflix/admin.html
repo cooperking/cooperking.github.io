@@ -2104,7 +2104,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       b.disabled = true; fetch(GW + '/api/critrel', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'logodel', n: +b.dataset.crgdel }) }).then(function (r) { return r.json(); }).then(crDraw).catch(function () { b.disabled = false; });
     }; }); var F = j.films || [], pr = j.progress || {}, by = { no: [], yes: [], channel: [], unread: [], todo: [] };
     F.forEach(function (f) { (by[f.v] || by.todo).push(f); });
-    $('#crsay').textContent = (pr.of ? (pr.running ? 'Looking: ' + (pr.done || 0) + ' of ' + pr.of + ' films' + (pr.paused ? ' (paused: ' + pr.paused + ')' : '') + '. ' : 'All ' + pr.of + ' looked at. ') : '') +
+    $('#crsay').textContent = (pr.of ? (pr.running ? 'Looking: ' + (pr.done || 0) + ' of ' + pr.of + ' films' + (pr.paused ? ' (paused: ' + pr.paused + ')' : pr.onmac ? ' (on your Mac)' : '') + '. ' : 'All ' + pr.of + ' looked at. ') : '') +
       (pr.mine ? 'Looking for Criterion’s logo as in ' + pr.mine + ' of your pictures of it' + (pr.chans ? ', and the Criterion Channel’s opening.' : '.') : pr.known ? 'Criterion’s logo learnt from ' + pr.known + ' films named Criterion' + (pr.logos ? '' : ' (not learnt yet: too few looked at so far)') + '.' : F.length ? '' : 'Starting three minutes after the Mac mini’s next restart.');
     var T = [['no', 'Not Criterion’s?'], ['yes', 'Criterion’s'], ['channel', 'Criterion Channel'], ['unread', 'Couldn’t look'], ['todo', 'Not looked at yet']].filter(function (t) { return by[t[0]].length || t[0] === 'no'; });
     $('#crtabs').innerHTML = T.map(function (t) { return '<button class="btn' + (CR.tab === t[0] ? ' primary' : '') + '" type="button" data-crt="' + t[0] + '">' + t[1] + ' (' + by[t[0]].length + ')</button>'; }).join('');
@@ -2867,7 +2867,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     }
     var R = I.crl || {}, H = I.health || {}, hot = H.cpulimit && H.cpulimit < 100;
     var nf = function (n) { return Number(n || 0).toLocaleString('en-GB'); };
-    var bg = R.of ? 'Criterion logo check: ' + nf(R.done) + ' of ' + nf(R.of) + ' films read' + (R.paused ? ' · waiting, as ' + esc(R.paused) : R.running ? '' : ' · all read') + '.' : '';
+    var bg = R.of ? 'Criterion logo check: ' + nf(R.done) + ' of ' + nf(R.of) + ' films read' + (R.paused ? ' · waiting, as ' + esc(R.paused) : R.onmac ? ' · being read on your Mac' : R.running ? '' : ' · all read') + '.' : '';
     var hl = H.at ? (hot ? '<b style="color:#f08a4b">Hot:</b> it’s slowed itself to ' + H.cpulimit + '% to cool down.' : 'Temperature: fine.') + (H.memfree != null ? ' ' + H.memfree + '% of its memory free.' : '') + ' <span class="when" style="display:inline">(' + hm(H.at) + ')</span>' : '';
     $('#rnmini').innerHTML = '<ul class="changes"><li>' + cv + '</li></ul>' +
       (nx.length ? '<p class="stat" style="margin:12px 0 4px"><b>Next to repackage, in this order</b>' + (L.remux ? ' (' + nf(L.remux) + ' in all)' : '') + '</p><ul class="changes">' +

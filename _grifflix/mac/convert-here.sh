@@ -227,6 +227,15 @@ if [[ "${1:-}" == "agent" ]]; then
       detach /usr/bin/caffeinate -i /bin/zsh "$HERE/convert-here.sh" copyback "${a[1]}" "${a[2]}" "${a[3]}"
     done
   fi
+  # (the Criterion logo check: the opening of each Criterion film read here, alongside any film being converted, at this Mac's lowest call
+  # on its processors (logocheck.py), the Mac mini only comparing what it sends: John, 25 Nov 2026, "Run the logo check on your Mac")
+  ll="$HERE/logo.lock"; nx=$(cat "$HERE/logo.next" 2>/dev/null); [[ "$nx" == <-> ]] || nx=0
+  if [[ "$home" == 1 && -d /Volumes/G-Drive ]] && (( nx <= $(date +%s) )) && ! { [[ -f "$ll" ]] && kill -0 "$(cat "$ll" 2>/dev/null)" 2>/dev/null; }; then
+    curl -fsSL -m 60 https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/logocheck.py -o "$HERE/logocheck.py.new" 2>/dev/null &&
+      /usr/bin/python3 -c 'import ast, sys; ast.parse(open(sys.argv[1]).read())' "$HERE/logocheck.py.new" 2>/dev/null && mv -f "$HERE/logocheck.py.new" "$HERE/logocheck.py"
+    rm -f "$HERE/logocheck.py.new"
+    if [[ -f "$HERE/logocheck.py" ]]; then detach /usr/bin/caffeinate -i /usr/bin/python3 "$HERE/logocheck.py"; echo $! > "$ll"; fi
+  fi
   if [[ -f "$lock" ]] && kill -0 "$(cat "$lock" 2>/dev/null)" 2>/dev/null; then exit 0; fi   # (one film at a time; copies over go on all the same)
   ans=$(curl -fsS -m 90 -H "Authorization: Bearer $key" "$base/macagent/next?home=$home") || exit 0
   [[ "$home" == 1 ]] || exit 0
