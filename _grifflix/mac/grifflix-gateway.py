@@ -1472,7 +1472,9 @@ def make_handler(g):
 
                         # (his own films made smaller on his Mac, as he said (18 Nov 2026); those the Mac mini put on the queue made as it planned
                         # them: a simple repackaging stays one, not made smaller, now everything is on the one queue: 25 Nov 2026)
-                        forced = bool(x.get('force')) or x.get('from') != 'mini'
+                        # (and one to repackage whose picture is much bigger than it need be: made smaller on his Mac, not only repackaged: John,
+                        # 25 Nov 2026, "Convert only if smaller")
+                        forced = bool(x.get('force')) or x.get('from') != 'mini' or bool(x.get('big'))
 
                         def plan_it(x=x, forced=forced):
                             try:
@@ -3691,7 +3693,8 @@ def make_handler(g):
                 if j_.get('mac') and not j_.get('ended') and j_.get('state') in ('waiting', 'started', 'converting', 'copying', 'checking'):
                     it_ = (j_.get('plan') or {}).get('item') or {}
                     live_.append({'id': j_.get('id'), 'name': it_.get('name') or '', 'state': j_.get('state'), 't': j_.get('t') or 0, 'dur': (j_.get('plan') or {}).get('dur') or 0,
-                                  'speed': str(j_.get('speed') or ''), 'stage': str(j_.get('stage') or '')[:160], 'why': str(it_.get('why') or '')[:160], 'at': j_.get('at')})
+                                  'speed': str(j_.get('speed') or ''), 'stage': str(j_.get('stage') or '')[:160], 'why': str(it_.get('why') or '')[:160], 'at': j_.get('at'),
+                                  'mode': it_.get('mode') or ''})
             ids_ = set(x['id'] for x in live_)
             Q = [x for x in load(MACQ, []) or [] if x.get('id') not in ids_]
             cur = load(os.path.join(home, 'convert-now.json'), {}) or {}
@@ -3707,8 +3710,8 @@ def make_handler(g):
                 'at': int(time.time()),
                 'mac': {'setup': bool(a.get('key')), 'seen': MACAGENT.get('seen'), 'home': MACAGENT.get('home'), 'now': live_, 'paused': bool(a.get('paused')),
                         'queue': [{'id': x.get('id'), 'name': x.get('name'), 'from': x.get('from') or 'you', 'why': x.get('why') or '', 'at': x.get('at'), 'first': bool(x.get('first')),
-                                   'kind': x.get('kind') or ('convert' if x.get('from') == 'mini' else 'you'), 'new': bool(x.get('new'))} for x in Q[:15]],
-                        'qn': len(Q), 'qremux': sum(1 for x in Q if x.get('kind') == 'remux'), 'qyours': sum(1 for x in Q if x.get('from') != 'mini'),
+                                   'kind': x.get('kind') or ('convert' if x.get('from') == 'mini' else 'you'), 'new': bool(x.get('new')), 'big': x.get('big') or 0} for x in Q[:15]],
+                        'qn': len(Q), 'qremux': sum(1 for x in Q if x.get('kind') == 'remux' and not x.get('big')), 'qyours': sum(1 for x in Q if x.get('from') != 'mini'),
                         'subs': {'at': SUBASK.get('at'), 'said': SUBASK.get('said')}},
                 'mini': {'conv': {'alive': bool(conv_alive(cur)), 'state': cur.get('state'), 'id': cur.get('id'), 'name': cur.get('name'), 'pct': cur.get('pct'), 'why': cur.get('why'),
                                   'since': cur.get('since'), 'at': cur.get('at'), 'next': [x for x in cur.get('next') or [] if x.get('id') not in done_][:8], 'left': cur.get('left')},
