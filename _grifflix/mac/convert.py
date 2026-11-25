@@ -1149,6 +1149,13 @@ def plays_first(x):
     return os.path.splitext(x.get('path') or '')[1].lower() not in ('.mp4', '.m4v', '.mov') or str(x.get('why') or '').startswith('format')
 
 
+def fresh_in(x, pins):
+    """One for the top of the queue: just brought in (a download that's come), today's or tomorrow's Movie of the Day, or one John pinned. Not
+    every film added or changed in the last fortnight, as the converter's own order has it: with films repackaged and converted all day, that
+    was nearly every film, and the order John asked for (everything playing first, then by the space saved) was lost: 25 Nov 2026."""
+    return x['id'] in pins or bool(x.get('fetched')) or bool(x.get('urgent'))
+
+
 def to_mac(items):
     """Everything there is to do, on the one queue, which John's Mac works through (John, 25 Nov 2026, "as the conversions don't run on my
     mac mini when my mac is on, and my mac is on most of the time, there's really no point in the queue being in two places. Queue everything
@@ -1173,7 +1180,7 @@ def to_mac(items):
         e = dict({'id': x['id'], 'name': x['name'], 'at': int(time.time()), 'from': 'mini', 'why': (x.get('why') or '')[:160], 'kind': x.get('mode') or 'convert', 'save': x.get('save') or 0,
                   'play': plays_first(x)},
                  **({'force': True} if x.get('mode') == 'shrink' else {}), **({'big': x['big']} if x.get('mode') == 'remux' and x.get('big') else {}))
-        if x['id'] in pins or x.get('fetched') or x.get('urgent') or x.get('new'):
+        if fresh_in(x, pins):
             e['new'] = True
             top.append(e)
         else:
@@ -1197,8 +1204,13 @@ def to_mac(items):
             continue
         x = now_[y['id']]
         k_, w_, sv_, pl_ = x.get('mode') or 'convert', (x.get('why') or '')[:160], x.get('save') or 0, plays_first(x)
-        if y.get('kind') != k_ or y.get('why') != w_ or y.get('save') != sv_ or (y.get('big') or 0) != big_.get(y['id'], 0) or y.get('play') != pl_:
+        nw_ = fresh_in(x, pins)
+        if y.get('kind') != k_ or y.get('why') != w_ or y.get('save') != sv_ or (y.get('big') or 0) != big_.get(y['id'], 0) or y.get('play') != pl_ or bool(y.get('new')) != nw_:
             y.update(kind=k_, why=w_, save=sv_, play=pl_)
+            if nw_:
+                y['new'] = True
+            else:
+                y.pop('new', None)
             if big_.get(y['id']):
                 y['big'] = big_[y['id']]
             else:
