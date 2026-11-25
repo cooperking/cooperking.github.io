@@ -1201,6 +1201,21 @@ def shrink_item(iid, name=None, mac=False):
     if is_hdr(v) and rt.upper() == 'DOVI':   # (Dolby Vision alone, with no ordinary HDR picture beneath it: its colours can't be worked out)
         SKIPWHY[iid] = 'it’s Dolby Vision only (no HDR10 picture beneath), which can’t be turned into ordinary colours: replace it with another copy.'
         return None
+    # (made smaller only if it really is big for its size, allowing for how efficient its picture is: one already compact would only lose
+    # picture. Marty Supreme, an efficient HEVC picture at 2.3 Mbps, was "made smaller" to H.264 at 1.6 and graded Replace: John, 25 Nov 2026,
+    # "what was the cause of the Marty Supreme being made to replace? It was a very good copy before")
+    ms_ = (g(it, 'MediaSources') or [{}])[0]
+    w_, h_ = g(v, 'Width', 0), g(v, 'Height', 0)
+    mbps_ = (g(ms_, 'Bitrate') or g(v, 'BitRate') or 0) / 1e6
+    if not mbps_ and g(ms_, 'Size') and g(ms_, 'RunTimeTicks'):
+        mbps_ = g(ms_, 'Size') * 8 / (g(ms_, 'RunTimeTicks') / 1e7) / 1e6
+    vc_ = (g(v, 'Codec') or '').lower()
+    eff_ = 2.0 if vc_ == 'av1' else 1.6 if vc_ in ('hevc', 'h265', 'vp9') else 1.0 if vc_ == 'h264' else .6
+    top_ = 6 if h_ >= 900 else 3.5 if h_ >= 600 else 2
+    if mbps_ and not (w_ > MAX_W + 8 or h_ > MAX_H + 8) and mbps_ * eff_ < 1.5 * top_:
+        SKIPWHY[iid] = 'it’s already compact for its size (%s, %.1f Mbps): made smaller it would only lose picture, so it’s left as it is.' % (
+            {'hevc': 'HEVC', 'h265': 'HEVC', 'h264': 'H.264', 'vp9': 'VP9', 'av1': 'AV1'}.get(vc_, vc_.upper() or '?'), mbps_)
+        return None
     return {'id': iid, 'name': g(it, 'Name') or name or '?', 'year': g(it, 'ProductionYear', ''), 'lib': 'movies' if g(it, 'Type') == 'Movie' else 'tv',
             'why': SHRINK + ' (chosen by you)', 'mode': 'shrink', 'path': path, 'mins': round((g(it, 'RunTimeTicks') or 0) / 6e8),
             'rating': g(it, 'CommunityRating') or 0, 'gb': round(os.path.getsize(path) / 1e9, 1), 'added': g(it, 'DateCreated') or ''}
@@ -1214,7 +1229,9 @@ if CMD in ('plan', 'finish'):   # (John's "Convert on this Mac", 16 Nov 2026: th
         # network twice: Disclosure Day, 40.6 GB, at 0.6x: John, 18 Nov 2026, "I'm going to save space by converting the bigger files on my mac")
         if 'force' in sys.argv[3:] and (not found or found[0].get('mode') == 'remux') and sys.argv[2] not in noshrink():
             f = shrink_item(sys.argv[2], mac=True)
-            found = [f] if f else []   # (HDR: made on John's Mac, its colours tone-mapped (convert); Dolby Vision alone passed over)
+            # (HDR: made on John's Mac, its colours tone-mapped (convert); Dolby Vision alone passed over; one already compact not made smaller,
+            # but still repackaged if that's what it needs)
+            found = [f] if f else found
         if not found:
             print(json.dumps({'error': (SKIPWHY.get(sys.argv[2]) or 'it plays everywhere as it is: nothing to convert.')}))
             sys.exit()
