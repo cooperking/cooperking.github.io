@@ -215,6 +215,25 @@ def why(ms):
     return 'format (%s%s)' % (vc or '?', ', 10-bit' if bits > 8 or '10' in prof else '')
 
 
+def shrinks(ms):
+    """A film to be repackaged whose picture is much bigger than it need be: its rate (Mbps) if so, else 0. On John's Mac it's then made
+    smaller straight away, not only repackaged: at least one and a half times the converted rate (6 Mbps at 1080p, 3.5 at 720p, 2 below);
+    never HEVC (H.264 needs more for the same picture), HDR (its colours), or one bigger than 1080p (converted anyway). John, 25 Nov 2026,
+    "if that's happening on my mac it should say it's a full conversion job" ... "Convert only if smaller"."""
+    streams = g(ms, 'MediaStreams', [])
+    v = next((x for x in streams if g(x, 'Type') == 'Video'), None)
+    if not v or is_hdr(v) or (g(v, 'Codec') or '').lower() in ('hevc', 'h265'):
+        return 0
+    w, h = g(v, 'Width', 0), g(v, 'Height', 0)
+    if w > MAX_W + 8 or h > MAX_H + 8:
+        return 0
+    mbps = (g(ms, 'Bitrate') or g(v, 'BitRate') or 0) / 1e6
+    if not mbps and g(ms, 'Size') and g(ms, 'RunTimeTicks'):
+        mbps = g(ms, 'Size') * 8 / (g(ms, 'RunTimeTicks') / 1e7) / 1e6
+    top = 6 if h >= 900 else 3.5 if h >= 600 else 2
+    return round(mbps, 1) if mbps >= 1.5 * top else 0
+
+
 REREAD = set()   # (films the media server was asked to read again, this run: once each)
 VIDEO = ('.mkv', '.mp4', '.m4v', '.avi', '.mov', '.ts', '.m2ts', '.webm', '.wmv', '.mpg', '.mpeg', '.flv', '.vob')
 
@@ -247,7 +266,7 @@ def gather():
                     name = g(it, 'Name') if types == 'Movie' else '%s S%02dE%02d' % (g(it, 'SeriesName'), g(it, 'ParentIndexNumber', 0), g(it, 'IndexNumber', 0))
                     out.append({'id': g(it, 'Id'), 'name': name, 'year': g(it, 'ProductionYear', ''), 'lib': lib, 'why': w, 'mode': 'remux' if w.startswith(REPACK) else 'shrink' if w.startswith(SHRINK) else 'convert',
                                 'path': g(it, 'Path'), 'mins': round((g(it, 'RunTimeTicks') or 0) / 6e8), 'rating': g(it, 'CommunityRating') or 0,
-                                'gb': round(os.path.getsize(g(it, 'Path')) / 1e9, 1), 'added': g(it, 'DateCreated') or ''})
+                                'gb': round(os.path.getsize(g(it, 'Path')) / 1e9, 1), 'added': g(it, 'DateCreated') or '', 'big': shrinks(ms) if w.startswith(REPACK) else 0})
             start += 300
             if start >= g(r, 'TotalRecordCount', 0):
                 break
@@ -997,7 +1016,7 @@ def to_mac(items):
         if x.get('redo') or x['id'] in have or x['id'] in passed or time.time() - sent.get(x['id'], 0) < 7 * 86400 or not os.path.exists(x['path']):
             continue   # (a language John put right is the Mac mini's own: minutes, and only it can)
         e = dict({'id': x['id'], 'name': x['name'], 'at': int(time.time()), 'from': 'mini', 'why': (x.get('why') or '')[:160], 'kind': x.get('mode') or 'convert'},
-                 **({'force': True} if x.get('mode') == 'shrink' else {}))
+                 **({'force': True} if x.get('mode') == 'shrink' else {}), **({'big': x['big']} if x.get('mode') == 'remux' and x.get('big') else {}))
         if x['id'] in pins or x.get('fetched') or x.get('urgent') or x.get('new'):
             e['new'] = True
             top.append(e)
@@ -1011,7 +1030,16 @@ def to_mac(items):
     top = [y for y in top if y['id'] not in have]
     end = [y for y in end if y['id'] not in have]
     moved = [dict(y, new=True) for y in Q if y.get('id') in pins and y.get('from') == 'mini' and not y.get('new')]   # (pinned since: to the top)
-    if not (top or end or moved or gone):
+    big_ = {x['id']: x.get('big') or 0 for x in items if x.get('mode') == 'remux' and not x.get('redo')}
+    fixed = 0
+    for y in Q:   # (whether one to repackage is made smaller on John's Mac instead: said on those queued before it was worked out)
+        if y.get('from') == 'mini' and y.get('kind') == 'remux' and y.get('id') in big_ and (y.get('big') or 0) != big_[y['id']]:
+            if big_[y['id']]:
+                y['big'] = big_[y['id']]
+            else:
+                y.pop('big', None)
+            fixed += 1
+    if not (top or end or moved or gone or fixed):
         return []
     mids = set(y['id'] for y in moved)
     Q = [y for y in Q if y.get('id') not in mids]
