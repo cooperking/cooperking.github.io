@@ -3060,6 +3060,10 @@ def make_handler(g):
                 hevc = False   # (a 10-bit HEVC film to a device that plays only 8-bit HEVC: it couldn't show it; John, 11 Nov 2026: Rushmore)
             v0c, v0b = (vs0.get('Codec') or '').lower(), vs0.get('BitDepth') or (10 if '10' in (vs0.get('Profile') or '') else 8)
             plays = (v0c == 'h264' and v0b <= 8) or (v0c in ('hevc', 'h265') and hevc)   # (the device plays the picture as it is)
+            # (VP9 too, on a device that says it plays it (Chrome, Android, a Fire TV 4K), as the whole file only: a stream of it would mean converting)
+            cont_ = [c.strip() for c in (ms.get('Container') or '').lower().split(',') if c.strip()]
+            vp9ok = v0c == 'vp9' and q.get('vp9') == '1' and v0b <= 8 and any(c in ('mp4', 'm4v', 'webm') for c in cont_) and not q.get('nodirect')
+            plays = plays or vp9ok
             hq = {'MediaSourceId': msid, 'DeviceId': dev, 'PlaySessionId': ps, 'VideoCodec': 'h264,hevc' if hevc else 'h264', 'AudioCodec': 'aac,mp3',
                   'TranscodingMaxAudioChannels': 2, 'MaxStreamingBitrate': br, 'SegmentContainer': 'mp4', 'MinSegments': 1,
                   'BreakOnNonKeyFrames': 'True', 'RequireAvc': 'false', 'g': key}
@@ -3081,10 +3085,25 @@ def make_handler(g):
             direct = None
             # (the whole file, when it's an MP4 whose picture and first sound this device plays as they are: the surest way to play
             # anywhere. AC3 and E-AC3 only where the device says it plays them (Safari does, Chrome doesn't): John, 12 Nov 2026)
-            snd = ('aac', 'mp3') + (('ac3', 'eac3') if q.get('ac3') == '1' else ())
-            if not pick and not q.get('nodirect') and any(c in ('mp4', 'm4v', 'mov') for c in (ms.get('Container') or '').split(',')) and vs and plays \
+            snd = ('aac', 'mp3') + (('ac3', 'eac3') if q.get('ac3') == '1' else ()) + (('opus', 'vorbis') if vp9ok else ())
+            if not pick and not q.get('nodirect') and any(c in ('mp4', 'm4v', 'mov') + (('webm',) if vp9ok else ()) for c in (ms.get('Container') or '').split(',')) and vs and plays \
                     and all((a.get('Codec') or '') in snd for a in aus[:1]):
                 direct = '/v/%s/stream?' % iid + urllib.parse.urlencode({'Static': 'true', 'MediaSourceId': msid, 'g': key})
+            # (never converted as it plays: a film whose picture this device can't play as it is gets a message saying why, not a conversion
+            # the Mac mini can't keep up with (the container or the sound made to fit is fine: the picture copied as it is): John, 25 Nov 2026,
+            # "I never want encoding - so if anyone tries to play something that would need converting, can it instead give a message why it
+            # wouldn't play on that device?")
+            if vs and (not plays or (v0c == 'vp9' and not direct)):
+                why_ = cant_play_why(v0c, v0b, hevc_dev=q.get('hevc') == '1', vp9_dev=q.get('vp9') == '1')
+                Q_ = load(MACQ, []) or []
+                pos_ = next((i_ + 1 for i_, x in enumerate(Q_) if x.get('id') == iid), 0)
+                live_ = any(j_.get('id') == iid and j_.get('mac') and not j_.get('ended') for j_ in list(CONVJOBS.values()))
+                log('Wouldn’t play %s on %s: %s' % (it.get('Name') or iid, (q.get('kind') or 'a device')[:40], why_['short']))
+                record('Wouldn’t play (no converting as it plays)', film=it.get('Name'), id=iid, device=(q.get('kind') or '')[:40], who=me.get('name'), why=why_['short'])
+                if q.get('cant') != '1':   # (a page from before, the live one till John publishes the draft: the why as an error it shows as it is)
+                    return self.send_json(403, {'error': '“%s” won’t play on this device. %s%s' % (it.get('Name') or 'This film', why_['say'], (' It plays on %s.' % why_['on']) if why_['on'] else '')})
+                return self.send_json(200, {'cant': why_['say'], 'plays_on': why_['on'], 'queued': pos_, 'making': live_, 'owner': bool(me.get('owner')), 'id': iid,
+                                            'secs': round((it.get('RunTimeTicks') or 0) / 1e7)})
             subs = self.subs_out(iid, ms, key)
             v0 = vs0 or {}
             srcd = {'v': (v0.get('Codec') or '').lower(), 'bits': v0.get('BitDepth') or (10 if '10' in (v0.get('Profile') or '') else 8),
@@ -8077,6 +8096,27 @@ def fanny_series(g):
         log('Fanny and Alexander as a miniseries:', str(e)[:200])
 
 
+def cant_play_why(vc, bits, hevc_dev=False, vp9_dev=False):
+    """Why a film's picture won't play on a device as it is, in plain words, and where it does: {'say', 'short', 'on'}."""
+    vc = (vc or '').lower()
+    if vc in ('hevc', 'h265'):
+        name = '10-bit HEVC (H.265)' if bits > 8 else 'HEVC (H.265)'
+        on = 'iPhones, iPads, Macs (in Safari), an Apple TV and a Fire TV 4K' if bits <= 8 else 'recent iPhones, iPads and Macs (in Safari), and a Fire TV 4K'
+        dev = 'this device plays HEVC, but not 10-bit' if hevc_dev and bits > 8 else 'this device can’t play it as it is'
+    elif vc == 'vp9':
+        name, on = 'VP9', 'Chrome or Firefox on a computer, Android phones, and a Fire TV 4K'
+        dev = 'this device can’t play it as it is' if not vp9_dev else 'this device plays VP9, but not in the file it’s in'
+    elif vc == 'h264' and bits > 8:
+        name, on, dev = '10-bit H.264', '', 'hardly any device plays it as it is'
+    else:
+        name = {'mpeg4': 'an old format (MPEG-4: XviD or DivX)', 'msmpeg4v3': 'an old format (DivX 3)', 'mpeg2video': 'MPEG-2 (as on a DVD)', 'vc1': 'VC-1',
+                'av1': 'AV1', 'wmv3': 'Windows Media', 'h263': 'an old format (H.263)', 'mjpeg': 'Motion JPEG'}.get(vc, (vc or 'an unusual format').upper())
+        on, dev = '', 'this device can’t play it as it is'
+    return {'short': '%s: %s' % (name, dev),
+            'say': 'Its picture is %s, and %s. Grifflix doesn’t convert films while they play: the Mac mini can’t keep up.' % (name, dev),
+            'on': on}
+
+
 def mac_job(iid, force=False):
     """A film planned for John's Mac, as the Mac mini's converter would plan it, and handed over by a one-time address: (code, answer)."""
     if not re.match(r'^[0-9a-f]{32}$', iid):
@@ -11210,6 +11250,25 @@ def health_watch():
         time.sleep(300)
 
 
+def no_video_transcoding(g):
+    """Every media server user's own players (Jellyfin's apps, a TV over DLNA) not allowed to convert a film's picture as it plays either:
+    they say they can't play it instead. Repackaging as it plays (the picture copied) and the sound made to fit stay allowed (John, 25 Nov
+    2026, "I never want encoding"). Looked at at each start, so it stays so."""
+    time.sleep(60)
+    try:
+        for u in g.jf.call('GET', '/Users') or []:
+            pol = dict(u.get('Policy') or {})
+            if pol and pol.get('EnableVideoPlaybackTranscoding', True):
+                pol['EnableVideoPlaybackTranscoding'] = False
+                pol.setdefault('EnablePlaybackRemuxing', True)
+                pol.setdefault('EnableAudioPlaybackTranscoding', True)
+                g.jf.call('POST', '/Users/%s/Policy' % u['Id'], pol)
+                log('Media server: %s’s players no longer convert a film’s picture as it plays (repackaging and the sound still allowed)' % (u.get('Name') or u['Id']))
+                record('Media server user: no converting the picture as it plays', user=u.get('Name'))
+    except Exception as e:
+        log('Media server users, no converting as it plays: %s' % str(e)[:160])
+
+
 def keep_converting():
     """The converter kept going: started again if it isn't running (after the Mac restarts, or if the restart after Update everything
     didn't take), unless it finished everything in the last 12 hours; any time the Mac isn't in use, pausing while anyone watches
@@ -11441,6 +11500,7 @@ def serve():
     threading.Thread(target=to_check_once, args=(g,), daemon=True).start()
     threading.Thread(target=silent_once, args=(g,), daemon=True).start()   # (once: silent films put in Not needed)   # (once: the films in doubt in a To check collection, John's alone)   # (each episode's series' IMDb number and own title, for the searches)   # (once: those turned down by their words, looked at again by when their lines are said)
     threading.Thread(target=health_watch, daemon=True).start()   # (why it stopped, and how hard it's working: 25 Nov 2026)
+    threading.Thread(target=no_video_transcoding, args=(g,), daemon=True).start()   # (no converting as it plays, anywhere: 25 Nov 2026)
     threading.Thread(target=keep_file_checks, args=(g,), daemon=True).start()   # (each waiting film's files checked here as soon as it's waiting)   # (other subtitles timed by when people speak, before Whisper)
     try:   # (films already turned down where Whisper heard next to no speech anywhere (Robot Dreams): little or no dialogue, not tried again)
         P_ = load(SUBPREP, {}) or {}
