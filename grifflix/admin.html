@@ -3493,10 +3493,11 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     $('#lbsum').innerHTML = all.length ? '<b>' + mkv + '</b> MKV file' + (mkv === 1 ? '' : 's') + ' · <a href="#" data-lbf="repackage"><b>' + rp + '</b> to repackage</a> (minutes each) · <a href="#" data-lbf="convert"><b>' + cv + '</b> to convert</a> (hours each) · <a href="#" data-lbf="smaller"><b>' + cnt.sh + '</b> to make smaller</a> (last; about <b>' + (free >= 1000 ? (free / 1000).toFixed(1) + ' TB' : Math.round(free) + ' GB') + '</b> freed)' : '';
     Array.prototype.forEach.call(document.querySelectorAll('[data-lbf]'), function (a) { a.onclick = function (e) { e.preventDefault(); LB.f = a.dataset.lbf; LB.n = 50; lbDraw(); }; });
     var tot = { replace: 0, smaller: 0, convert: 0, repackage: 0, good: 0 }; all0.forEach(function (x) { var k = (x.p || lbPlan(x)).k; if (tot[k] != null) tot[k]++; });
-    var now_ = 0, then_ = 0; all0.forEach(function (x) { var p_ = x.p || lbPlan(x); now_ += x.gb || 0; then_ += p_.ng != null ? p_.ng : (x.gb || 0); });
+    var now_ = 0, then_ = 0, xg_ = 0; all0.forEach(function (x) { var p_ = x.p || lbPlan(x); now_ += x.gb || 0; then_ += p_.ng != null ? p_.ng : (x.gb || 0); xg_ += x.xgb || 0; });
+    now_ += xg_; then_ += xg_;   // (the films' extras part of the library, and its size: John, 25 Nov 2026, "Extras are a legitimate part of the library so should be included in space"; as they are, not converted)
     var tb = function (g) { return g >= 1000 ? (g / 1000).toFixed(2) + ' TB' : Math.round(g) + ' GB'; };
     var ntv = all0.filter(function (x) { return x.tv; }).length;
-    $('#lbhead').innerHTML = (all0.length - ntv) + ' films' + (ntv ? ' and ' + ntv + ' TV episodes' : '') + ', ' + tb(now_) + ': <em>about ' + tb(then_) + ' when all are done, saving ' + tb(now_ - then_) + '</em>' +
+    $('#lbhead').innerHTML = (all0.length - ntv) + ' films' + (ntv ? ' and ' + ntv + ' TV episodes' : '') + ', ' + tb(now_) + (xg_ ? ' with the films’ extras (' + tb(xg_) + ')' : '') + ': <em>about ' + tb(then_) + ' when all are done, saving ' + tb(now_ - then_) + '</em>' +
       '<small style="display:block;font-size:14px;opacity:.8;margin-top:4px">' + tot.smaller + ' to make smaller, ' + tot.convert + ' to convert, ' + tot.repackage + ' to repackage, ' + tot.replace + ' to replace</small>';
   }
   $('#lbcopy').onclick = function () { lbExport('copy'); }; $('#lbcsv').onclick = function () { lbExport('csv'); };
