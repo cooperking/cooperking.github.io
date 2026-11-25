@@ -157,6 +157,17 @@ def is_hdr(v):
     return (g(v, 'VideoRange') or '').upper() == 'HDR' or tr in ('smpte2084', 'arib-std-b67') or 'dovi' in (g(v, 'VideoRangeType') or '').lower()
 
 
+POOR = .035   # (the Library's line for a poor copy: bits of picture per pixel per frame, allowing for how efficient its format is)
+
+
+def pic_bpp(mbps, w, h, vc):
+    """How much picture a file carries for its size, as the Library judges it (admin's lbGrade): HEVC and VP9 count 1.6 times H.264,
+    AV1 twice, older formats 0.6."""
+    vc = (vc or '').lower()
+    eff = 2.0 if vc == 'av1' else 1.6 if vc in ('hevc', 'h265', 'vp9') else 1.0 if vc == 'h264' else .6
+    return mbps * 1e6 * eff / (w * h * 24) if mbps and w and h else None
+
+
 def why(ms):
     streams = g(ms, 'MediaStreams', [])
     v = next((x for x in streams if g(x, 'Type') == 'Video'), None)
@@ -211,6 +222,12 @@ def why(ms):
         thr = (8.5 if h >= 900 else 5 if h >= 600 else 3) * (1.6 if vc in ('hevc', 'h265') else 1)
         if mbps > thr and not hdr:
             return SHRINK + ' (%.1f Mbps)' % mbps
+        return None
+    # (a copy already poor isn't converted: it would come out no better, and then be one to replace; left as it is, the Library saying replace
+    # it: John, 25 Nov 2026, "we shouldn't ever be converting things and then saying we should replace them. I don't want to be making poor
+    # quality versions of things")
+    b_ = pic_bpp(mbps, w, h, vc)
+    if b_ is not None and b_ < POOR:
         return None
     return 'format (%s%s)' % (vc or '?', ', 10-bit' if bits > 8 or '10' in prof else '')
 
@@ -274,7 +291,7 @@ def gather():
                         log('  %s: the media server had no details of its file (read while being copied in?): asked to read it again' % g(it, 'Name'))
                     except Exception:
                         pass
-                if w and w.startswith(SHRINK) and g(it, 'Id') in NS_:   # (made smaller once, and it saved too little: left as it is)
+                if w and not w.startswith(REPACK) and g(it, 'Id') in NS_:   # (made once, and it saved too little, or came out poorer: left as it is)
                     w = None
                 if w and g(it, 'Path') and os.path.exists(g(it, 'Path')):
                     name = g(it, 'Name') if types == 'Movie' else '%s S%02dE%02d' % (g(it, 'SeriesName'), g(it, 'ParentIndexNumber', 0), g(it, 'IndexNumber', 0))
@@ -620,7 +637,11 @@ def convert(item, ffmpeg, ffprobe, st):
     # after: John, 25 Nov 2026, "The Replace section of the Library shows films that the mac has converted itself")
     vc_ = (v.get('codec_name') or '').lower()
     eff_ = 2.0 if vc_ == 'av1' else 1.6 if vc_ in ('hevc', 'h265', 'vp9') else 1.0
-    cap = int(max(1200, min(top, src_kbps * eff_ if src_kbps > 0 else top)))
+    # (and never below the Library's line for a good copy of its size, with a third to spare: a converted film is never one to replace)
+    ih_, iw_ = int(v.get('height') or 1080), int(v.get('width') or 1920)
+    ow_ = iw_ * oh / ih_ if ih_ else 1920
+    floor_ = POOR * ow_ * oh * 24 * 1.3 / 1000
+    cap = int(min(top, max(1200, floor_, src_kbps * eff_ if src_kbps > 0 else top)))
     cmd += ['-map_metadata', '0', '-map_chapters', '0']
     if remux:   # (the picture copied as it is; HEVC labelled hvc1, as Apple's devices need, not hev1)
         cmd += ['-c:v', 'copy', '-disposition:v:0', 'default'] + (['-tag:v', 'hvc1'] if v.get('codec_name') == 'hevc' else [])
@@ -773,10 +794,31 @@ def convert(item, ffmpeg, ffprobe, st):
         except Exception:
             pass
         raise RuntimeError('made smaller, it saved too little (%.1f GB → %.1f GB): the original kept as it is' % (a_, b_))
-    new_dur = float((probe(ffprobe, tmp).get('format') or {}).get('duration') or 0)
+    ninfo_ = probe(ffprobe, tmp)
+    new_dur = float((ninfo_.get('format') or {}).get('duration') or 0)
     if abs(new_dur - dur) > max(3, dur * .01):
         os.remove(tmp)
         raise RuntimeError('the new file is %.0f s long, the original %.0f s: kept the original' % (new_dur, dur))
+    if not remux:   # (its picture made again: never a poorer copy than it was, by the Library's measure; else the original kept, and left as it is)
+        try:
+            nv_ = next((x for x in ninfo_.get('streams') or [] if x.get('codec_type') == 'video'), {})
+            n_mbps = os.path.getsize(tmp) * 8 / max(1.0, new_dur) / 1e6
+            s_mbps = os.path.getsize(src) * 8 / max(1.0, dur) / 1e6
+            nb_ = pic_bpp(n_mbps, nv_.get('width') or 0, nv_.get('height') or 0, nv_.get('codec_name'))
+            sb_ = pic_bpp(s_mbps, v.get('width') or 0, v.get('height') or 0, v.get('codec_name'))
+            if nb_ is not None and sb_ is not None and sb_ >= POOR and nb_ < POOR * .7:
+                os.remove(tmp)
+                try:
+                    ns_ = noshrink()
+                    ns_[item['id']] = {'name': item.get('name'), 'at': int(time.time()), 'was_mbps': round(s_mbps, 1), 'made_mbps': round(n_mbps, 1), 'poorer': True}
+                    json.dump(ns_, open(NOSHRINK_F, 'w'))
+                except Exception:
+                    pass
+                raise RuntimeError('it came out a poorer copy than it was (%.1f Mbps from %.1f): the original kept, and left as it is' % (n_mbps, s_mbps))
+        except RuntimeError:
+            raise
+        except Exception:
+            pass
 
     # the new one in the original's place (moved in only now, whole and checked), and the original deleted: John keeps his own backups
     # (John, 12 Nov 2026: "delete all originals automatically - I have backups so it's fine"); kept in Grifflix Originals only if
@@ -1055,6 +1097,10 @@ def to_mac(items):
     Q = queue_read()   # (read again just before writing: John may have queued or taken one off meanwhile)
     n0 = len(Q)
     Q = [y for y in Q if not (y.get('from') == 'mini' and (st['done'].get(y.get('id')) or {}).get('at', 0) > (y.get('at') or 0))]   # (made since)
+    # (and those the converter no longer has to do (a poor copy, left as it is for replacing: 25 Nov 2026), unless John's Mac is at it now)
+    if items:
+        live_ids = set(x['id'] for x in items)
+        Q = [y for y in Q if y.get('from') != 'mini' or y.get('id') in live_ids or job_claimed(y.get('id') or '')]
     gone = n0 - len(Q)
     have = set(y.get('id') for y in Q)
     top = [y for y in top if y['id'] not in have]

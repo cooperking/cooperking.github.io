@@ -3315,7 +3315,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   function lbGrade(x) {
     var res = x.w >= 3200 || x.h >= 1700 ? '4K' : x.w >= 1800 || x.h >= 1000 ? '1080p' : x.w >= 1200 || x.h >= 700 ? '720p' : x.w ? 'SD' : '?';
     var hv = x.v === 'hevc' || x.v === 'h265';
-    var eff = hv ? 1.6 : x.v === 'av1' ? 2 : x.v === 'h264' ? 1 : .6;   // (how much picture each bit carries, by format)
+    var eff = hv || x.v === 'vp9' ? 1.6 : x.v === 'av1' ? 2 : x.v === 'h264' ? 1 : .6;   // (how much picture each bit carries, by format: VP9 as HEVC)
     var bpp = x.w && x.h && x.mbps ? x.mbps * 1e6 * eff / (x.w * x.h * 24) : null;
     var thr = (x.h >= 900 ? 8.5 : x.h >= 600 ? 5 : 3) * (hv ? 1.6 : 1);   // (the converter's own line for "bigger than it need be": convert.py)
     var q = 'good', why = '';
@@ -3331,11 +3331,16 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     else why = bpp == null ? 'no rate known' : 'good ' + res;
     // (one Grifflix converted itself, said so, and from what: a poor copy to begin with, or made worse by converting: John, 25 Nov 2026, "The
     // Replace section of the Library shows films that the mac has converted itself")
+    // (Grifflix never makes a poorer copy now: a poor one isn't converted, the rate never goes below the good line, and one that came out
+    // poorer is thrown away, the original kept: John, 25 Nov 2026, "we shouldn't ever be converting things and then saying we should replace
+    // them". One it made at a quality from a good copy is judged by that copy: a simple picture comes out compact. Those made before, at too
+    // low a rate, said so)
     if (q === 'replace' && x.conv && !x.rp) {
       var wv = x.was, wb = null, by = 'converted by Grifflix' + (x.conv_where === 'mac' ? ' on your Mac' : '') + (x.conv_at ? ' (' + new Date(x.conv_at * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ')' : '');
       if (wv && wv.w && wv.h && wv.mbps) { var we = /HEVC|VP9/i.test(wv.v || '') ? 1.6 : /AV1/i.test(wv.v || '') ? 2 : /H\.264/.test(wv.v || '') ? 1 : .6; wb = wv.mbps * 1e6 * we / (wv.w * wv.h * 24); }
-      why += ' · ' + by + (wb == null ? ', at a rate too low for its picture (since put right): it was probably a better copy before; replace it'
-        : wb >= .035 ? ' from ' + wv.v + ' at ' + wv.mbps + ' Mbps, a good copy: made worse by converting, its original deleted; replace it'
+      if (wb != null && wb >= .035 && bpp != null && bpp >= .035 * .7) { q = 'good'; why = 'good ' + res + ' · ' + by + ' from a good copy (' + wv.v + ', ' + wv.mbps + ' Mbps): compact, as its picture allows'; }
+      else why += ' · ' + by + (wb == null ? ', at a rate too low for its picture, before that was put right: it was probably a better copy before; replace it'
+        : wb >= .035 ? ' from ' + wv.v + ' at ' + wv.mbps + ' Mbps, a good copy: made worse by converting, before that was put right; replace it'
         : ' from ' + wv.v + ' at ' + wv.mbps + ' Mbps, already a poor copy');
     }
     return { q: q, res: res, why: why, bpp: bpp == null ? 1 : bpp };
