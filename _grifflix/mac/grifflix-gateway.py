@@ -4579,7 +4579,8 @@ def make_handler(g):
                 try:
                     # (each file too, two folders down, with files=1: what's in the films' folders besides the films)
                     dep_ = q.get('d') if q.get('d') in ('1', '2', '3') else '1'
-                    r = subprocess.run(['du', '-k', '-x'] + (['-a'] if q.get('files') == '1' else []) + ['-d', dep_, path], capture_output=True, text=True, timeout=600)
+                    # (the Mac's du takes -a or -d, not both: every file, all the way down, or the folders to a depth)
+                    r = subprocess.run(['du', '-k', '-x'] + (['-a'] if q.get('files') == '1' else ['-d', dep_]) + [path], capture_output=True, text=True, timeout=600)
                 except subprocess.TimeoutExpired:
                     return self.send_json(504, {'error': 'Took too long to measure.'})
                 rows = []
@@ -4594,7 +4595,7 @@ def make_handler(g):
                 except Exception:
                     pass
                 n_ = min(int(q.get('n')) if str(q.get('n') or '').isdigit() else 40, 40000)
-                return self.send_json(200, {'path': path, 'folders': rows[:n_], 'rows': len(rows), 'snapshots': snaps, 'unreadable': len([l for l in (r.stderr or '').splitlines() if 'denied' in l.lower() or 'not permitted' in l.lower()])})
+                return self.send_json(200, {'path': path, 'folders': rows[:n_], 'rows': len(rows), 'err': (r.stderr or '')[:300], 'snapshots': snaps, 'unreadable': len([l for l in (r.stderr or '').splitlines() if 'denied' in l.lower() or 'not permitted' in l.lower()])})
             if what == 'jf':   # (the media server's own answers, asked only; e.g. /Items/<id>, /Library/VirtualFolders)
                 path = q.get('path') or ''
                 if not re.match(r'^/(Items|Users/[0-9a-f]{32}/Items|Library/VirtualFolders|System/Info|Sessions|ScheduledTasks|Shows|Search/Hints)', path):
