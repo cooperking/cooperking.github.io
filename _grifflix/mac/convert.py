@@ -950,58 +950,130 @@ def claimed(iid):
         return False
 
 
-TOMAC_MAX = 3   # (films the Mac mini has handed to John's Mac waiting in its queue at once: more handed over as those are taken up)
+QF = os.path.join(HOME, 'mac-queue.json')
 
 
-def to_mac(slow):
-    """The Mac mini repackages only, the picture copied as it is (minutes): a film whose picture must be made again (made 1080p, from a
-    format not every device plays, made smaller) is handed to John's Mac, whose hardware does it in a fraction of the time, put at the end
-    of its queue, a few at a time, so his own choices aren't buried. One handed over and taken off his queue by John, or passed over there,
-    isn't handed over again for a week. John, 23 Nov 2026, "the mac mini shouldn't be taking on conversion jobs like this": Rozmarné léto,
-    4K made 1080p here, 23% after nine hours."""
-    qf = os.path.join(HOME, 'mac-queue.json')
+def queue_read():
     try:
-        Q = json.load(open(qf))
+        Q = json.load(open(QF))
     except (OSError, ValueError):
         Q = []
-    Q = Q if isinstance(Q, list) else []
+    return Q if isinstance(Q, list) else []
+
+
+def queue_write(Q):
+    tmp = QF + '.tmp'
+    json.dump(Q, open(tmp, 'w'))
+    os.replace(tmp, QF)
+
+
+def job_claimed(iid):
+    """Being made on John's Mac now (its claim renewed by the gateway with every word from it; lapsing half an hour after the last)."""
     try:
-        passed = set(y.get('id') for y in json.load(open(qf + '.passed')) or [] if time.time() - y.get('at', 0) < 3 * 86400)
+        return time.time() - float(json.load(open(CLAIMS)).get(iid, 0)) < 1800
+    except (OSError, ValueError, AttributeError):
+        return False
+
+
+def to_mac(items):
+    """Everything there is to do, on the one queue, which John's Mac works through (John, 25 Nov 2026, "as the conversions don't run on my
+    mac mini when my mac is on, and my mac is on most of the time, there's really no point in the queue being in two places. Queue everything
+    for my mac"): films just come in, and any he pinned, at the top (after any he put first); the rest at the end, in the converter's order;
+    each saying what it needs (a simple repackaging, or its picture made again). One taken off the queue by John, or passed over there, isn't
+    put on again for a week. Films made since they were put on it taken off."""
+    try:
+        passed = set(y.get('id') for y in json.load(open(QF + '.passed')) or [] if time.time() - y.get('at', 0) < 3 * 86400)
     except (OSError, ValueError, AttributeError, TypeError):
         passed = set()
     sent = st.setdefault('tomac', {})
-    waiting, added = sum(1 for x in Q if x.get('from') == 'mini'), []
-    try:   # (one John asked to have done next: first on his Mac's queue, whatever's waiting)
+    try:
         pins = set(x.get('id') for x in prio()['pins'])
     except Exception:
         pins = set()
-    slow = [x for x in slow if x['id'] in pins] + [x for x in slow if x['id'] not in pins]
-    for x in slow:
-        if waiting + len(added) >= TOMAC_MAX and x['id'] not in pins:
-            break
-        if x['id'] in passed or any(y.get('id') == x['id'] for y in Q) or time.time() - sent.get(x['id'], 0) < 7 * 86400 or not os.path.exists(x['path']):
-            continue
-        added.append(dict({'id': x['id'], 'name': x['name'], 'at': int(time.time()), 'from': 'mini', 'why': (x.get('why') or '')[:160]},
-                          **({'force': True} if x.get('mode') == 'shrink' else {}), **({'first': True} if x['id'] in pins else {})))
+    Q = queue_read()
+    have = set(y.get('id') for y in Q)
+    top, end = [], []
+    for x in items:
+        if x.get('redo') or x['id'] in have or x['id'] in passed or time.time() - sent.get(x['id'], 0) < 7 * 86400 or not os.path.exists(x['path']):
+            continue   # (a language John put right is the Mac mini's own: minutes, and only it can)
+        e = dict({'id': x['id'], 'name': x['name'], 'at': int(time.time()), 'from': 'mini', 'why': (x.get('why') or '')[:160], 'kind': x.get('mode') or 'convert'},
+                 **({'force': True} if x.get('mode') == 'shrink' else {}))
+        if x['id'] in pins or x.get('fetched') or x.get('urgent') or x.get('new'):
+            e['new'] = True
+            top.append(e)
+        else:
+            end.append(e)
+    Q = queue_read()   # (read again just before writing: John may have queued or taken one off meanwhile)
+    n0 = len(Q)
+    Q = [y for y in Q if not (y.get('from') == 'mini' and (st['done'].get(y.get('id')) or {}).get('at', 0) > (y.get('at') or 0))]   # (made since)
+    gone = n0 - len(Q)
+    have = set(y.get('id') for y in Q)
+    top = [y for y in top if y['id'] not in have]
+    end = [y for y in end if y['id'] not in have]
+    moved = [dict(y, new=True) for y in Q if y.get('id') in pins and y.get('from') == 'mini' and not y.get('new')]   # (pinned since: to the top)
+    if not (top or end or moved or gone):
+        return []
+    mids = set(y['id'] for y in moved)
+    Q = [y for y in Q if y.get('id') not in mids]
+    k = next((i for i, y in enumerate(Q) if not y.get('first')), len(Q))   # (after any John put first)
+    Q = Q[:k] + top + moved + Q[k:] + end
+    queue_write(Q)
+    for y in top + end:
+        sent[y['id']] = int(time.time())
+    save_state(st)
+    added = top + end
     if added:
-        try:   # (read again just before writing: John may have queued one meanwhile)
-            Q = json.load(open(qf))
-            Q = Q if isinstance(Q, list) else []
-        except (OSError, ValueError):
-            Q = []
-        ids_ = set(y.get('id') for y in Q)
-        new_ = [y for y in added if y['id'] not in ids_]
-        tmp = qf + '.tmp'
-        first_ = [y for y in new_ if y.get('first')]
-        for y in new_:
-            y.pop('first', None)
-        json.dump(first_ + Q + [y for y in new_ if y not in first_], open(tmp, 'w'))
-        os.replace(tmp, qf)
-        for y in added:
-            sent[y['id']] = int(time.time())
-        save_state(st)
-        log('  handed to John’s Mac to convert (the Mac mini only repackages): %s' % ', '.join(y['name'] for y in added))
+        nr = sum(1 for y in added if y['kind'] == 'remux')
+        log('  on the queue: %s%s' % (', '.join(y['name'] for y in added) if len(added) <= 5 else '%d films' % len(added),
+                                      ' (%d to repackage, %d to convert)' % (nr, len(added) - nr) if len(added) > 5 else ''))
     return added
+
+
+def mac_off():
+    """John's Mac off, asleep or away from home: not heard from for ten minutes, by the gateway's note of when it last was."""
+    try:
+        a = json.load(open(os.path.join(HOME, 'mac-agent.json')))
+    except (OSError, ValueError):
+        return True
+    return time.time() - float(a.get('seen') or 0) > 600 or a.get('home') is False
+
+
+def mini_wait(redo=False):
+    """Why the Mac mini mustn't take anything now ('' if it may): only while nothing is playing, and only while John's Mac is off (John,
+    25 Nov 2026, "the only time the mac mini should then pick up jobs is if my mac is off, and then it should only be simple repackaging jobs
+    while nothing is playing"); a language he put right, whenever his Mac isn't converting."""
+    if watching():
+        return 'someone is watching'
+    if redo:
+        return 'your Mac is converting' if mac_converting() else ''
+    if not mac_off():
+        return 'your Mac is on: it works through the queue, and the Mac mini only takes simple repackaging while your Mac is off'
+    return ''
+
+
+def mini_pick(rest):
+    """The first simple repackaging on the queue (one the Mac mini put there), in the queue's order."""
+    byid = {x['id']: x for x in rest if x.get('mode') == 'remux' and not x.get('redo')}
+    for y in queue_read():
+        if y.get('from') == 'mini' and y.get('kind') == 'remux' and y.get('id') in byid and not job_claimed(y['id']):
+            return byid[y['id']]
+    return None
+
+
+def queue_take(iid):
+    Q = queue_read()
+    if any(y.get('id') == iid for y in Q):
+        queue_write([y for y in Q if y.get('id') != iid])
+    st.setdefault('tomac', {}).pop(iid, None)   # (if it can't be repackaged, it goes on again, to convert)
+
+
+def queue_back(it):
+    """One the Mac mini stopped part way (John's Mac came on): back at the top of the queue."""
+    Q = [y for y in queue_read() if y.get('id') != it['id']]
+    k = next((i for i, y in enumerate(Q) if not y.get('first')), len(Q))
+    Q.insert(k, {'id': it['id'], 'name': it['name'], 'at': int(time.time()), 'from': 'mini', 'why': (it.get('why') or '')[:160], 'kind': 'remux', 'new': True})
+    queue_write(Q)
+    st.setdefault('tomac', {})[it['id']] = int(time.time())
 
 
 SKIPWHY = {}   # (why one was passed over, said as it is, not "this or that": John, 20 Nov 2026, Wild at Heart "failed, but I don't see any message")
@@ -1386,59 +1458,52 @@ while rest:
             os.execv(sys.executable, [sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
     except OSError as e:
         log('couldn’t start the newer version:', e)
-    # (a film being converted on John's Mac passed over, kept for later in case his Mac gives up; only those left: a wait, then a look again:
-    # John, 17 Nov 2026, "we need a check that the mac mini doesn't try and convert anything that's being converted on the mac")
-    free = [x for x in rest if not claimed(x['id'])]
-    if not free:
-        now('waiting', why='the rest are being converted on John’s Mac')
-        time.sleep(120)
+    # (everything on the one queue, which John's Mac works through; the Mac mini itself takes a simple repackaging from it only while his Mac
+    # is off and nothing is playing, and a language he put right whenever his Mac isn't converting: John, 25 Nov 2026, "Queue everything for
+    # my mac and let me choose when and where to run things" ... "the only time the mac mini should then pick up jobs is if my mac is off, and
+    # then it should only be simple repackaging jobs while nothing is playing")
+    try:
+        to_mac([x for x in rest if not job_claimed(x['id'])])
+    except Exception as e:
+        log('  couldn’t put films on the queue:', e)
+    RUN['left'] = {'remux': sum(1 for x in rest if x.get('mode') == 'remux'), 'convert': sum(1 for x in rest if x.get('mode') != 'remux')}
+    redo_ = [x for x in rest if x.get('redo') and not job_claimed(x['id'])]
+    wait_ = mini_wait(bool(redo_))
+    it = None if wait_ else (redo_[0] if redo_ else mini_pick(rest))
+    if not it:
+        RUN['next'] = [{'id': x['id'], 'name': x['name'], 'why': x['why'], 'gb': x['gb'], 'mins': x['mins'], 'mode': x.get('mode')}
+                       for x in [mini_pick(rest)] if x]   # (what the Mac mini would take next, for the admin page)
+        now('waiting', why=wait_ or 'nothing on the queue is a simple repackaging it can do: the rest are for your Mac')
+        if time.time() - REGATHER[0] > 1800:   # (a whole look again every half hour: films come in, and those repackaged may need converting)
+            REGATHER[0] = time.time()
+            try:
+                have = set(x['id'] for x in rest)
+                more = [i for i in fresh(gather(), st) if i['id'] not in have and i['id'] not in st['done'] and i['id'] not in st['failed']]
+                if more:
+                    log('%d more to do' % len(more))
+                    rest = rest + more
+                    RUN['total'] = RUN.get('total', 0) + len(more)
+            except Exception as e:
+                log('  couldn’t look for more to do:', e)
+        time.sleep(90)
         continue
-    slow = [x for x in free if x.get('mode') != 'remux']
-    if slow:
-        try:
-            to_mac(slow)
-        except Exception as e:
-            log('  couldn’t hand films to John’s Mac:', e)
-        free = [x for x in free if x.get('mode') == 'remux']
-        if not free:   # (only films for John's Mac left: a whole look again every half hour, for films to repackage since)
-            if time.time() - REGATHER[0] > 1800:
-                REGATHER[0] = time.time()
-                try:
-                    have = set(x['id'] for x in rest)
-                    more = [i for i in fresh(gather(), st) if i['id'] not in have and i['id'] not in st['done'] and i['id'] not in st['failed'] and i.get('mode') == 'remux']
-                    if more:
-                        log('%d more to repackage' % len(more))
-                        rest = more + rest
-                        RUN['total'] = RUN.get('total', 0) + len(more)
-                        continue
-                except Exception as e:
-                    log('  couldn’t look for more to repackage:', e)
-            RUN['next'] = []
-            now('waiting', why='the rest are for John’s Mac to convert: the Mac mini only repackages')
-            time.sleep(120)
-            continue
-    it = free[0]
     rest.remove(it)
     n += 1
     RUN['n'] = n
-    RUN['next'] = [{'id': x['id'], 'name': x['name'], 'why': x['why'], 'gb': x['gb'], 'mins': x['mins'], 'mode': x.get('mode')} for x in [it] + [y for y in rest if y.get('mode') == 'remux'][:11]]   # (what's coming, for the admin page: what the Mac mini itself does)
-    RUN['left'] = {'remux': sum(1 for x in [it] + rest if x.get('mode') == 'remux'), 'convert': sum(1 for x in [it] + rest if x.get('mode') != 'remux')}
-    # (no waiting for the night: it converts whenever nothing is playing and John's Mac isn't converting, below: John, 12 Nov 2026, "That 2am
-    # 8am rule was changed to any time not in use"; the night wait itself taken out: John, 20 Nov 2026, "the mac now just converts whenever
-    # something isn't playing")
-    # (only while John's Mac isn't converting and nothing is playing: John, 18 Nov 2026, "only picking up when I'm not and nothing is playing")
-    while mac_converting() or watching():
-        now('waiting', why='your Mac is converting' if mac_converting() else 'someone is watching')
-        time.sleep(30)
+    RUN['next'] = [{'id': it['id'], 'name': it['name'], 'why': it['why'], 'gb': it['gb'], 'mins': it['mins'], 'mode': it.get('mode')}]
     if not os.path.exists(it['path']):   # (renamed or deleted since it was listed: looked at again under its new name later)
         log('  %s isn’t where it was (renamed or deleted): skipped for now' % it['name'])
         continue
+    if not it.get('redo'):
+        queue_take(it['id'])   # (off the queue while the Mac mini makes it: John's Mac doesn't take it too)
     try:
         try:
             convert(it, ffmpeg, ffprobe, st)
         except MacBusy:
-            log('  stopped and cleared: your Mac is converting. %s is back at the front, for when it isn’t' % it['name'])
+            log('  stopped and cleared: your Mac is converting. %s is back at the top of the queue' % it['name'])
             rest.insert(0, it)
+            if not it.get('redo'):
+                queue_back(it)
             continue
         if it.get('redo'):   # (made again in John's language: the flag down)
             st['ask'].pop(it['id'], None)

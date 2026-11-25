@@ -967,7 +967,7 @@ def make_handler(g):
                     MACAGENT['report'] = int(time.time())
                     # (any word from John's Mac is its checking in: while it converts it doesn't ask for a film, and the admin page said "off or
                     # asleep" with it converting: John, 24 Nov 2026, "Why so long? My mac has been on the whole time")
-                    MACAGENT['seen'] = int(time.time())
+                    MACAGENT['seen'] = int(time.time()); macagent_note()
                     return self.send_json(200, {'ok': True})
                 if u.path == '/macagent/copying':   # (John's Mac's helper: the films it made that the Mac mini is still waiting for, to copy over)
                     tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
@@ -1420,7 +1420,7 @@ def make_handler(g):
                     want = (g.st.get('macagent') or {}).get('key')
                     if not want or not tok or not hmac.compare_digest(hashlib.sha256(tok.encode()).hexdigest(), want):
                         return self.send_json(403, {'error': 'Not allowed.'})
-                    MACAGENT['seen'] = int(time.time()); MACAGENT['home'] = q.get('home') == '1'
+                    MACAGENT['seen'] = int(time.time()); MACAGENT['home'] = q.get('home') == '1'; macagent_note()
                     # (that it has ever checked in, kept over restarts: admin's "Set up your Mac" to-do stayed open after every restart while
                     # his Mac was off: John, 20 Nov 2026, "This has been there for a while, but I sorted this a while ago")
                     ma_ = g.st.get('macagent') or {}
@@ -1428,6 +1428,8 @@ def make_handler(g):
                         ma_['worked'] = int(time.time()); g.st['macagent'] = ma_; save(SETTINGS, g.st)
                     if q.get('home') != '1':   # (away from home, the G-Drive out of reach: the queue kept for when it's back)
                         return self.send_json(200, {'wait': 'away'})
+                    if (g.st.get('macagent') or {}).get('paused'):   # (John's choice of when: his Mac takes nothing new while paused)
+                        return self.send_json(200, {'wait': 'paused'})
                     # (the plan made in the background and handed over at the next ask: planning took longer than the 20 seconds John's
                     # Mac waited, so it gave up, and the film planned for it was handed to no one: John, 18 Nov 2026, Disclosure Day
                     # "waiting for your Mac to take it up - nothing seems to be happening")
@@ -1468,9 +1470,13 @@ def make_handler(g):
                         save(MACQ + '.planning', x)   # (kept till it's a job: a restart meanwhile puts it back, not loses it: John, 20 Nov 2026,
                         # "I queued films for my mac but nothing happened": Wild at Heart and News from Home taken off the queue and gone)
 
-                        def plan_it(x=x):
+                        # (his own films made smaller on his Mac, as he said (18 Nov 2026); those the Mac mini put on the queue made as it planned
+                        # them: a simple repackaging stays one, not made smaller, now everything is on the one queue: 25 Nov 2026)
+                        forced = bool(x.get('force')) or x.get('from') != 'mini'
+
+                        def plan_it(x=x, forced=forced):
                             try:
-                                code, j = mac_job(x['id'], True)   # (always made smaller on John's Mac: see convert.py plan)
+                                code, j = mac_job(x['id'], forced)
                             except Exception as e:
                                 code, j = 0, {'error': 'it couldn’t be planned: %s' % str(e)[:200]}
                             try:
@@ -1478,7 +1484,7 @@ def make_handler(g):
                             except OSError:
                                 pass
                             if code == 200:
-                                CONVJOBS[j['token']].update(mac=True, force=True)
+                                CONVJOBS[j['token']].update(mac=True, force=forced)
                                 convjobs_save()
                             else:
                                 log('Queue for John’s Mac: %s passed over (%s)' % (x.get('name') or x['id'], j.get('error')))
@@ -1521,6 +1527,7 @@ def make_handler(g):
                     if len(parts) > 3 and parts[3] == 'progress':   # (how far John's Mac has got, every few seconds: for the film's Edit panel)
                         job['t'], job['speed'], job['state'], job['seen'] = float(body.get('t') or 0), str(body.get('speed') or '')[:12], 'converting', time.time()
                         MACAGENT['seen'], MACAGENT['home'] = int(time.time()), True   # (converting: on, and reaching the G-Drive)
+                        macagent_note()
                         if time.time() - job.get('saved', 0) > 30:
                             job['saved'] = time.time()
                             convjobs_save()
@@ -3637,6 +3644,14 @@ def make_handler(g):
                 return self.send_json(409, {'error': 'It’s being made on your Mac now (%s).' % live_[str(b.get('id'))]['state'], 'queue': Q, 'now': list(live_.values())})
             if b:
                 op, iid = str(b.get('op') or ''), str(b.get('id') or '')
+                if op in ('pause', 'resume'):   # (his Mac's queue paused, or going again: his choice of when)
+                    ma_ = g.st.get('macagent') or {}
+                    ma_['paused'] = op == 'pause'
+                    g.st['macagent'] = ma_
+                    save(SETTINGS, g.st)
+                    log('Queue for John’s Mac: %s' % ('paused by John' if op == 'pause' else 'going again'))
+                    record('Queue for John’s Mac ' + ('paused' if op == 'pause' else 'going again'))
+                    return self.send_json(200, {'paused': op == 'pause'})
                 if op == 'key':   # (a new key for his Mac's helper: the old one stops working)
                     k = secrets.token_urlsafe(24)
                     g.st['macagent'] = {'key': hashlib.sha256(k.encode()).hexdigest(), 'made': int(time.time())}
@@ -3653,15 +3668,16 @@ def make_handler(g):
                 old = next((x for x in (load(MACQ, []) or []) if x.get('id') == iid), {})
                 ent = dict({'id': iid, 'name': str(b.get('name') or old.get('name') or '')[:200], 'at': int(time.time())},
                            **({'force': True} if b.get('force') or old.get('force') else {}))   # (one of the largest, to make smaller: John, 18 Nov 2026)
-                if op == 'add':
-                    Q.append(ent)
-                elif op == 'first':
-                    Q.insert(0, ent)
+                if op == 'add':   # (before the Mac mini's backlog, after his own and those just come in: everything is on the one queue)
+                    at_ = next((i_ for i_, y in enumerate(Q) if y.get('from') == 'mini' and not y.get('new') and not y.get('first')), len(Q))
+                    Q.insert(at_, ent)
+                elif op == 'first':   # (and kept above films that come in after it)
+                    Q.insert(0, dict(ent, first=True))
                 save(MACQ, Q)
                 log('Queue for John’s Mac: %s %s' % ({'add': 'added', 'first': 'put first', 'remove': 'taken off'}.get(op, op), b.get('name') or iid))
             a = g.st.get('macagent') or {}
             P_ = [y for y in (load(MACQ + '.passed', []) or []) if time.time() - y.get('at', 0) < 3 * 86400]
-            return self.send_json(200, {'queue': Q, 'now': list(live_.values()), 'passed': P_, 'setup': bool(a.get('key')), 'worked': bool(a.get('key') and (a.get('worked') or MACAGENT.get('seen') or any(v.get('mac') for v in list(CONVJOBS.values())))), 'seen': MACAGENT.get('seen'), 'home': MACAGENT.get('home')})
+            return self.send_json(200, {'queue': Q, 'now': list(live_.values()), 'passed': P_, 'setup': bool(a.get('key')), 'paused': bool(a.get('paused')), 'worked': bool(a.get('key') and (a.get('worked') or MACAGENT.get('seen') or any(v.get('mac') for v in list(CONVJOBS.values())))), 'seen': MACAGENT.get('seen'), 'home': MACAGENT.get('home')})
 
         def api_now(self, me, user, q, b):
             """John's only: what's happening right now, on his Mac and on the Mac mini, and in what order, in one look: what each is doing,
@@ -3689,8 +3705,10 @@ def make_handler(g):
             a = g.st.get('macagent') or {}
             return self.send_json(200, {
                 'at': int(time.time()),
-                'mac': {'setup': bool(a.get('key')), 'seen': MACAGENT.get('seen'), 'home': MACAGENT.get('home'), 'now': live_,
-                        'queue': [{'id': x.get('id'), 'name': x.get('name'), 'from': x.get('from') or 'you', 'why': x.get('why') or '', 'at': x.get('at'), 'first': bool(x.get('first'))} for x in Q],
+                'mac': {'setup': bool(a.get('key')), 'seen': MACAGENT.get('seen'), 'home': MACAGENT.get('home'), 'now': live_, 'paused': bool(a.get('paused')),
+                        'queue': [{'id': x.get('id'), 'name': x.get('name'), 'from': x.get('from') or 'you', 'why': x.get('why') or '', 'at': x.get('at'), 'first': bool(x.get('first')),
+                                   'kind': x.get('kind') or ('convert' if x.get('from') == 'mini' else 'you'), 'new': bool(x.get('new'))} for x in Q[:15]],
+                        'qn': len(Q), 'qremux': sum(1 for x in Q if x.get('kind') == 'remux'), 'qyours': sum(1 for x in Q if x.get('from') != 'mini'),
                         'subs': {'at': SUBASK.get('at'), 'said': SUBASK.get('said')}},
                 'mini': {'conv': {'alive': bool(conv_alive(cur)), 'state': cur.get('state'), 'id': cur.get('id'), 'name': cur.get('name'), 'pct': cur.get('pct'), 'why': cur.get('why'),
                                   'since': cur.get('since'), 'at': cur.get('at'), 'next': [x for x in cur.get('next') or [] if x.get('id') not in done_][:8], 'left': cur.get('left')},
@@ -7976,7 +7994,19 @@ CONVJOBS_AT = os.path.expanduser('~/Grifflix/convert-jobs.json')   # (kept throu
 
 MACQ = os.path.expanduser('~/Grifflix/mac-queue.json')
 SUBPREP = os.path.expanduser('~/Grifflix/subprep.json')   # (the foreign-language films whose English subtitles are made ready on John's Mac)   # (films queued for John's Mac, in his order)
-MACAGENT = {}   # (when his Mac's helper last asked, and whether it was at home)
+MACAGENT = {}
+
+
+def macagent_note():
+    """When John's Mac was last heard from, at home or not, and whether he's paused its queue: kept in mac-agent.json for the Mac mini's
+    converter, which takes simple repackaging from the one queue only while his Mac is off (John, 25 Nov 2026, "the only time the mac mini
+    should then pick up jobs is if my mac is off")."""
+    try:
+        if time.time() - MACAGENT.get('noted', 0) > 30:
+            MACAGENT['noted'] = time.time()
+            save(os.path.expanduser('~/Grifflix/mac-agent.json'), {'seen': MACAGENT.get('seen'), 'home': MACAGENT.get('home')})
+    except Exception:
+        pass   # (when his Mac's helper last asked, and whether it was at home)
 
 
 def fanny_series(g):
