@@ -9782,9 +9782,17 @@ def crl_scan(g):
             CRL_STATE.update(of=len(films), done=len(films) - len(todo), running=bool(todo))
             n_ = 0
             for _, i, sz in todo:
-                while someone_watching(g):
-                    CRL_STATE['paused'] = 'someone is watching'
-                    time.sleep(60)
+                while True:   # (and while the Mac is hot: it can wait, the media server and the converter can't)
+                    if someone_watching(g):
+                        CRL_STATE['paused'] = 'someone is watching'
+                        time.sleep(60)
+                        continue
+                    hot = mac_hot()
+                    if hot:
+                        CRL_STATE['paused'] = 'the Mac mini is hot (slowed to %d%%)' % hot
+                        time.sleep(300)
+                        continue
+                    break
                 CRL_STATE['paused'] = ''
                 fr = crl_frames(ff, films[i]['path'], (CRL_STATE.get('logo') or []) + (CRL_STATE.get('chan') or []))
                 H[i] = {'s': sz, 'f': fr, 'at': int(time.time()), 'v': CRL_V}
@@ -11037,6 +11045,13 @@ def health_run(cmd, t=60):
         return 'couldn’t: %s' % str(e)[:120]
 
 
+def mac_hot():
+    """The Mac slowing its processors to cool down: the speed it's held to (under 100%), else 0. It was held to 67% a quarter of an hour
+    after starting from cold, the night it turned itself off (25 Nov 2026)."""
+    m = re.search(r'CPU_Speed_Limit\s*=\s*(\d+)', health_run(['pmset', '-g', 'therm'], 20))
+    return int(m.group(1)) if m and int(m.group(1)) < 100 else 0
+
+
 def why_it_stopped():
     """After the Mac mini starts: why it stopped before, as the Mac itself recorded it (the shutdown cause it notes at each start, its
     power log, any crash report), and its own settings for starting again, kept in health/last-boot.json and said in the log. It turned
@@ -11106,12 +11121,12 @@ def health_watch():
             s_['cpulimit'] = int(m.group(1)) if m else None
             s_['thermal'] = bool(re.search(r'(?i)thermal warning level\s*[:=]?\s*\d|warning level set', th)) and 'No thermal warning' not in th
             s_['top'] = [' '.join(l.split()[:2] + [os.path.basename(' '.join(l.split()[2:]))[:40]]) for l in health_run(['ps', '-axro', 'pcpu=,pmem=,comm='], 20).splitlines()[:6]]
-            fp = os.path.join(HEALTH, time.strftime('%Y-%m-%d') + '.jsonl')
+            fp = os.path.join(HEALTH, time.strftime('%Y-%m-%d') + '.log')   # (.log: one reading a line, readable from afar)
             os.makedirs(HEALTH, exist_ok=True)
             with open(fp, 'a') as f_:
                 f_.write(json.dumps(s_) + '\n')
             for n in os.listdir(HEALTH):
-                if n.endswith('.jsonl') and time.time() - os.path.getmtime(os.path.join(HEALTH, n)) > 8 * 86400:
+                if n.endswith(('.log', '.jsonl')) and time.time() - os.path.getmtime(os.path.join(HEALTH, n)) > 8 * 86400:
                     os.remove(os.path.join(HEALTH, n))
             strain = [w for w, c in (('load %.0f on %d cores' % (s_['load'][0], ncpu), s_['load'][0] > 3 * ncpu),
                                      ('%s%% memory free' % s_['memfree'], s_['memfree'] is not None and s_['memfree'] < 10),
