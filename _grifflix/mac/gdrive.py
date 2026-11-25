@@ -631,6 +631,14 @@ def conv_running():
         return False
 
 
+def conv_at():
+    """When the converter last said how it's getting on (0 if never)."""
+    try:
+        return float(json.load(open(os.path.join(HOME, 'convert-now.json'))).get('at') or 0)
+    except (OSError, ValueError, TypeError):
+        return 0
+
+
 def conv_state():
     try:
         return json.load(open(os.path.join(HOME, 'convert-now.json'))).get('state') or ''
@@ -655,6 +663,11 @@ def wait_repack(dest, title):
             # (the converter paused (John's Mac converting, or someone watching): nothing is being repackaged, so no waiting for it; the
             # next copy goes onto the G-Drive now: John, 20 Nov 2026, A Journey to the Beginning of Time "99%... nothing has come for 41 min")
             if time.time() - t0 > 60 and conv_state() == 'waiting':
+                break
+            # (the converter not heard from for ten minutes (it says how far it's got every 20 seconds): stuck, so nothing is being repackaged;
+            # Altered States' extras waited the full 45 minutes on one stuck since the morning: John, 24 Nov 2026, "Altered states has been on
+            # 99% for a long time")
+            if time.time() - conv_at() > 600:
                 break
             time.sleep(15)
         log('  %s: %s; on to the next' % (title, 'repackaged' if not os.path.exists(dest) else 'not repackaged yet (it will be)'))

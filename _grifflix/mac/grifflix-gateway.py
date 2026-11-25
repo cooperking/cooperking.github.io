@@ -11051,6 +11051,31 @@ def keep_converting():
                 log('The converter: %s, being converted on the Mac mini itself (%s, %s%%), stopped: the Mac mini only repackages now, and the '
                     'new converter hands it to John’s Mac' % (cur.get('name'), cur.get('why'), cur.get('pct', 0)))
                 alive = bool(conv_alive(cur))
+            # (one stuck part way through a film: it says how far it's got every 20 seconds, paused or not; nothing for 45 minutes and it's
+            # stopped, with what it was running, and started again below. Sanshiro Sugata, Part Two stopped at 82% at 10:42 on 24 Nov 2026 and
+            # nothing was repackaged for 13 hours, Altered States' extras waiting on it: John, "Altered states has been on 99% for a long time")
+            if alive and cur.get('state') in ('converting', 'paused') and time.time() - (cur.get('at') or 0) > 2700:
+                import subprocess, signal as signal_
+                pid_ = conv_alive(cur)
+                kids = []
+                try:
+                    for line_ in subprocess.run(['ps', '-axo', 'pid=,ppid='], capture_output=True, text=True, timeout=20).stdout.splitlines():
+                        a_, b_ = (line_.split() + ['', ''])[:2]
+                        if b_ == str(pid_) and a_.isdigit():
+                            kids.append(int(a_))
+                except Exception:
+                    pass
+                for k_ in kids + [pid_]:
+                    for sg in (signal_.SIGCONT, signal_.SIGKILL):
+                        try:
+                            os.kill(k_, sg)
+                        except OSError:
+                            pass
+                time.sleep(3)
+                log('The converter: stuck on %s at %s%% (nothing for %d minutes): stopped, and started again' % (
+                    cur.get('name'), cur.get('pct', 0), (time.time() - (cur.get('at') or 0)) // 60))
+                record('The converter stuck: started again', film=cur.get('name'), pct=cur.get('pct'))
+                alive = bool(conv_alive(cur))
             recently_done = cur.get('state') == 'finished' and time.time() - (cur.get('at') or 0) < 12 * 3600 and not load(os.path.join(home, 'convert-new.json'), [])   # (films just brought in: started for them)
             if os.path.exists(script) and not alive and not recently_done:
                 import subprocess
