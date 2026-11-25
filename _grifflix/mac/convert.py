@@ -612,6 +612,128 @@ def watching():
         return False
 
 
+# ---------------------------------------------------------------- picture subtitles
+
+PICS = ('hdmv_pgs_subtitle', 'pgssub', 'dvd_subtitle', 'dvdsub', 'dvb_subtitle')
+
+
+def sub_packets(ffprobe, src, idx):
+    """How many pieces a subtitle track holds (the whole file read for it): 0 for a track with nothing in it; None if not known."""
+    try:
+        r = subprocess.run([ffprobe, '-v', 'error', '-select_streams', str(idx), '-count_packets', '-show_entries', 'stream=nb_read_packets',
+                            '-of', 'csv=p=0', src], capture_output=True, text=True, timeout=3600)
+        v = (r.stdout or '').strip().split(',')[0].strip()
+        return 0 if v == 'N/A' and r.returncode == 0 else int(v) if v.isdigit() else None   # (N/A: none read; nothing at all: no such track)
+    except Exception:
+        return None
+
+
+def save_pics(ffmpeg, ffprobe, src, bdst, pics, have=()):
+    """Each picture subtitle (Blu-ray PGS, DVD VobSub, DVB) saved beside the film on its own, named for the film and its language: all at
+    once as they are (.sup for PGS, .mks for the others), then each on its own that didn't come out, then a PGS one in a Matroska file (.mks)
+    instead; a track with nothing in it (a forced track with no lines) is nothing lost. have: the sizes of those already beside it, so one
+    saved before isn't saved twice (John, 25 Nov 2026: the originals were being kept for picture subtitles that wouldn't come out, "go with
+    your recommendation": rescued, then the originals deleted). Returns (saved, failed [(track, why)], empty [track], already)."""
+    saved, failed, empty, same, used = [], [], [], 0, set()
+
+    def name_for(x, ext_):
+        l_ = lang(x) or 'und'
+        dp = x.get('disposition') or {}
+        tag = '.forced' if dp.get('forced') else '.sdh' if dp.get('hearing_impaired') else ''
+        out, k = '%s.%s%s%s' % (bdst, l_, tag, ext_), 1
+        while os.path.exists(out) or out in used:
+            k += 1
+            out = '%s.%s%s.%d%s' % (bdst, l_, tag, k, ext_)
+        used.add(out)
+        return out
+
+    def run(args):
+        try:
+            r_ = subprocess.run([ffmpeg, '-hide_banner', '-nostdin', '-y', '-v', 'error', '-i', src] + args, capture_output=True, text=True, timeout=3600)
+            return r_.returncode, ((r_.stderr or '').strip().splitlines() or [''])[-1][:160]
+        except Exception as e:
+            return 1, str(e)[:160]
+
+    def good(out):
+        return os.path.exists(out) and os.path.getsize(out) > 100
+
+    def drop(out):
+        try:
+            os.remove(out)
+        except OSError:
+            pass
+
+    def took(x, out):
+        nonlocal same
+        if out.endswith('.mks') and os.path.getsize(out) < 4096 and not sub_packets(ffprobe, out, 0):   # (a Matroska file with only its
+            # heading, or one that can't be read: what was in the track, from the film itself)
+            drop(out)
+            if sub_packets(ffprobe, src, x['index']) == 0:
+                empty.append(x)
+            else:
+                failed.append((x, 'it came out empty'))
+            return
+        if os.path.getsize(out) in have:   # (the very one saved before: not twice)
+            drop(out)
+            same += 1
+            return
+        dp = x.get('disposition') or {}
+        saved.append({'file': out, 'lang': lang(x) or 'und', 'name': lang_name(x), 'kind': 'PGS' if 'pgs' in x.get('codec_name', '') else 'VobSub' if 'dvd' in x.get('codec_name', '') else 'DVB',
+                      'forced': bool(dp.get('forced')), 'sdh': bool(dp.get('hearing_impaired')), 'title': ((x.get('tags') or {}).get('title') or '')[:80]})
+
+    ext = lambda x: '.sup' if 'pgs' in x.get('codec_name', '') else '.mks'
+    # (each file's kind said, not left to its ending: ffmpeg doesn't know ".mks", and every DVD subtitle (VobSub) failed for it, its original
+    # kept: 25 Nov 2026)
+    fmt = lambda out: ['-f', 'sup' if out.endswith('.sup') else 'matroska']
+    outs = [(x, name_for(x, ext(x))) for x in pics]
+    rc, err = run([a for x, out in outs for a in ['-map', '0:%d' % x['index'], '-c:s', 'copy'] + fmt(out) + [out]]) if outs else (0, '')
+    for x, out in outs:
+        if rc == 0 and good(out):
+            took(x, out)
+            continue
+        drop(out)
+        why_ = err
+        if rc == 0:   # (made, but nothing in it: a track with nothing in it, most likely)
+            n_ = sub_packets(ffprobe, src, x['index'])
+            if n_ == 0:
+                empty.append(x)
+                continue
+        done_ = False
+        for e_ in dict.fromkeys([ext(x), '.mks']):   # (on its own, then in a Matroska file)
+            o_ = name_for(x, e_)
+            rc_, why_ = run(['-map', '0:%d' % x['index'], '-c:s', 'copy'] + fmt(o_) + [o_])
+            if rc_ == 0 and good(o_):
+                took(x, o_)
+                done_ = True
+                break
+            drop(o_)
+        if done_:
+            continue
+        if sub_packets(ffprobe, src, x['index']) == 0:
+            empty.append(x)
+        else:
+            failed.append((x, why_ or 'nothing came out'))
+    return saved, failed, empty, same
+
+
+def note_pics(iid, name, year, film, saved):
+    """Picture subtitles saved beside a film, listed (picture-subs.json), to be turned into text as a job of their own later."""
+    try:
+        pf = os.path.join(HOME, 'picture-subs.json')
+        P = json.load(open(pf)) if os.path.exists(pf) else {}
+        key = iid or film
+        e = P.get(key)
+        if e and e.get('film') == film:
+            e['subs'] = (e.get('subs') or []) + saved
+            e.update(at=int(time.time()), text=False)
+        else:
+            P[key] = {'name': name, 'year': year, 'film': film, 'subs': saved, 'at': int(time.time()), 'text': False}
+        json.dump(P, open(pf + '.tmp', 'w'), indent=1)
+        os.replace(pf + '.tmp', pf)
+    except Exception as e:
+        log('  (picture subtitles list: %s)' % e)
+
+
 # ---------------------------------------------------------------- one file
 
 def fingerprint(path):
@@ -904,45 +1026,19 @@ def convert(item, ffmpeg, ffprobe, st):
     # the film and its language, so the media server offers them and none is lost when the original goes; listed in picture-subs.json to be
     # turned into text as a job of its own later. One that can't be saved: the original kept, whatever the setting. John, 20 Nov 2026, "they
     # should be saved and then converted as a separate job later")
-    pics = [x for x in subs if x.get('codec_name') in ('hdmv_pgs_subtitle', 'pgssub', 'dvd_subtitle', 'dvdsub', 'dvb_subtitle')]
+    pics = [x for x in subs if x.get('codec_name') in PICS]
     saved, keep_pics = [], False
-    if pics and not item.get('plan_only'):
-        bdst = os.path.splitext(dst)[0]
-        for n, x in enumerate(pics):
-            l_ = lang(x) or 'und'
-            dp = x.get('disposition') or {}
-            tag = '.forced' if dp.get('forced') else '.sdh' if dp.get('hearing_impaired') else ''
-            ext_ = '.sup' if 'pgs' in x.get('codec_name', '') else '.mks'
-            out = '%s.%s%s%s' % (bdst, l_, tag, ext_)
-            if os.path.exists(out) or out in [y['file'] for y in saved]:
-                out = '%s.%s%s.%d%s' % (bdst, l_, tag, n + 1, ext_)
-            try:
-                r_ = subprocess.run([ffmpeg, '-hide_banner', '-nostdin', '-y', '-v', 'error', '-i', src, '-map', '0:%d' % x['index'], '-c:s', 'copy', out],
-                                    capture_output=True, text=True, timeout=1800)
-                ok_ = r_.returncode == 0 and os.path.exists(out) and os.path.getsize(out) > 100
-            except Exception:
-                ok_ = False
-            if ok_:
-                saved.append({'file': out, 'lang': l_, 'name': lang_name(x), 'kind': 'PGS' if ext_ == '.sup' else 'VobSub', 'forced': bool(dp.get('forced')),
-                              'sdh': bool(dp.get('hearing_impaired')), 'title': ((x.get('tags') or {}).get('title') or '')[:80]})
-            else:
-                keep_pics = True
-                try:
-                    os.remove(out)
-                except OSError:
-                    pass
+    if pics and not item.get('plan_only'):   # (in either way, and one with nothing in it passed over: an original kept only if one with
+        # something in it still won't come out: John, 25 Nov 2026)
+        saved, failed_, empty_, _ = save_pics(ffmpeg, ffprobe, src, os.path.splitext(dst)[0], pics)
+        keep_pics = bool(failed_)
+        if empty_:
+            log('  %d picture subtitle%s with nothing in it passed over' % (len(empty_), '' if len(empty_) == 1 else 's'))
         if saved:
             log('  picture subtitles saved beside it: %s' % ', '.join('%s (%s)' % (y['name'], y['kind']) for y in saved))
-            try:
-                pf = os.path.join(HOME, 'picture-subs.json')
-                P = json.load(open(pf)) if os.path.exists(pf) else {}
-                P[item['id']] = {'name': item['name'], 'year': item.get('year'), 'film': dst, 'subs': saved, 'at': int(time.time()), 'text': False}
-                json.dump(P, open(pf + '.tmp', 'w'), indent=1)
-                os.replace(pf + '.tmp', pf)
-            except Exception as e:
-                log('  (picture subtitles list: %s)' % e)
+            note_pics(item['id'], item['name'], item.get('year'), dst, saved)
         if keep_pics:
-            log('  a picture subtitle couldn’t be saved on its own: the original kept, so it isn’t lost')
+            log('  a picture subtitle couldn’t be saved on its own (%s): the original kept, so it isn’t lost' % '; '.join('%s: %s' % (lang_name(x), w) for x, w in failed_)[:240])
     if not os.path.exists(src):   # (moved or renamed while it was being made: the new file not put where the old one was)
         if os.path.exists(tmp):
             os.remove(tmp)
@@ -1552,6 +1648,146 @@ def leftovers():
                 call('POST', '/Library/Refresh')   # (Jellyfin looks again, so they go from Grifflix too)
         except Exception:
             pass
+RESCUE = os.path.join(HOME, 'originals-rescue.json')   # (each original in Grifflix Originals looked at, and what came of it)
+RESCUE_V = 1
+RESCUE_MORE = [False, 0]   # (cut short by someone watching: carried on between films; when last tried)
+VIDX = ('.mkv', '.mp4', '.m4v', '.avi', '.mov', '.ts', '.m2ts', '.wmv', '.mpg', '.mpeg', '.webm', '.vob')
+
+
+def rescue_originals():
+    """The originals kept in Grifflix Originals: each one's picture subtitles saved beside its film now (save_pics: either way, and a track
+    with nothing in it passed over), and the original deleted once nothing in it would be lost (John, 25 Nov 2026: "go with your
+    recommendation": the subtitles rescued first, then the originals deleted). Kept: one whose soundtrack's language John's still to check
+    (the admin page asks), one whose film can't be found, and one with a subtitle that still won't come out, said why. Each looked at once
+    (again only if it changes, or this is made better); not while someone's watching (the whole file's read, from the G-Drive)."""
+    RESCUE_MORE[:] = [False, time.time()]
+    if s.get('keep_originals'):   # (John's setting to keep them all)
+        return
+    R = load_json(RESCUE) or {}
+    asked = set(os.path.realpath(x.get('kept')) for x in (st.get('ask') or {}).values() if x.get('kept'))
+    hist = []
+    try:
+        for l_ in open(os.path.join(HOME, 'convert-history.jsonl'), encoding='utf-8'):
+            try:
+                hist.append(json.loads(l_))
+            except ValueError:
+                pass
+    except OSError:
+        pass
+    kept_by = {}   # (an original's path: the film made from it, as the converter recorded it)
+    for x in hist:
+        if x.get('kept'):
+            kept_by[os.path.realpath(x['kept'])] = (x.get('id'), x)
+    for iid, x in (st.get('done') or {}).items():
+        if x.get('kept'):
+            kept_by[os.path.realpath(x['kept'])] = (iid, x)
+    then = {os.path.normcase(x['from']): x['to'] for x in hist if x.get('from') and x.get('to') and x['from'] != x['to']}
+    roots = []
+    for vf_ in call('GET', '/Library/VirtualFolders') or []:
+        for r in g(vf_, 'Locations', []):
+            roots.append((r.rstrip('/'), os.path.join(os.path.dirname(r.rstrip('/')), 'Grifflix Originals', os.path.basename(r.rstrip('/')))))
+    freed, gone, said = 0, 0, []
+    refresh = False
+    for lib, oroot in roots:
+        if not os.path.isdir(oroot):
+            continue
+        for d, _, fs in sorted(os.walk(oroot)):
+            for f in sorted(fs):
+                if f.startswith('.') or os.path.splitext(f)[1].lower() not in VIDX:
+                    continue
+                fp = os.path.realpath(os.path.join(d, f))
+                try:
+                    sz = os.path.getsize(fp)
+                except OSError:
+                    continue
+                r0 = R.get(fp) or {}
+                if r0.get('v') == RESCUE_V and r0.get('s') == sz:
+                    continue
+                if watching():
+                    RESCUE_MORE[0] = True
+                    log('saving subtitles from the kept originals: someone is watching, carried on later')
+                    save_rescue(R, freed, gone, said)
+                    return
+                iid, rec = kept_by.get(fp, (None, None))
+                name = (rec or {}).get('name') or os.path.basename(d)
+                rec_ = {'s': sz, 'v': RESCUE_V, 'at': int(time.time()), 'name': name}
+                if fp in asked:
+                    R[fp] = dict(rec_, kept='its soundtrack’s language is for you to check (the admin page asks)')
+                    said.append('%s: kept, its soundtrack’s language for you to check' % name)
+                    continue
+                film = (rec or {}).get('to')
+                for _ in range(6):   # (made again since: followed to where it is now)
+                    if not film or os.path.exists(film):
+                        break
+                    film = then.get(os.path.normcase(film))
+                if not film or not os.path.exists(film):   # (not the converter's (gdrive.py keeps a replaced copy): the film in its folder)
+                    fd_ = os.path.join(lib, os.path.relpath(d, oroot))
+                    try:
+                        vs_ = [os.path.join(fd_, y) for y in os.listdir(fd_) if not y.startswith('.') and os.path.splitext(y)[1].lower() in VIDX
+                               and os.path.getsize(os.path.join(fd_, y)) > 3e8]
+                    except OSError:
+                        vs_ = []
+                    film = vs_[0] if len(vs_) == 1 else None
+                if not film:
+                    R[fp] = dict(rec_, kept='its film couldn’t be found')
+                    said.append('%s: kept, its film couldn’t be found' % name)
+                    continue
+                now('tidying', name=name, why='saving the subtitles in %s’s kept original, before it’s deleted' % name)
+                info = probe(ffprobe, fp)
+                pics = [x for x in info.get('streams') or [] if x.get('codec_type') == 'subtitle' and x.get('codec_name') in PICS]
+                have = set()
+                for y in os.listdir(os.path.dirname(film)):
+                    if y.lower().endswith(('.sup', '.mks')):
+                        try:
+                            have.add(os.path.getsize(os.path.join(os.path.dirname(film), y)))
+                        except OSError:
+                            pass
+                saved, failed, empty, same = save_pics(ffmpeg, ffprobe, fp, os.path.splitext(film)[0], pics, have) if pics else ([], [], [], 0)
+                if saved:
+                    note_pics(iid, name, (rec or {}).get('year'), film, saved)
+                    refresh = True
+                if failed:
+                    why_ = '; '.join('%s: %s' % (lang_name(x), w) for x, w in failed)[:300]
+                    R[fp] = dict(rec_, kept='a subtitle still won’t come out (%s)' % why_, saved=len(saved))
+                    said.append('%s: kept, a subtitle still won’t come out (%s)' % (name, why_))
+                    log('  %s: its original kept: a subtitle still won’t come out (%s)' % (name, why_))
+                    continue
+                try:
+                    os.remove(fp)
+                except OSError as e:
+                    R[fp] = dict(rec_, kept='couldn’t be deleted (%s)' % str(e)[:80])
+                    continue
+                freed += sz
+                gone += 1
+                dd = d
+                while os.path.realpath(dd) != os.path.realpath(oroot) and os.path.isdir(dd) and not [y for y in os.listdir(dd) if not y.startswith('.')]:
+                    shutil.rmtree(dd, ignore_errors=True)
+                    dd = os.path.dirname(dd)
+                if iid and os.path.realpath(((st.get('done') or {}).get(iid) or {}).get('kept') or '') == fp:
+                    st['done'][iid]['kept'] = None
+                    save_state(st)
+                R[fp] = dict(rec_, gone=True, saved=len(saved), same=same, empty=len(empty))
+                log('  %s: its original deleted, nothing lost (%d picture subtitle%s saved beside it now, %d saved before, %d with nothing in it)' % (
+                    name, len(saved), '' if len(saved) == 1 else 's', same, len(empty)))
+    save_rescue(R, freed, gone, said)
+    if refresh:   # (the media server looks again, so the subtitles saved beside the films are offered)
+        try:
+            if not any(g(t, 'Key') == 'RefreshLibrary' and g(t, 'State') == 'Running' for t in call('GET', '/ScheduledTasks') or []):
+                call('POST', '/Library/Refresh')
+        except Exception:
+            pass
+
+
+def save_rescue(R, freed, gone, said):
+    try:
+        json.dump(R, open(RESCUE + '.tmp', 'w'), indent=1, ensure_ascii=False)
+        os.replace(RESCUE + '.tmp', RESCUE)
+    except OSError:
+        pass
+    if gone or said:
+        log('kept originals: %d deleted (%.1f GB freed), their subtitles saved first%s' % (gone, freed / 1e9, ('; ' + '; '.join(said)) if said else ''))
+
+
 NEWF = os.path.join(HOME, 'convert-new.json')   # (films gdrive.py has just brought in, by their path)
 PEEKED = set()
 
@@ -1648,6 +1884,10 @@ def orphans():
 
 orphans()
 leftovers()
+try:
+    rescue_originals()
+except Exception as e:
+    log('couldn’t save the subtitles from the kept originals:', e)
 log('starting: %d to convert' % len(items))
 RUN['total'] = len(items)
 follow_up(st)
@@ -1667,6 +1907,11 @@ while rest:
                 RUN['total'] = RUN.get('total', 0) + len(add)
         except Exception as e:
             log('  couldn’t look for new films:', e)   # (the order looked at again before each film: a film John pins goes next, without starting anything again)
+    if RESCUE_MORE[0] and time.time() - RESCUE_MORE[1] > 1800:   # (the kept originals' subtitles, carried on once nobody's watching)
+        try:
+            rescue_originals()
+        except Exception as e:
+            log('couldn’t save the subtitles from the kept originals:', e)
     have = set(x['id'] for x in rest)
     rest = [x for x in redos() if x['id'] not in have] + rest   # (John's language changes first: minutes each)
     merge_ext()
