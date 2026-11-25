@@ -536,7 +536,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       <section class="card" data-tab="library">
         <div class="kicker">Library</div>
         <h2 id="lbhead">Every film’s <em>quality</em></h2>
-        <p class="stat" id="lbsay">Each film’s file as it is, and what Grifflix will do with it, by the converter’s own rules: <b>Replace</b>, a poor copy for its size (Grifflix won’t convert it: it couldn’t come out better); <b>Make smaller</b>, its rate at least one and a half times what it would be made at (9 Mbps at 1080p, 5.25 at 720p, 3 below), so it comes out a third smaller at least and still a good copy, on your Mac; <b>Convert</b>, so it plays everywhere; <b>Repackage</b>, the picture untouched; or <b>Nothing to do</b>, and why it’s the size it is. Each says what it would come out as. All of it can be copied into a Google Sheet.</p>
+        <p class="stat" id="lbsay">Each film’s file as it is, and what Grifflix will do with it, by the converter’s own rules: <b>Replace</b>, a poor copy for its size (Grifflix won’t convert it: it couldn’t come out better); <b>Make smaller</b>, on your Mac, as HEVC: every H.264 film (about 40% smaller, the same picture), and HEVC well over what it would be made at (5.6 Mbps at 1080p); <b>Convert</b>, so it plays everywhere; <b>Repackage</b>, the picture untouched; or <b>Nothing to do</b>, and why it’s the size it is. Each says what it would come out as. All of it can be copied into a Google Sheet.</p>
         <p class="stat" id="lbwhen" style="margin:6px 0 0;opacity:.75"></p>
         <div class="state"><button class="btn" id="lbgo" type="button">Look at the library</button></div>
         <div id="lbui" hidden>
@@ -2781,6 +2781,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     if (/10-bit/.test(w)) return 'its picture is 10-bit, which most TVs can’t play';
     if (m) return 'its picture is ' + m[1].toUpperCase() + ', which not every TV plays';
     if (/bigger than 1080p/.test(w)) return 'it’s bigger than 1080p: made 1080p';
+    if (/made HEVC/.test(w)) return 'made HEVC: about 40% smaller, the same picture';
     if (/to make smaller/.test(w)) return 'to make it smaller';
     if (/MKV file/.test(w)) return 'an MKV: made an MP4, the picture kept as it is';
     if (/^just brought in/.test(w)) return 'just came in: it goes next';
@@ -3318,25 +3319,27 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   // the poor line): John, 25 Nov 2026, "I have films that are very large marked as good which is confusing - I know they can be made smaller,
   // but unless I have some better view on what will happen distinguishing the films is almost impossible")
   var LBK = { replace: 'Replace', smaller: 'Make smaller', convert: 'Convert', repackage: 'Repackage', good: 'Nothing to do' };
-  function lbPlan(x) {
-    var g = x.g, ho = Math.min(x.h || 1080, 1080), wo = Math.min(x.w || 1920, 1920), top = (wo >= 1700 || ho >= 900) ? 6 : (wo >= 1100 || ho >= 600) ? 3.5 : 2, mb = x.mbps || 0, gb = x.gb || 0, mins = x.mins || 0, w = x.why || '';
+  function lbPlan(x) {   // (HEVC the library's own now: John, 25 Nov 2026, "HEVC is fine, so go ahead")
+    var g = x.g, ho = Math.min(x.h || 1080, 1080), wo = Math.min(x.w || 1920, 1920), top = ((wo >= 1700 || ho >= 900) ? 6 : (wo >= 1100 || ho >= 600) ? 3.5 : 2) / 1.6;
+    var mb = x.mbps || 0, gb = x.gb || 0, mins = x.mins || 0, w = x.why || '', v = x.v || '';
+    var floor = .035 * wo * ho * 24 * 1.3 / 1e6 / 1.6, effv = (v === 'av1' ? 2 : /hevc|h265|vp9/.test(v) ? 1.6 : v === 'h264' ? 1 : .6) / 1.6;
     var est = function (rate) { return mins ? Math.round((rate + .25) * mins * 60 / 8 / 1000 * 10) / 10 : null; };   // (GB, its sound included)
+    var out = function (r) { var e = est(r); return { e: e, save: e != null && gb ? Math.max(0, Math.round((gb - e) * 10) / 10) : 0 }; };
     var big = (x.w || 0) > 1928 || (x.h || 0) > 1088, q = LB.MQ && LB.MQ[x.id] ? (LB.MQ[x.id] === 'now' ? ' · being made on your Mac now' : ' · on your Mac’s queue') : '';
     var long_ = gb >= 6 && mins >= 140 ? ' · large because it’s long (' + mins + ' min)' : '', loss = /TrueHD|DTS-HD|DTS-MA|FLAC|PCM|LPCM/i.test(x.a || '') ? ' · lossless sound adds to its size' : '';
-    if (g.q === 'replace') return { k: 'replace', say: '<b>Replace</b>: ' + esc(g.why) + '. Grifflix won’t convert it: it couldn’t come out better' };
-    if (x.hdrt) return { k: 'convert', say: '<b>Convert on your Mac</b>: ' + esc(g.why) + q };
-    if (big || /^to make smaller/.test(w) || (mb && mb >= 1.5 * top)) {
-      var e = est(top);
-      return { k: 'smaller', save: e != null && gb ? Math.max(0, Math.round((gb - e) * 10) / 10) : 0,
-        say: '<b>Make smaller on your Mac</b>: now ' + gb + ' GB (' + mb + ' Mbps) → at most about ' + (e != null ? e + ' GB' : '?') + ' (H.264 at up to ' + top + ' Mbps' + (big ? ', made 1080p' : '') + '), often less; still a good copy' + (e != null && gb ? ', saving ' + Math.max(0, Math.round((gb - e) * 10) / 10) + ' GB or more' : '') + q };
+    var r = Math.min(top, Math.max(floor, Math.max(.2, mb - .25) * effv)), o = out(r), h264 = v === 'h264' && !(x.b > 8);
+    if (g.q === 'replace') return { k: 'replace', ng: gb, say: '<b>Replace</b>: ' + esc(g.why) + '. Grifflix won’t convert it: it couldn’t come out better' };
+    if (x.hdrt) return { k: 'convert', ng: gb, say: '<b>Convert on your Mac</b>: ' + esc(g.why) + q };
+    if (big || h264 || (/hevc|h265/.test(v) && mb >= 1.5 * top)) {
+      if (big) { r = top; o = out(r); }
+      return { k: 'smaller', save: o.save, ng: o.e != null ? o.e : gb,
+        say: '<b>' + (h264 ? 'Made HEVC on your Mac' : 'Make smaller on your Mac') + '</b>: now ' + gb + ' GB (' + mb + ' Mbps ' + (v === 'h264' ? 'H.264' : v.toUpperCase()) + ') → about ' + (o.e != null ? o.e + ' GB' : '?') + ' (HEVC at about ' + (Math.round(r * 10) / 10) + ' Mbps' + (big ? ', made 1080p' : '') + '), the same picture' + (o.save ? ', saving ' + o.save + ' GB' : '') + q };
     }
-    if (w && !/^to repackage/.test(w)) {
-      var eff = /hevc|h265|vp9/.test(x.v || '') ? 1.6 : x.v === 'av1' ? 2 : x.v === 'h264' ? 1 : .6, r = Math.min(top, Math.max(1.2, .035 * (x.w || 1920) * ho * 24 * 1.3 / 1e6, mb * eff)), e2 = est(r);
-      return { k: 'convert', say: '<b>Convert on your Mac</b>, to play everywhere: ' + esc(rnWhy(w)) + ' · now ' + gb + ' GB → about ' + (e2 != null ? e2 + ' GB' : '?') + ' (H.264 at about ' + (Math.round(r * 10) / 10) + ' Mbps, as good as it is now)' + q };
-    }
-    if (/^to repackage/.test(w)) return { k: 'repackage', say: '<b>Repackage</b>: ' + esc(rnWhy(w)) + ' · the picture untouched, about the same size' + (loss ? ' (less, if extra soundtracks go)' : '') + q };
-    return { k: 'good', say: '<b>Nothing to do</b>: plays everywhere as it is' + (mb ? ' · ' + mb + ' Mbps is compact for ' + g.res + ' (made smaller only from ' + (1.5 * top) + ' Mbps)' : '') + long_ + loss };
+    if (w && !/^to repackage/.test(w)) return { k: 'convert', save: o.save, ng: o.e != null ? o.e : gb, say: '<b>Made HEVC on your Mac</b>, to play almost everywhere: ' + esc(rnWhy(w)) + ' · now ' + gb + ' GB → about ' + (o.e != null ? o.e + ' GB' : '?') + ', as good as it is now' + q };
+    if (/^to repackage/.test(w)) return { k: 'repackage', ng: gb, say: '<b>Repackage</b>: ' + esc(rnWhy(w)) + ' · the picture untouched, about the same size' + (loss ? ' (less, if extra soundtracks go)' : '') + q };
+    return { k: 'good', ng: gb, say: '<b>Nothing to do</b>: ' + (/hevc|h265/.test(v) ? 'HEVC, already efficient' : 'kept as it is') + (mb ? ' · ' + mb + ' Mbps for ' + g.res + (/hevc|h265/.test(v) ? ' (made smaller only from ' + (Math.round(1.5 * top * 10) / 10) + ' Mbps)' : '') : '') + long_ + loss };
   }
+
   function lbGrade(x) {
     var res = x.w >= 3200 || x.h >= 1700 ? '4K' : x.w >= 1800 || x.h >= 1000 ? '1080p' : x.w >= 1200 || x.h >= 700 ? '720p' : x.w ? 'SD' : '?';
     var hv = x.v === 'hevc' || x.v === 'h265';
@@ -3440,17 +3443,17 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var isRp = function (x) { return /^to repackage/.test(x.why || ''); }, isSh = function (x) { return /^to make smaller/.test(x.why || ''); }, isCv = function (x) { return !!x.why && !isRp(x) && !isSh(x); };
     var all0 = LB.all || [], rc = {}; all0.forEach(function (x) { rc[x.g.res] = (rc[x.g.res] || 0) + 1; });
     var all = all0.filter(function (x) { return LB.r === 'all' || x.g.res === LB.r; });   // (the size chosen: everything below is within it)
-    var cnt = { replace: 0, smaller: 0, convert: 0, repackage: 0, good: 0, ps: 0 }, save = 0; all.forEach(function (x) { x.p = lbPlan(x); cnt[x.p.k]++; if (x.p.k === 'smaller') save += x.p.save || 0; if (x.ps) cnt.ps++; });
+    var cnt = { replace: 0, smaller: 0, convert: 0, repackage: 0, good: 0, ps: 0, tv: 0, film: 0 }, save = 0; all.forEach(function (x) { x.p = lbPlan(x); cnt[x.p.k]++; if (x.p.k === 'smaller') save += x.p.save || 0; if (x.ps) cnt.ps++; cnt[x.tv ? 'tv' : 'film']++; });
     var chip = function (c, on, n, attr) { return '<button type="button" ' + attr + '="' + c[0] + '" aria-pressed="' + on + '">' + c[1] + (n == null ? '' : ' ' + n) + '</button>'; };
     $('#lbres').innerHTML = [['all', 'Every size']].concat(LBRES.filter(function (r) { return rc[r]; }).map(function (r) { return [r, r === '?' ? 'Size unknown' : r]; })).map(function (c) { return chip(c, LB.r === c[0], c[0] === 'all' ? all0.length : rc[c[0]], 'data-r'); }).join('');
-    if (['replace', 'smaller', 'convert', 'repackage', 'good', 'all', 'big', 'ps'].indexOf(LB.f) < 0) LB.f = 'replace';
+    if (['replace', 'smaller', 'convert', 'repackage', 'good', 'all', 'big', 'ps', 'tv', 'film'].indexOf(LB.f) < 0) LB.f = 'replace';
     $('#lbchips').innerHTML = [['replace', 'Replace'], ['smaller', 'Make smaller'], ['convert', 'Convert'], ['repackage', 'Repackage'], ['good', 'Nothing to do'], ['all', 'All']].map(function (c) { return chip(c, LB.f === c[0], c[0] === 'all' ? all.length : cnt[c[0]], 'data-f'); }).join('') +
       (LB.f === 'smaller' && save ? '<small style="opacity:.8;margin-left:6px">making them all smaller would free about ' + Math.round(save) + ' GB</small>' : '');
-    $('#lbqueue').innerHTML = [['big', 'Largest'], ['ps', 'Picture subtitles']].map(function (c) { return chip(c, LB.f === c[0], c[0] === 'big' ? null : cnt[c[0]], 'data-f'); }).join('');
+    $('#lbqueue').innerHTML = [['film', 'Films'], ['tv', 'TV episodes'], ['big', 'Largest'], ['ps', 'Picture subtitles']].map(function (c) { return chip(c, LB.f === c[0], c[0] === 'big' ? null : cnt[c[0]], 'data-f'); }).join('');
     Array.prototype.forEach.call(document.querySelectorAll('#lbchips button, #lbqueue button'), function (b) { b.onclick = function () { LB.f = b.dataset.f; LB.n = 50; lbDraw(); }; });
     Array.prototype.forEach.call(document.querySelectorAll('#lbres button'), function (b) { b.onclick = function () { LB.r = b.dataset.r; LB.n = 50; lbDraw(); }; });
     var qq = ($('#lbq').value || '').trim().toLowerCase(), so = $('#lbsort').value, rank = { replace: 0, smaller: 1, convert: 2, repackage: 3, good: 4 };
-    var L = all.filter(function (x) { return (LB.f === 'all' || LB.f === 'big' || (LB.f === 'ps' ? !!x.ps : x.p.k === LB.f)) && (!qq || (x.n || '').toLowerCase().indexOf(qq) >= 0); });
+    var L = all.filter(function (x) { return (LB.f === 'all' || LB.f === 'big' || (LB.f === 'ps' ? !!x.ps : LB.f === 'tv' ? !!x.tv : LB.f === 'film' ? !x.tv : x.p.k === LB.f)) && (!qq || (x.n || '').toLowerCase().indexOf(qq) >= 0); });
     L.sort(so === 'big' || LB.f === 'big' ? function (p, q) { return q.gb - p.gb; } : so === 'az' ? function (p, q) { return (p.n || '').localeCompare(q.n || ''); } : function (p, q) { return rank[p.p.k] - rank[q.p.k] || (p.p.k === 'smaller' ? (q.p.save || 0) - (p.p.save || 0) : p.g.bpp - q.g.bpp); });
     var vn = function (v) { return { h264: 'H.264', hevc: 'HEVC', h265: 'HEVC', mpeg4: 'MPEG-4 (XviD/DivX)', mpeg2video: 'MPEG-2', vc1: 'VC-1', av1: 'AV1', vp9: 'VP9' }[v] || (v || '?').toUpperCase(); };
     var fl = function (f) { return f ? (f.w ? f.w + '×' + f.h + ' ' : '') + esc(f.v) + (f.mbps ? ', ' + f.mbps + ' Mbps' : '') + (f.gb ? ', ' + f.gb + ' GB' : '') : ''; };
@@ -3490,7 +3493,11 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     $('#lbsum').innerHTML = all.length ? '<b>' + mkv + '</b> MKV file' + (mkv === 1 ? '' : 's') + ' · <a href="#" data-lbf="repackage"><b>' + rp + '</b> to repackage</a> (minutes each) · <a href="#" data-lbf="convert"><b>' + cv + '</b> to convert</a> (hours each) · <a href="#" data-lbf="smaller"><b>' + cnt.sh + '</b> to make smaller</a> (last; about <b>' + (free >= 1000 ? (free / 1000).toFixed(1) + ' TB' : Math.round(free) + ' GB') + '</b> freed)' : '';
     Array.prototype.forEach.call(document.querySelectorAll('[data-lbf]'), function (a) { a.onclick = function (e) { e.preventDefault(); LB.f = a.dataset.lbf; LB.n = 50; lbDraw(); }; });
     var tot = { replace: 0, smaller: 0, convert: 0, repackage: 0, good: 0 }; all0.forEach(function (x) { var k = (x.p || lbPlan(x)).k; if (tot[k] != null) tot[k]++; });
-    $('#lbhead').innerHTML = all0.length + ' films: <em>' + tot.replace + ' to replace, ' + tot.smaller + ' to make smaller, ' + tot.convert + ' to convert, ' + tot.repackage + ' to repackage</em>';
+    var now_ = 0, then_ = 0; all0.forEach(function (x) { var p_ = x.p || lbPlan(x); now_ += x.gb || 0; then_ += p_.ng != null ? p_.ng : (x.gb || 0); });
+    var tb = function (g) { return g >= 1000 ? (g / 1000).toFixed(2) + ' TB' : Math.round(g) + ' GB'; };
+    var ntv = all0.filter(function (x) { return x.tv; }).length;
+    $('#lbhead').innerHTML = (all0.length - ntv) + ' films' + (ntv ? ' and ' + ntv + ' TV episodes' : '') + ', ' + tb(now_) + ': <em>about ' + tb(then_) + ' when all are done, saving ' + tb(now_ - then_) + '</em>' +
+      '<small style="display:block;font-size:14px;opacity:.8;margin-top:4px">' + tot.smaller + ' to make smaller, ' + tot.convert + ' to convert, ' + tot.repackage + ' to repackage, ' + tot.replace + ' to replace</small>';
   }
   $('#lbcopy').onclick = function () { lbExport('copy'); }; $('#lbcsv').onclick = function () { lbExport('csv'); };
   $('#lbgo').onclick = function () {

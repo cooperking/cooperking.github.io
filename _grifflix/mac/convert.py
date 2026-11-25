@@ -160,20 +160,30 @@ def is_hdr(v):
 POOR = .035   # (the Library's line for a poor copy: bits of picture per pixel per frame, allowing for how efficient its format is)
 
 
+# (every film made again is made HEVC (H.265), 8-bit, in an MP4 labelled hvc1 as Apple's devices need: about 60% of H.264's rate for the same
+# picture, so the whole library about 40% smaller at the same picture; it plays almost everywhere, and where it doesn't the player says why.
+# John, 25 Nov 2026, "My aim is to have good 1080p mp4 films in a format playable everywhere (or almost everywhere) ... as small as they can be
+# without losing noticeable quality" ... "HEVC is fine, so go ahead")
+HEVC_OUT = True
+HE = 1.6   # (H.264 needs this many times HEVC's rate for the same picture)
+
+
 def size_top(w, h):
     """What a film of this size is made at, at most (Mbps): 1080p 6, 720p 3.5, smaller 2; by its width as well as its height, so a widescreen
     1080p film (1920 x 800) counts as 1080p, not 720p (Heaven's Gate was to be made at 3.5: 25 Nov 2026)."""
     return 6 if (w >= 1700 or h >= 900) else 3.5 if (w >= 1100 or h >= 600) else 2
 
 
-def worth_smaller(mbps, w, h):
+def worth_smaller(mbps, w, h, vc=''):
     """The one rule for whether a film is made smaller (here, the Library and John's queue alike): its rate at least one and a half times
     what it would be made at (6 Mbps at 1080p, 3.5 at 720p, 2 below), whatever its format, as it comes out H.264 at no more than that: a third
     smaller at least, and still well above a good copy; or bigger than 1080p. John, 25 Nov 2026, "I have films that are very large marked as
     good which is confusing"."""
     if w > MAX_W + 8 or h > MAX_H + 8:
         return True
-    return bool(mbps) and mbps >= 1.5 * size_top(w, h)
+    if HEVC_OUT and (vc or '').lower() == 'h264':   # (H.264 made HEVC: at most its own picture's worth, about 40% smaller, whatever its rate)
+        return bool(mbps)
+    return bool(mbps) and mbps >= 1.5 * size_top(w, h) / (HE if HEVC_OUT else 1)   # (HEVC already: only one well over what it would be made at)
 
 
 def pic_bpp(mbps, w, h, vc):
@@ -182,6 +192,46 @@ def pic_bpp(mbps, w, h, vc):
     vc = (vc or '').lower()
     eff = 2.0 if vc == 'av1' else 1.6 if vc in ('hevc', 'h265', 'vp9') else 1.0 if vc == 'h264' else .6
     return mbps * 1e6 * eff / (w * h * 24) if mbps and w and h else None
+
+
+def est_save(ms, gb, mins, mode):
+    """About how much space (GB) making a film would save: what it would come out as (HEVC, at no more than its picture needs or the set rate,
+    its sound about 0.25 Mbps) against what it is. A repackaging: none."""
+    if mode == 'remux' or not gb or not mins:
+        return 0
+    v = next((x for x in g(ms, 'MediaStreams', []) if g(x, 'Type') == 'Video'), {})
+    w, h = min(g(v, 'Width', 0) or 1920, MAX_W), min(g(v, 'Height', 0) or 1080, MAX_H)
+    mbps = (g(ms, 'Bitrate') or g(v, 'BitRate') or 0) / 1e6 or gb * 8000 / (mins * 60)
+    vc = (g(v, 'Codec') or '').lower()
+    eff = (2.0 if vc == 'av1' else 1.6 if vc in ('hevc', 'h265', 'vp9') else 1.0 if vc == 'h264' else .6) / (HE if HEVC_OUT else 1)
+    top = size_top(w, h) / (HE if HEVC_OUT else 1)
+    floor = POOR * w * h * 24 * 1.3 / 1e6 / (HE if HEVC_OUT else 1)
+    out = (min(top, max(floor, max(.2, mbps - .25) * eff)) + .25) * mins * 60 / 8 / 1000
+    return round(max(0, gb - out), 1)
+
+
+def reencode_reason(v, mbps, hdr):
+    """Why a film's picture is to be made again (HEVC), or None if it stays as it is: bigger than 1080p; H.264 (made HEVC, about 40%
+    smaller); HEVC well over what it would be made at; a format not every device plays. Never an HDR one (its colours: kept as it is), a
+    poor copy (it would come out no better: left for replacing), or 10-bit HEVC at a fair rate (it plays: John, 16 Nov 2026)."""
+    vc = (g(v, 'Codec') or '').lower()
+    w, h = g(v, 'Width', 0), g(v, 'Height', 0)
+    bits = g(v, 'BitDepth', 8) or 8
+    prof = (g(v, 'Profile') or '').lower()
+    if hdr:
+        return None
+    if w > MAX_W + 8 or h > MAX_H + 8:
+        return 'bigger than 1080p (%dx%d)' % (w, h)
+    b_ = pic_bpp(mbps, w, h, vc)
+    if b_ is not None and b_ < POOR:
+        return None
+    if vc in ('hevc', 'h265'):
+        return SHRINK + ' (%.1f Mbps)' % mbps if worth_smaller(mbps, w, h, vc) else None
+    if vc == 'h264' and bits <= 8 and '10' not in prof:
+        if not HEVC_OUT:
+            return SHRINK + ' (%.1f Mbps)' % mbps if worth_smaller(mbps, w, h, vc) else None
+        return SHRINK + ' (%.1f Mbps H.264, made HEVC)' % mbps if mbps else None
+    return 'format (%s%s)' % (vc or '?', ', 10-bit' if bits > 8 or '10' in prof else '')
 
 
 def why(ms):
@@ -200,6 +250,11 @@ def why(ms):
     # later: the whole library put right quickly, then the slow conversions (John, 12 Nov 2026: "I want all MKV's repackaged before they
     # are converted, even if they also need converting later"). Once it's an MP4, the next look finds what's still to convert)
     cont0 = [c.strip() for c in (g(ms, 'Container') or '').lower().split(',') if c.strip()]
+    if HEVC_OUT:   # (one whose picture is made again goes straight to it, as an MP4: repackaged first, it would be done twice; an MKV plays meanwhile,
+        # repackaged as it plays, the picture untouched: 25 Nov 2026, the rule of 12 Nov (MKVs repackaged first) made when converting took hours)
+        r_ = reencode_reason(v, mbps, is_hdr(v))
+        if r_:
+            return r_
     if cont0 and not any(c in ('mp4', 'm4v', 'mov') for c in cont0):
         return REPACK + ' (%s file)' % cont0[0].upper()
     # (an HDR picture (HDR10, Dolby Vision, HLG) is never made smaller or turned into 1080p here: its colours need converting too, which
@@ -235,12 +290,14 @@ def why(ms):
         # (a file much bigger than its picture needs: made smaller, once, at the careful setting, last of all (John, 12 Nov 2026:
         # "converted to a smaller size without losing noticeable quality", "I don't want to convert films twice"). Grifflix's own
         # conversions are all under 8 Mbps, so never made again; HEVC is already efficient, so only far bigger ones)
-        if not hdr and worth_smaller(mbps, w, h):   # (the one rule: worth_smaller)
+        if not HEVC_OUT and not hdr and worth_smaller(mbps, w, h, vc):   # (the one rule: worth_smaller)
             return SHRINK + ' (%.1f Mbps)' % mbps
         return None
     # (a copy already poor isn't converted: it would come out no better, and then be one to replace; left as it is, the Library saying replace
     # it: John, 25 Nov 2026, "we shouldn't ever be converting things and then saying we should replace them. I don't want to be making poor
     # quality versions of things")
+    if HEVC_OUT:   # (its picture stays as it is: reencode_reason said so above)
+        return None
     b_ = pic_bpp(mbps, w, h, vc)
     if b_ is not None and b_ < POOR:
         return None
@@ -262,7 +319,7 @@ def shrinks(ms):
     mbps = (g(ms, 'Bitrate') or g(v, 'BitRate') or 0) / 1e6
     if not mbps and g(ms, 'Size') and g(ms, 'RunTimeTicks'):
         mbps = g(ms, 'Size') * 8 / (g(ms, 'RunTimeTicks') / 1e7) / 1e6
-    return round(mbps, 1) if worth_smaller(mbps, w, h) else 0   # (the one rule, HEVC too: it comes out H.264 at no more than the set rate)
+    return round(mbps, 1) if worth_smaller(mbps, w, h, g(v, 'Codec')) else 0   # (the one rule)
 
 
 NOSHRINK_F = os.path.join(os.path.expanduser('~/Grifflix'), 'convert-noshrink.json')
@@ -312,6 +369,7 @@ def gather():
                     out.append({'id': g(it, 'Id'), 'name': name, 'year': g(it, 'ProductionYear', ''), 'lib': lib, 'why': w, 'mode': 'remux' if w.startswith(REPACK) else 'shrink' if w.startswith(SHRINK) else 'convert',
                                 'path': g(it, 'Path'), 'mins': round((g(it, 'RunTimeTicks') or 0) / 6e8), 'rating': g(it, 'CommunityRating') or 0,
                                 'gb': round(os.path.getsize(g(it, 'Path')) / 1e9, 1), 'added': g(it, 'DateCreated') or '', 'big': shrinks(ms) if w.startswith(REPACK) and g(it, 'Id') not in NS_ else 0})
+                    out[-1]['save'] = est_save(ms, out[-1]['gb'], out[-1]['mins'], out[-1]['mode'])
             start += 300
             if start >= g(r, 'TotalRecordCount', 0):
                 break
@@ -646,20 +704,23 @@ def convert(item, ffmpeg, ffprobe, st):
     # original had: much smaller with no difference to see (John, 12 Nov 2026); slower to make, so done once and never again)
     oh = min(int(v.get('height') or 1080), MAX_H)
     ow0_ = min(int(v.get('width') or 1920), MAX_W)
-    top = int(size_top(ow0_, oh) * 1000)
+    top = int(size_top(ow0_, oh) * 1000 / (HE if HEVC_OUT else 1))   # (in the made film's own terms: HEVC needs less)
     # (H.264 needs about 1.6 times the rate of HEVC or VP9 for the same picture, twice AV1's: an efficient picture held to its own rate came
     # out worse, and compact films converted on John's Mac (Days of Being Wild, Marty Supreme, the 1930s VP9 films) were graded Replace
     # after: John, 25 Nov 2026, "The Replace section of the Library shows films that the mac has converted itself")
     vc_ = (v.get('codec_name') or '').lower()
-    eff_ = 2.0 if vc_ == 'av1' else 1.6 if vc_ in ('hevc', 'h265', 'vp9') else 1.0
+    eff_ = (2.0 if vc_ == 'av1' else 1.6 if vc_ in ('hevc', 'h265', 'vp9') else 1.0 if vc_ == 'h264' else .6) / (HE if HEVC_OUT else 1)
     # (and never below the Library's line for a good copy of its size, with a third to spare: a converted film is never one to replace)
     ih_, iw_ = int(v.get('height') or 1080), int(v.get('width') or 1920)
     ow_ = iw_ * oh / ih_ if ih_ else 1920
-    floor_ = POOR * ow_ * oh * 24 * 1.3 / 1000
-    cap = int(min(top, max(1200, floor_, src_kbps * eff_ if src_kbps > 0 else top)))
+    floor_ = POOR * ow_ * oh * 24 * 1.3 / 1000 / (HE if HEVC_OUT else 1)
+    cap = int(min(top, max(750 if HEVC_OUT else 1200, floor_, src_kbps * eff_ if src_kbps > 0 else top)))
     cmd += ['-map_metadata', '0', '-map_chapters', '0']
     if remux:   # (the picture copied as it is; HEVC labelled hvc1, as Apple's devices need, not hev1)
         cmd += ['-c:v', 'copy', '-disposition:v:0', 'default'] + (['-tag:v', 'hvc1'] if v.get('codec_name') == 'hevc' else [])
+    elif HEVC_OUT:   # (HEVC, 8-bit, labelled hvc1; on John's Mac, Apple's hardware encoder at a quality: the gateway's vt_args)
+        cmd += ['-c:v', 'libx265', '-preset', 'medium', '-crf', '22', '-maxrate', '%dk' % cap, '-bufsize', '%dk' % (cap * 2),
+                '-profile:v', 'main', '-tag:v', 'hvc1', '-pix_fmt', 'yuv420p', '-vf', vf, '-disposition:v:0', 'default']
     else:
         cmd += ['-c:v', 'libx264', '-preset', 'slow', '-crf', '21', '-maxrate', '%dk' % cap, '-bufsize', '%dk' % (cap * 2),
                 '-profile:v', 'high', '-level', '4.1', '-pix_fmt', 'yuv420p', '-vf', vf, '-disposition:v:0', 'default']
@@ -1102,7 +1163,7 @@ def to_mac(items):
     for x in items:
         if x.get('redo') or x['id'] in have or x['id'] in passed or time.time() - sent.get(x['id'], 0) < 7 * 86400 or not os.path.exists(x['path']):
             continue   # (a language John put right is the Mac mini's own: minutes, and only it can)
-        e = dict({'id': x['id'], 'name': x['name'], 'at': int(time.time()), 'from': 'mini', 'why': (x.get('why') or '')[:160], 'kind': x.get('mode') or 'convert'},
+        e = dict({'id': x['id'], 'name': x['name'], 'at': int(time.time()), 'from': 'mini', 'why': (x.get('why') or '')[:160], 'kind': x.get('mode') or 'convert', 'save': x.get('save') or 0},
                  **({'force': True} if x.get('mode') == 'shrink' else {}), **({'big': x['big']} if x.get('mode') == 'remux' and x.get('big') else {}))
         if x['id'] in pins or x.get('fetched') or x.get('urgent') or x.get('new'):
             e['new'] = True
@@ -1120,22 +1181,34 @@ def to_mac(items):
     have = set(y.get('id') for y in Q)
     top = [y for y in top if y['id'] not in have]
     end = [y for y in end if y['id'] not in have]
-    moved = [dict(y, new=True) for y in Q if y.get('id') in pins and y.get('from') == 'mini' and not y.get('new')]   # (pinned since: to the top)
     big_ = {x['id']: x.get('big') or 0 for x in items if x.get('mode') == 'remux' and not x.get('redo')}
+    now_ = {x['id']: x for x in items if not x.get('redo')}
     fixed = 0
-    for y in Q:   # (whether one to repackage is made smaller on John's Mac instead: said on those queued before it was worked out)
-        if y.get('from') == 'mini' and y.get('kind') == 'remux' and y.get('id') in big_ and (y.get('big') or 0) != big_[y['id']]:
-            if big_[y['id']]:
+    for y in Q:   # (each the Mac mini put there: what it needs now (the plan changes: HEVC, 25 Nov 2026), whether it's made smaller, what it saves)
+        if y.get('from') != 'mini' or y.get('id') not in now_:
+            continue
+        x = now_[y['id']]
+        k_, w_, sv_ = x.get('mode') or 'convert', (x.get('why') or '')[:160], x.get('save') or 0
+        if y.get('kind') != k_ or y.get('why') != w_ or y.get('save') != sv_ or (y.get('big') or 0) != big_.get(y['id'], 0):
+            y.update(kind=k_, why=w_, save=sv_)
+            if big_.get(y['id']):
                 y['big'] = big_[y['id']]
             else:
                 y.pop('big', None)
+            if k_ == 'shrink':
+                y['force'] = True
             fixed += 1
+    moved = [dict(y, new=True) for y in Q if y.get('id') in pins and y.get('from') == 'mini' and not y.get('new')]   # (pinned since: to the top)
     if not (top or end or moved or gone or fixed):
         return []
     mids = set(y['id'] for y in moved)
     Q = [y for y in Q if y.get('id') not in mids]
-    k = next((i for i, y in enumerate(Q) if not y.get('first')), len(Q))   # (after any John put first)
-    Q = Q[:k] + top + moved + Q[k:] + end
+    # (the backlog in order of the space it saves, the largest first; John's own, those just come in and those put first stay at the top)
+    keep_ = lambda y: y.get('from') != 'mini' or y.get('new') or y.get('first')
+    head_ = [y for y in Q if keep_(y)]
+    tail_ = sorted([y for y in Q if not keep_(y)] + end, key=lambda y: -(y.get('save') or 0))
+    k = next((i for i, y in enumerate(head_) if not y.get('first')), len(head_))   # (after any John put first)
+    Q = head_[:k] + top + moved + head_[k:] + tail_
     queue_write(Q)
     for y in top + end:
         sent[y['id']] = int(time.time())
@@ -1225,7 +1298,7 @@ def shrink_item(iid, name=None, mac=False):
     if not mbps_ and g(ms_, 'Size') and g(ms_, 'RunTimeTicks'):
         mbps_ = g(ms_, 'Size') * 8 / (g(ms_, 'RunTimeTicks') / 1e7) / 1e6
     vc_ = (g(v, 'Codec') or '').lower()
-    if mbps_ and not worth_smaller(mbps_, w_, h_):   # (the one rule)
+    if mbps_ and not worth_smaller(mbps_, w_, h_, vc_):   # (the one rule)
         SKIPWHY[iid] = 'it’s already compact for its size (%s, %.1f Mbps): made smaller it would only lose picture, so it’s left as it is.' % (
             {'hevc': 'HEVC', 'h265': 'HEVC', 'h264': 'H.264', 'vp9': 'VP9', 'av1': 'AV1'}.get(vc_, vc_.upper() or '?'), mbps_)
         return None

@@ -302,16 +302,27 @@ def conv_why(ms):
     if not mbps and ms.get('Size') and ms.get('RunTimeTicks'):   # (no rate recorded: from the file's size and length)
         mbps = round(ms['Size'] * 8 / (ms['RunTimeTicks'] / 1e7) / 1e6, 1)
     cont = [c for c in (ms.get('Container') or '').lower().split(',') if c]
-    if cont and not any(c in ('mp4', 'm4v', 'mov') for c in cont):   # (every MKV repackaged first, the picture as it is, converted after if need be: John, 12 Nov 2026)
+    # (as convert.py's reencode_reason since 25 Nov 2026: every film made again is made HEVC, and goes straight to it; a poor copy, HDR and 10-bit
+    # HEVC at a fair rate are left as they are; then repackaging, the picture untouched)
+    hdr = (v.get('VideoRange') or '').upper() == 'HDR' or (v.get('ColorTransfer') or '').lower() in ('smpte2084', 'arib-std-b67') or 'dovi' in (v.get('VideoRangeType') or '').lower()
+    if v and not hdr:
+        if w > 1928 or h > 1088:
+            return 'bigger than 1080p'
+        eff = 2.0 if vc == 'av1' else 1.6 if vc in ('hevc', 'h265', 'vp9') else 1.0 if vc == 'h264' else .6
+        bpp = mbps * 1e6 * eff / (w * h * 24) if mbps and w and h else None
+        top = (6 if (min(w, 1920) >= 1700 or min(h, 1080) >= 900) else 3.5 if (w >= 1100 or h >= 600) else 2) / 1.6
+        if bpp is None or bpp >= .035:
+            if vc in ('hevc', 'h265'):
+                if mbps and mbps >= 1.5 * top:
+                    return 'to make smaller (%s Mbps)' % mbps
+            elif vc == 'h264' and bits <= 8 and '10' not in (v.get('Profile') or ''):
+                return 'to make smaller (%s Mbps H.264, made HEVC)' % mbps
+            else:
+                return 'format browsers can’t play'
+    if cont and not any(c in ('mp4', 'm4v', 'mov') for c in cont):
         return 'to repackage (%s file), the picture untouched' % cont[0].upper()
-    if w > 1928 or h > 1088:
-        return 'bigger than 1080p'
-    if not (vc in ('hevc', 'h265') or (vc == 'h264' and bits <= 8 and '10' not in (v.get('Profile') or ''))):   # (10-bit HEVC left as it is, as convert.py since 16 Nov 2026)
-        return 'format browsers can’t play' if v else ''
     if au and (au[0].get('Codec') or '').lower() not in ('aac', 'mp3'):
         return 'to repackage (%s sound), the picture untouched' % (au[0].get('Codec') or '?').upper()
-    if mbps > (8.5 if h >= 900 else 5 if h >= 600 else 3) * (1.6 if vc in ('hevc', 'h265') else 1):   # (as convert.py: made smaller, once, last)
-        return 'to make smaller (%s Mbps)' % mbps
     return ''
 
 
@@ -2248,7 +2259,8 @@ def make_handler(g):
                                 g.lib_job = {'state': 'done', 'code': code, 'body': body, 'at': time.time()}
                         threading.Thread(target=run, daemon=True).start()
                 return self.send_json(202, {'making': True})
-            lid = (g.st.get('libraries') or {}).get('movies')
+            libs_ = g.st.get('libraries') or {}
+            lid = libs_.get('movies')
             if not lid:
                 return self.send_json(200, {'films': []})
             st = load(os.path.expanduser('~/Grifflix/convert-state.json'), {})
@@ -2263,16 +2275,21 @@ def make_handler(g):
             # file details took minutes on the old Mac)
             cache_at = os.path.expanduser('~/Grifflix/library-cache.json')
             cache = (load(cache_at, {}) or {}).get('rows') or {}
-            quick, start = [], 0
-            while True:
-                r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Etag,Path',
-                                                                       'StartIndex': start, 'Limit': 500, 'SortBy': 'SortName', 'EnableImages': 'false'}) or {}
-                quick += r.get('Items') or []
-                start += 500
-                if start >= (r.get('TotalRecordCount') or 0):
-                    break
+            # (TV's episodes too, with the films: the library's size and what it would come to is all of it: John, 25 Nov 2026, "tv should be included")
+            quick = []
+            for lid_, typ_ in ((lid, 'Movie'), (libs_.get('tv'), 'Episode')):
+                if not lid_:
+                    continue
+                start = 0
+                while True:
+                    r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid_, 'Recursive': 'true', 'IncludeItemTypes': typ_, 'Fields': 'Etag,Path',
+                                                                           'StartIndex': start, 'Limit': 500, 'SortBy': 'SortName', 'EnableImages': 'false'}) or {}
+                    quick += r.get('Items') or []
+                    start += 500
+                    if start >= (r.get('TotalRecordCount') or 0):
+                        break
             need = [it['Id'] for it in quick if not it.get('Etag') or (cache.get(it['Id']) or {}).get('e') != it.get('Etag') or (cache.get(it['Id']) or {}).get('p') != it.get('Path')
-                    or 'hdrt' not in ((cache.get(it['Id']) or {}).get('r') or {})]   # (read once more for which HDR it is)
+                    or 'hdrt' not in ((cache.get(it['Id']) or {}).get('r') or {}) or 'tv' not in ((cache.get(it['Id']) or {}).get('r') or {})]   # (read once more for which HDR it is, and whether it's TV)
             for n in range(0, len(need), 100):
                 r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Ids': ','.join(need[n:n + 100]), 'Fields': 'MediaSources,Path,ProductionYear,Etag'}) or {}
                 for it in r.get('Items') or []:
@@ -2283,7 +2300,8 @@ def make_handler(g):
                     # (picture subtitles (Blu-ray PGS, DVD VobSub): an MP4 can't hold them, so repackaging leaves them in the original: John, 12 Nov 2026)
                     pics = [x for x in ss if x.get('Type') == 'Subtitle' and not x.get('IsTextSubtitleStream') and not x.get('IsExternal')]
                     cache[it['Id']] = {'e': it.get('Etag'), 'p': it.get('Path'), 'w0': conv_why(ms), 'r': {
-                        'id': it.get('Id'), 'n': it.get('Name'), 'y': it.get('ProductionYear') or '', 'w': v.get('Width') or 0, 'h': v.get('Height') or 0,
+                        'id': it.get('Id'), 'n': it.get('Name') if it.get('Type') != 'Episode' else '%s S%02dE%02d%s' % (it.get('SeriesName') or '?', it.get('ParentIndexNumber') or 0, it.get('IndexNumber') or 0, (' · ' + it['Name']) if it.get('Name') else ''),
+                        'tv': it.get('Type') == 'Episode', 'y': it.get('ProductionYear') or '', 'w': v.get('Width') or 0, 'h': v.get('Height') or 0,
                         'v': (v.get('Codec') or '').lower(), 'b': v.get('BitDepth') or 8, 'mbps': round((ms.get('Bitrate') or v.get('BitRate') or 0) / 1e6, 1),
                         'c': (ms.get('Container') or '').lower().split(',')[0],
                         # (HDR, as the converter judges it (convert.py is_hdr): it can't be made smaller here without spoiling its colours, so it's
@@ -8299,8 +8317,9 @@ def vt_args(cmd, q=None):
         if a in ('-preset', '-crf', '-level'):
             i += 2
             continue
-        if a == '-c:v' and i + 1 < len(cmd) and cmd[i + 1] == 'libx264':
-            out += ['-c:v', 'h264_videotoolbox'] + (['-q:v', str(q)] if q else ['-b:v', rate or '6000k']) + ['-allow_sw', '1']
+        if a == '-c:v' and i + 1 < len(cmd) and cmd[i + 1] in ('libx264', 'libx265'):   # (HEVC too, the library's own now: 25 Nov 2026)
+            enc_ = 'hevc_videotoolbox' if cmd[i + 1] == 'libx265' else 'h264_videotoolbox'
+            out += ['-c:v', enc_] + (['-q:v', str(q)] if q else ['-b:v', rate or '6000k']) + ['-allow_sw', '1']
             i += 2
             continue
         out.append(a)

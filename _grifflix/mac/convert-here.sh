@@ -284,7 +284,8 @@ fi
 if [[ "${args[*]}" == *-q:v* ]]; then
   qv=${args[$(( ${args[(i)-q:v]} + 1 ))]}
   mr=(); (( ${args[(i)-maxrate]} <= ${#args} )) && mr=(-maxrate ${args[$(( ${args[(i)-maxrate]} + 1 ))]} -bufsize ${args[$(( ${args[(i)-bufsize]} + 1 ))]})
-  if ! "$FF" -hide_banner -nostdin -v error -f lavfi -i testsrc2=size=1280x720:rate=24 -t 2 -c:v h264_videotoolbox -q:v "$qv" -allow_sw 1 "${mr[@]}" -f null - 2>/dev/null; then
+  enc=${args[$(( ${args[(i)-c:v]} + 1 ))]}   # (the encoder the plan asks for: HEVC's or H.264's)
+  if ! "$FF" -hide_banner -nostdin -v error -f lavfi -i testsrc2=size=1280x720:rate=24 -t 2 -c:v "$enc" -q:v "$qv" -allow_sw 1 "${mr[@]}" -f null - 2>/dev/null; then
     echo "Grifflix: this Mac's encoder won't make it at a quality: at the set rate instead."
     args=("${(@f)$(osascript -l JavaScript -e "JSON.parse($.NSString.stringWithContentsOfFileEncodingError('$job', 4, null).js).args_rate.join('\n')")}")
   else
