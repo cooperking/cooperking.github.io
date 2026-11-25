@@ -11257,6 +11257,24 @@ def keep_converting():
                     cur.get('name'), cur.get('pct', 0), (time.time() - (cur.get('at') or 0)) // 60))
                 record('The converter stuck: started again', film=cur.get('name'), pct=cur.get('pct'))
                 alive = bool(conv_alive(cur))
+            # (one only waiting, while a newer version of it has come: stopped, and started again below as the new one. It takes a new version
+            # up only between films, and one waiting the whole time for John's Mac never got there: the one queue waited on it: 25 Nov 2026)
+            try:
+                newer = os.path.getmtime(script) > float(cur.get('started') or 0) + 5
+            except (OSError, TypeError, ValueError):
+                newer = False
+            if alive and newer and cur.get('state') == 'waiting':
+                pid_ = conv_alive(cur)
+                try:
+                    os.kill(pid_, 15)
+                except OSError:
+                    pass
+                for _ in range(30):
+                    time.sleep(1)
+                    if not conv_alive(cur):
+                        break
+                log('The converter: only waiting, and a newer version here: started again as it')
+                alive = bool(conv_alive(cur))
             recently_done = cur.get('state') == 'finished' and time.time() - (cur.get('at') or 0) < 12 * 3600 and not load(os.path.join(home, 'convert-new.json'), [])   # (films just brought in: started for them)
             if os.path.exists(script) and not alive and not recently_done:
                 import subprocess
