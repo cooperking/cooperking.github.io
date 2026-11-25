@@ -1582,6 +1582,11 @@ def make_handler(g):
                                     short_again(job, int(body.get('short') or 0), int(job['plan'].get('dur') or 0))
                                 elif body.get('again') and not job.get('cancel'):   # (the G-Drive went part-way: back at the front of its queue)
                                     macq_again(job, time.time(), str(body.get('error') or ''))
+                                elif not job.get('cancel') and str(body.get('error') or '') != 'cancelled':
+                                    # (it didn't convert (ffmpeg's own words said): kept with why, on the queue's Passed over, and not put on the queue again by
+                                    # itself till its file changes; John queuing it again tries it again. The queue goes on: John, 25 Nov 2026, Pat Garrett and
+                                    # Billy the Kid, "I don't want things to break, so it should fail gracefully if it does")
+                                    mac_failed(job, str(body.get('error') or 'it didn’t convert'))
                                 try:
                                     os.remove(job['plan']['tmp'])
                                 except OSError:
@@ -3718,8 +3723,12 @@ def make_handler(g):
                     save(MACQ + '.passed', [])
                     return self.send_json(200, {'queue': Q, 'passed': []})
                 Q = [x for x in Q if x.get('id') != iid]
-                if op in ('add', 'first'):   # (queued again: off the passed-over list)
+                if op in ('add', 'first'):   # (queued again: off the passed-over list, and one that didn't convert tried again)
                     save(MACQ + '.passed', [y for y in (load(MACQ + '.passed', []) or []) if y.get('id') != iid])
+                    mf_ = load(os.path.expanduser('~/Grifflix/mac-failed.json'), {}) or {}
+                    if iid in mf_:
+                        mf_.pop(iid)
+                        save(os.path.expanduser('~/Grifflix/mac-failed.json'), mf_)
                 old = next((x for x in (load(MACQ, []) or []) if x.get('id') == iid), {})
                 ent = dict({'id': iid, 'name': str(b.get('name') or old.get('name') or '')[:200], 'at': int(time.time())},
                            **({'force': True} if b.get('force') or old.get('force') else {}))   # (one of the largest, to make smaller: John, 18 Nov 2026)
@@ -8254,6 +8263,28 @@ def jf_look(g, paths):
     g.jf.call('POST', '/Library/Refresh')
 
 
+def mac_failed(job, why):
+    """A film John's Mac couldn't convert: in mac-failed.json (with its file's size, so a new copy is tried again), and on the queue's Passed
+    over with why."""
+    try:
+        it_ = (job.get('plan') or {}).get('item') or {}
+        src_ = (job.get('plan') or {}).get('src') or it_.get('path') or ''
+        try:
+            size_ = os.path.getsize(src_)
+        except OSError:
+            size_ = 0
+        f_ = os.path.expanduser('~/Grifflix/mac-failed.json')
+        F_ = load(f_, {}) or {}
+        F_[job['id']] = {'name': it_.get('name') or '', 'at': int(time.time()), 'why': why[:300], 'size': size_, 'n': (F_.get(job['id']) or {}).get('n', 0) + 1}
+        save(f_, F_)
+        P_ = [y for y in (load(MACQ + '.passed', []) or []) if y.get('id') != job['id'] and time.time() - y.get('at', 0) < 3 * 86400]
+        save(MACQ + '.passed', ([{'id': job['id'], 'name': it_.get('name') or '', 'why': 'didn’t convert on your Mac: ' + why[:280] + ' (not tried again by itself; queue it to try again)',
+                                  'at': int(time.time())}] + P_)[:20])
+        record('Didn’t convert on John’s Mac', film=it_.get('name'), id=job['id'], why=why[:300])
+    except Exception as e:
+        log('Keeping a film that didn’t convert: %s' % str(e)[:160])
+
+
 def macq_again(j, now, why):
     """A film John's Mac didn't finish through no fault of its own, back at the front of its queue (once: its job marked lost)."""
     Q = load(MACQ, []) or []
@@ -9892,8 +9923,9 @@ def crl_classify(g):
                 e.update(v='yes', how='Criterion’s logo at %d:%02d' % (int(hits[0]) // 60, int(hits[0]) % 60))
             elif len(chits) >= CRL_HITS:
                 e.update(v='channel', how='the Criterion Channel’s opening at %d:%02d' % (int(chits[0]) // 60, int(chits[0]) % 60))
-            elif named:
-                e.update(v='yes', how='its file’s name says Criterion (no logo seen at its start)')
+            elif named and fr:   # (its start read, and no logo there: not Criterion's, whatever its file's name says: John, 25 Nov 2026,
+                # "If no logo seen at the start assume not criterion")
+                e.update(v='no', how='no Criterion logo at its start (though its file’s name says Criterion)')
             elif fr is None and i in H:
                 e.update(v='unread', how='its start couldn’t be read')
             elif i not in H:

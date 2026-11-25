@@ -1171,12 +1171,22 @@ def to_mac(items):
         pins = set(x.get('id') for x in prio()['pins'])
     except Exception:
         pins = set()
+    try:   # (one John's Mac couldn't convert: not put on again by itself, till its file changes: 25 Nov 2026)
+        failed_ = json.load(open(os.path.join(HOME, 'mac-failed.json'))) or {}
+    except (OSError, ValueError):
+        failed_ = {}
     Q = queue_read()
     have = set(y.get('id') for y in Q)
     top, end = [], []
     for x in items:
         if x.get('redo') or x['id'] in have or x['id'] in passed or time.time() - sent.get(x['id'], 0) < 7 * 86400 or not os.path.exists(x['path']):
             continue   # (a language John put right is the Mac mini's own: minutes, and only it can)
+        if x['id'] in failed_:
+            try:
+                if os.path.getsize(x['path']) == (failed_[x['id']] or {}).get('size'):
+                    continue
+            except OSError:
+                continue
         e = dict({'id': x['id'], 'name': x['name'], 'at': int(time.time()), 'from': 'mini', 'why': (x.get('why') or '')[:160], 'kind': x.get('mode') or 'convert', 'save': x.get('save') or 0,
                   'play': plays_first(x)},
                  **({'force': True} if x.get('mode') == 'shrink' else {}), **({'big': x['big']} if x.get('mode') == 'remux' and x.get('big') else {}))
