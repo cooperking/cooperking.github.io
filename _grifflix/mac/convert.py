@@ -160,6 +160,22 @@ def is_hdr(v):
 POOR = .035   # (the Library's line for a poor copy: bits of picture per pixel per frame, allowing for how efficient its format is)
 
 
+def size_top(w, h):
+    """What a film of this size is made at, at most (Mbps): 1080p 6, 720p 3.5, smaller 2; by its width as well as its height, so a widescreen
+    1080p film (1920 x 800) counts as 1080p, not 720p (Heaven's Gate was to be made at 3.5: 25 Nov 2026)."""
+    return 6 if (w >= 1700 or h >= 900) else 3.5 if (w >= 1100 or h >= 600) else 2
+
+
+def worth_smaller(mbps, w, h):
+    """The one rule for whether a film is made smaller (here, the Library and John's queue alike): its rate at least one and a half times
+    what it would be made at (6 Mbps at 1080p, 3.5 at 720p, 2 below), whatever its format, as it comes out H.264 at no more than that: a third
+    smaller at least, and still well above a good copy; or bigger than 1080p. John, 25 Nov 2026, "I have films that are very large marked as
+    good which is confusing"."""
+    if w > MAX_W + 8 or h > MAX_H + 8:
+        return True
+    return bool(mbps) and mbps >= 1.5 * size_top(w, h)
+
+
 def pic_bpp(mbps, w, h, vc):
     """How much picture a file carries for its size, as the Library judges it (admin's lbGrade): HEVC and VP9 count 1.6 times H.264,
     AV1 twice, older formats 0.6."""
@@ -219,8 +235,7 @@ def why(ms):
         # (a file much bigger than its picture needs: made smaller, once, at the careful setting, last of all (John, 12 Nov 2026:
         # "converted to a smaller size without losing noticeable quality", "I don't want to convert films twice"). Grifflix's own
         # conversions are all under 8 Mbps, so never made again; HEVC is already efficient, so only far bigger ones)
-        thr = (8.5 if h >= 900 else 5 if h >= 600 else 3) * (1.6 if vc in ('hevc', 'h265') else 1)
-        if mbps > thr and not hdr:
+        if not hdr and worth_smaller(mbps, w, h):   # (the one rule: worth_smaller)
             return SHRINK + ' (%.1f Mbps)' % mbps
         return None
     # (a copy already poor isn't converted: it would come out no better, and then be one to replace; left as it is, the Library saying replace
@@ -239,7 +254,7 @@ def shrinks(ms):
     "if that's happening on my mac it should say it's a full conversion job" ... "Convert only if smaller"."""
     streams = g(ms, 'MediaStreams', [])
     v = next((x for x in streams if g(x, 'Type') == 'Video'), None)
-    if not v or is_hdr(v) or (g(v, 'Codec') or '').lower() in ('hevc', 'h265'):
+    if not v or is_hdr(v):
         return 0
     w, h = g(v, 'Width', 0), g(v, 'Height', 0)
     if w > MAX_W + 8 or h > MAX_H + 8:
@@ -247,8 +262,7 @@ def shrinks(ms):
     mbps = (g(ms, 'Bitrate') or g(v, 'BitRate') or 0) / 1e6
     if not mbps and g(ms, 'Size') and g(ms, 'RunTimeTicks'):
         mbps = g(ms, 'Size') * 8 / (g(ms, 'RunTimeTicks') / 1e7) / 1e6
-    top = 6 if h >= 900 else 3.5 if h >= 600 else 2
-    return round(mbps, 1) if mbps >= 1.5 * top else 0
+    return round(mbps, 1) if worth_smaller(mbps, w, h) else 0   # (the one rule, HEVC too: it comes out H.264 at no more than the set rate)
 
 
 NOSHRINK_F = os.path.join(os.path.expanduser('~/Grifflix'), 'convert-noshrink.json')
@@ -631,7 +645,8 @@ def convert(item, ffmpeg, ffprobe, st):
     # (compact and careful, once: x264's slow preset at quality 21, at most 6 Mbps at 1080p, 3.5 at 720p, 2 below, never more than the
     # original had: much smaller with no difference to see (John, 12 Nov 2026); slower to make, so done once and never again)
     oh = min(int(v.get('height') or 1080), MAX_H)
-    top = 6000 if oh >= 900 else 3500 if oh >= 600 else 2000
+    ow0_ = min(int(v.get('width') or 1920), MAX_W)
+    top = int(size_top(ow0_, oh) * 1000)
     # (H.264 needs about 1.6 times the rate of HEVC or VP9 for the same picture, twice AV1's: an efficient picture held to its own rate came
     # out worse, and compact films converted on John's Mac (Days of Being Wild, Marty Supreme, the 1930s VP9 films) were graded Replace
     # after: John, 25 Nov 2026, "The Replace section of the Library shows films that the mac has converted itself")
@@ -1210,9 +1225,7 @@ def shrink_item(iid, name=None, mac=False):
     if not mbps_ and g(ms_, 'Size') and g(ms_, 'RunTimeTicks'):
         mbps_ = g(ms_, 'Size') * 8 / (g(ms_, 'RunTimeTicks') / 1e7) / 1e6
     vc_ = (g(v, 'Codec') or '').lower()
-    eff_ = 2.0 if vc_ == 'av1' else 1.6 if vc_ in ('hevc', 'h265', 'vp9') else 1.0 if vc_ == 'h264' else .6
-    top_ = 6 if h_ >= 900 else 3.5 if h_ >= 600 else 2
-    if mbps_ and not (w_ > MAX_W + 8 or h_ > MAX_H + 8) and mbps_ * eff_ < 1.5 * top_:
+    if mbps_ and not worth_smaller(mbps_, w_, h_):   # (the one rule)
         SKIPWHY[iid] = 'it’s already compact for its size (%s, %.1f Mbps): made smaller it would only lose picture, so it’s left as it is.' % (
             {'hevc': 'HEVC', 'h265': 'HEVC', 'h264': 'H.264', 'vp9': 'VP9', 'av1': 'AV1'}.get(vc_, vc_.upper() or '?'), mbps_)
         return None
