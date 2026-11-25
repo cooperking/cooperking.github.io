@@ -2679,7 +2679,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '30fc3cc076b7' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '0cba0560ba06' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6687,8 +6687,11 @@ var A24D = {}, A24S = store.get('grifflix-a24sort') === 'name' ? 'name' : 'year'
 function a24Draw(g, items, fq) {
   a24Imgs();
   var nk = function (i) { return showName(i).replace(/^(the|a|an)\s+/i, '').toLowerCase(); };
+  // (within a year, in the order they came out, as A24's own list has them, the newest first: John, 25 Nov 2026, "the films aren't in
+  // release order so it was lower down in 2026")
+  var pr = function (i) { return Date.parse(i.premiere || '') || 0; };
   items = items.slice().sort(A24S === 'name' ? function (a, b) { return A24DIR * -1 * (nk(a) < nk(b) ? -1 : nk(a) > nk(b) ? 1 : 0) || (b.year || 0) - (a.year || 0); }
-    : function (a, b) { return A24DIR * ((a.year || 0) - (b.year || 0)) || nk(a).localeCompare(nk(b)); });
+    : function (a, b) { return A24DIR * ((a.year || 0) - (b.year || 0)) || A24DIR * (pr(a) - pr(b)) || nk(a).localeCompare(nk(b)); });
   var hd = function (k, t) { var on = A24S === k, ar = k === 'year' ? (A24DIR < 0 ? ' ↓' : ' ↑') : (A24DIR < 0 ? ' A–Z' : ' Z–A'); return '<button type="button" class="' + (on ? 'on' : '') + '" data-a24s="' + k + '">' + t + (on ? ar : '') + '</button>'; };
   var NEW = Date.now() - 30 * 864e5, last = null;
   g.className = 'a24list';
