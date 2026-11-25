@@ -2854,6 +2854,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         /your Mac is converting/.test(wy) ? '<b>Waiting:</b> your Mac is converting, and both use the G-Drive, so the Mac mini waits while it does.' :
         /watching/.test(wy) ? '<b>Waiting:</b> someone is watching. It carries on when they stop.' : /nothing on the queue|only repackages|John’s Mac/.test(wy) ? '<b>Nothing it can do:</b> what’s on the queue needs your Mac.' : '<b>Waiting:</b> ' + esc(wy) + '.'; }
     else if (C.state === 'finished') cv = 'Everything repackaged.';
+    else if (C.state === 'tidying') cv = '<b>Now:</b> ' + esc(C.why || 'saving the subtitles in the kept originals') + '.';
     else cv = 'Repackaging: ' + esc(C.state || 'starting') + '.';
     var nx = [];   // (one queue now: what's next is your Mac's queue, above)
     var dl = '';
