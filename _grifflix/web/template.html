@@ -2450,7 +2450,13 @@ html.tv .bfiin .ray { filter: none; width: 640%; } html.tv .bfiin .rl { width: 5
 .bfiin .g { display: block; font-size: clamp(22px, 4.4vw, 40px); --gc-ink: #fff; opacity: 0; }
 .bfiin .n { display: block; min-height: 1.4em; margin: 22px auto 0; font: 500 13px/1.4 var(--bfi-sans); color: var(--bfi-grey); opacity: 0; font-variant-numeric: tabular-nums; }
 .bfiin .n b { color: #fff; font-weight: 700; }
-.bfiin.end .at { animation: gcUp .5s ease .1s forwards; } .bfiin.end .g { animation: gcUp .6s ease .25s forwards; } .bfiin.end .n { animation: gcUp .5s ease .6s forwards; }
+.bfiin.end .n { animation: gcUp .5s ease 1.75s forwards; }
+/* (GRIFFLIX coming into focus from behind: far back and out of focus as the logo settles, then drawn forward and sharp, as a camera pulling
+   focus; "at" with it: John, 26 Nov 2026, "try Grifflix coming in to focus from behind") */
+.bfiin.end .g { animation: bfiFocus 1.9s cubic-bezier(.22, .55, .2, 1) .05s forwards; } .bfiin.end .at { animation: bfiFocusAt 1.5s cubic-bezier(.22, .55, .2, 1) .15s forwards; }
+@keyframes bfiFocus { 0% { opacity: 0; filter: blur(20px); transform: scale(.8); } 22% { opacity: .6; } 100% { opacity: 1; filter: blur(0); transform: none; } }
+@keyframes bfiFocusAt { 0% { opacity: 0; filter: blur(8px); transform: scale(.85); } 30% { opacity: .5; } 100% { opacity: 1; filter: blur(0); transform: none; } }
+html.tv .bfiin.end .g { animation-name: bfiFocusTv; } @keyframes bfiFocusTv { 0% { opacity: 0; filter: blur(10px); transform: scale(.8); } 22% { opacity: .6; } 100% { opacity: 1; filter: blur(0); transform: none; } }
 @media (prefers-reduced-motion: reduce) { .bfiin *, .bfiin.end * { animation-duration: .01s !important; animation-delay: 0s !important; } }
 /* the intro: its films rolling by, as A24's list, and A24 at GRIFFLIX */
 /* the intro: a trailer's cut through A24's own stills, faster and faster, then black, A24 in white, at GRIFFLIX (John, 19 Nov 2026,
@@ -6946,8 +6952,8 @@ function bfiIntro() {   // (after the BFI's own intro: B, F, I, each lit from be
   var calm = CALM || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   requestAnimationFrame(function () { el.classList.add(calm ? 'calm' : 'go'); });
   if (!calm) { [450, 1250, 2050].forEach(function (t, k) { later(function () { if (snd) snd.pop(k); }, t); }); later(function () { if (snd) snd.chord(); }, 3150); }
-  later(function () { el.classList.add('end'); later(count, 700); }, calm ? 300 : 4400);
-  auto = setTimeout(function () { go(true); }, calm ? 3200 : 7400);
+  later(function () { el.classList.add('end'); later(count, calm ? 300 : 1800); }, calm ? 300 : 4200);
+  auto = setTimeout(function () { go(true); }, calm ? 3200 : 8000);
   bfiFind().then(function (c) { coll = c; if (!c) return; return api('collection?id=' + encodeURIComponent(c.id)).then(function (d) { n = (d.items || []).length; }); }).catch(function () {});
 }
 // (its soundtrack, made by the browser, only when Grifflix's music is on: a soft pad under the wall of films; a bright note as each circle
