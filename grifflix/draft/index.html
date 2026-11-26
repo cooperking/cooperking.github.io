@@ -2367,6 +2367,8 @@ html.phone #sheetIn .film.fbfi .in { margin-top: -64px !important; padding: 0 16
 #sheetIn .film.fbfi .eps .t { font-family: var(--bfi-sans) !important; color: #fff !important; }
 #sheetIn .film.fbfi .pill, #sheetIn .film.fbfi .ico, #sheetIn .film.fbfi .fback { background: transparent !important; color: #fff !important; border: 1px solid #fff !important; border-radius: 0 !important; box-shadow: none !important; font-family: var(--bfi-sans) !important; font-weight: 600 !important; letter-spacing: 0 !important; text-transform: none !important; }
 #sheetIn .film.fbfi .pill:hover, #sheetIn .film.fbfi .ico:hover, #sheetIn .film.fbfi .fback:hover { background: #fff !important; color: #000 !important; }
+html:not(.phone) #sheetIn .film.fbfi .pill { min-height: 48px !important; padding: 0 24px !important; font-size: 18px !important; }   /* (as BFI Player's buttons: Calibre semibold, 18px) */
+html:not(.phone) #sheetIn .film.fbfi .ico { width: 48px !important; height: 48px !important; }
 #sheetIn .film.fbfi .pill.go#aplay { background: #783df6 !important; border-color: #783df6 !important; color: #fff !important; }
 #sheetIn .film.fbfi .pill.go#aplay:hover { background: #6a2fe6 !important; border-color: #6a2fe6 !important; }
 /* its button in the bar, beside A24's: the BFI's logo */
@@ -2794,7 +2796,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '44e037c805d4' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '4b14c78af812' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
