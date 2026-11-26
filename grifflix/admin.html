@@ -193,6 +193,11 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .btab .ck { width: 22px; padding-right: 0; } .btab tr.on td { background: rgba(var(--kink, 255, 255, 255), .07); } .btab tr.on b { text-decoration: underline; text-underline-offset: 3px; }
 .btab tbody tr { cursor: pointer; } .btab tr.putrow { cursor: default; } .btab tr.putrow td { background: none; }
 @media (max-width: 640px) { .btab .bw, .btab .bc { display: none; } }
+.btab .tmtag { margin-left: 6px; padding: 1px 5px; font-size: 10px; font-weight: 700; letter-spacing: .06em; border: 1px solid currentColor; border-radius: 3px; opacity: .75; text-decoration: none; color: inherit; }
+.bfitmhits { display: flex; flex-wrap: wrap; gap: 8px; }
+.tmhit { display: flex; align-items: center; gap: 10px; max-width: 320px; padding: 6px 10px 6px 6px; border: 1px solid var(--line, rgba(255,255,255,.3)); background: none; color: inherit; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.tmhit:hover { border-color: currentColor; } .tmhit img, .tmhit .np { width: 34px; height: 51px; object-fit: cover; flex: none; background: rgba(var(--kink, 255, 255, 255), .1); }
+.tmhit small { display: block; margin-top: 2px; opacity: .65; font-size: 12px; }
 .mlist h3 { margin: 18px 0 6px; font-size: 15px; letter-spacing: .04em; } .mlist h3 small { font-weight: 400; opacity: .7; margin-left: 8px; }
 .mrow { display: grid; grid-template-columns: 56px minmax(0, 1fr) minmax(0, .8fr) auto; gap: 4px 14px; align-items: baseline; padding: 7px 0; border-top: 1px solid var(--line, rgba(255,255,255,.12)); font-size: 14px; }
 .mrow .y { font-variant-numeric: tabular-nums; opacity: .75; } .mrow b { font-weight: 600; } .mrow .d { opacity: .75; } .mrow .s { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; opacity: .8; white-space: nowrap; }
@@ -1279,7 +1284,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   var bfiMiss = function (x) { return /^no film of that name/i.test(x.why || ''); };
   function bfiShown() {
     var q = ($('#bfiq').value || '').trim().toLowerCase(), d = BFT.dir, art = function (t) { return String(t).replace(/^(the|a|an)\s+/i, '').toLowerCase(); };
-    var R = BFT.T.map(function (x) { return { x: x, k: x.file, t: x.title || x.name.replace(/^Mark Kermode introduces\s+/i, '').replace(/\s*\(\d{4}\)\s*$/, ''), y: +x.year || 0, a: x.mt || x.at || 0,
+    var R = BFT.T.map(function (x) { var tm = x.tmdb || null; return { x: x, k: x.file, t: (tm && tm.title) || x.title || x.name.replace(/^Mark Kermode introduces\s+/i, '').replace(/\s*\(\d{4}\)\s*$/, ''), y: +((tm && tm.year) || x.year) || 0, a: x.mt || x.at || 0, tm: tm,
       w: bfiMiss(x) ? 'Not in Grifflix' : String(x.why || '').replace(/^./, function (c) { return c.toUpperCase(); }) }; })
       .filter(function (r) { return (BFT.show === 'all' || bfiMiss(r.x)) && (!q || (r.t + ' ' + (r.y || '') + ' ' + r.w).toLowerCase().indexOf(q) >= 0); });
     R.sort(function (a, b) {
@@ -1302,8 +1307,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       '<table class="btab"><thead><tr><th class="ck"><input type="checkbox" class="cbpick" id="bfickall" aria-label="Tick all shown"' + (all ? ' checked' : '') + '></th>' + hd('title', 'Film', 'bt') + hd('year', 'Year', 'by') + hd('why', 'Why it’s here', 'bw') + hd('arr', 'Came', 'bc') + '<th></th></tr></thead><tbody>' +
       R.map(function (r) { var on = !!BFT.pick[r.k], x = r.x;
         return '<tr data-k="' + esc(r.k) + '"' + (on ? ' class="on"' : '') + '><td class="ck"><input type="checkbox" class="cbpick bfipk"' + (on ? ' checked' : '') + ' aria-label="Tick ' + esc(r.t) + '"></td>' +
-          '<td><b>' + esc(r.t) + '</b>' + (x.file !== x.name + '.mp4' ? '<small>In the folder as “' + esc(x.file) + '”</small>' : '') + '</td><td class="by">' + (r.y || '') + '</td><td class="bw">' + esc(r.w) + '</td>' +
-          '<td class="bc">' + (r.a ? esc(new Date(r.a * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) : '') + '</td><td style="text-align:right"><button class="btn small" type="button" data-bfiwith title="I have this film: put it with it">Put with…</button></td></tr>'; }).join('') + '</tbody></table>';
+          '<td><b>' + esc(r.t) + '</b>' + (r.tm && r.tm.id ? ' <a class="tmtag" href="https://www.themoviedb.org/' + (r.tm.kind === 'tv' ? 'tv' : 'movie') + '/' + esc(r.tm.id) + '" target="_blank" rel="noopener" title="Named from this film on TMDB">TMDB</a>' : '') + (x.file !== x.name + '.mp4' ? '<small>In the folder as “' + esc(x.file) + '”</small>' : '') + '</td><td class="by">' + (r.y || '') + '</td><td class="bw">' + esc(r.w) + '</td>' +
+          '<td class="bc">' + (r.a ? esc(new Date(r.a * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) : '') + '</td><td style="text-align:right;white-space:nowrap"><button class="btn small" type="button" data-bfitm title="The film it’s of, from TMDB: named by it, and put with it once it’s in Grifflix">TMDB…</button> <button class="btn small" type="button" data-bfiwith title="I have this film: put it with it">Put with…</button></td></tr>'; }).join('') + '</tbody></table>';
     Array.prototype.forEach.call(document.querySelectorAll('#bfitodo th[data-bs]'), function (th) { th.onclick = function () { if (BFT.sort === th.dataset.bs) BFT.dir = -BFT.dir; else { BFT.sort = th.dataset.bs; BFT.dir = th.dataset.bs === 'arr' ? -1 : 1; } bfiTable(); }; });
     var ck = $('#bfickall'); if (ck) ck.onchange = function () { R.forEach(function (r) { if (ck.checked) BFT.pick[r.k] = 1; else delete BFT.pick[r.k]; }); bfiTable(); };
     Array.prototype.forEach.call(document.querySelectorAll('#bfitodo tbody tr[data-k]'), function (tr) {
@@ -1311,10 +1316,31 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       var set = function (v) { if (v) BFT.pick[k] = 1; else delete BFT.pick[k]; cb.checked = v; tr.classList.toggle('on', v); var n_ = Object.keys(BFT.pick).length; $('#bfin').textContent = n_ ? n_ + ' ticked' : R.length + ' shown, none ticked: Search Tab Opener takes all shown'; var a_ = $('#bfickall'); if (a_) a_.checked = R.every(function (r) { return BFT.pick[r.k]; }); bfiStoPrep(); };
       cb.onchange = function () { set(cb.checked); };
       tr.onclick = function (e) { if (e.target.closest('input, button, a')) return; set(!cb.checked); };   // (the whole row ticks it)
-      tr.querySelector('[data-bfiwith]').onclick = function () {   // (the film it's for, if he has it after all: found by name, chosen)
-        var nx = tr.nextElementSibling; if (nx && nx.classList.contains('putrow')) { nx.remove(); return; }
+      tr.querySelector('[data-bfitm]').onclick = function () {   // (the film it's of, chosen on TMDB: John, 26 Nov 2026, "allow me to give the correct film in TMDb so they can be renamed that way")
+        var nx = tr.nextElementSibling; if (nx && nx.classList.contains('putrow')) { var was = nx.dataset.w; nx.remove(); if (was === 'tm') return; }
         var x = BFT.T.filter(function (t) { return t.file === k; })[0]; if (!x) return;
-        tr.insertAdjacentHTML('afterend', '<tr class="putrow"><td></td><td colspan="5"><div class="state" style="margin:0"><input type="search" class="name bfiq2" placeholder="Its film in Grifflix, by name…" autocomplete="off" style="flex:1 1 220px"></div><div class="state bfihits" style="margin-top:4px"></div></td></tr>');
+        var r0 = bfiShown().filter(function (r) { return r.k === k; })[0];
+        tr.insertAdjacentHTML('afterend', '<tr class="putrow" data-w="tm"><td></td><td colspan="5"><div class="state" style="margin:0"><input type="search" class="name bfiq2" placeholder="Its title on TMDB (a year after it if wanted), or a TMDB or IMDb link" autocomplete="off" style="flex:1 1 260px"></div><div class="bfitmhits" style="margin-top:6px"></div></td></tr>');
+        var row = tr.nextElementSibling, inp = row.querySelector('.bfiq2'), hits = row.querySelector('.bfitmhits'), tm;
+        var look = function () { var v = inp.value.trim(); if (v.length < 2) { hits.innerHTML = ''; return; }
+          hits.innerHTML = '<span class="stat">Looking on TMDB…</span>';
+          BFT.go(null, '?tmdb=' + encodeURIComponent(v)).then(function (r) {
+            if (inp.value.trim() !== v) return;
+            var F = r.films || [];
+            hits.innerHTML = F.length ? F.map(function (f, i) { return '<button class="tmhit" type="button" data-i="' + i + '">' + (f.poster ? '<img alt="" src="' + esc(f.poster) + '">' : '<span class="np"></span>') +
+              '<span><b>' + esc(f.title) + '</b>' + (f.year ? ' (' + esc(f.year) + ')' : '') + (f.kind === 'tv' ? ' · TV' : '') + (f.orig && f.orig !== f.title ? '<small>' + esc(f.orig) + '</small>' : '') + '</span></button>'; }).join('') : '<span class="stat">Nothing on TMDB called that.</span>';
+            Array.prototype.forEach.call(hits.querySelectorAll('.tmhit'), function (bt) { bt.onclick = function () {
+              var f = F[+bt.dataset.i]; bt.disabled = true;
+              BFT.go({ op: 'tmdb', file: x.file, tmdb: f.tmdb, kind: f.kind }).then(function (j) { toast(j.put ? 'Named ' + j.name + ', and put with its film' : 'Named ' + j.name + ': it goes with the film once that’s in Grifflix'); delete BFT.pick[k]; bfiLook(true); })
+                .catch(function (e) { bt.disabled = false; toast(e.message); }); }; });
+          }).catch(function (e) { hits.innerHTML = '<span class="stat">' + esc(e.message) + '</span>'; }); };
+        inp.value = (r0 ? r0.t + (r0.y ? ' ' + r0.y : '') : ''); inp.focus(); look();
+        inp.oninput = function () { clearTimeout(tm); tm = setTimeout(look, 400); };
+      };
+      tr.querySelector('[data-bfiwith]').onclick = function () {   // (the film it's for, if he has it after all: found by name, chosen)
+        var nx = tr.nextElementSibling; if (nx && nx.classList.contains('putrow')) { var was = nx.dataset.w; nx.remove(); if (was === 'put') return; }
+        var x = BFT.T.filter(function (t) { return t.file === k; })[0]; if (!x) return;
+        tr.insertAdjacentHTML('afterend', '<tr class="putrow" data-w="put"><td></td><td colspan="5"><div class="state" style="margin:0"><input type="search" class="name bfiq2" placeholder="Its film in Grifflix, by name…" autocomplete="off" style="flex:1 1 220px"></div><div class="state bfihits" style="margin-top:4px"></div></td></tr>');
         var row = tr.nextElementSibling, inp = row.querySelector('.bfiq2'), hits = row.querySelector('.bfihits'), tm; inp.value = BFT.sel || ''; inp.focus();
         inp.oninput = function () { clearTimeout(tm); var v = inp.value.trim(); if (v.length < 2) { hits.innerHTML = ''; return; }
           tm = setTimeout(function () { BFT.go(null, '?q=' + encodeURIComponent(v)).then(function (r) {

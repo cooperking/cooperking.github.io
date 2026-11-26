@@ -7072,7 +7072,12 @@ function navGo(w) {
       store.set('grifflix-tvview', 'themes'); S.mcal = true;
       if ((location.hash || '#home').split('/')[0] !== '#home' || !$('#cal')) { location.hash = '#home'; return; }
       drawMonth(); window.scrollTo(0, 0); return; }
-    if (VIEW() === 'themes') { S.calDay = d || null; return calSheet(); }
+    // (from another page (a collection, the BFI's, Film or TV): home first, to the month you were on (this month if none), its calendar opened
+    // there in its own theme's look, not over the page you were on: John, 26 Nov 2026, "Calender and theme toggle has become buggy when in
+    // other pages - make sure it always works and takes you back to the calendar or theme for the month you were on")
+    var away = (location.hash || '#home').split('/')[0] !== '#home';
+    if (VIEW() === 'themes') { S.calDay = d || null; if (away) { S.resumeSheet = { k: 'cal' }; location.hash = '#home'; return; } return calSheet(); }
+    if (away) { location.hash = '#home'; return; }
     if (d) drawMonth(); return;
   }
   if (w === 'theme') {   // the month you're on, not this month

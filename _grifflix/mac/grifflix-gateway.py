@@ -3463,13 +3463,73 @@ def make_handler(g):
 
         def api_bfi(self, me, user, q, b):
             """John's only: Mark Kermode's introductions, put in BFI Kermode on the G-Drive: those put with their films, and those not, with the
-            likeliest films; POST {op: 'move', file, id}: one put with the film John chose; {op: 'look'}: looked at now."""
+            likeliest films; POST {op: 'move', file, id}: one put with the film John chose; {op: 'look'}: looked at now; GET tmdb=: TMDB searched;
+            POST {op: 'tmdb', file, tmdb, kind}: one named by the TMDB film John chose, and put with it once it's in Grifflix."""
             if not me.get('owner'):
                 return self.send_json(403, {'error': 'Only John.'})
             if b and b.get('op') == 'move' and re.match(r'^[0-9a-f]{32}$', str(b.get('id') or '')) and b.get('file'):
                 S = bfi_now(g, only={str(b['file']): str(b['id'])})
                 ok = str(b['file']) not in (S.get('files') or {})
                 return self.send_json(200 if ok else 409, {'ok': ok, 'error': '' if ok else ((S.get('files') or {}).get(str(b['file'])) or {}).get('why') or 'not moved'})
+            if q.get('tmdb'):   # (TMDB searched for the film it's of: by its title (a year after it if wanted), or a TMDB or IMDb link or number)
+                if not g.st.get('tmdb_key'):
+                    return self.send_json(409, {'error': 'There’s no TMDB key on the Mac mini.'})
+                w = str(q['tmdb'])[:200].strip()
+                mt_ = re.search(r'themoviedb\.org/(movie|tv)/(\d+)', w) or re.match(r'^\s*()(\d{1,8})\s*$', w)
+                mi_ = re.search(r'\b(tt\d{6,10})\b', w)
+                hits = []
+                try:
+                    if mt_:
+                        kind = mt_.group(1) or 'movie'
+                        d = tmdb(g, '/%s/%s' % (kind, mt_.group(2)))
+                        hits = [dict(d, _k=kind)] if d else []
+                    elif mi_:
+                        d = tmdb(g, '/find/' + mi_.group(1), external_source='imdb_id') or {}
+                        hits = [dict(x, _k='movie') for x in d.get('movie_results') or []] + [dict(x, _k='tv') for x in d.get('tv_results') or []]
+                    else:
+                        m = re.search(r'\s*\(?((?:18|19|20)\d\d)\)?\s*$', w)
+                        y = m.group(1) if m and w[:m.start()].strip() else None
+                        w = w[:m.start()].strip() if y else w
+                        a_ = (tmdb(g, '/search/movie', query=w, **({'year': y} if y else {})) or {}).get('results') or []
+                        if y and not a_:
+                            a_ = (tmdb(g, '/search/movie', query=w) or {}).get('results') or []
+                        t_ = (tmdb(g, '/search/tv', query=w, **({'first_air_date_year': y} if y else {})) or {}).get('results') or []
+                        hits = [dict(x, _k='movie') for x in a_[:8]] + [dict(x, _k='tv') for x in t_[:3]]
+                except Exception as e:
+                    return self.send_json(502, {'error': 'TMDB didn’t answer: %s' % str(e)[:80]})
+                out = [{'tmdb': x.get('id'), 'kind': x['_k'], 'title': x.get('title') or x.get('name') or '', 'year': (x.get('release_date') or x.get('first_air_date') or '')[:4],
+                        'orig': x.get('original_title') or x.get('original_name') or '', 'poster': ('https://image.tmdb.org/t/p/w92' + x['poster_path']) if x.get('poster_path') else ''}
+                       for x in hits if x.get('id')]
+                return self.send_json(200, {'films': out})
+            if b and b.get('op') == 'tmdb' and str(b.get('tmdb') or '').isdigit() and b.get('file'):
+                # (the film it's of, as John chose it on TMDB: the introduction named by TMDB's own title and year, and that kept, so it goes
+                # with the film once that's in Grifflix, matched by its TMDB number)
+                kind = 'tv' if b.get('kind') == 'tv' else 'movie'
+                try:
+                    d = tmdb(g, '/%s/%s' % (kind, b['tmdb'])) if g.st.get('tmdb_key') else None
+                except Exception as e:
+                    return self.send_json(502, {'error': 'TMDB didn’t answer: %s' % str(e)[:80]})
+                if not d:
+                    return self.send_json(404, {'error': 'TMDB hasn’t that film.'})
+                t_, y_ = d.get('title') or d.get('name') or '', (d.get('release_date') or d.get('first_air_date') or '')[:4]
+                name = bfi_tidy('Mark Kermode introduces %s%s' % (t_, ' (%s)' % y_ if y_ else ''))[0]
+                f0 = os.path.basename(str(b['file']))
+                with BFI_LOCK:
+                    S = load(BFIF, {}) or {}
+                    src, dst = os.path.join(BFI_IN, f0), os.path.join(BFI_IN, name + '.mp4')
+                    if not os.path.exists(src):
+                        return self.send_json(404, {'error': 'It isn’t in BFI Kermode now.'})
+                    if dst != src:
+                        if os.path.exists(dst):
+                            return self.send_json(409, {'error': 'One called “%s” is there already.' % name})
+                        os.rename(src, dst)
+                    (S.get('files') or {}).pop(f0, None)
+                    (S.get('tmdb') or {}).pop(f0, None)
+                    S.setdefault('tmdb', {})[name + '.mp4'] = {'id': str(b['tmdb']), 'kind': kind, 'title': t_, 'year': y_}
+                    save(BFIF, S)
+                record('BFI introduction named from TMDB', file=f0, name=name, tmdb=str(b['tmdb']))
+                S = bfi_now(g, only={name + '.mp4': ''})
+                return self.send_json(200, {'ok': True, 'name': name, 'put': (name + '.mp4') not in (S.get('files') or {})})
             if q.get('q'):   # (another film than the guesses: found by its name, a year after it if wanted)
                 w = str(q['q'])[:120]
                 m = re.search(r'\s*\(?((?:18|19|20)\d\d)\)?\s*$', w)
@@ -9098,11 +9158,11 @@ def bfi_films(g):
     for key_, typ_ in (('movies', 'Movie'), ('tv', 'Series')):
         lid, start = L.get(key_), 0
         while lid:
-            r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': typ_, 'Fields': 'Path,OriginalTitle,ProductionYear',
+            r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': typ_, 'Fields': 'Path,OriginalTitle,ProductionYear,ProviderIds',
                                                                    'StartIndex': start, 'Limit': 500, 'EnableImages': 'false'}, timeout=120) or {}
             for x in r.get('Items') or []:
                 out.append({'id': x['Id'], 'name': x.get('Name') or '', 'year': x.get('ProductionYear') or 0, 'path': x.get('Path') or '', 'kind': 'series' if typ_ == 'Series' else 'movie',
-                            'f': set(t for t in (fold(x.get('Name')), fold(x.get('OriginalTitle'))) if t)})
+                            'f': set(t for t in (fold(x.get('Name')), fold(x.get('OriginalTitle'))) if t), 'tmdb': str((x.get('ProviderIds') or {}).get('Tmdb') or '')})
             start += 500
             if start >= (r.get('TotalRecordCount') or 0) or not r.get('Items'):
                 break
@@ -9282,6 +9342,8 @@ def bfi_now(g, only=None):
                 try:
                     os.rename(src, os.path.join(BFI_IN, name + '.mp4'))
                     S['files'].pop(n, None)
+                    if n in (S.get('tmdb') or {}):
+                        S['tmdb'][name + '.mp4'] = S['tmdb'].pop(n)
                     n, src = name + '.mp4', os.path.join(BFI_IN, name + '.mp4')
                 except OSError as e:
                     log('BFI introduction %s not renamed: %s' % (n, e))
@@ -9289,6 +9351,11 @@ def bfi_now(g, only=None):
                 films = bfi_films(g)
             want = (only or {}).get(n)
             film = next((f for f in films if f['id'] == want), None) if want else None
+            # (the film John gave it from TMDB: the one in Grifflix with that TMDB number, whatever its name here: John, 26 Nov 2026, "allow me
+            # to give the correct film in TMDb so they can be renamed that way")
+            tm = (S.get('tmdb') or {}).get(n)
+            if not film and tm and tm.get('id'):
+                film = next((f for f in films if f.get('tmdb') == str(tm['id']) and f.get('kind', 'movie') == ('series' if tm.get('kind') == 'tv' else 'movie')), None)
             sure, guesses = bfi_match(films, title, year, g)
             why = ''
             if want and not film:
@@ -9299,7 +9366,7 @@ def bfi_now(g, only=None):
                     same = [f for f in films if fold(title) in f['f']]
                     why = ('%d films are called that, and its year doesn’t say which' % len(same)) if len(same) > 1 else \
                           ('the film of that name is from %s, not %s' % (same[0]['year'], year)) if same and year else \
-                          'no film of that name in Grifflix' + (': the likeliest below' if guesses else '')
+                          'no film of that name in Grifflix' + (' (named from TMDB)' if tm else ': the likeliest below' if guesses else '')
             if film:
                 # (named by the film's own name and year in Grifflix, not as the file had it: "Seven Samuria" put right too)
                 name = bfi_tidy('Mark Kermode introduces %s%s' % (film['name'], ' (%d)' % film['year'] if film['year'] else ''))[0] or name
@@ -9321,10 +9388,13 @@ def bfi_now(g, only=None):
                 mt = os.path.getmtime(src)
             except OSError:
                 mt = 0
-            S['files'][n] = {'name': name, 'title': title, 'year': year, 'why': why, 'guesses': guesses, 'at': int(time.time()), 'mt': int(mt), 'nf': sig}
+            S['files'][n] = {'name': name, 'title': title, 'year': year, 'why': why, 'guesses': guesses, 'at': int(time.time()), 'mt': int(mt), 'nf': sig, 'tmdb': tm}
         for k in list(S['files']):   # (gone from the folder: off the list)
             if not os.path.exists(os.path.join(BFI_IN, k)):
                 S['files'].pop(k, None)
+        for k in list(S.get('tmdb') or {}):   # (and the TMDB film given for one put with its film, or gone)
+            if not os.path.exists(os.path.join(BFI_IN, k)):
+                S['tmdb'].pop(k, None)
         S['moved'] = S['moved'][:500]
         try:
             bfi_collect(g, S)
