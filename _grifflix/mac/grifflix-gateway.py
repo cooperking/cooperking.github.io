@@ -3480,7 +3480,7 @@ def make_handler(g):
                 fw = fold(w)
                 hits = [f for f in BFI_FILMS[1] if fw and any(fw in x for x in f['f']) and (not y or abs((f['year'] or 0) - y) <= 1)]
                 hits.sort(key=lambda f: (min(len(x) for x in f['f']) - len(fw), f['name'], f['year']))
-                out = [{'id': f['id'], 'name': f['name'], 'year': f['year']} for f in hits[:12]] or bfi_match(BFI_FILMS[1], w, y)[1]
+                out = [{'id': f['id'], 'name': f['name'], 'year': f['year'], 'kind': f.get('kind', 'movie')} for f in hits[:12]] or bfi_match(BFI_FILMS[1], w, y)[1]
                 return self.send_json(200, {'films': out})
             if b and b.get('op') == 'get':   # (the playlist checked now, not at the week's end)
                 if KERMODE_RUN.locked():
@@ -9091,47 +9091,114 @@ def bfi_tidy(stem):
 
 
 def bfi_films(g):
-    """Every film: id, name, year, its path, its titles folded for comparing."""
-    out, start = [], 0
-    lid = (g.st.get('libraries') or {}).get('movies')
-    while lid:
-        r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path,OriginalTitle,ProductionYear',
-                                                               'StartIndex': start, 'Limit': 500, 'EnableImages': 'false'}, timeout=120) or {}
-        for x in r.get('Items') or []:
-            out.append({'id': x['Id'], 'name': x.get('Name') or '', 'year': x.get('ProductionYear') or 0, 'path': x.get('Path') or '',
-                        'f': set(t for t in (fold(x.get('Name')), fold(x.get('OriginalTitle'))) if t)})
-        start += 500
-        if start >= (r.get('TotalRecordCount') or 0) or not r.get('Items'):
-            break
+    """Every film, and every series (A Personal Journey with Martin Scorsese is one: John, 26 Nov 2026, "It's not matching to A Personal
+    Journey with Martin Scorsese because its in TV"): id, name, year, its path (a series': its own folder), its titles folded for comparing."""
+    out = []
+    L = g.st.get('libraries') or {}
+    for key_, typ_ in (('movies', 'Movie'), ('tv', 'Series')):
+        lid, start = L.get(key_), 0
+        while lid:
+            r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': typ_, 'Fields': 'Path,OriginalTitle,ProductionYear',
+                                                                   'StartIndex': start, 'Limit': 500, 'EnableImages': 'false'}, timeout=120) or {}
+            for x in r.get('Items') or []:
+                out.append({'id': x['Id'], 'name': x.get('Name') or '', 'year': x.get('ProductionYear') or 0, 'path': x.get('Path') or '', 'kind': 'series' if typ_ == 'Series' else 'movie',
+                            'f': set(t for t in (fold(x.get('Name')), fold(x.get('OriginalTitle'))) if t)})
+            start += 500
+            if start >= (r.get('TotalRecordCount') or 0) or not r.get('Items'):
+                break
     return out
 
 
 def bfi_sig(g):
-    """How many films, and the newest: changed when one comes in, goes, or is renamed (a new item), so those listed are looked at again."""
-    lid = (g.st.get('libraries') or {}).get('movies')
-    r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'SortBy': 'DateCreated', 'SortOrder': 'Descending',
-                                                           'Limit': 1, 'EnableImages': 'false'}) or {} if lid else {}
-    return '%s:%s' % (r.get('TotalRecordCount') or 0, ((r.get('Items') or [{}])[0]).get('Id') or '')
+    """How many films and series, and the newest of each: changed when one comes in, goes, or is renamed (a new item), so those listed are
+    looked at again (and "v3": the matching itself changed, 26 Nov 2026, so all of them looked at again once)."""
+    L, out = g.st.get('libraries') or {}, ['v3']
+    for key_, typ_ in (('movies', 'Movie'), ('tv', 'Series')):
+        lid = L.get(key_)
+        r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': typ_, 'SortBy': 'DateCreated', 'SortOrder': 'Descending',
+                                                               'Limit': 1, 'EnableImages': 'false'}) or {} if lid else {}
+        out.append('%s:%s' % (r.get('TotalRecordCount') or 0, ((r.get('Items') or [{}])[0]).get('Id') or ''))
+    return '|'.join(out)
 
 
-def bfi_match(films, title, year):
-    """(the film, if sure: its own title and a year within one, or with no year the only film of that title), and the likeliest others."""
+def bfi_alt(title):
+    """A title with its director's name in front, and maybe words saying what it is: (the director, [the title alone, …]), or None.
+    "Antonioni's Red Desert" is ('Antonioni', ['Red Desert']); "Alfred Hitchcock's silent classic The Lodger" is ('Alfred Hitchcock',
+    ['silent classic The Lodger', 'The Lodger']); "Buñuel and Dalí's Surrealist masterpiece Un Chien Andalou" ends 'Un Chien Andalou'."""
+    m = re.match(r"^(.+?)['’]s\s+(.+)$", title or '')
+    if not m:
+        return None
+    head, tail = m.group(1).strip(), m.group(2).strip()
+    words = head.split()
+    if not (1 <= len(words) <= 6 and all(w[:1].isupper() or w in ('and', '&', 'de', 'van', 'von', 'da', 'del', 'la', 'le') for w in words) and words[-1][:1].isupper()):
+        return None
+    toks = tail.split()
+    low = [i for i, w in enumerate(toks[:-1]) if w[:1].islower() and (toks[i + 1][:1].isupper() or toks[i + 1][:1].isdigit())]
+    cands = [tail] + ([' '.join(toks[low[-1] + 1:])] if low else [])
+    return head, list(dict.fromkeys(c for c in cands if c))
+
+
+def bfi_directed(g, iid, head):
+    """The film is by the one named before its title (Antonioni, Bong Joon-ho, Buñuel and Dalí…): their surname among its directors."""
+    try:
+        it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid), query={'Fields': 'People'}) or {}
+    except Exception:
+        return False
+    ds = [fold(p.get('Name')) for p in it.get('People') or [] if p.get('Type') == 'Director']
+    for part in re.split(r'\s+(?:and|&)\s+', head):
+        w = part.split()
+        sn = fold(w[-1]) if w else ''
+        if len(sn) >= 3 and any(sn in d for d in ds):
+            return True
+    return False
+
+
+def bfi_match(films, title, year, g=None):
+    """(the film, if sure, and the likeliest others). Sure: its own title and a year within one, or with no year the only film of that
+    title. A title with its director's name in front ("Antonioni's Red Desert"): the title alone, sure as before when it has a year, and
+    without one only when the film is by that director."""
     import difflib
+
+    def exact(ft):
+        same = [f for f in films if ft and ft in f['f']]
+        near = [f for f in same if year and f['year'] and abs(f['year'] - year) <= 1]
+        return (near[0] if len(near) == 1 else (same[0] if not year and len(same) == 1 else None)), same
     ft = fold(title)
-    same = [f for f in films if ft and ft in f['f']]
-    near = [f for f in same if year and f['year'] and abs(f['year'] - year) <= 1]
-    sure = near[0] if len(near) == 1 else (same[0] if not year and len(same) == 1 else None)
-    sc = []
+    sure, same = exact(ft)
+    alt = []
+    if not same:
+        a = bfi_alt(title)
+        for c in (a[1] if a else []):
+            s2, same2 = exact(fold(c))
+            alt += [f for f in same2 if f not in alt]
+            if s2 and (year or (g and bfi_directed(g, s2['id'], a[0]))):
+                sure = s2
+                break
+            if not s2 and not year and g and len(same2) > 1:   # (two of that title: the one by that director, Bong Joon-ho's Mother)
+                by = [f for f in same2 if bfi_directed(g, f['id'], a[0])]
+                if len(by) == 1:
+                    sure = by[0]
+                    break
+    if not same and not sure and len(ft) >= 20:   # (the start of its full title, and most of it, and the only one: "A Personal Journey with Martin
+        # Scorsese" is A Personal Journey with Martin Scorsese Through American Movies)
+        pre = [f for f in films if any(x.startswith(ft) and len(ft) >= .6 * len(x) for x in f['f'])
+               and not (year and f['year'] and abs(f['year'] - year) > 1)]
+        if len(pre) == 1:
+            sure = pre[0]
+    sc = [(.95, f) for f in alt]
     for f in films:
+        if f in alt:
+            continue
         r = max((difflib.SequenceMatcher(None, ft, x).ratio() for x in f['f']), default=0)
-        if ft and any(ft in x or x in ft for x in f['f'] if len(x) > 3):
+        # (one title in the other only when it's much of it: "Persona" isn't A Personal Journey, nor "Toni" Antonioni's Red Desert)
+        if ft and any((ft in x or x in ft) and min(len(x), len(ft)) >= .5 * max(len(x), len(ft)) for x in f['f'] if len(x) > 3):
             r = max(r, .8)
         if year and f['year']:
             r -= min(.3, abs(f['year'] - year) * .05)
         if r >= .55:
             sc.append((r, f))
     sc.sort(key=lambda x: -x[0])
-    return sure, [{'id': f['id'], 'name': f['name'], 'year': f['year'], 'score': round(r, 2)} for r, f in sc[:4]]
+    return sure, [{'id': f['id'], 'name': f['name'], 'year': f['year'], 'score': round(r, 2), 'kind': f.get('kind', 'movie')} for r, f in sc[:4]]
 
 
 def bfi_secs(fp, path):
@@ -9148,7 +9215,7 @@ def bfi_move(g, src, film, name, fp=None):
     the film has already (the same name, the same length to a second) isn't put there twice: it goes to BFI Kermode's "Already got"
     folder, to delete (returned as (path, True))."""
     import shutil
-    d = os.path.dirname(film['path'])
+    d = film['path'] if film.get('kind') == 'series' else os.path.dirname(film['path'])   # (a series: Extras in its own folder)
     libs = [os.path.realpath(l).rstrip('/') for v in g.jf.call('GET', '/Library/VirtualFolders') or [] for l in v.get('Locations') or []]
     if not film['path'] or not os.path.isdir(d) or os.path.realpath(d).rstrip('/') in libs:
         raise RuntimeError('the film hasn’t a folder of its own')
@@ -9171,7 +9238,7 @@ def bfi_move(g, src, film, name, fp=None):
         dst = os.path.join(x, '%s (%d).mp4' % (name, n_))   # (another of the same film, a different length: kept beside it)
     shutil.move(src, dst)
     try:
-        g.jf.call('POST', '/Items/%s/Refresh' % film['id'], query={'Recursive': 'true', 'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'Default', 'ReplaceAllMetadata': 'false', 'ReplaceAllImages': 'false'})
+        g.jf.call('POST', '/Items/%s/Refresh' % film['id'], query={'Recursive': 'false' if film.get('kind') == 'series' else 'true', 'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'Default', 'ReplaceAllMetadata': 'false', 'ReplaceAllImages': 'false'})
     except Exception:
         pass
     return dst, False
@@ -9222,7 +9289,7 @@ def bfi_now(g, only=None):
                 films = bfi_films(g)
             want = (only or {}).get(n)
             film = next((f for f in films if f['id'] == want), None) if want else None
-            sure, guesses = bfi_match(films, title, year)
+            sure, guesses = bfi_match(films, title, year, g)
             why = ''
             if want and not film:
                 why = 'the film you chose isn’t in Grifflix now'
