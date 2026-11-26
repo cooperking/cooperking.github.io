@@ -32,6 +32,27 @@ def fold(x):
     return re.sub(r'[^a-z0-9]+', ' ', x).strip()
 
 
+# (a film John has by another name than A24's list gives it: 1%, A24's Outlaws: John, 26 Nov 2026)
+AKA = {'1%': 'Outlaws'}
+
+
+def page_pictures(slug):
+    """The wide pictures on a film's own page at A24 (its data, as the page loads it), the likeliest first: the still from its trailer with
+    no words on it, then the pictures of its notes; for a film whose picture in A24's list is its poster or a square (Y2K, Babygirl): John,
+    26 Nov 2026, "Recent films added in to A24 don't include the images from the page correctly"."""
+    try:
+        with urllib.request.urlopen(urllib.request.Request('https://api.a24films.com/api/web/v1/films/%s/' % urllib.parse.quote(slug), headers={'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json'}), timeout=60) as r:
+            d = json.loads(r.read().decode('utf-8'))
+    except Exception:
+        return []
+    out = [((d.get('primary_trailer') or {}).get('static_art') or {}).get('src'), (d.get('static_art') or {}).get('src'), (d.get('mobile_static_art') or {}).get('src'),
+           (d.get('promotional_image') or {}).get('src') if isinstance(d.get('promotional_image'), dict) else None]
+    for n in (((d.get('module_stream') or {}).get('refs') or {}).get('notes') or {}).values():
+        if isinstance(n, dict):
+            out.append((n.get('hero_image') or {}).get('src'))
+    return [u for u in dict.fromkeys(out) if u and re.search(r'\.(jpe?g|png|webp)$', u, re.I)]
+
+
 def main():
     lib = json.load(open(os.path.join(ROOT, 'grifflix', 'data', 'library.json'), encoding='utf-8'))
     a24 = json.load(open(os.path.join(ROOT, 'grifflix', 'a24-list.json'), encoding='utf-8'))
@@ -55,27 +76,39 @@ def main():
         it = items.get(iid) or {}
         if iid in have and os.path.exists(os.path.join(OUT, iid + '.jpg')):
             continue
-        f = next((f for f in byname.get(fold(it.get('name')), []) if not it.get('year') or abs(int(f['y']) - int(it['year'])) <= 1), None)
+        nm_ = AKA.get(it.get('name'), it.get('name'))
+        f = next((f for f in byname.get(fold(nm_), []) if not it.get('year') or nm_ != it.get('name') or abs(int(f['y']) - int(it['year'])) <= 1), None)
         if not f:
             continue
-        url = 'https://a24films.com/_next/image?url=%s&w=1920&q=75' % urllib.parse.quote(f['img'], safe='')
-        try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Accept': 'image/jpeg'}), timeout=60) as r:
-                body = r.read()
-            if Image:
-                im = Image.open(io.BytesIO(body))
-                w, h = im.size
-                if w / h < 1.3:
-                    print('Not a wide picture, left: %s (%dx%d)' % (it.get('name'), w, h))
-                    continue
-                im.convert('RGB').save(os.path.join(OUT, iid + '.jpg'), 'JPEG', quality=82, optimize=True, progressive=True)
-            else:
-                open(os.path.join(OUT, iid + '.jpg'), 'wb').write(body)
-            have.add(iid)
-            got += 1
-            print('A24 still: %s' % it.get('name'))
-        except Exception as e:
-            print('Couldn’t fetch the A24 still for %s: %s' % (it.get('name'), e))
+        # (the picture A24's list gives it, and if that's a poster or a square, the wide ones on the film's own page)
+        tried, kept = [], False
+        for src in [f['img']] + (page_pictures(f['u']) if f.get('u') else []):
+            if src in tried:
+                continue
+            tried.append(src)
+            url = 'https://a24films.com/_next/image?url=%s&w=1920&q=75' % urllib.parse.quote(src, safe='')
+            try:
+                with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Accept': 'image/jpeg'}), timeout=60) as r:
+                    body = r.read()
+                if Image:
+                    im = Image.open(io.BytesIO(body))
+                    w, h = im.size
+                    if w / h < 1.3:
+                        continue
+                    im.convert('RGB').save(os.path.join(OUT, iid + '.jpg'), 'JPEG', quality=82, optimize=True, progressive=True)
+                else:
+                    if src != f['img']:
+                        continue
+                    open(os.path.join(OUT, iid + '.jpg'), 'wb').write(body)
+                have.add(iid)
+                got += 1
+                kept = True
+                print('A24 still: %s%s' % (it.get('name'), '' if src == f['img'] else ' (from its own page)'))
+                break
+            except Exception as e:
+                print('Couldn’t fetch an A24 picture for %s: %s' % (it.get('name'), e))
+        if not kept:
+            print('No wide picture at A24 for %s: its own background picture is used' % it.get('name'))
     if got:
         os.makedirs(OUT, exist_ok=True)
         json.dump(sorted(have), open(idx_path, 'w'))
