@@ -2411,30 +2411,47 @@ html.gbfi #cbody .cfind::placeholder { color: var(--bfi-grey); opacity: 1; }
 .bfif:hover .ph img, .bfif:focus-visible .ph img { transform: scale(1.04); }
 .bfif:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
 html.gbfi #cbody .empty { color: #fff; font-family: var(--bfi-sans); }
-/* the intro, after the BFI's own, BFI at GRIFFLIX as one: in the dark, a projector's lamp passing behind B, F and I in turn, its light streaming
-   out past each, then on along GRIFFLIX, each letter catching it as it passes; then logo and name flaring on together and settling white on
-   black, side by side as the BFI page's heading has them (one above the other on a phone held upright). The light itself drawn (bfiLight) */
-.bfiin { position: fixed; inset: 0; z-index: 2147483000; overflow: hidden; background: #000; color: #fff; cursor: pointer; transition: opacity .5s ease;
-  --L: min(230px, 25vmin, calc((100vw - 48px) / 5.3)); }
-.bfiin.tall { --L: min(220px, 40vw, 26vh); }
+/* the intro, after the BFI's own: in the dark, B, F and I each lit from behind in turn, a projector's light in shafts of green, gold, rose and
+   blue swinging past it; then the whole logo flaring on, its light turning away, white on black; at GRIFFLIX */
+.bfiin { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; overflow: hidden; background: #000; color: #fff; cursor: pointer; transition: opacity .5s ease; }
 .bfiin.out { opacity: 0; pointer-events: none; }
-.bfiin .fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; transition: opacity .8s ease; }
-.bfiin .lock { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: calc(var(--L) * .17); }
-.bfiin .txt { display: flex; align-items: center; gap: calc(var(--L) * .17); }
-.bfiin.tall .lock { flex-direction: column; gap: calc(var(--L) * .2); } .bfiin.tall .txt { flex-direction: column; gap: calc(var(--L) * .1); }
-.bfiin .stage { position: relative; flex: none; width: calc(var(--L) * .974); height: var(--L); }
+.bfiin .core { position: relative; text-align: center; }
+.bfiin .txt { position: absolute; left: 50%; top: 100%; width: max-content; transform: translateX(-50%); }
+.bfiin .stage { position: relative; width: clamp(150px, 30vmin, 300px); aspect-ratio: 29.21 / 30; margin: 0 auto; }
 .bfiin .stage svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .bfiin .lg { fill: #fff; opacity: 0; }
-.bfiin .lt { fill: #fff6dc; opacity: 0; }
-.bfiin .at { display: block; font: 600 max(11px, calc(var(--L) * .1))/1 var(--bfi-sans); letter-spacing: .3em; margin-right: -.3em; text-transform: uppercase; color: var(--bfi-grey); opacity: 0; }
-.bfiin .g { display: block; line-height: 0; font-size: calc(var(--L) * .36); color: #fff; }
-.bfiin.tall .g { font-size: min(calc(var(--L) * .36), calc((100vw - 40px) / 9.7)); }
-.bfiin .g .gxs { vertical-align: top; }
-.bfiin .g .gxs path { opacity: 0; }
-.bfiin.calm .lg, .bfiin.calm .at, .bfiin.calm .g .gxs path { opacity: 1; }
-.bfiin .n { position: absolute; left: -50vw; right: -50vw; top: calc(100% + max(22px, var(--L) * .2)); text-align: center; min-height: 1.4em; font: 500 13px/1.4 var(--bfi-sans); color: var(--bfi-grey); opacity: 0; font-variant-numeric: tabular-nums; }
+.bfiin .lt { fill: #fdf8df; opacity: 0; filter: drop-shadow(0 0 3px rgba(255, 252, 225, .95)) drop-shadow(0 0 14px rgba(190, 255, 210, .55)); }
+.bfiin .ray { position: absolute; left: 50%; top: 50%; width: 1000%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; mix-blend-mode: screen; opacity: 0;
+  background: conic-gradient(from var(--rf, 120deg), transparent 0deg, var(--rc1) 9deg, transparent 20deg, var(--rc2) 31deg, transparent 40deg, var(--rc1) 52deg, transparent 66deg, var(--rc3, var(--rc2)) 80deg, transparent 96deg, var(--rc2) 108deg, transparent 124deg 360deg);
+  -webkit-mask: radial-gradient(circle, #000 0, rgba(0, 0, 0, .7) 4%, rgba(0, 0, 0, .22) 16%, transparent 40%); mask: radial-gradient(circle, #000 0, rgba(0, 0, 0, .7) 4%, rgba(0, 0, 0, .22) 16%, transparent 40%); filter: blur(7px); }
+.bfiin .r0 { --rf: 95deg; --rc1: rgba(190, 255, 175, .75); --rc2: rgba(255, 240, 150, .55); --rc3: rgba(245, 175, 235, .5); }
+.bfiin .r1 { --rf: 140deg; --rc1: rgba(255, 236, 140, .75); --rc2: rgba(160, 245, 215, .5); --rc3: rgba(250, 165, 225, .55); }
+.bfiin .r2 { --rf: 220deg; --rc1: rgba(150, 236, 255, .75); --rc2: rgba(250, 180, 220, .55); --rc3: rgba(200, 255, 190, .5); }
+.bfiin .rl { width: 760%; --rf: 60deg; --rc1: rgba(205, 255, 235, .8); --rc2: rgba(232, 205, 255, .55); --rc3: rgba(255, 245, 190, .55);
+  background: conic-gradient(from 0deg, transparent 0deg, var(--rc1) 12deg, transparent 26deg, var(--rc2) 70deg, transparent 84deg, var(--rc3) 140deg, transparent 160deg, var(--rc1) 205deg, transparent 222deg, var(--rc2) 268deg, transparent 284deg, var(--rc3) 320deg, transparent 336deg); }
+.bfiin .burst { position: absolute; left: 50%; top: 50%; width: 270%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%) scale(.2); pointer-events: none; mix-blend-mode: screen; opacity: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, .95) 0, rgba(205, 255, 238, .55) 17%, rgba(80, 160, 150, .18) 40%, transparent 66%); }
+/* (B, F, I: each lit from behind in turn, its light swinging past) */
+.bfiin.go .lB { animation: bfiLt 1.5s ease .25s forwards; } .bfiin.go .lF { animation: bfiLt 1.5s ease 1.05s forwards; } .bfiin.go .lI { animation: bfiLt 1.4s ease 1.85s forwards; }
+@keyframes bfiLt { 0% { opacity: 0; } 28% { opacity: 1; } 68% { opacity: .85; } 100% { opacity: 0; } }
+.bfiin.go .r0 { animation: bfiRay 1.7s ease-out .2s forwards; } .bfiin.go .r1 { animation: bfiRay 1.7s ease-out 1s forwards; } .bfiin.go .r2 { animation: bfiRay 1.6s ease-out 1.8s forwards; }
+@keyframes bfiRay { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(-28deg); } 32% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(32deg); } }
+/* (then the whole logo, flaring on as its light bursts and turns away, and settling white on black) */
+.bfiin.go .lg { animation: bfiLg 1.6s ease 3.1s forwards; }
+@keyframes bfiLg { 0% { opacity: 0; filter: brightness(1.6) drop-shadow(0 0 26px rgba(220, 255, 240, .95)); } 30% { opacity: 1; } 100% { opacity: 1; filter: drop-shadow(0 0 10px rgba(200, 255, 235, .12)); } }
+.bfiin.go .burst { animation: bfiBurst 2.5s ease-out 3s forwards; }
+@keyframes bfiBurst { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.2); } 18% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); } }
+.bfiin.go .rl { animation: bfiRayL 3s ease-out 3s forwards; }
+@keyframes bfiRayL { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(-12deg); } 22% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(26deg); } }
+.bfiin.calm .lg { opacity: 1; }
+.bfiin .core { transition: transform .8s cubic-bezier(.3, 0, .2, 1); } .bfiin.end .core { transform: translateY(-11vh); }
+html.tv .bfiin .ray { filter: none; width: 640%; } html.tv .bfiin .rl { width: 520%; }   /* (lighter on the Fire TV) */
+.bfiin .at { display: block; margin: 30px 0 10px; font: 600 11px/1 var(--bfi-sans); letter-spacing: .3em; text-transform: uppercase; color: var(--bfi-grey); opacity: 0; }
+.bfiin .g { display: block; font-size: clamp(22px, 4.4vw, 40px); --gc-ink: #fff; opacity: 0; }
+.bfiin .n { display: block; min-height: 1.4em; margin: 22px auto 0; font: 500 13px/1.4 var(--bfi-sans); color: var(--bfi-grey); opacity: 0; font-variant-numeric: tabular-nums; }
 .bfiin .n b { color: #fff; font-weight: 700; }
-.bfiin.end .n { animation: gcUp .6s ease forwards; }
+.bfiin.end .at { animation: gcUp .5s ease .1s forwards; } .bfiin.end .g { animation: gcUp .6s ease .25s forwards; } .bfiin.end .n { animation: gcUp .5s ease .6s forwards; }
+@media (prefers-reduced-motion: reduce) { .bfiin *, .bfiin.end * { animation-duration: .01s !important; animation-delay: 0s !important; } }
 /* the intro: its films rolling by, as A24's list, and A24 at GRIFFLIX */
 /* the intro: a trailer's cut through A24's own stills, faster and faster, then black, A24 in white, at GRIFFLIX (John, 19 Nov 2026,
    "The A24 intro is a bit too similar to the criterion one. Can we have a more original one") */
@@ -2794,7 +2811,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '6630e2a49edb' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '46e84501b17d' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6898,160 +6915,40 @@ function bfiDraw(g, items, fq) {   // (BFI Player's grid: each film's wide still
   }).join('') : '<div class="empty">' + (fq ? 'No film called that here.' : 'None yet: each film comes as its introduction is put with it.') + '</div>';
   wireCards(g, items);
 }
-function bfiIntro() {   // (after the BFI's own intro, BFI at GRIFFLIX as one: a projector's lamp passing behind B, F and I in turn, then on along
-  // GRIFFLIX, each letter lit from behind as it passes; then logo and name flaring on together, white on black: John, 26 Nov 2026, "Can the intro be
-  // based on this", the BFI's 2160p intro, and "have the animation intergrate Grifflix rather than it just pop in at the end")
+function bfiIntro() {   // (after the BFI's own intro: B, F, I, each lit from behind in turn by a projector's light; then the logo flaring on and
+  // settling white on black; at GRIFFLIX: John, 26 Nov 2026, "Can the intro be based on this", the BFI's 2160p intro)
   if ($('.bfiin')) return; bfiFonts();
   var el = document.createElement('div'); el.className = 'bfiin'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'BFI at Grifflix');
   var sv = function (cls, d) { return '<svg class="' + cls + '" viewBox="' + BFIVB + '" aria-hidden="true"><path fill-rule="evenodd" d="' + d + '"/></svg>'; };
-  el.innerHTML = '<canvas class="fx" aria-hidden="true"></canvas><div class="lock"><div class="stage" aria-hidden="true">' + sv('lg', BFIPATH) + sv('lt lB', BFILET.B) + sv('lt lF', BFILET.F) + sv('lt lI', BFILET.I) + '</div>' +
-    '<div class="txt"><span class="at">at</span><span class="g" aria-label="Grifflix">' + gxSvg(.5) + '</span></div><span class="n" aria-live="polite">&nbsp;</span></div>';
+  el.innerHTML = '<div class="core"><div class="stage" aria-hidden="true">' +
+    ['B', 'F', 'I'].map(function (k, i) { return '<i class="ray r' + i + '" style="left:' + BFIC[k][0] + '%;top:' + BFIC[k][1] + '%"></i>'; }).join('') +
+    '<i class="ray rl"></i><i class="burst"></i>' + sv('lg', BFIPATH) + sv('lt lB', BFILET.B) + sv('lt lF', BFILET.F) + sv('lt lI', BFILET.I) + '</div>' +
+    '<div class="txt"><span class="at">at</span><span class="g gcx" aria-label="Grifflix">' + gxSvg(.5) + '</span><span class="n" aria-live="polite">&nbsp;</span></div></div>';
   document.body.appendChild(el); var unTop = introTop('#000');
-  var shape = function () { el.classList.toggle('tall', innerWidth < innerHeight * .95); };   // (one above the other on a phone held upright)
-  shape(); addEventListener('resize', shape);
-  var coll = null, done = false, auto = 0, timers = [], n = null, snd = bfiSound(), fx = null;
+  var coll = null, done = false, auto = 0, timers = [], n = null, snd = bfiSound();
   var later = function (f, ms) { timers.push(setTimeout(f, ms)); };
   var key = function (e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
   var go = function (byItself) {
-    if (done) return; done = true; clearTimeout(auto); timers.forEach(clearTimeout); if (fx) fx.stop(); if (snd && byItself !== true) snd.stop();
+    if (done) return; done = true; clearTimeout(auto); timers.forEach(clearTimeout); if (snd && byItself !== true) snd.stop();
     if (coll) location.hash = '#collection/' + coll.id;
     el.classList.add('out'); setTimeout(function () { el.remove(); unTop(); }, 600);
-    document.removeEventListener('keydown', key, true); removeEventListener('resize', shape);
+    document.removeEventListener('keydown', key, true);
   };
   document.addEventListener('keydown', key, true);
   el.onclick = function () { go(); };
   var count = function () {   // (how many, counted up under the name)
-    var box = $('.bfiin .n'); if (!box) return; el.classList.add('end');
+    var box = $('.bfiin .n'); if (!box) return;
     if (n == null) { box.textContent = coll ? '' : 'No BFI collection in Grifflix yet'; return; }
     var st = 0, tick = function () { if (!st) st = Date.now(); var k = Math.min(1, (Date.now() - st) / 1100), e = 1 - Math.pow(1 - k, 3);
       box.innerHTML = '<b>' + Math.round(n * e) + '</b> ' + (n === 1 ? 'film' : 'films'); if (k < 1 && !done) requestAnimationFrame(tick); };
     tick();
   };
   var calm = CALM || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
-  if (calm) el.classList.add('calm'); else fx = bfiLight(el, snd);
-  later(count, calm ? 300 : 6000);
-  auto = setTimeout(function () { go(true); }, calm ? 3200 : 8500);
+  requestAnimationFrame(function () { el.classList.add(calm ? 'calm' : 'go'); });
+  if (!calm) { [450, 1250, 2050].forEach(function (t, k) { later(function () { if (snd) snd.pop(k); }, t); }); later(function () { if (snd) snd.chord(); }, 3150); }
+  later(function () { el.classList.add('end'); later(count, 700); }, calm ? 300 : 4400);
+  auto = setTimeout(function () { go(true); }, calm ? 3200 : 7400);
   bfiFind().then(function (c) { coll = c; if (!c) return; return api('collection?id=' + encodeURIComponent(c.id)).then(function (d) { n = (d.items || []).length; }); }).catch(function () {});
-}
-// (the intro's light, drawn as the BFI's own is: a lamp behind the lettering, and the light of whatever it lights streaming out past it, away
-// from the lamp, in shafts of green, gold, rose and blue that swing as the lamp moves. Each frame: what is lit, drawn small; drawn again many
-// times, each a little larger about the lamp, and blended, so its light runs out in rays; striped into shafts; laid over the black. The
-// lettering itself is the page's, lit by it. On a narrow phone and the Fire TV, smaller and in fewer steps)
-function bfiLight(el, snd) {
-  var q = function (s) { return el.querySelector(s); }, cv = q('.fx'), lg = q('.lg'), at = q('.at'), gsv = q('.g .gxs');
-  var gp = [].slice.call(el.querySelectorAll('.g .gxs path')), lt = { B: q('.lB'), F: q('.lF'), I: q('.lI') };
-  var mk = function (d) { try { return new Path2D(d); } catch (e) { return null; } };
-  var c = null, E = null, A = null, B = null;
-  try { c = cv.getContext('2d'); E = document.createElement('canvas'); A = document.createElement('canvas'); B = document.createElement('canvas'); } catch (e) { c = null; }
-  var LOGO = window.Path2D ? mk(BFIPATH) : null, LET = { B: LOGO && mk(BFILET.B), F: LOGO && mk(BFILET.F), I: LOGO && mk(BFILET.I) };
-  var GP = gp.map(function (p) { var m = /translate\(\s*([-\d.]+)/.exec(p.getAttribute('transform') || ''); return { d: LOGO && mk(p.getAttribute('d')), tx: m ? +m[1] : 0 }; });
-  var drawn = !!(c && LOGO && E.getContext && c.drawImage);
-  if (!drawn) cv.style.display = 'none';
-  var FL = 4.4, END = 6.9, T0 = 0, raf = 0, stopped = false, ds = 0, W = 0, H = 0, G = null, its = [], K = [], next = 0;
-  var sm = function (a, b, t) { var x = Math.min(1, Math.max(0, (t - a) / (b - a))); return x * x * (3 - 2 * x); };
-  var mix = function (a, b, k) { return Math.round(a + (b - a) * k); };
-  var measure = function () {   // (where each thing is, in the canvas's own pixels: again whenever the window changes)
-    ds = Math.max(TV ? 3 : innerWidth < 700 ? 1.5 : 2, innerWidth / (TV ? 640 : 820));   // (the light soft: drawn small, and no bigger than that)
-    W = Math.max(2, Math.round(innerWidth / ds)); H = Math.max(2, Math.round(innerHeight / ds));
-    if (drawn) [cv, E, A, B].forEach(function (k) { if (k.width !== W || k.height !== H) { k.width = W; k.height = H; } });
-    var r = lg.getBoundingClientRect(), gr = gsv.getBoundingClientRect(), ar = at.getBoundingClientRect(), L = r.height / ds;
-    var cen = function (b) { return { x: (b.left + b.width / 2) / ds, y: (b.top + b.height / 2) / ds }; };
-    G = { L: L, ls: r.width / 29.21 / ds, lx: r.left / ds, ly: r.top / ds, gs: gr.height / 2048 / ds, gx: gr.left / ds, gy: gr.top / ds + 1796 * gr.height / 2048 / ds,
-      sw: (parseFloat(getComputedStyle(gsv).strokeWidth) || 2) / ds, mid: cen(r) };
-    var pre = {}; its.forEach(function (it) { pre[it.k] = it; });
-    its = [];
-    ['B', 'F', 'I'].forEach(function (k, i) { its.push({ k: k, n: i, kind: 'b', el: lt[k], p: LET[k], x: G.lx + BFIC[k][0] / 100 * r.width / ds, y: G.ly + BFIC[k][1] / 100 * r.height / ds, s: .17 * L, res: .07 }); });
-    its.push({ k: 'at', kind: 'at', el: at, x: cen(ar).x, y: cen(ar).y, s: .2 * L, res: .3 });
-    gp.forEach(function (p, i) { var b = cen(p.getBoundingClientRect()); its.push({ k: 'g' + i, n: i, kind: 'g', el: p, p: GP[i].d, tx: GP[i].tx, x: b.x, y: b.y, s: .2 * L, res: .26 }); });
-    its.forEach(function (it) { var o = pre[it.k]; it.pk = o ? o.pk : 0; it.sung = o ? o.sung : false; });
-    var P = function (k) { for (var i = 0; i < its.length; i++) if (its[i].k === k) return its[i]; }, g0 = P('g0'), g7 = P('g7'), adv = (g7.x - g0.x) / 7;
-    var off = { x: -.06 * L, y: .07 * L }, at2 = function (t, it, a, dx, dy, cut) { return { t: t, x: it.x + off.x + (dx || 0), y: it.y + off.y + (dy || 0), a: a, cut: cut }; };
-    K = [at2(.15, P('B'), 0, -.32 * L, -.26 * L), at2(.75, P('B'), 1), at2(1.32, P('F'), 1), at2(1.86, P('I'), 1)];   // (the lamp's way, and how bright, by when)
-    if (el.classList.contains('tall')) K.push(at2(2.16, P('I'), 0, .45 * L, -.04 * L), at2(2.28, g0, 0, -1.2 * adv, 0, true));
-    else K.push(at2(2.26, P('at'), .9));
-    for (var i = 0; i < 8; i++) K.push(at2(2.52 + i * .2, P('g' + i), 1));   // (gathering pace, from the logo into the name)
-    K.push(at2(4.24, g7, 0, 1.3 * adv, 0));
-  };
-  var lamp = function (t) {   // (where the lamp is, smoothly through its points, and how bright)
-    if (t <= K[0].t) return { x: K[0].x, y: K[0].y, a: 0 };
-    var i = 0; while (i < K.length - 2 && t > K[i + 1].t) i++;
-    var k1 = K[i], k2 = K[i + 1]; if (t >= k2.t) return { x: k2.x, y: k2.y, a: k2.a };
-    var u = (t - k1.t) / (k2.t - k1.t), k0 = i > 0 && !k1.cut ? K[i - 1] : k1, k3 = i + 2 < K.length && !K[i + 2].cut ? K[i + 2] : k2;
-    if (k2.cut) return { x: k2.x, y: k2.y, a: 0 };
-    var cr = function (a, b, c2, d) { return .5 * (2 * b + (c2 - a) * u + (2 * a - 5 * b + 4 * c2 - d) * u * u + (3 * b - a - 3 * c2 + d) * u * u * u); };
-    return { x: cr(k0.x, k1.x, k2.x, k3.x), y: cr(k0.y, k1.y, k2.y, k3.y), a: k1.a + (k2.a - k1.a) * u };
-  };
-  var shafts = function (x, cx, cy, rot, tint) {   // (the light in shafts: a fan of stripes about the lamp, coloured as the BFI's)
-    if (!x.createConicGradient) return;
-    var g = x.createConicGradient(rot, cx, cy), C = ['200,255,190', '255,238,150', '248,182,236', '160,236,255', '255,250,230'], w = [15, 9, 19, 12, 17, 8, 14, 21, 10, 16], a = 0, tot = 0;
-    w.forEach(function (v) { tot += v; });
-    w.forEach(function (v, i) { var c0 = a / tot, c1 = (a + v * .62) / tot, c2 = (a + v) / tot, col = 'rgb(' + C[i % 5] + ')';
-      g.addColorStop(c0, 'rgb(' + tint + ')'); g.addColorStop((c0 * .7 + c1 * .3), col); g.addColorStop(c0 * .3 + c1 * .7, col); g.addColorStop(c1, 'rgb(' + tint + ')'); g.addColorStop(c2, 'rgb(' + tint + ')'); a += v; });
-    x.globalCompositeOperation = 'multiply'; x.globalAlpha = 1; x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = g; x.fillRect(0, 0, W, H);
-  };
-  var rays = function (cx, cy, len) {   // (what is lit, drawn larger and larger about the lamp and blended: its light running out in rays)
-    var N = TV ? 5 : 7, src = E, dst = A;
-    for (var k = 0; k < N; k++) {
-      var s = Math.pow(1 + len, Math.pow(2, k - N)), x = dst.getContext('2d');
-      x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = 'copy'; x.globalAlpha = 1; x.drawImage(src, 0, 0);
-      x.globalCompositeOperation = 'source-over'; x.globalAlpha = .47 - .025 * k; x.setTransform(s, 0, 0, s, cx * (1 - s), cy * (1 - s)); x.drawImage(src, 0, 0);   // (the farther, the fainter)
-      src = dst; dst = dst === A ? B : A;
-    }
-    return src;
-  };
-  var frame = function (now) {
-    if (stopped) return;
-    if (!T0) T0 = now; var t = (now - T0) / 1000;
-    if (t > next) { measure(); next = t + .5; }
-    var S = lamp(t), f = t < FL ? 0 : sm(FL, FL + .2, t) * Math.exp(-Math.max(0, t - FL - .35) / .6), w = sm(FL, FL + .4, t);
-    var gone = sm(FL - .05, FL + .2, t);   // (B, F and I alone, giving way to the logo)
-    its.forEach(function (it) {
-      var dx = S.x - it.x, dy = S.y - it.y, I = S.a * Math.exp(-(dx * dx + dy * dy) / (2 * it.s * it.s)) * (it.kind === 'b' ? 1 - sm(2.2, 2.5, t) : 1);
-      it.I = I; it.pk = Math.max(it.pk, I);
-      if (I > .55 && !it.sung) { it.sung = true; if (snd) { if (it.kind === 'b') snd.pop(it.n); else if (it.kind === 'g') snd.glint(it.n); } }
-      var o = Math.max(I, it.res * it.pk);
-      if (it.kind === 'b') it.el.style.opacity = (o * (1 - gone)).toFixed(3);
-      else {
-        it.el.style.opacity = Math.max(o, w).toFixed(3);
-        var hot = Math.min(1, I * 1.4) * (1 - w), base = it.kind === 'at' ? [164, 164, 164] : [255, 255, 255];
-        var col = 'rgb(' + mix(base[0], 255, hot) + ',' + mix(base[1], 241, hot) + ',' + mix(base[2], 196, hot) + ')';
-        if (it.kind === 'at') it.el.style.color = col; else it.el.style.stroke = col;
-      }
-    });
-    lg.style.opacity = w.toFixed(3);
-    if (t >= FL && !frame.ch) { frame.ch = 1; if (snd) snd.chord(); }
-    if (drawn && t < END) {
-      var L = G.L, e = E.getContext('2d'), fl = f > .002, fk = sm(FL, END, t), cx = fl ? G.mid.x - (.16 - .16 * fk) * L : S.x, cy = fl ? G.mid.y - (.13 - .13 * fk) * L : S.y, m = Math.max(S.a, f);
-      e.setTransform(1, 0, 0, 1, 0, 0); e.globalCompositeOperation = 'source-over'; e.globalAlpha = 1; e.fillStyle = '#000'; e.fillRect(0, 0, W, H);
-      e.fillStyle = '#fff6dc'; e.strokeStyle = '#fff6dc';
-      its.forEach(function (it) {
-        if (!it.p || it.I < .01) return;
-        e.globalAlpha = Math.min(1, it.I);
-        if (it.kind === 'b') { e.setTransform(G.ls, 0, 0, G.ls, G.lx, G.ly); e.fill(it.p, 'evenodd'); }
-        else { e.setTransform(G.gs, 0, 0, G.gs, G.gx + it.tx * G.gs, G.gy); e.lineWidth = G.sw * 3.2 / G.gs; e.stroke(it.p); }
-      });
-      if (fl) {   // (the flare: the whole of it, the logo's circles and GRIFFLIX, its light pouring out past them)
-        e.fillStyle = '#fff'; e.strokeStyle = '#fff'; e.globalAlpha = Math.min(1, f * 1.1);
-        e.setTransform(G.ls, 0, 0, G.ls, G.lx, G.ly); e.fill(LOGO, 'evenodd');
-      }
-      var R = rays(cx, cy, fl ? 3.2 : 3.6);
-      shafts(R.getContext('2d'), cx, cy, (fl ? 2.1 : .4) + t * .32, fl ? '92,104,100' : '78,88,84');
-      c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1; c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
-      if (m > .01) { var hz = c.createRadialGradient(cx, cy, 0, cx, cy, 2.2 * L); hz.addColorStop(0, 'rgba(70,128,116,' + .32 * m + ')'); hz.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = hz; c.fillRect(0, 0, W, H); }
-      c.globalCompositeOperation = 'lighter'; c.drawImage(R, 0, 0); c.drawImage(R, 0, 0); c.globalAlpha = .7; c.drawImage(E, 0, 0);
-      var hr = fl ? 1.1 * L : .45 * L, ha = fl ? .55 * f : .2 * S.a, hl = c.createRadialGradient(cx, cy, 0, cx, cy, hr);   // (the lamp's own glow, behind)
-      hl.addColorStop(0, 'rgba(255,248,226,' + ha + ')'); hl.addColorStop(.4, 'rgba(215,255,236,' + ha * .3 + ')'); hl.addColorStop(1, 'rgba(0,0,0,0)');
-      c.globalAlpha = 1; c.fillStyle = hl; c.fillRect(cx - hr, cy - hr, 2 * hr, 2 * hr);
-      if (fl) {   // (GRIFFLIX in the flare: aglow with it as the logo is, its light not thrown on across the screen)
-        c.save(); c.shadowColor = 'rgba(255,246,220,' + Math.min(1, f) + ')'; c.shadowBlur = 9 / ds; c.strokeStyle = 'rgba(255,248,230,' + (.4 * f) + ')';
-        its.forEach(function (it) { if (it.kind === 'g' && it.p) { c.setTransform(G.gs, 0, 0, G.gs, G.gx + it.tx * G.gs, G.gy); c.lineWidth = G.sw * 1.2 / G.gs; c.stroke(it.p); } });
-        c.restore();
-      }
-    } else if (drawn && t >= END && !frame.off) { frame.off = 1; cv.style.opacity = '0'; }
-    if (t < END + 1) raf = requestAnimationFrame(frame);
-  };
-  measure(); raf = requestAnimationFrame(frame);
-  return { stop: function () { stopped = true; cancelAnimationFrame(raf); } };
 }
 // (its soundtrack, made by the browser, only when Grifflix's music is on: a soft pad under the wall of films; a bright note as each circle
 // comes, G, B, D; and a warm G major chord under the name)
@@ -7076,11 +6973,6 @@ function bfiSound() {
       var ch = c.createGain(); ch.gain.setValueAtTime(.0001, t); ch.gain.exponentialRampToValueAtTime(.26, t + .5); ch.gain.setValueAtTime(.26, t + 1.4); ch.gain.exponentialRampToValueAtTime(.0001, t + 4.2); ch.connect(out);
       [196, 246.94, 293.66, 392, 587.33].forEach(function (f, j) { [-3, 3].forEach(function (d) { var o = c.createOscillator(), g = c.createGain(); o.type = j < 2 ? 'triangle' : 'sine'; o.frequency.value = f; o.detune.value = d; g.gain.value = .16; o.connect(g); g.connect(ch); o.start(t + j * .02); o.stop(t + 4.4); }); });
       setTimeout(halt, 800);
-    },
-    glint: function (k) {   // (each letter of GRIFFLIX: a small bright note, climbing G major, as the light passes)
-      if (stopped) return; var t = c.currentTime, f = [784, 880, 987.77, 1174.66, 1318.51, 1567.98, 1760, 1975.53][k] || 1568;
-      var o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = f;
-      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.06, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .7); o.connect(g); g.connect(out); o.start(t); o.stop(t + .8);
     },
     stop: function () {
       if (stopped) return; stopped = true; var t = c.currentTime;
