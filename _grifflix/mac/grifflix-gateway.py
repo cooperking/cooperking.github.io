@@ -3436,6 +3436,32 @@ def make_handler(g):
             return self.send_json(200, {'ids': sorted(by), 'checked': sum(1 for t in by if t in D), 'found': sum(1 for t in by if D.get(t)),
                                         'total': len(by), 'noimdb': len(films) - sum(len(v) for v in by.values()), 'dist': out})
 
+        def api_bfi(self, me, user, q, b):
+            """John's only: Mark Kermode's introductions, put in BFI Kermode on the G-Drive: those put with their films, and those not, with the
+            likeliest films; POST {op: 'move', file, id}: one put with the film John chose; {op: 'look'}: looked at now."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            if b and b.get('op') == 'move' and re.match(r'^[0-9a-f]{32}$', str(b.get('id') or '')) and b.get('file'):
+                S = bfi_now(g, only={str(b['file']): str(b['id'])})
+                ok = str(b['file']) not in (S.get('files') or {})
+                return self.send_json(200 if ok else 409, {'ok': ok, 'error': '' if ok else ((S.get('files') or {}).get(str(b['file'])) or {}).get('why') or 'not moved'})
+            if q.get('q'):   # (another film than the guesses: found by its name, a year after it if wanted)
+                w = str(q['q'])[:120]
+                m = re.search(r'\s*\(?((?:18|19|20)\d\d)\)?\s*$', w)
+                y = int(m.group(1)) if m and w[:m.start()].strip() else None
+                w = w[:m.start()] if y else w
+                if time.time() - BFI_FILMS[0] > 600:
+                    BFI_FILMS[:] = [time.time(), bfi_films(g)]
+                fw = fold(w)
+                hits = [f for f in BFI_FILMS[1] if fw and any(fw in x for x in f['f']) and (not y or abs((f['year'] or 0) - y) <= 1)]
+                hits.sort(key=lambda f: (min(len(x) for x in f['f']) - len(fw), f['name'], f['year']))
+                out = [{'id': f['id'], 'name': f['name'], 'year': f['year']} for f in hits[:12]] or bfi_match(BFI_FILMS[1], w, y)[1]
+                return self.send_json(200, {'films': out})
+            S = bfi_now(g) if b and b.get('op') == 'look' else (load(BFIF, {}) or {})
+            files = sorted(((k, v) for k, v in (S.get('files') or {}).items()), key=lambda kv: kv[1].get('name') or kv[0])
+            return self.send_json(200, {'folder': 'G-Drive › Grifflix › BFI Kermode', 'there': os.path.isdir(BFI_IN), 'looked': S.get('looked'),
+                                        'todo': [dict(v, file=k) for k, v in files], 'moved': (S.get('moved') or [])[:200]})
+
         def api_picsubs(self, me, user, q, b):
             """John's only: films whose picture subtitles were saved beside them when converted (convert.py, picture-subs.json), waiting to be
             turned into text as a job of their own (John, 20 Nov 2026)."""
@@ -8988,6 +9014,214 @@ def fold(t):   # a title compared: letters and numbers only, accents plain, "&" 
     return t[3:] if t.startswith('the') and len(t) > 6 else t
 
 
+BFI_IN = os.path.join(os.environ.get('GRIFFLIX_MEDIA') or '/Volumes/G-Drive/Grifflix', 'BFI Kermode')   # (Mark Kermode's introductions, put here)
+BFIF = os.path.expanduser('~/Grifflix/bfi.json')
+BFI_LOCK = threading.Lock()
+BFI_FILMS = [0, []]   # (when the films were last read for John's searches, and them)
+
+
+def bfi_tidy(stem):
+    """An introduction's name put right: "Mark Kermode introduces Title (Year)", from whatever it came as (the BFI's YouTube name, its code
+    and "｜ BFI Player" left on, two spaces, a year without brackets, "reviews" for "introduces"). Returns (name, title, year): the name
+    one the G-Drive can hold (it can't have : ? " * / \\ | < >), the title as it reads."""
+    import unicodedata
+    t = unicodedata.normalize('NFC', stem or '')
+    t = re.sub(r'(?i)(\.(mp4|m4v|mkv|webm|mov))+$', '', t)
+    t = re.sub(r'\s*\[[A-Za-z0-9_-]{11}\]\s*$', '', t)   # (YouTube's code for it)
+    t = re.sub(r'(?i)\s*[｜|]\s*bfi\b.*$', '', t)   # ("｜ BFI Player")
+    for a, b in (('＂', '"'), ('：', ':'), ('？', '?'), ('／', '/'), ('＊', '*'), ('＜', '<'), ('＞', '>'), ('⧸', '/'), ('’', "'"), ('‘', "'"), ('“', '"'), ('”', '"')):
+        t = t.replace(a, b)   # (yt-dlp's stand-ins for what a file name can't have)
+    t = re.sub(r'[_]+', ' ', t)
+    t = re.sub(r'\s+', ' ', t).strip(' -–—.')
+    m = re.match(r'(?i)^(.+?)\s*[-–—:,]?\s*\b(?:introduced|presented|reviewed) by (?:mark )?kermode$', t)
+    if m:
+        t = m.group(1)
+    else:
+        m = re.match(r"(?i)^(?:mark\s+)?kermode(?:'s)?\s*(?:introduces|introducing|introduction to|intro to|introduction|reviews|review of|review|on|presents|talks about|discusses)?\s*[:\-–—]?\s+(.*)$", t)
+        if m:
+            t = m.group(1)
+    title = t
+    y, yr = None, int(time.strftime('%Y')) + 1
+    mm = re.search(r'\s*[\(\[]?\s*((?:18|19|20)\d\d)\s*[\)\]]?\s*$', title)
+    if mm and 1880 <= int(mm.group(1)) <= yr and title[:mm.start()].strip(' -–—,'):
+        y, title = int(mm.group(1)), title[:mm.start()].strip(' -–—,')
+    title = re.sub(r'\s+', ' ', title.strip(' "\'')).strip()
+    title = re.sub(r'\s+([,:;!?])', r'\1', title)
+    title = re.sub(r'(?<=\w)\(', ' (', title)
+    safe = title.replace(': ', ' - ').replace(':', '-').replace('"', "'")
+    safe = re.sub(r'[?*<>]', '', safe)
+    safe = re.sub(r'\s+', ' ', re.sub(r'[/\\|]', '-', safe)).strip(' .')
+    return 'Mark Kermode introduces %s%s' % (safe, ' (%d)' % y if y else ''), title, y
+
+
+def bfi_films(g):
+    """Every film: id, name, year, its path, its titles folded for comparing."""
+    out, start = [], 0
+    lid = (g.st.get('libraries') or {}).get('movies')
+    while lid:
+        r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path,OriginalTitle,ProductionYear',
+                                                               'StartIndex': start, 'Limit': 500, 'EnableImages': 'false'}, timeout=120) or {}
+        for x in r.get('Items') or []:
+            out.append({'id': x['Id'], 'name': x.get('Name') or '', 'year': x.get('ProductionYear') or 0, 'path': x.get('Path') or '',
+                        'f': set(t for t in (fold(x.get('Name')), fold(x.get('OriginalTitle'))) if t)})
+        start += 500
+        if start >= (r.get('TotalRecordCount') or 0) or not r.get('Items'):
+            break
+    return out
+
+
+def bfi_sig(g):
+    """How many films, and the newest: changed when one comes in, goes, or is renamed (a new item), so those listed are looked at again."""
+    lid = (g.st.get('libraries') or {}).get('movies')
+    r = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'SortBy': 'DateCreated', 'SortOrder': 'Descending',
+                                                           'Limit': 1, 'EnableImages': 'false'}) or {} if lid else {}
+    return '%s:%s' % (r.get('TotalRecordCount') or 0, ((r.get('Items') or [{}])[0]).get('Id') or '')
+
+
+def bfi_match(films, title, year):
+    """(the film, if sure: its own title and a year within one, or with no year the only film of that title), and the likeliest others."""
+    import difflib
+    ft = fold(title)
+    same = [f for f in films if ft and ft in f['f']]
+    near = [f for f in same if year and f['year'] and abs(f['year'] - year) <= 1]
+    sure = near[0] if len(near) == 1 else (same[0] if not year and len(same) == 1 else None)
+    sc = []
+    for f in films:
+        r = max((difflib.SequenceMatcher(None, ft, x).ratio() for x in f['f']), default=0)
+        if ft and any(ft in x or x in ft for x in f['f'] if len(x) > 3):
+            r = max(r, .8)
+        if year and f['year']:
+            r -= min(.3, abs(f['year'] - year) * .05)
+        if r >= .55:
+            sc.append((r, f))
+    sc.sort(key=lambda x: -x[0])
+    return sure, [{'id': f['id'], 'name': f['name'], 'year': f['year'], 'score': round(r, 2)} for r, f in sc[:4]]
+
+
+def bfi_move(g, src, film, name):
+    """An introduction put in its film's own folder, in Extras, by its right name, and the media server asked to look at that film."""
+    import shutil
+    d = os.path.dirname(film['path'])
+    libs = [os.path.realpath(l).rstrip('/') for v in g.jf.call('GET', '/Library/VirtualFolders') or [] for l in v.get('Locations') or []]
+    if not film['path'] or not os.path.isdir(d) or os.path.realpath(d).rstrip('/') in libs:
+        raise RuntimeError('the film hasn’t a folder of its own')
+    x = os.path.join(d, 'Extras')
+    os.makedirs(x, exist_ok=True)
+    dst = os.path.join(x, name + '.mp4')
+    if os.path.exists(dst):
+        if os.path.getsize(dst) == os.path.getsize(src):   # (the same, there already: this one not needed)
+            os.remove(src)
+            return dst
+        dst = os.path.join(x, name + ' (2).mp4')
+    shutil.move(src, dst)
+    try:
+        g.jf.call('POST', '/Items/%s/Refresh' % film['id'], query={'Recursive': 'true', 'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'Default', 'ReplaceAllMetadata': 'false', 'ReplaceAllImages': 'false'})
+    except Exception:
+        pass
+    return dst
+
+
+def bfi_now(g, only=None):
+    """Mark Kermode's introductions to the BFI's films, put in the folder BFI Kermode on the G-Drive (John, 26 Nov 2026, "I'll need a
+    script that moves the mark kermode films to the matching film as an extra. Ones that don't match or aren't there go in a list on a new
+    BFI tab in admin. A best guess would help me work out the film but don't move unless sure. Clean up obvious mistakes from the mp4 names"):
+    each MP4 (whole, and not touched for five minutes: still being copied or made, left) given its right name; put in its film's Extras
+    when sure which film it's of; else listed for John, with the likeliest films."""
+    import subprocess
+    with BFI_LOCK:
+        os.makedirs(BFI_IN, exist_ok=True)
+        S = load(BFIF, {}) or {}
+        S.setdefault('files', {})
+        S.setdefault('moved', [])
+        ff = crl_ffmpeg(g)
+        fp = os.path.join(os.path.dirname(ff), 'ffprobe') if ff else None
+        films = None
+        names = sorted(n for n in os.listdir(BFI_IN) if n.lower().endswith('.mp4') and not n.startswith('.'))
+        moved = []
+        sig = bfi_sig(g) if names else S.get('nf')
+        for n in names:
+            src = os.path.join(BFI_IN, n)
+            try:
+                mt = os.path.getmtime(src)
+                if time.time() - mt < 300:
+                    continue
+                was = S['files'].get(n)
+                if was and not (only or {}).get(n) and was.get('mt') == int(mt) and was.get('nf') == sig != '0:':
+                    continue   # (listed already, and nothing changed since, not it nor the films: left as it was)
+                if fp and os.path.exists(fp):   # (whole: a film still being made has no index yet)
+                    r = subprocess.run([fp, '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src], capture_output=True, text=True, timeout=60)
+                    if r.returncode != 0 or not (r.stdout or '').strip():
+                        continue
+            except OSError:
+                continue
+            name, title, year = bfi_tidy(os.path.splitext(n)[0])
+            if name + '.mp4' != n and not os.path.exists(os.path.join(BFI_IN, name + '.mp4')):   # (its name put right where it is)
+                try:
+                    os.rename(src, os.path.join(BFI_IN, name + '.mp4'))
+                    S['files'].pop(n, None)
+                    n, src = name + '.mp4', os.path.join(BFI_IN, name + '.mp4')
+                except OSError as e:
+                    log('BFI introduction %s not renamed: %s' % (n, e))
+            if films is None:
+                films = bfi_films(g)
+            want = (only or {}).get(n)
+            film = next((f for f in films if f['id'] == want), None) if want else None
+            sure, guesses = bfi_match(films, title, year)
+            why = ''
+            if want and not film:
+                why = 'the film you chose isn’t in Grifflix now'
+            elif not film:
+                film = sure
+                if not film:
+                    same = [f for f in films if fold(title) in f['f']]
+                    why = ('%d films are called that, and its year doesn’t say which' % len(same)) if len(same) > 1 else \
+                          ('the film of that name is from %s, not %s' % (same[0]['year'], year)) if same and year else \
+                          'no film of that name in Grifflix' + (': the likeliest below' if guesses else '')
+            if film:
+                # (named by the film's own name and year in Grifflix, not as the file had it: "Seven Samuria" put right too)
+                name = bfi_tidy('Mark Kermode introduces %s%s' % (film['name'], ' (%d)' % film['year'] if film['year'] else ''))[0] or name
+                try:
+                    dst = bfi_move(g, src, film, name)
+                    S['files'].pop(n, None)
+                    moved.append(film['name'])
+                    S['moved'].insert(0, {'name': name, 'film': film['name'], 'year': film['year'], 'id': film['id'], 'to': dst, 'at': int(time.time()), 'by': 'John' if want else ''})
+                    record('BFI introduction put with its film', file=name, film=film['name'], to=dst, chosen_by='John' if want else 'matched')
+                    continue
+                except Exception as e:
+                    why = 'couldn’t be moved: %s' % str(e)[:120]
+            try:
+                mt = os.path.getmtime(src)
+            except OSError:
+                mt = 0
+            S['files'][n] = {'name': name, 'title': title, 'year': year, 'why': why, 'guesses': guesses, 'at': int(time.time()), 'mt': int(mt), 'nf': sig}
+        for k in list(S['files']):   # (gone from the folder: off the list)
+            if not os.path.exists(os.path.join(BFI_IN, k)):
+                S['files'].pop(k, None)
+        S['moved'] = S['moved'][:500]
+        S['nf'] = sig
+        S['looked'] = int(time.time())
+        save(BFIF, S)
+    if moved:
+        log('BFI introductions put with their films (%d): %s' % (len(moved), ', '.join(moved)[:600]))
+        try:
+            g.forget()
+            g.publish_soon = time.time() + 600   # (the site told of the films' new extras, as extras_fix does)
+        except Exception:
+            pass
+    return S
+
+
+def bfi_loop(g):
+    time.sleep(180)
+    while True:
+        try:
+            if os.path.isdir(os.path.dirname(BFI_IN)):
+                bfi_now(g)
+        except Exception as e:
+            log('BFI introductions: %s' % str(e)[:200])
+        time.sleep(600)
+
+
 def auto_match(g):
     """Films the media server has taken for another film put right by themselves (John, 16 Nov 2026: "you can fix these and they should
     be fixed automatically" ... "you should be able to match better by using a tmdb check"). A film looks wrong when its folder's title
@@ -12097,7 +12331,8 @@ def serve():
     threading.Timer(420, set_covers_now).start()
     threading.Timer(300, crit_missing_now).start()   # (the Criterion films missing, kept ready: 24 Nov 2026)
     threading.Thread(target=one_percent_once, args=(g,), daemon=True).start()   # (once: 1% (Outlaws) put right: 26 Nov 2026)
-    threading.Thread(target=pic_local, args=(g,), daemon=True).start()   # (picture subtitles into text on the Mac mini, when John chooses it: 26 Nov 2026)
+    threading.Thread(target=pic_local, args=(g,), daemon=True).start()
+    threading.Thread(target=bfi_loop, args=(g,), daemon=True).start()   # (Mark Kermode's introductions put with their films: 26 Nov 2026)   # (picture subtitles into text on the Mac mini, when John chooses it: 26 Nov 2026)
     threading.Thread(target=crl_scan, args=(g,), daemon=True).start()   # (which Criterion films are Criterion's own release: 24 Nov 2026)   # (and the box set covers on the films released only in a set: 24 Nov 2026)   # (and once each start: any A24 film come in before this, Tony and Misty Green, put in)   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
     threading.Thread(target=fanny_series, args=(g,), daemon=True).start()
     threading.Thread(target=keep_disk_health, daemon=True).start()
