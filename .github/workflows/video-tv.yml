@@ -31,7 +31,7 @@ jobs:
       - name: Tools
         run: |
           # ffmpeg: apt, briefly (it has hung, and failed three runs in a row on 6 Nov 2026); else a ready-made static build (else one through pip)
-          for i in 1 2; do timeout 150 sudo apt-get install -y -qq --no-install-recommends ffmpeg > /dev/null 2>&1 && break; timeout 150 sudo apt-get update -qq > /dev/null 2>&1; echo "apt stuck or failed (try $i)"; done
+          for i in 1 2; do timeout 150 sudo apt-get install -y -qq --no-install-recommends ffmpeg > /dev/null 2>&1 && break; timeout 150 sudo apt-get update -qq > /dev/null 2>&1; echo "apt stuck or failed (try $i)"; sudo dpkg --configure -a > /dev/null 2>&1 || true; done
           if ! command -v ffprobe > /dev/null; then
             echo "apt didn't give ffmpeg: the ready-made one instead"
             d="$RUNNER_TEMP/ffmpeg"; mkdir -p "$d"

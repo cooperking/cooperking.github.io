@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Tools
         run: |
-          for i in 1 2 3; do timeout 300 sudo apt-get update -qq && timeout 300 sudo apt-get install -y -qq ffmpeg > /dev/null && break; echo "apt stuck or failed (try $i)"; sleep 10; done   # (a run once hung here 30 minutes)
+          for i in 1 2 3; do timeout 300 sudo apt-get update -qq && timeout 300 sudo apt-get install -y -qq ffmpeg > /dev/null && break; echo "apt stuck or failed (try $i)"; sudo dpkg --configure -a || true; sleep 10; done   # (a run once hung here 30 minutes)
           which ffprobe
           pip install --quiet boto3
       - name: Originals
