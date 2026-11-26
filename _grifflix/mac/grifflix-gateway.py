@@ -9326,6 +9326,10 @@ def bfi_now(g, only=None):
             if not os.path.exists(os.path.join(BFI_IN, k)):
                 S['files'].pop(k, None)
         S['moved'] = S['moved'][:500]
+        try:
+            bfi_collect(g, S)
+        except Exception as e:
+            log('BFI collection: %s' % str(e)[:160])
         S['nf'] = sig
         S['looked'] = int(time.time())
         save(BFIF, S)
@@ -9409,6 +9413,42 @@ def kermode_loop(g):
         except Exception as e:
             log('BFI playlist: %s' % str(e)[:200])
         time.sleep(1800)
+
+
+def bfi_collect(g, S):
+    """Every film (or series) given Mark Kermode's introduction in the BFI collection, made if it isn't there, as A24's and Criterion's
+    are (John, 26 Nov 2026: "Any film that the Extra is added to, should be labelled BFI, and added to a collection, just like A24 and
+    Criterion"). Only when there are more than last time; a film John takes out by hand stays out until another introduction of it comes."""
+    ids = [m['id'] for m in S.get('moved') or [] if re.match(r'^[0-9a-f]{32}$', str(m.get('id') or ''))]
+    ids = list(dict.fromkeys(ids))
+    done = set(S.get('coll') or [])
+    new = [i for i in ids if i not in done]
+    if not new:
+        return
+    sets = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'BoxSet'}) or {}).get('Items') or []
+    box = next((x for x in sets if (x.get('Name') or '').strip().lower() == 'bfi'), None)
+    have = set()
+    for i in new:   # (still in the library: a film renamed since is a new item, and an old id can't go in)
+        try:
+            if (g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, i)) or {}).get('Id'):
+                have.add(i)
+        except Exception:
+            pass
+    put = [i for i in new if i in have]
+    if put:
+        if box:
+            g.jf.call('POST', '/Collections/%s/Items' % box['Id'], query={'Ids': ','.join(put)})
+        else:
+            cid = ((g.jf.call('POST', '/Collections', query={'Name': 'BFI', 'IsLocked': 'true', 'Ids': ','.join(put)}) or {}).get('Id') or '')
+            if cid:
+                full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, cid)) or {}
+                full['Overview'] = 'Films with Mark Kermode’s introduction, from the BFI: each in its Extras.'
+                full['LockedFields'] = sorted(set((full.get('LockedFields') or []) + ['Overview', 'Name']))
+                g.jf.call('POST', '/Items/%s' % cid, full)
+        log('BFI collection: %d put in' % len(put))
+        g.forget()
+        g.publish_soon = time.time() + 300
+    S['coll'] = sorted(done | set(new))
 
 
 def bfi_loop(g):
