@@ -10,6 +10,11 @@ On John's Mac, in Terminal. Once, to have it:
   python3 ~/Grifflix/kermode.py --new  only says which are new, getting nothing
   python3 ~/Grifflix/kermode.py --move only makes MP4s of what's in the folder and puts them on the G-Drive, getting nothing
   python3 ~/Grifflix/kermode.py --here this folder used from now on, not the one before
+  python3 ~/Grifflix/kermode.py --install    it runs by itself from now on, in the background, every 6 hours (and now): new ones got, made
+                                             and put on the G-Drive when you're at home, with a notification (John, 26 Nov 2026: "I would
+                                             like that Kermode playlist checked and automatically downloaded, in a similar way to the song
+                                             of the day script"); what it did in ~/Grifflix/kermode.log
+  python3 ~/Grifflix/kermode.py --uninstall  not by itself any more
 
 What it does, in order:
  1. What's been got already: every YouTube code in a file name in the folder (its originals folder too), kept in ~/Grifflix/kermode-got.txt
@@ -36,6 +41,13 @@ MINI = '192.168.68.125'   # (the Mac mini, as convert-here.sh has it)
 CODE = re.compile(r'\[([A-Za-z0-9_-]{11})\]')
 VID = ('.mkv', '.webm')
 HALF = re.compile(r'\.(part|ytdl|temp)(\.|$)|\.f\d+\.\w+$|^\.')
+AUTO = '--auto' in sys.argv   # (run by launchd: quiet, polite to YouTube, never asking anything)
+LABEL = 'io.github.cooperking.grifflix-kermode'
+AGENT = os.path.join(HOME, 'Library', 'LaunchAgents', LABEL + '.plist')
+LOGF = os.path.join(G, 'kermode.log')
+LOCK = os.path.join(G, 'kermode.lock')
+SRC = 'https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/kermode.py'
+PER_RUN = 40   # (by itself, at most this many got each time: YouTube stopped a run of hundreds for an hour, 26 Nov 2026)
 
 ROMAN = {'ii': '2', 'iii': '3', 'iv': '4', 'vi': '6', 'vii': '7', 'viii': '8', 'ix': '9', 'xi': '11', 'xii': '12', 'xiii': '13', 'xiv': '14', 'xv': '15', 'xvi': '16', 'xvii': '17', 'xviii': '18', 'xix': '19', 'xx': '20'}
 
@@ -149,12 +161,15 @@ def keep_fresh(y):
 
 def solver(y):
     """The newest puzzle solver fetched by yt-dlp itself from its own GitHub, where this yt-dlp can (2025.11 on), so a YouTube change
-    between yt-dlp's releases doesn't stop it."""
+    between yt-dlp's releases doesn't stop it; and Deno named outright, where it can be, so it's found however this is started ("No
+    supported JavaScript runtime could be found": John, 26 Nov 2026)."""
     try:
         h = subprocess.run([y, '--help'], capture_output=True, text=True, env=env(), timeout=60).stdout or ''
     except Exception:
         h = ''
-    return ['--remote-components', 'ejs:github'] if '--remote-components' in h else []
+    d = tool('deno') or next((x for x in (os.path.join(HOME, '.deno', 'bin', 'deno'),) if os.path.exists(x)), None)
+    return (['--remote-components', 'ejs:github'] if '--remote-components' in h else []) + \
+           (['--js-runtimes', 'deno:' + d] if d and '--js-runtimes' in h else [])
 
 
 def env():
@@ -250,9 +265,21 @@ def whole(ff, out, src):
     return b is None or a >= b - 2
 
 
+def at_home():
+    """The Mac mini answers here (its file sharing): at home, not at work, where asking for the G-Drive would only put up a box."""
+    import socket
+    try:
+        socket.create_connection((MINI, 445), timeout=3).close()
+        return True
+    except OSError:
+        return False
+
+
 def drive():
     if os.path.isdir(GD):
         return True
+    if AUTO and not at_home():
+        return False
     say('Connecting to the G-Drive (a box may ask for the Mac mini’s sign-in) …')
     subprocess.run(['open', 'smb://%s/G-Drive' % MINI])
     for _ in range(120):
@@ -378,8 +405,97 @@ def move(folder, fresh):
     return n
 
 
+def notify(text):
+    if AUTO:
+        try:
+            subprocess.run(['osascript', '-e', 'display notification "%s" with title "Grifflix: Mark Kermode"' % text.replace('"', "'")], capture_output=True)
+        except OSError:
+            pass
+
+
+def install():
+    """By itself from now on: a LaunchAgent, as the Song of the Day uploader has, every 6 hours and now."""
+    try:
+        C = json.load(open(CONF))
+    except (OSError, ValueError):
+        C = {}
+    if not C.get('folder') or not C.get('urls'):
+        sys.exit('Run it once by hand first (in the folder, with the playlist’s address), so it knows where and what. Then --install.')
+    me = os.path.join(G, 'kermode.py')
+    if os.path.realpath(os.path.abspath(__file__)) != os.path.realpath(me):
+        shutil.copyfile(os.path.abspath(__file__), me)
+    os.makedirs(os.path.dirname(AGENT), exist_ok=True)
+    open(AGENT, 'w').write('''<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>%s</string>
+  <key>ProgramArguments</key><array><string>/usr/bin/python3</string><string>%s</string><string>--auto</string></array>
+  <key>StartInterval</key><integer>21600</integer>
+  <key>RunAtLoad</key><true/>
+  <key>LowPriorityIO</key><true/>
+  <key>Nice</key><integer>10</integer>
+  <key>StandardOutPath</key><string>%s</string>
+  <key>StandardErrorPath</key><string>%s</string>
+</dict></plist>
+''' % (LABEL, me, LOGF, LOGF))
+    uid = str(os.getuid())
+    subprocess.run(['launchctl', 'bootout', 'gui/%s/%s' % (uid, LABEL)], capture_output=True)
+    r = subprocess.run(['launchctl', 'bootstrap', 'gui/' + uid, AGENT], capture_output=True, text=True)
+    if r.returncode:
+        sys.exit('Couldn’t set it going: %s' % (r.stderr or '').strip())
+    say('Set up. Every 6 hours, and now, your Mac looks at the playlist, gets any new introductions (%d at most each time, so YouTube '
+        'doesn’t stop it), makes the MP4s and puts them on the G-Drive when you’re at home, with a notification when any go on. '
+        'What it does: %s. To stop it: python3 ~/Grifflix/kermode.py --uninstall' % (PER_RUN, LOGF))
+
+
+def uninstall():
+    subprocess.run(['launchctl', 'bootout', 'gui/%s/%s' % (os.getuid(), LABEL)], capture_output=True)
+    try:
+        os.remove(AGENT)
+    except OSError:
+        pass
+    say('Stopped: it runs only when you run it now.')
+
+
+def auto_start():
+    """By itself: one at a time (a run of hundreds outlasts 6 hours), the newest of this script first, the log kept small."""
+    try:
+        pid = int(open(LOCK).read().strip() or 0)
+        if pid and pid != os.getpid():
+            os.kill(pid, 0)
+            sys.exit(0)   # (one still running)
+    except (OSError, ValueError):
+        pass
+    open(LOCK, 'w').write(str(os.getpid()))
+    try:
+        if os.path.getsize(LOGF) > 3e6:
+            t = open(LOGF, encoding='utf-8', errors='replace').readlines()[-5000:]
+            open(LOGF, 'w', encoding='utf-8').writelines(t)
+    except OSError:
+        pass
+    say('==== %s' % time.strftime('%Y-%m-%d %H:%M'))
+    if not os.environ.get('KERMODE_FRESH'):   # (the newest version, from GitHub, taken up before each run)
+        try:
+            new = subprocess.run(['curl', '-fsSL', '-m', '60', SRC], capture_output=True).stdout
+            me = os.path.abspath(__file__)
+            if new and new.startswith(b'#!') and new != open(me, 'rb').read():
+                open(me + '.new', 'wb').write(new)
+                os.replace(me + '.new', me)
+                say('A newer version: carrying on with it')
+                os.remove(LOCK)
+                os.execve(sys.executable, [sys.executable, me] + sys.argv[1:], dict(os.environ, KERMODE_FRESH='1'))
+        except OSError:
+            pass
+
+
 def main(a):
     os.makedirs(G, exist_ok=True)
+    if '--install' in a:
+        return install()
+    if '--uninstall' in a:
+        return uninstall()
+    if AUTO:
+        auto_start()
     try:
         C = json.load(open(CONF))
     except (OSError, ValueError):
@@ -395,6 +511,8 @@ def main(a):
     if gone:   # (one kept before that isn't a whole address: forgotten)
         say('Forgotten (not a whole address): %s' % ', '.join(gone))
         C['urls'] = [u for u in C['urls'] if good_url(u)]
+    if AUTO and not (C.get('folder') and C.get('urls')):
+        sys.exit('Not set up: run it once by hand first')
     if '--here' in a or not C.get('folder'):
         if os.path.realpath(os.getcwd()) == os.path.realpath(HOME):
             sys.exit('First, in Terminal: cd (with a space), drag the folder the introductions are in onto the window, press Return. Then this again.')
@@ -439,9 +557,12 @@ def main(a):
         if new:
             done = os.path.join(tempfile.mkdtemp(), 'done.txt')
             keep_fresh(y)
+            # (gently: yt-dlp's own "-t sleep" pauses, as YouTube asked when it stopped a run of hundreds for an hour, 26 Nov 2026; and by
+            # itself, at most PER_RUN each time, the rest next time)
             subprocess.run([y] + solver(y) + ['--download-archive', GOT, '--ignore-errors', '--no-overwrites', '--match-filters', "title~='(?i)kermode'",
                             '-S', 'vcodec:h264,res:1080,acodec:m4a', '--merge-output-format', 'mkv', '-o', '%(title)s [%(id)s].%(ext)s',
-                            '--sleep-interval', '2', '--max-sleep-interval', '6', '--print-to-file', 'after_move:filepath', done] + C['urls'], env=env())
+                            '--sleep-requests', '0.75', '--sleep-interval', '10', '--max-sleep-interval', '20', '--print-to-file', 'after_move:filepath', done]
+                           + (['--max-downloads', str(PER_RUN), '--no-progress'] if AUTO else []) + C['urls'], env=env())
             try:
                 fresh = {os.path.join(folder, os.path.basename(l.strip())) for l in open(done, encoding='utf-8') if l.strip()}
             except OSError:
@@ -453,6 +574,11 @@ def main(a):
     m = move(folder, fresh)
     say('Done: %d made into MP4s, %d put in G-Drive › Grifflix › BFI Kermode. The Mac mini puts each with its film within 10 minutes; '
         'any it isn’t sure of are on the admin page, BFI tab.' % (c, m))
+    if m:
+        notify('%d introduction%s put on the G-Drive: each goes with its film within 10 minutes' % (m, '' if m == 1 else 's'))
+    left = [f for f in os.listdir(folder) if f.lower().endswith('.mp4') and not f.startswith('.')]
+    if AUTO and left and not os.path.isdir(GD):
+        say('%d waiting here for the G-Drive (you’re not at home): next time' % len(left))
 
 
 if __name__ == '__main__':
@@ -461,3 +587,10 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print('\nStopped. Run it again to carry on: nothing half-made is kept or moved.')
         sys.exit(130)
+    finally:
+        if AUTO:
+            try:
+                if open(LOCK).read().strip() == str(os.getpid()):
+                    os.remove(LOCK)
+            except OSError:
+                pass

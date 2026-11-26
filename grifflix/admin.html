@@ -798,7 +798,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="kicker">To check</div>
         <h2>To <em>check</em></h2>
         <p class="stat">Films whose file is in doubt: the wrong film, a second copy, or a file far shorter or longer than its film (only part of it?), each with why. Only you see this collection. Take a film out of it once it’s put right (in the collection on the draft) and it goes from here too.</p>
-        <div class="state"><a class="btn primary" id="tcopen" href="#" target="_blank" rel="noopener" hidden>Open To check</a><a class="btn" id="tcdraft" href="#" target="_blank" rel="noopener" hidden>On the draft</a><button class="btn" type="button" id="tcagain" title="Every film’s file checked against its film’s length now, as every 6 hours">Check again</button></div>
+        <div class="state"><a class="btn primary" id="tcopen" href="#" target="_blank" rel="noopener" hidden>Open To check</a><a class="btn" id="tcdraft" href="#" target="_blank" rel="noopener" hidden>On the draft</a><button class="btn" type="button" id="tcagain" title="The whole library checked now, as every 6 hours: films newly in doubt put in, and those put right since (after Fix match, say) taken off">Check again</button></div>
         <p class="stat" id="tcsay">Looking on the Mac mini…</p>
         <div class="state" id="tcpickbar" hidden><button class="btn primary" type="button" id="tcgo" disabled>Open ticked in tabs</button><button class="btn" type="button" id="tcall">Tick all</button></div>
         <div id="tclist"></div>
@@ -2282,7 +2282,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     var csv = ['Spine,Title,Year,Director,Country,Criterion page'].concat((CMF.rows || []).map(function (r) { return r.map(c).join(','); })).join('\n');
     var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'criterion-films-missing.csv'; document.body.appendChild(a); a.click(); a.remove();
   };
-  // (every film checked for To check now, not in up to 6 hours: John, 26 Nov 2026, "can I have a button to check again on the check page")
+  // (the whole library checked for To check now, not in up to 6 hours: films newly in doubt put in, those put right since taken off: John,
+  // 26 Nov 2026, "can I have a button to check again on the check page" ... "I meant one button to check again for problems with the library")
   $('#tcagain').onclick = function () {
     var b = this; if (!GW) return toast('The Mac mini isn’t connected just now.');
     b.disabled = true; b.textContent = 'Checking…';
@@ -2290,8 +2291,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(r.status === 404 ? 'The Mac mini hasn’t this yet: it gets it at its next update.' : j.error || 'The Mac mini didn’t answer.'); return j; }); })
       .then(function (j) {
         b.disabled = false; b.textContent = 'Check again';
-        var L = j.last || {}, a = L.added || [];
-        toast(j.running ? 'Still checking: look again in a minute' : L.error ? 'Couldn’t check: ' + L.error : a.length ? a.length + ' put in: ' + a.join(', ') : 'Checked: nothing new in doubt');
+        var L = j.last || {}, a = L.added || [], c = L.cleared || [];
+        toast(j.running ? 'Still checking: look again in a minute' : L.error ? 'Couldn’t check: ' + L.error : !a.length && !c.length ? 'Checked: nothing new in doubt, nothing put right' :
+          (a.length ? a.length + ' put in: ' + a.join(', ') + '. ' : '') + (c.length ? c.length + ' put right, taken off: ' + c.join(', ') : ''));
         a24Look();
       }).catch(function (e) { b.disabled = false; b.textContent = 'Check again'; toast(e.message); });
   };
