@@ -215,8 +215,10 @@
         badge: res, say: r.failed ? (r.steps && r.steps.length ? 'Stopped at: ' + r.steps.join(', ') : 'It failed') + (r.bad ? '' : ' · run again since (see its later run)') : '', url: r.url, dealt: r.bad ? r : null,
         more: (r.why || []).map(function (x) { return el('span', 'err', x); }) }));   // (the download job's own last lines, from its log in the bucket)
     });
-    (j.mails || []).forEach(function (e) {   // emails sent from your Gmail: sign-in codes, and tests
-      out.push(item({ at: e.at, title: e.what === 'code' ? 'Email: a sign-in code' : 'Email: a test', what: 'to ' + e.to, by: { t: 'your Gmail' },
+    (j.mails || []).forEach(function (e) {   // emails sent from your Gmail: sign-in codes, notifications, round-ups and tests
+      // (each by what it was: a notification or the day's round-up, not "a test": John, 26 Nov 2026, "why is it called a test?")
+      var mk = e.what === 'code' ? 'a sign-in code' : e.what === 'test' ? 'a test' : e.what === 'notes' ? 'the day’s round-up' : e.what === 'note' ? 'a notification' : e.what || 'sent';
+      out.push(item({ at: e.at, title: 'Email: ' + mk + (e.s && e.what !== 'code' && e.what !== 'test' ? ' · ' + e.s : ''), what: 'to ' + e.to, by: { t: 'your Gmail' },
         st: e.ok ? 'ok' : 'bad', badge: status(e.ok ? 'ok' : 'bad', e.ack, 'Sent'), say: e.ok ? '' : e.err, dealt: e }));
     });
     var sp = j.spotify;   // Spotify asked the Worker to wait

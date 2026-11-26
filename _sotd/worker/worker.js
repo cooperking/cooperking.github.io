@@ -4041,7 +4041,7 @@ async function mailNote(env, e) {
   await kvSoft(env, 'mailLog', JSON.stringify(log));
 }
 async function sendMail(env, to, subject, text, what, html) {   // html: the formatted email (notifications), with text as its plain version   // from John's Google account (his own address on it)
-  const note = { id: randomCode(6), at: Date.now(), what, to: mailShort(to) };
+  const note = { id: randomCode(6), at: Date.now(), what, to: mailShort(to), s: String(subject || '').slice(0, 90) };   // (its subject, for the Status tab: John, 26 Nov 2026, "why is it called a test?")
   try {
     if (!mailReady(env)) throw new HttpError(503, 'Emails aren’t set up yet: the Worker has no mailer.');
     if (mailScript(env)) {   // the Apps Script mailer (MailApp, as John; 100 a day): it answers { ok, left } or { error }
