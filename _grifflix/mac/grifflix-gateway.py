@@ -3438,6 +3438,28 @@ def make_handler(g):
             return self.send_json(200, {'ids': sorted(by), 'checked': sum(1 for t in by if t in D), 'found': sum(1 for t in by if D.get(t)),
                                         'total': len(by), 'noimdb': len(films) - sum(len(v) for v in by.values()), 'dist': out})
 
+        def api_tocheck(self, me, user, q, b):
+            """John's only: POST {op: 'look'}: every film looked at for To check now (to_check_scan), answered when done or after 80 seconds
+            (then it carries on, and says so); GET: the last look."""
+            if not me.get('owner'):
+                return self.send_json(403, {'error': 'Only John.'})
+            if b and b.get('op') == 'look':
+                if TC_LOCK.locked():
+                    return self.send_json(200, {'running': True, 'last': TC_LAST})
+
+                def go():
+                    with TC_LOCK:
+                        try:
+                            TC_LAST.clear()
+                            TC_LAST.update(at=int(time.time()), added=to_check_scan(g))
+                        except Exception as e:
+                            TC_LAST.update(at=int(time.time()), error=str(e)[:200])
+                t_ = threading.Thread(target=go, daemon=True)
+                t_.start()
+                t_.join(80)
+                return self.send_json(200, {'running': t_.is_alive(), 'last': TC_LAST})
+            return self.send_json(200, {'running': TC_LOCK.locked(), 'last': TC_LAST})
+
         def api_bfi(self, me, user, q, b):
             """John's only: Mark Kermode's introductions, put in BFI Kermode on the G-Drive: those put with their films, and those not, with the
             likeliest films; POST {op: 'move', file, id}: one put with the film John chose; {op: 'look'}: looked at now."""
@@ -3463,7 +3485,11 @@ def make_handler(g):
             files = sorted(((k, v) for k, v in (S.get('files') or {}).items()), key=lambda kv: kv[1].get('name') or kv[0])
             return self.send_json(200, {'folder': 'G-Drive › Grifflix › BFI Kermode', 'there': os.path.isdir(BFI_IN), 'looked': S.get('looked'),
                                         'todo': [dict(v, file=k) for k, v in files], 'moved': (S.get('moved') or [])[:200],
-                                        'twice': [x for x in (S.get('twice') or []) if os.path.exists(os.path.join(BFI_IN, 'Already got'))][:50]})
+                                        'twice': [x for x in (S.get('twice') or []) if os.path.exists(os.path.join(BFI_IN, 'Already got'))][:50],
+                                        # (those just put there, not yet looked at (each waits 5 minutes after it arrives), and one coming in now:
+                                        # John, 26 Nov 2026, "I can't see if things are moving")
+                                        'arriving': len([n for n in (os.listdir(BFI_IN) if os.path.isdir(BFI_IN) else []) if n.lower().endswith('.mp4') and not n.startswith('.') and n not in (S.get('files') or {})]),
+                                        'copying': next((n[len('.copying-'):] for n in (os.listdir(BFI_IN) if os.path.isdir(BFI_IN) else []) if n.startswith('.copying-')), None)})
 
         def api_picsubs(self, me, user, q, b):
             """John's only: films whose picture subtitles were saved beside them when converted (convert.py, picture-subs.json), waiting to be
@@ -9305,16 +9331,10 @@ def auto_match(g):
                 wrong_len = rt > 10 and abs(rt - mins) > 15   # (its match runs a quarter of an hour longer or shorter than the film itself)
             except Exception:
                 pass
-        if wrong_len:   # (To check, saying so plainly (John, 26 Nov 2026: "Opus isn't in there"; Weekend's note not understood): a file far shorter
-            # than its film (under 60%: only part of it), or matched to a film of another name and another length (the wrong film). Not a
-            # longer file of its own film: the extended and director's cuts (The Lord of the Rings, Apocalypse Now, Amadeus…) are on purpose
-            rt_ = tmdb_runtime(g, cur)['rt']
-            named_ = same_year and (same_name or (len(fold(title)) >= 5 and fold(it.get('Name')).startswith(fold(title))))
-            if not named_:
-                doubt.append((it, fname, mins, 'the file runs %d minutes, but it’s matched to %s (%s), which runs %d: the wrong film? Fix match on its page'
-                              % (mins, it.get('Name'), it.get('ProductionYear') or '?', rt_)))
-            elif mins < .6 * rt_:
-                doubt.append((it, fname, mins, 'the file runs %d minutes; the film runs %d: only part of it?' % (mins, rt_)))
+        if wrong_len:
+            why_ = len_doubt(g, it, title, mins, cur, same_name, same_year)
+            if why_:
+                doubt.append((it, fname, mins, why_))
         if same_name and same_year and not wrong_len:
             continue
         if time.time() - tried.get(fname, 0) < 7 * 86400:
@@ -9371,6 +9391,71 @@ def auto_match(g):
         log('To check: %s' % str(e)[:200])
 
 
+def len_doubt(g, it, title, mins, cur, same_name, same_year):
+    """Why a film's file is in doubt, for To check, said plainly (John, 26 Nov 2026: "Opus isn't in there"; Weekend's note not understood),
+    or None: a file far shorter than its film (under 60%: only part of it), or matched to a film of another name and another length (the
+    wrong film). Not a longer file of its own film: the extended and director's cuts (The Lord of the Rings, Apocalypse Now, Amadeus…) are
+    on purpose."""
+    rt_ = tmdb_runtime(g, cur)['rt']
+    if not (rt_ > 10 and mins > 10 and abs(rt_ - mins) > 15):
+        return None
+    named_ = same_year and (same_name or (len(fold(title)) >= 5 and fold(it.get('Name')).startswith(fold(title))))
+    if not named_:
+        return 'the file runs %d minutes, but it’s matched to %s (%s), which runs %d: the wrong film? Fix match on its page' % (mins, it.get('Name'), it.get('ProductionYear') or '?', rt_)
+    if mins < .6 * rt_:
+        return 'the file runs %d minutes; the film runs %d: only part of it?' % (mins, rt_)
+    return None
+
+
+TC_LOCK = threading.Lock()
+TC_LAST = {}
+
+
+def to_check_scan(g):
+    """Every film looked at for To check now (John's Check again, 26 Nov 2026: "can I have a button to check again on the check page"):
+    its file's length against its film's, as every 6 hours, without matching any again. Returns the films put in."""
+    import difflib, unicodedata
+    if not g.st.get('tmdb_key'):
+        raise RuntimeError('no TMDB key on the Mac mini, so no film lengths to compare')
+    VID = ('.mp4', '.mkv', '.m4v', '.mov', '.avi', '.ts', '.wmv', '.mpg', '.mpeg', '.webm')
+    lid = (g.st.get('libraries') or {}).get('movies')
+    items, start = [], 0
+    while lid:
+        r_ = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': lid, 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'StartIndex': start, 'Limit': 300,
+                                                              'Fields': 'Path,ProductionYear,ProviderIds,LockedFields'}, timeout=180) or {}
+        items += r_.get('Items') or []
+        start += 300
+        if start >= (r_.get('TotalRecordCount') or 0) or not r_.get('Items'):
+            break
+    doubt = []
+    for it in items:
+        p = it.get('Path') or ''
+        folder = os.path.dirname(p)
+        fname = os.path.basename(folder)
+        m = re.match(r'^(.*?)\s*\((\d{4})\)\s*$', fname)
+        cur = (it.get('ProviderIds') or {}).get('Tmdb')
+        mins = round((it.get('RunTimeTicks') or 0) / 6e8)
+        if not m or not cur or mins <= 10 or '{edition-' in p.lower() or 'Name' in (it.get('LockedFields') or []) or it.get('LockData'):
+            continue
+        title, year = m.group(1).strip(), int(m.group(2))
+        same_name = difflib.SequenceMatcher(None, fold(title), fold(it.get('Name'))).ratio() >= .9
+        same_year = not it.get('ProductionYear') or abs(int(it['ProductionYear']) - year) <= 1
+        try:
+            why_ = len_doubt(g, it, title, mins, cur, same_name, same_year)
+        except Exception:
+            continue
+        if why_:
+            try:
+                if sum(1 for n in os.listdir(folder) if n.lower().endswith(VID) and not n.startswith('.')) != 1:
+                    continue
+            except OSError:
+                continue
+            doubt.append((it, fname, mins, why_))
+    if TMDBC.pop('_dirty', None):
+        save(os.path.expanduser('~/Grifflix/tmdb-runtimes.json'), TMDBC)
+    return to_check_add(g, doubt) or []
+
+
 def to_check_add(g, doubts):
     """Films whose file is in doubt put in To check by themselves, each with why, every time the films are looked at (every 6 hours), not
     only the once (John, 26 Nov 2026: "how often is the to check run, because Opus isn't in there"). Each film at most once for the
@@ -9378,7 +9463,7 @@ def to_check_add(g, doubts):
     23 Nov, count as put in already."""
     import unicodedata
     if not doubts:
-        return
+        return []
     nf = lambda t: unicodedata.normalize('NFC', t or '')
     f = os.path.expanduser('~/Grifflix/to-check-added.json')
     A = load(f, {}) or {}
@@ -9415,6 +9500,7 @@ def to_check_add(g, doubts):
         g.forget()
         g.publish_soon = time.time() + 300
     save(f, A)
+    return [it.get('Name') or fname for it, fname, _ in new]
 
 
 def match_unmatched(g):

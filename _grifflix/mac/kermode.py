@@ -347,7 +347,8 @@ def move(folder, fresh):
                 pass
     ff = tool('ffmpeg')
     n = 0
-    for f in todo:
+    say('Putting %d on the G-Drive, one at a time (about a minute each while the Mac mini is busy) …' % len(todo))
+    for k, f in enumerate(todo, 1):
         src = os.path.join(folder, f)
         name = tidy(os.path.splitext(f)[0])[0] + '.mp4'
         dst = os.path.join(DEST, name)
@@ -367,7 +368,7 @@ def move(folder, fresh):
             os.remove(src)
             names_add([os.path.splitext(name)[0]])
             n += 1
-            say('On the G-Drive: %s' % name)
+            say('On the G-Drive (%d of %d): %s' % (k, len(todo), name))
         except OSError as e:
             try:
                 os.remove(tmp)
