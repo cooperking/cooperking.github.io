@@ -124,6 +124,39 @@ def ytdlp():
     return y
 
 
+def keep_fresh(y):
+    """yt-dlp brought up to date once a day: YouTube changes its player often, and an older yt-dlp can't solve its puzzles ("n challenge
+    solving failed ... Some formats may be missing": John, 26 Nov 2026). One from Homebrew or pip is updated the way it came, said so."""
+    stamp = os.path.join(G, 'ytdlp-checked')
+    try:
+        if time.time() - os.path.getmtime(stamp) < 86400:
+            return
+    except OSError:
+        pass
+    try:
+        r = subprocess.run([y, '-U'], capture_output=True, text=True, env=env(), timeout=300)
+        out = ((r.stdout or '') + (r.stderr or '')).strip()
+    except Exception as e:
+        out = str(e)
+    open(stamp, 'w').write(out[-500:])
+    if re.search(r'(?i)updated yt-dlp to|updating to', out):
+        say('yt-dlp brought up to date.')
+    elif re.search(r'(?i)\bpip\b|pypi', out):
+        say('yt-dlp came with pip: to bring it up to date, in Terminal: python3 -m pip install -U "yt-dlp[default]"')
+    elif re.search(r'(?i)package manager|homebrew|brew', out):
+        say('yt-dlp came with Homebrew: to bring it up to date, in Terminal: brew upgrade yt-dlp')
+
+
+def solver(y):
+    """The newest puzzle solver fetched by yt-dlp itself from its own GitHub, where this yt-dlp can (2025.11 on), so a YouTube change
+    between yt-dlp's releases doesn't stop it."""
+    try:
+        h = subprocess.run([y, '--help'], capture_output=True, text=True, env=env(), timeout=60).stdout or ''
+    except Exception:
+        h = ''
+    return ['--remote-components', 'ejs:github'] if '--remote-components' in h else []
+
+
 def env():
     e = dict(os.environ)
     e['PATH'] = ':'.join([os.path.join(HOME, 'bin'), os.path.join(HOME, '.deno', 'bin'), '/opt/homebrew/bin', '/usr/local/bin', e.get('PATH', '')])
@@ -404,7 +437,8 @@ def main(a):
             return
         if new:
             done = os.path.join(tempfile.mkdtemp(), 'done.txt')
-            subprocess.run([y, '--download-archive', GOT, '--ignore-errors', '--no-overwrites', '--match-filters', "title~='(?i)kermode'",
+            keep_fresh(y)
+            subprocess.run([y] + solver(y) + ['--download-archive', GOT, '--ignore-errors', '--no-overwrites', '--match-filters', "title~='(?i)kermode'",
                             '-S', 'vcodec:h264,res:1080,acodec:m4a', '--merge-output-format', 'mkv', '-o', '%(title)s [%(id)s].%(ext)s',
                             '--sleep-interval', '2', '--max-sleep-interval', '6', '--print-to-file', 'after_move:filepath', done] + C['urls'], env=env())
             try:
