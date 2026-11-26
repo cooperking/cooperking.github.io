@@ -1243,7 +1243,10 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || (r.status === 404 ? 'The Mac mini hasn’t this yet: it gets it at its next update.' : 'The Mac mini didn’t answer.')); return j; }); }); };
     var put = function (bt, file, id, what) {
       bt.disabled = true; var was = bt.textContent; bt.textContent = 'Moving…';
-      go({ op: 'move', file: file, id: id }).then(function () { toast('Putting it with ' + what + ': done in a moment'); setTimeout(function () { bfiLook(true); }, 15000); setTimeout(function () { bfiLook(true); }, 45000); })
+      go({ op: 'move', file: file, id: id }).then(function () {
+        toast('Putting it with ' + what + ': done in a moment');
+        BFT.T = BFT.T.filter(function (t) { return t.file !== file; }); delete BFT.pick[file]; bfiTable();   // (off the list at once, not after the next look)
+        setTimeout(function () { bfiLook(true); }, 15000); setTimeout(function () { bfiLook(true); }, 45000); })
         .catch(function (e) { bt.disabled = false; bt.textContent = was; toast(e.message); });
     };
     var pick = function (f) { return f.name + (f.year ? ' (' + f.year + ')' : '') + (f.kind === 'series' ? ' · TV' : ''); };
