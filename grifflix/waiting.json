@@ -173,7 +173,9 @@
    "optional": true,
    "title": "Remove the AFI text from the site's past versions on GitHub?",
    "why": "The AFI details are now for members only and no longer in the site's files, but copies published before stay in the repository's history.",
-   "how": "You said yes (26 Nov). Claude needs one more yes, after reading what it can and can’t remove (in the chat): GitHub keeps copies for every pull request, which only GitHub Support can clear."
+   "how": "You said yes (26 Nov). Claude needs one more yes, after reading what it can and can’t remove (in the chat): GitHub keeps copies for every pull request, which only GitHub Support can clear.",
+   "done": "2026-11-26",
+   "answer": "Left as it is: not findable by search (GitHub searches only the files as they are now), and the text is public anyway. If the site ever moves to a new repository, it starts without its history."
   },
   {
    "id": "argos-setup",
