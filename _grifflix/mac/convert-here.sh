@@ -236,6 +236,16 @@ if [[ "${1:-}" == "agent" ]]; then
     rm -f "$HERE/logocheck.py.new"
     if [[ -f "$HERE/logocheck.py" ]]; then detach /usr/bin/caffeinate -i /usr/bin/python3 "$HERE/logocheck.py"; echo $! > "$ll"; fi
   fi
+  # (picture subtitles read into text here (picsubs.py), only while John has it switched on for this Mac on the admin page, alongside anything
+  # being converted: John, 26 Nov 2026, "Build the picture job, but I'll decide when and where to run it")
+  pl="$HERE/picsubs.lock"; px=$(cat "$HERE/picsubs.next" 2>/dev/null); [[ "$px" == <-> ]] || px=0
+  if [[ "$home" == 1 && -d /Volumes/G-Drive ]] && (( px <= $(date +%s) )) && ! { [[ -f "$pl" ]] && kill -0 "$(cat "$pl" 2>/dev/null)" 2>/dev/null; } \
+     && curl -fsS -m 20 -H "Authorization: Bearer $key" "$base/macagent/picnext?peek=1" 2>/dev/null | grep -q '"on": true'; then
+    curl -fsSL -m 60 https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/picsubs.py -o "$HERE/picsubs.py.new" 2>/dev/null &&
+      /usr/bin/python3 -c 'import ast, sys; ast.parse(open(sys.argv[1]).read())' "$HERE/picsubs.py.new" 2>/dev/null && mv -f "$HERE/picsubs.py.new" "$HERE/picsubs.py"
+    rm -f "$HERE/picsubs.py.new"
+    if [[ -f "$HERE/picsubs.py" ]]; then detach /usr/bin/caffeinate -i /usr/bin/python3 "$HERE/picsubs.py"; echo $! > "$pl"; fi
+  fi
   if [[ -f "$lock" ]] && kill -0 "$(cat "$lock" 2>/dev/null)" 2>/dev/null; then exit 0; fi   # (one film at a time; copies over go on all the same)
   ans=$(curl -fsS -m 90 -H "Authorization: Bearer $key" "$base/macagent/next?home=$home") || exit 0
   [[ "$home" == 1 ]] || exit 0
