@@ -9279,6 +9279,7 @@ def auto_match(g):
             break
     keyed = bool(g.st.get('tmdb_key'))
     fixed, unsure = [], []
+    doubt, fixed_ids = [], set()   # (films whose file is in doubt, for To check, each time, not only the once: 26 Nov 2026)
     for it in items:
         p = it.get('Path') or ''
         folder = os.path.dirname(p)
@@ -9304,6 +9305,16 @@ def auto_match(g):
                 wrong_len = rt > 10 and abs(rt - mins) > 15   # (its match runs a quarter of an hour longer or shorter than the film itself)
             except Exception:
                 pass
+        if wrong_len:   # (To check, saying so plainly (John, 26 Nov 2026: "Opus isn't in there"; Weekend's note not understood): a file far shorter
+            # than its film (under 60%: only part of it), or matched to a film of another name and another length (the wrong film). Not a
+            # longer file of its own film: the extended and director's cuts (The Lord of the Rings, Apocalypse Now, Amadeus…) are on purpose
+            rt_ = tmdb_runtime(g, cur)['rt']
+            named_ = same_year and (same_name or (len(fold(title)) >= 5 and fold(it.get('Name')).startswith(fold(title))))
+            if not named_:
+                doubt.append((it, fname, mins, 'the file runs %d minutes, but it’s matched to %s (%s), which runs %d: the wrong film? Fix match on its page'
+                              % (mins, it.get('Name'), it.get('ProductionYear') or '?', rt_)))
+            elif mins < .6 * rt_:
+                doubt.append((it, fname, mins, 'the file runs %d minutes; the film runs %d: only part of it?' % (mins, rt_)))
         if same_name and same_year and not wrong_len:
             continue
         if time.time() - tried.get(fname, 0) < 7 * 86400:
@@ -9341,6 +9352,7 @@ def auto_match(g):
             if not pick or str((pick.get('ProviderIds') or {}).get('Tmdb')) == str(cur):
                 continue
             apply_match(g, it['Id'], pick)
+            fixed_ids.add(it['Id'])
             fixed.append('%s: was %s (%s), now %s (%s)' % (fname, it.get('Name'), it.get('ProductionYear') or '?', pick.get('Name'), pick.get('ProductionYear') or '?'))
         except Exception as e:
             log('Matching again %s: %s' % (fname, e))
@@ -9353,6 +9365,56 @@ def auto_match(g):
         g.publish_soon = time.time() + 300
     if unsure:
         log('Not sure which film (left as they are, Fix match on its page): %s' % '; '.join(unsure)[:800])
+    try:
+        to_check_add(g, [d for d in doubt if d[0]['Id'] not in fixed_ids])
+    except Exception as e:
+        log('To check: %s' % str(e)[:200])
+
+
+def to_check_add(g, doubts):
+    """Films whose file is in doubt put in To check by themselves, each with why, every time the films are looked at (every 6 hours), not
+    only the once (John, 26 Nov 2026: "how often is the to check run, because Opus isn't in there"). Each film at most once for the
+    same file: one John takes out (Done) stays out, unless its file changes to another length still in doubt. Those of the first list,
+    23 Nov, count as put in already."""
+    import unicodedata
+    if not doubts:
+        return
+    nf = lambda t: unicodedata.normalize('NFC', t or '')
+    f = os.path.expanduser('~/Grifflix/to-check-added.json')
+    A = load(f, {}) or {}
+    sets = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'BoxSet'}) or {}).get('Items') or []
+    box = next((x for x in sets if (x.get('Name') or '').strip().lower() == 'to check'), None)
+    first = {nf(fo) for fo, _ in TO_CHECK}
+    inbox = {x['Id'] for x in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': box['Id']}) or {}).get('Items') or []} if box else set()
+    new = []
+    for it, fname, mins, why in doubts:
+        k = '%s|%s' % (nf(fname), mins)
+        if k in A or it['Id'] in inbox:
+            A.setdefault(k, int(time.time()))
+            continue
+        if nf(fname) in first and not any(x.startswith(nf(fname) + '|') for x in A):   # (the first list's: put in then, maybe taken out since)
+            A[k] = int(time.time())
+            continue
+        new.append((it, fname, why))
+        A[k] = int(time.time())
+    if new:
+        ids = ','.join(it['Id'] for it, _, _ in new)
+        if box:
+            g.jf.call('POST', '/Collections/%s/Items' % box['Id'], query={'Ids': ids})
+            cid = box['Id']
+        else:
+            cid = ((g.jf.call('POST', '/Collections', query={'Name': 'To check', 'IsLocked': 'true', 'Ids': ids}) or {}).get('Id') or '')
+        if cid:
+            full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, cid)) or {}
+            ov = (full.get('Overview') or '').rstrip() or ('Films whose file is in doubt, only you see this: the wrong film, a second copy, or a file far '
+                                                         'shorter or longer than its film. Take each out once it’s put right.\n')
+            full['Overview'] = (ov + '\n' + '\n'.join('%s: %s.' % (it.get('Name') or fname, why) for it, fname, why in new))[:8000]
+            full['LockedFields'] = sorted(set((full.get('LockedFields') or []) + ['Overview']))
+            g.jf.call('POST', '/Items/%s' % cid, full)
+        log('To check: %d more put in: %s' % (len(new), '; '.join('%s (%s)' % (fname, why) for _, fname, why in new)[:1200]))
+        g.forget()
+        g.publish_soon = time.time() + 300
+    save(f, A)
 
 
 def match_unmatched(g):
