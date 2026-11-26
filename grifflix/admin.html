@@ -191,6 +191,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 .mrow.cb.pk { grid-template-columns: 22px 48px minmax(0, 1fr) 56px; cursor: pointer; } .mrow.cb.pk.on b { text-decoration: underline; text-underline-offset: 3px; }
 .cbpick, .cbsetpick { width: 16px; height: 16px; margin: 0; accent-color: currentColor; cursor: pointer; } .cbsetpick { vertical-align: -2px; margin-right: 8px; }
 @media (max-width: 600px) { .mrow.cb.pk { grid-template-columns: 22px 40px minmax(0, 1fr); } .mrow.cb.pk .s { grid-column: 3; } }
+#tclist .mrow.cb.pk { grid-template-columns: 22px 48px minmax(0, 1fr) auto; } #tclist .tcdone { margin: 0; }   /* (room for Done: 26 Nov 2026) */
+@media (max-width: 600px) { #tclist .mrow.cb.pk { grid-template-columns: 22px 40px minmax(0, 1fr); } #tclist .tcdone { margin-top: 6px; } }
 .mlist .mhead.first { margin-top: 18px; } .mlist .mhead { margin-top: 30px; padding-top: 14px; border-top: 2px solid currentColor; }
 .mset summary { cursor: pointer; padding: 8px 0; border-top: 1px solid var(--line, rgba(255,255,255,.12)); font-size: 14px; font-weight: 600; } .mset summary small { font-weight: 400; opacity: .7; margin-left: 8px; }
 .mset[open] summary { padding-bottom: 4px; } .mset .mrow { padding-left: 14px; }
@@ -2293,7 +2295,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
           // "put a selector next to the to check so I can open in the tab")
           var picked = {}; try { (JSON.parse(localStorage.getItem('grifflix-tc-picks') || '[]') || []).forEach(function (i) { picked[i] = 1; }); } catch (e) {}
           $('#tclist').innerHTML = items.length ? items.map(function (it) {
-            return '<label class="mrow cb pk' + (picked[it.id] ? ' on' : '') + '"><input type="checkbox" class="cbpick tcpick" data-id="' + esc(it.id) + '"' + (picked[it.id] ? ' checked' : '') + ' aria-label="Tick ' + esc(it.name || '') + '"><span class="y">' + esc(String(it.year || '')) + '</span><span>' + flA(it.id, it.name || '?') + (why(it.name) ? '<br><small class="d">' + esc(why(it.name)) + '</small>' : '') + '</span><span class="s"></span></label>';
+            return '<label class="mrow cb pk' + (picked[it.id] ? ' on' : '') + '"><input type="checkbox" class="cbpick tcpick" data-id="' + esc(it.id) + '"' + (picked[it.id] ? ' checked' : '') + ' aria-label="Tick ' + esc(it.name || '') + '"><span class="y">' + esc(String(it.year || '')) + '</span><span>' + flA(it.id, it.name || '?') + (why(it.name) ? '<br><small class="d">' + esc(why(it.name)) + '</small>' : '') + '</span><span class="s"><button class="btn small tcdone" type="button" data-id="' + esc(it.id) + '" data-name="' + esc(it.name || '') + '" title="Put right: taken out of To check, with its note">Done</button></span></label>';
           }).join('') : '<p class="stat">Nothing in it: every film has been put right.</p>';
           var boxes = [].slice.call(document.querySelectorAll('#tclist .tcpick'));
           var sync = function () {
@@ -2305,6 +2307,25 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
             try { localStorage.setItem('grifflix-tc-picks', JSON.stringify(on.map(function (b) { return b.dataset.id; }))); } catch (e) {}
           };
           $('#tcpickbar').hidden = !boxes.length;
+          // (each one put right taken off here: out of the collection, and its note out of the description: John, 26 Nov 2026, "There is no
+          // way to tick off the film")
+          [].forEach.call(document.querySelectorAll('#tclist .tcdone'), function (bt) {
+            bt.onclick = function (e) {
+              e.preventDefault(); e.stopPropagation();
+              var id = bt.dataset.id, nm = bt.dataset.name; bt.disabled = true; bt.textContent = '…';
+              var post = function (body) { return fetch(GW + '/api/collections', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+                .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || 'The Mac mini didn’t answer.'); return j; }); }); };
+              lines = lines.filter(function (x) { return !(nm && x.indexOf(nm + ': ') === 0); });
+              post({ op: 'remove', id: t.id, item: id }).then(function () { return post({ op: 'describe', id: t.id, text: lines.join('\n') }); }).then(function () {
+                items = items.filter(function (x) { return x.id !== id; });
+                var lab = bt.closest('label'), b = lab && lab.querySelector('.tcpick'); if (b) { b.checked = false; boxes = boxes.filter(function (x) { return x !== b; }); } if (lab) lab.remove();
+                $('#tcsay').textContent = items.length + ' film' + (items.length === 1 ? '' : 's') + ' in it.';
+                if (!items.length) $('#tclist').innerHTML = '<p class="stat">Nothing in it: every film has been put right.</p>';
+                $('#tcpickbar').hidden = !boxes.length; sync();
+                toast(nm + ': off the list');
+              }).catch(function (er) { bt.disabled = false; bt.textContent = 'Done'; toast(er.message); });
+            };
+          });
           boxes.forEach(function (b) { b.onchange = sync; });
           $('#tcall').onclick = function () { var all = boxes.every(function (b) { return b.checked; }); boxes.forEach(function (b) { b.checked = !all; }); sync(); };
           $('#tcgo').onclick = function () {
