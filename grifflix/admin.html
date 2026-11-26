@@ -1165,14 +1165,30 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 })();
   // ---- picture subtitles saved beside converted films, waiting to be turned into text later (John, 20 Nov 2026, "they should be saved and then
   // converted as a separate job later")
-  function picSubs() {
-    if (!TOKEN || !GW) return setTimeout(picSubs, 5000);
-    fetch(GW + '/api/picsubs', { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+  // (and read into text, where John chooses and when: off, on his Mac, or on the Mac mini once it's the new one; how each went, with a few
+  // of its lines to look at: John, 26 Nov 2026, "Build the picture job, but I'll decide when and where to run it")
+  function picSubs(once) {
+    if (!TOKEN || !GW) { if (!once) setTimeout(picSubs, 5000); return; }
+    var go = function (body) { return fetch(GW + '/api/picsubs', body ? { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }); };
+    go().then(function (j) {
       var el = $('#pslist'); if (!el) return;
-      el.innerHTML = j.films.length ? '<p class="stat" style="margin:16px 0 6px"><b>Picture subtitles saved</b> (' + j.films.length + ' film' + (j.films.length === 1 ? '' : 's') + (j.waiting ? ', ' + j.waiting + ' waiting to be turned into text' : '') + ') · Blu-ray and DVD subtitles an MP4 can’t hold, kept beside each film when it was converted; the media server offers them as they are.</p><ul class="changes">' +
-        j.films.map(function (x) { return '<li>' + FL(x.name, x.year, x.id) + '<span class="when">' + x.subs.map(function (y) { return esc(y.name) + (y.forced ? ' (forced)' : y.sdh ? ' (SDH)' : '') + ' · ' + esc(y.kind); }).join(', ') + (x.text ? ' · turned into text ✓' : '') + '</span></li>'; }).join('') + '</ul>' : '';
+      var R = j.read || [], done = R.filter(function (x) { return x.state === 'done'; }), now = R.filter(function (x) { return x.state === 'given'; }), bad = R.filter(function (x) { return x.state === 'failed'; });
+      var where = { off: 'Off: none is read until you choose where', mac: 'On your Mac: it reads them while it’s on and at home, alongside anything it’s converting', mini: 'On the Mac mini: it reads them when nobody’s watching' }[j.run || 'off'];
+      var ctl = '<p class="stat" style="margin:16px 0 6px"><b>Picture subtitles into text</b> · the English ones read with macOS’s own text recognition (Live Text’s) into subtitles every device plays, exactly timed, the disc’s own words. Whisper’s, where a film has them, are kept aside, not deleted.</p>' +
+        '<div class="state" style="margin:6px 0 4px">' + [['off', 'Off'], ['mac', 'On your Mac'], ['mini', 'On the Mac mini']].map(function (r) { var dis = r[0] === 'mini' && !j.mini_can;
+          return '<button class="btn' + ((j.run || 'off') === r[0] ? ' primary' : '') + '" type="button" data-psrun="' + r[0] + '"' + (dis ? ' disabled title="Only on a Mac mini with Apple Silicon: the new one"' : '') + '>' + r[1] + '</button>'; }).join('') + '</div>' +
+        '<p class="stat" style="margin:4px 0 8px">' + esc(where) + '. ' + (j.left != null ? j.left + ' to read' : '') + (done.length ? ', ' + done.length + ' read' : '') + (bad.length ? ', ' + bad.length + ' couldn’t be' : '') + '.' + (j.mini_can ? '' : ' (The Mac mini can do it once it’s the new one.)') + '</p>' +
+        (now.length || done.length || bad.length ? '<ul class="changes">' +
+          now.map(function (x) { return '<li><b>Now</b> ' + esc(x.name) + '<span class="when">on ' + esc(x.by === 'mini' ? 'the Mac mini' : 'your Mac') + (x.step ? ' · ' + esc(x.step) : '') + '</span></li>'; }).join('') +
+          done.slice(0, 40).map(function (x) { return '<li>' + esc(x.name) + '<span class="when">' + (x.lines || 0) + ' lines from ' + (x.pictures || 0) + ' pictures' + (x.blank ? ' (' + x.blank + ' gave no words)' : '') + ' · on ' + esc(x.by || '') + (x.aside ? ' · Whisper’s kept aside' : '') + '</span>' +
+            (x.sample && x.sample.length ? '<span class="stat" style="display:block;margin-top:3px;font-style:italic">' + x.sample.map(function (s) { return esc(s[1]); }).join(' / ') + '</span>' : '') + '</li>'; }).join('') +
+          bad.map(function (x) { return '<li>' + esc(x.name) + '<span class="when">couldn’t be read: ' + esc(x.err || '') + '</span></li>'; }).join('') + '</ul>' : '');
+      el.innerHTML = ctl + (j.films.length ? '<p class="stat" style="margin:16px 0 6px"><b>Picture subtitles saved</b> (' + j.films.length + ' film' + (j.films.length === 1 ? '' : 's') + (j.waiting ? ', ' + j.waiting + ' waiting to be turned into text' : '') + ') · Blu-ray and DVD subtitles an MP4 can’t hold, kept beside each film when it was converted; the media server offers them as they are.</p><ul class="changes">' +
+        j.films.map(function (x) { return '<li>' + FL(x.name, x.year, x.id) + '<span class="when">' + x.subs.map(function (y) { return esc(y.name) + (y.forced ? ' (forced)' : y.sdh ? ' (SDH)' : '') + ' · ' + esc(y.kind); }).join(', ') + (x.text ? ' · turned into text ✓' : '') + '</span></li>'; }).join('') + '</ul>' : '');
+      Array.prototype.forEach.call(el.querySelectorAll('[data-psrun]'), function (bt) { bt.onclick = function () { bt.disabled = true;
+        go({ run: bt.dataset.psrun }).then(function () { toast({ off: 'Picture subtitles: off', mac: 'Picture subtitles: read on your Mac', mini: 'Picture subtitles: read on the Mac mini' }[bt.dataset.psrun]); picSubs(true); }).catch(function () { bt.disabled = false; toast('The Mac mini didn’t answer'); }); }; });
     }).catch(function () {});
-    setTimeout(picSubs, 300000);
+    if (!once) setTimeout(picSubs, 120000);
   }
   picSubs();
   // ---- English subtitles made ready on John's Mac (subprep.py), timed by Whisper: John, 20 Nov 2026, "pre-prepare"

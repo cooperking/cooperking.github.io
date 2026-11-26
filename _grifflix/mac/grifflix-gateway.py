@@ -69,7 +69,8 @@ SOFTWARE = [('grifflix-gateway.py', os.path.join(APP_DIR, 'grifflix-gateway.py')
             ('criterion.py', os.path.expanduser('~/Grifflix/criterion.py'), 'Criterion Films'),
             ('criterion-covers.py', os.path.expanduser('~/Grifflix/criterion-covers.py'), 'criterion-list.html'),
             ('duplicates.py', os.path.expanduser('~/Grifflix/duplicates.py'), 'Set aside'),   # (films John has two copies of: 16 Nov 2026)   # (every Criterion cover: 16 Nov 2026)
-            ('gdrive.py', os.path.expanduser('~/Grifflix/gdrive.py'), 'Google Drive')]   # (films from Google Drive, by themselves: 15 Nov 2026)   # what John's last Update sent (so the next reads only what's new)
+            ('gdrive.py', os.path.expanduser('~/Grifflix/gdrive.py'), 'Google Drive'),   # (films from Google Drive, by themselves: 15 Nov 2026)
+            ('picsubs.py', os.path.expanduser('~/Grifflix/picsubs.py'), 'picture subtitles')]   # (picture subtitles read into text, for when the Mac mini runs it: 26 Nov 2026)   # (films from Google Drive, by themselves: 15 Nov 2026)   # what John's last Update sent (so the next reads only what's new)
 LIBS = {'movies': ('Movies', 'movies'), 'tv': ('TV', 'tvshows'), 'home': ('Home videos', 'homevideos')}
 
 
@@ -994,6 +995,28 @@ def make_handler(g):
                     self.end_headers()
                     self.wfile.write(body_)
                     return
+                if u.path in ('/macagent/picnext', '/macagent/picprog', '/macagent/picdone'):   # (John's Mac's helper: picture subtitles read into
+                    # text there (picsubs.py), while John has it switched on: John, 26 Nov 2026, "Build the picture job, but I'll decide when and where
+                    # to run it")
+                    tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
+                    want = (g.st.get('macagent') or {}).get('key')
+                    if not want or not tok or not hmac.compare_digest(hashlib.sha256(tok.encode()).hexdigest(), want):
+                        return self.send_json(403, {'error': 'Not allowed.'})
+                    MACAGENT['seen'] = int(time.time()); macagent_note()
+                    run_ = (g.st.get('picsubs') or {}).get('run') or 'off'
+                    if u.path == '/macagent/picprog':
+                        pic_note(str(self.body().get('key') or ''), step=str(self.body().get('step') or '')[:120])
+                        return self.send_json(200, {'ok': True, 'stop': run_ != 'mac'})
+                    if u.path == '/macagent/picdone':
+                        if method != 'POST':
+                            return self.send_json(405, {'error': 'POST'})
+                        return self.send_json(200, dict(pic_done(g, self.body(), 'your Mac'), stop=run_ != 'mac'))
+                    if q.get('peek'):   # (asked every minute by the helper: is it to start the job?)
+                        return self.send_json(200, {'on': run_ == 'mac'})
+                    if run_ != 'mac':
+                        return self.send_json(200, {'job': None, 'wait': 3600, 'why': 'switched off' if run_ == 'off' else 'set to run on the Mac mini'})
+                    j_ = pic_next(g, 'mac', someone_watching(g))
+                    return self.send_json(200, {'job': j_, 'wait': 0 if j_ else 3600, 'why': '' if j_ else 'none left'})
                 if u.path in ('/macagent/logonext', '/macagent/logodone'):   # (John's Mac's helper: the Criterion logo check, the opening of each
                     # film read there (logocheck.py), not on the Mac mini, slowed for heat all day and once turned off by it: John, 25 Nov 2026,
                     # "Run the logo check on your Mac")
@@ -3418,11 +3441,26 @@ def make_handler(g):
             turned into text as a job of their own (John, 20 Nov 2026)."""
             if not me.get('owner'):
                 return self.send_json(403, {'error': 'Only John.'})
+            import platform
+            if b and b.get('run') in ('off', 'mac', 'mini'):   # (where they're read into text, or not at all: John's choice, 26 Nov 2026, "I'll decide
+                # when and where to run it")
+                g.st['picsubs'] = dict(g.st.get('picsubs') or {}, run=b['run'], at=int(time.time()))
+                save(SETTINGS, g.st)
+                log('Picture subtitles into text: %s, John’s choice' % {'off': 'off', 'mac': 'on John’s Mac', 'mini': 'on the Mac mini'}[b['run']])
             P = load(os.path.expanduser('~/Grifflix/picture-subs.json'), {}) or {}
+            T_ = load(PICTEXT, {}) or {}
+            try:
+                left_ = len(pic_work(g))
+            except Exception:
+                left_ = None
+            read_ = sorted(({'key': k, 'name': v.get('name'), 'state': v.get('state'), 'at': v.get('at'), 'by': v.get('by'), 'lines': v.get('lines'), 'pictures': v.get('pictures'),
+                             'blank': v.get('blank'), 'sample': v.get('sample'), 'err': v.get('err'), 'step': v.get('step'), 'aside': bool(v.get('aside')), 'file': os.path.basename(v.get('file') or '')}
+                            for k, v in T_.items()), key=lambda x: -(x.get('at') or 0))
             L = sorted(({'id': k, 'name': v.get('name'), 'year': v.get('year'), 'text': bool(v.get('text')), 'at': v.get('at'),
                          'subs': [{'name': x.get('name'), 'kind': x.get('kind'), 'forced': x.get('forced'), 'sdh': x.get('sdh')} for x in v.get('subs') or []]}
                         for k, v in P.items()), key=lambda x: -(x.get('at') or 0))
-            return self.send_json(200, {'films': L, 'waiting': sum(1 for x in L if not x['text'])})
+            return self.send_json(200, {'films': L, 'waiting': sum(1 for x in L if not x['text']), 'run': (g.st.get('picsubs') or {}).get('run') or 'off',
+                                        'mini_can': platform.machine() == 'arm64', 'left': left_, 'read': read_[:200]})
 
         def api_unmatched(self, me, user, q, b):
             """John's only: the films with no IMDb number (never matched on TMDB, or matched to a TMDB film without one), with what the
@@ -10010,6 +10048,179 @@ def crl_classify(g):
     return out
 
 
+PICTEXT = os.path.expanduser('~/Grifflix/picture-text.json')   # (each picture subtitle read into text: when, by which Mac, how it went)
+PT_LOCK = threading.Lock()
+PIC_REFRESH = [0]
+
+
+def pic_note(key, **kw):
+    with PT_LOCK:
+        T = load(PICTEXT, {}) or {}
+        if key in T:
+            T[key].update(kw, stepat=int(time.time()))
+            save(PICTEXT, T)
+
+
+def pic_work(g):
+    """The English picture subtitles still to be read into text, the likeliest needed first: those saved beside a converted film
+    (picture-subs.json) whose film has no English text subtitle of its own, then those that have one, then a film's forced ones; and last
+    those still inside films not converted yet (the Mac mini's list of the library: its picture subtitles, English among them)."""
+    P = load(os.path.expanduser('~/Grifflix/picture-subs.json'), {}) or {}
+    T = load(PICTEXT, {}) or {}
+    out, seen = [], set()
+    for iid, e in P.items():
+        film = e.get('film') or ''
+        for x in e.get('subs') or []:
+            if (x.get('lang') or '') not in ('eng', 'en'):
+                continue
+            f = x.get('file') or ''
+            seen.add(os.path.realpath(film))
+            t = T.get(f) or {}
+            if not f or t.get('state') == 'done' or (t.get('state') == 'failed' and (t.get('tries') or 0) >= 2):
+                continue
+            if not (os.path.exists(f) and os.path.exists(film)):
+                continue
+            base = os.path.splitext(film)[0]
+            own = any(os.path.exists(base + n) for n in ('.en.srt', '.eng.srt', '.English.srt'))
+            out.append({'key': f, 'name': e.get('name'), 'film': film, 'src': f, 'index': None, 'kind': 'dvd' if f.endswith('.mks') and x.get('kind') != 'PGS' else None,
+                        'forced': bool(x.get('forced')), 'sdh': bool(x.get('sdh')), 'pri': (1 if own else 0) + (2 if x.get('forced') else 0)})
+    cache = (load(os.path.expanduser('~/Grifflix/library-cache.json'), {}) or {}).get('rows') or {}
+    for iid, c in cache.items():
+        r_, path = c.get('r') or {}, c.get('p') or ''
+        if 'English' not in str(r_.get('ps') or '') or not path or os.path.realpath(path) in seen:
+            continue
+        k = path + '#eng'
+        t = T.get(k) or {}
+        if t.get('state') == 'done' or (t.get('state') == 'failed' and (t.get('tries') or 0) >= 2):
+            continue
+        out.append({'key': k, 'name': r_.get('n'), 'film': path, 'src': path, 'index': None, 'kind': None, 'forced': False, 'sdh': False, 'pri': 4, 'inside': True})
+    out.sort(key=lambda x: (x['pri'], str(x.get('name') or '')))
+    return out
+
+
+def pic_track(g, path):
+    """A film's English picture subtitle inside it (not forced, if it has more than one): its index and kind, by the media server's ffprobe."""
+    import subprocess
+    ff = crl_ffmpeg(g)
+    fp = os.path.join(os.path.dirname(ff), 'ffprobe') if ff else None
+    if not fp or not os.path.exists(fp):
+        return None, None
+    r = subprocess.run([fp, '-v', 'error', '-print_format', 'json', '-show_streams', '-select_streams', 's', path], capture_output=True, text=True, timeout=120)
+    ss = [x for x in (json.loads(r.stdout or '{}').get('streams') or []) if x.get('codec_name') in ('hdmv_pgs_subtitle', 'pgssub', 'dvd_subtitle', 'dvdsub')
+          and ((x.get('tags') or {}).get('language') or '').lower() in ('eng', 'en')]
+    ss.sort(key=lambda x: ((x.get('disposition') or {}).get('forced') or 0, (x.get('disposition') or {}).get('hearing_impaired') or 0))
+    if not ss:
+        return None, None
+    return ss[0]['index'], ('dvd' if 'dvd' in ss[0]['codec_name'] else 'pgs')
+
+
+def pic_next(g, by, watching):
+    """The next one to read, given out (another Mac's for twenty minutes); one inside a film (the whole film read) not while someone's watching."""
+    with PT_LOCK:
+        T = load(PICTEXT, {}) or {}
+        for w in pic_work(g):
+            t = T.get(w['key']) or {}
+            if t.get('state') == 'given' and time.time() - (t.get('at') or 0) < 1200:
+                continue
+            if w.get('inside'):
+                if watching:
+                    continue
+                idx, kind = pic_track(g, w['src'])
+                if idx is None:
+                    T[w['key']] = {'state': 'failed', 'tries': 9, 'name': w['name'], 'err': 'no English picture subtitle found in it', 'at': int(time.time())}
+                    save(PICTEXT, T)
+                    continue
+                w.update(index=idx, kind=kind)
+            T[w['key']] = dict(t, state='given', name=w['name'], film=w['film'], at=int(time.time()), by=by, step='')
+            save(PICTEXT, T)
+            return {k: w[k] for k in ('key', 'name', 'src', 'index', 'kind')}
+    return None
+
+
+def pic_done(g, b, by):
+    """One read into text: put beside its film as its English subtitle (the disc's own, exactly timed), a Grifflix-made one (Whisper's)
+    kept aside, not deleted; or why it couldn't be."""
+    import shutil
+    key = str(b.get('key') or '')
+    with PT_LOCK:
+        T = load(PICTEXT, {}) or {}
+        t = T.get(key)
+        if not t:
+            return {'ok': False, 'error': 'Not one given out.'}
+        if b.get('error') or not b.get('srt64'):
+            t.update(state='failed', tries=(t.get('tries') or 0) + 1, err=str(b.get('error') or 'nothing came back')[:300], at=int(time.time()), by=by)
+            save(PICTEXT, T)
+            log('Picture subtitles: %s couldn’t be read on %s (%s)' % (t.get('name'), by, t['err']))
+            return {'ok': True}
+        try:
+            srt = base64.b64decode(str(b['srt64'])).decode('utf-8', 'replace')
+        except Exception:
+            srt = ''
+        cues = SUBS.parse_srt(srt) if SUBS else []
+        film = t.get('film') or ''
+        if len(cues) < 3 or not os.path.exists(film):
+            t.update(state='failed', tries=(t.get('tries') or 0) + 1, err='only %d lines read' % len(cues) if len(cues) < 3 else 'its film isn’t there now', at=int(time.time()))
+            save(PICTEXT, T)
+            return {'ok': True}
+        P = load(os.path.expanduser('~/Grifflix/picture-subs.json'), {}) or {}
+        sub = next((x for e in P.values() for x in e.get('subs') or [] if x.get('file') == key), {})
+        tag = '.forced' if sub.get('forced') else '.sdh' if sub.get('sdh') else ''
+        base = os.path.splitext(film)[0]
+        dst = base + '.en' + tag + '.srt'
+        if os.path.exists(dst):   # (one of the film's own already: this beside it, named for where it's from)
+            dst = base + '.Disc.en' + tag + '.srt'
+        aside = ''
+        if not tag and os.path.exists(base + '.Grifflix.en.srt'):   # (Whisper's: kept aside, to put back if this is worse)
+            os.makedirs(os.path.expanduser('~/Grifflix/subs-replaced'), exist_ok=True)
+            aside = os.path.join(os.path.expanduser('~/Grifflix/subs-replaced'), os.path.basename(base) + '.Grifflix.en.srt')
+            shutil.move(base + '.Grifflix.en.srt', aside)
+        with open(dst, 'w', encoding='utf-8') as f_:
+            f_.write(srt)
+        mid = cues[len(cues) // 3:len(cues) // 3 + 6]
+        t.update(state='done', file=dst, aside=aside, lines=len(cues), pictures=b.get('pictures'), blank=b.get('blank'), secs=b.get('secs'),
+                 sample=[[round(a, 1), str(x)[:120]] for a, _, x in mid], at=int(time.time()), by=by, step='')
+        save(PICTEXT, T)
+        for e in P.values():   # (the list of picture subtitles: this one now text)
+            for x in e.get('subs') or []:
+                if x.get('file') == key:
+                    x['text'] = dst
+            if e.get('subs') and all(x.get('text') or x.get('lang') not in ('eng', 'en') for x in e['subs']):
+                e['text'] = True
+        save(os.path.expanduser('~/Grifflix/picture-subs.json'), P)
+    log('Picture subtitles read into text on %s: %s (%d lines)%s' % (by, t.get('name'), len(cues), ', Whisper’s kept aside' if aside else ''))
+    record('picture subtitles read into text', film=t.get('name'), file=dst, lines=len(cues), by=by)
+    if time.time() - PIC_REFRESH[0] > 1800:   # (the media server looks again, so it offers the new subtitles: once in a while, not after each)
+        PIC_REFRESH[0] = time.time()
+        threading.Timer(600, lambda: SCAN_NOW.set()).start()
+    return {'ok': True}
+
+
+def pic_local(g):
+    """Picture subtitles read into text on the Mac mini itself, when John has chosen it and it's one that can (Apple Silicon, with macOS's
+    text recognition: the new one, not the 2010 one), one at a time, never while someone's watching."""
+    import platform, subprocess, tempfile
+    time.sleep(300)
+    while True:
+        try:
+            if (g.st.get('picsubs') or {}).get('run') == 'mini' and platform.machine() == 'arm64' and not someone_watching(g):
+                j = pic_next(g, 'mini', False)
+                if j:
+                    py = os.path.expanduser('~/Grifflix/ocr/bin/python3')
+                    out = os.path.join(tempfile.gettempdir(), 'grifflix-picsub.srt')
+                    r = subprocess.run([py if os.path.exists(py) else '/usr/bin/python3', os.path.expanduser('~/Grifflix/picsubs.py'), j['src']]
+                                       + ([str(j['index'])] if j.get('index') is not None else ['-']) + [out], capture_output=True, text=True, timeout=7200)
+                    m = re.search(r'(\d+) pictures, (\d+) lines, (\d+) with no words', r.stdout or '')
+                    if r.returncode == 0 and m and os.path.exists(out):
+                        srt = open(out, encoding='utf-8').read()
+                        pic_done(g, {'key': j['key'], 'srt64': base64.b64encode(srt.encode()).decode(), 'pictures': int(m.group(1)), 'blank': int(m.group(3))}, 'the Mac mini')
+                    else:
+                        pic_done(g, {'key': j['key'], 'error': ((r.stderr or r.stdout or '').strip().splitlines() or ['it stopped'])[-1][:200]}, 'the Mac mini')
+                    continue
+        except Exception as e:
+            log('Picture subtitles on the Mac mini: %s' % str(e)[:200])
+        time.sleep(600)
+
+
 CRL_LOCK = threading.Lock()
 CRL_MAC_FOR = 1800   # (John's Mac counted as reading them for half an hour after it last asked: off, asleep or away longer, the Mac mini reads them)
 
@@ -11811,6 +12022,7 @@ def serve():
     threading.Timer(420, set_covers_now).start()
     threading.Timer(300, crit_missing_now).start()   # (the Criterion films missing, kept ready: 24 Nov 2026)
     threading.Thread(target=one_percent_once, args=(g,), daemon=True).start()   # (once: 1% (Outlaws) put right: 26 Nov 2026)
+    threading.Thread(target=pic_local, args=(g,), daemon=True).start()   # (picture subtitles into text on the Mac mini, when John chooses it: 26 Nov 2026)
     threading.Thread(target=crl_scan, args=(g,), daemon=True).start()   # (which Criterion films are Criterion's own release: 24 Nov 2026)   # (and the box set covers on the films released only in a set: 24 Nov 2026)   # (and once each start: any A24 film come in before this, Tony and Misty Green, put in)   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
     threading.Thread(target=fanny_series, args=(g,), daemon=True).start()
     threading.Thread(target=keep_disk_health, daemon=True).start()
