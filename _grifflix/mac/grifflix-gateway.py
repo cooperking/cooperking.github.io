@@ -2230,8 +2230,19 @@ def make_handler(g):
             except OSError as e:
                 log('Couldn’t keep the export:', e)
             log('Update: %d new, %d changed, %d gone (%d read in full)' % (count['new'], count['changed'], count['removed'], count['read']))
+            # (the films Mark Kermode introduces that John has said, from TMDB, which they are, though not yet in Grifflix: their BFI Player
+            # pictures got by the site now, while BFI Player has them (bfi_stills.py): John, 26 Nov 2026, "can we prefetch any confirmed films
+            # on the list's images")
+            try:
+                bw = {}
+                for v_ in ((load(BFIF, {}) or {}).get('tmdb') or {}).values():
+                    if v_.get('id') and v_.get('title'):
+                        bw[str(v_['id'])] = {'tmdb': str(v_['id']), 'kind': v_.get('kind') or 'movie', 'title': v_['title'], 'year': str(v_.get('year') or '')}
+                bfiwant = sorted(bw.values(), key=lambda x: x['title'])
+            except Exception:
+                bfiwant = []
             self.send_json(200, {'v': 1, 'at': int(time.time()), 'items': items, 'lists': lists, 'sets': members, 'series': series, 'changes': count, 'personal': personal,
-                                 'motd': {'days': days, 'notes': dict(c.get('notes', {})), 'ext': ext}})
+                                 'motd': {'days': days, 'notes': dict(c.get('notes', {})), 'ext': ext}, 'bfiwant': bfiwant})
 
         @staticmethod
         def extras(raw, items, lists):
@@ -3468,9 +3479,17 @@ def make_handler(g):
             if not me.get('owner'):
                 return self.send_json(403, {'error': 'Only John.'})
             if b and b.get('op') == 'move' and re.match(r'^[0-9a-f]{32}$', str(b.get('id') or '')) and b.get('file'):
-                S = bfi_now(g, only={str(b['file']): str(b['id'])})
-                ok = str(b['file']) not in (S.get('files') or {})
-                return self.send_json(200 if ok else 409, {'ok': ok, 'error': '' if ok else ((S.get('files') or {}).get(str(b['file'])) or {}).get('why') or 'not moved'})
+                # (answered at once, and put with the film after: with the whole folder looked at too, it took longer than the admin page
+                # waits: 26 Nov 2026)
+                if not os.path.exists(os.path.join(BFI_IN, os.path.basename(str(b['file'])))):
+                    return self.send_json(404, {'error': 'It isn’t in BFI Kermode now.'})
+                def put_(f_=str(b['file']), i_=str(b['id'])):
+                    try:
+                        bfi_now(g, only={f_: i_})
+                    except Exception as e:
+                        log('BFI introduction %s not put with its film: %s' % (f_, str(e)[:160]))
+                threading.Thread(target=put_, daemon=True).start()
+                return self.send_json(200, {'ok': True, 'pending': True})
             if q.get('tmdb'):   # (TMDB searched for the film it's of: by its title (a year after it if wanted), or a TMDB or IMDb link or number)
                 if not g.st.get('tmdb_key'):
                     return self.send_json(409, {'error': 'There’s no TMDB key on the Mac mini.'})
@@ -3528,8 +3547,17 @@ def make_handler(g):
                     S.setdefault('tmdb', {})[name + '.mp4'] = {'id': str(b['tmdb']), 'kind': kind, 'title': t_, 'year': y_}
                     save(BFIF, S)
                 record('BFI introduction named from TMDB', file=f0, name=name, tmdb=str(b['tmdb']))
-                S = bfi_now(g, only={name + '.mp4': ''})
-                return self.send_json(200, {'ok': True, 'name': name, 'put': (name + '.mp4') not in (S.get('files') or {})})
+                # (answered at once, renamed; it's looked at again, and put with its film if that's here, after: looking at it with the whole
+                # folder took longer than the admin page waits, so choosing a film seemed to do nothing: John, 26 Nov 2026, "nothin happens when
+                # I select a tmdb film to match")
+                def again(n_=name + '.mp4'):
+                    try:
+                        bfi_now(g, only={n_: ''})
+                    except Exception as e:
+                        log('BFI introduction %s not looked at again: %s' % (n_, str(e)[:160]))
+                threading.Thread(target=again, daemon=True).start()
+                g.publish_soon = time.time() + 300   # (the site told, so its BFI Player picture is got while BFI Player has it)
+                return self.send_json(200, {'ok': True, 'name': name})
             if q.get('q'):   # (another film than the guesses: found by its name, a year after it if wanted)
                 w = str(q['q'])[:120]
                 m = re.search(r'\s*\(?((?:18|19|20)\d\d)\)?\s*$', w)

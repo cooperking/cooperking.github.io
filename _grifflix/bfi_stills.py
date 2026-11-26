@@ -8,7 +8,12 @@ collection gets its picture the same day.
 Each film looked for on BFI Player: first among the films its Kermode Introduces page lists (each with its page and its picture), else at
 the address BFI Player gives a film's page, made from its title and year (subscription, rentals or free; the year, or one either way),
 taken only when that page's own title is the film's. The picture is its 1200×675 one. One already here is left; one not found is tried
-again after a week. grifflix/img/bfi/index.json: {"have": {id: its page}, "miss": {id: when last tried}}.
+again after a week. grifflix/img/bfi/index.json: {"have": {id: its page}, "miss": {id: when last tried}, "pre": {TMDB number: {page, title,
+year}}, "premiss": {TMDB number: when last tried}}.
+
+And ahead: the films Mark Kermode introduces that John has named from TMDB but hasn't yet (grifflix/data/bfiwant.json, from the Mac mini),
+each picture got now, while BFI Player has the film (its films come and go), kept as grifflix/img/bfi/pre/<TMDB number>.jpg, and used as the
+film's own the day it comes into the BFI collection: John, 26 Nov 2026, "can we prefetch any confirmed films on the list's images".
 """
 import html
 import json
@@ -123,54 +128,109 @@ def shrink_all():   # (those kept before this made them smaller)
             save(open(p, 'rb').read(), p)
 
 
+def find(L, name, year):
+    """A film's page and picture on BFI Player: among the Kermode Introduces page's, else at the page John named for it, else at its own
+    address: (page, picture), or (None, None)."""
+    c = next((x for x in L if fold(x[0]) == fold(name) and (not year or not x[1] or abs(x[1] - year) <= 1)), None)
+    if c:
+        return c[2], c[3]
+    if fold(name) in PAGES:
+        return given_page(PAGES[fold(name)])
+    return own_page(name, year)
+
+
+def fetch(pic, to):
+    data = get(pic, binary=True)
+    if len(data) < 5000 or data[:2] != b'\xff\xd8':
+        raise ValueError('not a picture')
+    save(data, to)
+
+
 def main():
     lib = json.load(open(os.path.join(ROOT, 'grifflix', 'data', 'library.json')))
     bfi = next((c for c in lib.get('collections') or [] if (lib['items'].get(c) or {}).get('name', '').lower() == 'bfi'), None)
-    if not bfi:
-        print('No BFI collection in the site yet')
-        return 0
-    films = [lib['items'][i] for i in lib['sets'].get(bfi) or [] if i in lib['items']]
-    os.makedirs(OUT, exist_ok=True)
+    films = [lib['items'][i] for i in lib['sets'].get(bfi) or [] if i in lib['items']] if bfi else []
+    try:
+        want = json.load(open(os.path.join(ROOT, 'grifflix', 'data', 'bfiwant.json'))).get('films') or []
+    except (OSError, ValueError):
+        want = []
+    os.makedirs(os.path.join(OUT, 'pre'), exist_ok=True)
     ix_f = os.path.join(OUT, 'index.json')
     try:
         ix = json.load(open(ix_f))
     except (OSError, ValueError):
         ix = {}
-    have, miss = ix.get('have') or {}, ix.get('miss') or {}
+    have, miss, pre, premiss = ix.get('have') or {}, ix.get('miss') or {}, ix.get('pre') or {}, ix.get('premiss') or {}
+    keep = lambda: json.dump({'have': have, 'miss': miss, 'pre': pre, 'premiss': premiss}, open(ix_f, 'w'), indent=0, sort_keys=True)
     shrink_all()
+    # (a film newly in the BFI collection whose picture was got ahead: that one, at once)
+    used = []
+    for f in films:
+        if f['id'] in have and os.path.exists(os.path.join(OUT, f['id'] + '.jpg')):
+            continue
+        y = int(f.get('year') or 0)
+        t = next((k for k, v in pre.items() if fold(v.get('title')) == fold(f.get('name')) and (not y or not v.get('year') or abs(int(v['year']) - y) <= 1)
+                  and os.path.exists(os.path.join(OUT, 'pre', k + '.jpg'))), None)
+        if t:
+            os.replace(os.path.join(OUT, 'pre', t + '.jpg'), os.path.join(OUT, f['id'] + '.jpg'))
+            have[f['id']] = pre.pop(t).get('page') or ''
+            miss.pop(f['id'], None)
+            used.append(f.get('name') or '')
+    if used:
+        print('BFI pictures got ahead, now used: %s' % ', '.join(used)[:600])
     todo = [f for f in films if not (f['id'] in have and os.path.exists(os.path.join(OUT, f['id'] + '.jpg')))
             and (time.time() - (miss.get(f['id']) or 0) > 7 * 86400 or fold(f.get('name')) in PAGES)]
-    if not todo:
-        print('BFI pictures: none to get (%d here)' % len(have))
+    names = set(fold(f.get('name')) for f in films)
+    ahead = [w for w in want if w.get('tmdb') and w.get('title') and fold(w['title']) not in names
+             and not (str(w['tmdb']) in pre and os.path.exists(os.path.join(OUT, 'pre', str(w['tmdb']) + '.jpg')))
+             and time.time() - (premiss.get(str(w['tmdb'])) or 0) > 7 * 86400]
+    if not todo and not ahead:
+        keep()
+        print('BFI pictures: none to get (%d here, %d got ahead)' % (len(have), len(pre)))
         return 0
     try:
         L = cards(get(LIST))
     except Exception as e:
+        keep()
         print('BFI Player didn’t answer: %s' % e)
         return 0
-    print('BFI Player lists %d films; %d of Grifflix’s BFI films to find' % (len(L), len(todo)))
+    print('BFI Player lists %d films; %d of Grifflix’s BFI films to find, %d to get ahead' % (len(L), len(todo), len(ahead)))
     got, none = [], []
     for f in todo:
         name, year = f.get('name') or '', int(f.get('year') or 0)
-        c = next((x for x in L if fold(x[0]) == fold(name) and (not year or not x[1] or abs(x[1] - year) <= 1)), None)
-        page, pic = (c[2], c[3]) if c else given_page(PAGES[fold(name)]) if fold(name) in PAGES else own_page(name, year)
+        page, pic = find(L, name, year)
         if not pic:
             miss[f['id']] = int(time.time())
             none.append(name)
             continue
         try:
-            data = get(pic, binary=True)
-            if len(data) < 5000 or data[:2] != b'\xff\xd8':
-                raise ValueError('not a picture')
-            save(data, os.path.join(OUT, f['id'] + '.jpg'))
+            fetch(pic, os.path.join(OUT, f['id'] + '.jpg'))
             have[f['id']] = page
             miss.pop(f['id'], None)
             got.append(name)
         except Exception as e:
             miss[f['id']] = int(time.time())
             none.append('%s (%s)' % (name, e))
-    json.dump({'have': have, 'miss': miss}, open(ix_f, 'w'), indent=0, sort_keys=True)
+    aget, anone = [], []
+    for w in ahead:   # (the films John has named from TMDB, not here yet: their pictures now, while BFI Player has them)
+        t, name, year = str(w['tmdb']), w['title'], int(w.get('year') or 0) if str(w.get('year') or '').isdigit() else 0
+        page, pic = find(L, name, year)
+        if not pic:
+            premiss[t] = int(time.time())
+            anone.append(name)
+            continue
+        try:
+            fetch(pic, os.path.join(OUT, 'pre', t + '.jpg'))
+            pre[t] = {'page': page, 'title': name, 'year': year or ''}
+            premiss.pop(t, None)
+            aget.append(name)
+        except Exception as e:
+            premiss[t] = int(time.time())
+            anone.append('%s (%s)' % (name, e))
+    keep()
     print('BFI pictures: %d got (%s); %d not on BFI Player (%s)' % (len(got), ', '.join(got)[:600], len(none), ', '.join(none)[:600]))
+    if ahead:
+        print('BFI pictures got ahead: %d (%s); %d not on BFI Player (%s)' % (len(aget), ', '.join(aget)[:600], len(anone), ', '.join(anone)[:600]))
     return 0
 
 
