@@ -4223,12 +4223,18 @@ def make_handler(g):
             # (John's own pictures in the film's folder (his Criterion posters) kept: replacing all pictures made the media server delete
             # them, The Freshman's poster.jpg and fanart.jpg gone for good: John, 16 Nov 2026. With pictures of its own in its folder, only
             # its details are taken from the match; and every picture in its folder is copied aside first, whatever happens)
+            # (a name John gave it himself (Rename) kept over the match's, the film still matched by its number: Outlaws, A24's title, matched
+            # to TMDB's "1%" became "1%": John, 26 Nov 2026, "I would like to change 1% to be called Outlaws and match A24's title, although
+            # it should be linked correctly via the film's tmdb")
+            own_ = it.get('Name') if 'Name' in (it.get('LockedFields') or []) else None
             apply_match(g, iid, pick)
+            if own_:
+                name_as(g, iid, own_)
             g.forget()
             g.publish_soon = time.time() + 180   # (the site's copy brought up to date by itself, once the media server has read it)
-            log('Identified by John: %s → %s (%s)' % (it.get('Name'), pick.get('Name'), pick.get('ProductionYear') or '?'))
+            log('Identified by John: %s → %s (%s)%s' % (it.get('Name'), pick.get('Name'), pick.get('ProductionYear') or '?', (', still called %s, his name for it' % own_) if own_ else ''))
             try:   # (its folder and files given the right name too: John, 15 Nov 2026, "I want the folder names corrected too")
-                did = rename_to(g, iid, pick.get('Name') or '', crit_year(pick) or pick.get('ProductionYear'), pick)   # (Criterion's year, for its films)
+                did = rename_to(g, iid, own_ or pick.get('Name') or '', crit_year(pick) or pick.get('ProductionYear'), pick, keep_name=own_)   # (Criterion's year, for its films)
             except Exception as e:
                 did = 'its folder couldn’t be renamed (%s)' % e
                 log('  rename:', e)
@@ -10756,7 +10762,16 @@ def covers_now(only=None):
         COVERS_LOCK.release()
 
 
-def rename_to(g, iid, name, year, pick=None):
+def name_as(g, iid, name):
+    """A film shown by a name of John's own, kept: the media server told not to change it (as Rename does)."""
+    full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid)) or {}
+    if full and (full.get('Name') != name or 'Name' not in (full.get('LockedFields') or [])):
+        full['Name'] = name
+        full['LockedFields'] = sorted(set((full.get('LockedFields') or []) + ['Name']))
+        g.jf.call('POST', '/Items/%s' % iid, full)
+
+
+def rename_to(g, iid, name, year, pick=None, keep_name=None):
     """A film's (or series') folder and files renamed to its right name, "Title (Year)", after Fix match (John, 15 Nov 2026: "I want the
     folder names corrected too"). The media server then has it as a new item: once it does, calendars, hearts, lists, where people
     stopped, its collections and its date added follow it, and the match is put on it again. Only a folder that is the film's own
@@ -10857,6 +10872,8 @@ def rename_to(g, iid, name, year, pick=None):
                 if pick:
                     try:   # (its own pictures in its folder (Criterion's covers) kept: apply_match takes only the details then)
                         apply_match(g, top, pick)
+                        if keep_name:   # (and John's own name for it kept: Outlaws)
+                            name_as(g, top, keep_name)
                     except Exception:
                         pass
                     # (and looked at again a minute and a half on: the media server's own look-up of a film it thinks is new can finish after
@@ -10868,8 +10885,12 @@ def rename_to(g, iid, name, year, pick=None):
                             try:
                                 have_ = (g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, top)) or {}).get('ProviderIds') or {}
                                 if not want_ or any(str(have_.get(k) or '') == v for k, v in want_.items()):
+                                    if keep_name:
+                                        name_as(g, top, keep_name)
                                     return
                                 apply_match(g, top, pick)
+                                if keep_name:
+                                    name_as(g, top, keep_name)
                                 log('  %s: the media server had put its own match on it; yours put back' % new)
                             except Exception:
                                 pass
@@ -10909,7 +10930,8 @@ def one_percent_once(g):
     as Fix match does, its calendars, lists and collections following it."""
     mk = os.path.expanduser('~/Grifflix/one-percent.done')
     if os.path.exists(mk):
-        return one_percent_again(g)
+        one_percent_again(g)
+        return outlaws_once(g)
     time.sleep(240)   # (after the media server's own start)
     M_ = '/Volumes/G-Drive/Grifflix/Movies/'
     A_, B_ = M_ + '1% (2018)/1% (2018).mp4', M_ + 'Outlaws (2017)/Outlaws (2017).mp4'
@@ -10961,6 +10983,39 @@ def one_percent_once(g):
         said.append('stopped: %s' % str(e)[:160])
     open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M ') + '; '.join(said) + '\n')
     log('1%% (Outlaws), put right: %s' % '; '.join(said))
+
+
+def outlaws_once(g):
+    """Once: 1% shown as Outlaws, A24's title, still matched to its own film by its number (TMDB 433288, IMDb tt6301712), and its folder
+    named so (John, 26 Nov 2026, "I would like to change 1% to be called Outlaws and match A24's title, although it should be linked correctly
+    via the film's tmdb")."""
+    mk = os.path.expanduser('~/Grifflix/outlaws.done')
+    if os.path.exists(mk) or not os.path.exists(os.path.expanduser('~/Grifflix/one-percent-2.done')):
+        return
+    time.sleep(240)
+    A_ = '/Volumes/G-Drive/Grifflix/Movies/1 Percent (2018) [tmdbid-433288]/1 Percent (2018).mp4'
+    said = []
+    try:
+        iid = None
+        for y_ in ('2017', '2018', '2019'):
+            for x in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Years': y_, 'Fields': 'Path'}, timeout=120) or {}).get('Items') or []:
+                if os.path.realpath(x.get('Path') or '') == os.path.realpath(A_):
+                    iid = x['Id']
+        if not iid:
+            said.append('1%% not where it was (%s): nothing done' % A_)
+        else:
+            res = g.jf.call('POST', '/Items/RemoteSearch/Movie', {'SearchInfo': {'Name': '', 'ProviderIds': {'Imdb': 'tt6301712'}}, 'ItemId': iid, 'IncludeDisabledProviders': False}, timeout=60) or []
+            pick = res[0] if res else {'ProviderIds': {'Tmdb': '433288', 'Imdb': 'tt6301712'}}
+            name_as(g, iid, 'Outlaws')
+            g.forget()
+            said.append('shown as Outlaws')
+            said.append(rename_to(g, iid, 'Outlaws', pick.get('ProductionYear') or 2018, pick, keep_name='Outlaws') or 'its folder kept its name')
+            after_fixes()
+            g.publish_soon = time.time() + 300
+    except Exception as e:
+        said.append('stopped: %s' % str(e)[:160])
+    open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M ') + '; '.join(said) + '\n')
+    log('Outlaws (1%%): %s' % '; '.join(said))
 
 
 def one_percent_again(g):
