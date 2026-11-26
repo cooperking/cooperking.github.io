@@ -407,7 +407,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   <div id="app" hidden>
     <div class="top"><button type="button" class="reload" id="reload" aria-label="Reload" title="Reload" onclick="location.reload()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><h1>Grifflix <em>admin</em></h1><p class="sub" id="hello"></p></div>
     <nav class="tabs" id="tabs" role="tablist" aria-label="Admin">
-      <button type="button" role="tab" data-go="updates">Home</button><button type="button" role="tab" data-go="downloads">Downloads</button><button type="button" role="tab" data-go="convert">Conversions</button><button type="button" role="tab" data-go="library">Library</button><button type="button" role="tab" data-go="criterion">Criterion</button><button type="button" role="tab" data-go="a24">A24</button><button type="button" role="tab" data-go="tocheck">To check</button><button type="button" role="tab" data-go="calendar">Calendar</button><button type="button" role="tab" data-go="members">Members</button><button type="button" role="tab" data-go="mac">Mac mini</button><button type="button" role="tab" data-go="dupes" id="dupetab" hidden>Copies</button>
+      <button type="button" role="tab" data-go="updates">Home</button><button type="button" role="tab" data-go="downloads">Downloads</button><button type="button" role="tab" data-go="convert">Conversions</button><button type="button" role="tab" data-go="library">Library</button><button type="button" role="tab" data-go="criterion">Criterion</button><button type="button" role="tab" data-go="a24">A24</button><button type="button" role="tab" data-go="bfi">BFI</button><button type="button" role="tab" data-go="tocheck">To check</button><button type="button" role="tab" data-go="calendar">Calendar</button><button type="button" role="tab" data-go="members">Members</button><button type="button" role="tab" data-go="mac">Mac mini</button><button type="button" role="tab" data-go="dupes" id="dupetab" hidden>Copies</button>
     </nav>
     <nav class="subtabs" id="subtabs" aria-label="In this tab" hidden></nav>
     <div class="cards">
@@ -814,6 +814,23 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <p class="stat" id="a24mnote">Every film in A24’s own list (a24films.com/films), checked against Grifflix each time this is opened.</p>
         <div class="mlist" id="a24miss"><p class="stat">Looking…</p></div>
       </section>
+      <!-- (Mark Kermode's introductions to the BFI's films, each put with its film as an extra when it's sure which, the rest listed here with
+           the likeliest films: John, 26 Nov 2026, "Ones that don't match or aren't there go in a list on a new BFI tab in admin. A best guess
+           would help me work out the film but don't move unless sure") -->
+      <section class="card" data-tab="bfi">
+        <div class="kicker">To sort out</div>
+        <h2>Mark Kermode’s <em>introductions</em></h2>
+        <p class="stat">Put the MP4s in <b>G-Drive › Grifflix › BFI Kermode</b>. Every 10 minutes the Mac mini gives each finished one its right name (“Mark Kermode introduces Kes (1969)”) and puts it in its film’s Extras, but only when it’s sure which film: the same title, and the same year give or take one. The rest wait here with the likeliest films. One whose film isn’t in Grifflix yet goes in by itself once the film arrives.</p>
+        <div class="state"><button class="btn" type="button" id="bfilook">Look now</button></div>
+        <p class="stat" id="bfisay">Looking on the Mac mini…</p>
+        <ul class="changes" id="bfitodo"></ul>
+      </section>
+      <section class="card" data-tab="bfi">
+        <div class="kicker">Put with films</div>
+        <h2>Put with <em>their films</em></h2>
+        <p class="stat" id="bfimsay">Each one in its film’s Extras folder, shown with the film’s extras.</p>
+        <ul class="changes" id="bfimoved"></ul>
+      </section>
       <section class="card" data-tab="mac">
         <div class="kicker">Claude</div>
         <h2>Let Claude look at the Mac mini</h2>
@@ -1191,6 +1208,49 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     if (!once) setTimeout(picSubs, 120000);
   }
   picSubs();
+  // ---- Mark Kermode's introductions (the BFI tab): those waiting, with the likeliest films to put each with, or another found by name
+  function bfiLook(once) {
+    if (!TOKEN || !GW) { if (!once) setTimeout(bfiLook, 5000); return; }
+    var go = function (body, qs) { return fetch(GW + '/api/bfi' + (qs || ''), body ? { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: { Authorization: 'Bearer ' + TOKEN }, cache: 'no-store' })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || (r.status === 404 ? 'The Mac mini hasn’t this yet: it gets it at its next update.' : 'The Mac mini didn’t answer.')); return j; }); }); };
+    var put = function (bt, file, id, what) {
+      bt.disabled = true; var was = bt.textContent; bt.textContent = 'Moving…';
+      go({ op: 'move', file: file, id: id }).then(function () { toast('Put with ' + what); bfiLook(true); })
+        .catch(function (e) { bt.disabled = false; bt.textContent = was; toast(e.message); });
+    };
+    var pick = function (f) { return f.name + (f.year ? ' (' + f.year + ')' : ''); };
+    var draw = function (j) {
+      var T = j.todo || [], M = j.moved || [];
+      $('#bfisay').innerHTML = !j.there ? 'The folder isn’t there yet: the Mac mini makes it when the G-Drive is in.' :
+        T.length ? '<b>' + T.length + '</b> to sort out.' + (j.looked ? ' Last looked ' + esc(when(j.looked * 1000)) + '.' : '') :
+        'Nothing to sort out' + (M.length ? ': every one is with its film.' : ' yet: none has been put in the folder.') + (j.looked ? ' Last looked ' + esc(when(j.looked * 1000)) + '.' : '');
+      $('#bfitodo').innerHTML = T.map(function (x, i) {
+        return '<li data-bfi="' + i + '"><b>' + esc(x.name) + '</b><span class="when">' + esc(x.why || '') + (x.file !== x.name + '.mp4' ? ' · in the folder as “' + esc(x.file) + '”' : '') + '</span>' +
+          '<div class="state" style="margin-top:6px">' + (x.guesses || []).map(function (f) {
+            return '<button class="btn small" type="button" data-bfiput="' + esc(f.id) + '" data-bfiw="' + esc(pick(f)) + '" title="Put it with this film">' + esc(pick(f)) + '</button>'; }).join('') +
+          '<input type="search" class="name bfiq" placeholder="Another film…" autocomplete="off" style="flex:1 1 160px;min-width:0"></div><div class="state bfihits" style="margin-top:4px"></div></li>';
+      }).join('');
+      $('#bfimsay').innerHTML = M.length ? '<b>' + M.length + '</b> put in their films’ Extras, newest first. Each is shown with the film’s extras once the site next updates.' : 'None yet.';
+      $('#bfimoved').innerHTML = M.map(function (x) {
+        return '<li>' + FL(x.film, x.year, x.id) + (x.year ? ' (' + x.year + ')' : '') + '<span class="when">' + esc(x.name) + ' · ' + esc(when(x.at * 1000)) + (x.by ? ' · you chose the film' : '') + '</span></li>'; }).join('');
+      Array.prototype.forEach.call(document.querySelectorAll('#bfitodo [data-bfi]'), function (li) {
+        var x = T[+li.dataset.bfi];
+        Array.prototype.forEach.call(li.querySelectorAll('[data-bfiput]'), function (bt) { bt.onclick = function () { put(bt, x.file, bt.dataset.bfiput, bt.dataset.bfiw); }; });
+        var inp = li.querySelector('.bfiq'), hits = li.querySelector('.bfihits'), tm;
+        inp.oninput = function () { clearTimeout(tm); var v = inp.value.trim(); if (v.length < 2) { hits.innerHTML = ''; return; }
+          tm = setTimeout(function () { go(null, '?q=' + encodeURIComponent(v)).then(function (r) {
+            if (inp.value.trim() !== v) return;
+            hits.innerHTML = (r.films || []).length ? r.films.map(function (f) { return '<button class="btn small" type="button" data-bfiput="' + esc(f.id) + '" data-bfiw="' + esc(pick(f)) + '">' + esc(pick(f)) + '</button>'; }).join('') : '<span class="stat">No film of that name in Grifflix.</span>';
+            Array.prototype.forEach.call(hits.querySelectorAll('[data-bfiput]'), function (bt) { bt.onclick = function () { put(bt, x.file, bt.dataset.bfiput, bt.dataset.bfiw); }; });
+          }).catch(function (e) { hits.innerHTML = '<span class="stat">' + esc(e.message) + '</span>'; }); }, 300); };
+      });
+    };
+    if (!document.querySelector('#bfitodo .bfiq:focus')) go().then(draw).catch(function (e) { $('#bfisay').textContent = e.message; });
+    $('#bfilook').onclick = function () { var b = this; b.disabled = true; b.textContent = 'Looking…';
+      go({ op: 'look' }).then(function (j) { b.disabled = false; b.textContent = 'Look now'; draw(j); toast('Looked'); }).catch(function (e) { b.disabled = false; b.textContent = 'Look now'; toast(e.message); }); };
+    if (!once) setTimeout(bfiLook, 120000);
+  }
+  bfiLook();
   // ---- English subtitles made ready on John's Mac (subprep.py), timed by Whisper: John, 20 Nov 2026, "pre-prepare"
   // (what it did for a film, in full: the subtitle chosen, how it was moved and how sure, each part of the film listened to, the others tried:
   // John, 21 Nov 2026, "I still need to know what the fix chose to do - if it moved them - what subtitles it chose, etc")
@@ -4404,7 +4464,7 @@ var feats = function (doc) {
   (function () {   // ---- the tabs: one group of cards at a time, the last one chosen kept (and #themes etc. in the address)
     // (each kind of thing in a tab of its own, so nothing needs scrolling for: John, 18 Nov 2026, "Can you tidy up admin putting everything
     // into clear findable tabs, so I don't have to always scroll to find things"; the old tabs' names lead to the new)
-    var TABS = ['updates', 'downloads', 'convert', 'library', 'criterion', 'a24', 'tocheck', 'calendar', 'members', 'mac', 'dupes'], OLD = { films: 'library', themes: 'calendar', requests: 'downloads' };
+    var TABS = ['updates', 'downloads', 'convert', 'library', 'criterion', 'a24', 'bfi', 'tocheck', 'calendar', 'members', 'mac', 'dupes'], OLD = { films: 'library', themes: 'calendar', requests: 'downloads' };
     function show(t, push) {
       t = OLD[t] || t;
       if (TABS.indexOf(t) < 0) t = 'updates';
@@ -4419,6 +4479,7 @@ var feats = function (doc) {
       [].forEach.call(document.querySelectorAll('#tabs [data-go]'), function (b) { var on = b.dataset.go === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
       store.set('grifflix-admintab', t);
       if (t === 'criterion' && GW && typeof cmfLook === 'function' && !CMF.rows) cmfLook();
+      if (t === 'bfi' && typeof bfiLook === 'function') bfiLook(true);
       if (push) { try { history.replaceState(null, '', '#' + t); } catch (e) {} }
       dispatchEvent(new Event('resize'));   // (the theme explorer's preview, sized now it can be seen)
     }
