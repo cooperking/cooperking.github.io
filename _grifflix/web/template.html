@@ -401,6 +401,9 @@ html.tv .sheet .people a.afi { display: none; }   /* (no browsing out from the T
 .ptap { position: absolute; inset: 0; z-index: 1; }
 .player .top { z-index: 3; transition: opacity .3s; }
 .player .nextup { z-index: 3; bottom: 128px; }
+/* (above the controls' layer, which reaches up over them, transparent, and took the click: John, 26 Nov 2026, "skip this intro doesn't work as the
+   players controls go in foront of it") */
+.player .skipin, .player .nextup { z-index: 6; } .player .skipin { bottom: 128px; } html.tv .player .skipin, html.tv .player .nextup { bottom: 168px; }
 .pctl { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: 48px max(20px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); background: linear-gradient(transparent, rgba(0, 0, 0, .8)); color: #fff; transition: opacity .3s; }
 .player.idle .pctl, .player.idle .pmid { opacity: 0; pointer-events: none; }
 .pseekrow { display: flex; align-items: center; gap: 14px; font: 500 12.5px/1 var(--kfont); letter-spacing: .06em; font-variant-numeric: tabular-nums; }
@@ -2374,7 +2377,7 @@ html:not(.phone) #sheetIn .film.fbfi .ico { width: 48px !important; height: 48px
 /* (laid out as BFI Player's own film page, Shackle's: the picture across the top, the title and Play over its foot, nothing else on it; under it,
    as wide as BFI Player's page, on the left the genre, year and length, who directed it, then each detail under its heading; on the right its
    words, the first line white: John, 26 Nov 2026. Shaped by bfiShape; one column on a phone, its words first) */
-#sheetIn .film.fbfi.bfish .heroimg { height: min(72vh, 45vw) !important; min-height: 360px; }
+#sheetIn .film.fbfi.bfish .heroimg { height: min(72vh, 45vw) !important; min-height: 360px; margin-top: var(--bfitop, 0px) !important; }
 html.phone #sheetIn .film.fbfi.bfish .heroimg { height: min(127vw, 68vh) !important; min-height: 0; aspect-ratio: auto !important; }
 #sheetIn .film.fbfi.bfish .heroimg::before { background: linear-gradient(0deg, rgba(0, 0, 0, .3), transparent 40%); }
 #sheetIn .film.fbfi .bfitop { position: absolute; z-index: 2; left: 0; right: 0; bottom: clamp(36px, 8vh, 75px); padding: 0 max(24px, calc((100% - 1094px) / 2)); }
@@ -2430,6 +2433,7 @@ html.gbfi #cbody .sfb { min-height: 40px; border: 1px solid #fff !important; bor
 html.gbfi #cbody .sfb:hover, html.gbfi #cbody .sfb.on { background: #fff !important; color: #000 !important; }
 html.gbfi #cbody .sfb b { font: 600 14px/1 var(--bfi-sans); letter-spacing: .02em; }
 html.gbfi #cbody .sfb i { background: #783df6; color: #fff; }
+html.gbfi #cbody #sffilt::after { content: "Filters"; font: 600 14px/1 var(--bfi-sans); letter-spacing: .02em; text-transform: uppercase; }   /* (named, as Sort is: John, 26 Nov 2026, "Can we have filters too") */
 html.gbfi .sfpop { background: #000; color: #fff; border-color: #fff; font-family: var(--bfi-sans); }
 #cbody .bfihead > div { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 0 14px; } .bfihead .ctoolic { position: static !important; border-radius: 0; } #cbody .bfihead #ctoolrow { flex-basis: 100%; }
 #cbody .bfihead h1.bfih1 { display: flex; align-items: center; gap: 16px; margin: 6px 0 0 !important; padding-right: 50px; color: #fff; font: inherit !important; letter-spacing: 0 !important; text-transform: none !important; }
@@ -7566,6 +7570,9 @@ function bfiShape(it) {   // (a BFI film's page as BFI Player's own film page: i
   var fm = $('#sheetIn .film.fbfi'), hero = fm && fm.querySelector(':scope > .heroimg'), body = $('#isbody');
   if (!fm || !hero || !body || TV) return;
   fm.classList.add('bfish');
+  // (the picture starting under Grifflix's bar, not behind it: John, 26 Nov 2026, "the background images on films goes to the top of the screen and
+  // doesn't take the top bar into consideration")
+  var bar = $('.bar-top'), bb = bar && bar.getBoundingClientRect(); fm.style.setProperty('--bfitop', (bb && bb.bottom > 0 ? Math.round(bb.bottom + 10) : 0) + 'px');
   var top = hero.querySelector('.bfitop'); if (!top) { top = document.createElement('div'); top.className = 'bfitop'; hero.appendChild(top); }
   var h2 = fm.querySelector('.in > h2'); if (h2) {
     top.insertBefore(h2, top.firstChild);
