@@ -2322,6 +2322,13 @@ html.ga24 .a24btn { background: var(--a24-ink) !important; color: var(--a24-page
 .a24c i { display: block; margin: 9% 0 6%; font: normal 400 5.6cqw/1 var(--a24-mono); letter-spacing: .22em; text-transform: uppercase; color: #9a9a9a; }
 .a24c .gcx { display: block; font-size: 9.6cqw; }
 .a24c small { display: block; margin-top: 11%; font: 400 5cqw/1 var(--a24-mono); letter-spacing: .14em; text-transform: uppercase; color: #9a9a9a; }
+/* ---- BFI at Grifflix: the films with Mark Kermode's introduction from the BFI, as A24's and Criterion's are (John, 26 Nov 2026, "Any film that
+   the Extra is added to, should be labelled BFI, and added to a collection, just like A24 and Criterion"): white, BFI in black, at GRIFFLIX */
+.card.coll .ccov.bfic { background: #fff; color: #000; border-color: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 8% 7%; --gc-ink: #000; --gcx-bg: #fff; }
+.bfic .bfim { display: block; font: 900 31cqw/.86 "Helvetica Neue", Helvetica, Arial, sans-serif; letter-spacing: -.035em; }
+.bfic i { display: block; margin: 9% 0 6%; font: normal 400 5.6cqw/1 var(--sans); letter-spacing: .22em; text-transform: uppercase; color: #6b6b6b; }
+.bfic .gcx { display: block; font-size: 9.6cqw; }
+.bfic small { display: block; margin-top: 11%; font: 400 5cqw/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: #6b6b6b; }
 /* the intro: its films rolling by, as A24's list, and A24 at GRIFFLIX */
 /* the intro: a trailer's cut through A24's own stills, faster and faster, then black, A24 in white, at GRIFFLIX (John, 19 Nov 2026,
    "The A24 intro is a bit too similar to the criterion one. Can we have a more original one") */
@@ -2680,7 +2687,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: 'cb393edb3fcf' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'e9d6d6e312f5' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6004,6 +6011,7 @@ function collCard(c) {   // a collection's cover, drawn rather than a picture: a
   var h = 0; for (var i = 0; i < (c.id || nm).length; i++) h = (h * 31 + (c.id || nm).charCodeAt(i)) >>> 0;
   var long = nm.length > 26 ? ' xl' : (nm.length > 13 ? ' l' : ''), n = c.children ? c.children + (c.children === 1 ? ' title' : ' titles') : 'Collection';
   if (/criterion/i.test(c.name)) return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '">' + gcCover(c, n) + '<div class="t">' + esc(c.name) + '</div><div class="s">' + n + '</div></a>';
+  if (/^bfi$/i.test(c.name)) return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '"><div class="pic ccov bfic"><span class="bfim" aria-hidden="true">BFI</span><i>at</i><b class="gcx" aria-label="Grifflix">' + gxSvg(.5) + '</b><small>' + esc(n) + '</small></div><div class="t">' + esc(c.name) + '</div><div class="s">' + n + '</div></a>';   // (BFI at Grifflix: 26 Nov 2026)
   if (/^a24$/i.test(c.name)) { a24Fonts(); return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '"><div class="pic ccov a24c">' + a24Mark() + '<i>at</i><b class="gcx" aria-label="Grifflix">' + gxSvg(.5) + '</b><small>' + esc(n) + '</small></div><div class="t">' + esc(c.name) + '</div><div class="s">' + n + '</div></a>'; }
   return '<a class="card coll" href="#collection/' + c.id + '" aria-label="' + esc(c.name + ', ' + n) + '"><div class="pic ccov" data-cn="' + esc(c.name) + '" data-nm="' + esc(nm) + '" data-ch="' + h + '">' + collArt(h, nm, c.name) +
     '<div class="cc">' + (k ? '<small>' + esc(k) + '</small>' : '') + '<b class="' + long + '">' + esc(nm) + '</b><i></i><span>' + n + '</span></div></div><div class="t">' + esc(c.name) + '</div><div class="s">' + n + '</div></a>';   // (its name under it too, as a film's: John, 8 Nov 2026)
@@ -7092,6 +7100,9 @@ function identifySheet(it) {   // John's: the right film (or series) found on TM
 }
 // (a Criterion film's page in Criterion's lettering, an A24 film's in A24's: as the collection it was opened from, else the one it's in:
 // John, 20 Nov 2026, "Could the film's individual pages match the criterion font, not Grifflix - that is true of A24 as well, for their font")
+function inSet(it, re) {   // (the film is in a collection of that name: A24, The Criterion Collection, BFI)
+  return !!(it && LIB && LIB.sets && LIB.collections && LIB.collections.some(function (cid) { return LIB.items[cid] && re.test(LIB.items[cid].name || '') && (LIB.sets[cid] || []).indexOf(it.id) >= 0; }));
+}
 function filmHouse(it) {
   var de = document.documentElement;
   if (S.view === 'collection' && de.classList.contains('gcrit')) return 'crit';
@@ -7114,7 +7125,7 @@ function itemSheet(it, ctx) {
   S.sheetIt = it; S.sheetCtx = ctx;
   var kept = sheetKeep() || (($('#sheetIn > .film') || S.backItem) && SHEETBACK.length) || ctx.kept;   // (from a page of films: that page kept, and a way back to it)
   var hse = filmHouse(it); if (hse === 'a24') a24Fonts(); if (hse === 'crit') critFonts();
-  openSheet('<div class="film' + (hse ? ' f' + hse : '') + (pst ? ' hasposter' : '') + (it.type === 'series' ? ' series' : '') + '">' + (!TV ? '<button type="button" class="fback" id="fback" aria-label="Back">‹ Back</button>' : '') + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it)) + (it.spine ? ' · Criterion no. ' + esc(String(it.spine)) : '')) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');
+  openSheet('<div class="film' + (hse ? ' f' + hse : '') + (pst ? ' hasposter' : '') + (it.type === 'series' ? ' series' : '') + '">' + (!TV ? '<button type="button" class="fback" id="fback" aria-label="Back">‹ Back</button>' : '') + top + (pst ? '<div class="ipost"><img alt="" src="' + esc(pst) + '"></div>' : '') + '<div class="in"><div class="date">' + (ctx.date ? dnav(-1) + '<span>' + esc(longDate(ctx.date)) + '</span>' + dnav(1) : esc(typeName(it)) + (it.spine ? ' · Criterion no. ' + esc(String(it.spine)) : '') + (inSet(it, /^bfi$/i) ? ' · BFI' : '')) + '</div><h2>' + esc(showName(it)) + '</h2><div id="isbody">' + bodyHTML(it, ctx) + '</div></div></div>');
   $$('#sheetIn [data-dstep]').forEach(function (b) { b.onclick = function () { dayStep(+b.dataset.dstep); }; });
   // (a Back on every film: to the page of films it came from, else closed, back where you were: John, 18 Nov 2026, "Films should have a back
   // on them - there was before, so you're not stuck in a film")
