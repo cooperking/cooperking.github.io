@@ -1221,7 +1221,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       go({ op: 'move', file: file, id: id }).then(function () { toast('Put with ' + what); bfiLook(true); })
         .catch(function (e) { bt.disabled = false; bt.textContent = was; toast(e.message); });
     };
-    var pick = function (f) { return f.name + (f.year ? ' (' + f.year + ')' : ''); };
+    var pick = function (f) { return f.name + (f.year ? ' (' + f.year + ')' : '') + (f.kind === 'series' ? ' · TV' : ''); };
     var draw = function (j) {
       var T = j.todo || [], M = j.moved || [];
       var arr = (j.arriving ? ' <b>' + j.arriving + ' just arrived</b>: each is looked at 5 minutes after it comes, so it’s whole.' : '') + (j.copying ? ' Coming in now: ' + esc(j.copying) + '.' : '');
