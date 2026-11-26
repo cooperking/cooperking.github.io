@@ -10558,7 +10558,14 @@ def rename_to(g, iid, name, year, pick=None):
     # (no "%": the media server can't take a folder with one, and looked "1% (2018)" up as "1", Ready Player One; nor what the G-Drive's
     # kind of disk won't take: John, 26 Nov 2026, Outlaws, "it's actually called outlaws only in the states and 1% elsewhere")
     new = re.sub(r'\s*%', ' Percent', re.sub(r'[/:\\*?"<>|]', '-', '%s (%s)' % (name, year) if year else name))
-    new = re.sub(r'\s+', ' ', new).strip(' .')
+    base = new = re.sub(r'\s+', ' ', new).strip(' .')
+    # (and the film's own number on its folder, the media server's way of being told which film it is: renamed, a film is new to it, and it
+    # looked it up again by its folder's name, twice wrongly (1 Percent (2018): One Percent More Humid), whatever John had chosen: 26 Nov 2026)
+    pid_ = (pick or {}).get('ProviderIds') or {}
+    if pid_.get('Imdb'):
+        new = '%s [imdbid-%s]' % (base, pid_['Imdb'])
+    elif pid_.get('Tmdb'):
+        new = '%s [tmdbid-%s]' % (base, pid_['Tmdb'])
     folder = path if kind == 'Series' else os.path.dirname(path)
     libs = [os.path.realpath(l).rstrip('/') for v in g.jf.call('GET', '/Library/VirtualFolders') or [] for l in v.get('Locations') or []]
     if os.path.realpath(folder).rstrip('/') in libs:
@@ -10567,6 +10574,7 @@ def rename_to(g, iid, name, year, pick=None):
     if kind == 'Movie' and any(n.lower().endswith(VIDS) and not n.startswith('.') and os.path.join(folder, n) != path and 'sample' not in n.lower() for n in os.listdir(folder)):
         return 'its folder has other films in it, so it keeps its name'
     oldname = os.path.basename(folder.rstrip('/'))
+    oldbase = re.sub(r'\s*\[(imdbid|tmdbid|tvdbid)-[^\]]+\]$', '', oldname)   # (the files are named without the number)
     target = os.path.join(os.path.dirname(folder.rstrip('/')), new)
     if oldname == new:
         return ''
@@ -10592,9 +10600,9 @@ def rename_to(g, iid, name, year, pick=None):
     real_folder = os.path.realpath(folder)
     for d, _, files in os.walk(real_folder):
         for f in files:
-            if f.startswith(oldname):
-                os.rename(os.path.join(d, f), os.path.join(d, new + f[len(oldname):]))
-                moved[os.path.join(d, f)] = os.path.join(d, new + f[len(oldname):])
+            if f.startswith(oldbase) and base + f[len(oldbase):] != f:
+                os.rename(os.path.join(d, f), os.path.join(d, base + f[len(oldbase):]))
+                moved[os.path.join(d, f)] = os.path.join(d, base + f[len(oldbase):])
     real_target = os.path.join(os.path.dirname(real_folder), new)
     os.rename(real_folder, real_target)
     want = {}
@@ -10624,7 +10632,7 @@ def rename_to(g, iid, name, year, pick=None):
                             break
                 else:   # (by its name, and by its folder's (the media server's own name for it till it's matched: "1 Percent", not "1%"))
                     xs = []
-                    for t_ in dict.fromkeys([name, re.sub(r'\s*\(\d{4}\)$', '', new)]):
+                    for t_ in dict.fromkeys([name, re.sub(r'\s*\(\d{4}\)$', '', base)]):
                         if t_:
                             xs += (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path', 'SearchTerm': t_, 'Limit': 50}, timeout=90) or {}).get('Items') or []
                 for x in xs:
@@ -10644,8 +10652,8 @@ def rename_to(g, iid, name, year, pick=None):
                     # it, and put its own guess over John's: 1% became Ready Player One, 26 Nov 2026)
                     def recheck(top=top):
                         want_ = {k: str(v) for k, v in (pick.get('ProviderIds') or {}).items() if k in ('Tmdb', 'Imdb') and v}
-                        for _ in range(3):
-                            time.sleep(90)
+                        for w_ in (90, 90, 180, 300, 600):
+                            time.sleep(w_)
                             try:
                                 have_ = (g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, top)) or {}).get('ProviderIds') or {}
                                 if not want_ or any(str(have_.get(k) or '') == v for k, v in want_.items()):
@@ -10690,7 +10698,7 @@ def one_percent_once(g):
     as Fix match does, its calendars, lists and collections following it."""
     mk = os.path.expanduser('~/Grifflix/one-percent.done')
     if os.path.exists(mk):
-        return
+        return one_percent_again(g)
     time.sleep(240)   # (after the media server's own start)
     M_ = '/Volumes/G-Drive/Grifflix/Movies/'
     A_, B_ = M_ + '1% (2018)/1% (2018).mp4', M_ + 'Outlaws (2017)/Outlaws (2017).mp4'
@@ -10742,6 +10750,41 @@ def one_percent_once(g):
         said.append('stopped: %s' % str(e)[:160])
     open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M ') + '; '.join(said) + '\n')
     log('1%% (Outlaws), put right: %s' % '; '.join(said))
+
+
+def one_percent_again(g):
+    """Once more: 1%, looked up again by the media server from its folder's name after it was put right, and called One Percent More
+    Humid; its folder given its IMDb number, so the media server knows which film it is whatever it looks at (26 Nov 2026)."""
+    mk = os.path.expanduser('~/Grifflix/one-percent-2.done')
+    if os.path.exists(mk):
+        return
+    time.sleep(240)
+    A_ = '/Volumes/G-Drive/Grifflix/Movies/1 Percent (2018)/1 Percent (2018).mp4'
+    said = []
+    try:
+        iid = None
+        for y_ in ('2017', '2018', '2019'):
+            for x in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Years': y_, 'Fields': 'Path'}, timeout=120) or {}).get('Items') or []:
+                if os.path.realpath(x.get('Path') or '') == os.path.realpath(A_):
+                    iid = x['Id']
+        if not iid:
+            said.append('1 Percent (2018) not in the media server: nothing done')
+        else:
+            res = g.jf.call('POST', '/Items/RemoteSearch/Movie', {'SearchInfo': {'Name': '', 'ProviderIds': {'Imdb': 'tt6301712'}}, 'ItemId': iid, 'IncludeDisabledProviders': False}, timeout=60) or []
+            pick = res[0] if res else None
+            if not pick:
+                said.append('TMDB didn’t give tt6301712')
+            else:
+                apply_match(g, iid, pick)
+                g.forget()
+                said.append('matched as %s (%s)' % (pick.get('Name'), pick.get('ProductionYear')))
+                said.append(rename_to(g, iid, pick.get('Name') or '1%', pick.get('ProductionYear') or 2018, pick) or 'its folder kept its name')
+                after_fixes()
+                g.publish_soon = time.time() + 300
+    except Exception as e:
+        said.append('stopped: %s' % str(e)[:160])
+    open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M ') + '; '.join(said) + '\n')
+    log('1%% (Outlaws), its number on its folder: %s' % '; '.join(said))
 
 
 def loose_to_folders(g, quiet=False):
