@@ -3451,7 +3451,7 @@ def make_handler(g):
                     with TC_LOCK:
                         try:
                             TC_LAST.clear()
-                            TC_LAST.update(at=int(time.time()), added=to_check_scan(g))
+                            TC_LAST.update(at=int(time.time()), **to_check_scan(g))
                         except Exception as e:
                             TC_LAST.update(at=int(time.time()), error=str(e)[:200])
                 t_ = threading.Thread(target=go, daemon=True)
@@ -9412,8 +9412,9 @@ TC_LAST = {}
 
 
 def to_check_scan(g):
-    """Every film looked at for To check now (John's Check again, 26 Nov 2026: "can I have a button to check again on the check page"):
-    its file's length against its film's, as every 6 hours, without matching any again. Returns the films put in."""
+    """The whole library looked at for To check now (John's Check again, 26 Nov 2026: "I meant one button to check again for problems with
+    the library"): each film's file's length against its film's, as every 6 hours, without matching any again; and those in To check
+    checked again, those put right since taken off. Returns {added: [names], cleared: [names]}."""
     import difflib, unicodedata
     if not g.st.get('tmdb_key'):
         raise RuntimeError('no TMDB key on the Mac mini, so no film lengths to compare')
@@ -9451,9 +9452,69 @@ def to_check_scan(g):
             except OSError:
                 continue
             doubt.append((it, fname, mins, why_))
+    added = to_check_add(g, doubt) or []
+    # (and those in it checked again: put right since (Fix match on Weekend, say), taken off; still in doubt, their notes said plainly)
+    cleared = []
+    sets = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'BoxSet'}) or {}).get('Items') or []
+    box = next((x for x in sets if (x.get('Name') or '').strip().lower() == 'to check'), None)
+    for x in ((g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': box['Id']}) or {}).get('Items') or []) if box else []:
+        try:
+            r_ = to_check_one(g, x['Id'])
+            if r_.get('state') in ('fine', 'gone'):
+                cleared.append(x.get('Name') or '?')
+        except Exception as e:
+            log('To check, %s: %s' % (x.get('Name'), str(e)[:120]))
     if TMDBC.pop('_dirty', None):
         save(os.path.expanduser('~/Grifflix/tmdb-runtimes.json'), TMDBC)
-    return to_check_add(g, doubt) or []
+    return {'added': added, 'cleared': cleared}
+
+
+def to_check_one(g, iid):
+    """One film in To check checked again, after Fix match, say: its file's length against its film's now. Put right: out of To check, its
+    note too. Still in doubt: its note said afresh. One in for another reason (a second copy) is checked by eye: John's Done."""
+    import difflib, unicodedata
+    it = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, iid)) or {}
+    if not it.get('Id'):
+        return {'state': 'gone', 'say': 'It isn’t in the library now.'}
+    sets = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'BoxSet'}) or {}).get('Items') or []
+    box = next((x for x in sets if (x.get('Name') or '').strip().lower() == 'to check'), None)
+    full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, box['Id'])) if box else {}
+    lines = (full.get('Overview') or '').split('\n')
+    A = load(os.path.expanduser('~/Grifflix/to-check-added.json'), {}) or {}
+    p = it.get('Path') or ''
+    fname = os.path.basename(os.path.dirname(p))
+    m = re.match(r'^(.*?)\s*\((\d{4})\)\s*$', fname)
+    names = {n for n in (it.get('Name'), A.get('id:' + iid), m.group(1).strip() if m else None) if n}
+    mine = [l for l in lines if any(l.startswith(n + ': ') for n in names)]
+    if mine and not any(' runs ' in l for l in mine):
+        return {'state': 'by-eye', 'say': 'This one’s in for another reason (%s): press Done once it’s put right.' % mine[0].split(': ', 1)[1].rstrip('.')}
+    cur = (it.get('ProviderIds') or {}).get('Tmdb')
+    mins = round((it.get('RunTimeTicks') or 0) / 6e8)
+    if not (m and cur and mins and g.st.get('tmdb_key')):
+        return {'state': 'cant', 'say': 'Its length can’t be checked (%s): press Done once it’s put right.' % ('no TMDB match' if not cur else 'no length for its file' if not mins else 'no TMDB key' if not g.st.get('tmdb_key') else 'its folder has no year')}
+    title, year = m.group(1).strip(), int(m.group(2))
+    same_name = difflib.SequenceMatcher(None, fold(title), fold(it.get('Name'))).ratio() >= .9
+    same_year = not it.get('ProductionYear') or abs(int(it['ProductionYear']) - year) <= 1
+    rt_ = tmdb_runtime(g, cur)['rt']
+    # (put right only when the lengths agree now, to a quarter of an hour: Weekend, still matched to the Polish Weekend of 121, isn't)
+    why = None if rt_ and abs(rt_ - mins) <= 15 else (len_doubt(g, it, title, mins, cur, same_name, same_year) or
+        'the file runs %d minutes; the film it’s matched to, %s (%s), runs %s: the wrong film, or another cut? Fix match, or Done if it’s right'
+        % (mins, it.get('Name'), it.get('ProductionYear') or '?', rt_ or '?'))
+    keep = [l for l in lines if l not in mine]
+    if why:
+        full['Overview'] = '\n'.join(keep + ['%s: %s.' % (it.get('Name'), why)])[:8000]
+    elif box:
+        g.jf.call('DELETE', '/Collections/%s/Items' % box['Id'], query={'Ids': iid})
+        full['Overview'] = '\n'.join(keep)
+    if box:
+        full['LockedFields'] = sorted(set((full.get('LockedFields') or []) + ['Overview']))
+        g.jf.call('POST', '/Items/%s' % box['Id'], full)
+    g.forget()
+    g.publish_soon = time.time() + 300
+    if why:
+        return {'state': 'doubt', 'why': why, 'say': 'Still in doubt: %s' % why}
+    log('To check: %s checked again and put right (the file %d minutes, the film %d): taken out' % (it.get('Name'), mins, rt_))
+    return {'state': 'fine', 'say': '%s: the file runs %d minutes, and %s (%s) runs %s: put right, off the list' % (it.get('Name'), mins, it.get('Name'), it.get('ProductionYear') or '?', rt_ or '?')}
 
 
 def to_check_add(g, doubts):
@@ -9482,6 +9543,7 @@ def to_check_add(g, doubts):
             continue
         new.append((it, fname, why))
         A[k] = int(time.time())
+        A['id:' + it['Id']] = it.get('Name') or fname   # (the name its note is under, for Check again after Fix match renames it)
     if new:
         ids = ','.join(it['Id'] for it, _, _ in new)
         if box:
