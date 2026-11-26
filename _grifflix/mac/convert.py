@@ -1649,7 +1649,8 @@ def leftovers():
         except Exception:
             pass
 RESCUE = os.path.join(HOME, 'originals-rescue.json')   # (each original in Grifflix Originals looked at, and what came of it)
-RESCUE_V = 2   # (2: an episode matched by its name or SxxEyy, in a folder of several: Scenes from a Marriage's, Dekalog's sixth)
+RESCUE_V = 3   # (2: an episode matched by its name or SxxEyy, in a folder of several: Scenes from a Marriage's, Dekalog's sixth; 3: a
+# folder found whatever its accents (Fårö Document's); and the soundtracks compared)
 RESCUE_MORE = [False, 0]   # (cut short by someone watching: carried on between films; when last tried)
 VIDX = ('.mkv', '.mp4', '.m4v', '.avi', '.mov', '.ts', '.m2ts', '.wmv', '.mpg', '.mpeg', '.webm', '.vob')
 
@@ -1722,6 +1723,13 @@ def rescue_originals():
                     film = then.get(os.path.normcase(film))
                 if not film or not os.path.exists(film):   # (not the converter's (gdrive.py keeps a replaced copy): the film in its folder)
                     fd_ = os.path.join(lib, os.path.relpath(d, oroot))
+                    if not os.path.isdir(fd_):   # (the film's folder renamed since, with its accents: Faro Document (1970), Fårö Document (1970))
+                        import unicodedata
+                        fold_ = lambda n: ''.join(c for c in unicodedata.normalize('NFKD', n) if not unicodedata.combining(c)).casefold()
+                        try:
+                            fd_ = next((os.path.join(os.path.dirname(fd_), y) for y in os.listdir(os.path.dirname(fd_)) if fold_(y) == fold_(os.path.basename(fd_))), fd_)
+                        except OSError:
+                            pass
                     try:
                         vs_ = [os.path.join(fd_, y) for y in os.listdir(fd_) if not y.startswith('.') and os.path.splitext(y)[1].lower() in VIDX
                                and os.path.getsize(os.path.join(fd_, y)) > 3e8]
@@ -1751,6 +1759,16 @@ def rescue_originals():
                 if saved:
                     note_pics(iid, name, (rec or {}).get('year'), film, saved)
                     refresh = True
+                # (and a soundtrack in a language the film no longer has, only in the original, kept with it, unless John chose the language:
+                # One Wonderful Sunday's original went, its second soundtrack with it: 26 Nov 2026)
+                aud_ = lambda inf: set((lang(x) or 'und') for x in inf.get('streams') or [] if x.get('codec_type') == 'audio' and not commentary(x))
+                only_ = sorted(aud_(info) - aud_(probe(ffprobe, film)) - {'und'})
+                if only_ and not (iid and chosen_lang(iid)):
+                    why_ = 'its %s soundtrack is only in the original' % ' and '.join(NAMES.get(x, x) for x in only_)
+                    R[fp] = dict(rec_, kept=why_, saved=len(saved))
+                    said.append('%s: kept, %s' % (name, why_))
+                    log('  %s: its original kept: %s' % (name, why_))
+                    continue
                 if failed:
                     why_ = '; '.join('%s: %s' % (lang_name(x), w) for x, w in failed)[:300]
                     R[fp] = dict(rec_, kept='a subtitle still won’t come out (%s)' % why_, saved=len(saved))
