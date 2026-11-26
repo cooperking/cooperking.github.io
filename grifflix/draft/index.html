@@ -2447,10 +2447,29 @@ html.gbfi #cbody .empty { color: #fff; font-family: var(--bfi-sans); }
 .bfiin .core { transition: transform .8s cubic-bezier(.3, 0, .2, 1); } .bfiin.end .core { transform: translateY(-11vh); }
 html.tv .bfiin .ray { filter: none; width: 640%; } html.tv .bfiin .rl { width: 520%; }   /* (lighter on the Fire TV) */
 .bfiin .at { display: block; margin: 30px 0 10px; font: 600 11px/1 var(--bfi-sans); letter-spacing: .3em; text-transform: uppercase; color: var(--bfi-grey); opacity: 0; }
-.bfiin .g { display: block; font-size: clamp(22px, 4.4vw, 40px); --gc-ink: #fff; opacity: 0; }
+/* (GRIFFLIX, in its own lettering, lit by the same projector's light as B, F and I: its shafts sweeping along under the logo, each letter catching
+   it in turn, warm, then settling white; "at" glinting as the light starts: John, 26 Nov 2026) */
+.bfiin .g { position: relative; display: block; font-size: clamp(22px, 4.4vw, 40px); --gc-ink: #fff; }
+.bfiin .g > .gxs path { opacity: 0; }
+.bfiin .g .gw { position: absolute; left: 0; right: 0; top: 0; color: #fff1bd; filter: blur(5px); pointer-events: none; }
+.bfiin .g .gw .gxs { stroke-width: 3.2px !important; } .bfiin .g .gw .gxs path { opacity: 0; }
+.bfiin.go .g .gxs path { animation: bfiGx 1.2s ease forwards; } .bfiin.go .g .gw .gxs path { animation-name: bfiGxGlow; }
+@keyframes bfiGx { 0% { opacity: 0; stroke: #fff2bf; } 30% { opacity: 1; stroke: #fffbe8; } 100% { opacity: 1; stroke: #fff; } }
+@keyframes bfiGxGlow { 0% { opacity: 0; } 28% { opacity: 1; } 100% { opacity: 0; } }
+.bfiin.go .g .gxs path:nth-child(1) { animation-delay: 4.55s; } .bfiin.go .g .gxs path:nth-child(2) { animation-delay: 4.7s; } .bfiin.go .g .gxs path:nth-child(3) { animation-delay: 4.85s; } .bfiin.go .g .gxs path:nth-child(4) { animation-delay: 5s; }
+.bfiin.go .g .gxs path:nth-child(5) { animation-delay: 5.15s; } .bfiin.go .g .gxs path:nth-child(6) { animation-delay: 5.3s; } .bfiin.go .g .gxs path:nth-child(7) { animation-delay: 5.45s; } .bfiin.go .g .gxs path:nth-child(8) { animation-delay: 5.6s; }
+.bfiin .sweep { position: absolute; left: 0; top: 50%; width: 175%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; mix-blend-mode: screen; opacity: 0;
+  background: conic-gradient(from 290deg, transparent 0deg, rgba(200, 255, 222, .7) 11deg, transparent 24deg, rgba(255, 240, 160, .6) 38deg, transparent 50deg, rgba(245, 178, 230, .55) 64deg, transparent 78deg, rgba(160, 232, 255, .55) 92deg, transparent 108deg 360deg);
+  -webkit-mask: radial-gradient(circle, #000 0, rgba(0, 0, 0, .75) 8%, rgba(0, 0, 0, .28) 26%, transparent 50%); mask: radial-gradient(circle, #000 0, rgba(0, 0, 0, .75) 8%, rgba(0, 0, 0, .28) 26%, transparent 50%); filter: blur(6px); }
+.bfiin.go .sweep { animation: bfiSweep 1.9s ease-in-out 4.35s forwards; }
+@keyframes bfiSweep { 0% { left: -8%; opacity: 0; transform: translate(-50%, -50%) rotate(-18deg); } 18% { opacity: 1; } 82% { opacity: 1; } 100% { left: 108%; opacity: 0; transform: translate(-50%, -50%) rotate(22deg); } }
+.bfiin.go .at { animation: bfiAt 1.2s ease 4.3s forwards; }
+@keyframes bfiAt { 0% { opacity: 0; color: #fff2bf; } 35% { opacity: 1; color: #fffbe8; } 100% { opacity: 1; color: var(--bfi-grey); } }
+.bfiin.calm .g .gxs path, .bfiin.calm .at { opacity: 1; } .bfiin.calm .gw, .bfiin.calm .sweep { display: none; }
+html.tv .bfiin .sweep, html.tv .bfiin .g .gw { filter: none; }
 .bfiin .n { display: block; min-height: 1.4em; margin: 22px auto 0; font: 500 13px/1.4 var(--bfi-sans); color: var(--bfi-grey); opacity: 0; font-variant-numeric: tabular-nums; }
 .bfiin .n b { color: #fff; font-weight: 700; }
-.bfiin.end .at { animation: gcUp .5s ease .1s forwards; } .bfiin.end .g { animation: gcUp .6s ease .25s forwards; } .bfiin.end .n { animation: gcUp .5s ease .6s forwards; }
+.bfiin.end .n { animation: gcUp .5s ease 2.2s forwards; } .bfiin.calm.end .n { animation-delay: .2s; }
 @media (prefers-reduced-motion: reduce) { .bfiin *, .bfiin.end * { animation-duration: .01s !important; animation-delay: 0s !important; } }
 /* the intro: its films rolling by, as A24's list, and A24 at GRIFFLIX */
 /* the intro: a trailer's cut through A24's own stills, faster and faster, then black, A24 in white, at GRIFFLIX (John, 19 Nov 2026,
@@ -2811,7 +2830,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '46e84501b17d' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: 'a2b25083b16a' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6923,7 +6942,7 @@ function bfiIntro() {   // (after the BFI's own intro: B, F, I, each lit from be
   el.innerHTML = '<div class="core"><div class="stage" aria-hidden="true">' +
     ['B', 'F', 'I'].map(function (k, i) { return '<i class="ray r' + i + '" style="left:' + BFIC[k][0] + '%;top:' + BFIC[k][1] + '%"></i>'; }).join('') +
     '<i class="ray rl"></i><i class="burst"></i>' + sv('lg', BFIPATH) + sv('lt lB', BFILET.B) + sv('lt lF', BFILET.F) + sv('lt lI', BFILET.I) + '</div>' +
-    '<div class="txt"><span class="at">at</span><span class="g gcx" aria-label="Grifflix">' + gxSvg(.5) + '</span><span class="n" aria-live="polite">&nbsp;</span></div></div>';
+    '<div class="txt"><span class="at">at</span><span class="g gcx" aria-label="Grifflix"><i class="sweep"></i>' + gxSvg(.5) + '<span class="gw" aria-hidden="true">' + gxSvg(.5) + '</span></span><span class="n" aria-live="polite">&nbsp;</span></div></div>';
   document.body.appendChild(el); var unTop = introTop('#000');
   var coll = null, done = false, auto = 0, timers = [], n = null, snd = bfiSound();
   var later = function (f, ms) { timers.push(setTimeout(f, ms)); };
@@ -6945,9 +6964,12 @@ function bfiIntro() {   // (after the BFI's own intro: B, F, I, each lit from be
   };
   var calm = CALM || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   requestAnimationFrame(function () { el.classList.add(calm ? 'calm' : 'go'); });
-  if (!calm) { [450, 1250, 2050].forEach(function (t, k) { later(function () { if (snd) snd.pop(k); }, t); }); later(function () { if (snd) snd.chord(); }, 3150); }
-  later(function () { el.classList.add('end'); later(count, 700); }, calm ? 300 : 4400);
-  auto = setTimeout(function () { go(true); }, calm ? 3200 : 7400);
+  if (!calm) { [450, 1250, 2050].forEach(function (t, k) { later(function () { if (snd) snd.pop(k); }, t); }); later(function () { if (snd) snd.chord(); }, 3150);
+    // (then GRIFFLIX lit by the same light, letter by letter, a glint with each: John, 26 Nov 2026, "have the animation integrate Grifflix
+    // rather than it just pop in at the end")
+    for (var k = 0; k < 8; k++) (function (k) { later(function () { if (snd) snd.glint(k); }, 4550 + k * 150); })(k); }
+  later(function () { el.classList.add('end'); later(count, calm ? 300 : 2300); }, calm ? 300 : 4000);
+  auto = setTimeout(function () { go(true); }, calm ? 3200 : 8600);
   bfiFind().then(function (c) { coll = c; if (!c) return; return api('collection?id=' + encodeURIComponent(c.id)).then(function (d) { n = (d.items || []).length; }); }).catch(function () {});
 }
 // (its soundtrack, made by the browser, only when Grifflix's music is on: a soft pad under the wall of films; a bright note as each circle
@@ -6973,6 +6995,11 @@ function bfiSound() {
       var ch = c.createGain(); ch.gain.setValueAtTime(.0001, t); ch.gain.exponentialRampToValueAtTime(.26, t + .5); ch.gain.setValueAtTime(.26, t + 1.4); ch.gain.exponentialRampToValueAtTime(.0001, t + 4.2); ch.connect(out);
       [196, 246.94, 293.66, 392, 587.33].forEach(function (f, j) { [-3, 3].forEach(function (d) { var o = c.createOscillator(), g = c.createGain(); o.type = j < 2 ? 'triangle' : 'sine'; o.frequency.value = f; o.detune.value = d; g.gain.value = .16; o.connect(g); g.connect(ch); o.start(t + j * .02); o.stop(t + 4.4); }); });
       setTimeout(halt, 800);
+    },
+    glint: function (k) {   // (each letter of GRIFFLIX: a small bright note, climbing G major, as the light passes)
+      if (stopped) return; var t = c.currentTime, f = [784, 880, 987.77, 1174.66, 1318.51, 1567.98, 1760, 1975.53][k] || 1568;
+      var o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.06, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .7); o.connect(g); g.connect(out); o.start(t); o.stop(t + .8);
     },
     stop: function () {
       if (stopped) return; stopped = true; var t = c.currentTime;
