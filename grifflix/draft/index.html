@@ -2371,6 +2371,39 @@ html:not(.phone) #sheetIn .film.fbfi .pill { min-height: 48px !important; paddin
 html:not(.phone) #sheetIn .film.fbfi .ico { width: 48px !important; height: 48px !important; }
 #sheetIn .film.fbfi .pill.go#aplay { background: #783df6 !important; border-color: #783df6 !important; color: #fff !important; }
 #sheetIn .film.fbfi .pill.go#aplay:hover { background: #6a2fe6 !important; border-color: #6a2fe6 !important; }
+/* (laid out as BFI Player's own film page, Shackle's: the picture across the top, the title and Play over its foot, nothing else on it; under it,
+   as wide as BFI Player's page, on the left the genre, year and length, who directed it, then each detail under its heading; on the right its
+   words, the first line white: John, 26 Nov 2026. Shaped by bfiShape; one column on a phone, its words first) */
+#sheetIn .film.fbfi.bfish .heroimg { height: min(72vh, 45vw) !important; min-height: 360px; }
+html.phone #sheetIn .film.fbfi.bfish .heroimg { height: min(127vw, 68vh) !important; min-height: 0; aspect-ratio: auto !important; }
+#sheetIn .film.fbfi.bfish .heroimg::before { background: linear-gradient(0deg, rgba(0, 0, 0, .3), transparent 40%); }
+#sheetIn .film.fbfi .bfitop { position: absolute; z-index: 2; left: 0; right: 0; bottom: clamp(36px, 8vh, 75px); padding: 0 max(24px, calc((100% - 1094px) / 2)); }
+html.phone #sheetIn .film.fbfi .bfitop { bottom: 14px; padding: 0 16px; }
+#sheetIn .film.fbfi .bfitop h2 { max-width: 1000px; margin: 0 0 24px !important; font: 700 clamp(34px, 3.7vw, 54px)/1.05 var(--bfi-sans) !important; letter-spacing: -.5px !important; text-shadow: 0 0 25px rgba(0, 0, 0, .9) !important; }
+html.phone #sheetIn .film.fbfi .bfitop h2 { margin: 0 !important; font-size: 40px !important; }
+#sheetIn .film.fbfi .bfitop .acts { margin: 0 !important; }
+#sheetIn .film.fbfi .bfitop .pill:not(#aplay), #sheetIn .film.fbfi .bfitop .ico { background: rgba(0, 0, 0, .55) !important; }
+#sheetIn .film.fbfi .bfitop .pill:not(#aplay):hover, #sheetIn .film.fbfi .bfitop .ico:hover { background: #fff !important; }
+.bbfc { display: inline-grid; place-items: center; width: 30px; height: 30px; margin-left: 12px; border-radius: 50%; vertical-align: .55em; font: 600 13px/1 var(--bfi-sans); letter-spacing: 0; color: #fff; text-shadow: none; border: 2px solid #fff; background: #ec008c; }
+.bbfc.bU { background: #00a650; } .bbfc.bPG { background: #fbad00; } .bbfc.b12, .bbfc.b12A { background: #f58220; } .bbfc.b18, .bbfc.bR18 { background: #dc0a0a; }
+#sheetIn .film.fbfi.bfish .in { max-width: 1094px !important; margin: 50px auto 0 !important; padding: 0 24px !important; box-sizing: content-box; }
+html.phone #sheetIn .film.fbfi.bfish .in { margin-top: 22px !important; padding: 0 16px 40px !important; }
+#sheetIn .film.fbfi.bfish .in > .date:not(:has(.dnav)) { display: none !important; }
+html.phone #sheetIn .film.fbfi.bfish #isbody > .acts { margin: 0 0 26px !important; }
+#sheetIn .film.fbfi .bfcols { display: grid; grid-template-columns: minmax(0, 310px) minmax(0, 1fr); column-gap: clamp(32px, 4.6vw, 66px); margin: 0 0 44px; }
+html.phone #sheetIn .film.fbfi .bfcols { grid-template-columns: minmax(0, 1fr); } html.phone #sheetIn .film.fbfi .bfr { order: -1; margin-bottom: 26px; }
+#sheetIn .film.fbfi .bfl, #sheetIn .film.fbfi .bfl * { font-family: var(--bfi-sans) !important; }
+#sheetIn .film.fbfi .bfl .bl { margin: 0 0 6px; font: 400 17px/1.35 var(--bfi-sans); color: var(--bfi-grey); }
+#sheetIn .film.fbfi .bfl .bl.bgap { margin-top: 24px; }
+#sheetIn .film.fbfi .bfl .bsep { margin: 0 9px; }
+#sheetIn .film.fbfi .bfl u { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+#sheetIn .film.fbfi .bfl .bsec, #sheetIn .film.fbfi .bfl .people, #sheetIn .film.fbfi .bfl .incoll { display: block !important; margin: 24px 0 0 !important; font: 400 17px/1.35 var(--bfi-sans) !important; color: var(--bfi-grey) !important; }
+#sheetIn .film.fbfi .bfl .bsec b, #sheetIn .film.fbfi .bfl .people b, #sheetIn .film.fbfi .bfl .incoll > span { display: block !important; margin: 0 0 4px !important; font: 600 17px/1.35 var(--bfi-sans) !important; color: #fff !important; text-transform: none !important; letter-spacing: 0 !important; }
+#sheetIn .film.fbfi .bfl .people b:not(:first-child) { margin-top: 18px !important; }   /* (each heading of Produced by, Released by, Now in the library of on its own) */
+#sheetIn .film.fbfi .bfl .incoll a { display: inline !important; margin: 0 12px 0 0 !important; padding: 0 !important; border: 0 !important; background: none !important; font: 400 17px/1.35 var(--bfi-sans) !important; color: var(--bfi-grey) !important; text-decoration: underline !important; text-underline-offset: 3px; }
+#sheetIn .film.fbfi .bfr .tag { margin: 0 0 20px !important; font: 400 19px/1.3 var(--bfi-sans) !important; color: #fff !important; }
+#sheetIn .film.fbfi .bfr .ov { margin: 0 !important; max-width: none !important; font: 400 17px/1.4 var(--bfi-sans) !important; color: var(--bfi-grey) !important; }
+#sheetIn .film.fbfi .bfr .note, #sheetIn .film.fbfi .bfr details { margin-top: 20px !important; }
 /* its button in the bar, beside A24's: the BFI's logo */
 html.public .bfibtn { display: none !important; }
 .bfibtn { flex: none; display: inline-grid; place-items: center; width: 32px; height: 32px; padding: 0 !important; margin-left: 2px; border: 1px solid var(--gc-c, rgba(var(--kink), .45)) !important; background: transparent !important; color: var(--gc-c, var(--fg)) !important; border-radius: 0 !important; cursor: pointer; }
@@ -2386,30 +2419,35 @@ html.gbfi .bar-top { background: #000 !important; -webkit-backdrop-filter: none 
 html.gbfi .bar-top::before { content: ""; position: absolute; left: -100vw; right: -100vw; bottom: 100%; height: 240px; background: #000; pointer-events: none; }
 html.gbfi body::before, html.gbfi body::after { background-color: #000 !important; background-image: none !important; }
 html.gbfi #main > .tabs:first-child { display: none; }
-html.gbfi #cbody { color: #fff; font-family: var(--bfi-sans); }
+html.gbfi #cbody { color: #fff; font-family: var(--bfi-sans); max-width: 1094px; margin-left: auto !important; margin-right: auto !important; }   /* (as wide as BFI Player's page) */
 #cbody .bfihead { display: block; margin: 8px 0 0; padding: 0; }
 #cbody .bfihead > div { position: relative; } .bfihead .ctoolic { top: clamp(26px, 4vw, 52px); border-radius: 0; }
-#cbody .bfihead h1.bfih1 { display: flex; align-items: center; flex-wrap: wrap; gap: 14px clamp(16px, 2.4vw, 28px); margin: clamp(26px, 4vw, 52px) 0 0 !important; padding-right: 50px; color: #fff; font: inherit !important; letter-spacing: 0 !important; text-transform: none !important; }
-#cbody .bfihead h1.bfih1 .bfim { font-size: clamp(64px, 9vw, 116px); }
-#cbody .bfihead h1.bfih1 .at { font: 600 clamp(12px, 1.2vw, 15px)/1 var(--bfi-sans); letter-spacing: .3em; text-transform: uppercase; color: var(--bfi-grey); }
-#cbody .bfihead h1.bfih1 .gcx { font-size: clamp(22px, 3.4vw, 44px); --gc-ink: #fff; --gcx-bg: #000; }
-#cbody .bfihead .hsub, #cbody .bfihead .hsub i { margin: 18px 0 0; color: var(--bfi-grey); font: 600 14px/1 var(--bfi-sans) !important; font-style: normal !important; letter-spacing: .02em; text-transform: uppercase; }
+#cbody .bfihead h1.bfih1 { display: flex; align-items: center; margin: clamp(18px, 2.4vw, 30px) 0 0 !important; padding-right: 50px; color: #fff; font: inherit !important; letter-spacing: 0 !important; text-transform: none !important; }
+#cbody .bfihead h1.bfih1 .bfim { font-size: clamp(46px, 4.8vw, 66px); }   /* (small, as the Criterion Collection's logo on its page: John, 26 Nov 2026) */
+#cbody .bfihead .hsub, #cbody .bfihead .hsub i { margin: 16px 0 0; color: var(--bfi-grey); font: 600 14px/1 var(--bfi-sans) !important; font-style: normal !important; letter-spacing: .02em; text-transform: uppercase; }
 #cbody .bfihead + .tabs { margin: 26px 0 0; }
 html.gbfi #cbody .cfind { border: 0; border-bottom: 1px solid #fff; border-radius: 0; background: none; color: #fff; font: 500 16px/1 var(--bfi-sans); padding-left: 0; }
 html.gbfi #cbody .cfind::placeholder { color: var(--bfi-grey); opacity: 1; }
-/* its films: BFI Player's grid, a wide still and the name under it in bold */
-#cgrid.bfigrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 40px 16px; margin: 30px 0 56px; }
-@media (max-width: 1000px) { #cgrid.bfigrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 680px) { #cgrid.bfigrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px 12px; } }
-.bfif { display: block; width: 100%; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; color: #fff; text-align: left; font: inherit; cursor: pointer; }
+/* its films: BFI Player's grid, as its Kermode Introduces page: three across, a wide still and the name under it in bold; pointed at (or chosen
+   with the remote), outlined in BFI Player's purple and opened down over the row below: a few words, and its genre, year, length and director
+   in grey tags (John, 26 Nov 2026, "it is different on hover and click"). One across on a phone, as there */
+#cgrid.bfigrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 1.5%; margin: 30px 0 140px; padding: 0; }
+@media (max-width: 900px) { #cgrid.bfigrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; } }
+@media (max-width: 600px) { #cgrid.bfigrid { grid-template-columns: minmax(0, 1fr); gap: 14px; } }
+.bfiw { position: relative; }
+.bfiw::before { content: ""; display: block; padding-top: calc(56.25% + 56px); }   /* (its room in the grid: the still and two lines of name) */
+.bfif { position: absolute; top: 0; left: 0; right: 0; z-index: 1; display: block; margin: 0; padding: 0; border: 0; border-radius: 0; background: #000; color: #fff; text-align: left; font: inherit; cursor: pointer; }
 .bfif .ph { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; background: var(--bfi-dark); }
-.bfif .ph img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .35s ease; }
+.bfif .ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .bfif .ph .no { position: absolute; inset: 0; display: grid; place-items: center; padding: 10px; font: 700 18px/1 var(--bfi-sans); color: var(--bfi-grey); text-align: center; }
 .bfif .tg { position: absolute; top: 0; right: 0; padding: 6px 10px 5px; background: #000; color: #fff; font: 600 11px/1.1 var(--bfi-sans); letter-spacing: -.1px; text-transform: uppercase; }
-.bfif .t { display: block; margin: 12px 10px 0; font: 700 clamp(17px, 1.6vw, 20px)/1.05 var(--bfi-sans); letter-spacing: -.2px; }
-.bfif .y { display: block; margin: 6px 10px 0; font: 500 13px/1 var(--bfi-sans); color: var(--bfi-grey); }
-.bfif:hover .ph img, .bfif:focus-visible .ph img { transform: scale(1.04); }
-.bfif:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+.bfif .t { display: block; padding: 10px; font: 700 20px/1 var(--bfi-sans); letter-spacing: -.2px; color: #fff; }
+.bfif .more { display: none; padding: 0 10px 10px; }
+.bfif .d { display: block; padding: 0 0 15px; font: 400 16px/1.2 var(--bfi-sans); color: #fff; } .bfif .d:empty { display: none; }
+.bfif .tags { display: flex; flex-wrap: wrap; }
+.bfif .tags i { margin: 0 5px 5px 0; padding: 5px; background: var(--bfi-dark); color: var(--bfi-grey); font: normal 600 11px/1.2 var(--bfi-sans); text-transform: uppercase; }
+@media (hover: hover) { .bfif:hover { z-index: 3; outline: 2px solid #783df6; } .bfif:hover .more { display: block; } }
+.bfif:focus-visible { z-index: 3; outline: 2px solid #783df6; outline-offset: 0; } .bfif:focus-visible .more { display: block; }
 html.gbfi #cbody .empty { color: #fff; font-family: var(--bfi-sans); }
 /* the intro, after the BFI's own: in the dark, B, F and I each lit from behind in turn, a projector's light in shafts of green, gold, rose and
    blue swinging past it; then the whole logo flaring on, its light turning away, white on black; at GRIFFLIX */
@@ -2816,7 +2854,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '909e932ea255' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '4918438180bc' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -6293,7 +6331,7 @@ function collectionView(id, into) {
     var ft = 0; $('#cfind').oninput = function () { var v = this.value.trim().toLowerCase(); clearTimeout(ft); ft = setTimeout(function () { fq = v; draw(); }, 120); };
     sfMode(/criterion/i.test(c.name)); if (!A24 && !BFI) sfWire($('#cbody'), c.items, draw);   // (A24's and the BFI's pages have no sort and filter bar to wire)
     if (c._later && !c.overview) c._later.then(function (ov) {   // (its description, once its file is here)
-      if (!ov || c.overview || !$('#cbody')) return; c.overview = ov;
+      if (!ov || c.overview || !$('#cbody') || BFI) return; c.overview = ov;   // (none under the BFI's logo: its page as BFI Player's)
       var d = $('#cbody .collhead > div:last-child'), at = d && d.querySelector(A24 ? '.colltitle' : '.hsub'); if (!at || d.querySelector('.ov')) return;
       var p = document.createElement('p'); p.className = 'ov'; p.textContent = ov; at.after(p);
       var cd = $('#cdesc'); if (cd) cd.textContent = 'Change the description';
@@ -6901,24 +6939,39 @@ function bfiPic(it, w, kind) {   // (BFI Player's own picture of the film, where
   return BFIIMG[it.id] ? '/grifflix/img/bfi/' + it.id + '.jpg' : img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), w);
 }
 function bfiFind() { return api('collections').then(function (r) { return (r.collections || []).filter(function (c) { return /^bfi$/i.test(c.name); })[0]; }); }
-function bfiHead(c) {   // (BFI at Grifflix, and nothing else, as its heading: the BFI's logo, at GRIFFLIX, big, as BFI Player's own heading; white on black:
-  // John, 26 Nov 2026, "I don't want it to say Mark Kermode introduces anywhere - just BFI at Grifflix")
-  return '<div class="collhead bfihead"><div><h1 class="colltitle bfih1" aria-label="BFI at Grifflix">' + bfiMark() + '<span class="at">at</span><b class="gcx">' + gxSvg(.5) + '</b></h1>' +
+function bfiHead(c) {   // (the BFI's logo, small, as the Criterion Collection's page has its own, and how many: John, 26 Nov 2026, "Make the BFI much
+  // smaller - and remove at Grifflix - like in the Criterion collection")
+  return '<div class="collhead bfihead"><div><h1 class="colltitle bfih1" aria-label="BFI">' + bfiMark() + '</h1>' +
     '<div class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' film' : ' films') + '</i></div></div></div>' +
     '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find a film" aria-label="Find in BFI" autocomplete="off"><span class="sp"></span></div>' +
     '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>';
 }
-function bfiDraw(g, items, fq) {   // (BFI Player's grid: each film's wide still, its name under it in bold; A to Z)
+function bfiDraw(g, items, fq) {   // (BFI Player's grid, as its Kermode Introduces page: three across, each film's wide still and its name in bold;
+  // pointed at, outlined in its purple and opened down over the row below, a few words about it and its genre, year, length and director in grey
+  // tags; A to Z: John, 26 Nov 2026, "the list view should look much more like the page I gave you - it is different on hover and click")
   if (!bfiDraw.w && Object.keys(BFIIMG).length === 0) { bfiDraw.w = 1; getJSON('/grifflix/img/bfi/index.json').then(function (j) { Object.keys((j && j.have) || {}).forEach(function (id) { BFIIMG[id] = 1; }); if (g.isConnected) bfiDraw(g, items, fq); }).catch(function () {}); }
   var nk = function (i) { return showName(i).replace(/^(the|a|an)\s+/i, '').toLowerCase(); }, NEW = Date.now() - 30 * 864e5;
   items = items.slice().sort(function (a, b) { return nk(a) < nk(b) ? -1 : nk(a) > nk(b) ? 1 : 0; });
   g.className = 'gridcards bfigrid';
   g.innerHTML = items.length ? items.map(function (i) {
-    var src = bfiPic(i, 640);
-    return '<button type="button" class="bfif" data-item="' + i.id + '"><span class="ph">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '<span class="no">' + esc(showName(i)) + '</span>') +
-      (i.added && Date.parse(i.added) > NEW ? '<span class="tg">Just added</span>' : '') + '</span><span class="t">' + esc(showName(i)) + '</span>' + (i.year ? '<span class="y">' + esc(String(i.year)) + '</span>' : '') + '</button>';
+    var src = bfiPic(i, 640), tags = [(i.genres || [])[0], i.year, i.mins ? i.mins + ' mins' : '', i.cdir].filter(Boolean);
+    return '<div class="bfiw"><button type="button" class="bfif" data-item="' + i.id + '"><span class="ph">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '<span class="no">' + esc(showName(i)) + '</span>') +
+      (i.added && Date.parse(i.added) > NEW ? '<span class="tg">Just added</span>' : '') + '</span><span class="t">' + esc(showName(i)) + '</span>' +
+      '<span class="more"><span class="d"></span><span class="tags">' + tags.map(function (x) { return '<i>' + esc(String(x)) + '</i>'; }).join('') + '</span></span></button></div>';
   }).join('') : '<div class="empty">' + (fq ? 'No film called that here.' : 'None yet: each film comes as its introduction is put with it.') + '</div>';
   wireCards(g, items);
+  var by = {}; items.forEach(function (i) { by[i.id] = i; });
+  $$('.bfif', g).forEach(function (b) {   // (its few words, from its details, the first time it's pointed at)
+    var get = function () {
+      if (b._d) return; b._d = 1; var it = by[b.dataset.item]; if (!it) return;
+      details(it).then(function (d) {
+        var o = String(d.overview || '').replace(/\s+/g, ' ').trim(), m = /^.{30,230}?[.!?](?=\s|$)/.exec(o);
+        b.querySelector('.d').textContent = m ? m[0] : o.length > 200 ? o.slice(0, 200).replace(/\s+\S*$/, '') + '…' : (o || d.tagline || '');
+        if (!it.cdir && d.directors && d.directors[0]) b.querySelector('.tags').insertAdjacentHTML('beforeend', '<i>' + esc(d.directors[0]) + '</i>');
+      }).catch(function () {});
+    };
+    b.addEventListener('mouseenter', get); b.addEventListener('focus', get);
+  });
 }
 function bfiIntro() {   // (after the BFI's own intro: B, F, I, each lit from behind in turn by a projector's light; then the logo flaring on and
   // settling white on black; at GRIFFLIX: John, 26 Nov 2026, "Can the intro be based on this", the BFI's 2160p intro)
@@ -7496,7 +7549,39 @@ function bodyHTML(it, ctx) {
   }
   return h;
 }
+function bfiShape(it) {   // (a BFI film's page as BFI Player's own film page: its picture across the top, the title and Play over its foot; under it,
+  // on the left its genre, year and length, who directed it and its details, each under its heading; on the right its words: John, 26 Nov 2026,
+  // "film page example is here, so more like this", BFI Player's page for Shackle. Not on the Fire TV, whose film page is its own)
+  var fm = $('#sheetIn .film.fbfi'), hero = fm && fm.querySelector(':scope > .heroimg'), body = $('#isbody');
+  if (!fm || !hero || !body || TV) return;
+  fm.classList.add('bfish');
+  var top = hero.querySelector('.bfitop'); if (!top) { top = document.createElement('div'); top.className = 'bfitop'; hero.appendChild(top); }
+  var h2 = fm.querySelector('.in > h2'); if (h2) {
+    top.insertBefore(h2, top.firstChild);
+    var gb = /^(GB-)?(U|PG|12A?|15|18|R18)$/i.exec(String(it.cert || ''));   // (its certificate by the title, in the BBFC's colours, as there)
+    if (gb && !h2.querySelector('.bbfc')) h2.insertAdjacentHTML('beforeend', '<span class="bbfc b' + gb[2].toUpperCase() + '" aria-label="Rated ' + gb[2].toUpperCase() + '">' + gb[2].toUpperCase() + '</span>');
+  }
+  $$('.acts', top).forEach(function (x) { x.remove(); });   // (the last drawing's buttons: before this one's are wired)
+  var acts = body.querySelector(':scope > .acts'); if (acts && !document.documentElement.classList.contains('phone')) top.appendChild(acts);
+  if (body.querySelector('.bfcols')) return;
+  var hm = it.mins ? (it.mins >= 60 ? Math.floor(it.mins / 60) + (it.mins >= 120 ? 'hrs' : 'hr') + (it.mins % 60 ? ' ' + it.mins % 60 + 'mins' : '') : it.mins + 'mins') : '';
+  var l1 = [(it.genres || [])[0], it.year, hm].filter(Boolean).map(function (x) { return esc(String(x)); }).join('<span class="bsep">|</span>');
+  var dir = it.directors && it.directors.length ? it.directors : it.cdir ? [it.cdir] : [];
+  var sec = function (t, v) { return '<div class="bsec"><b>' + t + '</b><span>' + v + '</span></div>'; };
+  var L = (l1 ? '<p class="bl">' + l1 + '</p>' : '') + (dir.length ? '<p class="bl">Directed by ' + dir.map(function (d) { return '<u>' + esc(d) + '</u>'; }).join(', ') + '</p>' : '') +
+    (it.ccty ? '<p class="bl bgap">' + esc(it.ccty) + '</p>' : '') +
+    (it.genres && it.genres.length ? sec('Genres', it.genres.map(function (g) { return '<u>' + esc(g) + '</u>'; }).join(', ')) : '') +
+    sec('Certificate', it.cert ? esc(String(it.cert).replace(/^[A-Z]{2}-/, '')) : 'Not rated') +
+    (it.cast && it.cast.length ? sec('Starring', esc(it.cast.slice(0, 6).join(', '))) : '');
+  var cols = document.createElement('div'); cols.className = 'bfcols'; cols.innerHTML = '<div class="bfl">' + L + '</div><div class="bfr"></div>';
+  var bl = cols.firstChild, br = cols.lastChild;
+  $$(':scope > .tag, :scope > .ov, :scope > .note, :scope > details.afih', body).forEach(function (x) { br.appendChild(x); });
+  $$(':scope > .people.dist, :scope > .people.afis, :scope > .incoll:not(.asound)', body).forEach(function (x) { bl.appendChild(x); });
+  $$(':scope > .meta, :scope > .chips, :scope > .people', body).forEach(function (x) { x.remove(); });
+  var after = body.querySelector(':scope > .acts'); if (after) after.after(cols); else body.insertBefore(cols, body.firstChild);
+}
 function wireBody(it, ctx) {
+  bfiShape(it);
   if ($('#asound')) mac('sound?id=' + it.id).then(function (j) {
     var el = $('#asound'), au = j.audio || []; if (!el || !au.length) return;
     el.innerHTML = '<span>Sound</span>' + au.map(function (a, n) {
