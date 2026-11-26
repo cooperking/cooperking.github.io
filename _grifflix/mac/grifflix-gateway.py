@@ -70,7 +70,8 @@ SOFTWARE = [('grifflix-gateway.py', os.path.join(APP_DIR, 'grifflix-gateway.py')
             ('criterion-covers.py', os.path.expanduser('~/Grifflix/criterion-covers.py'), 'criterion-list.html'),
             ('duplicates.py', os.path.expanduser('~/Grifflix/duplicates.py'), 'Set aside'),   # (films John has two copies of: 16 Nov 2026)   # (every Criterion cover: 16 Nov 2026)
             ('gdrive.py', os.path.expanduser('~/Grifflix/gdrive.py'), 'Google Drive'),   # (films from Google Drive, by themselves: 15 Nov 2026)
-            ('picsubs.py', os.path.expanduser('~/Grifflix/picsubs.py'), 'picture subtitles')]   # (picture subtitles read into text, for when the Mac mini runs it: 26 Nov 2026)   # (films from Google Drive, by themselves: 15 Nov 2026)   # what John's last Update sent (so the next reads only what's new)
+            ('picsubs.py', os.path.expanduser('~/Grifflix/picsubs.py'), 'picture subtitles'),
+            ('kermode.py', os.path.expanduser('~/Grifflix/kermode.py'), 'Mark Kermode')]   # (the BFI playlist checked weekly here: 26 Nov 2026)   # (picture subtitles read into text, for when the Mac mini runs it: 26 Nov 2026)   # (films from Google Drive, by themselves: 15 Nov 2026)   # what John's last Update sent (so the next reads only what's new)
 LIBS = {'movies': ('Movies', 'movies'), 'tv': ('TV', 'tvshows'), 'home': ('Home videos', 'homevideos')}
 
 
@@ -3481,6 +3482,11 @@ def make_handler(g):
                 hits.sort(key=lambda f: (min(len(x) for x in f['f']) - len(fw), f['name'], f['year']))
                 out = [{'id': f['id'], 'name': f['name'], 'year': f['year']} for f in hits[:12]] or bfi_match(BFI_FILMS[1], w, y)[1]
                 return self.send_json(200, {'films': out})
+            if b and b.get('op') == 'get':   # (the playlist checked now, not at the week's end)
+                if KERMODE_RUN.locked():
+                    return self.send_json(200, {'ok': True, 'running': True})
+                threading.Thread(target=kermode_get, args=(g,), daemon=True).start()
+                return self.send_json(200, {'ok': True, 'running': True})
             S = bfi_now(g) if b and b.get('op') == 'look' else (load(BFIF, {}) or {})
             files = sorted(((k, v) for k, v in (S.get('files') or {}).items()), key=lambda kv: kv[1].get('name') or kv[0])
             return self.send_json(200, {'folder': 'G-Drive › Grifflix › BFI Kermode', 'there': os.path.isdir(BFI_IN), 'looked': S.get('looked'),
@@ -3489,7 +3495,8 @@ def make_handler(g):
                                         # (those just put there, not yet looked at (each waits 5 minutes after it arrives), and one coming in now:
                                         # John, 26 Nov 2026, "I can't see if things are moving")
                                         'arriving': len([n for n in (os.listdir(BFI_IN) if os.path.isdir(BFI_IN) else []) if n.lower().endswith('.mp4') and not n.startswith('.') and n not in (S.get('files') or {})]),
-                                        'copying': next((n[len('.copying-'):] for n in (os.listdir(BFI_IN) if os.path.isdir(BFI_IN) else []) if n.startswith('.copying-')), None)})
+                                        'copying': next((n[len('.copying-'):] for n in (os.listdir(BFI_IN) if os.path.isdir(BFI_IN) else []) if n.startswith('.copying-')), None),
+                                        'getter': dict(load(KERMODE_F, {}) or {}, running=KERMODE_RUN.locked())})
 
         def api_picsubs(self, me, user, q, b):
             """John's only: films whose picture subtitles were saved beside them when converted (convert.py, picture-subs.json), waiting to be
@@ -4616,7 +4623,7 @@ def make_handler(g):
         def look(self, what, q):
             LOOKED['at'] = time.time()
             home = os.path.expanduser('~/Grifflix')
-            LOGS = {'duplicates': os.path.join(home, 'duplicates.log'), 'criterion': os.path.join(home, 'criterion-covers.log'), 'criterion-auto': os.path.join(home, 'criterion-auto.log'), 'criterion-sheet': os.path.join(home, 'criterion-sheet.log'), 'gateway': os.path.join(APP_DIR, 'gateway.log'), 'tunnel': os.path.join(APP_DIR, 'tunnel.log'), 'setup': os.path.join(APP_DIR, 'setup.log'),
+            LOGS = {'kermode': os.path.join(home, 'kermode.log'), 'duplicates': os.path.join(home, 'duplicates.log'), 'criterion': os.path.join(home, 'criterion-covers.log'), 'criterion-auto': os.path.join(home, 'criterion-auto.log'), 'criterion-sheet': os.path.join(home, 'criterion-sheet.log'), 'gateway': os.path.join(APP_DIR, 'gateway.log'), 'tunnel': os.path.join(APP_DIR, 'tunnel.log'), 'setup': os.path.join(APP_DIR, 'setup.log'),
                     'convert': os.path.join(home, 'convert.log'), 'convert-out': os.path.join(home, 'convert.out'), 'gdrive': os.path.join(home, 'gdrive.log'), 'backup': os.path.join(home, 'backup.out')}
             SECRETISH = re.compile(r'(rclone\.conf|token|secret|password|\.pickle$|client_secret|\.pem$|\.key$|settings\.json$)', re.I)
             def inside(p):
@@ -9265,6 +9272,78 @@ def bfi_now(g, only=None):
     return S
 
 
+KERMODE_PL = 'https://www.youtube.com/playlist?list=PLXvkgGofjDzhx-h7eexfVbH3WslWrBXE9'   # (the BFI's "Mark Kermode Reviews" playlist, John's)
+KERMODE_F = os.path.expanduser('~/Grifflix/kermode-mini.json')
+KERMODE_RUN = threading.Lock()
+
+
+def kermode_get(g):
+    """The BFI's Mark Kermode playlist checked here on the Mac mini, and the new introductions got, made MP4s and put in BFI Kermode beside
+    it, by kermode.py (John, 26 Nov 2026: "I would like the automatic check done on the mac mini and not use my mac - my mac is just for
+    now"). What it found kept for the BFI tab."""
+    import subprocess
+    if not KERMODE_RUN.acquire(blocking=False):
+        return
+    st = load(KERMODE_F, {}) or {}
+    try:
+        st.update(running=True, started=int(time.time()))
+        save(KERMODE_F, st)
+        home = os.path.expanduser('~/Grifflix')
+        conf = os.path.join(home, 'kermode.json')
+        C = load(conf, {}) or {}
+        if not C.get('folder'):
+            C['folder'] = os.path.join(home, 'kermode-work')
+        C['urls'] = C.get('urls') or [KERMODE_PL]
+        os.makedirs(C['folder'], exist_ok=True)
+        save(conf, C)
+        if os.path.isdir(BFI_IN):   # (John's Mac, set to do it by itself, stops when it sees this)
+            open(os.path.join(BFI_IN, '.mini-gets'), 'w').write(time.strftime('%Y-%m-%d %H:%M'))
+        script = os.path.join(home, 'kermode.py')
+        if not os.path.exists(script):
+            raise RuntimeError('kermode.py isn’t on the Mac mini yet (it comes with the next update)')
+        cmd = ['nice', '-n', '15', sys.executable, script, '--auto']
+        if os.path.exists('/usr/sbin/taskpolicy'):
+            cmd = ['/usr/sbin/taskpolicy', '-b'] + cmd
+        with open(os.path.join(home, 'kermode.log'), 'a', encoding='utf-8') as lf:
+            r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=6 * 3600, env=dict(os.environ, KERMODE_HOST='mini'))
+            out = r.stdout or ''
+            lf.write(out)
+        m = re.search(r'(\d+) in the playlists? with Kermode in the name; (\d+) got before; (\d+) new', out)
+        got = re.search(r'Got (\d+)\.', out)
+        put = re.search(r'Done: (\d+) made into MP4s, (\d+) put', out)
+        limited = len(re.findall(r'(?i)rate-limited', out))
+        failed = [l for l in out.splitlines() if l.startswith('ERROR:') and 'rate-limited' not in l]
+        st = {'at': int(time.time()), 'playlist': int(m.group(1)) if m else None, 'new': int(m.group(3)) if m else 0, 'got': int(got.group(1)) if got else 0,
+              'put': int(put.group(2)) if put else 0, 'limited': limited, 'failed': len(failed),
+              'error': '' if m or put else ((out.strip().splitlines() or ['it stopped'])[-1][:200])}
+        # (as many as one go takes (40, kermode.py's PER_RUN), so maybe more, or YouTube said wait: again in 6 hours, not a week)
+        st['more'] = st['got'] >= 40 or bool(limited)   # (not one gone from YouTube for good: that would be every 6 hours for ever)
+        log('BFI playlist checked on the Mac mini: %s new, %s got, %s put in BFI Kermode%s%s' % (st['new'], st['got'], st['put'], '; YouTube asked it to wait (%d)' % limited if limited else '',
+                                                                                                '; ' + st['error'] if st['error'] else ''))
+    except Exception as e:
+        st = dict(st, at=int(time.time()), error=str(e)[:200], more=False)
+        log('BFI playlist on the Mac mini: %s' % str(e)[:200])
+    finally:
+        st['running'] = False
+        save(KERMODE_F, st)
+        KERMODE_RUN.release()
+
+
+def kermode_loop(g):
+    """Once a week (John, 26 Nov 2026: "once a week for checking is enough"); every 6 hours while there's more to get than one go takes;
+    not while someone's watching."""
+    time.sleep(1200)
+    while True:
+        try:
+            st = load(KERMODE_F, {}) or {}
+            due = (st.get('at') or 0) + (6 * 3600 if st.get('more') else 7 * 86400)
+            if time.time() >= due and os.path.isdir(os.path.dirname(BFI_IN)) and not someone_watching(g):
+                kermode_get(g)
+        except Exception as e:
+            log('BFI playlist: %s' % str(e)[:200])
+        time.sleep(1800)
+
+
 def bfi_loop(g):
     time.sleep(180)
     while True:
@@ -12570,7 +12649,8 @@ def serve():
     threading.Timer(300, crit_missing_now).start()   # (the Criterion films missing, kept ready: 24 Nov 2026)
     threading.Thread(target=one_percent_once, args=(g,), daemon=True).start()   # (once: 1% (Outlaws) put right: 26 Nov 2026)
     threading.Thread(target=pic_local, args=(g,), daemon=True).start()
-    threading.Thread(target=bfi_loop, args=(g,), daemon=True).start()   # (Mark Kermode's introductions put with their films: 26 Nov 2026)   # (picture subtitles into text on the Mac mini, when John chooses it: 26 Nov 2026)
+    threading.Thread(target=bfi_loop, args=(g,), daemon=True).start()
+    threading.Thread(target=kermode_loop, args=(g,), daemon=True).start()   # (the BFI playlist checked weekly here, not on John's Mac: 26 Nov 2026)   # (Mark Kermode's introductions put with their films: 26 Nov 2026)   # (picture subtitles into text on the Mac mini, when John chooses it: 26 Nov 2026)
     threading.Thread(target=crl_scan, args=(g,), daemon=True).start()   # (which Criterion films are Criterion's own release: 24 Nov 2026)   # (and the box set covers on the films released only in a set: 24 Nov 2026)   # (and once each start: any A24 film come in before this, Tony and Misty Green, put in)   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
     threading.Thread(target=fanny_series, args=(g,), daemon=True).start()
     threading.Thread(target=keep_disk_health, daemon=True).start()
