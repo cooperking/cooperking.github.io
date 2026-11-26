@@ -25,6 +25,12 @@ OUT = os.path.join(ROOT, 'grifflix', 'img', 'bfi')
 BASE = 'https://player.bfi.org.uk'
 LIST = BASE + '/subscription/kermode-introduces'
 UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15'
+# (a film BFI Player has by another name, or as one of its parts: its page there, as John found it, 26 Nov 2026)
+PAGES = {'shoah': BASE + '/subscription/film/watch-shoah-first-era-1985-online',
+         'lovers on the bridge': BASE + '/subscription/film/watch-les-amants-du-pont-neuf-1991-online',
+         'one false move': BASE + '/subscription/film/watch-one-false-move-1990-online',
+         'celebration': BASE + '/subscription/film/watch-festen-1998-online',
+         'mulholland drive': BASE + '/rentals/film/watch-mulholland-dr-2001-online'}
 ROMAN = {'ii': 2, 'iii': 3, 'iv': 4, 'vi': 6, 'vii': 7, 'viii': 8, 'ix': 9, 'xi': 11, 'xii': 12, 'xiii': 13, 'xiv': 14, 'xv': 15, 'xvi': 16, 'xvii': 17, 'xviii': 18, 'xix': 19, 'xx': 20}
 
 
@@ -63,6 +69,16 @@ def cards(page):
         if t and im:
             out.append((html.unescape(t.group(1).strip()), int(y.group(1)) if y else 0, BASE + href, BASE + html.unescape(im.group(1))))
     return out
+
+
+def given_page(url):
+    """A page John named for a film: its picture, whatever its title there."""
+    try:
+        p = get(url)
+    except Exception:
+        return None, None
+    og = re.search(r'<meta property="og:image" content="([^"]+)"', p)
+    return (url, html.unescape(og.group(1))) if og else (None, None)
 
 
 def own_page(name, year):
@@ -123,7 +139,7 @@ def main():
     have, miss = ix.get('have') or {}, ix.get('miss') or {}
     shrink_all()
     todo = [f for f in films if not (f['id'] in have and os.path.exists(os.path.join(OUT, f['id'] + '.jpg')))
-            and time.time() - (miss.get(f['id']) or 0) > 7 * 86400]
+            and (time.time() - (miss.get(f['id']) or 0) > 7 * 86400 or fold(f.get('name')) in PAGES)]
     if not todo:
         print('BFI pictures: none to get (%d here)' % len(have))
         return 0
@@ -137,7 +153,7 @@ def main():
     for f in todo:
         name, year = f.get('name') or '', int(f.get('year') or 0)
         c = next((x for x in L if fold(x[0]) == fold(name) and (not year or not x[1] or abs(x[1] - year) <= 1)), None)
-        page, pic = (c[2], c[3]) if c else own_page(name, year)
+        page, pic = (c[2], c[3]) if c else given_page(PAGES[fold(name)]) if fold(name) in PAGES else own_page(name, year)
         if not pic:
             miss[f['id']] = int(time.time())
             none.append(name)
