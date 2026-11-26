@@ -5,7 +5,8 @@ Ochi isn't"). Run by the Grifflix data workflow after each Update: a film newly 
   python3 _grifflix/a24_stills.py
 
 grifflix/a24-list.json is A24's list (a24films.com/films): each film's title (t), year (y) and its still (img), matched to Grifflix's
-films by title (its "The" and punctuation aside) and year (a year either way). Only wide pictures are kept; one already here is left.
+films by title (its "The" and punctuation aside) and year (a year either way). A wide picture first (from A24's list, else from the film's
+own page at A24); with none, A24's own picture all the same, whatever its shape. One already here is left.
 """
 import io
 import json
@@ -107,11 +108,34 @@ def main():
                 break
             except Exception as e:
                 print('Couldn’t fetch an A24 picture for %s: %s' % (it.get('name'), e))
-        if not kept:
-            print('No wide picture at A24 for %s: its own background picture is used' % it.get('name'))
+        if not kept and f.get('img'):   # (no wide one anywhere at A24: A24's own picture all the same, its poster or square, whatever its
+            # shape, shown whole: John, 26 Nov 2026, "A24's picture should be used, no matter the size")
+            url = 'https://a24films.com/_next/image?url=%s&w=1920&q=75' % urllib.parse.quote(f['img'], safe='')
+            try:
+                with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Accept': 'image/jpeg'}), timeout=60) as r:
+                    body = r.read()
+                if Image:
+                    Image.open(io.BytesIO(body)).convert('RGB').save(os.path.join(OUT, iid + '.jpg'), 'JPEG', quality=82, optimize=True, progressive=True)
+                else:
+                    open(os.path.join(OUT, iid + '.jpg'), 'wb').write(body)
+                have.add(iid)
+                got += 1
+                print('A24 picture (not wide, shown whole): %s' % it.get('name'))
+            except Exception as e:
+                print('Couldn’t fetch A24’s picture for %s: %s' % (it.get('name'), e))
     if got:
         os.makedirs(OUT, exist_ok=True)
         json.dump(sorted(have), open(idx_path, 'w'))
+    if Image:   # (those not wide, listed: the A24 page's opening cut, full screen, uses only the wide ones)
+        tall = []
+        for iid in sorted(have):
+            try:
+                w, h = Image.open(os.path.join(OUT, iid + '.jpg')).size
+                if w / h < 1.3:
+                    tall.append(iid)
+            except Exception:
+                pass
+        json.dump(tall, open(os.path.join(OUT, 'tall.json'), 'w'))
     print('%d new A24 still(s); %d in all.' % (got, len(have)))
     return 0
 
