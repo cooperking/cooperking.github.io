@@ -10436,10 +10436,17 @@ def set_covers_now():
     df = os.path.expanduser('~/Grifflix/set-covers.json')
     done = load(df, {}) or {}
     put = []
+    import collections
+    spines_ = collections.Counter(i.get('spine') for i in items.values() if i.get('spine'))
     for iid, i in items.items():
         c, sp, im, f = i.get('cset') or [], i.get('csetsp') or [], i.get('csetimg') or [], i.get('csetfimg') or []
         url = next((im[n] for n in range(len(c)) if n < len(im) and im[n] and not (n < len(f) and f[n]) and i.get('spine')
                     and str(sp[n] if n < len(sp) else '') == str(i.get('spine'))), '')
+        # (a short on one volume of a set, the volume its own release with its own cover, shared by every film on it: that volume's cover:
+        # Dog Star Man and Wedlock House on By Brakhage: An Anthology, Volume One (184), in the set of Volumes One and Two (518): John, 26 Nov
+        # 2026, "the films here that aren't correctly showing criterion covers should be")
+        if not url and i.get('spine') and spines_[i.get('spine')] > 1:
+            url = next((f[n] for n in range(len(c)) if n < len(f) and f[n] and str(sp[n] if n < len(sp) else '') != str(i.get('spine'))), '')
         if not url or done.get(iid) == url:
             continue
         url = re.sub(r'_(small|thumbnail)\.', '_large.', url)
