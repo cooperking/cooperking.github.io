@@ -10554,7 +10554,10 @@ def rename_to(g, iid, name, year, pick=None):
     kind, path = it.get('Type'), it.get('Path') or ''
     if kind not in ('Movie', 'Series') or not path or not os.path.exists(path):
         return 'its files weren’t found, so they keep their names'
-    new = re.sub(r'[/:\\]', '-', '%s (%s)' % (name, year) if year else name).strip(' .')
+    # (no "%": the media server can't take a folder with one, and looked "1% (2018)" up as "1", Ready Player One; nor what the G-Drive's
+    # kind of disk won't take: John, 26 Nov 2026, Outlaws, "it's actually called outlaws only in the states and 1% elsewhere")
+    new = re.sub(r'\s*%', ' Percent', re.sub(r'[/:\\*?"<>|]', '-', '%s (%s)' % (name, year) if year else name))
+    new = re.sub(r'\s+', ' ', new).strip(' .')
     folder = path if kind == 'Series' else os.path.dirname(path)
     libs = [os.path.realpath(l).rstrip('/') for v in g.jf.call('GET', '/Library/VirtualFolders') or [] for l in v.get('Locations') or []]
     if os.path.realpath(folder).rstrip('/') in libs:
@@ -10618,8 +10621,11 @@ def rename_to(g, iid, name, year, pick=None):
                         st_ += 500
                         if st_ >= (r.get('TotalRecordCount') or 0) or not r.get('Items'):
                             break
-                else:
-                    xs = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path', 'SearchTerm': name, 'Limit': 50}, timeout=90) or {}).get('Items') or []
+                else:   # (by its name, and by its folder's (the media server's own name for it till it's matched: "1 Percent", not "1%"))
+                    xs = []
+                    for t_ in dict.fromkeys([name, re.sub(r'\s*\(\d{4}\)$', '', new)]):
+                        if t_:
+                            xs += (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'Path', 'SearchTerm': t_, 'Limit': 50}, timeout=90) or {}).get('Items') or []
                 for x in xs:
                     rp = os.path.realpath(x.get('Path') or '')
                     if rp in want:
@@ -10633,6 +10639,21 @@ def rename_to(g, iid, name, year, pick=None):
                         apply_match(g, top, pick)
                     except Exception:
                         pass
+                    # (and looked at again a minute and a half on: the media server's own look-up of a film it thinks is new can finish after
+                    # it, and put its own guess over John's: 1% became Ready Player One, 26 Nov 2026)
+                    def recheck(top=top):
+                        want_ = {k: str(v) for k, v in (pick.get('ProviderIds') or {}).items() if k in ('Tmdb', 'Imdb') and v}
+                        for _ in range(3):
+                            time.sleep(90)
+                            try:
+                                have_ = (g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, top)) or {}).get('ProviderIds') or {}
+                                if not want_ or any(str(have_.get(k) or '') == v for k, v in want_.items()):
+                                    return
+                                apply_match(g, top, pick)
+                                log('  %s: the media server had put its own match on it; yours put back' % new)
+                            except Exception:
+                                pass
+                    threading.Thread(target=recheck, daemon=True).start()
                 for b_ in sets:
                     try:
                         g.jf.call('POST', '/Collections/%s/Items' % b_, query={'Ids': top})
@@ -10654,6 +10675,68 @@ def rename_to(g, iid, name, year, pick=None):
         log('  %s: the media server didn’t show its new name within 20 minutes; calendars and lists not moved' % new)
     threading.Thread(target=follow, daemon=True).start()
     return 'renamed to “%s”' % new
+
+
+def one_percent_once(g):
+    """Once: 1% (Outlaws in America) put right (John, 26 Nov 2026: "Outlaws has come in but it's actually called outlaws only in the states
+    and 1% elsewhere. I tried to rename it but now can't find it"). His Fix match renamed its folder "1% (2018)", which the media server
+    looked up as "1", Ready Player One; with the film gone from where it was, the RARBG copy he'd deleted for good on 24 Nov was fetched
+    again as "Outlaws (2017)". That copy deleted again; his copy's folder named "1 Percent (2018)", and the film put on it by its IMDb number,
+    as Fix match does, its calendars, lists and collections following it."""
+    mk = os.path.expanduser('~/Grifflix/one-percent.done')
+    if os.path.exists(mk):
+        return
+    time.sleep(240)   # (after the media server's own start)
+    M_ = '/Volumes/G-Drive/Grifflix/Movies/'
+    A_, B_ = M_ + '1% (2018)/1% (2018).mp4', M_ + 'Outlaws (2017)/Outlaws (2017).mp4'
+    said = []
+    try:
+        if not os.path.isfile(A_):
+            said.append('1% (2018) not there: nothing done')
+        else:
+            # (the copy fetched again by mistake: only if it's the one, alone in its folder)
+            try:
+                sz_ = os.path.getsize(B_)
+                others_ = [n for n in os.listdir(os.path.dirname(B_)) if not n.startswith('.') and n != os.path.basename(B_)]
+                if 1.4e9 < sz_ < 1.7e9 and not [n for n in others_ if not n.lower().endswith(('.srt', '.jpg', '.png', '.nfo'))]:
+                    import shutil
+                    shutil.rmtree(os.path.dirname(B_), ignore_errors=True)
+                    said.append('the copy fetched again by mistake deleted (%.1f GB)' % (sz_ / 1e9))
+                else:
+                    said.append('Outlaws (2017) left as it is (not as expected)')
+            except OSError:
+                pass
+            try:
+                g.jf.call('POST', '/Library/Refresh')
+            except Exception:
+                pass
+            time.sleep(120)
+            iid = None
+            for _ in range(10):
+                for x in (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Years': '2018', 'Fields': 'Path'}, timeout=120) or {}).get('Items') or []:
+                    if os.path.realpath(x.get('Path') or '') == os.path.realpath(A_):
+                        iid = x['Id']
+                if iid:
+                    break
+                time.sleep(60)
+            if not iid:
+                said.append('the media server didn’t have 1% (2018): not matched')
+            else:
+                res = g.jf.call('POST', '/Items/RemoteSearch/Movie', {'SearchInfo': {'Name': '', 'ProviderIds': {'Imdb': 'tt6301712'}}, 'ItemId': iid, 'IncludeDisabledProviders': False}, timeout=60) or []
+                pick = res[0] if res else None
+                if not pick:
+                    said.append('TMDB didn’t give tt6301712: not matched')
+                else:
+                    apply_match(g, iid, pick)
+                    g.forget()
+                    said.append('matched as %s (%s)' % (pick.get('Name'), pick.get('ProductionYear')))
+                    said.append(rename_to(g, iid, pick.get('Name') or '1%', pick.get('ProductionYear') or 2018, pick) or 'its folder kept its name')
+                    after_fixes()
+                    g.publish_soon = time.time() + 300
+    except Exception as e:
+        said.append('stopped: %s' % str(e)[:160])
+    open(mk, 'w').write(time.strftime('%Y-%m-%d %H:%M ') + '; '.join(said) + '\n')
+    log('1%% (Outlaws), put right: %s' % '; '.join(said))
 
 
 def loose_to_folders(g, quiet=False):
@@ -11679,6 +11762,7 @@ def serve():
     threading.Timer(200, a24_now).start()
     threading.Timer(420, set_covers_now).start()
     threading.Timer(300, crit_missing_now).start()   # (the Criterion films missing, kept ready: 24 Nov 2026)
+    threading.Thread(target=one_percent_once, args=(g,), daemon=True).start()   # (once: 1% (Outlaws) put right: 26 Nov 2026)
     threading.Thread(target=crl_scan, args=(g,), daemon=True).start()   # (which Criterion films are Criterion's own release: 24 Nov 2026)   # (and the box set covers on the films released only in a set: 24 Nov 2026)   # (and once each start: any A24 film come in before this, Tony and Misty Green, put in)   # (the Mac's own files kept up to date by themselves: John, 17 Nov 2026)
     threading.Thread(target=fanny_series, args=(g,), daemon=True).start()
     threading.Thread(target=keep_disk_health, daemon=True).start()
