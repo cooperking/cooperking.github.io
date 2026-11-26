@@ -2766,6 +2766,8 @@ def make_handler(g):
                                         'attorbox': st.get('attorbox') or [],   # (still coming in at TorBox: 20 Nov 2026)
                                         'peeked': pk.get('at') or None, 'peeking': bool(PEEK.get('p') and PEEK['p'].poll() is None),
                                         'hold': st.get('hold'),   # (the film it waits on to be repackaged: admin says so, not "nothing has come": 20 Nov 2026)
+                                        # (downloaded on the Mac's own disk, waiting to go onto the G-Drive while the next downloads: 26 Nov 2026)
+                                        'held': (st.get('held') or []) if running else [], 'heldfor': st.get('heldfor') if running else None,
                                         'upgrades': st.get('upgrades') or [], 'chosen': load(os.path.join(home, 'fetch-upgrades.json'), {}) or {},
                                         'cancelled': [dict(v, key=k) for k, v in (load(os.path.join(home, 'fetch-cancelled-names.json'), {}) or {}).items() if isinstance(v, dict) and not v.get('hid')],
                                         'first': load(os.path.join(home, 'fetch-first.json'), []) or [], 'names': load(os.path.join(home, 'fetch-names.json'), {}) or {}})
@@ -3460,7 +3462,8 @@ def make_handler(g):
             S = bfi_now(g) if b and b.get('op') == 'look' else (load(BFIF, {}) or {})
             files = sorted(((k, v) for k, v in (S.get('files') or {}).items()), key=lambda kv: kv[1].get('name') or kv[0])
             return self.send_json(200, {'folder': 'G-Drive › Grifflix › BFI Kermode', 'there': os.path.isdir(BFI_IN), 'looked': S.get('looked'),
-                                        'todo': [dict(v, file=k) for k, v in files], 'moved': (S.get('moved') or [])[:200]})
+                                        'todo': [dict(v, file=k) for k, v in files], 'moved': (S.get('moved') or [])[:200],
+                                        'twice': [x for x in (S.get('twice') or []) if os.path.exists(os.path.join(BFI_IN, 'Already got'))][:50]})
 
         def api_picsubs(self, me, user, q, b):
             """John's only: films whose picture subtitles were saved beside them when converted (convert.py, picture-subs.json), waiting to be
@@ -9098,8 +9101,19 @@ def bfi_match(films, title, year):
     return sure, [{'id': f['id'], 'name': f['name'], 'year': f['year'], 'score': round(r, 2)} for r, f in sc[:4]]
 
 
-def bfi_move(g, src, film, name):
-    """An introduction put in its film's own folder, in Extras, by its right name, and the media server asked to look at that film."""
+def bfi_secs(fp, path):
+    import subprocess
+    try:
+        r = subprocess.run([fp, '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', path], capture_output=True, text=True, timeout=60)
+        return float((r.stdout or '').strip())
+    except Exception:
+        return None
+
+
+def bfi_move(g, src, film, name, fp=None):
+    """An introduction put in its film's own folder, in Extras, by its right name, and the media server asked to look at that film. One
+    the film has already (the same name, the same length to a second) isn't put there twice: it goes to BFI Kermode's "Already got"
+    folder, to delete (returned as (path, True))."""
     import shutil
     d = os.path.dirname(film['path'])
     libs = [os.path.realpath(l).rstrip('/') for v in g.jf.call('GET', '/Library/VirtualFolders') or [] for l in v.get('Locations') or []]
@@ -9109,16 +9123,25 @@ def bfi_move(g, src, film, name):
     os.makedirs(x, exist_ok=True)
     dst = os.path.join(x, name + '.mp4')
     if os.path.exists(dst):
-        if os.path.getsize(dst) == os.path.getsize(src):   # (the same, there already: this one not needed)
-            os.remove(src)
-            return dst
-        dst = os.path.join(x, name + ' (2).mp4')
+        a, b = (bfi_secs(fp, dst), bfi_secs(fp, src)) if fp and os.path.exists(fp) else (None, None)
+        if os.path.getsize(dst) == os.path.getsize(src) or a and b and abs(a - b) <= 1:   # (the same, got twice)
+            ag = os.path.join(BFI_IN, 'Already got')
+            os.makedirs(ag, exist_ok=True)
+            to = os.path.join(ag, os.path.basename(src))
+            if os.path.exists(to):
+                to = os.path.join(ag, '%s %d.mp4' % (os.path.splitext(os.path.basename(src))[0], int(time.time())))
+            shutil.move(src, to)
+            return to, True
+        n_ = 2
+        while os.path.exists(os.path.join(x, '%s (%d).mp4' % (name, n_))):
+            n_ += 1
+        dst = os.path.join(x, '%s (%d).mp4' % (name, n_))   # (another of the same film, a different length: kept beside it)
     shutil.move(src, dst)
     try:
         g.jf.call('POST', '/Items/%s/Refresh' % film['id'], query={'Recursive': 'true', 'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'Default', 'ReplaceAllMetadata': 'false', 'ReplaceAllImages': 'false'})
     except Exception:
         pass
-    return dst
+    return dst, False
 
 
 def bfi_now(g, only=None):
@@ -9181,8 +9204,13 @@ def bfi_now(g, only=None):
                 # (named by the film's own name and year in Grifflix, not as the file had it: "Seven Samuria" put right too)
                 name = bfi_tidy('Mark Kermode introduces %s%s' % (film['name'], ' (%d)' % film['year'] if film['year'] else ''))[0] or name
                 try:
-                    dst = bfi_move(g, src, film, name)
+                    dst, twice = bfi_move(g, src, film, name, fp)
                     S['files'].pop(n, None)
+                    if twice:   # (the film has it already: put aside to delete, not listed again)
+                        S.setdefault('twice', []).insert(0, {'name': name, 'film': film['name'], 'year': film['year'], 'id': film['id'], 'at': int(time.time())})
+                        S['twice'] = S['twice'][:200]
+                        log('BFI introduction got twice: %s is with %s already; this copy is in BFI Kermode › Already got, to delete' % (name, film['name']))
+                        continue
                     moved.append(film['name'])
                     S['moved'].insert(0, {'name': name, 'film': film['name'], 'year': film['year'], 'id': film['id'], 'to': dst, 'at': int(time.time()), 'by': 'John' if want else ''})
                     record('BFI introduction put with its film', file=name, film=film['name'], to=dst, chosen_by='John' if want else 'matched')
