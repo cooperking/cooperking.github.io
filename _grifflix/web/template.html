@@ -2419,21 +2419,31 @@ html.gbfi .bar-top { background: #000 !important; -webkit-backdrop-filter: none 
 html.gbfi .bar-top::before { content: ""; position: absolute; left: -100vw; right: -100vw; bottom: 100%; height: 240px; background: #000; pointer-events: none; }
 html.gbfi body::before, html.gbfi body::after { background-color: #000 !important; background-image: none !important; }
 html.gbfi #main > .tabs:first-child { display: none; }
-html.gbfi #cbody { color: #fff; font-family: var(--bfi-sans); max-width: 1094px; margin-left: auto !important; margin-right: auto !important; }   /* (as wide as BFI Player's page) */
-#cbody .bfihead { display: block; margin: 8px 0 0; padding: 0; }
-#cbody .bfihead > div { position: relative; } .bfihead .ctoolic { top: clamp(26px, 4vw, 52px); border-radius: 0; }
-#cbody .bfihead h1.bfih1 { display: flex; align-items: center; margin: clamp(18px, 2.4vw, 30px) 0 0 !important; padding-right: 50px; color: #fff; font: inherit !important; letter-spacing: 0 !important; text-transform: none !important; }
-#cbody .bfihead h1.bfih1 .bfim { font-size: clamp(46px, 4.8vw, 66px); }   /* (small, as the Criterion Collection's logo on its page: John, 26 Nov 2026) */
-#cbody .bfihead .hsub, #cbody .bfihead .hsub i { margin: 16px 0 0; color: var(--bfi-grey); font: 600 14px/1 var(--bfi-sans) !important; font-style: normal !important; letter-spacing: .02em; text-transform: uppercase; }
-#cbody .bfihead + .tabs { margin: 26px 0 0; }
-html.gbfi #cbody .cfind { border: 0; border-bottom: 1px solid #fff; border-radius: 0; background: none; color: #fff; font: 500 16px/1 var(--bfi-sans); padding-left: 0; }
+html.gbfi #cbody { color: #fff; font-family: var(--bfi-sans); }
+#cbody .bfihead { display: block; margin: 0; padding: 0; }
+/* (the logo and its count on the left, find, sort and filters on the right, on one line above the films; one under the other on a phone) */
+html.gbfi #cbody { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 24px; }
+html.gbfi #cbody > :not(.collhead):not(.tabs) { grid-column: 1 / -1; }
+html.gbfi #cbody > .tabs { justify-content: flex-end; margin: 0 !important; flex-wrap: nowrap; }
+@media (max-width: 700px) { html.gbfi #cbody { grid-template-columns: minmax(0, 1fr); } html.gbfi #cbody > .tabs { justify-content: flex-start; margin: 14px 0 0 !important; } }
+html.gbfi #cbody .sfb { min-height: 40px; border: 1px solid #fff !important; border-radius: 0 !important; background: transparent !important; color: #fff !important; box-shadow: none !important; }
+html.gbfi #cbody .sfb:hover, html.gbfi #cbody .sfb.on { background: #fff !important; color: #000 !important; }
+html.gbfi #cbody .sfb b { font: 600 14px/1 var(--bfi-sans); letter-spacing: .02em; }
+html.gbfi #cbody .sfb i { background: #783df6; color: #fff; }
+html.gbfi .sfpop { background: #000; color: #fff; border-color: #fff; font-family: var(--bfi-sans); }
+#cbody .bfihead > div { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 0 14px; } .bfihead .ctoolic { position: static !important; border-radius: 0; } #cbody .bfihead #ctoolrow { flex-basis: 100%; }
+#cbody .bfihead h1.bfih1 { display: flex; align-items: center; gap: 16px; margin: 6px 0 0 !important; padding-right: 50px; color: #fff; font: inherit !important; letter-spacing: 0 !important; text-transform: none !important; }
+#cbody .bfihead h1.bfih1 .bfim { font-size: clamp(34px, 3vw, 42px); }   /* (small: John, 26 Nov 2026, "the logo at the top is still too big") */
+#cbody .bfihead .hsub, #cbody .bfihead .hsub i { margin: 0; color: var(--bfi-grey); font: 600 14px/1 var(--bfi-sans) !important; font-style: normal !important; letter-spacing: .02em; text-transform: uppercase; }
+html.gbfi #cbody .cfind { flex: 0 1 280px; border: 0; border-bottom: 1px solid #fff; border-radius: 0; background: none; color: #fff; font: 500 16px/1 var(--bfi-sans); padding-left: 0; }
 html.gbfi #cbody .cfind::placeholder { color: var(--bfi-grey); opacity: 1; }
 /* its films: BFI Player's grid, as its Kermode Introduces page: three across, a wide still and the name under it in bold; pointed at (or chosen
    with the remote), outlined in BFI Player's purple and opened down over the row below: a few words, and its genre, year, length and director
-   in grey tags (John, 26 Nov 2026, "it is different on hover and click"). One across on a phone, as there */
-#cgrid.bfigrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 1.5%; margin: 30px 0 140px; padding: 0; }
-@media (max-width: 900px) { #cgrid.bfigrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; } }
-@media (max-width: 600px) { #cgrid.bfigrid { grid-template-columns: minmax(0, 1fr); gap: 14px; } }
+   in grey tags (John, 26 Nov 2026, "it is different on hover and click"). Four across when wide, as there; one on a phone */
+#cgrid.bfigrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 30px 1.5%; margin: 22px 0 140px; padding: 0; }
+@media (max-width: 1100px) { #cgrid.bfigrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 800px) { #cgrid.bfigrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 12px; } }
+@media (max-width: 560px) { #cgrid.bfigrid { grid-template-columns: minmax(0, 1fr); gap: 14px; } }
 .bfiw { position: relative; }
 .bfiw::before { content: ""; display: block; padding-top: calc(56.25% + 56px); }   /* (its room in the grid: the still and two lines of name) */
 .bfif { position: absolute; top: 0; left: 0; right: 0; z-index: 1; display: block; margin: 0; padding: 0; border: 0; border-radius: 0; background: #000; color: #fff; text-align: left; font: inherit; cursor: pointer; }
@@ -6329,7 +6339,7 @@ function collectionView(id, into) {
     };
     var count = function () { var h = $('#cbody .hsub i'); if (h) h.textContent = c.items.length + (A24 ? ' films' : c.items.length === 1 ? ' title' : ' titles'); };
     var ft = 0; $('#cfind').oninput = function () { var v = this.value.trim().toLowerCase(); clearTimeout(ft); ft = setTimeout(function () { fq = v; draw(); }, 120); };
-    sfMode(/criterion/i.test(c.name)); if (!A24 && !BFI) sfWire($('#cbody'), c.items, draw);   // (A24's and the BFI's pages have no sort and filter bar to wire)
+    sfMode(/criterion/i.test(c.name)); if (!A24) sfWire($('#cbody'), c.items, draw);   // (A24's page has no sort and filter bar to wire)
     if (c._later && !c.overview) c._later.then(function (ov) {   // (its description, once its file is here)
       if (!ov || c.overview || !$('#cbody') || BFI) return; c.overview = ov;   // (none under the BFI's logo: its page as BFI Player's)
       var d = $('#cbody .collhead > div:last-child'), at = d && d.querySelector(A24 ? '.colltitle' : '.hsub'); if (!at || d.querySelector('.ov')) return;
@@ -6939,26 +6949,27 @@ function bfiPic(it, w, kind) {   // (BFI Player's own picture of the film, where
   return BFIIMG[it.id] ? '/grifflix/img/bfi/' + it.id + '.jpg' : img(it.backdrop || it.thumb || it.poster, it.backdrop ? 'Backdrop' : (it.thumb ? 'Thumb' : 'Primary'), w);
 }
 function bfiFind() { return api('collections').then(function (r) { return (r.collections || []).filter(function (c) { return /^bfi$/i.test(c.name); })[0]; }); }
-function bfiHead(c) {   // (the BFI's logo, small, as the Criterion Collection's page has its own, and how many: John, 26 Nov 2026, "Make the BFI much
-  // smaller - and remove at Grifflix - like in the Criterion collection")
-  return '<div class="collhead bfihead"><div><h1 class="colltitle bfih1" aria-label="BFI">' + bfiMark() + '</h1>' +
-    '<div class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' film' : ' films') + '</i></div></div></div>' +
-    '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find a film" aria-label="Find in BFI" autocomplete="off"><span class="sp"></span></div>' +
+function bfiHead(c) {   // (the BFI's logo, small, as the Criterion Collection's page has its own, and how many beside it: John, 26 Nov 2026, "Make the BFI
+  // much smaller - and remove at Grifflix - like in the Criterion collection", "the logo at the top is still too big - films should start higher
+  // up the page"; on the right, find, sort and filters: "on the right hand side we need to be able to order and sort")
+  return '<div class="collhead bfihead"><div><h1 class="colltitle bfih1" aria-label="BFI">' + bfiMark() + '<span class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' film' : ' films') + '</i></span></h1></div></div>' +
+    '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find a film" aria-label="Find in BFI" autocomplete="off">' + sfBar() + '</div>' +
     '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>';
 }
 function bfiDraw(g, items, fq) {   // (BFI Player's grid, as its Kermode Introduces page: three across, each film's wide still and its name in bold;
   // pointed at, outlined in its purple and opened down over the row below, a few words about it and its genre, year, length and director in grey
-  // tags; A to Z: John, 26 Nov 2026, "the list view should look much more like the page I gave you - it is different on hover and click")
+  // tags: John, 26 Nov 2026, "the list view should look much more like the page I gave you - it is different on hover and click"; four across when
+  // wide, as there: "the page I gave you had four across when wide")
   if (!bfiDraw.w && Object.keys(BFIIMG).length === 0) { bfiDraw.w = 1; getJSON('/grifflix/img/bfi/index.json').then(function (j) { Object.keys((j && j.have) || {}).forEach(function (id) { BFIIMG[id] = 1; }); if (g.isConnected) bfiDraw(g, items, fq); }).catch(function () {}); }
-  var nk = function (i) { return showName(i).replace(/^(the|a|an)\s+/i, '').toLowerCase(); }, NEW = Date.now() - 30 * 864e5;
-  items = items.slice().sort(function (a, b) { return nk(a) < nk(b) ? -1 : nk(a) > nk(b) ? 1 : 0; });
+  var NEW = Date.now() - 30 * 864e5;
+  items = sfSort(items.filter(sfFits(SF.f)), sfKey(), sfDirOf());   // (in the order and with the filters chosen on its right, as every shelf)
   g.className = 'gridcards bfigrid';
   g.innerHTML = items.length ? items.map(function (i) {
     var src = bfiPic(i, 640), tags = [(i.genres || [])[0], i.year, i.mins ? i.mins + ' mins' : '', i.cdir].filter(Boolean);
     return '<div class="bfiw"><button type="button" class="bfif" data-item="' + i.id + '"><span class="ph">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : '<span class="no">' + esc(showName(i)) + '</span>') +
       (i.added && Date.parse(i.added) > NEW ? '<span class="tg">Just added</span>' : '') + '</span><span class="t">' + esc(showName(i)) + '</span>' +
       '<span class="more"><span class="d"></span><span class="tags">' + tags.map(function (x) { return '<i>' + esc(String(x)) + '</i>'; }).join('') + '</span></span></button></div>';
-  }).join('') : '<div class="empty">' + (fq ? 'No film called that here.' : 'None yet: each film comes as its introduction is put with it.') + '</div>';
+  }).join('') : '<div class="empty">' + (fq ? 'No film called that here.' : sfCount(SF.f) ? 'None with those filters.' : 'None yet: each film comes as its introduction is put with it.') + '</div>';
   wireCards(g, items);
   var by = {}; items.forEach(function (i) { by[i.id] = i; });
   $$('.bfif', g).forEach(function (b) {   // (its few words, from its details, the first time it's pointed at)
