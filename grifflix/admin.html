@@ -1230,7 +1230,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
             return '<button class="btn small" type="button" data-bfiput="' + esc(f.id) + '" data-bfiw="' + esc(pick(f)) + '" title="Put it with this film">' + esc(pick(f)) + '</button>'; }).join('') +
           '<input type="search" class="name bfiq" placeholder="Another film…" autocomplete="off" style="flex:1 1 160px;min-width:0"></div><div class="state bfihits" style="margin-top:4px"></div></li>';
       }).join('');
-      $('#bfimsay').innerHTML = M.length ? '<b>' + M.length + '</b> put in their films’ Extras, newest first. Each is shown with the film’s extras once the site next updates.' : 'None yet.';
+      var TW = j.twice || [];
+      $('#bfimsay').innerHTML = (M.length ? '<b>' + M.length + '</b> put in their films’ Extras, newest first. Each is shown with the film’s extras once the site next updates.' : 'None yet.') +
+        (TW.length ? ' <b>' + TW.length + ' got twice</b> (' + TW.slice(0, 6).map(function (x) { return esc(x.film); }).join(', ') + (TW.length > 6 ? '…' : '') + '): the film has it already, so the second copy is in BFI Kermode › Already got, to delete.' : '');
       $('#bfimoved').innerHTML = M.map(function (x) {
         return '<li>' + FL(x.film, x.year, x.id) + (x.year ? ' (' + x.year + ')' : '') + '<span class="when">' + esc(x.name) + ' · ' + esc(when(x.at * 1000)) + (x.by ? ' · you chose the film' : '') + '</span></li>'; }).join('');
       Array.prototype.forEach.call(document.querySelectorAll('#bfitodo [data-bfi]'), function (li) {
@@ -2657,11 +2659,13 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         $('#fsay').innerHTML = 'All ' + (n.size / 1e9).toFixed(1) + ' GB is on the Mac mini. ' + (n.moving ? 'Going onto the G-Drive now.' : 'It goes onto the G-Drive once <b>' + esc(f.hold) + '</b> is repackaged (up to 45 min), so the drive does one big thing at a time.') + (w.length ? ' Then ' + w.length + ' more.' : '');
       } else if (n) {
         $('#fhead').innerHTML = 'Downloading <em>' + esc(n.to) + '</em>';
+        var hd = (f.held || []).length ? ' <b>Downloaded, waiting to go onto the G-Drive:</b> ' + f.held.map(esc).join(', ') + (f.heldfor ? ', once ' + esc(f.heldfor) + ' is repackaged (up to 45 min), so the drive does one big thing at a time' : '') + '.' : '';
         $('#ffill').style.width = (n.pct || 0) + '%';
         var left = n.mbps && n.size && !(n.still >= 120) ? Math.round((n.size - n.got) * 8 / (n.mbps * 1e6) / 60) : 0;
-        $('#fsay').innerHTML = '<b>' + Math.floor(n.pct || 0) + '%</b> of ' + (n.size / 1e9).toFixed(1) + ' GB from ' + esc(n.from) + (n.still >= 120 ? ': <b style="color:#f08a4b">nothing has come for ' + Math.round(n.still / 60) + ' min</b> (it’s started again after 10)' : n.mbps ? ', ' + n.mbps + ' Mbps' + (left ? ', about ' + (left >= 90 ? Math.round(left / 6) / 10 + ' hours' : left + ' min') + ' to go' : '') : '') + '.' + (w.length ? ' Then ' + w.length + ' more.' : '');
+        $('#fsay').innerHTML = '<b>' + Math.floor(n.pct || 0) + '%</b> of ' + (n.size / 1e9).toFixed(1) + ' GB from ' + esc(n.from) + (n.still >= 120 ? ': <b style="color:#f08a4b">nothing has come for ' + Math.round(n.still / 60) + ' min</b> (it’s started again after 10)' : n.mbps ? ', ' + n.mbps + ' Mbps' + (left ? ', about ' + (left >= 90 ? Math.round(left / 6) / 10 + ' hours' : left + ' min') + ' to go' : '') : '') + '.' + (w.length ? ' Then ' + w.length + ' more.' : '') + hd;
       } else if (f.running && f.hold) {   // (waiting while the film it brought in is repackaged: the drive does one at a time well)
-        $('#fhead').innerHTML = 'Waiting <em>while ' + esc(f.hold) + ' is repackaged</em>'; $('#fsay').textContent = 'Downloads carry on once it’s done (up to 45 min).';
+        $('#fhead').innerHTML = 'Waiting <em>while ' + esc(f.hold) + ' is repackaged</em>';
+        $('#fsay').innerHTML = (f.held || []).length ? '<b>Downloaded</b> and on the Mac mini: ' + f.held.map(esc).join(', ') + '. Each goes onto the G-Drive once the one before is repackaged (up to 45 min), so the drive does one big thing at a time.' : 'Downloads carry on once it’s done (up to 45 min).';
       } else if (f.running || (fetching.asked && Date.now() - fetching.asked < 60000)) {
         $('#fhead').innerHTML = 'Looking <em>now</em>'; $('#fsay').textContent = 'Seeing what’s in TorBox and Google Drive…';
       } else if ((f.trouble || []).length && !w.length) {   // (TorBox or Google Drive couldn't be read: said, not "nothing waiting")
@@ -2943,6 +2947,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       dl = fn && (f.hold || fn.moving) ? '<b>Downloaded:</b> ' + esc(fn.to) + ' · ' + (fn.moving ? 'going onto the G-Drive now' : 'goes onto the G-Drive once ' + esc(f.hold) + ' is repackaged')
         : fn ? '<b>Downloading:</b> ' + esc(fn.to) + ' <span class="when" style="display:inline">· ' + Math.floor(fn.pct || 0) + '%' + (fn.size ? ' of ' + (fn.size / 1e9).toFixed(1) + ' GB' : '') + '</span>' + bar(fn.pct || 0, '#3c9a5f')
         : f.running && f.hold ? '<b>Downloads wait</b> while ' + esc(f.hold) + ' is repackaged.' : 'Nothing downloading.';
+      if ((f.held || []).length) dl += line('<b>Downloaded, waiting to go onto the G-Drive:</b> ' + f.held.map(esc).join(', ') + (f.heldfor ? ' · once ' + esc(f.heldfor) + ' is repackaged' : ''));
       if (wn.length) dl += line('Then, in this order: ' + wn.slice(0, 4).map(esc).join(', ') + (wn.length > 4 ? ', and ' + (wn.length - 4) + ' more' : '') + '.');
     }
     var R = I.crl || {}, H = I.health || {}, hot = H.cpulimit && H.cpulimit < 100;

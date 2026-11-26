@@ -649,26 +649,32 @@ def conv_state():
 PENDING = {}   # (the film just brought in, still being repackaged: the next download's copy onto the G-Drive waits for it)
 
 
-def wait_repack(dest, title):
-    """The film just brought in repackaged before the next download (the drive does one at a time well): waited for, at most 45 minutes,
-    or 6 if the converter isn't running by then."""
+def repack_over(dest, t0):
+    """Whether the film brought in at t0 is repackaged, or needn't be waited for any more: at most 45 minutes, or 6 if the converter isn't
+    running by then."""
+    if not os.path.exists(dest) or time.time() - t0 >= 2700:
+        return True
+    if time.time() - t0 > 360 and not conv_running():
+        return True
+    # (the converter paused (John's Mac converting, or someone watching): nothing is being repackaged, so no waiting for it; the
+    # next copy goes onto the G-Drive now: John, 20 Nov 2026, A Journey to the Beginning of Time "99%... nothing has come for 41 min")
+    if time.time() - t0 > 60 and conv_state() == 'waiting':
+        return True
+    # (the converter not heard from for ten minutes (it says how far it's got every 20 seconds): stuck, so nothing is being repackaged;
+    # Altered States' extras waited the full 45 minutes on one stuck since the morning: John, 24 Nov 2026, "Altered states has been on
+    # 99% for a long time")
+    return time.time() - conv_at() > 600
+
+
+def wait_repack(dest, title, t0=None):
+    """The film just brought in repackaged before the next copy onto the G-Drive (the drive does one big thing at a time well): waited
+    for, as repack_over says (from when it was brought in, t0)."""
     flag = os.path.join(HOME, 'fetch-waiting')
     open(flag, 'w').write(title)
     status(hold=title)
-    t0 = time.time()
+    t0 = t0 or time.time()
     try:
-        while os.path.exists(dest) and time.time() - t0 < 2700:
-            if time.time() - t0 > 360 and not conv_running():
-                break
-            # (the converter paused (John's Mac converting, or someone watching): nothing is being repackaged, so no waiting for it; the
-            # next copy goes onto the G-Drive now: John, 20 Nov 2026, A Journey to the Beginning of Time "99%... nothing has come for 41 min")
-            if time.time() - t0 > 60 and conv_state() == 'waiting':
-                break
-            # (the converter not heard from for ten minutes (it says how far it's got every 20 seconds): stuck, so nothing is being repackaged;
-            # Altered States' extras waited the full 45 minutes on one stuck since the morning: John, 24 Nov 2026, "Altered states has been on
-            # 99% for a long time")
-            if time.time() - conv_at() > 600:
-                break
+        while not repack_over(dest, t0):
             time.sleep(15)
         log('  %s: %s; on to the next' % (title, 'repackaged' if not os.path.exists(dest) else 'not repackaged yet (it will be)'))
     finally:
@@ -849,10 +855,153 @@ def _run(check):
                      'waiting': [dict(wait_entry(p), noroom=free0 < p['size'] + 20e9) for p in plan]})
     else:
         status(checked=int(time.time()), trouble=trouble, upgrades=UPG, attorbox=torbox_pending(), waiting=[dict(wait_entry(p), noroom=free0 < p['size'] + 20e9) for p in plan], now=None, peek=None)
+    HELD = []   # (downloaded whole on the Mac's own disk, waiting to go onto the G-Drive till the film before is repackaged)
+
+    def land(p, work, part, said):
+        """A download, whole, put in its place on the G-Drive (moved there from the Mac's own disk first, if made there), then everything
+        after: its subtitles, deleted where it came from, the Mac and the converter told."""
+        nonlocal done
+        src, loc, path, size, key, folder, title, year, ext, dest_dir, dest, subs = (p[k] for k in
+            ('src', 'loc', 'path', 'size', 'key', 'folder', 'title', 'year', 'ext', 'dest_dir', 'dest', 'subs'))
+        came = lambda ok, why='', title=title + (' · extra: ' + os.path.splitext(p['extra'])[0] if p.get('extra') else ''), src=src, size=size: status(now=None, came={'tid': p.get('tid') or '', 'to': title, 'from': src['name'], 'gb': round(size / 1e9, 1), 'at': int(time.time()), 'ok': ok, 'why': why})
+        if work and os.path.exists(work):   # (onto the G-Drive whole, in one go)
+            status(now={'from': src['name'], 'file': path, 'to': title, 'extra': p.get('extra'), 'size': size, 'part': part, 'since': int(time.time()), 'moving': True})
+            try:
+                os.makedirs(os.path.dirname(part), exist_ok=True)
+                shutil.move(work, part)
+            except Exception as e:
+                log('  %s: couldn’t go onto the G-Drive (%s): left in %s' % (title, e, src['name']))
+                came(False, 'couldn’t go onto the G-Drive: left in %s' % src['name'])
+                for x_ in (work, part):
+                    try:
+                        os.remove(x_)
+                    except OSError:
+                        pass
+                try:
+                    os.rmdir(dest_dir)
+                except OSError:
+                    pass
+                return
+        try:
+            got = os.path.getsize(part)
+        except OSError:   # (gone: another fetch took it; Ghosts, 15 Nov 2026, two at once just after an update)
+            log('  %s: it didn’t come (rclone said: %s): left in %s, tried again next time' % (title, said.replace('\n', ' / ')[-300:] or 'nothing', src['name']))
+            came(False, 'it didn’t come: ' + (said.splitlines()[-1][-160:] if said else 'tried again next time'))
+            return
+        if size and got != size or not got:
+            log('  the copy isn’t whole (%d of %d bytes): left in %s' % (got, size, src['name']))
+            came(False, 'the copy wasn’t whole: left in %s' % src['name'])
+            os.remove(part)
+            return
+        if p.get('replace') and os.path.exists(p['replace']):   # (a better copy: in place of the one here)
+            try:
+                dest, kept = replace_film(p['replace'], part, ext, root, title)
+                log('  replaced %s with this copy (the old one is in %s)' % (title, os.path.dirname(kept)))
+                u_ = upgrades(); u_.pop(key, None)
+                json.dump(u_, open(UPGRADE, 'w'))
+            except Exception as e:
+                log('  couldn’t put it in place of the one here (%s): left as it was' % e)
+                came(False, 'couldn’t replace the one here')
+                try:
+                    os.remove(part)
+                except OSError:
+                    pass
+                return
+        else:
+            os.replace(part, dest)
+        if src['remote'] == 'torbox':
+            got_ok(key)
+        if p.get('extra'):   # (an extra: nothing more to do, the media server finds it in Other)
+            seen[key] = int(time.time())
+            log('  done: %s in %s/Other' % (p['extra'], title))
+            came(True)
+            try:
+                tmp = SEEN + '.tmp'
+                json.dump(seen, open(tmp, 'w'))
+                os.replace(tmp, SEEN)
+            except OSError:
+                pass
+            return
+        # (its subtitles: beside it, with the film's new name)
+        stem = os.path.splitext(p['name'])[0]
+        for s_ in subs:
+            if os.path.dirname(s_['Path']) != folder or ((not folder or p['series']) and not s_['Name'].startswith(stem)):
+                continue
+            sb = os.path.splitext(s_['Name'])[0]
+            lang = '.' + sb.rsplit('.', 1)[1] if re.search(r'\.[a-z]{2,3}$', sb) else ''
+            try:
+                sp = os.path.splitext(dest)[0] + lang + '.srt'
+                fetch(loc, s_['Path'], sp + '.adding')
+                if os.path.exists(sp + '.adding'):
+                    os.replace(sp + '.adding', sp)
+                if src['delete']:
+                    rc('deletefile', '--drive-use-trash=false', loc(s_['Path']))
+            except Exception as e:
+                log('  its subtitles %s: %s' % (s_['Name'], e))
+        if src['delete']:
+            rc('deletefile', '--drive-use-trash=false', loc(path))
+        seen[key] = int(time.time())
+        log('  done: on the G-Drive' + (', and deleted from ' + src['name'] if src['delete'] else '') +
+            ('' if year else '. NOTE: "%s" has no year in its name, so the media server may match the wrong film: if it does, Fix match on it in Grifflix' % title))
+        done += 1
+        came(True, '' if year else 'no year in its name: check it’s the right film')
+        try:   # (the Mac told at once: the media server looks now, the converter takes it next: John, 15 Nov 2026)
+            s_ = json.load(open(os.path.join(APP, 'settings.json')))
+            urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:%s/local/fetched' % s_.get('port', 8097), data=json.dumps({'path': dest}).encode(),
+                                   method='POST', headers={'X-Grifflix-Secret': s_.get('secret', ''), 'Content-Type': 'application/json'}), timeout=30).read()
+        except Exception:
+            pass   # (the gateway's own look, every 10 minutes, finds it anyway)
+        if ext not in ('.mp4', '.m4v'):   # (an MKV and the like: the converter told now, to repackage it next: John, 15 Nov 2026,
+            try:                          # "the mkv films should immediately be put to the top of the list for repackaging")
+                nf = os.path.join(HOME, 'convert-new.json')
+                try:
+                    have = json.load(open(nf))
+                except (OSError, ValueError):
+                    have = []
+                json.dump(have + [{'path': dest, 'name': title, 'at': int(time.time())}], open(nf, 'w'))
+            except OSError:
+                pass
+        if ext not in ('.mp4', '.m4v') and not check:   # (repackaged first: John, 15 Nov 2026, "when downloaded it should be repackaged first")
+            if shutil.disk_usage(STAGE if os.path.isdir(STAGE) else HOME).free > 60e9:
+                # (the next download made on the Mac's own disk while this one's repackaged; only its copy onto the G-Drive waits)
+                PENDING.update(dest=dest, title=title, at=time.time())
+                log('  %s: being repackaged; the next download comes in meanwhile on the Mac’s own disk' % title)
+            else:   # (no room on the Mac's own disk: the next would be made on the G-Drive itself, so it waits, as before)
+                wait_repack(dest, title)
+        if src['delete']:
+            rc('rmdirs', '--leave-root', loc('').rstrip('/'), check=False)   # (download folders left empty)
+        try:
+            tmp = SEEN + '.tmp'
+            json.dump(seen, open(tmp, 'w'))
+            os.replace(tmp, SEEN)
+        except OSError:
+            pass
+
+    def flush_held(block):
+        """Those downloaded and waiting put on the G-Drive, each once the film before it is repackaged; with block, waited for; else only
+        those whose turn it is, the rest left waiting while the next download comes in (John, 26 Nov 2026, The Eight Mountains: "waiting for
+        something to convert before moving - that's fine, but shouldn't stop the Downloads")."""
+        while HELD:
+            if PENDING.get('dest') and os.path.exists(PENDING['dest']):
+                if block:
+                    status(now=None, held=[h['p']['title'] for h in HELD], heldfor=PENDING['title'])
+                    wait_repack(PENDING['dest'], PENDING['title'], PENDING.get('at'))
+                elif not repack_over(PENDING['dest'], PENDING.get('at') or time.time()):
+                    status(held=[h['p']['title'] for h in HELD], heldfor=PENDING['title'])   # (shown on the admin page)
+                    return
+                else:
+                    log('  %s: %s; on to the next' % (PENDING['title'], 'repackaged' if not os.path.exists(PENDING['dest']) else 'not repackaged yet (it will be)'))
+            PENDING.clear()
+            h = HELD.pop(0)
+            status(held=[x['p']['title'] for x in HELD] or None, heldfor=None)
+            land(h['p'], h['work'], h['part'], h['said'])
+        status(held=None, heldfor=None)
+
     while plan:
         try:   # (a newer version since this fetch began: finish here, between films, and start again as it; never a download thrown
                # away part way: Donnie Darko, 9.4 GB, began again after Update everything: John, 15 Nov 2026, "Downloads seem to have slowed")
             if os.path.getmtime(os.path.abspath(__file__)) != MINE and not check:
+                flush_held(True)   # (those downloaded and waiting on the Mac's own disk put on first: the new one starts by clearing it)
                 log('A newer version of this: carrying on with it')
                 os.remove(LOCK)
                 sys.stdout.flush()
@@ -897,133 +1046,43 @@ def _run(check):
                                      'to': title + ('/Other' if p.get('extra') else ''), 'gb': round(size / 1e9, 2)}, ensure_ascii=False) + '\n')
         except Exception:
             pass
+        if any(h['p']['dest'] == dest for h in HELD):
+            continue   # (the same, downloaded already and waiting to go onto the G-Drive)
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         part = dest + '.adding'
         work = stage_for(part, size)   # (made on the Mac's own disk if it has room, in many streams; else here, in one)
-        if not work and PENDING.get('dest') and os.path.exists(PENDING['dest']):   # (made on the G-Drive itself: after the repackaging)
-            wait_repack(PENDING['dest'], PENDING['title']); PENDING.clear()
+        if not work:   # (made on the G-Drive itself: those waiting go on first, and it after the repackaging, as before)
+            flush_held(True)
+            if PENDING.get('dest') and os.path.exists(PENDING['dest']):
+                wait_repack(PENDING['dest'], PENDING['title'], PENDING.get('at')); PENDING.clear()
         status(now={'from': src['name'], 'file': path, 'to': title, 'extra': p.get('extra'), 'size': size, 'part': work or part, 'since': int(time.time()), 'tid': p.get('tid') or ''})
-        came = lambda ok, why='', title=title + (' · extra: ' + os.path.splitext(p['extra'])[0] if p.get('extra') else ''), src=src, size=size: status(now=None, came={'tid': p.get('tid') or '', 'to': title, 'from': src['name'], 'gb': round(size / 1e9, 1), 'at': int(time.time()), 'ok': ok, 'why': why})
         said = ''
         try:   # (in Terminal: how far, how fast, how long to go, as it downloads)
             said = fetch(loc, path, work or part, show=sys.stdout.isatty(), streams=16 if work else 0)
-            if work and os.path.exists(work):   # (onto the G-Drive whole, in one go)
-                # (the film before still being repackaged: the copy onto the G-Drive waits for it, so the drive does one big thing at a time;
-                # the download itself, on the Mac's own disk, went on meanwhile: John, 19 Nov 2026, "if both could happen without difficulty yes")
-                if PENDING.get('dest') and os.path.exists(PENDING['dest']):
-                    wait_repack(PENDING['dest'], PENDING['title'])
-                PENDING.clear()
-                status(now={'from': src['name'], 'file': path, 'to': title, 'extra': p.get('extra'), 'size': size, 'part': part, 'since': int(time.time()), 'moving': True})
-                shutil.move(work, part)
         except Exception as e:
             log('  the download failed (%s): left in %s' % (e, src['name']))
-            came(False, 'the download failed: left in %s' % src['name'])
-            for x_ in ([work] if work else []):
+            status(now=None, came={'tid': p.get('tid') or '', 'to': title, 'from': src['name'], 'gb': round(size / 1e9, 1), 'at': int(time.time()), 'ok': False, 'why': 'the download failed: left in %s' % src['name']})
+            for x_ in ([work] if work else []) + [part]:
                 try:
                     os.remove(x_)
                 except OSError:
                     pass
-            if os.path.exists(part):
-                os.remove(part)
             try:
                 os.rmdir(dest_dir)
             except OSError:
                 pass
             continue
-        try:
-            got = os.path.getsize(part)
-        except OSError:   # (gone: another fetch took it; Ghosts, 15 Nov 2026, two at once just after an update)
-            log('  %s: it didn’t come (rclone said: %s): left in %s, tried again next time' % (title, said.replace('\n', ' / ')[-300:] or 'nothing', src['name']))
-            came(False, 'it didn’t come: ' + (said.splitlines()[-1][-160:] if said else 'tried again next time'))
+        if work and os.path.exists(work):
+            # (the film before still being repackaged: this one waits on the Mac's own disk to go onto the G-Drive, so the drive does one big
+            # thing at a time, but the next download comes in meanwhile: John, 26 Nov 2026, "shouldn't stop the Downloads")
+            HELD.append({'p': p, 'work': work, 'part': part, 'said': said})
+            flush_held(False)
+            if HELD:
+                log('  %s: downloaded; goes onto the G-Drive once %s is repackaged. The next download meanwhile' % (title, PENDING.get('title') or 'the film before'))
             continue
-        if size and got != size or not got:
-            log('  the copy isn’t whole (%d of %d bytes): left in %s' % (got, size, src['name']))
-            came(False, 'the copy wasn’t whole: left in %s' % src['name'])
-            os.remove(part)
-            continue
-        if p.get('replace') and os.path.exists(p['replace']):   # (a better copy: in place of the one here)
-            try:
-                dest, kept = replace_film(p['replace'], part, ext, root, title)
-                log('  replaced %s with this copy (the old one is in %s)' % (title, os.path.dirname(kept)))
-                u_ = upgrades(); u_.pop(key, None)
-                json.dump(u_, open(UPGRADE, 'w'))
-            except Exception as e:
-                log('  couldn’t put it in place of the one here (%s): left as it was' % e)
-                came(False, 'couldn’t replace the one here')
-                try:
-                    os.remove(part)
-                except OSError:
-                    pass
-                continue
-        else:
-            os.replace(part, dest)
-        if src['remote'] == 'torbox':
-            got_ok(key)
-        if p.get('extra'):   # (an extra: nothing more to do, the media server finds it in Other)
-            seen[key] = int(time.time())
-            log('  done: %s in %s/Other' % (p['extra'], title))
-            came(True)
-            try:
-                tmp = SEEN + '.tmp'
-                json.dump(seen, open(tmp, 'w'))
-                os.replace(tmp, SEEN)
-            except OSError:
-                pass
-            continue
-        # (its subtitles: beside it, with the film's new name)
-        stem = os.path.splitext(p['name'])[0]
-        for s_ in subs:
-            if os.path.dirname(s_['Path']) != folder or ((not folder or p['series']) and not s_['Name'].startswith(stem)):
-                continue
-            sb = os.path.splitext(s_['Name'])[0]
-            lang = '.' + sb.rsplit('.', 1)[1] if re.search(r'\.[a-z]{2,3}$', sb) else ''
-            try:
-                sp = os.path.splitext(dest)[0] + lang + '.srt'
-                fetch(loc, s_['Path'], sp + '.adding')
-                if os.path.exists(sp + '.adding'):
-                    os.replace(sp + '.adding', sp)
-                if src['delete']:
-                    rc('deletefile', '--drive-use-trash=false', loc(s_['Path']))
-            except Exception as e:
-                log('  its subtitles %s: %s' % (s_['Name'], e))
-        if src['delete']:
-            rc('deletefile', '--drive-use-trash=false', loc(path))
-        seen[key] = int(time.time())
-        log('  done: on the G-Drive' + (', and deleted from ' + src['name'] if src['delete'] else '') +
-            ('' if year else '. NOTE: "%s" has no year in its name, so the media server may match the wrong film: if it does, Fix match on it in Grifflix' % title))
-        done += 1
-        came(True, '' if year else 'no year in its name: check it’s the right film')
-        try:   # (the Mac told at once: the media server looks now, the converter takes it next: John, 15 Nov 2026)
-            s_ = json.load(open(os.path.join(APP, 'settings.json')))
-            urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:%s/local/fetched' % s_.get('port', 8097), data=json.dumps({'path': dest}).encode(),
-                                   method='POST', headers={'X-Grifflix-Secret': s_.get('secret', ''), 'Content-Type': 'application/json'}), timeout=30).read()
-        except Exception:
-            pass   # (the gateway's own look, every 10 minutes, finds it anyway)
-        if ext not in ('.mp4', '.m4v'):   # (an MKV and the like: the converter told now, to repackage it next: John, 15 Nov 2026,
-            try:                          # "the mkv films should immediately be put to the top of the list for repackaging")
-                nf = os.path.join(HOME, 'convert-new.json')
-                try:
-                    have = json.load(open(nf))
-                except (OSError, ValueError):
-                    have = []
-                json.dump(have + [{'path': dest, 'name': title, 'at': int(time.time())}], open(nf, 'w'))
-            except OSError:
-                pass
-        if ext not in ('.mp4', '.m4v') and not check:   # (repackaged first: John, 15 Nov 2026, "when downloaded it should be repackaged first")
-            if shutil.disk_usage(STAGE if os.path.isdir(STAGE) else HOME).free > 60e9:
-                # (the next download made on the Mac's own disk while this one's repackaged; only its copy onto the G-Drive waits)
-                PENDING.update(dest=dest, title=title)
-                log('  %s: being repackaged; the next download comes in meanwhile on the Mac’s own disk' % title)
-            else:   # (no room on the Mac's own disk: the next would be made on the G-Drive itself, so it waits, as before)
-                wait_repack(dest, title)
-        if src['delete']:
-            rc('rmdirs', '--leave-root', loc('').rstrip('/'), check=False)   # (download folders left empty)
-        try:
-            tmp = SEEN + '.tmp'
-            json.dump(seen, open(tmp, 'w'))
-            os.replace(tmp, SEEN)
-        except OSError:
-            pass
+        land(p, None, part, said)
+    if not check:
+        flush_held(True)
     if not check:
         status(now=None)
     try:
