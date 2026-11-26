@@ -46,7 +46,9 @@ jobs:
             python3 _grifflix/data_publish.py "$MODE"
             # (A24's own still for any film newly in the A24 collection: John, 19 Nov 2026)
             if [ "$MODE" = full ]; then python3 _grifflix/a24_stills.py || echo "A24 stills: skipped"; fi
-            git add -A grifflix/data grifflix/img/a24
+            # (BFI Player's own picture for any film newly in the BFI collection: John, 26 Nov 2026)
+            if [ "$MODE" = full ]; then python3 _grifflix/bfi_stills.py || echo "BFI pictures: skipped"; fi
+            git add -A grifflix/data grifflix/img/a24 grifflix/img/bfi
             if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
             git commit --quiet -m "Grifflix data ($MODE)"
             git push --quiet origin HEAD:main && exit 0
