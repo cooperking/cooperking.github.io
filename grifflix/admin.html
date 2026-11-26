@@ -823,7 +823,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         <div class="kicker">To sort out</div>
         <h2>Mark Kermode’s <em>introductions</em></h2>
         <p class="stat">Put the MP4s in <b>G-Drive › Grifflix › BFI Kermode</b>. Every 10 minutes the Mac mini gives each finished one its right name (“Mark Kermode introduces Kes (1969)”) and puts it in its film’s Extras, but only when it’s sure which film: the same title, and the same year give or take one. The rest wait here with the likeliest films. One whose film isn’t in Grifflix yet goes in by itself once the film arrives.</p>
-        <div class="state"><button class="btn" type="button" id="bfilook">Look now</button></div>
+        <div class="state"><button class="btn" type="button" id="bfilook">Look now</button><button class="btn" type="button" id="bfiget" title="The BFI’s Mark Kermode playlist checked now on the Mac mini, and any new introductions got">Check the playlist now</button></div>
+        <p class="stat" id="bfiget-say"></p>
         <p class="stat" id="bfisay">Looking on the Mac mini…</p>
         <ul class="changes" id="bfitodo"></ul>
       </section>
@@ -1233,6 +1234,14 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
             return '<button class="btn small" type="button" data-bfiput="' + esc(f.id) + '" data-bfiw="' + esc(pick(f)) + '" title="Put it with this film">' + esc(pick(f)) + '</button>'; }).join('') +
           '<input type="search" class="name bfiq" placeholder="Another film…" autocomplete="off" style="flex:1 1 160px;min-width:0"></div><div class="state bfihits" style="margin-top:4px"></div></li>';
       }).join('');
+      // (the playlist checked weekly on the Mac mini, and what it found: John, 26 Nov 2026, "I would like the automatic check done on the mac mini")
+      var K = j.getter || {}, dd = function (t) { return esc(when(t * 1000)); };
+      $('#bfiget-say').innerHTML = K.running ? '<b>Checking the playlist now</b> on the Mac mini, and getting any new ones…' :
+        K.at ? 'The Mac mini checks the BFI’s playlist once a week for new introductions and gets them itself. Last checked ' + dd(K.at) + ': ' +
+          (K.error ? '<b>it didn’t work</b> (' + esc(K.error) + ').' : (K.new ? K.new + ' new, ' + K.got + ' got, ' + K.put + ' put in BFI Kermode' : 'nothing new') + '.' +
+          (K.limited ? ' YouTube asked it to wait, so it carries on in 6 hours.' : K.more ? ' More to get: it carries on in 6 hours.' : '')) :
+        'The Mac mini checks the BFI’s playlist once a week for new introductions and gets them itself: not yet checked.';
+      $('#bfiget').disabled = !!K.running;
       var TW = j.twice || [];
       $('#bfimsay').innerHTML = (M.length ? '<b>' + M.length + '</b> put in their films’ Extras, newest first. Each is shown with the film’s extras once the site next updates.' : 'None yet.') +
         (TW.length ? ' <b>' + TW.length + ' got twice</b> (' + TW.slice(0, 6).map(function (x) { return esc(x.film); }).join(', ') + (TW.length > 6 ? '…' : '') + '): the film has it already, so the second copy is in BFI Kermode › Already got, to delete.' : '');
@@ -1251,6 +1260,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       });
     };
     if (!document.querySelector('#bfitodo .bfiq:focus')) go().then(draw).catch(function (e) { $('#bfisay').textContent = e.message; });
+    $('#bfiget').onclick = function () { var b = this; b.disabled = true;
+      go({ op: 'get' }).then(function () { toast('Checking the playlist on the Mac mini: new ones come in over the next while'); setTimeout(function () { bfiLook(true); }, 3000); })
+        .catch(function (e) { b.disabled = false; toast(e.message); }); };
     $('#bfilook').onclick = function () { var b = this; b.disabled = true; b.textContent = 'Looking…';
       go({ op: 'look' }).then(function (j) { b.disabled = false; b.textContent = 'Look now'; draw(j); toast('Looked'); }).catch(function (e) { b.disabled = false; b.textContent = 'Look now'; toast(e.message); }); };
     if (!once) setTimeout(bfiLook, 120000);

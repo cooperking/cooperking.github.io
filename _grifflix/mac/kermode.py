@@ -16,6 +16,10 @@ On John's Mac, in Terminal. Once, to have it:
                                              of the day script"); what it did in ~/Grifflix/kermode.log
   python3 ~/Grifflix/kermode.py --uninstall  not by itself any more
 
+On the Mac mini, the gateway runs it by itself once a week (KERMODE_HOST=mini), not John's Mac (John, 26 Nov 2026: "I would like the
+automatic check done on the mac mini and not use my mac - my mac is just for now"; "once a week for checking is enough"): yt-dlp in its
+own folder there (~/Grifflix/ytdlp), and the MP4s straight into BFI Kermode beside it. Once it does, John's Mac stops its own (--install).
+
 What it does, in order:
  1. What's been got already: every YouTube code in a file name in the folder (its originals folder too), kept in ~/Grifflix/kermode-got.txt
     and on the G-Drive (BFI Kermode/.got.txt), so nothing is got twice, from this Mac or another. Any in the playlist whose name is one
@@ -42,6 +46,8 @@ CODE = re.compile(r'\[([A-Za-z0-9_-]{11})\]')
 VID = ('.mkv', '.webm')
 HALF = re.compile(r'\.(part|ytdl|temp)(\.|$)|\.f\d+\.\w+$|^\.')
 AUTO = '--auto' in sys.argv   # (run by launchd: quiet, polite to YouTube, never asking anything)
+ON_MINI = os.environ.get('KERMODE_HOST') == 'mini'   # (run by the gateway on the Mac mini, the G-Drive its own)
+VENV = os.path.join(G, 'ytdlp')   # (the Mac mini's yt-dlp, in a folder of its own: pip's, so it runs on its older macOS)
 LABEL = 'io.github.cooperking.grifflix-kermode'
 AGENT = os.path.join(HOME, 'Library', 'LaunchAgents', LABEL + '.plist')
 LOGF = os.path.join(G, 'kermode.log')
@@ -98,8 +104,9 @@ def key(name):
 
 
 def tool(name):
-    for p in [os.path.join(HOME, 'bin', name), '/opt/homebrew/bin/' + name, '/usr/local/bin/' + name, shutil.which(name)] + \
-             sorted(glob.glob(os.path.join(HOME, 'Library/Python/*/bin', name))):
+    for p in [os.path.join(VENV, 'bin', name), os.path.join(HOME, 'bin', name), '/opt/homebrew/bin/' + name, '/usr/local/bin/' + name, shutil.which(name)] + \
+             sorted(glob.glob(os.path.join(HOME, 'Library/Python/*/bin', name))) + \
+             (['/Applications/Jellyfin.app/Contents/MacOS/' + name] if name in ('ffmpeg', 'ffprobe') else []):
         if p and os.path.isfile(p) and os.access(p, os.X_OK):
             return p
     return None
@@ -118,22 +125,47 @@ def ytdlp():
     """yt-dlp, and Deno, which it needs for YouTube now: the Mac's own if it has them, else each fetched once into ~/bin (one file each, from
     their own GitHub pages; no administrator rights)."""
     y = tool('yt-dlp')
+    if not y and ON_MINI:   # (pip's, in a folder of its own: the standalone one needs a newer macOS than the 2010 Mac mini's)
+        say('Putting yt-dlp on the Mac mini (once), in %s …' % VENV)
+        subprocess.run([sys.executable, '-m', 'venv', VENV])
+        pip = [os.path.join(VENV, 'bin', 'python3'), '-m', 'pip', 'install', '-q', '-U']
+        if subprocess.run(pip + ['yt-dlp[default]']).returncode:
+            subprocess.run(pip + ['yt-dlp'])
+        y = tool('yt-dlp')
+        if not y:
+            sys.exit('Couldn’t put yt-dlp on the Mac mini')
     if not y:
         say('Fetching yt-dlp (once) into ~/bin …')
         y = os.path.join(HOME, 'bin', 'yt-dlp')
         if not fetch('https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos', y):
             sys.exit('Couldn’t fetch yt-dlp. Try again, or: brew install yt-dlp')
         os.chmod(y, 0o755)
-    if not (tool('deno') or os.path.exists(os.path.join(HOME, '.deno', 'bin', 'deno'))):
+    nod = os.path.join(G, 'deno-wont-run-%s' % os.uname().machine)   # (tried, and this Mac's macOS too old for it: not fetched again for a month)
+    if not deno() and not (os.path.exists(nod) and time.time() - os.path.getmtime(nod) < 30 * 86400):
         say('Fetching Deno (once) into ~/bin, which yt-dlp needs for YouTube …')
         arch = 'aarch64' if os.uname().machine == 'arm64' else 'x86_64'
         z = os.path.join(tempfile.mkdtemp(), 'deno.zip')
         if fetch('https://github.com/denoland/deno/releases/latest/download/deno-%s-apple-darwin.zip' % arch, z):
             subprocess.run(['unzip', '-oq', z, '-d', os.path.join(HOME, 'bin')])
             os.chmod(os.path.join(HOME, 'bin', 'deno'), 0o755)
+            if not deno():
+                open(nod, 'w').write(time.strftime('%Y-%m-%d'))
+                say('Deno won’t run on this Mac’s macOS: yt-dlp goes on without it (it may get fewer of YouTube’s formats).')
         else:
             say('Couldn’t fetch Deno: yt-dlp may get only some videos from YouTube without it.')
     return y
+
+
+def deno():
+    """Deno's path, if it's here and runs (the 2010 Mac mini's macOS may be too old for it)."""
+    for d in (tool('deno'), os.path.join(HOME, '.deno', 'bin', 'deno')):
+        if d and os.path.exists(d):
+            try:
+                if subprocess.run([d, '--version'], capture_output=True, timeout=30).returncode == 0:
+                    return d
+            except Exception:
+                pass
+    return None
 
 
 def keep_fresh(y):
@@ -146,8 +178,12 @@ def keep_fresh(y):
     except OSError:
         pass
     try:
-        r = subprocess.run([y, '-U'], capture_output=True, text=True, env=env(), timeout=300)
-        out = ((r.stdout or '') + (r.stderr or '')).strip()
+        if y.startswith(VENV + '/'):   # (the Mac mini's: pip's own update)
+            r = subprocess.run([os.path.join(VENV, 'bin', 'python3'), '-m', 'pip', 'install', '-q', '-U', 'yt-dlp[default]'], capture_output=True, text=True, timeout=600)
+            out = 'updated yt-dlp to the newest' if r.returncode == 0 else (r.stderr or '')[-300:]
+        else:
+            r = subprocess.run([y, '-U'], capture_output=True, text=True, env=env(), timeout=300)
+            out = ((r.stdout or '') + (r.stderr or '')).strip()
     except Exception as e:
         out = str(e)
     open(stamp, 'w').write(out[-500:])
@@ -167,7 +203,7 @@ def solver(y):
         h = subprocess.run([y, '--help'], capture_output=True, text=True, env=env(), timeout=60).stdout or ''
     except Exception:
         h = ''
-    d = tool('deno') or next((x for x in (os.path.join(HOME, '.deno', 'bin', 'deno'),) if os.path.exists(x)), None)
+    d = deno()
     return (['--remote-components', 'ejs:github'] if '--remote-components' in h else []) + \
            (['--js-runtimes', 'deno:' + d] if d and '--js-runtimes' in h else [])
 
@@ -406,7 +442,7 @@ def move(folder, fresh):
 
 
 def notify(text):
-    if AUTO:
+    if AUTO and not ON_MINI:
         try:
             subprocess.run(['osascript', '-e', 'display notification "%s" with title "Grifflix: Mark Kermode"' % text.replace('"', "'")], capture_output=True)
         except OSError:
@@ -449,7 +485,10 @@ def install():
 
 
 def uninstall():
-    subprocess.run(['launchctl', 'bootout', 'gui/%s/%s' % (os.getuid(), LABEL)], capture_output=True)
+    try:
+        subprocess.run(['launchctl', 'bootout', 'gui/%s/%s' % (os.getuid(), LABEL)], capture_output=True)
+    except OSError:
+        pass
     try:
         os.remove(AGENT)
     except OSError:
@@ -474,7 +513,16 @@ def auto_start():
     except OSError:
         pass
     say('==== %s' % time.strftime('%Y-%m-%d %H:%M'))
-    if not os.environ.get('KERMODE_FRESH'):   # (the newest version, from GitHub, taken up before each run)
+    if not ON_MINI and os.path.exists(os.path.join(DEST, '.mini-gets')):   # (the Mac mini gets them now: this Mac's own stopped)
+        say('The Mac mini gets them now: this Mac stops doing it by itself.')
+        uninstall()
+        try:
+            os.remove(LOCK)
+        except OSError:
+            pass
+        sys.exit(0)
+    if not ON_MINI and not os.environ.get('KERMODE_FRESH'):   # (the newest version, from GitHub, taken up before each run; the Mac mini's
+        # is kept up to date by the gateway)
         try:
             new = subprocess.run(['curl', '-fsSL', '-m', '60', SRC], capture_output=True).stdout
             me = os.path.abspath(__file__)
