@@ -9,6 +9,8 @@ On John's Mac, in Terminal. Once, to have it:
   python3 ~/Grifflix/kermode.py        after that, from anywhere: the same folder and playlists, only the new ones got
   python3 ~/Grifflix/kermode.py --new  only says which are new, getting nothing
   python3 ~/Grifflix/kermode.py --move only makes MP4s of what's in the folder and puts them on the G-Drive, getting nothing
+  python3 ~/Grifflix/kermode.py --make only makes MP4s of what's in the folder, to drag into BFI Kermode in Finder yourself (John, 26 Nov
+                                       2026: "moving the files is extremely slow. I can just move them myself in finder")
   python3 ~/Grifflix/kermode.py --here this folder used from now on, not the one before
   python3 ~/Grifflix/kermode.py --install    it runs by itself from now on, in the background, every 6 hours (and now): new ones got, made
                                              and put on the G-Drive when you're at home, with a notification (John, 26 Nov 2026: "I would
@@ -583,7 +585,7 @@ def main(a):
             pass
     have = got_write(ids)
     fresh = set()
-    if '--move' not in a:
+    if '--move' not in a and '--make' not in a:
         if not C['urls']:
             sys.exit('Which YouTube playlist are they from? Run it again with its address after it, in quotes.')
         y = ytdlp()
@@ -619,6 +621,9 @@ def main(a):
             say('Got %d.' % len(fresh))
     # 3. MP4s made; 4. put on the G-Drive
     c = convert(folder, fresh)
+    if '--make' in a:
+        left = [f for f in os.listdir(folder) if f.lower().endswith('.mp4') and not f.startswith('.')]
+        return say('Done: %d made into MP4s. %d MP4s are in %s, ready to drag into G-Drive › Grifflix › BFI Kermode.' % (c, len(left), folder))
     m = move(folder, fresh)
     say('Done: %d made into MP4s, %d put in G-Drive › Grifflix › BFI Kermode. The Mac mini puts each with its film within 10 minutes; '
         'any it isn’t sure of are on the admin page, BFI tab.' % (c, m))
