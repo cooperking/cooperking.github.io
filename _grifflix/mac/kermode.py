@@ -29,6 +29,7 @@ HOME = os.path.expanduser('~')
 G = os.path.join(HOME, 'Grifflix')
 CONF = os.path.join(G, 'kermode.json')
 GOT = os.path.join(G, 'kermode-got.txt')
+NAMES = os.path.join(G, 'kermode-names.txt')   # (the name of every one put on the G-Drive, so one the playlist has under another code isn't got again)
 GD = os.environ.get('GRIFFLIX_GD') or '/Volumes/G-Drive'
 DEST = os.path.join(GD, 'Grifflix', 'BFI Kermode')
 MINI = '192.168.68.125'   # (the Mac mini, as convert-here.sh has it)
@@ -169,10 +170,51 @@ def names_here(folder):
     return out
 
 
-def on_films():
-    """Those already with their films on the G-Drive (the Mac mini put them in each film's Extras)."""
-    say('Looking at the films on the G-Drive for introductions they have already (a minute or so) …')
-    return [os.path.basename(p) for p in glob.glob(os.path.join(GD, 'Grifflix', 'Movies', '*', 'Extras', 'Mark Kermode*'))]
+def names_read():
+    """The names of all those put on the G-Drive before, from this Mac or another (looking through every film's folder over the network
+    took too long: John, 26 Nov 2026)."""
+    out = set()
+    for f in (NAMES, os.path.join(DEST, '.names.txt')):
+        try:
+            out |= {l.strip() for l in open(f, encoding='utf-8') if l.strip()}
+        except OSError:
+            pass
+    return out
+
+
+def names_add(names):
+    have = names_read() | set(names)
+    text = ''.join('%s\n' % n for n in sorted(have))
+    for f in (NAMES, os.path.join(DEST, '.names.txt')):
+        if f.startswith(GD) and not os.path.isdir(DEST):
+            continue
+        try:
+            open(f + '.new', 'w', encoding='utf-8').write(text)
+            os.replace(f + '.new', f)
+        except OSError:
+            pass
+
+
+def good_url(u):
+    """A whole address: not one with "…" in it for the playlist's code, as in an example (John, 26 Nov 2026)."""
+    return bool(re.match(r'https?://\S+$', u)) and '…' not in u and '...' not in u and \
+        (not re.search(r'[?&]list=', u) or bool(re.search(r'[?&]list=[A-Za-z0-9_-]{10,}', u)))
+
+
+def secs(ff, path):
+    """How long a video is, from ffmpeg (None if it can't be read: one stopped part way has no index)."""
+    r = subprocess.run([ff, '-hide_banner', '-i', path], capture_output=True, text=True).stderr or ''
+    m = re.search(r'Duration: (\d+):(\d\d):(\d\d(?:\.\d+)?)', r)
+    return int(m.group(1)) * 3600 + int(m.group(2)) * 60 + float(m.group(3)) if m and 'moov atom not found' not in r else None
+
+
+def whole(ff, out, src):
+    """An MP4 made before is whole: it can be read, and it's as long as what it was made from, give or take two seconds."""
+    a = secs(ff, out)
+    if a is None:
+        return False
+    b = secs(ff, src) if src and os.path.exists(src) else None
+    return b is None or a >= b - 2
 
 
 def drive():
@@ -208,6 +250,12 @@ def convert(folder, fresh):
         say('No ffmpeg on this Mac: from osxexperts.net (Apple Silicon) unzip ffmpeg into ~/bin, then: xattr -d com.apple.quarantine ~/bin/ffmpeg')
         return 0
     n = 0
+    for f in os.listdir(folder):   # (ones a stop part way left: made again)
+        if f.startswith('.making-'):
+            try:
+                os.remove(os.path.join(folder, f))
+            except OSError:
+                pass
     for f in sorted(os.listdir(folder)):
         p = os.path.join(folder, f)
         if not f.lower().endswith(VID) or HALF.search(f) or not os.path.isfile(p):
@@ -216,19 +264,27 @@ def convert(folder, fresh):
             continue
         out = os.path.join(folder, tidy(os.path.splitext(f)[0])[0] + '.mp4')
         if os.path.exists(out):
-            say('Already an MP4 of it: %s' % os.path.basename(out))
-            continue
+            if whole(ff, out, p):   # (made before: the original put away)
+                os.makedirs(os.path.join(folder, 'originals'), exist_ok=True)
+                shutil.move(p, os.path.join(folder, 'originals', f))
+                say('Already made: %s' % os.path.basename(out))
+                continue
+            os.remove(out)   # (stopped part way, by Ctrl-C or the Mac sleeping: made again)
+            say('Making again (it was stopped part way): %s' % os.path.basename(out))
+        tmp = os.path.join(folder, '.making-' + os.path.basename(out))
         info = subprocess.run([ff, '-hide_banner', '-i', p], capture_output=True, text=True).stderr or ''
         v = ['-c:v', 'copy'] if re.search(r'Video: h264', info) else ['-c:v', 'h264_videotoolbox', '-q:v', '65']
         base = [ff, '-hide_banner', '-nostdin', '-v', 'error', '-i', p, '-map', '0:v:0', '-map', '0:a:0?']
-        tail = ['-tag:v', 'avc1', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', '-n', out]
-        ok = subprocess.run(base + v + tail).returncode == 0
-        if not ok:
-            try:
-                os.remove(out)
-            except OSError:
-                pass
-            ok = subprocess.run(base + ['-c:v', 'libx264', '-crf', '20', '-preset', 'medium', '-pix_fmt', 'yuv420p'] + tail).returncode == 0
+        tail = ['-tag:v', 'avc1', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', '-f', 'mp4', '-y', tmp]
+        try:   # (made under a hidden name, and named only when whole: one stopped part way is never taken for finished)
+            ok = subprocess.run(base + v + tail).returncode == 0
+            if not ok:
+                ok = subprocess.run(base + ['-c:v', 'libx264', '-crf', '20', '-preset', 'medium', '-pix_fmt', 'yuv420p'] + tail).returncode == 0
+            if ok:
+                os.rename(tmp, out)
+        finally:
+            if os.path.exists(tmp):
+                os.remove(tmp)
         if ok:
             os.makedirs(os.path.join(folder, 'originals'), exist_ok=True)
             shutil.move(p, os.path.join(folder, 'originals', f))
@@ -236,10 +292,6 @@ def convert(folder, fresh):
             fresh.add(out)
             n += 1
         else:
-            try:
-                os.remove(out)
-            except OSError:
-                pass
             say('Couldn’t make an MP4 of: %s' % f)
     return n
 
@@ -254,6 +306,13 @@ def move(folder, fresh):
         say('The G-Drive isn’t connected: in Finder, Go › Connect to Server, smb://%s/G-Drive, then run this again. The MP4s stay here till then.' % MINI)
         return 0
     os.makedirs(DEST, exist_ok=True)
+    for f in os.listdir(DEST):   # (copies a stop part way left)
+        if f.startswith('.copying-'):
+            try:
+                os.remove(os.path.join(DEST, f))
+            except OSError:
+                pass
+    ff = tool('ffmpeg')
     n = 0
     for f in todo:
         src = os.path.join(folder, f)
@@ -262,6 +321,10 @@ def move(folder, fresh):
         if os.path.exists(dst):
             say('Already in BFI Kermode, left here: %s' % f)
             continue
+        src_ = next((os.path.join(folder, x) for x in os.listdir(folder) if x.lower().endswith(VID) and tidy(os.path.splitext(x)[0])[0] + '.mp4' == name), None)
+        if src_ or ff and secs(ff, src) is None:   # (its original still waiting to be made into it, or unreadable: stopped part way)
+            say('Not whole yet, left here: %s' % f)
+            continue
         tmp = os.path.join(DEST, '.copying-' + name)
         try:
             shutil.copyfile(src, tmp)
@@ -269,6 +332,7 @@ def move(folder, fresh):
                 raise OSError('the copy came out a different size')
             os.rename(tmp, dst)
             os.remove(src)
+            names_add([os.path.splitext(name)[0]])
             n += 1
             say('On the G-Drive: %s' % name)
         except OSError as e:
@@ -289,6 +353,14 @@ def main(a):
     urls = [x for x in a if re.match(r'https?://', x)]
     if a and a[0] in ('-h', '--help'):
         return say(__doc__)
+    bad = [u for u in urls if not good_url(u)]
+    if bad:
+        sys.exit('That isn’t a whole address: %s. Copy the playlist’s address from your browser’s address bar (it ends with list= and a long code), '
+                 'and put it after this in quotes.' % bad[0])
+    gone = [u for u in C.get('urls') or [] if not good_url(u)]
+    if gone:   # (one kept before that isn't a whole address: forgotten)
+        say('Forgotten (not a whole address): %s' % ', '.join(gone))
+        C['urls'] = [u for u in C['urls'] if good_url(u)]
     if '--here' in a or not C.get('folder'):
         if os.path.realpath(os.getcwd()) == os.path.realpath(HOME):
             sys.exit('First, in Terminal: cd (with a space), drag the folder the introductions are in onto the window, press Return. Then this again.')
@@ -319,9 +391,7 @@ def main(a):
         L = listing(y, C['urls'])
         new = [(i, t) for i, t in L if i not in have]
         if new:   # (any already here by its name, without its code: added to the list, not got again)
-            known = {key(n) for n in names_here(folder)}
-            if any(key(t) not in known for _, t in new) and os.path.isdir(GD):
-                known |= {key(n) for n in on_films()}
+            known = {key(n) for n in names_here(folder)} | {key(n) for n in names_read()}
             already = [(i, t) for i, t in new if key(t) in known]
             if already:
                 have = got_write({i for i, _ in already})
@@ -351,4 +421,8 @@ def main(a):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    try:
+        main(sys.argv[1:])
+    except KeyboardInterrupt:
+        print('\nStopped. Run it again to carry on: nothing half-made is kept or moved.')
+        sys.exit(130)
