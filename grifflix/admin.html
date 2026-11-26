@@ -1941,7 +1941,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       Object.keys(I).forEach(function (k) { var i = I[k]; if (i.type === 'movie' && !i.extra) (mine[fold(i.name)] = mine[fold(i.name)] || []).push(i); });
       var a24 = Object.keys(I).filter(function (k) { return I[k].type === 'collection' && /^a24$/i.test(I[k].name); })[0];
       ((L.sets || {})[a24] || []).forEach(function (id) { inA24[id] = 1; });
-      var got = function (f) { return (mine[fold(f.t)] || []).filter(function (i) { return !i.year || Math.abs(i.year - f.y) <= 1; })[0]; };
+      // (and a film John has by another name than A24's: 1% is A24's Outlaws: John, 26 Nov 2026)
+      var AKA = { outlaws: ['1%'] };
+      var got = function (f) { return [f.t].concat(AKA[String(f.t).toLowerCase()] || []).map(function (t) { return (mine[fold(t)] || []).filter(function (i) { return !i.year || Math.abs(i.year - f.y) <= 1; })[0]; }).filter(Boolean)[0]; };
       var miss = [], loose = [];
       (A.films || []).forEach(function (f) { var i = got(f); if (!i) miss.push(f); else if (!inA24[i.id]) loose.push(f); });
       var row = function (f) { return '<div class="mrow" data-t="' + esc(gxFold(f.t)) + '" data-y="' + esc(f.y || '') + '"><span class="y">' + f.y + '</span><b>' + esc(f.t) + '</b><span class="d">' + esc((f.d || []).join(', ')) + '</span><span class="s">' + esc(f.s || '') + '</span></div>'; };

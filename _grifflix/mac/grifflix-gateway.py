@@ -10290,10 +10290,11 @@ def a24_now():
         libs = g.st.get('libraries', {})
         if not libs.get('movies'):
             return
-        movies = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': libs['movies'], 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'ProductionYear'}).get('Items', [])
+        movies = g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'ParentId': libs['movies'], 'Recursive': 'true', 'IncludeItemTypes': 'Movie', 'Fields': 'ProductionYear,ProviderIds'}).get('Items', [])
         # (its name, or the part after a colon: "Oasis: Supersonic" is A24's Supersonic)
         names_ = lambda m: [fold(m.get('Name'))] + ([fold((m.get('Name') or '').split(':', 1)[1])] if ':' in (m.get('Name') or '') else [])
-        add = [m for m in movies if m['Id'] not in held and any(not m.get('ProductionYear') or abs(y - int(m['ProductionYear'])) <= 1 for n_ in names_(m) for y in want.get(n_, []))]
+        add = [m for m in movies if m['Id'] not in held and (any(not m.get('ProductionYear') or abs(y - int(m['ProductionYear'])) <= 1 for n_ in names_(m) for y in want.get(n_, []))
+                                                          or ((m.get('ProviderIds') or {}).get('Imdb') in A24_AKA and fold(A24_AKA[(m.get('ProviderIds') or {}).get('Imdb')]) in want))]
         back = [m for m in add if m['Id'] in checks]
         if back and chk:   # (A24 lists it now: out of A24 CHECKS, into A24)
             g.jf.call('DELETE', '/Collections/%s/Items' % chk['Id'], query={'Ids': ','.join(m['Id'] for m in back)})
@@ -10675,6 +10676,10 @@ def rename_to(g, iid, name, year, pick=None):
         log('  %s: the media server didn’t show its new name within 20 minutes; calendars and lists not moved' % new)
     threading.Thread(target=follow, daemon=True).start()
     return 'renamed to “%s”' % new
+
+
+A24_AKA = {'tt6301712': 'Outlaws'}   # (a film John has by another name than A24's list gives it, by its IMDb number: 1%, A24's Outlaws:
+# John, 26 Nov 2026, "it's actually called outlaws only in the states and 1% elsewhere")
 
 
 def one_percent_once(g):
