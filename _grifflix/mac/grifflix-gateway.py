@@ -10140,14 +10140,19 @@ def crl_scan(g):
                     if i in CRL_STATE['macdone']:   # (read on John's Mac)
                         gone_ = True
                         break
+                    if CRL_STATE.get('macnew', 0) >= 100:   # (what John's Mac sends matched every hundred, whatever the Mac mini's waiting
+                        # for: it waited, hot, on one his Mac couldn't find, and 900 read overnight went unmatched: 26 Nov 2026)
+                        CRL_STATE['macnew'] = 0
+                        crl_classify(g)
                     if crl_mac_on() and i not in CRL_STATE['macskip']:   # (John's Mac reading them: left to it, the Mac mini only matching
                         # what it sends, every hundred: John, 25 Nov 2026, "Run the logo check on your Mac")
                         CRL_STATE.update(paused='', onmac=True)
-                        if CRL_STATE.get('macnew', 0) >= 100:
-                            CRL_STATE['macnew'] = 0
-                            crl_classify(g)
                         time.sleep(30)
                         continue
+                    if crl_mac_on() and (someone_watching(g) or mac_hot()):   # (one John's Mac couldn't find (its file renamed since, made
+                        # smaller): left for the next round, not holding the rest up while the Mac mini's hot or someone's watching)
+                        gone_ = True
+                        break
                     CRL_STATE['onmac'] = False
                     if someone_watching(g):
                         CRL_STATE['paused'] = 'someone is watching'
