@@ -3542,9 +3542,12 @@ def make_handler(g):
                         if os.path.exists(dst):
                             return self.send_json(409, {'error': 'One called “%s” is there already.' % name})
                         os.rename(src, dst)
-                    (S.get('files') or {}).pop(f0, None)
+                    old_ = (S.get('files') or {}).pop(f0, None) or {}
                     (S.get('tmdb') or {}).pop(f0, None)
                     S.setdefault('tmdb', {})[name + '.mp4'] = {'id': str(b['tmdb']), 'kind': kind, 'title': t_, 'year': y_}
+                    # (listed at once under its new name, so the admin page shows it so straight away; looked at again just after)
+                    S.setdefault('files', {})[name + '.mp4'] = dict(old_, name=name, title=t_, year=int(y_) if y_.isdigit() else None, why='no film of that name in Grifflix (named from TMDB)',
+                                                                   guesses=[], tmdb=S['tmdb'][name + '.mp4'], nf=None)
                     save(BFIF, S)
                 record('BFI introduction named from TMDB', file=f0, name=name, tmdb=str(b['tmdb']))
                 # (answered at once, renamed; it's looked at again, and put with its film if that's here, after: looking at it with the whole
@@ -3563,12 +3566,11 @@ def make_handler(g):
                 m = re.search(r'\s*\(?((?:18|19|20)\d\d)\)?\s*$', w)
                 y = int(m.group(1)) if m and w[:m.start()].strip() else None
                 w = w[:m.start()] if y else w
-                if time.time() - BFI_FILMS[0] > 600:
-                    BFI_FILMS[:] = [time.time(), bfi_films(g)]
+                F_ = bfi_films_now(g)
                 fw = fold(w)
-                hits = [f for f in BFI_FILMS[1] if fw and any(fw in x for x in f['f']) and (not y or abs((f['year'] or 0) - y) <= 1)]
+                hits = [f for f in F_ if fw and any(fw in x for x in f['f']) and (not y or abs((f['year'] or 0) - y) <= 1)]
                 hits.sort(key=lambda f: (min(len(x) for x in f['f']) - len(fw), f['name'], f['year']))
-                out = [{'id': f['id'], 'name': f['name'], 'year': f['year'], 'kind': f.get('kind', 'movie')} for f in hits[:12]] or bfi_match(BFI_FILMS[1], w, y)[1]
+                out = [{'id': f['id'], 'name': f['name'], 'year': f['year'], 'kind': f.get('kind', 'movie')} for f in hits[:12]] or bfi_match(F_, w, y)[1]
                 return self.send_json(200, {'films': out})
             if b and b.get('op') == 'get':   # (the playlist checked now, not at the week's end)
                 if KERMODE_RUN.locked():
@@ -9141,7 +9143,23 @@ def fold(t):   # a title compared: letters and numbers only, accents plain, "&" 
 BFI_IN = os.path.join(os.environ.get('GRIFFLIX_MEDIA') or '/Volumes/G-Drive/Grifflix', 'BFI Kermode')   # (Mark Kermode's introductions, put here)
 BFIF = os.path.expanduser('~/Grifflix/bfi.json')
 BFI_LOCK = threading.Lock()
-BFI_FILMS = [0, []]   # (when the films were last read for John's searches, and them)
+BFI_FILMS = [0, [], None]   # (when the films were last read, them, and the library's signature then)
+BFI_FILMS_LOCK = threading.Lock()
+
+
+def bfi_films_now(g, sig=None):
+    """The films and series, read once and kept while the library is the same (its signature, bfi_sig, unchanged; and at most six hours):
+    John's searches, a film chosen, the folder looked at, none of them reading the whole library again, which on the old Mac mini took long
+    enough each time that the admin page waited and gave up: John, 26 Nov 2026, "make sure I don't have to reload the library each time in
+    the admin page for the BFI"."""
+    sig = sig or bfi_sig(g)
+    with BFI_FILMS_LOCK:
+        if BFI_FILMS[1] and BFI_FILMS[2] == sig and time.time() - BFI_FILMS[0] < 6 * 3600:
+            return BFI_FILMS[1]
+    films = bfi_films(g)
+    with BFI_FILMS_LOCK:
+        BFI_FILMS[:] = [time.time(), films, sig]
+    return films
 
 
 def bfi_tidy(stem):
@@ -9376,7 +9394,7 @@ def bfi_now(g, only=None):
                 except OSError as e:
                     log('BFI introduction %s not renamed: %s' % (n, e))
             if films is None:
-                films = bfi_films(g)
+                films = bfi_films_now(g, sig)
             want = (only or {}).get(n)
             film = next((f for f in films if f['id'] == want), None) if want else None
             # (the film John gave it from TMDB: the one in Grifflix with that TMDB number, whatever its name here: John, 26 Nov 2026, "allow me
@@ -9564,6 +9582,7 @@ def bfi_loop(g):
     while True:
         try:
             if os.path.isdir(os.path.dirname(BFI_IN)):
+                bfi_films_now(g)   # (kept ready, so John's searches and choices never wait for it)
                 bfi_now(g)
         except Exception as e:
             log('BFI introductions: %s' % str(e)[:200])
