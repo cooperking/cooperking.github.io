@@ -182,6 +182,17 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
 @media (max-width: 480px) { .tmonths li { grid-template-columns: 2.6em 16px minmax(0, 1fr); } .tmonths .mv { grid-column: 3; justify-self: end; } .tmonths .fsw, .tmonths .warn { grid-column: 1 / -1; } }   /* (Try there on a phone too: John, 9 Nov 2026) */
 /* the lists of films still to get: A24's, and each Criterion box set's (John, 19 Nov 2026) */
 .mlist { margin-top: 12px; }
+/* (the BFI's introductions waiting: a table, sorted by a click on its heading, each row ticked) */
+.btabw { margin-top: 12px; overflow-x: auto; }
+.btab { width: 100%; border-collapse: collapse; font-size: 14px; }
+.btab th { position: sticky; top: 0; z-index: 1; padding: 8px 10px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; background: var(--bg, #111); border-bottom: 1px solid var(--pline, rgba(255,255,255,.45)); }
+.btab th[data-bs] { cursor: pointer; user-select: none; } .btab th[data-bs]:hover { text-decoration: underline; text-underline-offset: 3px; }
+.btab td { padding: 7px 10px; vertical-align: baseline; border-bottom: 1px solid var(--line, rgba(255,255,255,.12)); }
+.btab td.by, .btab td.bc { white-space: nowrap; font-variant-numeric: tabular-nums; opacity: .8; } .btab td.bw { opacity: .75; }
+.btab td small { display: block; margin-top: 2px; font-size: 12px; opacity: .65; }
+.btab .ck { width: 22px; padding-right: 0; } .btab tr.on td { background: rgba(var(--kink, 255, 255, 255), .07); } .btab tr.on b { text-decoration: underline; text-underline-offset: 3px; }
+.btab tbody tr { cursor: pointer; } .btab tr.putrow { cursor: default; } .btab tr.putrow td { background: none; }
+@media (max-width: 640px) { .btab .bw, .btab .bc { display: none; } }
 .mlist h3 { margin: 18px 0 6px; font-size: 15px; letter-spacing: .04em; } .mlist h3 small { font-weight: 400; opacity: .7; margin-left: 8px; }
 .mrow { display: grid; grid-template-columns: 56px minmax(0, 1fr) minmax(0, .8fr) auto; gap: 4px 14px; align-items: baseline; padding: 7px 0; border-top: 1px solid var(--line, rgba(255,255,255,.12)); font-size: 14px; }
 .mrow .y { font-variant-numeric: tabular-nums; opacity: .75; } .mrow b { font-weight: 600; } .mrow .d { opacity: .75; } .mrow .s { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; opacity: .8; white-space: nowrap; }
@@ -824,11 +835,17 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       <section class="card" data-tab="bfi">
         <div class="kicker">To sort out</div>
         <h2>Mark Kermode’s <em>introductions</em></h2>
-        <p class="stat">Put the MP4s in <b>G-Drive › Grifflix › BFI Kermode</b>. Every 10 minutes the Mac mini gives each finished one its right name (“Mark Kermode introduces Kes (1969)”) and puts it in its film’s Extras, but only when it’s sure which film: the same title, and the same year give or take one. The rest wait here with the likeliest films. One whose film isn’t in Grifflix yet goes in by itself once the film arrives.</p>
+        <p class="stat">Put the MP4s in <b>G-Drive › Grifflix › BFI Kermode</b>. Every 10 minutes the Mac mini gives each finished one its right name (“Mark Kermode introduces Kes (1969)”) and puts it in its film’s Extras, but only when it’s sure which film: the same title, and the same year give or take one. The rest wait here, in the table: the films you haven’t got, sorted by a click on a heading, each ticked (or all shown) for your Search Tab Opener. One whose film isn’t in Grifflix yet goes in by itself once the film arrives; one you have under another name, <b>Put with a film…</b>.</p>
         <div class="state"><button class="btn" type="button" id="bfilook">Look now</button><button class="btn" type="button" id="bfiget" title="The BFI’s Mark Kermode playlist checked now on the Mac mini, and any new introductions got">Check the playlist now</button></div>
         <p class="stat" id="bfiget-say"></p>
         <p class="stat" id="bfisay">Looking on the Mac mini…</p>
-        <ul class="changes" id="bfitodo"></ul>
+        <!-- (the films they introduce that aren't in Grifflix, as a table: sortable by its headings, each with a tick, the ticked ones (or all shown)
+             to his Search Tab Opener: John, 26 Nov 2026, "I need a table that I can check, sortable for what films i am missing, selectable, opening
+             in tab opener. Your current sugestions aren't close") -->
+        <div class="state"><input type="search" id="bfiq" placeholder="Find a title or year" style="flex:1 1 220px"><span id="bfishow" class="state" style="margin:0"></span></div>
+        <div class="state" id="bfibar" hidden><button class="btn primary" type="button" id="bfisto">Search Tab Opener</button><button class="btn" type="button" id="bfitext">Select as text</button><button class="btn" type="button" id="bficsv">Download (CSV)</button><span class="stat" id="bfin" style="margin:0"></span></div>
+        <pre id="bfibox" hidden style="white-space:pre-wrap;user-select:text;-webkit-user-select:text;max-height:320px;overflow:auto;margin:10px 0;padding:10px 12px;border:1px solid var(--line, rgba(255,255,255,.2));border-radius:8px;font:14px/1.5 ui-monospace,Menlo,monospace"></pre>
+        <div id="bfitodo" class="btabw"></div>
       </section>
       <section class="card" data-tab="bfi">
         <div class="kicker">Put with films</div>
@@ -1230,12 +1247,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       $('#bfisay').innerHTML = (!j.there ? 'The folder isn’t there yet: the Mac mini makes it when the G-Drive is in.' :
         T.length ? '<b>' + T.length + '</b> to sort out.' + (j.looked ? ' Last looked ' + esc(when(j.looked * 1000)) + '.' : '') :
         'Nothing to sort out' + (M.length ? ': every one is with its film.' : j.arriving || j.copying ? '.' : ' yet: none has been put in the folder.') + (j.looked ? ' Last looked ' + esc(when(j.looked * 1000)) + '.' : '')) + arr;
-      $('#bfitodo').innerHTML = T.map(function (x, i) {
-        return '<li data-bfi="' + i + '"><b>' + esc(x.name) + '</b><span class="when">' + esc(x.why || '') + (x.file !== x.name + '.mp4' ? ' · in the folder as “' + esc(x.file) + '”' : '') + '</span>' +
-          '<div class="state" style="margin-top:6px">' + (x.guesses || []).map(function (f) {
-            return '<button class="btn small" type="button" data-bfiput="' + esc(f.id) + '" data-bfiw="' + esc(pick(f)) + '" title="Put it with this film">' + esc(pick(f)) + '</button>'; }).join('') +
-          '<input type="search" class="name bfiq" placeholder="Another film…" autocomplete="off" style="flex:1 1 160px;min-width:0"></div><div class="state bfihits" style="margin-top:4px"></div></li>';
-      }).join('');
+      BFT.T = T; bfiTable();
       // (the playlist checked weekly on the Mac mini, and what it found: John, 26 Nov 2026, "I would like the automatic check done on the mac mini")
       var K = j.getter || {}, dd = function (t) { return esc(when(t * 1000)); };
       $('#bfiget-say').innerHTML = K.running ? '<b>Checking the playlist now</b> on the Mac mini, and getting any new ones…' :
@@ -1249,19 +1261,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         (TW.length ? ' <b>' + TW.length + ' got twice</b> (' + TW.slice(0, 6).map(function (x) { return esc(x.film); }).join(', ') + (TW.length > 6 ? '…' : '') + '): the film has it already, so the second copy is in BFI Kermode › Already got, to delete.' : '');
       $('#bfimoved').innerHTML = M.map(function (x) {
         return '<li>' + FL(x.film, x.year, x.id) + (x.year ? ' (' + x.year + ')' : '') + '<span class="when">' + esc(x.name) + ' · ' + esc(when(x.at * 1000)) + (x.by ? ' · you chose the film' : '') + '</span></li>'; }).join('');
-      Array.prototype.forEach.call(document.querySelectorAll('#bfitodo [data-bfi]'), function (li) {
-        var x = T[+li.dataset.bfi];
-        Array.prototype.forEach.call(li.querySelectorAll('[data-bfiput]'), function (bt) { bt.onclick = function () { put(bt, x.file, bt.dataset.bfiput, bt.dataset.bfiw); }; });
-        var inp = li.querySelector('.bfiq'), hits = li.querySelector('.bfihits'), tm;
-        inp.oninput = function () { clearTimeout(tm); var v = inp.value.trim(); if (v.length < 2) { hits.innerHTML = ''; return; }
-          tm = setTimeout(function () { go(null, '?q=' + encodeURIComponent(v)).then(function (r) {
-            if (inp.value.trim() !== v) return;
-            hits.innerHTML = (r.films || []).length ? r.films.map(function (f) { return '<button class="btn small" type="button" data-bfiput="' + esc(f.id) + '" data-bfiw="' + esc(pick(f)) + '">' + esc(pick(f)) + '</button>'; }).join('') : '<span class="stat">No film of that name in Grifflix.</span>';
-            Array.prototype.forEach.call(hits.querySelectorAll('[data-bfiput]'), function (bt) { bt.onclick = function () { put(bt, x.file, bt.dataset.bfiput, bt.dataset.bfiw); }; });
-          }).catch(function (e) { hits.innerHTML = '<span class="stat">' + esc(e.message) + '</span>'; }); }, 300); };
-      });
     };
-    if (!document.querySelector('#bfitodo .bfiq:focus')) go().then(draw).catch(function (e) { $('#bfisay').textContent = e.message; });
+    BFT.go = go; BFT.put = put; BFT.pick_ = pick;
+    if (!document.querySelector('#bfitodo .bfiq2:focus')) go().then(draw).catch(function (e) { $('#bfisay').textContent = e.message; });
     $('#bfiget').onclick = function () { var b = this; b.disabled = true;
       go({ op: 'get' }).then(function () { toast('Checking the playlist on the Mac mini: new ones come in over the next while'); setTimeout(function () { bfiLook(true); }, 3000); })
         .catch(function (e) { b.disabled = false; toast(e.message); }); };
@@ -1270,6 +1272,97 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
     if (!once) setTimeout(bfiLook, 120000);
   }
   bfiLook();
+  // (the table: those whose film isn't in Grifflix (or all waiting), sortable by a click on a heading (again for the other way), ticked one by one
+  // or all shown from the heading's box; the ticked ones, or all shown, to his Search Tab Opener as the Criterion films are, or selected as text,
+  // or downloaded; each one put with a film of his choosing, found by name, if he has it after all)
+  var BFT = { T: [], sort: 'arr', dir: -1, show: 'miss', pick: {} }, BSTO = { url: '', csv: '', name: '', n: 0 };
+  var bfiMiss = function (x) { return /^no film of that name/i.test(x.why || ''); };
+  function bfiShown() {
+    var q = ($('#bfiq').value || '').trim().toLowerCase(), d = BFT.dir, art = function (t) { return String(t).replace(/^(the|a|an)\s+/i, '').toLowerCase(); };
+    var R = BFT.T.map(function (x) { return { x: x, k: x.file, t: x.title || x.name.replace(/^Mark Kermode introduces\s+/i, '').replace(/\s*\(\d{4}\)\s*$/, ''), y: +x.year || 0, a: x.mt || x.at || 0,
+      w: bfiMiss(x) ? 'Not in Grifflix' : String(x.why || '').replace(/^./, function (c) { return c.toUpperCase(); }) }; })
+      .filter(function (r) { return (BFT.show === 'all' || bfiMiss(r.x)) && (!q || (r.t + ' ' + (r.y || '') + ' ' + r.w).toLowerCase().indexOf(q) >= 0); });
+    R.sort(function (a, b) {
+      if (BFT.sort === 'year') { if (!a.y !== !b.y) return a.y ? -1 : 1; return d * (a.y - b.y) || art(a.t).localeCompare(art(b.t)); }
+      if (BFT.sort === 'arr') return d * (a.a - b.a) || art(a.t).localeCompare(art(b.t));
+      if (BFT.sort === 'why') return d * a.w.localeCompare(b.w) || art(a.t).localeCompare(art(b.t));
+      return d * art(a.t).localeCompare(art(b.t)) || a.y - b.y;
+    });
+    return R;
+  }
+  function bfiTable() {
+    var T = BFT.T, R = bfiShown(), nm = T.filter(bfiMiss).length, np = Object.keys(BFT.pick).filter(function (k) { return T.some(function (x) { return x.file === k; }); }).length;
+    $('#bfishow').innerHTML = T.length ? '<button class="btn' + (BFT.show === 'miss' ? ' primary' : '') + '" type="button" data-bfishow="miss">Not in Grifflix (' + nm + ')</button><button class="btn' + (BFT.show === 'all' ? ' primary' : '') + '" type="button" data-bfishow="all">All waiting (' + T.length + ')</button>' : '';
+    Array.prototype.forEach.call(document.querySelectorAll('[data-bfishow]'), function (b) { b.onclick = function () { BFT.show = b.dataset.bfishow; bfiTable(); }; });
+    $('#bfibar').hidden = !T.length;
+    $('#bfin').textContent = np ? np + ' ticked' : R.length + ' shown, none ticked: Search Tab Opener takes all shown';
+    var hd = function (k, t, c) { return '<th class="' + c + '" data-bs="' + k + '">' + t + (BFT.sort === k ? (BFT.dir > 0 ? ' ↑' : ' ↓') : '') + '</th>'; };
+    var all = R.length && R.every(function (r) { return BFT.pick[r.k]; });
+    $('#bfitodo').innerHTML = !T.length ? '' : !R.length ? '<p class="stat">None' + (($('#bfiq').value || '').trim() ? ' found.' : '.') + '</p>' :
+      '<table class="btab"><thead><tr><th class="ck"><input type="checkbox" class="cbpick" id="bfickall" aria-label="Tick all shown"' + (all ? ' checked' : '') + '></th>' + hd('title', 'Film', 'bt') + hd('year', 'Year', 'by') + hd('why', 'Why it’s here', 'bw') + hd('arr', 'Came', 'bc') + '<th></th></tr></thead><tbody>' +
+      R.map(function (r) { var on = !!BFT.pick[r.k], x = r.x;
+        return '<tr data-k="' + esc(r.k) + '"' + (on ? ' class="on"' : '') + '><td class="ck"><input type="checkbox" class="cbpick bfipk"' + (on ? ' checked' : '') + ' aria-label="Tick ' + esc(r.t) + '"></td>' +
+          '<td><b>' + esc(r.t) + '</b>' + (x.file !== x.name + '.mp4' ? '<small>In the folder as “' + esc(x.file) + '”</small>' : '') + '</td><td class="by">' + (r.y || '') + '</td><td class="bw">' + esc(r.w) + '</td>' +
+          '<td class="bc">' + (r.a ? esc(new Date(r.a * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) : '') + '</td><td style="text-align:right"><button class="btn small" type="button" data-bfiwith title="I have this film: put it with it">Put with…</button></td></tr>'; }).join('') + '</tbody></table>';
+    Array.prototype.forEach.call(document.querySelectorAll('#bfitodo th[data-bs]'), function (th) { th.onclick = function () { if (BFT.sort === th.dataset.bs) BFT.dir = -BFT.dir; else { BFT.sort = th.dataset.bs; BFT.dir = th.dataset.bs === 'arr' ? -1 : 1; } bfiTable(); }; });
+    var ck = $('#bfickall'); if (ck) ck.onchange = function () { R.forEach(function (r) { if (ck.checked) BFT.pick[r.k] = 1; else delete BFT.pick[r.k]; }); bfiTable(); };
+    Array.prototype.forEach.call(document.querySelectorAll('#bfitodo tbody tr[data-k]'), function (tr) {
+      var k = tr.dataset.k, cb = tr.querySelector('.bfipk');
+      var set = function (v) { if (v) BFT.pick[k] = 1; else delete BFT.pick[k]; cb.checked = v; tr.classList.toggle('on', v); var n_ = Object.keys(BFT.pick).length; $('#bfin').textContent = n_ ? n_ + ' ticked' : R.length + ' shown, none ticked: Search Tab Opener takes all shown'; var a_ = $('#bfickall'); if (a_) a_.checked = R.every(function (r) { return BFT.pick[r.k]; }); bfiStoPrep(); };
+      cb.onchange = function () { set(cb.checked); };
+      tr.onclick = function (e) { if (e.target.closest('input, button, a')) return; set(!cb.checked); };   // (the whole row ticks it)
+      tr.querySelector('[data-bfiwith]').onclick = function () {   // (the film it's for, if he has it after all: found by name, chosen)
+        var nx = tr.nextElementSibling; if (nx && nx.classList.contains('putrow')) { nx.remove(); return; }
+        var x = BFT.T.filter(function (t) { return t.file === k; })[0]; if (!x) return;
+        tr.insertAdjacentHTML('afterend', '<tr class="putrow"><td></td><td colspan="5"><div class="state" style="margin:0"><input type="search" class="name bfiq2" placeholder="Its film in Grifflix, by name…" autocomplete="off" style="flex:1 1 220px"></div><div class="state bfihits" style="margin-top:4px"></div></td></tr>');
+        var row = tr.nextElementSibling, inp = row.querySelector('.bfiq2'), hits = row.querySelector('.bfihits'), tm; inp.value = BFT.sel || ''; inp.focus();
+        inp.oninput = function () { clearTimeout(tm); var v = inp.value.trim(); if (v.length < 2) { hits.innerHTML = ''; return; }
+          tm = setTimeout(function () { BFT.go(null, '?q=' + encodeURIComponent(v)).then(function (r) {
+            if (inp.value.trim() !== v) return;
+            hits.innerHTML = (r.films || []).length ? r.films.map(function (f) { return '<button class="btn small" type="button" data-bfiput="' + esc(f.id) + '" data-bfiw="' + esc(BFT.pick_(f)) + '">' + esc(BFT.pick_(f)) + '</button>'; }).join('') : '<span class="stat">No film of that name in Grifflix.</span>';
+            Array.prototype.forEach.call(hits.querySelectorAll('[data-bfiput]'), function (bt) { bt.onclick = function () { BFT.put(bt, x.file, bt.dataset.bfiput, bt.dataset.bfiw); }; });
+          }).catch(function (e) { hits.innerHTML = '<span class="stat">' + esc(e.message) + '</span>'; }); }, 300); };
+      };
+    });
+    bfiStoPrep();
+  }
+  function bfiChosen() { var R = bfiShown(), P = R.filter(function (r) { return BFT.pick[r.k]; }); return { P: P.length ? P : R, ch: P.length }; }
+  function bfiStoPrep() {   // (ready before the click, as the Criterion films' is: the tab must open in the click itself)
+    var c = bfiChosen(), P = c.P;
+    var rows = [['Box set', 'Set spine', 'Film', 'Year', 'Spine', 'Director', 'Country']].concat(P.map(function (r) { return ['', '', r.t, r.y || '', '', '', '']; }));
+    var csv = '﻿' + rows.map(function (r) { return r.map(function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(','); }).join('\r\n');
+    var nm = (c.ch ? 'BFI Kermode films chosen ' : 'BFI Kermode films missing ') + new Date().toISOString().slice(0, 10), base = 'https://cooperking.github.io/search-tab-opener/#from=grifflix&name=' + encodeURIComponent(nm);
+    var b64 = btoa(unescape(encodeURIComponent(csv)));
+    BSTO = { url: base + (b64.length < 24000 ? '&csv=' + encodeURIComponent('data:text/csv;base64,' + b64) : ''), csv: csv, name: nm, n: P.length, ch: c.ch };
+    if (typeof CompressionStream === 'undefined') return;
+    var mine = BSTO;
+    new Response(new Blob([csv]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer().then(function (ab) {
+      var u = new Uint8Array(ab), bin = ''; for (var i = 0; i < u.length; i += 8192) bin += String.fromCharCode.apply(null, u.subarray(i, i + 8192));
+      if (BSTO === mine) mine.url = base + '&csvz=' + btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }).catch(function () {});
+  }
+  $('#bfisto').onclick = function () {
+    if (!BSTO.n) { bfiStoPrep(); if (!BSTO.n) return toast('Nothing shown to open'); }
+    var o = BSTO, w;
+    if (navigator.standalone && /iPhone|iPad|iPod/.test(navigator.userAgent)) { location.href = 'x-safari-' + o.url; toast(o.n + ' film' + (o.n === 1 ? '' : 's') + (o.ch ? ' chosen' : '') + ' opened in Safari'); return; }
+    w = window.open(o.url, '_blank');
+    var hand = function (e) { if (e.origin !== 'https://cooperking.github.io' || !e.data || e.data.type !== 'sto-ready' || !w || e.source !== w) return; window.removeEventListener('message', hand); w.postMessage({ type: 'sto-csv', csv: o.csv, name: o.name }, 'https://cooperking.github.io'); };
+    window.addEventListener('message', hand); setTimeout(function () { window.removeEventListener('message', hand); }, 60000);
+    toast(o.n + ' film' + (o.n === 1 ? '' : 's') + (o.ch ? ' chosen' : '') + ' to your Search Tab Opener');
+  };
+  $('#bfitext').onclick = function () {
+    var P = bfiChosen().P, box = $('#bfibox');
+    box.textContent = P.map(function (r) { return r.t + (r.y ? ' ' + r.y : ''); }).join('\n'); box.hidden = false;
+    try { var sel = window.getSelection(); sel.removeAllRanges(); var rg = document.createRange(); rg.selectNodeContents(box); sel.addRange(rg); } catch (e) {}
+    box.scrollIntoView({ block: 'nearest' });
+    toast(P.length + ' film' + (P.length === 1 ? '' : 's') + ' selected: open them with your Search Tab Opener');
+  };
+  $('#bficsv').onclick = function () {
+    var c = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }, P = bfiChosen().P;
+    var csv = ['Film,Year,Why it’s here,In the folder as'].concat(P.map(function (r) { return [r.t, r.y || '', r.w, r.x.file].map(c).join(','); })).join('\n');
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' })); a.download = 'bfi-kermode-films-missing.csv'; document.body.appendChild(a); a.click(); a.remove();
+  };
+  $('#bfiq').addEventListener('input', function () { bfiTable(); });
   // ---- English subtitles made ready on John's Mac (subprep.py), timed by Whisper: John, 20 Nov 2026, "pre-prepare"
   // (what it did for a film, in full: the subtitle chosen, how it was moved and how sure, each part of the film listened to, the others tried:
   // John, 21 Nov 2026, "I still need to know what the fix chose to do - if it moved them - what subtitles it chose, etc")
