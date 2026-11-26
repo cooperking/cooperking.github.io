@@ -2679,7 +2679,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '0cba0560ba06' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '7c0446f5e60a' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -3133,7 +3133,7 @@ function fromSite(path) {   // what the site's own files answer (null: a thing o
 // set or spine number, else one letter out (a typo); the title's own matches first, whole title, then its start, then the rest
 var SROM = { ii: 2, iii: 3, iv: 4, vi: 6, vii: 7, viii: 8, ix: 9, xi: 11, xii: 12, xiii: 13, xiv: 14, xv: 15, xvi: 16, xvii: 17, xviii: 18, xix: 19, xx: 20 };
 function sFold(x) {
-  return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['’‘`´"“”]/g, '').replace(/&/g, ' and ')
+  return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['’‘`´"“”]/g, '').replace(/&/g, ' and ').replace(/%/g, ' percent ')   // (1%: "1%" and "1 percent" both find it: 26 Nov 2026)
     .replace(/\b(xviii|viii|xiii|xvii|iii|vii|xii|xiv|xvi|xix|ii|iv|vi|ix|xi|xv|xx)\b/g, function (m) { return String(SROM[m]); })
     .replace(/[^a-z0-9]+/g, ' ').trim();
 }
