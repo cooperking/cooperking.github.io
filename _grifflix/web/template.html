@@ -2878,7 +2878,9 @@ function fits(genre, mood) {
     if (m && m[0] === 'kids') {
       var ct = String(i.cert || '').replace(/^[A-Z]{2}-/, '').toUpperCase(), kidc = /^(U|PG|G|TV-Y7?|TV-G|TV-PG|0|6|7|A|AL|TP|K-?\d)$/.test(ct);
       if ((i.ctags || []).indexOf('Avant-garde') >= 0 || /^(15|18|R|NC-17|X|R18|TV-MA|16|M)$/.test(ct)) return false;
-      if (g.indexOf('Family') < 0 && ct && !kidc) return false;   // (one with no rating given the benefit: Karel Zeman's)
+      // (its rating decides, a family film's as an animated one's: a 12A family film isn't for kids either: John, 26 Nov 2026, "animation
+      // shouldn't have anything to do with if it's for kids. Only if the rating is for kids". One with no rating given the benefit: Karel Zeman's)
+      if (ct && !kidc) return false;
     }
     var len = i.mins || (i.secs ? i.secs / 60 : 0);
     if (m && !m[2] && !(len && len <= 90)) return false;

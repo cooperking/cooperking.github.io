@@ -105,7 +105,9 @@
    "optional": true,
    "title": "More memory for the Mac mini (about £20–£30)",
    "why": "It has 4 GB and is short of it: macOS is squashing and swapping memory all day, which slows everything.",
-   "how": "Two 4 GB DDR3 1066 MHz SO-DIMM sticks (8 GB) for a Mac mini Mid 2010: the base unscrews by hand. Or tell Claude and it'll help."
+   "how": "Two 4 GB DDR3 1066 MHz SO-DIMM sticks (8 GB) for a Mac mini Mid 2010: the base unscrews by hand. Or tell Claude and it'll help.",
+   "done": "2026-11-26",
+   "answer": "Not doing: the new Mac mini replaces it."
   },
   {
    "id": "mac-replace",
@@ -113,7 +115,9 @@
    "optional": true,
    "title": "Decide whether to replace the Mac mini",
    "why": "It's a 2010 model: USB 2 only (the G-Drive runs at a fraction of its speed), a 2-core processor flat out, and macOS too old for current tools.",
-   "how": "A used Mac mini from 2018 or later (about £200–£350) with the same drive on USB 3. Tell Claude before buying, to check the model."
+   "how": "A used Mac mini from 2018 or later (about £200–£350) with the same drive on USB 3. Tell Claude before buying, to check the model.",
+   "done": "2026-11-26",
+   "answer": "An M6 Mac mini, arriving 27 Nov 2026."
   },
   {
    "id": "criterion-features-bm",
@@ -125,9 +129,9 @@
   {
    "id": "afi-pages-434",
    "added": "2026-11-22",
-   "title": "Run the AFI bookmark again, for the 434 films whose AFI pages weren't read",
-   "why": "434 films have their AFI page linked but no details: mostly films after 1993, whose pages AFI shows differently. The bookmark now reads those too.",
-   "how": "Reload this page, drag Library › AFI Catalog › Grifflix: AFI pages to your bar again (replacing the old one), run it on catalog.afi.com (about half an hour), then choose the grifflix-afi.json it saves there. Tell Claude when it's in, for the AFI document."
+   "title": "Run the AFI bookmark again, for the 55 films whose AFI pages weren’t read",
+   "why": "55 films have their AFI page linked but no details: 14 never read, and 41 where AFI’s search page was kept instead of the film’s. (It was 434: your runs on 22 Nov read the rest.) Not urgent.",
+   "how": "Your bookmark is up to date if you dragged it to your bar on or after 22 Nov: it asks the Mac mini for the list when you click it. Run it on catalog.afi.com: it reads those 55 first, then looks for the films with no AFI link yet (most aren’t American, so it takes a while). Then choose the grifflix-afi.json it saves."
   },
   {
    "id": "ask-set-genres",
@@ -143,7 +147,9 @@
    "optional": true,
    "title": "Should 12A animation count as For kids?",
    "why": "For kids now leaves out animation rated 12A and over: The Boy and the Heron and Ne Zha 2 dropped out with By Brakhage.",
-   "how": "Tell Claude if 12A should count; otherwise nothing to do."
+   "how": "Tell Claude if 12A should count; otherwise nothing to do.",
+   "done": "2026-11-26",
+   "answer": "Only the rating decides: a family or animated film is For kids if rated U, PG, G or the like (26 Nov 2026)."
   },
   {
    "id": "ask-varda-title",
@@ -151,14 +157,15 @@
    "optional": true,
    "title": "Agnès de ci de là Varda: keep its English title?",
    "why": "Given its IMDb number, the media server named it Agnès Varda: From Here to There, TMDB's English title.",
-   "how": "Tell Claude if you'd rather it kept the French title; otherwise nothing to do."
+   "how": "Tell Claude if you'd rather it kept the French title; otherwise nothing to do.",
+   "done": "2026-11-26"
   },
   {
    "id": "ask-picture-subs",
    "added": "2026-11-22",
    "title": "Turn picture subtitles into text?",
-   "why": "99 foreign films have English picture subtitles (Blu-ray PGS) inside them, exactly timed. Read into text they'd play everywhere, better than any made by Whisper.",
-   "how": "Tell Claude yes to build it: it would run on your Mac, like the Whisper job."
+   "why": "84 films have English picture subtitles (Blu-ray PGS or DVD) saved beside them, exactly timed, and more come with every conversion. Read into text they’d play everywhere, better than any made by Whisper.",
+   "how": "Claude has a plan ready (in the chat, 26 Nov): tell Claude to go ahead and it’ll be built, running on your Mac like the Whisper job."
   },
   {
    "id": "ask-afi-history",
@@ -166,7 +173,7 @@
    "optional": true,
    "title": "Remove the AFI text from the site's past versions on GitHub?",
    "why": "The AFI details are now for members only and no longer in the site's files, but copies published before stay in the repository's history.",
-   "how": "Tell Claude if you want them gone: it means rewriting the repository's history, so only if you're sure."
+   "how": "You said yes (26 Nov). Claude needs one more yes, after reading what it can and can’t remove (in the chat): GitHub keeps copies for every pull request, which only GitHub Support can clear."
   },
   {
    "id": "argos-setup",
@@ -174,6 +181,13 @@
    "title": "Put Argos Translate on your Mac (once, optional)",
    "why": "Your Mac now translates a film's own subtitles in another language (built in or beside it), or ones made for its copy, and compares them with the English before Whisper listens. It installs Argos Translate by itself the first time it needs it: a large download (around 1 GB with what it needs), which holds that first film up while it downloads.",
    "how": "On your own Mac, the one whose helper does Whisper's work (not the Mac mini): open Terminal, paste  ~/Grifflix/fw/bin/python3 -m pip install argostranslate \"spacy<3.8\"  and press Return (the quotes matter). Each language's translation model (about 100 MB) comes the first time a film in that language needs it."
+  },
+  {
+   "id": "new-mac-mini",
+   "added": "2026-11-26",
+   "title": "Move Grifflix onto the new Mac mini",
+   "why": "The M6 Mac mini arrives on 27 Nov. Grifflix (the media server, the gateway, the converter, the downloads) moves onto it, and the G-Drive goes on USB 3 at full speed.",
+   "how": "Tell Claude when it’s unpacked and signed in: Claude will give you the steps, a few at a time, and do the rest itself."
   }
  ]
 }
