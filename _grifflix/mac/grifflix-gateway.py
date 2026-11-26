@@ -9423,10 +9423,20 @@ def bfi_collect(g, S):
     ids = list(dict.fromkeys(ids))
     done = set(S.get('coll') or [])
     new = [i for i in ids if i not in done]
-    if not new:
+    if not new and S.get('ov2'):
         return
     sets = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'BoxSet'}) or {}).get('Items') or []
     box = next((x for x in sets if (x.get('Name') or '').strip().lower() == 'bfi'), None)
+    if box and not S.get('ov2'):   # (its description just BFI at Grifflix, nothing about the introductions: John, 26 Nov 2026, "I don't want it
+        # to say Mark Kermode introduces anywhere - just BFI at Grifflix")
+        full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, box['Id'])) or {}
+        if 'kermode' in (full.get('Overview') or '').lower():
+            full['Overview'] = 'BFI at Grifflix.'
+            full['LockedFields'] = sorted(set((full.get('LockedFields') or []) + ['Overview', 'Name']))
+            g.jf.call('POST', '/Items/%s' % box['Id'], full)
+        S['ov2'] = 1
+    if not new:
+        return
     have = set()
     for i in new:   # (still in the library: a film renamed since is a new item, and an old id can't go in)
         try:
@@ -9442,7 +9452,7 @@ def bfi_collect(g, S):
             cid = ((g.jf.call('POST', '/Collections', query={'Name': 'BFI', 'IsLocked': 'true', 'Ids': ','.join(put)}) or {}).get('Id') or '')
             if cid:
                 full = g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, cid)) or {}
-                full['Overview'] = 'Films with Mark Kermode’s introduction, from the BFI: each in its Extras.'
+                full['Overview'] = 'BFI at Grifflix.'
                 full['LockedFields'] = sorted(set((full.get('LockedFields') or []) + ['Overview', 'Name']))
                 g.jf.call('POST', '/Items/%s' % cid, full)
         log('BFI collection: %d put in' % len(put))
