@@ -2235,9 +2235,10 @@ def make_handler(g):
             # on the list's images")
             try:
                 bw = {}
-                for v_ in ((load(BFIF, {}) or {}).get('tmdb') or {}).values():
-                    if v_.get('id') and v_.get('title'):
-                        bw[str(v_['id'])] = {'tmdb': str(v_['id']), 'kind': v_.get('kind') or 'movie', 'title': v_['title'], 'year': str(v_.get('year') or '')}
+                for v0 in ((load(BFIF, {}) or {}).get('tmdb') or {}).values():
+                    for v_ in v0.get('films') or [v0]:   # (each film of a double bill too)
+                        if v_.get('id') and v_.get('title'):
+                            bw[str(v_['id'])] = {'tmdb': str(v_['id']), 'kind': v_.get('kind') or 'movie', 'title': v_['title'], 'year': str(v_.get('year') or '')}
                 bfiwant = sorted(bw.values(), key=lambda x: x['title'])
             except Exception:
                 bfiwant = []
@@ -3533,6 +3534,22 @@ def make_handler(g):
                 t_, y_ = d.get('title') or d.get('name') or '', (d.get('release_date') or d.get('first_air_date') or '')[:4]
                 name = bfi_tidy('Mark Kermode introduces %s%s' % (t_, ' (%s)' % y_ if y_ else ''))[0]
                 f0 = os.path.basename(str(b['file']))
+                if b.get('add'):   # (another film it introduces, a double bill: kept with it, the name as it is; a copy with each as each comes)
+                    with BFI_LOCK:
+                        S = load(BFIF, {}) or {}
+                        if not os.path.exists(os.path.join(BFI_IN, f0)):
+                            return self.send_json(404, {'error': 'It isn’t in BFI Kermode now.'})
+                        cur = (S.get('tmdb') or {}).get(f0) or {}
+                        fl_ = list(cur.get('films') or ([{k_: cur[k_] for k_ in ('id', 'kind', 'title', 'year') if k_ in cur}] if cur.get('id') else []))
+                        if str(b['tmdb']) not in [str(x.get('id')) for x in fl_]:
+                            fl_.append({'id': str(b['tmdb']), 'kind': kind, 'title': t_, 'year': y_})
+                        S.setdefault('tmdb', {})[f0] = {'films': fl_, 'title': ' and '.join(x['title'] for x in fl_), 'done': cur.get('done') or []}
+                        if f0 in (S.get('files') or {}):
+                            S['files'][f0].update(tmdb=S['tmdb'][f0], nf=None)
+                        save(BFIF, S)
+                    threading.Thread(target=lambda: bfi_now(g, only={f0: ''}), daemon=True).start()
+                    g.publish_soon = time.time() + 300
+                    return self.send_json(200, {'ok': True, 'name': os.path.splitext(f0)[0], 'double': True})
                 with BFI_LOCK:
                     S = load(BFIF, {}) or {}
                     src, dst = os.path.join(BFI_IN, f0), os.path.join(BFI_IN, name + '.mp4')
@@ -9316,10 +9333,11 @@ def bfi_secs(fp, path):
         return None
 
 
-def bfi_move(g, src, film, name, fp=None):
+def bfi_move(g, src, film, name, fp=None, copy=False):
     """An introduction put in its film's own folder, in Extras, by its right name, and the media server asked to look at that film. One
     the film has already (the same name, the same length to a second) isn't put there twice: it goes to BFI Kermode's "Already got"
-    folder, to delete (returned as (path, True))."""
+    folder, to delete (returned as (path, True)). With copy, a copy put there and the introduction left where it is (a double bill's,
+    for its other film), and one the film has already simply not put there again."""
     import shutil
     d = film['path'] if film.get('kind') == 'series' else os.path.dirname(film['path'])   # (a series: Extras in its own folder)
     libs = [os.path.realpath(l).rstrip('/') for v in g.jf.call('GET', '/Library/VirtualFolders') or [] for l in v.get('Locations') or []]
@@ -9331,6 +9349,8 @@ def bfi_move(g, src, film, name, fp=None):
     if os.path.exists(dst):
         a, b = (bfi_secs(fp, dst), bfi_secs(fp, src)) if fp and os.path.exists(fp) else (None, None)
         if os.path.getsize(dst) == os.path.getsize(src) or a and b and abs(a - b) <= 1:   # (the same, got twice)
+            if copy:
+                return dst, True
             ag = os.path.join(BFI_IN, 'Already got')
             os.makedirs(ag, exist_ok=True)
             to = os.path.join(ag, os.path.basename(src))
@@ -9342,7 +9362,11 @@ def bfi_move(g, src, film, name, fp=None):
         while os.path.exists(os.path.join(x, '%s (%d).mp4' % (name, n_))):
             n_ += 1
         dst = os.path.join(x, '%s (%d).mp4' % (name, n_))   # (another of the same film, a different length: kept beside it)
-    shutil.move(src, dst)
+    if copy:
+        shutil.copyfile(src, dst + '.part')   # (whole before the media server sees it)
+        os.replace(dst + '.part', dst)
+    else:
+        shutil.move(src, dst)
     try:
         g.jf.call('POST', '/Items/%s/Refresh' % film['id'], query={'Recursive': 'false' if film.get('kind') == 'series' else 'true', 'MetadataRefreshMode': 'Default', 'ImageRefreshMode': 'Default', 'ReplaceAllMetadata': 'false', 'ReplaceAllImages': 'false'})
     except Exception:
@@ -9402,6 +9426,42 @@ def bfi_now(g, only=None):
             tm = (S.get('tmdb') or {}).get(n)
             if not film and tm and tm.get('id'):
                 film = next((f for f in films if f.get('tmdb') == str(tm['id']) and f.get('kind', 'movie') == ('series' if tm.get('kind') == 'tv' else 'movie')), None)
+            if tm and tm.get('films') and not want:
+                # (a double bill, one introduction to two films: a copy put with each as it comes into Grifflix, by its TMDB number, named by
+                # that film; the introduction itself gone once both have it: John, 27 Nov 2026, "Trans-Europ-Express and Successive Slidings of
+                # Pleasure are the kermode double bill? A copy will need to be added to each extra when I have them")
+                done_ = tm.setdefault('done', [])
+                for f_ in tm['films']:
+                    if str(f_.get('id')) in done_:
+                        continue
+                    fm_ = next((f for f in films if f.get('tmdb') == str(f_.get('id')) and f.get('kind', 'movie') == ('series' if f_.get('kind') == 'tv' else 'movie')), None)
+                    if not fm_:
+                        continue
+                    nm_ = bfi_tidy('Mark Kermode introduces %s%s' % (fm_['name'], ' (%d)' % fm_['year'] if fm_['year'] else ''))[0]
+                    try:
+                        dst_, twice_ = bfi_move(g, src, fm_, nm_, fp, copy=True)
+                    except Exception as e:
+                        log('BFI double bill %s: not put with %s: %s' % (n, fm_['name'], str(e)[:120]))
+                        continue
+                    done_.append(str(f_.get('id')))
+                    if not twice_:
+                        moved.append(fm_['name'])
+                        S['moved'].insert(0, {'name': nm_, 'film': fm_['name'], 'year': fm_['year'], 'id': fm_['id'], 'to': dst_, 'at': int(time.time()), 'by': '', 'double': True})
+                        record('BFI double bill introduction put with one of its films', file=n, film=fm_['name'], to=dst_)
+                left_ = [f_ for f_ in tm['films'] if str(f_.get('id')) not in done_]
+                if not left_:
+                    try:
+                        os.remove(src)
+                    except OSError:
+                        pass
+                    S['files'].pop(n, None)
+                    S['tmdb'].pop(n, None)
+                    continue
+                got_ = [f_ for f_ in tm['films'] if str(f_.get('id')) in done_]
+                S['files'][n] = {'name': name, 'title': tm.get('title') or title, 'year': None, 'guesses': [], 'at': int(time.time()), 'mt': int(mt), 'nf': sig, 'tmdb': tm,
+                                 'why': 'no film of that name in Grifflix (a double bill%s; still to come: %s)' % ((', with ' + ' and '.join(f_['title'] for f_ in got_) + ' now') if got_ else '',
+                                                                                                         ' and '.join('%s (%s)' % (f_['title'], f_['year']) for f_ in left_))}
+                continue
             sure, guesses = bfi_match(films, title, year, g)
             why = ''
             if want and not film:
@@ -9577,6 +9637,75 @@ def bfi_collect(g, S):
     S['coll'] = sorted(done | set(new))
 
 
+# (Mark Kermode's double bills: one introduction to two films, each film's title and year, for TMDB to find: John, 27 Nov 2026)
+BFI_DOUBLE = [(r'(?i)robbe-?grillet double bill', [('Trans-Europ-Express', 1966), ('Successive Slidings of Pleasure', 1974)])]
+
+
+def tmdb_one(g, title, year):
+    """The one film (else series) TMDB has by that title, its own or its original, and that year or one either side: only when it's the one
+    such, and else None. (title, year): {id, kind, title, year}."""
+    for kind, path, dk in (('movie', '/search/movie', 'release_date'), ('tv', '/search/tv', 'first_air_date')):
+        res = (tmdb(g, path, query=title) or {}).get('results') or []
+        same = [x for x in res if fold(title) in (fold(x.get('title') or x.get('name') or ''), fold(x.get('original_title') or x.get('original_name') or ''))]
+        if year:
+            same = [x for x in same if (x.get(dk) or '')[:4].isdigit() and abs(int(x[dk][:4]) - int(year)) <= 1]
+            if len(same) > 1:
+                same = [x for x in same if (x.get(dk) or '')[:4] == str(year)] or same
+        if len(same) == 1:
+            x = same[0]
+            return {'id': str(x['id']), 'kind': kind, 'title': x.get('title') or x.get('name') or title, 'year': (x.get(dk) or '')[:4]}
+        if same:
+            return None   # (several: not sure which, left for John)
+        time.sleep(.2)
+    return None
+
+
+def bfi_tmdb_auto(g, limit=150):
+    """Each introduction waiting given its film's TMDB number by itself, from its title and year, where TMDB has the one film so (never over
+    one John chose; one not found tried again in a week), so it goes with its film by that number once that's in Grifflix, whatever its name
+    or year there, and its BFI Player picture is got ahead: John, 27 Nov 2026, "You should be able to get the tmdb number for every film now.
+    I've done some corrections". Returns how many found."""
+    if not g.st.get('tmdb_key'):
+        return 0
+    with BFI_LOCK:
+        S = load(BFIF, {}) or {}
+        files, T, tried = dict(S.get('files') or {}), dict(S.get('tmdb') or {}), dict(S.get('tmdbtry') or {})
+    todo = [(k, v) for k, v in files.items() if k not in T and time.time() - (tried.get(k) or 0) > 7 * 86400][:limit]
+    found = {}
+    for k, v in todo:
+        title, year = v.get('title') or '', v.get('year')
+        tried[k] = int(time.time())
+        try:
+            dbl = next((films_ for rx, films_ in BFI_DOUBLE if re.search(rx, title or k)), None)
+            if dbl:
+                got = [tmdb_one(g, t_, y_) for t_, y_ in dbl]
+                if all(got):
+                    found[k] = {'films': got, 'title': ' and '.join(x['title'] for x in got), 'auto': True}
+                continue
+            if title:
+                hit = tmdb_one(g, title, year)
+                if hit:
+                    found[k] = dict(hit, auto=True)
+        except Exception as e:
+            log('TMDB, for BFI introduction %s: %s' % (k, str(e)[:120]))
+            break
+        time.sleep(.25)
+    with BFI_LOCK:
+        S = load(BFIF, {}) or {}
+        S.setdefault('tmdb', {})
+        for k, v in found.items():
+            if k in (S.get('files') or {}) and k not in S['tmdb']:
+                S['tmdb'][k] = v
+                S['files'][k]['tmdb'] = v
+                S['files'][k]['nf'] = None   # (looked at again: put with its film if that's here by its TMDB number)
+        S['tmdbtry'] = {k: t for k, t in tried.items() if k in (S.get('files') or {})}
+        save(BFIF, S)
+    if found:
+        log('BFI introductions given their films’ TMDB numbers: %d' % len(found))
+        g.publish_soon = time.time() + 600   # (their BFI Player pictures got ahead)
+    return len(found)
+
+
 def bfi_loop(g):
     time.sleep(180)
     while True:
@@ -9584,6 +9713,8 @@ def bfi_loop(g):
             if os.path.isdir(os.path.dirname(BFI_IN)):
                 bfi_films_now(g)   # (kept ready, so John's searches and choices never wait for it)
                 bfi_now(g)
+                if bfi_tmdb_auto(g):
+                    bfi_now(g)   # (those found by their TMDB number put with their films now, if they're here)
         except Exception as e:
             log('BFI introductions: %s' % str(e)[:200])
         time.sleep(600)
