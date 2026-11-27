@@ -2921,7 +2921,7 @@ html:not(.phone):not(.tv):not(.mob) .tcal { padding-left: 64px !important; paddi
 <script>
 (function () {
 'use strict';
-var BUILD = /*BUILD*/{ draft: true, v: '71c6ad5660df' };   // (page.py: which copy this is, and when it was built)
+var BUILD = /*BUILD*/{ draft: true, v: '15598da0209e' };   // (page.py: which copy this is, and when it was built)
 /* ------------------------------------------------------------------ setup
    The page talks to the Grifflix gateway on John's Mac mini (through the Cloudflare Tunnel). Its address is in
    config.json; ?gateway=... tries another one (kept on this device), ?demo=1 shows made-up films instead. */
@@ -3147,12 +3147,14 @@ var SFS = SF;
 // (the BFI page's own sort and filters, its films newest in the BFI's Kermode playlist first: John, 27 Nov 2026, "Can the default order on the
 // bfi tab be the most recent order in the playlist")
 var BFIOK = false, SKB = [['kp', 'Latest picks', -1]], SFB = { sort: 'kp', dir: -1, f: {} };
-try { var sfb0 = JSON.parse(store.get('grifflix-sfb') || 'null'); if (sfb0 && sfb0.sort) SFB = { sort: sfb0.sort, dir: sfb0.dir || -1, f: {} }; } catch (e) {}
+// (Latest picks each time the page is opened afresh: another order chosen lasts only while you're on the site, not kept for next time: John, 27 Nov
+// 2026, "have the Latest picks be the default order")
+try { store.set('grifflix-sfb', ''); } catch (e) {}
 function sfMode(crit, bfi) { crit = !!crit; bfi = !crit && !!bfi; if (SPINEOK) SFC = SF; else if (BFIOK) SFB = SF; else SFS = SF; SPINEOK = crit; BFIOK = bfi; SF = crit ? SFC : bfi ? SFB : SFS; }
 function sfKeys() { return SPINEOK ? SKC : (BFIOK ? SKB : []).concat(SK.filter(function (k) { return k[0] !== 'spine'; })); }
 function sfKey() { return sfKeys().some(function (k) { return k[0] === SF.sort; }) ? SF.sort : SPINEOK ? 'spine' : BFIOK ? 'kp' : 'year'; }
 function sfDirOf() { return sfKey() === SF.sort ? SF.dir : SPINEOK ? 1 : -1; }
-function sfSave() { store.set(SPINEOK ? 'grifflix-sfc' : BFIOK ? 'grifflix-sfb' : 'grifflix-sf', JSON.stringify({ sort: SF.sort, dir: SF.dir })); }
+function sfSave() { if (!BFIOK) store.set(SPINEOK ? 'grifflix-sfc' : 'grifflix-sf', JSON.stringify({ sort: SF.sort, dir: SF.dir })); }
 function sfLen(i) { return i.mins || (i.secs ? Math.round(i.secs / 60) : 0); }
 function sfYear(i) { return +i.year || +String(i.premiere || '').slice(0, 4) || 0; }
 function sfSort(items, key, dir) {
@@ -7019,7 +7021,7 @@ function bfiHead(c) {   // (the BFI's logo, small, as the Criterion Collection's
   // up the page"; on the right, find, sort and filters: "on the right hand side we need to be able to order and sort")
   return '<div class="collhead bfihead"><div><h1 class="colltitle bfih1" aria-label="BFI">' + bfiMark() + '<span class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' film' : ' films') + '</i></span></h1></div></div>' +
     '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find a film" aria-label="Find in BFI" autocomplete="off">' + sfBar() + '</div>' +
-    '<section class="bfipick" id="bfipick" aria-label="Kermode’s latest pick" hidden></section><div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>';
+    '<section class="bfipick" id="bfipick" aria-label="Latest pick" hidden></section><div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>';
 }
 function bfiDraw(g, items, fq) {   // (BFI Player's grid, as its Kermode Introduces page: three across, each film's wide still and its name in bold;
   // pointed at, outlined in its purple and opened down over the row below, a few words about it and its genre, year, length and director in grey
@@ -7059,7 +7061,7 @@ function bfiPick(el, items) {   // Kermode's latest pick: the newest in the BFI'
   if (!it) { el.hidden = true; el._it = null; return; }
   var src = bfiPic(it, 1280), km = kermodeOf(it), meta = [it.year, it.mins ? (it.mins >= 60 ? Math.floor(it.mins / 60) + 'h ' : '') + (it.mins % 60 ? it.mins % 60 + 'm' : '') : '', it.cdir || (it.directors || [])[0]].filter(Boolean);
   el._it = it; el.hidden = false;
-  el.innerHTML = '<div class="bpt"><h3 class="bpk">Kermode’s latest pick</h3><h2 class="bph"><button type="button" class="bpn" data-item="' + it.id + '">' + esc(showName(it)) + '</button></h2>' +
+  el.innerHTML = '<div class="bpt"><h3 class="bpk">Latest pick</h3><h2 class="bph"><button type="button" class="bpn" data-item="' + it.id + '">' + esc(showName(it)) + '</button></h2>' +
     '<p class="bpm">' + meta.map(function (x) { return '<span>' + esc(String(x)) + '</span>'; }).join('') + '</p><p class="bpd"></p>' +
     '<div class="bpb"><button type="button" class="bpgo" id="bpintro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></svg><span>Play the introduction</span></button>' +
     '<button type="button" class="bpgo bpw" id="bpfilm">Watch the film</button></div></div>' +
