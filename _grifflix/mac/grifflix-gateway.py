@@ -9583,7 +9583,9 @@ def kermode_loop(g):
     while True:
         try:
             st = load(KERMODE_F, {}) or {}
-            due = (st.get('at') or 0) + (6 * 3600 if st.get('more') else 7 * 86400)
+            # (after a go that went wrong, again in an hour, not a week: kermode.py wasn't on the Mac mini till 27 Nov 2026 and the week's
+            # wait after that kept the playlist from being looked at)
+            due = (st.get('at') or 0) + (3600 if st.get('error') else 6 * 3600 if st.get('more') else 7 * 86400)
             if time.time() >= due and os.path.isdir(os.path.dirname(BFI_IN)) and not someone_watching(g):
                 kermode_get(g)
         except Exception as e:
@@ -12590,7 +12592,7 @@ def mac_update(quiet=False):
             pass
         if old == got[name]:
             continue
-        if old is None and name not in ('grifflix-gateway.py', 'convert.py', 'subtitles.py', 'poster-add.py', 'criterion.py', 'criterion-covers.py', 'duplicates.py', 'gdrive.py'):
+        if old is None and name not in ('grifflix-gateway.py', 'convert.py', 'subtitles.py', 'poster-add.py', 'criterion.py', 'criterion-covers.py', 'duplicates.py', 'gdrive.py', 'kermode.py'):
             continue   # (a script John hasn't got on this Mac stays away)
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         if old is not None:
