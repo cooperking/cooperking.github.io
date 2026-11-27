@@ -9562,7 +9562,8 @@ def kermode_get(g):
         failed = [l for l in out.splitlines() if l.startswith('ERROR:') and 'rate-limited' not in l]
         st = {'at': int(time.time()), 'playlist': int(m.group(1)) if m else None, 'new': int(m.group(3)) if m else 0, 'got': int(got.group(1)) if got else 0,
               'put': int(put.group(2)) if put else 0, 'limited': limited, 'failed': len(failed),
-              'error': '' if m or put else ((out.strip().splitlines() or ['it stopped'])[-1][:200])}
+              'error': '' if (m or put) and not r.returncode else ((out.strip().splitlines() or ['it stopped'])[-1][:200])}   # (kermode.py stopping
+        # with a reason, as when it read nothing of the playlist, 27 Nov 2026, an error too)
         # (as many as one go takes (40, kermode.py's PER_RUN), so maybe more, or YouTube said wait: again in 6 hours, not a week)
         st['more'] = st['got'] >= 40 or bool(limited)   # (not one gone from YouTube for good: that would be every 6 hours for ever)
         log('BFI playlist checked on the Mac mini: %s new, %s got, %s put in BFI Kermode%s%s' % (st['new'], st['got'], st['put'], '; YouTube asked it to wait (%d)' % limited if limited else '',
@@ -9585,7 +9586,8 @@ def kermode_loop(g):
             st = load(KERMODE_F, {}) or {}
             # (after a go that went wrong, again in an hour, not a week: kermode.py wasn't on the Mac mini till 27 Nov 2026 and the week's
             # wait after that kept the playlist from being looked at)
-            due = (st.get('at') or 0) + (3600 if st.get('error') else 6 * 3600 if st.get('more') else 7 * 86400)
+            due = (st.get('at') or 0) + (3600 if st.get('error') or not st.get('playlist') else 6 * 3600 if st.get('more') else 7 * 86400)
+            # (nothing read of the playlist an error too: its first go on the Mac mini, 27 Nov 2026, read none and called it done)
             if time.time() >= due and os.path.isdir(os.path.dirname(BFI_IN)) and not someone_watching(g):
                 kermode_get(g)
         except Exception as e:

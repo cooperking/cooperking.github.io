@@ -127,15 +127,17 @@ def ytdlp():
     """yt-dlp, and Deno, which it needs for YouTube now: the Mac's own if it has them, else each fetched once into ~/bin (one file each, from
     their own GitHub pages; no administrator rights)."""
     y = tool('yt-dlp')
-    if not y and ON_MINI:   # (pip's, in a folder of its own: the standalone one needs a newer macOS than the 2010 Mac mini's)
-        say('Putting yt-dlp on the Mac mini (once), in %s …' % VENV)
-        subprocess.run([sys.executable, '-m', 'venv', VENV])
-        pip = [os.path.join(VENV, 'bin', 'python3'), '-m', 'pip', 'install', '-q', '-U']
-        if subprocess.run(pip + ['yt-dlp[default]']).returncode:
-            subprocess.run(pip + ['yt-dlp'])
-        y = tool('yt-dlp')
-        if not y:
-            sys.exit('Couldn’t put yt-dlp on the Mac mini')
+    if ON_MINI:   # (always its own, pip's, in a folder of its own, kept up to date: another yt-dlp found on the Mac mini read nothing of the
+        # playlist, 27 Nov 2026; and the standalone one needs a newer macOS than the 2010 Mac mini's)
+        y = os.path.join(VENV, 'bin', 'yt-dlp')
+        if not (os.path.isfile(y) and os.access(y, os.X_OK)):
+            say('Putting yt-dlp on the Mac mini (once), in %s …' % VENV)
+            subprocess.run([sys.executable, '-m', 'venv', VENV])
+            pip = [os.path.join(VENV, 'bin', 'python3'), '-m', 'pip', 'install', '-q', '-U']
+            if subprocess.run(pip + ['yt-dlp[default]']).returncode:
+                subprocess.run(pip + ['yt-dlp'])
+            if not (os.path.isfile(y) and os.access(y, os.X_OK)):
+                sys.exit('Couldn’t put yt-dlp on the Mac mini')
     if not y:
         say('Fetching yt-dlp (once) into ~/bin …')
         y = os.path.join(HOME, 'bin', 'yt-dlp')
@@ -332,12 +334,20 @@ def listing(y, urls):
     out = []
     for u in urls:
         r = subprocess.run([y, '--flat-playlist', '--ignore-errors', '--print', '%(id)s\t%(title)s', u], capture_output=True, text=True, env=env())
+        n = 0
         for l in (r.stdout or '').splitlines():
             i, _, t = l.partition('\t')
-            if re.fullmatch(r'[A-Za-z0-9_-]{11}', i) and re.search(r'(?i)kermode', t):
-                out.append((i, t))
-        if r.returncode and not out:
-            say('Couldn’t read %s: %s' % (u, ((r.stderr or '').strip().splitlines() or [''])[-1]))
+            if re.fullmatch(r'[A-Za-z0-9_-]{11}', i):
+                n += 1
+                if re.search(r'(?i)kermode', t):
+                    out.append((i, t))
+        if not n:   # (nothing read at all, whatever yt-dlp said of it: which yt-dlp, and what it said, for the log)
+            try:
+                v = subprocess.run([y, '--version'], capture_output=True, text=True, env=env(), timeout=60).stdout.strip()
+            except Exception as e:
+                v = str(e)
+            said = [l for l in (r.stderr or '').strip().splitlines() if l.strip()][-3:]
+            say('Couldn’t read %s with %s (%s), which said: %s' % (u, y, v or 'no version', ' / '.join(said) or 'nothing'))
     return out
 
 
@@ -585,12 +595,14 @@ def main(a):
             pass
     have = got_write(ids)
     fresh = set()
+    unread = False
     if '--move' not in a and '--make' not in a:
         if not C['urls']:
             sys.exit('Which YouTube playlist are they from? Run it again with its address after it, in quotes.')
         y = ytdlp()
         say('Reading %s …' % ', '.join(C['urls']))
         L = listing(y, C['urls'])
+        unread = not L   # (an error, not "nothing new": the playlist always has them; said last, so it's looked at again soon, 27 Nov 2026)
         new = [(i, t) for i, t in L if i not in have]
         if new:   # (any already here by its name, without its code: added to the list, not got again)
             known = {key(n) for n in names_here(folder)} | {key(n) for n in names_read()}
@@ -632,6 +644,8 @@ def main(a):
     left = [f for f in os.listdir(folder) if f.lower().endswith('.mp4') and not f.startswith('.')]
     if AUTO and left and not os.path.isdir(GD):
         say('%d waiting here for the G-Drive (you’re not at home): next time' % len(left))
+    if unread:
+        sys.exit('Read nothing with Kermode in the name from the playlist: see above.')
 
 
 if __name__ == '__main__':
