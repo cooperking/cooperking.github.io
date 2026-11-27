@@ -183,7 +183,7 @@ def main():
     names = set(fold(f.get('name')) for f in films)
     ahead = [w for w in want if w.get('tmdb') and w.get('title') and fold(w['title']) not in names
              and not (str(w['tmdb']) in pre and os.path.exists(os.path.join(OUT, 'pre', str(w['tmdb']) + '.jpg')))
-             and time.time() - (premiss.get(str(w['tmdb'])) or 0) > 7 * 86400]
+             and time.time() - (premiss.get(str(w['tmdb'])) or 0) > 7 * 86400][:60]   # (sixty a run at most: a film not on BFI Player's list takes several looks)
     if not todo and not ahead:
         keep()
         print('BFI pictures: none to get (%d here, %d got ahead)' % (len(have), len(pre)))

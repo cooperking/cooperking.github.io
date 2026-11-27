@@ -1313,7 +1313,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
       '<table class="btab"><thead><tr><th class="ck"><input type="checkbox" class="cbpick" id="bfickall" aria-label="Tick all shown"' + (all ? ' checked' : '') + '></th>' + hd('title', 'Film', 'bt') + hd('year', 'Year', 'by') + hd('why', 'Why it’s here', 'bw') + hd('arr', 'Came', 'bc') + '<th></th></tr></thead><tbody>' +
       R.map(function (r) { var on = !!BFT.pick[r.k], x = r.x;
         return '<tr data-k="' + esc(r.k) + '"' + (on ? ' class="on"' : '') + '><td class="ck"><input type="checkbox" class="cbpick bfipk"' + (on ? ' checked' : '') + ' aria-label="Tick ' + esc(r.t) + '"></td>' +
-          '<td>' + (r.tm && r.tm.id && BFT.pre[r.tm.id] ? '<img class="bpre" alt="" loading="lazy" src="/grifflix/img/bfi/pre/' + esc(r.tm.id) + '.jpg" title="Its picture from BFI Player, got ahead">' : '') + '<b>' + esc(r.t) + '</b>' + (r.tm && r.tm.id ? ' <a class="tmtag" href="https://www.themoviedb.org/' + (r.tm.kind === 'tv' ? 'tv' : 'movie') + '/' + esc(r.tm.id) + '" target="_blank" rel="noopener" title="Named from this film on TMDB">TMDB</a>' : '') + (x.file !== x.name + '.mp4' ? '<small>In the folder as “' + esc(x.file) + '”</small>' : '') + '</td><td class="by">' + (r.y || '') + '</td><td class="bw">' + esc(r.w) + '</td>' +
+          '<td>' + (r.tm && r.tm.films ? '<small style="margin:0 0 2px">A double bill</small>' : '') + (r.tm && r.tm.id && BFT.pre[r.tm.id] ? '<img class="bpre" alt="" loading="lazy" src="/grifflix/img/bfi/pre/' + esc(r.tm.id) + '.jpg" title="Its picture from BFI Player, got ahead">' : '') + '<b>' + esc(r.t) + '</b>' + (r.tm ? (r.tm.films || (r.tm.id ? [r.tm] : [])).map(function (f) { return ' <a class="tmtag" href="https://www.themoviedb.org/' + (f.kind === 'tv' ? 'tv' : 'movie') + '/' + esc(f.id) + '" target="_blank" rel="noopener" title="' + esc((f.title || '') + (f.year ? ' (' + f.year + ')' : '') + (r.tm.auto ? ': found on TMDB by its title and year' : ': chosen by you on TMDB')) + '">TMDB' + (r.tm.films ? ' ' + esc(f.year || '') : '') + '</a>'; }).join('') : '') + (x.file !== x.name + '.mp4' ? '<small>In the folder as “' + esc(x.file) + '”</small>' : '') + '</td><td class="by">' + (r.y || '') + '</td><td class="bw">' + esc(r.w) + '</td>' +
           '<td class="bc">' + (r.a ? esc(new Date(r.a * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) : '') + '</td><td style="text-align:right;white-space:nowrap"><button class="btn small" type="button" data-bfitm title="The film it’s of, from TMDB: named by it, and put with it once it’s in Grifflix">TMDB…</button> <button class="btn small" type="button" data-bfiwith title="I have this film: put it with it">Put with…</button></td></tr>'; }).join('') + '</tbody></table>';
     Array.prototype.forEach.call(document.querySelectorAll('#bfitodo th[data-bs]'), function (th) { th.onclick = function () { if (BFT.sort === th.dataset.bs) BFT.dir = -BFT.dir; else { BFT.sort = th.dataset.bs; BFT.dir = th.dataset.bs === 'arr' ? -1 : 1; } bfiTable(); }; });
     var ck = $('#bfickall'); if (ck) ck.onchange = function () { R.forEach(function (r) { if (ck.checked) BFT.pick[r.k] = 1; else delete BFT.pick[r.k]; }); bfiTable(); };
@@ -1326,7 +1326,8 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
         var nx = tr.nextElementSibling; if (nx && nx.classList.contains('putrow')) { var was = nx.dataset.w; nx.remove(); if (was === 'tm') return; }
         var x = BFT.T.filter(function (t) { return t.file === k; })[0]; if (!x) return;
         var r0 = bfiShown().filter(function (r) { return r.k === k; })[0];
-        tr.insertAdjacentHTML('afterend', '<tr class="putrow" data-w="tm"><td></td><td colspan="5"><div class="state" style="margin:0"><input type="search" class="name bfiq2" placeholder="Its title on TMDB (a year after it if wanted), or a TMDB or IMDb link" autocomplete="off" style="flex:1 1 260px"></div><div class="bfitmhits" style="margin-top:6px"></div></td></tr>');
+        tr.insertAdjacentHTML('afterend', '<tr class="putrow" data-w="tm"><td></td><td colspan="5"><div class="state" style="margin:0"><input type="search" class="name bfiq2" placeholder="Its title on TMDB (a year after it if wanted), or a TMDB or IMDb link" autocomplete="off" style="flex:1 1 260px">' +
+          '<label class="stat" style="margin:0;display:inline-flex;gap:6px;align-items:center" title="One introduction to two films: a copy goes with each as each comes"><input type="checkbox" class="bfidbl"> A double bill: add the film to it</label></div><div class="bfitmhits" style="margin-top:6px"></div></td></tr>');
         var row = tr.nextElementSibling, inp = row.querySelector('.bfiq2'), hits = row.querySelector('.bfitmhits'), tm;
         var look = function () { var v = inp.value.trim(); if (v.length < 2) { hits.innerHTML = ''; return; }
           hits.innerHTML = '<span class="stat">Looking on TMDB…</span>';
@@ -1338,8 +1339,9 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
             Array.prototype.forEach.call(hits.querySelectorAll('.tmhit'), function (bt) { bt.onclick = function () {
               var f = F[+bt.dataset.i]; Array.prototype.forEach.call(hits.querySelectorAll('.tmhit'), function (o) { o.disabled = true; if (o !== bt) o.style.opacity = '.4'; });
               var say = document.createElement('span'); say.className = 'stat'; say.style.margin = '0'; say.textContent = 'Naming it from TMDB…'; hits.appendChild(say);   // (at once: it's on its way)
-              BFT.go({ op: 'tmdb', file: x.file, tmdb: f.tmdb, kind: f.kind }).then(function (j) {
-                toast('Named “' + j.name + '”: it goes with its film once that’s in Grifflix');
+              var dbl = row.querySelector('.bfidbl').checked;
+              BFT.go({ op: 'tmdb', file: x.file, tmdb: f.tmdb, kind: f.kind, add: dbl }).then(function (j) {
+                toast(j.double ? 'Added ' + f.title + ' to the double bill: a copy goes with each film as it comes' : 'Named “' + j.name + '”: it goes with its film once that’s in Grifflix');
                 delete BFT.pick[k]; bfiLook(true); setTimeout(function () { bfiLook(true); }, 40000);   // (and again once the Mac mini has looked: put with its film, if it's here)
               }).catch(function (e) { Array.prototype.forEach.call(hits.querySelectorAll('.tmhit'), function (o) { o.disabled = false; o.style.opacity = ''; }); say.textContent = e.message; toast(e.message); }); }; });
           }).catch(function (e) { hits.innerHTML = '<span class="stat">' + esc(e.message) + '</span>'; }); };
@@ -1364,11 +1366,12 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   function bfiChosen() { var R = bfiShown(), P = R.filter(function (r) { return BFT.pick[r.k]; }); return { P: P.length ? P : R, ch: P.length }; }
   function bfiStoPrep() {   // (ready before the click, as the Criterion films' is: the tab must open in the click itself)
     var c = bfiChosen(), P = c.P;
-    var rows = [['Box set', 'Set spine', 'Film', 'Year', 'Spine', 'Director', 'Country']].concat(P.map(function (r) { return ['', '', r.t, r.y || '', '', '', '']; }));
+    var each = []; P.forEach(function (r) { if (r.tm && r.tm.films) r.tm.films.forEach(function (f) { each.push({ t: f.title, y: f.year }); }); else each.push(r); });   // (a double bill's films each)
+    var rows = [['Box set', 'Set spine', 'Film', 'Year', 'Spine', 'Director', 'Country']].concat(each.map(function (r) { return ['', '', r.t, r.y || '', '', '', '']; }));
     var csv = '﻿' + rows.map(function (r) { return r.map(function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(','); }).join('\r\n');
     var nm = (c.ch ? 'BFI Kermode films chosen ' : 'BFI Kermode films missing ') + new Date().toISOString().slice(0, 10), base = 'https://cooperking.github.io/search-tab-opener/#from=grifflix&name=' + encodeURIComponent(nm);
     var b64 = btoa(unescape(encodeURIComponent(csv)));
-    BSTO = { url: base + (b64.length < 24000 ? '&csv=' + encodeURIComponent('data:text/csv;base64,' + b64) : ''), csv: csv, name: nm, n: P.length, ch: c.ch };
+    BSTO = { url: base + (b64.length < 24000 ? '&csv=' + encodeURIComponent('data:text/csv;base64,' + b64) : ''), csv: csv, name: nm, n: each.length, ch: c.ch };
     if (typeof CompressionStream === 'undefined') return;
     var mine = BSTO;
     new Response(new Blob([csv]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer().then(function (ab) {
@@ -1387,7 +1390,7 @@ dialog.pop::backdrop { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: n
   };
   $('#bfitext').onclick = function () {
     var P = bfiChosen().P, box = $('#bfibox');
-    box.textContent = P.map(function (r) { return r.t + (r.y ? ' ' + r.y : ''); }).join('\n'); box.hidden = false;
+    box.textContent = P.map(function (r) { return r.tm && r.tm.films ? r.tm.films.map(function (f) { return f.title + (f.year ? ' ' + f.year : ''); }).join('\n') : r.t + (r.y ? ' ' + r.y : ''); }).join('\n'); box.hidden = false;
     try { var sel = window.getSelection(); sel.removeAllRanges(); var rg = document.createRange(); rg.selectNodeContents(box); sel.addRange(rg); } catch (e) {}
     box.scrollIntoView({ block: 'nearest' });
     toast(P.length + ' film' + (P.length === 1 ? '' : 's') + ' selected: open them with your Search Tab Opener');
