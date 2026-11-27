@@ -15214,7 +15214,7 @@
    "sound": [
     "Melancholy",
     "Mellow",
-    "Energetic"
+    "Romantic"
    ],
    "claude": [
     "Uplifting"
@@ -20204,7 +20204,7 @@
    "sound": [
     "Playful",
     "Joyful",
-    "Energetic"
+    "Romantic"
    ],
    "claude": [
     "Playful",
@@ -22015,7 +22015,7 @@
    "sound": [
     "Joyful",
     "Playful",
-    "Energetic"
+    "Romantic"
    ],
    "claude": [
     "Romantic",
@@ -26495,7 +26495,7 @@
     ],
     [
      "Romantic",
-     28
+     27
     ],
     [
      "Melancholy",
@@ -26513,7 +26513,7 @@
       ],
       [
        "Romantic",
-       28
+       27
       ],
       [
        "Melancholy",
@@ -27260,7 +27260,7 @@
     ],
     [
      "Energetic",
-     12
+     11
     ]
    ],
    "moodEvidence": [
@@ -27278,7 +27278,7 @@
       ],
       [
        "Energetic",
-       12
+       11
       ]
      ]
     ]
@@ -27558,7 +27558,7 @@
     ],
     [
      "Energetic",
-     21
+     20
     ],
     [
      "Joyful",
@@ -27576,7 +27576,7 @@
       ],
       [
        "Energetic",
-       21
+       20
       ],
       [
        "Joyful",
@@ -30397,6 +30397,146 @@
     "pop",
     "pop rock",
     "rock"
+   ],
+   "check": true
+  },
+  "273uCXd7NPrInaiNqtkOrA": {
+   "n": 291,
+   "title": "Tarzan Boy",
+   "artist": "Baltimora",
+   "moods": [
+    "Energetic",
+    "Joyful"
+   ],
+   "moodMix": [
+    [
+     "Energetic",
+     37
+    ],
+    [
+     "Joyful",
+     21
+    ],
+    [
+     "Playful",
+     10
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Energetic",
+       37
+      ],
+      [
+       "Joyful",
+       21
+      ],
+      [
+       "Playful",
+       10
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Energetic",
+    "Joyful",
+    "Playful"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Euro-Disco",
+    "Italo-Disco",
+    "Synth-pop"
+   ],
+   "genres": [
+    "Electronic",
+    "Rock"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Electronic",
+     33
+    ],
+    [
+     "Rock",
+     26
+    ],
+    [
+     "Pop",
+     24
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Electronic",
+       49
+      ],
+      [
+       "Rock",
+       25
+      ],
+      [
+       "Pop",
+       25
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Rock",
+       43
+      ],
+      [
+       "Soul & R&B",
+       31
+      ],
+      [
+       "Pop",
+       26
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Electronic",
+       42
+      ],
+      [
+       "Soul & R&B",
+       40
+      ],
+      [
+       "Pop",
+       18
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "electronic",
+    "italo-disco",
+    "new wave",
+    "pop",
+    "rock",
+    "synth-pop",
+    "synthpop"
    ],
    "check": true
   }
