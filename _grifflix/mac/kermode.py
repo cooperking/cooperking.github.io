@@ -40,6 +40,7 @@ HOME = os.path.expanduser('~')
 G = os.path.join(HOME, 'Grifflix')
 CONF = os.path.join(G, 'kermode.json')
 GOT = os.path.join(G, 'kermode-got.txt')
+ORDER = os.path.join(G, 'kermode-playlist.json')   # (the playlist's own order, newest first, each time it's read: for the BFI page's order and its latest pick, 27 Nov 2026)
 NAMES = os.path.join(G, 'kermode-names.txt')   # (the name of every one put on the G-Drive, so one the playlist has under another code isn't got again)
 GD = os.environ.get('GRIFFLIX_GD') or '/Volumes/G-Drive'
 DEST = os.path.join(GD, 'Grifflix', 'BFI Kermode')
@@ -603,6 +604,13 @@ def main(a):
         say('Reading %s …' % ', '.join(C['urls']))
         L = listing(y, C['urls'])
         unread = not L   # (an error, not "nothing new": the playlist always has them; said last, so it's looked at again soon, 27 Nov 2026)
+        if L:   # (its order kept, each with the name its introduction is given: the Mac mini gives each BFI film its place in it)
+            try:
+                with open(ORDER + '.new', 'w', encoding='utf-8') as f:
+                    json.dump({'at': int(time.time()), 'urls': C['urls'], 'list': [[i, t, tidy(t)[0]] for i, t in L]}, f, ensure_ascii=False)
+                os.replace(ORDER + '.new', ORDER)
+            except OSError as e:
+                say('Couldn’t keep the playlist’s order: %s' % e)
         new = [(i, t) for i, t in L if i not in have]
         if new:   # (any already here by its name, without its code: added to the list, not got again)
             known = {key(n) for n in names_here(folder)} | {key(n) for n in names_read()}

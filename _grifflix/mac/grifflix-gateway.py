@@ -2233,6 +2233,14 @@ def make_handler(g):
             # (the films Mark Kermode introduces that John has said, from TMDB, which they are, though not yet in Grifflix: their BFI Player
             # pictures got by the site now, while BFI Player has them (bfi_stills.py): John, 26 Nov 2026, "can we prefetch any confirmed films
             # on the list's images")
+            try:   # (each BFI film's place in the BFI's Kermode playlist, newest 1: the BFI page's order and its latest pick, 27 Nov 2026)
+                kp_ = bfi_kp(items)
+                for k_, o_ in items.items():
+                    o_.pop('kp', None)
+                    if k_ in kp_:
+                        o_['kp'] = kp_[k_]
+            except Exception as e:
+                log('BFI playlist order on the site: %s' % str(e)[:200])
             try:
                 bw = {}
                 for v0 in ((load(BFIF, {}) or {}).get('tmdb') or {}).values():
@@ -9485,8 +9493,8 @@ def bfi_now(g, only=None):
                         log('BFI introduction got twice: %s is with %s already; this copy is in BFI Kermode › Already got, to delete' % (name, film['name']))
                         continue
                     moved.append(film['name'])
-                    S['moved'].insert(0, {'name': name, 'film': film['name'], 'year': film['year'], 'id': film['id'], 'to': dst, 'at': int(time.time()), 'by': 'John' if want else ''})
-                    record('BFI introduction put with its film', file=name, film=film['name'], to=dst, chosen_by='John' if want else 'matched')
+                    S['moved'].insert(0, {'name': name, 'film': film['name'], 'year': film['year'], 'id': film['id'], 'to': dst, 'at': int(time.time()), 'by': 'John' if want else '', 'from': n})
+                    record('BFI introduction put with its film', file=name, film=film['name'], to=dst, chosen_by='John' if want else 'matched', **{'from': n})
                     continue
                 except Exception as e:
                     why = 'couldn’t be moved: %s' % str(e)[:120]
@@ -9551,6 +9559,10 @@ def kermode_get(g):
         cmd = ['nice', '-n', '15', sys.executable, script, '--auto']
         if os.path.exists('/usr/sbin/taskpolicy'):
             cmd = ['/usr/sbin/taskpolicy', '-b'] + cmd
+        try:
+            kp0 = open(KPLAY, encoding='utf-8').read()
+        except OSError:
+            kp0 = None
         with open(os.path.join(home, 'kermode.log'), 'a', encoding='utf-8') as lf:
             r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=6 * 3600, env=dict(os.environ, KERMODE_HOST='mini'))
             out = r.stdout or ''
@@ -9565,6 +9577,11 @@ def kermode_get(g):
               'error': '' if (m or put) and not r.returncode else ((out.strip().splitlines() or ['it stopped'])[-1][:200])}   # (kermode.py stopping
         # with a reason, as when it read nothing of the playlist, 27 Nov 2026, an error too)
         # (as many as one go takes (40, kermode.py's PER_RUN), so maybe more, or YouTube said wait: again in 6 hours, not a week)
+        try:   # (the playlist's order changed: the site told, for the BFI page's order and its latest pick)
+            if open(KPLAY, encoding='utf-8').read() != kp0:
+                g.publish_soon = time.time() + 300
+        except OSError:
+            pass
         st['more'] = st['got'] >= 40 or bool(limited)   # (not one gone from YouTube for good: that would be every 6 hours for ever)
         log('BFI playlist checked on the Mac mini: %s new, %s got, %s put in BFI Kermode%s%s' % (st['new'], st['got'], st['put'], '; YouTube asked it to wait (%d)' % limited if limited else '',
                                                                                                 '; ' + st['error'] if st['error'] else ''))
@@ -9577,6 +9594,86 @@ def kermode_get(g):
         KERMODE_RUN.release()
 
 
+KPLAY = os.path.expanduser('~/Grifflix/kermode-playlist.json')   # (the playlist's order, newest first, as kermode.py last read it)
+
+
+def bfi_kp(items):
+    """Each BFI film's place in the BFI's Kermode playlist, 1 its newest, by its introduction's name or a name that introduction had before (named
+    from TMDB, or put with its film under the film's own name), as near as can be: {film id: place}. For the BFI page's order and its latest pick
+    (John, 27 Nov 2026: "Can the default order on the bfi tab be the most recent order in the playlist ... Could the latest in the playlist (that we
+    have) be put as the latest pick")."""
+    import difflib, unicodedata
+    rows = (load(KPLAY, {}) or {}).get('list') or []
+    pl = []
+    for n, r in enumerate(rows, 1):
+        try:
+            _, t, y = bfi_tidy(str(r[1]))
+        except Exception:
+            continue
+        if fold(t):
+            pl.append((n, fold(t), y))
+    if not pl:
+        return {}
+    stem = lambda p: unicodedata.normalize('NFC', os.path.splitext(os.path.basename(str(p or '')))[0]).casefold()   # (a Mac's file names' accents in pieces)
+    was = {}
+    try:
+        with open(os.path.expanduser('~/Grifflix/record.jsonl'), encoding='utf-8') as f:
+            for l in f:
+                if '"BFI ' not in l:
+                    continue
+                try:
+                    r = json.loads(l)
+                except ValueError:
+                    continue
+                if r.get('what') == 'BFI introduction named from TMDB' and r.get('name') and r.get('file'):
+                    was.setdefault(stem(r['name']), set()).add(stem(r['file']))
+                elif r.get('to') and (r.get('from') or r.get('file')):
+                    was.setdefault(stem(r['to']), set()).add(stem(r.get('from') or r['file']))
+    except OSError:
+        pass
+    near = lambda a, b: a is None or b is None or abs(a - b) <= 1
+
+    def place(name):
+        names, todo = set(), [stem(name)]
+        while todo:   # (with every name it had before)
+            nm = todo.pop()
+            if nm not in names:
+                names.add(nm)
+                todo += list(was.get(nm, ()))
+        best = None
+        for nm in names:
+            try:
+                _, t, y = bfi_tidy(nm)
+            except Exception:
+                continue
+            ft = fold(t)
+            if not ft:
+                continue
+            for n, pt, py in pl:
+                if pt == ft and (py == y or py is None or y is None):
+                    tier = 0
+                elif pt == ft and (near(py, y) or len(ft) >= 8 and abs(py - y) <= 2):
+                    tier = 1   # (a year or two apart: Blood Simple, 1984 here, 1983 on the BFI's video)
+                elif near(py, y) and min(len(pt), len(ft)) >= 5 and (pt.startswith(ft) or ft.startswith(pt) or (len(ft) >= 8 and ft in pt) or (len(pt) >= 8 and pt in ft)):
+                    tier = 2   # ("Ugetsu" in "Ugetsu Monogatari", "A Hard Day's Night" in "The Beatles: A Hard Day's Night")
+                elif py is not None and y is not None and near(py, y) and difflib.SequenceMatcher(None, pt, ft).ratio() >= 0.88:
+                    tier = 3   # (a letter or two apart)
+                else:
+                    continue
+                if best is None or (tier, n) < best:
+                    best = (tier, n)
+        return best[1] if best else None
+
+    out = {}
+    for o in items.values():
+        if not (o.get('extra') and o.get('of') and re.search(r'(?i)kermode', str(o.get('name') or ''))):
+            continue
+        n = place(str(o.get('name') or ''))
+        if n and (o['of'] not in out or n < out[o['of']]):
+            out[o['of']] = n
+    return out
+
+
 def kermode_loop(g):
     """Once a week (John, 26 Nov 2026: "once a week for checking is enough"); every 6 hours while there's more to get than one go takes;
     not while someone's watching."""
@@ -9586,7 +9683,7 @@ def kermode_loop(g):
             st = load(KERMODE_F, {}) or {}
             # (after a go that went wrong, again in an hour, not a week: kermode.py wasn't on the Mac mini till 27 Nov 2026 and the week's
             # wait after that kept the playlist from being looked at)
-            due = (st.get('at') or 0) + (3600 if st.get('error') or not st.get('playlist') else 6 * 3600 if st.get('more') else 7 * 86400)
+            due = (st.get('at') or 0) + (3600 if st.get('error') or not st.get('playlist') or not os.path.exists(KPLAY) else 6 * 3600 if st.get('more') else 7 * 86400)
             # (nothing read of the playlist an error too: its first go on the Mac mini, 27 Nov 2026, read none and called it done)
             if time.time() >= due and os.path.isdir(os.path.dirname(BFI_IN)) and not someone_watching(g):
                 kermode_get(g)
@@ -9599,10 +9696,27 @@ def bfi_collect(g, S):
     """Every film (or series) given Mark Kermode's introduction in the BFI collection, made if it isn't there, as A24's and Criterion's
     are (John, 26 Nov 2026: "Any film that the Extra is added to, should be labelled BFI, and added to a collection, just like A24 and
     Criterion"). Only when there are more than last time; a film John takes out by hand stays out until another introduction of it comes."""
-    ids = [m['id'] for m in S.get('moved') or [] if re.match(r'^[0-9a-f]{32}$', str(m.get('id') or ''))]
-    ids = list(dict.fromkeys(ids))
+    # (each by the film as it is now: one converted or read again since its introduction came is a new item, and its old number can't go in;
+    # found by its folder, where its introduction is, or its name and year: 27 Nov 2026, The Shrouds, 8½ and The Thing with Feathers had
+    # their introductions but weren't in the collection)
+    films = bfi_films_now(g)
+    byid = {f['id']: f for f in films}
+
+    def now_id(m):
+        i = str(m.get('id') or '')
+        if i in byid:
+            return i
+        d = os.path.dirname(str(m.get('to') or ''))
+        if os.path.basename(d).lower() == 'extras':
+            d = os.path.dirname(d)
+        f = next((f for f in films if d and (f['path'] if f.get('kind') == 'series' else os.path.dirname(f['path'])) == d), None)
+        if not f and m.get('film'):
+            same = [f for f in films if fold(m['film']) in f['f'] and (not m.get('year') or f['year'] == m.get('year'))]
+            f = same[0] if len(same) == 1 else None
+        return f['id'] if f else None
+    ids = list(dict.fromkeys(n for n in (now_id(m) for m in S.get('moved') or [] if re.match(r'^[0-9a-f]{32}$', str(m.get('id') or ''))) if n))
     done = set(S.get('coll') or [])
-    new = [i for i in ids if i not in done]
+    new = [i for i in ids if i not in done]   # (a film John takes out by hand: the same number, done, so it stays out)
     if not new and S.get('ov2'):
         return
     sets = (g.jf.call('GET', '/Users/%s/Items' % g.uid, query={'Recursive': 'true', 'IncludeItemTypes': 'BoxSet'}) or {}).get('Items') or []
@@ -9617,14 +9731,7 @@ def bfi_collect(g, S):
         S['ov2'] = 1
     if not new:
         return
-    have = set()
-    for i in new:   # (still in the library: a film renamed since is a new item, and an old id can't go in)
-        try:
-            if (g.jf.call('GET', '/Users/%s/Items/%s' % (g.uid, i)) or {}).get('Id'):
-                have.add(i)
-        except Exception:
-            pass
-    put = [i for i in new if i in have]
+    put = new   # (each in the library now, as above)
     if put:
         if box:
             g.jf.call('POST', '/Collections/%s/Items' % box['Id'], query={'Ids': ','.join(put)})
