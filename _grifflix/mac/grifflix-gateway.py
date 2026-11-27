@@ -12592,7 +12592,7 @@ def mac_update(quiet=False):
             pass
         if old == got[name]:
             continue
-        if old is None and name not in ('grifflix-gateway.py', 'convert.py', 'subtitles.py', 'poster-add.py', 'criterion.py', 'criterion-covers.py', 'duplicates.py', 'gdrive.py', 'kermode.py'):
+        if old is None and name not in FIRST_TIME:
             continue   # (a script John hasn't got on this Mac stays away)
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         if old is not None:
@@ -12642,6 +12642,10 @@ def someone_watching(g):
 UPDATE_NOW = threading.Event()   # (Claude's word that something's just gone onto GitHub: looked for at once)
 
 
+# (the scripts an update may put on this Mac for the first time; any other a script John hasn't got here, which stays away)
+FIRST_TIME = ('grifflix-gateway.py', 'convert.py', 'subtitles.py', 'poster-add.py', 'criterion.py', 'criterion-covers.py', 'duplicates.py', 'gdrive.py', 'kermode.py')
+
+
 def keep_updating(g):
     """The Mac's own files kept up to date by themselves, every 2 minutes (was 15: John, 18 Nov 2026, "Why can't we pick it up sooner
     automatically?"), and at once when Claude says it's just put something on GitHub, from what's on GitHub: John signs off only what changes the
@@ -12649,6 +12653,7 @@ def keep_updating(g):
     anything that changes the look or functionality of Grifflix"). The gateway itself restarts for its new version only while no one is
     watching (a film playing goes through it); the converter takes its new file between films, as ever."""
     time.sleep(180)
+    tried = None
     while True:
         try:
             have = load(INSTALLED, {})
@@ -12656,7 +12661,10 @@ def keep_updating(g):
             req = urllib.request.Request('https://github.com/%s/commits/main.atom' % REPO, headers={'User-Agent': 'Grifflix gateway'})
             with urllib.request.urlopen(req, timeout=60, context=tls()) as r_:
                 sha = re.search(r'Commit/([0-9a-f]{40})', r_.read().decode('utf-8', 'replace')).group(1)
-            if fresh or sha != have.get('sha'):
+            # (and once more for a script the last gateway kept away that this one lets come: kermode.py waited for a change on GitHub, 27 Nov 2026)
+            missing = [n for n, dest, _ in SOFTWARE if n in FIRST_TIME and not os.path.exists(dest)]
+            if fresh or sha != have.get('sha') or (missing and tried != sha):
+                tried = sha
                 r = mac_update(quiet=True)
                 save(os.path.join(APP_DIR, 'update-result.json'), dict(r, auto=True))
                 if r.get('restarting'):
