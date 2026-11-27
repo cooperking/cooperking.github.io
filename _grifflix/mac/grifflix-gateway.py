@@ -9642,19 +9642,35 @@ BFI_DOUBLE = [(r'(?i)robbe-?grillet double bill', [('Trans-Europ-Express', 1966)
 
 
 def tmdb_one(g, title, year):
-    """The one film (else series) TMDB has by that title, its own or its original, and that year or one either side: only when it's the one
-    such, and else None. (title, year): {id, kind, title, year}."""
+    """The one film (else series) TMDB has by that title, its own or its original: by its year, or one either side (the exact year where
+    several; two either side where only one has the title: a festival's year and a release's differ); where several are as near, the one
+    far the most known (three times the votes of the next, and twenty at least: Audition, Half Nelson, given without a year), else None, left
+    for John. (title, year): {id, kind, title, year}."""
+    votes = lambda x: x.get('vote_count') or 0
+    def best(c):
+        c = sorted(c, key=votes, reverse=True)
+        return c[0] if len(c) == 1 or (votes(c[0]) >= 3 * max(1, votes(c[1])) and votes(c[0]) >= 20) else None
     for kind, path, dk in (('movie', '/search/movie', 'release_date'), ('tv', '/search/tv', 'first_air_date')):
         res = (tmdb(g, path, query=title) or {}).get('results') or []
+        yr = lambda x: int(x[dk][:4]) if (x.get(dk) or '')[:4].isdigit() else 0
         same = [x for x in res if fold(title) in (fold(x.get('title') or x.get('name') or ''), fold(x.get('original_title') or x.get('original_name') or ''))]
-        if year:
-            same = [x for x in same if (x.get(dk) or '')[:4].isdigit() and abs(int(x[dk][:4]) - int(year)) <= 1]
-            if len(same) > 1:
-                same = [x for x in same if (x.get(dk) or '')[:4] == str(year)] or same
-        if len(same) == 1:
-            x = same[0]
-            return {'id': str(x['id']), 'kind': kind, 'title': x.get('title') or x.get('name') or title, 'year': (x.get(dk) or '')[:4]}
-        if same:
+        pick, unsure = None, False
+        if same and year:
+            near = [x for x in same if yr(x) and abs(yr(x) - int(year)) <= 1]
+            if near:
+                ex = [x for x in near if yr(x) == int(year)]
+                pick = best(near) or (ex[0] if len(ex) == 1 else None)   # (far the best known first: Mark Jenkin's Bait, of 2019, not another of 2018)
+                unsure = not pick
+            else:
+                near2 = [x for x in same if yr(x) and abs(yr(x) - int(year)) <= 2]
+                pick = near2[0] if len(near2) == 1 else None
+                unsure = len(near2) > 1
+        elif same:
+            pick = best(same)
+            unsure = not pick
+        if pick:
+            return {'id': str(pick['id']), 'kind': kind, 'title': pick.get('title') or pick.get('name') or title, 'year': (pick.get(dk) or '')[:4]}
+        if unsure:
             return None   # (several: not sure which, left for John)
         time.sleep(.2)
     return None
@@ -9670,6 +9686,10 @@ def bfi_tmdb_auto(g, limit=150):
     with BFI_LOCK:
         S = load(BFIF, {}) or {}
         files, T, tried = dict(S.get('files') or {}), dict(S.get('tmdb') or {}), dict(S.get('tmdbtry') or {})
+        if S.get('tmdbv') != 2:   # (the rule made better, 27 Nov 2026: those not settled looked at again now, not in a week)
+            tried, S['tmdbv'] = {}, 2
+            S['tmdbtry'] = {}
+            save(BFIF, S)
     todo = [(k, v) for k, v in files.items() if k not in T and time.time() - (tried.get(k) or 0) > 7 * 86400][:limit]
     found = {}
     for k, v in todo:
@@ -9684,6 +9704,11 @@ def bfi_tmdb_auto(g, limit=150):
                 continue
             if title:
                 hit = tmdb_one(g, title, year)
+                alt = None if hit else bfi_alt(title)   # ("Dario Argento's Suspiria": Suspiria)
+                for t2 in (alt[1] if alt else []):
+                    hit = tmdb_one(g, t2, year)
+                    if hit:
+                        break
                 if hit:
                     found[k] = dict(hit, auto=True)
         except Exception as e:
