@@ -2468,6 +2468,41 @@ html.gbfi #cbody .cfind::placeholder { color: var(--bfi-grey); opacity: 1; }
 @media (max-width: 560px) { #cgrid.bfigrid { grid-template-columns: minmax(0, 1fr); gap: 14px; } }
 .bfiw { position: relative; }
 .bfiw::before { content: ""; display: block; padding-top: calc(56.25% + 56px); }   /* (its room in the grid: the still and two lines of name) */
+/* Kermode's latest pick, in BFI Player's dusty pink band, the width of the page: the film's still, where its introduction plays, and its name and a
+   few words beside it (one above the other on a phone) (John, 27 Nov 2026: "Use the pink band for this space") */
+html.gbfi #cbody > .bfipick { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: clamp(20px, 4vw, 56px); align-items: center;
+  margin: 20px 0 34px; padding: clamp(24px, 3.4vw, 44px) 0; color: #000;
+  border-image: linear-gradient(#f5dee7, #f5dee7) fill 0 / 0 / 0 100vmax; }   /* (the pink the page's whole width, in one go, without widening it) */
+html.gbfi #cbody > .bfipick[hidden] { display: none; }
+.bfipick .bpk { margin: 0 0 12px; font: 700 20px/.9 var(--bfi-sans); letter-spacing: 0; text-transform: uppercase; color: #000; }
+.bfipick .bph { margin: 0 0 16px; font: 700 clamp(32px, 4.2vw, 52px)/.9 var(--bfi-sans); letter-spacing: -1px; color: #000; }
+.bfipick .bpn { all: unset; cursor: pointer; overflow-wrap: anywhere; }
+.bfipick .bpn:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.bfipick .bpn:focus-visible { outline: 3px solid #783df6; outline-offset: 4px; }
+.bfipick .bpm { display: flex; flex-wrap: wrap; gap: 5px; margin: 0 0 14px; }
+.bfipick .bpm span { padding: 5px 6px 4px; background: rgba(0, 0, 0, .09); font: 600 11px/1.2 var(--bfi-sans); letter-spacing: .02em; text-transform: uppercase; color: #000; }
+.bfipick .bpd { margin: 0 0 22px; max-width: 46ch; font: 400 16px/1.2 var(--bfi-sans); color: #000; } .bfipick .bpd:empty { display: none; }
+.bfipick .bpb { display: flex; flex-wrap: wrap; gap: 10px; }
+.bfipick .bpgo { display: inline-flex; align-items: center; gap: 9px; min-height: 46px; margin: 0; padding: 0 20px; border: 2px solid #000; border-radius: 0; background: #000; color: #fff;
+  font: 600 16px/1 var(--bfi-sans); cursor: pointer; box-shadow: none; }
+.bfipick .bpgo svg { width: 16px; height: 16px; flex: none; }
+.bfipick .bpgo.bpw { background: transparent; color: #000; }
+@media (hover: hover) { .bfipick .bpgo:hover { background: #783df6; border-color: #783df6; color: #fff; } }
+.bfipick .bpgo:focus-visible { outline: 3px solid #783df6; outline-offset: 3px; }
+.bfipick .bpv { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: #000; }
+.bfipick .bpi { all: unset; position: absolute; inset: 0; display: block; cursor: pointer; }
+.bfipick .bpi img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.bfipick .bpp { position: absolute; left: 50%; top: 50%; display: grid; place-items: center; width: 78px; height: 78px; margin: -39px 0 0 -39px; border-radius: 50%;
+  background: rgba(0, 0, 0, .6); color: #fff; transition: transform .2s ease, background .2s ease; }
+.bfipick .bpp svg { width: 34px; height: 34px; margin-left: 5px; }
+@media (hover: hover) { .bfipick .bpi:hover .bpp { background: #783df6; transform: scale(1.06); } }
+.bfipick video { position: absolute; inset: 0; width: 100%; height: 100%; background: #000; object-fit: contain; cursor: pointer; }
+.bfipick.started .bpi { visibility: hidden; }
+.bfipick.loading .bpv::after { content: ""; position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border: 3px solid rgba(255, 255, 255, .3);
+  border-top-color: #fff; border-radius: 50%; animation: pspin 1s linear infinite; }
+.bfipick .bpmsg { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; padding: 10px 14px; background: rgba(0, 0, 0, .78); color: #fff; font: 500 14px/1.3 var(--bfi-sans); }
+.bfipick .bpmsg[hidden] { display: none; }
+@media (max-width: 760px) { html.gbfi #cbody > .bfipick { grid-template-columns: minmax(0, 1fr); gap: 18px; } .bfipick .bpv { order: -1; } .bfipick .bpd { margin-bottom: 18px; } }
 .bfif { position: absolute; top: 0; left: 0; right: 0; z-index: 1; display: block; margin: 0; padding: 0; border: 0; border-radius: 0; background: #000; color: #fff; text-align: left; font: inherit; cursor: pointer; }
 .bfif .ph { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; background: var(--bfi-dark); }
 .bfif .ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -3109,11 +3144,15 @@ var CGEN = ['Action/Adventure', 'Animation', 'Avant-garde', 'Comedy', 'Crime', '
 var SFC = { sort: 'spine', dir: 1, f: {} };   // (a Criterion page's own sort and filters, kept apart from the rest of the site's)
 try { var sfc0 = JSON.parse(store.get('grifflix-sfc') || 'null'); if (sfc0 && sfc0.sort) SFC = { sort: sfc0.sort, dir: sfc0.dir || 1, f: {} }; } catch (e) {}
 var SFS = SF;
-function sfMode(crit) { if (crit !== SPINEOK) { if (SPINEOK) SFC = SF; else SFS = SF; } SPINEOK = !!crit; SF = crit ? SFC : SFS; }
-function sfKeys() { return SPINEOK ? SKC : SK.filter(function (k) { return k[0] !== 'spine'; }); }
-function sfKey() { return sfKeys().some(function (k) { return k[0] === SF.sort; }) ? SF.sort : SPINEOK ? 'spine' : 'year'; }
+// (the BFI page's own sort and filters, its films newest in the BFI's Kermode playlist first: John, 27 Nov 2026, "Can the default order on the
+// bfi tab be the most recent order in the playlist")
+var BFIOK = false, SKB = [['kp', 'Latest picks', -1]], SFB = { sort: 'kp', dir: -1, f: {} };
+try { var sfb0 = JSON.parse(store.get('grifflix-sfb') || 'null'); if (sfb0 && sfb0.sort) SFB = { sort: sfb0.sort, dir: sfb0.dir || -1, f: {} }; } catch (e) {}
+function sfMode(crit, bfi) { crit = !!crit; bfi = !crit && !!bfi; if (SPINEOK) SFC = SF; else if (BFIOK) SFB = SF; else SFS = SF; SPINEOK = crit; BFIOK = bfi; SF = crit ? SFC : bfi ? SFB : SFS; }
+function sfKeys() { return SPINEOK ? SKC : (BFIOK ? SKB : []).concat(SK.filter(function (k) { return k[0] !== 'spine'; })); }
+function sfKey() { return sfKeys().some(function (k) { return k[0] === SF.sort; }) ? SF.sort : SPINEOK ? 'spine' : BFIOK ? 'kp' : 'year'; }
 function sfDirOf() { return sfKey() === SF.sort ? SF.dir : SPINEOK ? 1 : -1; }
-function sfSave() { store.set(SPINEOK ? 'grifflix-sfc' : 'grifflix-sf', JSON.stringify({ sort: SF.sort, dir: SF.dir })); }
+function sfSave() { store.set(SPINEOK ? 'grifflix-sfc' : BFIOK ? 'grifflix-sfb' : 'grifflix-sf', JSON.stringify({ sort: SF.sort, dir: SF.dir })); }
 function sfLen(i) { return i.mins || (i.secs ? Math.round(i.secs / 60) : 0); }
 function sfYear(i) { return +i.year || +String(i.premiere || '').slice(0, 4) || 0; }
 function sfSort(items, key, dir) {
@@ -3123,7 +3162,8 @@ function sfSort(items, key, dir) {
     return items.slice().sort(function (a, b) { var x = nv(a), y = nv(b); if (!x && y) return 1; if (x && !y) return -1; return dir * x.localeCompare(y) || (+a.spine || 0) - (+b.spine || 0); });
   }
   if (key === 'year' && SPINEOK) return items.slice().sort(function (a, b) { var x = sfYear(a), y = sfYear(b); if (!x && y) return 1; if (x && !y) return -1; return dir * (x - y) || nameKey(a).localeCompare(nameKey(b)); });
-  var v = { year: function (i) { var p = Date.parse(i.premiere || ''); return p || (sfYear(i) ? Date.UTC(sfYear(i), 6, 1) : 0); }, added: function (i) { return Date.parse(i.added || '') || 0; }, name: null, rating: function (i) { return +i.rating || 0; }, mins: sfLen, spine: function (i) { return +i.spine || 0; } }[key];
+  var v = { year: function (i) { var p = Date.parse(i.premiere || ''); return p || (sfYear(i) ? Date.UTC(sfYear(i), 6, 1) : 0); }, added: function (i) { return Date.parse(i.added || '') || 0; }, name: null, rating: function (i) { return +i.rating || 0; }, mins: sfLen, spine: function (i) { return +i.spine || 0; },
+    kp: function (i) { return i.kp ? -i.kp : 0; } }[key];   // (its place in the BFI's Kermode playlist, 1 the newest: newest first going down)
   return items.slice().sort(function (a, b) {
     if (!v) return dir * nameKey(a).localeCompare(nameKey(b));
     var x = v(a), y = v(b); if (key !== 'spine') { if (!x && y) return 1; if (x && !y) return -1; }   // (those without one last, either way; a spine number: none counts as 0, so they sort first or last with the order: John, 16 Nov 2026)
@@ -6246,7 +6286,7 @@ function collectionView(id, into) {
   main.innerHTML = '<div class="tabs" style="margin-top:22px">' + (ME && ME.owner ? '<a class="pill" href="#browse/collections">‹ Collections</a>' : '<a class="pill" href="#browse/movies">‹ Films</a>') + '</div><div id="cbody"><div class="empty">Looking on the shelves…</div></div>';
   apiMemo('collection?id=' + encodeURIComponent(id), function (c) {
     if (!$('#cbody')) return;
-    sfMode(/criterion/i.test(c.name));   // (before its bar is drawn: the bar shows Criterion's sort)
+    sfMode(/criterion/i.test(c.name), /^bfi$/i.test(c.name));   // (before its bar is drawn: the bar shows Criterion's sort, or the BFI's)
     document.documentElement.classList.toggle('gcrit', /criterion/i.test(c.name)); if (/criterion/i.test(c.name)) critFonts();   // (The Criterion Collection at Grifflix: its own look)
     var A24 = /^a24$/i.test(c.name); document.documentElement.classList.toggle('ga24', A24); if (A24) a24Fonts();   // (A24 at Grifflix: A24's own list: John, 19 Nov 2026)
     var BFI = /^bfi$/i.test(c.name); document.documentElement.classList.toggle('gbfi', BFI); if (BFI) bfiFonts();   // (BFI at Grifflix: BFI Player's own look: 26 Nov 2026)
@@ -6263,6 +6303,7 @@ function collectionView(id, into) {
       // the ability to edit collections properly, as well as search within them")
       '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find in this collection" aria-label="Find in this collection" autocomplete="off"><span class="sp"></span>' + sfBar() + '</div>' +
       '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>');
+    if (BFI) bfiPick($('#bfipick'), c.items);
     var editing = false, fq = '', openSet = null, cv0 = store.get('grifflix-clist'), cmode = cv0 === 'covers' ? 'covers' : 'list', csets = cv0 === 'sets' || store.get('grifflix-csets') === '1', clist = cmode === 'list';
     if (S.wantSet && /criterion/i.test(c.name || '')) { openSet = S.wantSet; csets = true; }   // (a box set asked for from a film's page: shown open)
     S.wantSet = null;   // (List or Covers, for the films and for the box sets alike: John, 18 Nov 2026, "you should be able to see box sets in list or covers, not just list")
@@ -6362,7 +6403,7 @@ function collectionView(id, into) {
     };
     var count = function () { var h = $('#cbody .hsub i'); if (h) h.textContent = c.items.length + (A24 ? ' films' : c.items.length === 1 ? ' title' : ' titles'); };
     var ft = 0; $('#cfind').oninput = function () { var v = this.value.trim().toLowerCase(); clearTimeout(ft); ft = setTimeout(function () { fq = v; draw(); }, 120); };
-    sfMode(/criterion/i.test(c.name)); if (!A24) sfWire($('#cbody'), c.items, draw);   // (A24's page has no sort and filter bar to wire)
+    sfMode(/criterion/i.test(c.name), BFI); if (!A24) sfWire($('#cbody'), c.items, draw);   // (A24's page has no sort and filter bar to wire)
     if (c._later && !c.overview) c._later.then(function (ov) {   // (its description, once its file is here)
       if (!ov || c.overview || !$('#cbody') || BFI) return; c.overview = ov;   // (none under the BFI's logo: its page as BFI Player's)
       var d = $('#cbody .collhead > div:last-child'), at = d && d.querySelector(A24 ? '.colltitle' : '.hsub'); if (!at || d.querySelector('.ov')) return;
@@ -6463,6 +6504,7 @@ function browse(into) {
   // from film and tv, with just a private link to my collections from admin")
   var tabs = [['now', 'Now showing'], ['collections', 'Collections'], ['movies', 'Films'], ['tv', 'TV']].filter(function (t) { return t[0] !== 'collections' || S.browse === 'collections'; });   // (Now showing: Carry on watching, New films, New on TV - John, 8 Nov 2026: "it should be a tab like collections")   // (no Home videos tab: John, 7 Nov 2026; the gateway still serves a home videos library if one is added)
   if (S.browse === 'home') S.browse = 'movies';
+  sfMode(false);   // (the site's own sort before its bar is drawn: after Criterion's page it said "Spine #", 27 Nov 2026)
   main.innerHTML = '<div class="hero"><h1>' + { now: 'Now showing', movies: 'Films', tv: 'TV', collections: 'Collections' }[S.browse] + '</h1><div class="hsub" id="bcount"></div></div>' +
     '<div class="tabs">' + tabs.map(function (t) { return '<button class="pill' + (t[0] === S.browse ? ' on' : '') + '" data-b="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
     '<span class="sp"></span>' + (S.browse === 'collections' || S.browse === 'now' ? '' : sfBar()) + '</div>' +
@@ -6977,7 +7019,7 @@ function bfiHead(c) {   // (the BFI's logo, small, as the Criterion Collection's
   // up the page"; on the right, find, sort and filters: "on the right hand side we need to be able to order and sort")
   return '<div class="collhead bfihead"><div><h1 class="colltitle bfih1" aria-label="BFI">' + bfiMark() + '<span class="hsub"><i>' + c.items.length + (c.items.length === 1 ? ' film' : ' films') + '</i></span></h1></div></div>' +
     '<div class="tabs"><input type="search" class="cfind" id="cfind" placeholder="Find a film" aria-label="Find in BFI" autocomplete="off">' + sfBar() + '</div>' +
-    '<div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>';
+    '<section class="bfipick" id="bfipick" aria-label="Kermode’s latest pick" hidden></section><div id="cadd" hidden></div><div class="gridcards" id="cgrid"></div>';
 }
 function bfiDraw(g, items, fq) {   // (BFI Player's grid, as its Kermode Introduces page: three across, each film's wide still and its name in bold;
   // pointed at, outlined in its purple and opened down over the row below, a few words about it and its genre, year, length and director in grey
@@ -6985,6 +7027,7 @@ function bfiDraw(g, items, fq) {   // (BFI Player's grid, as its Kermode Introdu
   // wide, as there: "the page I gave you had four across when wide")
   if (!bfiDraw.w && Object.keys(BFIIMG).length === 0) { bfiDraw.w = 1; getJSON('/grifflix/img/bfi/index.json').then(function (j) { Object.keys((j && j.have) || {}).forEach(function (id) { BFIIMG[id] = 1; }); if (g.isConnected) bfiDraw(g, items, fq); }).catch(function () {}); }
   var NEW = Date.now() - 30 * 864e5;
+  var pk = $('#bfipick'); if (pk && pk._it) { pk.hidden = !!fq; if (fq) bfiPickStop(); }   // (Kermode's latest pick out of the way while a film's being found)
   items = sfSort(items.filter(sfFits(SF.f)), sfKey(), sfDirOf());   // (in the order and with the filters chosen on its right, as every shelf)
   g.className = 'gridcards bfigrid';
   g.innerHTML = items.length ? items.map(function (i) {
@@ -7007,6 +7050,58 @@ function bfiDraw(g, items, fq) {   // (BFI Player's grid, as its Kermode Introdu
     b.addEventListener('mouseenter', get); b.addEventListener('focus', get);
   });
 }
+function bfiPick(el, items) {   // Kermode's latest pick: the newest in the BFI's Kermode playlist that Grifflix has, in BFI Player's pink band,
+  // the film itself (its still, its name, a few words) and its introduction played there in the band (John, 27 Nov 2026: "Could the latest in the
+  // playlist (that we have) be put as the latest pick ... Use the pink band for this space. Just show the film in here, with the ability to play the
+  // Kermode introduction in the space")
+  if (!el) return;
+  var it = (items || []).filter(function (i) { return i.kp && kermodeOf(i); }).sort(function (a, b) { return a.kp - b.kp; })[0];
+  if (!it) { el.hidden = true; el._it = null; return; }
+  var src = bfiPic(it, 1280), km = kermodeOf(it), meta = [it.year, it.mins ? (it.mins >= 60 ? Math.floor(it.mins / 60) + 'h ' : '') + (it.mins % 60 ? it.mins % 60 + 'm' : '') : '', it.cdir || (it.directors || [])[0]].filter(Boolean);
+  el._it = it; el.hidden = false;
+  el.innerHTML = '<div class="bpt"><h3 class="bpk">Kermode’s latest pick</h3><h2 class="bph"><button type="button" class="bpn" data-item="' + it.id + '">' + esc(showName(it)) + '</button></h2>' +
+    '<p class="bpm">' + meta.map(function (x) { return '<span>' + esc(String(x)) + '</span>'; }).join('') + '</p><p class="bpd"></p>' +
+    '<div class="bpb"><button type="button" class="bpgo" id="bpintro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></svg><span>Play the introduction</span></button>' +
+    '<button type="button" class="bpgo bpw" id="bpfilm">Watch the film</button></div></div>' +
+    '<div class="bpv"><button type="button" class="bpi" tabindex="-1" aria-label="Play the introduction">' + (src ? '<img alt="" src="' + esc(src) + '">' : '') +
+    '<span class="bpp" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></svg></span></button>' +
+    '<video playsinline preload="none" hidden></video><p class="bpmsg" hidden></p></div>';
+  details(it).then(function (d) {   // (a few words about it, as BFI Player's band has)
+    var o = String(d.overview || '').replace(/\s+/g, ' ').trim(), m = /^.{40,300}?[.!?](?=\s|$)/.exec(o);
+    var t = m ? m[0] : o.length > 280 ? o.slice(0, 280).replace(/\s+\S*$/, '') + '…' : (o || d.tagline || '');
+    var dd = el.querySelector('.bpd'); if (dd && el._it === it) dd.textContent = t;
+    if (!it.cdir && !(it.directors || [])[0] && d.directors && d.directors[0] && el._it === it) el.querySelector('.bpm').insertAdjacentHTML('beforeend', '<span>' + esc(d.directors[0]) + '</span>');
+  }).catch(function () {});
+  var v = el.querySelector('video'), btn = el.querySelector('#bpintro'), lab = btn.querySelector('span'), msg = el.querySelector('.bpmsg'), seen = false, hls = null, asked = false;
+  var state = function (on) { el.classList.toggle('playing', on); lab.textContent = on ? 'Pause the introduction' : v.currentTime > 1 && !v.ended ? 'Carry on with the introduction' : 'Play the introduction'; btn.querySelector('svg').innerHTML = on ? '<path d="M6.5 4.5h4v15h-4zM13.5 4.5h4v15h-4z" fill="currentColor"/>' : '<path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/>'; };
+  v.addEventListener('play', function () { state(true); });
+  v.addEventListener('pause', function () { state(false); });
+  v.addEventListener('timeupdate', function () { if (v.duration && v.currentTime / v.duration > .8) seen = true; });
+  v.addEventListener('ended', function () { seen = true; v.hidden = true; el.classList.remove('started'); try { v.currentTime = 0; } catch (e) {} state(false); });
+  v.addEventListener('click', function () { if (v.paused) v.play().catch(function () {}); else v.pause(); });
+  var say = function (t) { msg.textContent = t; msg.hidden = !t; };
+  var go = function () {
+    if (PUBLIC) return signInSheet();
+    if (asked) { v.hidden = false; el.classList.add('started'); return v.paused ? v.play().catch(function () {}) : v.pause(); }
+    if (DEMO) return say('In the demo there’s nothing to play. Once the Mac mini is connected, the introduction plays here.');
+    asked = true; say('');
+    el.classList.add('started', 'loading'); v.hidden = false;
+    var fail = function (t) { asked = false; el.classList.remove('started', 'loading'); v.hidden = true; say(t); };
+    api('play?id=' + km.id + '&cant=1&kind=' + encodeURIComponent(devKind())).then(function (info) {
+      el.classList.remove('loading');
+      if (info.cant) return fail('It won’t play on this device. ' + (info.cant || ''));
+      if (info.direct) v.src = gwUrl(info.direct);
+      else if (v.canPlayType('application/vnd.apple.mpegurl') && (!(window.Hls && Hls.isSupported()) || /Apple/.test(navigator.vendor || ''))) v.src = gwUrl(info.hls);
+      else if (window.Hls && Hls.isSupported() && info.hls) { hls = new Hls({ maxBufferLength: 30 }); hls.loadSource(gwUrl(info.hls)); hls.attachMedia(v); el._hls = hls; }
+      else { fail(''); return play(km); }   // (no way to play it here, in the band: in the player)
+      v.play().catch(function () {});
+    }).catch(function (e) { fail(e && e.status === 401 ? 'Sign in to play it.' : 'The Mac mini isn’t answering just now: try again in a moment.'); });
+  };
+  btn.onclick = go; el.querySelector('.bpi').onclick = go;
+  el.querySelector('#bpfilm').onclick = function () { bfiPickStop(); if (seen) P.skipPre = it.id; play(it, null, true); };   // (straight to the film once its introduction's been seen here)
+  el.querySelector('.bpn').onclick = function () { bfiPickStop(); itemSheet(it); };
+}
+function bfiPickStop() { var el = $('#bfipick'), v = el && el.querySelector('video'); if (v && !v.paused) v.pause(); }
 function bfiIntro() {   // (after the BFI's own intro: B, F, I, each lit from behind in turn by a projector's light; then the logo flaring on and
   // settling white on black; at GRIFFLIX: John, 26 Nov 2026, "Can the intro be based on this", the BFI's 2160p intro)
   if ($('.bfiin')) return; bfiFonts();
@@ -7443,6 +7538,7 @@ function filmHouse(it) {
 }
 function itemSheet(it, ctx) {
   S.sheetNow = S.sheetNowNext || { k: 'film', id: it && it.id }; S.sheetNowNext = null;
+  bfiPickStop();   // (Kermode's latest pick's introduction paused as a film's page opens over it)
   if (TMUS.a || TMUS.pj) { musicHush(); TMUS.film = true; }   // (a film chosen: the theme's music stops at once)
   ctx = ctx || {};
   if (!it) return;
@@ -8270,6 +8366,7 @@ function kermodeOf(it) {   // (a film's Mark Kermode introduction, among its ext
 }
 function play(it, queue, fromStart) {
   if (!it) return;
+  bfiPickStop();   // (Kermode's latest pick's introduction, if it's playing in its band)
   if (PUBLIC) return signInSheet();
   // (a film played from the BFI page: Mark Kermode's introduction first, then the film straight after it, as the next in line; Skip goes
   // straight to the film. Only from the BFI page, and only from the start, not carrying on part way through: John, 26 Nov 2026, "when you
@@ -9086,7 +9183,7 @@ function moveFocus(dir) {
   var rectOf = function (el) { var w = el.classList && el.classList.contains('bfif') && el.parentElement; return (w || el).getBoundingClientRect(); };
   var all = pressables(), cur = document.activeElement;
   if (!all.length) return;
-  if (all.indexOf(cur) < 0) { (all.filter(function (e) { return e.matches('#cal button.front'); })[0] || all.filter(function (e) { return e.matches('.day.today, .hday.today, .tday.today, .vday.today'); })[0] || all.filter(function (e) { return e.matches('.card, .bfif, #aplay, .day.has, .hday.front, .vday.front'); })[0] || all[0]).focus(); return; }
+  if (all.indexOf(cur) < 0) { (all.filter(function (e) { return e.matches('#cal button.front'); })[0] || all.filter(function (e) { return e.matches('.day.today, .hday.today, .tday.today, .vday.today'); })[0] || all.filter(function (e) { return e.matches('#bpintro, .card, .bfif, #aplay, .day.has, .hday.front, .vday.front'); })[0] || all[0]).focus(); return; }
   var a = rectOf(cur), ax = a.left + a.width / 2, ay = a.top + a.height / 2, best = null, bestScore = 1e9;
   if (dir === 'up' || dir === 'down') {   // up and down: the next row first (whatever's nearest above or below), then along it the nearest (John, 8 Nov 2026: up from the calendar went straight past the month's buttons to the bar)
     var cands = all.filter(function (el) { if (el === cur) return false; var r = rectOf(el); return dir === 'down' ? r.top >= a.bottom - 4 : r.bottom <= a.top + 4; });
