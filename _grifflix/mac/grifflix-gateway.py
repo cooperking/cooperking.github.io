@@ -11307,7 +11307,8 @@ def pic_local(g):
                 if j:
                     py = os.path.expanduser('~/Grifflix/ocr/bin/python3')
                     out = os.path.join(tempfile.gettempdir(), 'grifflix-picsub.srt')
-                    r = subprocess.run([py if os.path.exists(py) else '/usr/bin/python3', os.path.expanduser('~/Grifflix/picsubs.py'), j['src']]
+                    r = subprocess.run([py if os.path.exists(py) else sys.executable, os.path.expanduser('~/Grifflix/picsubs.py'), j['src']]   # (the gateway's own
+                                       # Python, not macOS's /usr/bin/python3, which a new Mac only has once Apple's command line tools are in: 28 Nov 2026)
                                        + ([str(j['index'])] if j.get('index') is not None else ['-']) + [out], capture_output=True, text=True, timeout=7200)
                     m = re.search(r'(\d+) pictures, (\d+) lines, (\d+) with no words', r.stdout or '')
                     if r.returncode == 0 and m and os.path.exists(out):

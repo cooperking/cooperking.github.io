@@ -62,14 +62,13 @@ note "Sizes there: $(old 'du -sh ~/.local/share/jellyfin/metadata ~/.local/share
 old 'crontab -l 2>/dev/null | grep -v "^#" | grep -q . && echo "(note: the old Mac mini has crontab lines: crontab -l there)"; ls ~/Library/LaunchAgents 2>/dev/null | grep -Ev "^io.github.cooperking.grifflix-(gateway|tunnel)" | sed "s/^/(other launch agent on the old Mac mini: /;s/$/)/"' || true
 [ -d /Volumes/G-Drive ] && note "(the G-Drive is plugged in here already)"
 
-# ---- Python (python.org's, as on the old Mac mini), and Apple's command line tools for the subtitle reader (installs by itself, meanwhile)
+# ---- Python (python.org's, as on the old Mac mini: nothing here needs Apple's command line tools)
 if [ ! -x "$PY" ]; then
   note "Installing Python 3.12 (macOS asks for this Mac's password)…"
   fetch "$PY_PKG" "$WORK/python.pkg" || fail "Python didn’t download."
   sudo installer -pkg "$WORK/python.pkg" -target / || fail "Python didn’t install."
 fi
 "$PY" -m pip install --quiet --upgrade certifi || note "(certifi didn't install: the gateway may not reach the Worker)"
-xcode-select -p >/dev/null 2>&1 || { note "Asking macOS for its command line tools (click Install if it asks; it carries on meanwhile)"; xcode-select --install >/dev/null 2>&1; }
 
 # ---- downloads, meanwhile: Jellyfin's steps and 12.4, cloudflared
 note "Downloading Jellyfin ${JF_STEPS[*]} and $JF_NEW, and cloudflared, in the background…"
@@ -187,7 +186,6 @@ for v in $JF_STEPS $JF_NEW; do
   mark "jf-$v"; note "Jellyfin $v: done."
 done
 note "Starting Jellyfin $JF_NEW with the Mac (its folders named, so it uses the moved ones)…"
-osascript -e 'tell application "System Events" to delete login item "Jellyfin"' >/dev/null 2>&1
 cat > "$AGENTS/$LBL-jellyfin.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -203,6 +201,7 @@ cat > "$AGENTS/$LBL-jellyfin.plist" <<PLIST
   <key>StandardErrorPath</key><string>$JFD/log/launchd.log</string>
 </dict></plist>
 PLIST
+box "macOS will now ask whether jellyfin (and, a little later, Python) may use files on a removable volume: click Allow each time. Without it Grifflix can’t see the films on the G-Drive, and on a Mac with no screen nobody would see the question."
 launchctl bootstrap gui/$U "$AGENTS/$LBL-jellyfin.plist"
 for i in {1..120}; do curl -s -m 3 http://127.0.0.1:8096/System/Info/Public | grep -q '"StartupWizardCompleted":true' && break; sleep 3; done
 curl -s -m 3 http://127.0.0.1:8096/System/Info/Public | grep -q "\"Version\":\"$JF_NEW" || die "Jellyfin $JF_NEW didn’t start with the moved database (its log: ~/.local/share/jellyfin/log)."
@@ -250,6 +249,9 @@ note "Grifflix answers at $SITE from this Mac mini."
 # ---- 5. this Mac kept as a server: never asleep, back on by itself after a power cut, the G-Drive shared for John's Mac
 note "Server settings (macOS asks for this Mac's password)…"
 sudo pmset -a sleep 0 disksleep 0 powernap 0 autorestart 1 womp 1 || note "(power settings didn't take: System Settings → Energy)"
+# (headless: no looking for a Bluetooth keyboard and mouse at each start)
+sudo defaults write /Library/Preferences/com.apple.Bluetooth BluetoothAutoSeekKeyboard -bool false 2>/dev/null
+sudo defaults write /Library/Preferences/com.apple.Bluetooth BluetoothAutoSeekPointingDevice -bool false 2>/dev/null
 sudo sharing -a /Volumes/G-Drive -S G-Drive >/dev/null 2>&1 && note "G-Drive shared on the network." || note "(share the G-Drive by hand: System Settings → General → Sharing → File Sharing → +)"
 
 N=$(curl -s -m 30 -H "Authorization: MediaBrowser Token=\"$("$PY" -c 'import json,os;print(json.load(open(os.path.expanduser("~/Library/Application Support/Grifflix/settings.json")))["jf_token"])')\"" "http://127.0.0.1:8096/Items?Recursive=true&IncludeItemTypes=Movie&Limit=0" | "$PY" -c 'import json,sys;print(json.load(sys.stdin).get("TotalRecordCount","?"))' 2>/dev/null)

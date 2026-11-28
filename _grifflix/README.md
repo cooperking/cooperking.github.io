@@ -65,30 +65,45 @@ mini is deleted; if anything fails after the switch it offers to start the old o
 Linux builds of the same Jellyfin versions: ids, an edited and locked description, the BFI collection, the gateway's sign-in,
 the site's export and HLS playing all came through 12.4 unchanged; the gateway runs on 12.4 (its newer routes from 10.9 on).
 
-Before the day:
-- New Mac mini set up with **the same account name** as the old one (`johngriffiths`): Jellyfin keeps full paths.
-- A cable for the G-Drive to the new Mac mini (USB-C, or an adapter).
-- On the new one: System Settings → General → Sharing → **Remote Login** on (for Claude and the iPhone) and **File Sharing**
-  on (the G-Drive for John's Mac); Users & Groups → **automatic login** (FileVault off), so Grifflix starts by itself after a
-  power cut. The script sets "never sleep" and "start after a power failure" itself.
-- The old Mac mini on, as now (Remote Login on).
+From the box to running headless (John, 28 Nov 2026: "full instruction from out of the box to up and running in as few
+clicks as possible ... Mac mini will run headless"; the old one is on Ethernet through the powerline adapter):
 
-On the day, in Terminal on the new Mac mini (curl, so macOS doesn't hold the script back as downloaded):
+You need, for the first hour only: a TV or monitor with HDMI, a USB keyboard and mouse; and a cable for the G-Drive that fits
+the new Mac mini (USB-C, or a USB-A to USB-C adapter). The old Mac mini stays on, on the powerline, as now.
 
-```
-curl -fsSL https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/Move.command -o ~/Move.command && zsh ~/Move.command
-```
+1. **First start, at the TV.** New Mac mini to power, HDMI, keyboard and mouse; not the Ethernet yet (the old one has it). In
+   macOS's setup: your country; Accessibility **Not Now**; your home **Wi-Fi**; Migration Assistant **Not Now**; Apple Account
+   **Set Up Later** (a server needs none, and it keeps FileVault off); Agree; the account: full name John Griffiths, account
+   name exactly **johngriffiths** (the same as the old one: Jellyfin keeps full paths), the same password as the old one;
+   Location Services off; time zone London; analytics off; Screen Time later; Siri off; **FileVault off** if it asks (it
+   has to be, for automatic login); updates: only download automatically.
+2. **Three switches and a login**, in System Settings: General → Sharing → **Screen Sharing**, **File Sharing** and **Remote
+   Login** on; Users & Groups → **Automatically log in as** John Griffiths (its password once). (FileVault on after all?
+   Privacy & Security → FileVault → Turn Off, then this.)
+3. **The move.** Terminal (⌘-Space, Terminal, Return), paste and Return:
 
-It asks for the old Mac mini's address (192.168.68.125), the password there once, this Mac's password twice (Python, then the
-power settings), and the Cloudflare tunnel token only if the old keychain won't give it over the network. Its log:
-`~/Library/Logs/grifflix-move.log`.
+   ```
+   curl -fsSL https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/Move.command -o ~/Move.command && zsh ~/Move.command
+   ```
 
-After: turn the old Mac mini off; in the router's app (Deco: More → Advanced → Address Reservation) give the new one
-192.168.68.125, so John's Mac's scripts, the iPhone's SSH route and the shared G-Drive find it where they did; restart it.
-Keep the old one untouched for a week or two as the backup. Jellyfin on the new Mac mini runs from a launch agent
-(`io.github.cooperking.grifflix-jellyfin`) with its folders named, not the Jellyfin app: don't open the app there (it would
-start a second Jellyfin). The new Mac's video chip can convert (VideoToolbox); whether the converter should now do full
-conversions there, not only repackaging, is John's call afterwards.
+   Then only: Return (the old Mac mini's address is filled in); the old Mac mini's password; this Mac's password (Python);
+   the copy (tens of minutes; Grifflix carries on meanwhile); **Switch now** (nobody watching); move the G-Drive from the old
+   Mac mini to this one and OK (Time Machine asks: **Don't Use**); **Allow** each time macOS asks whether Terminal, jellyfin or
+   Python may use files on a removable volume or the local network; the tunnel token only if it asks; this Mac's password
+   again (server settings); the last message says it's running, with how many films. Play a film on your phone.
+4. **The network swap.** Shut the old Mac mini down. Move the powerline adapter's Ethernet cable to the new one. Deco app →
+   More → Advanced → Address Reservation: delete the old Mac mini's 192.168.68.125, then + → the new Mac mini (on Ethernet)
+   → 192.168.68.125 → Save. Restart the new Mac mini (Apple menu → Restart): it comes back by itself, signed in, with Jellyfin,
+   the gateway and the tunnel.
+5. **Headless.** Unplug the TV, keyboard and mouse. From then on: Screen Sharing from John's Mac (Finder → Go → Connect to
+   Server → `vnc://192.168.68.125`), SSH as before (same address, so the iPhone's route works unchanged), the G-Drive shared at
+   `smb://192.168.68.125/G-Drive` as before.
+
+The script's log: `~/Library/Logs/grifflix-move.log`. Keep the old Mac mini off but untouched for a week or two, as the
+backup (to go back: G-Drive, Ethernet cable and the address reservation back to it, turn it on, and Claude restarts its
+Grifflix). Jellyfin on the new Mac mini runs from a launch agent (`io.github.cooperking.grifflix-jellyfin`) with its folders
+named, not the Jellyfin app: don't open the app there (it would start a second Jellyfin). The new Mac's video chip can convert
+(VideoToolbox); whether the converter should now do full conversions there, not only repackaging, is John's call afterwards.
 
 ## Starting Jellyfin afresh
 
