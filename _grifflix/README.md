@@ -71,8 +71,9 @@ macOS's questions; the TV, keyboard and mouse unplugged straight after (the new 
 next to it); later, from the work Mac, **Switch now**; the G-Drive's cable and the network cable moved from the old Mac mini
 to the new one. The script, in order:
 
-1. Sets the new Mac mini up as a server: named `grifflix` (`vnc://grifflix.local`), Remote Login, Screen Sharing and File
-   Sharing on, signing itself in (`sysadminctl -autologin`; FileVault turned off if it was on), never asleep, on again after
+1. Sets the new Mac mini up as a server: named `grifflix` (`vnc://grifflix.local`), Remote Login and File Sharing on (Screen
+   Sharing asked for by hand, in System Settings: switched on by `launchctl` it refused connections, "Screen Sharing is not
+   permitted", found on the day), signing itself in (`sysadminctl -autologin`; FileVault turned off if it was on), never asleep, on again after
    a power cut, Time Machine not offering the G-Drive. What won't switch on by itself it asks for by hand, there and then.
    It starts itself again if the Mac restarts before the end (a launch agent opening it in Terminal; the password kept in
    the keychain until the end).
