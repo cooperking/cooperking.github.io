@@ -12769,8 +12769,8 @@
    "moodFrom": "Claude (researched)",
    "sound": [
     "Energetic",
-    "Joyful",
-    "Playful"
+    "Playful",
+    "Joyful"
    ],
    "claude": [
     "Uplifting",
@@ -20203,8 +20203,8 @@
    "moodFrom": "Claude (researched)",
    "sound": [
     "Playful",
-    "Joyful",
-    "Romantic"
+    "Romantic",
+    "Joyful"
    ],
    "claude": [
     "Playful",
@@ -26270,7 +26270,7 @@
    "moodMix": [
     [
      "Joyful",
-     46
+     45
     ],
     [
      "Playful",
@@ -26288,7 +26288,7 @@
      [
       [
        "Joyful",
-       46
+       45
       ],
       [
        "Playful",
@@ -26491,15 +26491,15 @@
    "moodMix": [
     [
      "Bittersweet",
-     42
+     41
     ],
     [
      "Romantic",
-     27
+     28
     ],
     [
      "Melancholy",
-     12
+     13
     ]
    ],
    "moodEvidence": [
@@ -26509,15 +26509,15 @@
      [
       [
        "Bittersweet",
-       42
+       41
       ],
       [
        "Romantic",
-       27
+       28
       ],
       [
        "Melancholy",
-       12
+       13
       ]
      ]
     ]
@@ -26721,7 +26721,7 @@
    "moodMix": [
     [
      "Energetic",
-     78
+     77
     ],
     [
      "Dark",
@@ -26739,7 +26739,7 @@
      [
       [
        "Energetic",
-       78
+       77
       ],
       [
        "Dark",
@@ -26990,7 +26990,7 @@
    "moodMix": [
     [
      "Uplifting",
-     27
+     26
     ],
     [
      "Melancholy",
@@ -27008,7 +27008,7 @@
      [
       [
        "Uplifting",
-       27
+       26
       ],
       [
        "Melancholy",
@@ -27437,7 +27437,7 @@
       ],
       [
        "Joyful",
-       23
+       22
       ]
      ]
     ]
@@ -28063,7 +28063,7 @@
     ],
     [
      "Dreamy",
-     13
+     14
     ]
    ],
    "moodEvidence": [
@@ -28081,7 +28081,7 @@
       ],
       [
        "Dreamy",
-       13
+       14
       ]
      ]
     ]
@@ -28588,7 +28588,7 @@
     ],
     [
      "Uplifting",
-     15
+     14
     ],
     [
      "Playful",
@@ -28606,7 +28606,7 @@
       ],
       [
        "Uplifting",
-       15
+       14
       ],
       [
        "Playful",
@@ -29245,7 +29245,7 @@
    "moodMix": [
     [
      "Mellow",
-     42
+     43
     ],
     [
      "Melancholy",
@@ -29263,7 +29263,7 @@
      [
       [
        "Mellow",
-       42
+       43
       ],
       [
        "Melancholy",
@@ -30026,7 +30026,7 @@
     ],
     [
      "Uplifting",
-     11
+     10
     ]
    ],
    "moodEvidence": [
@@ -30044,7 +30044,7 @@
       ],
       [
        "Uplifting",
-       11
+       10
       ]
      ]
     ]
@@ -30535,6 +30535,140 @@
     "new wave",
     "pop",
     "synth-pop"
+   ],
+   "check": true
+  },
+  "3movPj8XYDqzxth2Dv3ma9": {
+   "n": 292,
+   "title": "Impressively Average",
+   "artist": "Brigitte Calls Me Baby",
+   "moods": [
+    "Uplifting",
+    "Playful"
+   ],
+   "moodMix": [
+    [
+     "Uplifting",
+     27
+    ],
+    [
+     "Playful",
+     25
+    ],
+    [
+     "Joyful",
+     23
+    ]
+   ],
+   "moodEvidence": [
+    [
+     "Audio",
+     100,
+     [
+      [
+       "Uplifting",
+       27
+      ],
+      [
+       "Playful",
+       25
+      ],
+      [
+       "Joyful",
+       23
+      ]
+     ]
+    ]
+   ],
+   "moodFrom": "Weighed up",
+   "sound": [
+    "Uplifting",
+    "Playful",
+    "Joyful"
+   ],
+   "listeners": "none",
+   "styles": [
+    "Indie Rock",
+    "Alternative Rock",
+    "Brit Pop"
+   ],
+   "genres": [
+    "Indie",
+    "Rock"
+   ],
+   "genreFrom": "Weighed up",
+   "genreMix": [
+    [
+     "Indie",
+     59
+    ],
+    [
+     "Rock",
+     36
+    ],
+    [
+     "Pop",
+     6
+    ]
+   ],
+   "genreEvidence": [
+    [
+     "MusicBrainz",
+     50,
+     [
+      [
+       "Rock",
+       57
+      ],
+      [
+       "Indie",
+       43
+      ]
+     ]
+    ],
+    [
+     "Last.fm",
+     30,
+     [
+      [
+       "Indie",
+       88
+      ],
+      [
+       "Rock",
+       11
+      ],
+      [
+       "Pop",
+       1
+      ]
+     ]
+    ],
+    [
+     "Audio",
+     20,
+     [
+      [
+       "Indie",
+       54
+      ],
+      [
+       "Pop",
+       27
+      ],
+      [
+       "Rock",
+       19
+      ]
+     ]
+    ]
+   ],
+   "musicbrainz": [
+    "indie rock",
+    "jangle pop",
+    "new wave",
+    "post-punk",
+    "rock"
    ],
    "check": true
   }
