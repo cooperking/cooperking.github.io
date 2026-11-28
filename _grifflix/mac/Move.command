@@ -127,7 +127,6 @@ if ! done_ server; then
   sudo defaults write /Library/Preferences/com.apple.TimeMachine DoNotOfferNewDisksForBackup -bool true 2>/dev/null   # (no question when the G-Drive comes)
   sudo systemsetup -setremotelogin on >/dev/null 2>&1                            # Remote Login (SSH: the iPhone's way in)
   listening 22 || sudo launchctl load -w /System/Library/LaunchDaemons/ssh.plist >/dev/null 2>&1   # (systemsetup can't on newer macOS)
-  sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.screensharing.plist >/dev/null 2>&1   # Screen Sharing (the work Mac's view)
   sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.smbd.plist >/dev/null 2>&1           # File Sharing (the G-Drive's share)
   if fdesetup status 2>/dev/null | grep -q 'FileVault is On'; then   # (FileVault on, it can't sign itself in: off)
     note "Turning FileVault off (so this Mac signs itself in after a power cut)…"
@@ -138,10 +137,12 @@ if ! done_ server; then
   sudo sysadminctl -autologin set -userName "$USER" -password "$PW" >/dev/null 2>&1   # (signs itself in: Grifflix starts with no one there)
   sleep 2
   listening 22 || MISS+=("Remote Login")
-  listening 5900 || MISS+=("Screen Sharing")
   if [ ${#MISS} -gt 0 ]; then   # (what didn't switch on by itself, asked for now, while John's at the screen)
     box "Please switch on ${(j: and :)MISS} by hand (it wouldn’t switch on by itself): click the Apple logo at the top left, System Settings, General, Sharing, and click the switch next to ${(j: and next to :)MISS}. Then click OK here."
   fi
+  # Screen Sharing (the work Mac's view of this one) only by hand: switched on by a command it runs but refuses connections ("Screen
+  # Sharing is not permitted"), found on the day, 28 Nov 2026
+  box "One switch macOS only lets you turn on yourself, so your work Mac can show this Mac mini’s screen: click the Apple logo at the top left, System Settings, General, Sharing, and click the switch next to Screen Sharing to turn it on (if it’s on already, turn it off and on again). Close System Settings, then click OK here."
   if [ "$(defaults read /Library/Preferences/com.apple.loginwindow autoLoginUser 2>/dev/null)" != "$USER" ]; then
     box "Please set one thing by hand: click the Apple logo at the top left, System Settings, Users & Groups, and next to Automatically log in as choose your name (it asks for your password). If that menu is grey, FileVault is still switching off: wait five minutes and try again. Then click OK here. (So this Mac mini signs itself in after a power cut.)"
   fi
