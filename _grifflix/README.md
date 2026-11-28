@@ -77,9 +77,13 @@ the new Mac mini (USB-C, or a USB-A to USB-C adapter). The old Mac mini stays on
    name exactly **johngriffiths** (the same as the old one: Jellyfin keeps full paths), the same password as the old one;
    Location Services off; time zone London; analytics off; Screen Time later; Siri off; **FileVault off** if it asks (it
    has to be, for automatic login); updates: only download automatically.
-2. **Three switches and a login**, in System Settings: General → Sharing → **Screen Sharing**, **File Sharing** and **Remote
-   Login** on; Users & Groups → **Automatically log in as** John Griffiths (its password once). (FileVault on after all?
-   Privacy & Security → FileVault → Turn Off, then this.)
+2. **Three switches, a name and a login**, in System Settings: General → Sharing → **Screen Sharing**, **File Sharing** and
+   **Remote Login** on, and at the bottom Local hostname → Edit → **grifflix** (so it can be found by name before it has the
+   old one's address: the old one is "Johns-Mac-mini" too); Users & Groups → **Automatically log in as** John Griffiths (its
+   password once). (FileVault on after all? Privacy & Security → FileVault → Turn Off, then this.) From here on it can all be
+   done by Screen Sharing from John's Mac (Finder → Go → Connect to Server → `vnc://grifflix.local`, his password there): the
+   TV, keyboard and mouse can go now (John, 28 Nov 2026: "Can I set it up via screen sharing?"). Only the G-Drive's move, in
+   step 3, and the Ethernet cable, in step 4, are by hand.
 3. **The move.** Terminal (⌘-Space, Terminal, Return), paste and Return:
 
    ```
@@ -95,8 +99,8 @@ the new Mac mini (USB-C, or a USB-A to USB-C adapter). The old Mac mini stays on
    More → Advanced → Address Reservation: delete the old Mac mini's 192.168.68.125, then + → the new Mac mini (on Ethernet)
    → 192.168.68.125 → Save. Restart the new Mac mini (Apple menu → Restart): it comes back by itself, signed in, with Jellyfin,
    the gateway and the tunnel.
-5. **Headless.** Unplug the TV, keyboard and mouse. From then on: Screen Sharing from John's Mac (Finder → Go → Connect to
-   Server → `vnc://192.168.68.125`), SSH as before (same address, so the iPhone's route works unchanged), the G-Drive shared at
+5. **Headless.** Unplug the TV, keyboard and mouse, if they're still in. From then on: Screen Sharing from John's Mac (Finder →
+   Go → Connect to Server → `vnc://192.168.68.125` or `vnc://grifflix.local`), SSH as before (same address, so the iPhone's route works unchanged), the G-Drive shared at
    `smb://192.168.68.125/G-Drive` as before.
 
 The script's log: `~/Library/Logs/grifflix-move.log`. Keep the old Mac mini off but untouched for a week or two, as the
