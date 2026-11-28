@@ -173,7 +173,7 @@ jobs:
         run: |
           git pull --rebase --quiet || true
           rc=0; python _sotd/facts_ask.py || rc=$?
-          git add _sotd/data/facts-asked.json _sotd/data/facts-task.json 2>/dev/null || true
+          git add _sotd/data/facts-asked.json _sotd/data/facts-task.json _sotd/data/facts-pending.json songs/facts-pending.json songs/facts.json songs/draft/facts.json 2>/dev/null || true   # (and facts carried to a song's other version: facts_ask.py)
           if ! git diff --cached --quiet; then
             if [ "$rc" = 0 ]; then git commit -m "Asked Claude for the new songs' facts"; else git commit -m "The facts task couldn't be started"; fi
             pushed=0; for i in 1 2 3; do if git pull --rebase --quiet && git push; then pushed=1; break; fi; sleep 5; done
@@ -380,7 +380,7 @@ jobs:
         run: |
           git pull --rebase --quiet || true
           rc=0; python _sotd/facts_ask.py || rc=$?
-          git add _sotd/data/facts-asked.json _sotd/data/facts-task.json 2>/dev/null || true
+          git add _sotd/data/facts-asked.json _sotd/data/facts-task.json _sotd/data/facts-pending.json songs/facts-pending.json songs/facts.json songs/draft/facts.json 2>/dev/null || true   # (and facts carried to a song's other version: facts_ask.py)
           if ! git diff --cached --quiet; then
             if [ "$rc" = 0 ]; then git commit -m "Asked Claude for the new songs' facts"; else git commit -m "The facts task couldn't be started"; fi
             pushed=0; for i in 1 2 3; do if git pull --rebase --quiet && git push; then pushed=1; break; fi; sleep 5; done

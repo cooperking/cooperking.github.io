@@ -13,7 +13,7 @@ session, or not, with what came back) in _sotd/data/facts-task.json, which the a
 that fails ends with exit code 1, so the job's run shows as failed on GitHub (and on the Status tab) instead of
 quietly carrying on (28 Oct 2026: the task's token had been revoked, and nothing said so).
 """
-import datetime, json, os, sys, urllib.request
+import datetime, json, os, re, sys, unicodedata, urllib.request
 import runinfo
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -38,6 +38,52 @@ def said(ok, songs, text, session=''):   # how this call went, for the Status ta
     return 0 if ok else 1
 
 
+def fold(t):   # a title folded: " - Remastered 2011", brackets, case and punctuation not counting
+    t = re.sub(r'\s+-\s+.*$', '', t or '')
+    t = re.sub(r'\s*[(\[][^)\]]*[)\]]', '', t)
+    return re.sub(r'[^a-z0-9]+', '', unicodedata.normalize('NFKD', t.lower()))
+
+
+def carry(S, live, pending):
+    """A song swapped on the calendar for another Spotify version of itself (the same day's number, title and an artist in
+    common), once its facts were written: the facts it had, signed off or waiting, go to the version now on the calendar,
+    not written again (John, 28 Nov 2026: Tarzan Boy's facts signed off on 27 Nov were under the version it replaced, so a
+    second set was written and waited for him; its notification had already gone). Returns the tracks given facts so."""
+    moved = []
+    for tid, s in S['songs'].items():
+        if s.get('upl') or tid in live.get('songs', {}) or tid in live.get('signed', {}) or tid in pending['songs']:
+            continue
+        for oid, o in S['songs'].items():
+            if oid == tid or o.get('upl') or o.get('n') != s.get('n') or fold(o.get('title')) != fold(s.get('title')) or not set(o.get('artists') or []) & set(s.get('artists') or []):
+                continue
+            if oid in live.get('signed', {}) and oid in live.get('songs', {}):
+                live['songs'][tid] = live['songs'][oid]
+                live['signed'][tid] = live['signed'][oid]
+                moved.append((tid, oid, 'signed'))
+                break
+            if oid in pending['songs']:
+                e = pending['songs'].pop(oid)
+                e['title'], e['artist'] = s.get('title', e.get('title')), s.get('artist', e.get('artist'))
+                pending['songs'][tid] = e
+                moved.append((tid, oid, 'waiting'))
+                break
+    return moved
+
+
+def save_carried(live, pending):
+    for p in (os.path.join(ROOT, 'songs', 'facts.json'), os.path.join(ROOT, 'songs', 'draft', 'facts.json')):   # (the live facts and the draft's)
+        if not os.path.exists(p):
+            continue
+        raw = open(p, encoding='utf-8').read()
+        d = json.loads(raw)
+        d['songs'].update({k: v for k, v in live['songs'].items() if k not in d['songs']})
+        d.setdefault('signed', {}).update({k: v for k, v in live.get('signed', {}).items() if k not in d['signed']})
+        open(p, 'w', encoding='utf-8').write(json.dumps(d, ensure_ascii=False, separators=(',', ':')) + ('\n' if raw.endswith('\n') else ''))
+    for p, kw in ((os.path.join(HERE, 'data', 'facts-pending.json'), {'indent': 1}), (os.path.join(ROOT, 'songs', 'facts-pending.json'), {'separators': (',', ':')})):
+        raw = open(p, encoding='utf-8').read() if os.path.exists(p) else ''
+        open(p, 'w', encoding='utf-8').write(json.dumps(pending, ensure_ascii=False, **kw) + ('\n' if raw.endswith('\n') else ''))
+
+
 def main():
     url, token = os.environ.get('FACTS_TASK_URL', '').strip(), os.environ.get('FACTS_TASK_TOKEN', '').strip()
     force = os.environ.get('FORCE', '').lower() == 'true'
@@ -46,6 +92,11 @@ def main():
     pending = load(os.path.join(HERE, 'data', 'facts-pending.json'), {'songs': {}})
     theirs = load(os.path.join(HERE, 'data', 'upl-facts.json'), {'songs': {}})['songs']   # (members' public playlists' songs: written once)
     redo = load(os.path.join(HERE, 'data', 'facts-redo.json'), {})   # (out already, asked for again by John: facts_redo.py)
+    moved = carry(S, live, pending)
+    if moved:
+        save_carried(live, pending)
+        for tid, oid, how in moved:
+            print('facts carried over (%s): %s from the version it replaced, %s' % (how, tid, oid))
     need = sorted((s['n'], tid, s['title'], s['artist']) for tid, s in S['songs'].items()
                   if (tid not in theirs if s.get('upl') else ((tid not in live.get('songs', {}) and tid not in live.get('signed', {})) or tid in redo) and tid not in pending['songs']))
     asked = load(ASKED, {})
