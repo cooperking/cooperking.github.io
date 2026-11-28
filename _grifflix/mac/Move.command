@@ -5,11 +5,12 @@
 #     curl -fsLo m cooperking.github.io/grifflix/mac
 #     zsh m
 # (grifflix/mac fetches this file and runs it). The Macs: the OLD Mac mini (2010, running Grifflix now, with the G-Drive and the network
-# cable from the powerline adapter); the NEW Mac mini (this one); John's work Mac only to see this one's screen if it has to move away
-# from the TV. What John does: one password, typed once in a box (the same on both Mac minis: Part 1 of the guide chooses it so);
+# cable from the powerline adapter); the NEW Mac mini (this one); John's work Mac, to see this one's screen by Screen Sharing once the TV
+# is unplugged (about 20 minutes in). What John does: one password, typed once in a box (the same on both Mac minis: Part 1 of the guide chooses it so);
 # Allow on macOS's questions, all asked at the start while he's at the screen; Switch now; two cables moved. The rest is done here:
 #   1. this Mac set up as a server: its name (grifflix), Remote Login, Screen Sharing, File Sharing, signing itself in, never asleep, on
-#      again after a power cut, no Time Machine questions; it carries on by itself if it's restarted part way;
+#      again after a power cut, no Time Machine questions; it carries on by itself if it's restarted part way; once macOS's questions
+#      are answered (about 20 minutes in), the TV can go: the rest is seen from the work Mac by Screen Sharing;
 #   2. the old Mac mini found on the network and signed in to with that password (this Mac's own key put there, so never again); its SSH
 #      identity copied, so the iPhone's SSH app sees the same Mac; the tunnel's token taken from it; Jellyfin 12.4 installed; macOS's
 #      questions asked; Grifflix and Jellyfin copied while the old one carries on showing films; everything else made ready;
@@ -289,6 +290,22 @@ if ! done_ allowed; then
   mark allowed
 fi
 
+# ---- headless from here (John, 28 Nov 2026: "I want it to be headless as soon as possible"): nothing more is needed at the screen;
+# the rest is seen from the work Mac by Screen Sharing. Moved now if it's not by the old one, before the copy, so it's moved only once
+if ! done_ placed; then
+  speak "That's all for the screen."
+  C=$(osascript "${ACT[@]}" -e "button returned of (display dialog \"That’s all you need the TV for. Is this Mac mini next to the old one, close enough for the old one’s G-Drive cable and network cable to reach it?
+
+If it is, click It’s next to it. Then unplug the TV, keyboard and mouse: from now on you see this Mac mini’s screen from your work Mac (Finder → Go → Connect to Server, type  vnc://grifflix.local  and click Connect, then sign in with your password).
+
+If it isn’t, click Move it now. It switches itself off: take it to the old Mac mini, plug in only its power cable, and press its power button. It carries on by itself.\" buttons {\"Move it now\", \"It’s next to it\"} default button 2 with title \"$TITLE\")" 2>/dev/null)
+  mark placed
+  if [ "$C" = "Move it now" ]; then
+    note "Switching off, to be moved. Switched on again, it carries on by itself."
+    sudo shutdown -h now >/dev/null 2>&1; exit 0
+  fi
+fi
+
 # ---- the copy, while the old Mac mini carries on (the parts that change are copied again once it's stopped)
 XCL=(--exclude Grifflix/rclone --exclude Grifflix/ytdlp --exclude Grifflix/ocr --exclude 'Grifflix/node-v*.pkg' --exclude 'Grifflix/*.tmp'
      --exclude 'Grifflix/*.lock' --exclude 'Grifflix/deno-wont-run-*' --exclude '*/__pycache__' --exclude 'Library/Application Support/Grifflix/cloudflared'
@@ -375,25 +392,10 @@ die() { done_ stopped && ! done_ running && undo; fail "$1"; }   # (the old one 
 # ---- 3. the switch: Grifflix stopped on the old Mac mini, what changed copied again, the old one switched off, two cables moved
 if ! done_ switched; then
   speak "Grifflix is ready to switch over."
-  C=$(osascript "${ACT[@]}" -e "button returned of (display dialog \"Everything is ready. Next, Grifflix moves from the old Mac mini to this one: for 15 to 30 minutes nobody can watch.
+  ask "Everything is ready. Next, Grifflix moves from the old Mac mini to this one: for 15 to 30 minutes nobody can watch.
 
-Is anybody watching a film? Click Not now, and later in Terminal type  zsh m  and press Return.
-Is this Mac mini somewhere else, not next to the old one? Click Move it first.
-Otherwise, click Switch now.\" buttons {\"Not now\", \"Move it first\", \"Switch now\"} default button 3 with title \"$TITLE\")" 2>/dev/null)
-  case $C in
-    "Switch now") ;;
-    "Move it first")
-      box "This Mac mini now switches itself off. Then:
-
-1. Unplug it and take it to the old Mac mini.
-2. Plug in its power cable, and nothing else yet.
-3. Press its power button, on the back.
-
-In a couple of minutes it carries on by itself. To see its screen from your work Mac: Finder → Go → Connect to Server, type  vnc://grifflix.local  and click Connect, then sign in with your password."
-      note "Switching off, to be moved. Switched on again, it carries on by itself."
-      sudo shutdown -h now >/dev/null 2>&1; exit 0 ;;
-    *) note "Not now: when nobody's watching, type  zsh m  and press Return."; exit 0 ;;
-  esac
+Is anybody watching a film? If so, click Not now, and later in Terminal type  zsh m  and press Return (it comes straight back here).
+If not, click Switch now." "Switch now" || { note "Not now: when nobody's watching, type  zsh m  and press Return."; exit 0; }
   note "Stopping Grifflix on the old Mac mini (its files are kept: nothing is deleted)…"
   old 'A="$HOME/Library/Application Support/Grifflix"; U=$(id -u)
        for L in grifflix-tunnel grifflix-gateway; do launchctl bootout gui/$U/io.github.cooperking.$L 2>/dev/null; launchctl disable gui/$U/io.github.cooperking.$L 2>/dev/null; done
@@ -599,5 +601,5 @@ One thing it couldn’t do by itself: share the G-Drive on the network. Apple lo
 speak "Grifflix is running on the new Mac mini."
 box "Grifflix is running on this Mac mini, with $N films.
 
-You can now unplug the TV (or monitor), the keyboard and the mouse from it. If you like, play a film on your phone. The old Mac mini stays switched off: keep it as it is for a few weeks, as the backup.$LEFT"
+If the TV, keyboard and mouse are still plugged in, you can unplug them now. If you like, play a film on your phone. The old Mac mini stays switched off: keep it as it is for a few weeks, as the backup.$LEFT"
 rm -f "$WORK/pid"
