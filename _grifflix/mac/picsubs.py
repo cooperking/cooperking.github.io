@@ -361,7 +361,7 @@ def vision_ready():
     if os.path.realpath(sys.executable) != os.path.realpath(py):
         if not os.path.exists(py):
             say('getting Apple’s text recognition for Python, once (a minute or two)')
-            subprocess.run(['/usr/bin/python3', '-m', 'venv', VENV], check=True)
+            subprocess.run([sys.executable, '-m', 'venv', VENV], check=True)   # (the Python it's run with: on the new Mac mini python.org's, no Apple tools needed)
             subprocess.run([py, '-m', 'pip', 'install', '-q', '--upgrade', 'pip'], check=False)
             subprocess.run([py, '-m', 'pip', 'install', '-q', 'pyobjc-framework-Vision', 'pyobjc-framework-Quartz'], check=True)
         os.execv(py, [py, os.path.abspath(__file__)] + sys.argv[1:])
