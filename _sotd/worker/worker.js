@@ -322,6 +322,14 @@ export default {
       const U = await uplAll(env), rec = U['hXXaGojDDcooDA'];
       await env.MEDIA.put('diag/john-round.json', JSON.stringify({ owner, ownerIsPlaylistOwner: rec && rec.o === owner, push: pushMode(m), mail: mailMode(m), email: !!m.email, quiet: m.quiet || null, inbox, mine, bySub, pdig: await env.SOTD.get('pdig:' + owner, 'json'), mdig: ((await env.SOTD.get('mdig:' + owner, 'json')) || []).map(x => x.t) }, null, 1), { httpMetadata: { contentType: 'application/json' } });
     })().catch(async e => { if (env.MEDIA) await env.MEDIA.put('diag/john-round.json', JSON.stringify({ error: String(e && (e.stack || e.message) || e) }), { httpMetadata: { contentType: 'application/json' } }).catch(() => {}); }));
+    ctx.waitUntil((async () => {   // once: whether Tarzan Boy's notification went out on 27 Nov 2026 (John, 28 Nov 2026: "It needs signing off but no notifications")
+      if (!env.MEDIA || await env.SOTD.get('diagTarzan1')) return;
+      await env.SOTD.put('diagTarzan1', String(Date.now()));
+      const owner = await env.SOTD.get('owner'), log = ((await env.SOTD.get('pushLog', 'json')) || []).filter(e => e.at > Date.parse('2026-11-26T00:00:00Z')).map(e => ({ at: new Date(e.at).toISOString(), title: e.title, kind: e.kind, track: e.track, inboxes: e.inboxes, sent: e.sent }));
+      const inbox = ((await env.SOTD.get('inbox:' + owner, 'json')) || []).slice(0, 6).map(x => ({ t: x.t, at: new Date(x.at).toISOString(), u: x.u }));
+      const keys = {}; for (const k of ['lastSong', 'songPushed', 'pushedSongs', 'songsLastPush']) keys[k] = await env.SOTD.get(k);
+      await env.MEDIA.put('diag/tarzan.json', JSON.stringify({ log, inbox, keys }, null, 1), { httpMetadata: { contentType: 'application/json' } });
+    })().catch(async e => { if (env.MEDIA) await env.MEDIA.put('diag/tarzan.json', JSON.stringify({ error: String(e && (e.stack || e.message) || e) }), { httpMetadata: { contentType: 'application/json' } }).catch(() => {}); }));
     ctx.waitUntil((async () => {   // once: Collaborations' songs, their added dates, days and captions, for checking
       if (await env.SOTD.get('diagCollab4')) return;
       await env.SOTD.put('diagCollab4', String(Date.now()));
