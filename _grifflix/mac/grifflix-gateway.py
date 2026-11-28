@@ -952,7 +952,7 @@ def make_handler(g):
                     convjobs_save()
                     return self.send_json(200, {'size': size, 'whole': size >= total})
                 if u.path == '/health':
-                    return self.send_json(200, {'ok': True, 'version': VERSION, 'sha': (load(INSTALLED, {}).get('sha') or '')[:7]})
+                    return self.send_json(200, {'ok': True, 'version': VERSION, 'sha': (load(INSTALLED, {}).get('sha') or '')[:7], 'films': FILMS_OK['ok']})
                 if u.path == '/claude/update':   # (Claude: something's just gone onto GitHub, so look now; it can only make the Mac look sooner)
                     tok = (self.headers.get('Authorization') or '').replace('Bearer ', '').strip()
                     want = g.st.get('look_key')
@@ -4771,7 +4771,8 @@ def make_handler(g):
             LOOKED['at'] = time.time()
             home = os.path.expanduser('~/Grifflix')
             LOGS = {'kermode': os.path.join(home, 'kermode.log'), 'duplicates': os.path.join(home, 'duplicates.log'), 'criterion': os.path.join(home, 'criterion-covers.log'), 'criterion-auto': os.path.join(home, 'criterion-auto.log'), 'criterion-sheet': os.path.join(home, 'criterion-sheet.log'), 'gateway': os.path.join(APP_DIR, 'gateway.log'), 'tunnel': os.path.join(APP_DIR, 'tunnel.log'), 'setup': os.path.join(APP_DIR, 'setup.log'),
-                    'convert': os.path.join(home, 'convert.log'), 'convert-out': os.path.join(home, 'convert.out'), 'gdrive': os.path.join(home, 'gdrive.log'), 'backup': os.path.join(home, 'backup.out')}
+                    'convert': os.path.join(home, 'convert.log'), 'convert-out': os.path.join(home, 'convert.out'), 'gdrive': os.path.join(home, 'gdrive.log'), 'backup': os.path.join(home, 'backup.out'),
+                    'move': os.path.expanduser('~/Library/Logs/grifflix-move.log')}   # (the new Mac mini's move, 28 Nov 2026: what it did, if asked)
             SECRETISH = re.compile(r'(rclone\.conf|token|secret|password|\.pickle$|client_secret|\.pem$|\.key$|settings\.json$)', re.I)
             def inside(p):
                 rp = os.path.realpath(p)
@@ -6979,6 +6980,24 @@ def extras_fix(g, most=60):
         g.forget()
         g.publish_soon = time.time() + 600
     return len(asked)
+
+
+FILMS_OK = {'ok': None, 'at': 0}
+
+
+def keep_films_checked(g):
+    """Whether this gateway can read the films' folders. On a new Mac, macOS asks once whether Python may use files on a removable volume
+    (the G-Drive): looked at as soon as it starts, so the question comes while someone's at the screen to answer it, and every few minutes
+    after; shown on /health, where the move script waits for it (28 Nov 2026)."""
+    while True:
+        try:
+            locs = [l for v in (g.jf.call('GET', '/Library/VirtualFolders') or []) for l in (v.get('Locations') or [])]
+            for l in locs[:3]:
+                os.listdir(l)
+            FILMS_OK.update(ok=bool(locs), at=time.time())
+        except Exception:
+            FILMS_OK.update(ok=False, at=time.time())
+        time.sleep(300 if FILMS_OK['ok'] else 10)
 
 
 def keep_extras(g):
@@ -13209,6 +13228,7 @@ def serve():
     threading.Thread(target=keep_backup, args=(g,), daemon=True).start()
     threading.Thread(target=keep_plex_off, args=(g,), daemon=True).start()
     threading.Thread(target=keep_extras, args=(g,), daemon=True).start()
+    threading.Thread(target=keep_films_checked, args=(g,), daemon=True).start()
     threading.Thread(target=keep_covers, daemon=True).start()   # (every Criterion film its cover, hourly)
     # (the subtitles list looked over a minute after starting, not first in the three-hourly round behind the covers: John, 21 Nov 2026,
     # "there shouldn't be a need for a three hour check")

@@ -1,0 +1,11 @@
+# Grifflix: setting up the new Mac mini (John, 28 Nov 2026). Typed in Terminal on the new Mac mini, exactly, a line at a time:
+#     curl -fsLo m cooperking.github.io/grifflix/mac
+#     zsh m
+# (or, the same: curl -fsL cooperking.github.io/grifflix/mac | zsh)
+# It fetches the set-up (_grifflix/mac/Move.command, as it is on GitHub now) and runs it, answering from the keyboard and screen.
+print -- "Fetching the Grifflix set-up…"
+curl -fsSL https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/Move.command -o ~/Move.command || {
+  print -- "Couldn't fetch it. Check this Mac mini is on the internet (a Wi-Fi symbol at the top right of the screen), then type: zsh m"
+  exit 1
+}
+exec zsh ~/Move.command < /dev/tty

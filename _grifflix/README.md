@@ -58,12 +58,19 @@ What the old Mac means:
 ## Moving to a new Mac mini
 
 `Move.command` does it, run on the new Mac mini (Apple silicon, macOS 12 or later): it copies Grifflix's and Jellyfin's
-things from the old one over SSH while the old one carries on, then (when told) stops Grifflix there, copies what changed,
-waits for the G-Drive to be moved across, brings Jellyfin's database up to date in Jellyfin's own steps
-(10.8.13 → 10.9.11 → 10.10.7 → 12.4), and starts Jellyfin, the gateway and the tunnel on the new one. Nothing on the old Mac
-mini is deleted; if anything fails after the switch it offers to start the old one again. Rehearsed 28 Nov 2026 with
-Linux builds of the same Jellyfin versions: ids, an edited and locked description, the BFI collection, the gateway's sign-in,
-the site's export and HLS playing all came through 12.4 unchanged; the gateway runs on 12.4 (its newer routes from 10.9 on).
+things from the old one over SSH while the old one carries on, and gets everything else ready meanwhile (Jellyfin 12.4 and the
+in-between Jellyfins, signed for this Mac; cloudflared; the tunnel's token, read from the old one's running tunnel). Only
+then, when told, it stops Grifflix there, copies what changed (Jellyfin's databases and settings afresh), waits for the
+G-Drive to be moved across, brings Jellyfin's database up to date in Jellyfin's own steps (10.8.13 → 10.9.11 → 10.10.7 →
+12.4), starts Jellyfin, the gateway and the tunnel on the new one, and waits until macOS lets both Jellyfin and the gateway
+read the films (a film's first byte through Jellyfin; `"films": true` on the gateway's `/health`). Nothing on the old Mac
+mini is deleted. If anything fails after the switch, it stops the new one's for good (not started again by a restart), ejects
+the G-Drive, asks for it to go back, starts the old one's Grifflix again, waits for the site to answer, and offers to restart
+the old one if it doesn't. Each password is asked once: the new Mac's own SSH key is put on the old one with the first
+connection. Run again, it carries on where it stopped; after a finished move it doesn't need the old one.
+Rehearsed 28 Nov 2026 with Linux builds of the same Jellyfin versions: ids, an edited and locked description, the BFI
+collection, the gateway's sign-in, the site's export and HLS playing all came through 12.4 unchanged; the gateway runs on
+12.4 (its newer routes from 10.9 on). The script then had an independent review, and every point was fixed and rehearsed again.
 
 From the box to running headless (John, 28 Nov 2026: "full instruction from out of the box to up and running in as few
 clicks as possible ... Mac mini will run headless"; the old one is on Ethernet through the powerline adapter):
@@ -87,15 +94,20 @@ the new Mac mini (USB-C, or a USB-A to USB-C adapter). The old Mac mini stays on
 3. **The move.** Terminal (⌘-Space, Terminal, Return), paste and Return:
 
    ```
-   curl -fsSL https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/Move.command -o ~/Move.command && zsh ~/Move.command
+   curl -fsLo m cooperking.github.io/grifflix/mac
+   zsh m
    ```
 
-   Then only: Return (the old Mac mini's address is filled in); the old Mac mini's password; this Mac's password (Python);
-   the copy (tens of minutes; Grifflix carries on meanwhile); **Switch now** (nobody watching); move the G-Drive from the old
-   Mac mini to this one and OK (Time Machine asks: **Don't Use**); **Allow** each time macOS asks whether Terminal, jellyfin or
-   Python may use files on a removable volume or the local network; the tunnel token only if it asks; this Mac's password
-   again (server settings); the last message says it's running, with how many films. Play a film on your phone.
-4. **The network swap.** Shut the old Mac mini down. Move the powerline adapter's Ethernet cable to the new one. Deco app →
+   (`grifflix/mac` fetches `_grifflix/mac/Move.command` as it is on GitHub and runs it. The step-by-step guide for the day, written
+   for someone who has never used a Mac, is the Claude Doc "Setting up the new Grifflix Mac mini".)
+
+   Then only: this Mac's password; OK (the old Mac mini's address is filled in); the old Mac mini's password (**Allow** if
+   macOS asks about the local network); the tunnel's token only if it asks; the copy (tens of minutes; Grifflix carries on
+   meanwhile); **Switch now** (nobody watching); move the G-Drive from the old Mac mini to this one and OK (Time Machine
+   asks: **Don't Use**); **Allow** each time macOS asks whether Terminal, jellyfin or Python may use files on a removable
+   volume (it waits, and asks again, until they can); play a film on your phone; **Shut it down** (the old Mac mini: its
+   password once more).
+4. **The network swap.** The old Mac mini off (step 3 offers it). Move the powerline adapter's Ethernet cable to the new one. Deco app →
    More → Advanced → Address Reservation: delete the old Mac mini's 192.168.68.125, then + → the new Mac mini (on Ethernet)
    → 192.168.68.125 → Save. Restart the new Mac mini (Apple menu → Restart): it comes back by itself, signed in, with Jellyfin,
    the gateway and the tunnel.
