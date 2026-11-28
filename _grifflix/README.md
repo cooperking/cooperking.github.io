@@ -62,13 +62,14 @@ answered (John, 28 Nov 2026: "as quick as possible (in terms of user time, not t
 can set up in a script, you should, including the new Mac mini set up. Make sure every Mac used is clearly defined"). The
 step-by-step guide for the day, written for someone who has never used a Mac, is the Claude Doc "Setting up the new Grifflix
 Mac mini". The Macs: **the old Mac mini** (2010, running Grifflix, with the G-Drive and the powerline adapter's network
-cable); **the new Mac mini**; **John's work Mac**, only needed if the new one has to move away from the screen it's set up on
-(it then shows the new one's screen by Screen Sharing).
+cable); **the new Mac mini**; **John's work Mac**, which shows the new one's screen by Screen Sharing once the TV is
+unplugged, about 20 minutes in (John, 28 Nov 2026: "I want it to be headless as soon as possible").
 
 What John does, about 15 minutes in all: macOS's first questions (account `johngriffiths`, the old Mac mini's password);
 in Terminal `curl -fsLo m cooperking.github.io/grifflix/mac` then `zsh m`; the password once, in a box; **Allow** on
-macOS's questions; later **Switch now**; the G-Drive's cable and the network cable moved from the old Mac mini to the new
-one; the screen, keyboard and mouse unplugged at the end. The script, in order:
+macOS's questions; the TV, keyboard and mouse unplugged straight after (the new one carried to the old one first if it isn't
+next to it); later, from the work Mac, **Switch now**; the G-Drive's cable and the network cable moved from the old Mac mini
+to the new one. The script, in order:
 
 1. Sets the new Mac mini up as a server: named `grifflix` (`vnc://grifflix.local`), Remote Login, Screen Sharing and File
    Sharing on, signing itself in (`sysadminctl -autologin`; FileVault turned off if it was on), never asleep, on again after
@@ -81,9 +82,10 @@ one; the screen, keyboard and mouse unplugged at the end. The script, in order:
    Installs Jellyfin 12.4 and asks macOS's removable-volume questions for Terminal, Python and jellyfin straight away, on a
    small disk image of its own, with Python and jellyfin started by launchd as they will be (where macOS doesn't ask for a
    disk image, it asks when the G-Drive comes). Copies Grifflix and Jellyfin while the old one carries on, and makes the
-   rest ready (the in-between Jellyfins, signed; cloudflared).
-3. At **Switch now** (or **Move it first**: it switches itself off to be carried to the old one, and carries on when
-   switched on again): stops Grifflix on the old Mac mini, copies what changed (Jellyfin's databases and settings afresh),
+   rest ready (the in-between Jellyfins, signed; cloudflared). Before the copy, with nothing more needed at the screen, it
+   says the TV can go and asks whether it's next to the old Mac mini: if not (**Move it now**), it switches itself off to
+   be carried over, and carries on by itself when switched on again.
+3. At **Switch now**: stops Grifflix on the old Mac mini, copies what changed (Jellyfin's databases and settings afresh),
    ejects the G-Drive and switches the old Mac mini off, so both its cables move in one go.
 4. Brings Jellyfin's database up to date in Jellyfin's own steps (10.8.13 → 10.9.11 → 10.10.7 → 12.4), once the films can
    be read from here (an in-between Jellyfin that can't read them empties the collections); starts Jellyfin, the gateway
@@ -104,7 +106,7 @@ again, it carries on where it stopped; after a finished move it doesn't need the
 Rehearsed 28 Nov 2026 on Linux with real builds of the same Jellyfin versions and the real gateway, macOS's own commands
 stood in for: ids, an edited and locked description, the BFI collection, the gateway's sign-in, the site's export and HLS
 playing all came through 12.4 unchanged. Every scenario passed: the full move; the old Mac mini's password different; a
-mistyped password; Move it first; macOS's questions answered late, or refused at first; the network cable forgotten;
+mistyped password; Move it now; macOS's questions answered late, or refused at first; the network cable forgotten;
 settings that won't switch on by themselves; a failure after the switch with the undo and a retry; a second go after a
 finished move; Not now; a broken download. The script had an independent review before that, and every point was fixed.
 
