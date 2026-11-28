@@ -133,10 +133,40 @@ def tls():
 
 # ---------------------------------------------------------------- Jellyfin
 
+# (a user's items as Jellyfin 10.9 on has them, /Items?userId=, for the old /Users/{id}/Items routes, which 10.9 on keeps only hidden and
+# may drop: the new Mac mini, 28 Nov 2026, has Jellyfin 12.4; the old one 10.8.13, which has only the old routes)
+USER_ITEMS = re.compile(r'^/Users/([0-9a-fA-F-]{32,36})/Items(/[0-9a-fA-F-]{32,36})?(/SpecialFeatures)?(?:\?(.*))?$')
+
+
 class Jellyfin:
     def __init__(self, base, token=''):
         u = urllib.parse.urlparse(base)
         self.host, self.port, self.token = u.hostname, u.port or 8096, token
+        self._new = None
+
+    def new_api(self):
+        """Whether this Jellyfin is 10.9 or later (asked once; not known while it's starting, so the old routes till then)."""
+        if self._new is None:
+            try:
+                c = self.conn(10)
+                c.request('GET', '/System/Info/Public')
+                r = c.getresponse()
+                v = (json.loads(r.read() or b'{}') or {}).get('Version') if r.status == 200 else None
+                c.close()
+            except Exception:
+                v = None
+            if not v:
+                return False
+            n = [int(x) for x in re.findall(r'\d+', v)[:2]] + [0, 0]
+            self._new = n[0] > 10 or (n[0] == 10 and n[1] >= 9)
+        return self._new
+
+    def modern(self, path):
+        m = USER_ITEMS.match(path)
+        if not m or not self.new_api():
+            return path
+        uid, iid, sf, q = m.groups()
+        return '/Items%s%s?%suserId=%s' % (iid or '', sf or '', (q + '&') if q else '', uid)
 
     def auth_header(self):
         h = 'MediaBrowser Client="Grifflix", Device="Grifflix gateway", DeviceId="grifflix-gateway", Version="%s"' % VERSION
@@ -146,6 +176,7 @@ class Jellyfin:
         return http.client.HTTPConnection(self.host, self.port, timeout=timeout)
 
     def call(self, method, path, body=None, query=None, timeout=30):
+        path = self.modern(path)
         if query:
             path += ('&' if '?' in path else '?') + urllib.parse.urlencode({k: v for k, v in query.items() if v is not None})
         c = self.conn(timeout)
@@ -159,6 +190,7 @@ class Jellyfin:
         return pascal(json.loads(raw)) if raw and raw[:1] in b'[{' else None
 
     def raw(self, method, path, data=None, ctype='application/json'):
+        path = self.modern(path)
         c = self.conn(60)
         c.request(method, path, body=data, headers={'Authorization': self.auth_header(), 'Content-Type': ctype})
         r = c.getresponse()
@@ -5348,11 +5380,14 @@ def make_handler(g):
 
         def api_stop(self, me, user, q, b):
             with g.plays_lock:
-                g.plays.pop(str(b.get('ps') or ''), None)
+                p_ = g.plays.pop(str(b.get('ps') or ''), None)
             try:
                 g.jf.call('DELETE', '/Videos/ActiveEncodings', query={'DeviceId': b.get('device'), 'PlaySessionId': b.get('ps')})
             except Exception:
-                pass
+                try:   # (newer Jellyfin: its encoding ended by telling it the playing stopped)
+                    g.jf.call('POST', '/Sessions/Playing/Stopped', {'PlaySessionId': b.get('ps'), 'ItemId': (p_ or {}).get('iid')})
+                except Exception:
+                    pass
             self.send_json(200, {'ok': True})
 
         def api_progress(self, me, user, q, b):
@@ -6061,13 +6096,20 @@ def act_plex_on(g, req):
     return 'Plex started again, and left alone from now on.' if _plex_running() else 'Plex was let be, but didn’t start: it may need opening on the Mac mini.'
 
 
+JF_AGENT = 'io.github.cooperking.grifflix-jellyfin'   # (the new Mac mini's: Jellyfin's server started by launchd with its folders named, 28 Nov 2026)
+
+
 def act_jellyfin_restart(g, req):
     if someone_watching(g):
         raise RuntimeError('someone is watching: not restarted (allow it again later)')
-    _run(['pkill', '-x', 'Jellyfin Server'])
-    _run(['pkill', '-x', 'jellyfin'])
-    time.sleep(8)
-    _run(['open', '-a', 'Jellyfin'], 30)
+    if os.path.exists(os.path.expanduser('~/Library/LaunchAgents/%s.plist' % JF_AGENT)):   # (started again by launchd, not the app, which
+        # would start a second Jellyfin of its own)
+        _run(['launchctl', 'kickstart', '-k', 'gui/%d/%s' % (os.getuid(), JF_AGENT)], 30)
+    else:
+        _run(['pkill', '-x', 'Jellyfin Server'])
+        _run(['pkill', '-x', 'jellyfin'])
+        time.sleep(8)
+        _run(['open', '-a', 'Jellyfin'], 30)
     for _ in range(60):
         time.sleep(2)
         try:

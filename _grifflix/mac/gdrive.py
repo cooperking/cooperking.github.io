@@ -303,26 +303,36 @@ def films_root():
     raise RuntimeError('the media server has no films folder')
 
 
+def get_rclone():
+    """rclone put in ~/Grifflix, for this Mac: on Apple silicon the current one (the new Mac mini, 28 Nov 2026), else 1.63.1, the last for
+    macOS 10.13."""
+    import platform
+    if platform.machine() == 'arm64':
+        url, ver = 'https://downloads.rclone.org/rclone-current-osx-arm64.zip', 'current'
+    else:
+        url, ver = 'https://downloads.rclone.org/v%s/rclone-v%s-osx-amd64.zip' % (VERSION, VERSION), VERSION
+    print('Getting rclone %s…' % ver)
+    zp = os.path.join(HOME, 'rclone.zip')
+    # (with the certificates Grifflix's other scripts use: python.org's Python has none of its own, and refused the download)
+    try:
+        import certifi, ssl
+        ctx = ssl.create_default_context(cafile=certifi.where())
+        with urllib.request.urlopen(url, context=ctx, timeout=300) as r, open(zp, 'wb') as f:
+            shutil.copyfileobj(r, f)
+    except Exception:
+        subprocess.run(['curl', '-fsSL', url, '-o', zp], check=True)   # (or the Mac's own curl)
+    with zipfile.ZipFile(zp) as z:
+        name = next(n for n in z.namelist() if n.endswith('/rclone'))
+        with z.open(name) as src, open(RCLONE, 'wb') as dst:
+            shutil.copyfileobj(src, dst)
+    os.chmod(RCLONE, 0o755)
+    os.remove(zp)
+
+
 def setup():
     os.makedirs(HOME, exist_ok=True)
     if not os.path.exists(RCLONE):
-        url = 'https://downloads.rclone.org/v%s/rclone-v%s-osx-amd64.zip' % (VERSION, VERSION)
-        print('Getting rclone %s…' % VERSION)
-        zp = os.path.join(HOME, 'rclone.zip')
-        # (with the certificates Grifflix's other scripts use: python.org's Python has none of its own, and refused the download)
-        try:
-            import certifi, ssl
-            ctx = ssl.create_default_context(cafile=certifi.where())
-            with urllib.request.urlopen(url, context=ctx, timeout=300) as r, open(zp, 'wb') as f:
-                shutil.copyfileobj(r, f)
-        except Exception:
-            subprocess.run(['curl', '-fsSL', url, '-o', zp], check=True)   # (or the Mac's own curl)
-        with zipfile.ZipFile(zp) as z:
-            name = next(n for n in z.namelist() if n.endswith('/rclone'))
-            with z.open(name) as src, open(RCLONE, 'wb') as dst:
-                shutil.copyfileobj(src, dst)
-        os.chmod(RCLONE, 0o755)
-        os.remove(zp)
+        get_rclone()
     print('''
 Now the sign-in, on your work Mac (it has a browser this Mac's old Safari can't match). In Terminal there, run:
 
@@ -371,6 +381,12 @@ def lock_alive():
 
 
 def run(check=False):
+    if os.path.exists(CONF) and not os.path.exists(RCLONE):   # (signed in already, rclone itself not here: moved to a new Mac, where the old
+        # Mac's rclone wasn't brought, 28 Nov 2026)
+        try:
+            get_rclone()
+        except Exception as e:
+            sys.exit('rclone couldn’t be fetched: %s' % e)
     if not (os.path.exists(RCLONE) and os.path.exists(CONF)):
         sys.exit('Not set up yet: python3 ~/Grifflix/gdrive.py setup')
     if check:   # (a look changes nothing: always done, even while a fetch runs)

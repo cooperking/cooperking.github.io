@@ -55,8 +55,40 @@ What the old Mac means:
 - 4 GB: run Plex or Grifflix, not both scanning at once; quit Plex once Grifflix has the films.
 - It's on Wi-Fi ("Cami", 192.168.68.125); give it a fixed address in the router.
 
-A newer Mac later: run `Install.command` there (it takes the current versions), copy `data.json` across, and point
-the tunnel's hostname at it. The page doesn't change.
+## Moving to a new Mac mini
+
+`Move.command` does it, run on the new Mac mini (Apple silicon, macOS 12 or later): it copies Grifflix's and Jellyfin's
+things from the old one over SSH while the old one carries on, then (when told) stops Grifflix there, copies what changed,
+waits for the G-Drive to be moved across, brings Jellyfin's database up to date in Jellyfin's own steps
+(10.8.13 → 10.9.11 → 10.10.7 → 12.4), and starts Jellyfin, the gateway and the tunnel on the new one. Nothing on the old Mac
+mini is deleted; if anything fails after the switch it offers to start the old one again. Rehearsed 28 Nov 2026 with
+Linux builds of the same Jellyfin versions: ids, an edited and locked description, the BFI collection, the gateway's sign-in,
+the site's export and HLS playing all came through 12.4 unchanged; the gateway runs on 12.4 (its newer routes from 10.9 on).
+
+Before the day:
+- New Mac mini set up with **the same account name** as the old one (`johngriffiths`): Jellyfin keeps full paths.
+- A cable for the G-Drive to the new Mac mini (USB-C, or an adapter).
+- On the new one: System Settings → General → Sharing → **Remote Login** on (for Claude and the iPhone) and **File Sharing**
+  on (the G-Drive for John's Mac); Users & Groups → **automatic login** (FileVault off), so Grifflix starts by itself after a
+  power cut. The script sets "never sleep" and "start after a power failure" itself.
+- The old Mac mini on, as now (Remote Login on).
+
+On the day, in Terminal on the new Mac mini (curl, so macOS doesn't hold the script back as downloaded):
+
+```
+curl -fsSL https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/Move.command -o ~/Move.command && zsh ~/Move.command
+```
+
+It asks for the old Mac mini's address (192.168.68.125), the password there once, this Mac's password twice (Python, then the
+power settings), and the Cloudflare tunnel token only if the old keychain won't give it over the network. Its log:
+`~/Library/Logs/grifflix-move.log`.
+
+After: turn the old Mac mini off; in the router's app (Deco: More → Advanced → Address Reservation) give the new one
+192.168.68.125, so John's Mac's scripts, the iPhone's SSH route and the shared G-Drive find it where they did; restart it.
+Keep the old one untouched for a week or two as the backup. Jellyfin on the new Mac mini runs from a launch agent
+(`io.github.cooperking.grifflix-jellyfin`) with its folders named, not the Jellyfin app: don't open the app there (it would
+start a second Jellyfin). The new Mac's video chip can convert (VideoToolbox); whether the converter should now do full
+conversions there, not only repackaging, is John's call afterwards.
 
 ## Starting Jellyfin afresh
 
