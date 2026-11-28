@@ -87,8 +87,12 @@ the new Mac mini (USB-C, or a USB-A to USB-C adapter). The old Mac mini stays on
 3. **The move.** Terminal (⌘-Space, Terminal, Return), paste and Return:
 
    ```
-   curl -fsSL https://raw.githubusercontent.com/cooperking/cooperking.github.io/main/_grifflix/mac/Move.command -o ~/Move.command && zsh ~/Move.command
+   curl -fsLo m cooperking.github.io/grifflix/mac
+   zsh m
    ```
+
+   (`grifflix/mac` fetches `_grifflix/mac/Move.command` as it is on GitHub and runs it. The step-by-step guide for the day, written
+   for someone who has never used a Mac, is the Claude Doc "Setting up the new Grifflix Mac mini".)
 
    Then only: Return (the old Mac mini's address is filled in); the old Mac mini's password; this Mac's password (Python);
    the copy (tens of minutes; Grifflix carries on meanwhile); **Switch now** (nobody watching); move the G-Drive from the old

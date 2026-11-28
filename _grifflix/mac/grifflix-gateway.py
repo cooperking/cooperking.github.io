@@ -4771,7 +4771,8 @@ def make_handler(g):
             LOOKED['at'] = time.time()
             home = os.path.expanduser('~/Grifflix')
             LOGS = {'kermode': os.path.join(home, 'kermode.log'), 'duplicates': os.path.join(home, 'duplicates.log'), 'criterion': os.path.join(home, 'criterion-covers.log'), 'criterion-auto': os.path.join(home, 'criterion-auto.log'), 'criterion-sheet': os.path.join(home, 'criterion-sheet.log'), 'gateway': os.path.join(APP_DIR, 'gateway.log'), 'tunnel': os.path.join(APP_DIR, 'tunnel.log'), 'setup': os.path.join(APP_DIR, 'setup.log'),
-                    'convert': os.path.join(home, 'convert.log'), 'convert-out': os.path.join(home, 'convert.out'), 'gdrive': os.path.join(home, 'gdrive.log'), 'backup': os.path.join(home, 'backup.out')}
+                    'convert': os.path.join(home, 'convert.log'), 'convert-out': os.path.join(home, 'convert.out'), 'gdrive': os.path.join(home, 'gdrive.log'), 'backup': os.path.join(home, 'backup.out'),
+                    'move': os.path.expanduser('~/Library/Logs/grifflix-move.log')}   # (the new Mac mini's move, 28 Nov 2026: what it did, if asked)
             SECRETISH = re.compile(r'(rclone\.conf|token|secret|password|\.pickle$|client_secret|\.pem$|\.key$|settings\.json$)', re.I)
             def inside(p):
                 rp = os.path.realpath(p)
