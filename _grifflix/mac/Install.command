@@ -7,8 +7,7 @@
 # - older (John's 2010 Mac mini, High Sierra 10.13): the last builds that still run there, fetched directly:
 #   Jellyfin 10.7.7 (its app, with its own ffmpeg), Python 3.12.10 from python.org (High Sierra has no Python 3),
 #   cloudflared 2023.10.0 (the last built with Go 1.20; later ones need 10.15).
-# Moving to a newer Mac later: run this there, then copy ~/Library/Application Support/Grifflix/data.json across
-# (Movie of the Day, everyone's calendars, playlists and where they stopped).
+# Moving to a newer Mac: Move.command, not this (it brings everything across, Jellyfin's database too: README, "Moving to a new Mac mini").
 cd "$(dirname "$0")"
 APP="$HOME/Library/Application Support/Grifflix"
 AGENTS="$HOME/Library/LaunchAgents"
