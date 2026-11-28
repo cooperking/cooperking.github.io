@@ -64,11 +64,11 @@ OLD_HOST=$(cat "$WORK/old-host" 2>/dev/null)
 OLD_HOST=$(osascript -e "text returned of (display dialog \"The old Mac mini’s address on the home network. It’s filled in: just click OK.\" default answer \"${OLD_HOST:-192.168.68.125}\" with title \"$TITLE\")" 2>/dev/null) || exit 1
 print -- "$OLD_HOST" > "$WORK/old-host"
 OLD="${GM_OLDUSER:-$USER}@$OLD_HOST"
-SSHO=(-n -o ConnectTimeout=15 -o ServerAliveInterval=30 -o StrictHostKeyChecking=accept-new -o ControlMaster=auto -o "ControlPath=/tmp/grifflix-%C" -o ControlPersist=8h)
+SSHO=(-n -o LogLevel=ERROR -o ConnectTimeout=15 -o ServerAliveInterval=30 -o StrictHostKeyChecking=accept-new -o ControlMaster=auto -o "ControlPath=/tmp/grifflix-%C" -o ControlPersist=8h)
 old() { ssh "${SSHO[@]}" "$OLD" "$@"; }
 print -- ""
 print -- "Now the OLD Mac mini's password (your password on the old one) and Return. Again nothing shows as you type."
-old true || fail "Couldn’t reach the old Mac mini at $OLD_HOST. Check it’s switched on. If macOS asked whether Terminal may find devices on your local network, click Allow, then start again: in Terminal type  zsh m  and press Return."
+old true || fail "Couldn’t reach the old Mac mini at $OLD_HOST, or its password was typed wrong three times. Check it’s switched on. If macOS asked whether Terminal may find devices on your local network, click Allow, then start again: in Terminal type  zsh m  and press Return."
 OLDHOME=$(old 'echo $HOME')
 [ "$OLDHOME" = "$HOME" ] || fail "This Mac’s account is $HOME but the old Mac mini’s is $OLDHOME. They must be the same: make an account here called $(basename "$OLDHOME") (System Settings → Users & Groups), sign in to it, and start again."
 CFGWHERE=$(old 'if [ -f ~/.local/share/jellyfin/config/system.xml ]; then echo data; elif [ -f ~/.config/jellyfin/system.xml ]; then echo xdg; else echo none; fi')
@@ -76,6 +76,16 @@ CFGWHERE=$(old 'if [ -f ~/.local/share/jellyfin/config/system.xml ]; then echo d
 note "Old Mac mini: macOS $(old 'sw_vers -productVersion'); Jellyfin's settings in $([ $CFGWHERE = data ] && print '~/.local/share/jellyfin/config' || print '~/.config/jellyfin')"
 TOTAL=$(old 'du -sk ~/.local/share/jellyfin/metadata ~/.local/share/jellyfin/data ~/Grifflix "$HOME/Library/Application Support/Grifflix" 2>/dev/null | awk "{s+=\$1} END {print s}"')
 note "To copy: about $(( ${TOTAL:-0} / 1048576 )).$(( ${TOTAL:-0} % 1048576 * 10 / 1048576 )) GB"
+
+# ---- the tunnel's token (its key to Cloudflare), now, while the old Mac mini still runs: from its running tunnel, else its keychain, else asked
+# (never shown or written down; kept in this Mac's keychain, as on the old one)
+if ! security find-generic-password -s grifflix-tunnel -a cloudflare >/dev/null 2>&1; then
+  TOKEN=$(old 'ps -axww -o command | sed -n "s/.*cloudflared[ ]tunnel.*--token \([A-Za-z0-9_=+\/-]*\).*/\1/p" | head -1' 2>/dev/null)
+  [ -z "$TOKEN" ] && TOKEN=$(old 'security find-generic-password -s grifflix-tunnel -a cloudflare -w' 2>/dev/null)
+  [ -z "$TOKEN" ] && TOKEN=$(osascript -e "text returned of (display dialog \"One thing is needed from Cloudflare: the tunnel’s token, a long code. On this Mac mini open Safari, sign in at dash.cloudflare.com, then Zero Trust → Networks → Tunnels → grifflix → Configure, copy the long code after --token, click in the box below and paste it (it shows as dots). Or send Claude a photo of this and wait.\" default answer \"\" with hidden answer with title \"$TITLE\")" 2>/dev/null)
+  [ -n "$TOKEN" ] || fail "The tunnel needs its token. Start again when you have it: in Terminal type  zsh m  and press Return."
+  security add-generic-password -U -s grifflix-tunnel -a cloudflare -w "$TOKEN" >/dev/null; TOKEN=
+fi
 
 # ---- Python (python.org's, as on the old Mac mini: nothing here needs Apple's command line tools)
 if [ ! -x "$PY" ]; then
@@ -98,13 +108,15 @@ XCL=(--exclude Grifflix/rclone --exclude Grifflix/ytdlp --exclude Grifflix/ocr -
      --exclude .local/share/jellyfin/log)
 PARTS=(.local/share/jellyfin 'Library/Application Support/Grifflix' Grifflix)
 [ "$CFGWHERE" = xdg ] && PARTS+=(.config/jellyfin)
+old '[ -f ~/.ssh/authorized_keys ]' && PARTS+=(.ssh/authorized_keys)   # (the keys allowed to sign in over SSH: the iPhone's goes on working)
 qparts() { local p; for p in "$@"; do print -rn -- "'$p' "; done; }
 qxcl() { local x; for x in "${XCL[@]}"; do [ "$x" = --exclude ] && print -rn -- '--exclude ' || print -rn -- "'$x' "; done; }
-progress() {   # every minute, how much has come (so a long copy never looks stuck)
-  local s
+progress() {   # every minute, how much has come (so a long copy never looks stuck, and one that has stopped shows it)
+  local s p=-1
   while sleep 60 && kill -0 $$ 2>/dev/null; do
     s=$(du -sk "$JFD" "$G" "$APP" 2>/dev/null | awk '{s+=$1} END {print s}')
-    note "  copied so far: about $(( ${s:-0} / 1048576 )).$(( ${s:-0} % 1048576 * 10 / 1048576 )) GB"
+    note "  copied so far: about $(( ${s:-0} / 1048576 )).$(( ${s:-0} % 1048576 * 10 / 1048576 )) of $(( ${TOTAL:-0} / 1048576 )).$(( ${TOTAL:-0} % 1048576 * 10 / 1048576 )) GB$([ "${s:-0}" = "$p" ] && print ' (no change this minute)')"
+    p=${s:-0}
   done
 }
 if ! done_ copy1; then
@@ -114,6 +126,7 @@ if ! done_ copy1; then
   RC=${pipestatus[1]}${pipestatus[2]}
   kill $PG 2>/dev/null
   [ "$RC" = 00 ] || fail "The copy stopped part way. Start again: in Terminal type  zsh m  and press Return (it carries on from where it was)."
+  [ -f "$HOME/.ssh/authorized_keys" ] && { chmod 700 "$HOME/.ssh"; chmod 600 "$HOME/.ssh/authorized_keys"; }
   mark copy1
   note "First copy done."
 fi
@@ -252,12 +265,7 @@ note "Jellyfin $JF_NEW is running with the moved library."
 note "cloudflared for this Mac…"
 [ -s "$WORK/cloudflared.tgz" ] || die "cloudflared didn’t download."
 rm -f "$APP/cloudflared"; tar -C "$APP" -xzf "$WORK/cloudflared.tgz" && chmod +x "$APP/cloudflared" || die "cloudflared wouldn’t unpack."
-if ! security find-generic-password -s grifflix-tunnel -a cloudflare >/dev/null 2>&1; then
-  TOKEN=$(old 'security find-generic-password -s grifflix-tunnel -a cloudflare -w' 2>/dev/null)
-  [ -z "$TOKEN" ] && TOKEN=$(osascript -e "text returned of (display dialog \"One more thing is needed: the Cloudflare tunnel’s token (a long code). On the Cloudflare website: Zero Trust → Networks → Tunnels → grifflix → Configure; copy the long code after --token and paste it here.\" default answer \"\" with hidden answer with title \"$TITLE\")" 2>/dev/null)
-  [ -n "$TOKEN" ] || die "The tunnel needs its token."
-  security add-generic-password -U -s grifflix-tunnel -a cloudflare -w "$TOKEN" >/dev/null; TOKEN=
-fi
+security find-generic-password -s grifflix-tunnel -a cloudflare >/dev/null 2>&1 || die "The tunnel’s token isn’t here."
 cat > "$APP/tunnel.sh" <<SH
 #!/bin/zsh
 exec "$APP/cloudflared" tunnel --no-autoupdate --protocol http2 run --token "\$(security find-generic-password -s grifflix-tunnel -a cloudflare -w)"
